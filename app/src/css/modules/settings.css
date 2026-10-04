@@ -1576,8 +1576,8 @@
 .style-instructions-textarea::placeholder,
 .settings-card-content input[type="text"]::placeholder {
     color: var(--text-tertiary);
-    font-style: italic;
-    opacity: 1;
+    font-style: normal;
+    opacity: 0.85;
 }
 
 /* === Settings Focus Highlight Animation (for shortcuts to settings) === */

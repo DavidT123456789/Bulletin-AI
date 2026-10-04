@@ -412,25 +412,23 @@
 }
 
 .welcome-api-key-group:focus-within {
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+    border-color: var(--highlight-standard-border) !important;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .welcome-api-key-group:focus-within {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 
 
 /* Input interne - style propre unifié avec le bouton */
-#welcomeModal .welcome-api-key-group input,
-.welcome-api-key-group input:focus,
-.welcome-api-key-group input:active {
+#welcomeModal .welcome-api-key-group input {
     -webkit-text-security: disc;
     text-security: disc;
-    border: none !important;
     /* Arrondi à gauche seulement pour se connecter au bouton */
     border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important;
-    outline: none !important;
-    box-shadow: none !important;
-    /* Fond visible surface color */
-    background: var(--surface-color) !important;
     padding: 10px 18px;
     flex: 1;
     font-size: 0.95em;
@@ -1883,8 +1881,13 @@
 
 .mass-import-textarea-premium:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--highlight-standard-border) !important;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .mass-import-textarea-premium:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 .mass-import-textarea-premium::placeholder {

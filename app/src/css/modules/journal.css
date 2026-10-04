@@ -584,6 +584,12 @@
     transform: translateY(0) scale(1);
 }
 
+[data-theme="dark"] .journal-pill-menu {
+    background-color: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
 .journal-pill-menu .journal-dropdown-option {
     display: flex;
     align-items: center;
@@ -741,15 +747,20 @@
 
 .journal-note-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--highlight-standard-border) !important;
     background: var(--surface-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .journal-note-input:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 .journal-note-input::placeholder {
     color: var(--text-tertiary);
-    opacity: 0.7;
-    font-style: italic;
+    opacity: 0.75;
+    font-style: normal;
 }
 
 .journal-input-footer {

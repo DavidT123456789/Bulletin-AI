@@ -174,7 +174,7 @@ export const SeatingChartManager = {
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
                         <div class="sc-search-box">
-                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
+                            <input type="text" id="scSearchInput" class="custom-input" placeholder="Rechercher..." autocomplete="off">
                             <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
@@ -207,7 +207,7 @@ export const SeatingChartManager = {
                         </button>
                         <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
                             <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scFloatingSearchInput" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                            <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
                             <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
                             <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>

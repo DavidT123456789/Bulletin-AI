@@ -141,9 +141,9 @@
 
 /* Harmonization: Placeholder matches icon color */
 .search-input::placeholder {
-    color: var(--text-secondary);
-    opacity: 1;
-    /* Firefox default is lower */
+    color: var(--text-tertiary);
+    opacity: 0.85;
+    font-style: normal !important;
 }
 
 /* Hover States - Aligned with custom dropdown trigger */
@@ -168,8 +168,22 @@
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Focus States - Aligned with custom dropdown trigger open state */
-.search-input:focus,
+/* Search input focus - Unified clean luminous ring */
+.search-input:focus {
+    border-color: var(--highlight-standard-border) !important;
+    background-image: none !important;
+    animation: none !important;
+    color: var(--text-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .search-input:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Dropdown & button focus states */
 .output-toolbar .custom-dropdown-trigger.open,
 .output-toolbar .btn-icon:focus {
     border-color: transparent;
@@ -356,6 +370,12 @@
 .actions-dropdown-content {
     max-height: 400px;
     overflow-y: auto;
+}
+
+[data-theme="dark"] .actions-dropdown-content {
+    background-color: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .actions-group .btn-dropdown-item {

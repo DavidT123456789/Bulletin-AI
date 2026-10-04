@@ -1171,6 +1171,17 @@
     border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
+[data-theme="dark"] .assignment-select:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] .assignment-select:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    background-color: var(--bg-color) !important;
+}
+
 .assignment-select-wrapper {
     display: flex;
     align-items: center;

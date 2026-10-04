@@ -489,6 +489,17 @@
     display: flex;
 }
 
+[data-theme="dark"] .wizard-period-dropdown.open .wizard-period-trigger {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .wizard-period-menu {
+    background-color: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
 .wizard-period-option {
     display: flex;
     align-items: center;
@@ -1170,6 +1181,17 @@
 
 .import-wizard-modal .import-separator-select:hover:not(:focus) {
     border-color: rgba(var(--primary-color-rgb), 0.4);
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-select:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-select:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    background-color: var(--bg-color) !important;
 }
 
 /* Guide Panel Separator Styles */

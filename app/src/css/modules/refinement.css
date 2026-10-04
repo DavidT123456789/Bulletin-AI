@@ -398,7 +398,7 @@
     white-space: normal;
     /* Override pre-wrap to allow proper text flow and centering */
     color: var(--text-tertiary);
-    font-style: italic;
+    font-style: normal;
     background: var(--bg-secondary);
     border: 2px dashed var(--border-color);
     opacity: 0.7;

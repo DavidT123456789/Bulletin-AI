@@ -1433,6 +1433,12 @@
     text-security: disc;
 }
 
+.api-key-section .api-key-actions .api-key-input-container input::placeholder {
+    font-style: normal !important;
+    color: var(--text-tertiary);
+    opacity: 0.75;
+}
+
 .api-key-section .api-key-actions .api-key-input-container input:focus {
     -webkit-text-security: none;
     text-security: none;

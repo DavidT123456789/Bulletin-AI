@@ -131,26 +131,26 @@ a.btn-secondary:hover {
    ==================================================================== */
 ::-webkit-input-placeholder {
     color: var(--text-tertiary);
-    opacity: 0.55 !important;
-    font-style: italic;
+    opacity: 0.75;
+    font-style: normal;
 }
 
 ::-moz-placeholder {
     color: var(--text-tertiary);
-    opacity: 0.55 !important;
-    font-style: italic;
+    opacity: 0.75;
+    font-style: normal;
 }
 
 :-ms-input-placeholder {
     color: var(--text-tertiary);
-    opacity: 0.55 !important;
-    font-style: italic;
+    opacity: 0.75;
+    font-style: normal;
 }
 
 ::placeholder {
     color: var(--text-tertiary);
-    opacity: 0.55 !important;
-    font-style: italic;
+    opacity: 0.75;
+    font-style: normal;
 }
 
 /* Base class for all generic empty/informative states */

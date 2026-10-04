@@ -305,7 +305,7 @@ export const ListViewRenderer = {
                         <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
                             <iconify-icon icon="solar:magnifer-linear" class="inline-search-close-icon"></iconify-icon>
                         </button>
-                        <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
+                        <input type="text" class="inline-search-input custom-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                         <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
@@ -661,13 +661,19 @@ export const ListViewRenderer = {
                     }
                 }
 
+                const isPastPeriod = (i < currentIndex);
+                const emptyGradeText = isPastPeriod ? 'NC' : '--';
+                const emptyTooltipAttr = isPastPeriod && !tooltipAttr
+                    ? ' class="tooltip" data-tooltip="Non communiqué"'
+                    : tooltipAttr;
+
                 // Cellule de note
                 html += `
                     <td class="${cellClass}" data-period="${p}">
-                        <div class="grade-content-wrapper"${tooltipAttr}>
+                        <div class="grade-content-wrapper"${grade !== null ? tooltipAttr : emptyTooltipAttr}>
                         ${grade !== null
                         ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
-                        : `<span class="grade-empty">--</span>`
+                        : `<span class="grade-empty">${emptyGradeText}</span>`
                     }
                         </div>
                     </td>

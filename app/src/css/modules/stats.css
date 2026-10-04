@@ -211,9 +211,14 @@
 }
 
 .empty-state-class-pill:focus-within {
-    border-color: var(--brand-primary);
+    border-color: var(--highlight-standard-border) !important;
     background: var(--bg-primary);
-    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.18), var(--shadow-sm);
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow), var(--shadow-sm) !important;
+}
+
+[data-theme="dark"] .empty-state-class-pill:focus-within {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), var(--shadow-sm) !important;
 }
 
 .empty-state-class-pill.saved {
@@ -237,10 +242,6 @@
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
-    background: transparent;
-    border: none;
-    outline: none;
-    box-shadow: none;
     text-align: center;
     letter-spacing: -0.01em;
     font-family: inherit;

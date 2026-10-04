@@ -1111,7 +1111,7 @@
     caret-color: var(--primary-color);
     resize: none;
     overflow-y: hidden;
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
     font-family: inherit;
     box-sizing: border-box;
     display: block;
@@ -1122,7 +1122,6 @@
 }
 
 .focus-context-textarea:focus {
-    overflow-y: auto;
     outline: none !important;
     background: transparent !important;
     box-shadow: none !important;
@@ -1142,6 +1141,12 @@
 
 [data-theme="dark"] .focus-context-textarea:hover:not(:disabled):not(:focus) {
     background: transparent !important;
+}
+
+.focus-context-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal;
+    opacity: 0.75;
 }
 
 /* Custom Sleek Scrollbar for Context Textarea - Harmonized with App Style and rounded corners */
@@ -1238,7 +1243,6 @@
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
-/* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
 /* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
 .read-prev-appreciation,
 .read-prev-context,
@@ -1357,9 +1361,18 @@
 }
 
 .context-grade-group:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--highlight-standard-border) !important;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
     background: var(--item-hover-bg);
+}
+
+[data-theme="dark"] .context-grade-group:focus-within {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+.context-grade-group:focus-within label {
+    color: var(--text-primary);
 }
 
 .previous-grade-chip .period-prefix,
@@ -1439,6 +1452,15 @@ input.context-grade-input,
     outline: none !important;
 }
 
+/* Neutralize browser autofill styling on grade input */
+.context-grade-input:-webkit-autofill,
+.context-grade-input:-webkit-autofill:hover,
+.context-grade-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: 0 0 0px 1000px transparent inset !important;
+}
+
 [data-theme="dark"] .context-grade-input {
     caret-color: var(--text-primary);
 }
@@ -1450,6 +1472,12 @@ input.context-grade-input,
 .context-grade-input::placeholder {
     color: var(--text-tertiary);
     opacity: 0.6;
+    transition: opacity var(--transition-fast);
+}
+
+.context-grade-input:focus::placeholder {
+    opacity: 0;
+    color: transparent;
 }
 
 /* Inline evolution arrows inside focus panel context card */
@@ -2402,16 +2430,17 @@ input.context-grade-input,
 .focus-appreciation-text[contenteditable].empty::before {
     content: attr(data-placeholder);
     color: var(--text-tertiary);
-    font-style: italic;
+    font-style: normal;
     font-weight: 400;
-    opacity: 0.55;
-    transition: opacity var(--transition-base);
+    opacity: 0.75;
+    transition: opacity var(--transition-fast);
     pointer-events: none;
     position: absolute;
     top: 14px;
     left: 16px;
     right: 16px;
 }
+
 
 /* Refinement Options */
 .focus-refinement-options {
@@ -4031,7 +4060,7 @@ input.context-grade-input,
     align-items: center;
     gap: 12px;
     color: var(--text-tertiary);
-    font-style: italic;
+    font-style: normal;
     font-size: 13px;
     padding: 8px 0;
 }
@@ -4274,11 +4303,16 @@ input.context-grade-input,
 }
 
 .focus-input-header:focus {
-    border-color: var(--primary-color);
+    border-color: var(--highlight-standard-border) !important;
     background: var(--surface-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow),
+        inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
     transform: scale(1.01);
+}
+
+[data-theme="dark"] .focus-input-header:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Status Selection in Header (Chips) — nowrap, visible overflow via ancestors */

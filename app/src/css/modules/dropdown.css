@@ -16,26 +16,20 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12.5px 14.5px;
-    background: var(--bg-color);
+    background-color: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: var(--dropdown-radius-sm);
     font-size: 14px;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
     width: 100%;
     text-align: left;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .custom-dropdown-trigger:hover:not(.disabled) {
-        border-color: transparent;
-        /* Subtle primary tint + gradient border (consistent with inputs) */
-        background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
-            linear-gradient(var(--bg-color), var(--bg-color)),
-            linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-        background-origin: padding-box, padding-box, border-box;
-        background-clip: padding-box, padding-box, border-box;
+        border-color: rgba(var(--primary-color-rgb), 0.4);
     }
 }
 
@@ -43,28 +37,33 @@
     transform: scale(0.985);
 }
 
+.custom-dropdown-trigger:focus-visible {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+}
+
 .custom-dropdown.open .custom-dropdown-trigger {
-    background-color: transparent;
-    border-color: transparent;
-    /* Use bg-color for open/focus state - animated border is main feedback */
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    outline: none;
+    background-color: var(--bg-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+}
+
+/* Mode sombre : Anneau satiné sobre et moderne (Google / iOS 2026) identique aux inputs */
+[data-theme="dark"] .custom-dropdown-trigger:hover:not(.disabled) {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: var(--bg-color) !important;
+    background-image: none !important;
+}
+
+[data-theme="dark"] .custom-dropdown-trigger:focus-visible,
+[data-theme="dark"] .custom-dropdown.open .custom-dropdown-trigger {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    background-color: var(--bg-color) !important;
+    background-image: none !important;
+    animation: none !important;
 }
 
 .custom-dropdown-value {
@@ -99,13 +98,13 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background-color: rgba(var(--surface-color-rgb), 0.85);
+    background-color: rgba(var(--surface-color-rgb), 0.94);
     /* Glass effect */
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: var(--dropdown-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
     border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
     z-index: var(--z-dropdown);
     max-height: 320px;
     overflow-y: auto;
@@ -124,6 +123,12 @@
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
+}
+
+[data-theme="dark"] .custom-dropdown-menu {
+    background-color: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 /* === Optgroup (groupe d'options) === */
@@ -408,7 +413,6 @@
     opacity: 0.5;
     color: var(--text-tertiary);
     cursor: not-allowed;
-    font-style: italic;
     /* Note: pas de pointer-events: none pour permettre le survol et afficher le tooltip */
 }
 
@@ -429,7 +433,7 @@
 
 /* ====================================================================
    Styles spécifiques pour le dropdown de tri (#sortSelect)
-   Harmonisé avec le style du menu contextuel (actions-dropdown)
+   Harmonisé avec le style global des dropdowns
    ==================================================================== */
 
 /* Dropdown de tri : trigger plus compact */
@@ -442,14 +446,10 @@
     border-radius: var(--dropdown-radius-sm);
 }
 
-/* Dropdown de tri : menu harmonisé avec actions-dropdown */
+/* Dropdown de tri : menu compact */
 .custom-dropdown[data-for="sortSelect"] .custom-dropdown-menu {
     min-width: 140px;
     padding: 4px;
-    /* Harmonisation avec actions-dropdown */
-    background-color: var(--dropdown-bg);
-    border: var(--dropdown-border);
-    box-shadow: var(--dropdown-shadow-sm);
 }
 
 /* Dropdown de tri : options sans coche, plus compactes */

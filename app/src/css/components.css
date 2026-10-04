@@ -835,11 +835,47 @@ textarea:not(.focus-context-textarea):focus {
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
+[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):hover:not(:disabled):not(:focus),
+[data-theme="dark"] textarea:not(.focus-context-textarea):hover:not(:disabled):not(:focus) {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background-color: var(--bg-color) !important;
+    background-image: none !important;
+}
+
+[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):focus,
+[data-theme="dark"] textarea:not(.focus-context-textarea):focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background-color: var(--bg-color) !important;
+    background-image: none !important;
+    animation: none !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* --- Container-Embedded Inputs (.custom-input) ---
+   These inputs are housed inside composite pill/card containers that manage their own borders and focus rings. */
+.custom-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
 /* --- Select Focus: Clean ring (no animated gradient — selects close on click) --- */
 select:focus {
     outline: none !important;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+[data-theme="dark"] select:hover:not(:disabled):not(:focus) {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] select:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    background-color: var(--bg-color) !important;
 }
 
 /* --- Input Number Spinners - Design Nebula Premium --- */

@@ -1122,8 +1122,13 @@
 }
 
 .hex-input-container:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--highlight-standard-border) !important;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .hex-input-container:focus-within {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 .hex-symbol {
@@ -1134,21 +1139,12 @@
     user-select: none;
 }
 
-/* Force override of default input styling to prevent nested borders/backgrounds */
-.hex-input-container input.hex-text-input,
-.hex-input-container input.hex-text-input:hover,
-.hex-input-container input.hex-text-input:focus,
-.hex-input-container input.hex-text-input:active {
-    border: none !important;
-    background: transparent !important;
-    background-image: none !important;
+.hex-input-container input.hex-text-input {
     padding: 0 !important;
     margin: 0 !important;
     width: auto !important;
     flex: 1 !important;
     height: 100% !important;
-    outline: none !important;
-    box-shadow: none !important;
     transition: none !important;
     font-family: var(--font-mono) !important;
     font-size: 0.9rem !important;
@@ -1156,7 +1152,6 @@
     color: var(--text-primary) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
-    animation: none !important;
 }
 
 /* Eyedropper button style-harmonized to match other inputs */

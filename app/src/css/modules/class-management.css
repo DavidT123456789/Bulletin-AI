@@ -196,6 +196,12 @@
     pointer-events: auto;
 }
 
+[data-theme="dark"] .class-dropdown {
+    background-color: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
 .class-dropdown-header {
     display: flex;
     justify-content: space-between;
@@ -1177,6 +1183,13 @@
     animation: rotate-gradient 10s linear infinite;
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+[data-theme="dark"] .premium-input:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background-image: none !important;
+    animation: none !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 .premium-input::placeholder {
@@ -2340,9 +2353,14 @@
 
 .inline-field-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--highlight-standard-border) !important;
     background: var(--surface-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+}
+
+[data-theme="dark"] .inline-field-input:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Shared action buttons (Confirm & Cancel) */

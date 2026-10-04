@@ -995,9 +995,9 @@ export const FocusPanelManager = {
                     const chip = document.createElement('span');
                     chip.className = 'previous-grade-chip tooltip';
                     const periodLabel = Utils.getPeriodLabel(p, true);
-                    chip.setAttribute('data-tooltip', `${periodLabel} : --`);
+                    chip.setAttribute('data-tooltip', `${periodLabel} : Non communiqué`);
                     const shortPeriod = Utils.getPeriodLabel(p, false);
-                    chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">--</span>`;
+                    chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">NC</span>`;
                     prevGradesEl.appendChild(chip);
 
                     const nextPeriod = periods[idx + 1];
@@ -2098,11 +2098,12 @@ export const FocusPanelManager = {
 
         const getTooltipText = (period, gradeVal, evalCount, isCurrent = false) => {
             const periodLabel = Utils.getPeriodLabel(period, true);
-            const displayGrade = (gradeVal !== undefined && gradeVal !== null && gradeVal !== '')
+            const hasGrade = (gradeVal !== undefined && gradeVal !== null && gradeVal !== '');
+            const displayGrade = hasGrade
                 ? parseFloat(gradeVal).toFixed(1).replace('.', ',')
-                : '--';
+                : (isCurrent ? '--' : 'NC');
             const suffix = isCurrent ? ' (Période actuelle)' : '';
-            let tooltip = `${periodLabel}${suffix} : ${displayGrade}`;
+            let tooltip = `${periodLabel}${suffix} : ${hasGrade ? displayGrade : (isCurrent ? 'En attente de note' : 'Non communiqué')}`;
             if (typeof evalCount === 'number') {
                 tooltip += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
             }
@@ -2123,11 +2124,12 @@ export const FocusPanelManager = {
                 // Show chip for ALL past periods (even if empty) for consistency
                 const chip = document.createElement('span');
                 chip.className = 'previous-grade-chip';
-                const displayGrade = (grade !== undefined && grade !== null && grade !== '')
+                const hasGrade = (grade !== undefined && grade !== null && grade !== '');
+                const displayGrade = hasGrade
                     ? parseFloat(grade).toFixed(1).replace('.', ',')
-                    : '--';
+                    : 'NC';
 
-                const gradeClass = (grade !== undefined && grade !== null && grade !== '')
+                const gradeClass = hasGrade
                     ? Utils.getGradeClass(parseFloat(grade))
                     : '';
 
@@ -2244,6 +2246,7 @@ export const FocusPanelManager = {
                     }
                 }
             };
+            gradeInput.onchange = gradeInput.oninput;
         }
 
         // Context Textarea
