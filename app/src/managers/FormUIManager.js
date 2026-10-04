@@ -115,7 +115,7 @@ export const FormUI = {
             const lengthVal = parseInt(DOM.iaLengthSlider.value);
             const approxChars = Math.round(lengthVal * 6.5);
             const lengthDisplay = document.getElementById('iaLengthSliderValue');
-            if (lengthDisplay) lengthDisplay.textContent = `~ ${lengthVal} mots (≈ ${approxChars} car.)`;
+            if (lengthDisplay) lengthDisplay.textContent = `~${lengthVal} mots • ~${approxChars} car.`;
         }
 
         if (DOM.iaToneSlider) {

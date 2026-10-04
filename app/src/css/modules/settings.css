@@ -128,13 +128,34 @@
 .modal-header-actions.spaced {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
-/* Warning styling on hover for style reset button */
-#resetLabStyleBtn:hover {
-    color: var(--warning-color) !important;
-    background-color: var(--warning-light) !important;
+/* Modal header action buttons */
+.personalization-modal-content .modal-header-actions .icon-button,
+.personalization-modal-content .modal-header-actions .close-button {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-pill);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.personalization-modal-content .modal-header-actions .icon-button:hover,
+.personalization-modal-content .modal-header-actions .close-button:hover {
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.personalization-modal-content .modal-header-actions .icon-button.active {
+    background-color: var(--item-hover-bg);
+    color: var(--primary-color);
 }
 
 /* Force equal height cards in personalization grid */
@@ -152,6 +173,24 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.personalization-grid .settings-controls-column .settings-card-content .form-group {
+    margin-bottom: 14px;
+}
+
+.personalization-grid .style-instructions-textarea {
+    min-height: 65px;
+    height: 75px;
+    max-height: 110px;
+    resize: vertical;
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
 }
 
 /* Copy button styling in Inspector */
@@ -160,8 +199,8 @@
     height: 28px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-secondary);
+    background: transparent;
+    color: var(--text-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -171,9 +210,8 @@
 }
 
 #copyPromptBtn:hover {
-    background: var(--bg-secondary);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 /* Prompt preview block in inspector - better sizing */
@@ -590,24 +628,19 @@
     align-items: center;
     position: absolute;
     top: 50%;
-    /* Centrage vertical relatif au parent */
     transform: translateY(-50%);
-    /* Ajustement fin */
-    left: 10px;
-    right: 10px;
-    height: 10px;
-    /* On adapte la hauteur du conteneur à la hauteur des ticks */
+    left: 8px;
+    right: 8px;
+    height: 6px;
     z-index: 1;
     pointer-events: none;
-    /* Permet aux clics de passer au travers vers l'input si besoin, mais attention à l'infobulle */
 }
 
 .tick {
-    width: 3px;
-    height: 10px;
-    background-color: var(--bg-tertiary);
-    /* Neutral tick color - harmonized with track */
-    border-radius: 2px;
+    width: 5px;
+    height: 5px;
+    background-color: var(--border-color);
+    border-radius: 50%;
     transition: all var(--transition-fast);
     position: relative;
     pointer-events: auto;
@@ -615,15 +648,13 @@
 }
 
 .tick:hover {
-    background-color: var(--primary-color);
-    transform: scaleY(1.3);
+    background-color: var(--text-secondary);
+    transform: scale(1.4);
 }
 
 .tick.active {
     background-color: var(--primary-color);
-    height: 12px;
-    /* Harmonized active height */
-    transform: translateY(-1px);
+    transform: scale(1.4);
     opacity: 1;
 }
 
@@ -1687,62 +1718,169 @@
 
 /* === Refinement Group (Card containing Text + Meta Footer) === */
 .refinement-group {
-    background: var(--bg-secondary);
-    /* Default background like refinement-box */
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Ensure children don't overflow radius */
     transition: all var(--transition-base);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.refinement-group.is-empty {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1.5px dashed var(--border-color);
+    box-shadow: none;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.refinement-group.is-empty:hover {
+    border-color: rgba(59, 130, 246, 0.45);
+    background: rgba(59, 130, 246, 0.03);
+}
+
+[data-theme="dark"] .refinement-group {
+    background: rgba(30, 30, 35, 0.6);
+}
+
+[data-theme="dark"] .refinement-group.is-empty {
+    background: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .refinement-group.is-empty:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .refinement-content {
-    padding: 16px 16px 8px 16px;
-    /* Less bottom padding because meta is below */
-    min-height: 100px;
+    padding: 16px 18px 12px 18px;
+    min-height: 90px;
     font-size: 0.95rem;
-    line-height: 1.6;
+    line-height: 1.65;
     color: var(--text-primary);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-/* Specific placeholder style */
-.refinement-content:empty,
 .refinement-content.placeholder {
-    color: var(--text-tertiary);
-    font-style: italic;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Empty State Canvas Inside Preview */
+.preview-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding: 24px 16px;
+    user-select: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: inherit;
+}
+
+.preview-empty-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 12px;
+    transition: transform var(--transition-base), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+[data-theme="dark"] .preview-empty-icon-wrap {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93c5fd;
+    border: 1px solid rgba(147, 197, 253, 0.35);
+}
+
+.refinement-group:hover .preview-empty-icon-wrap {
+    transform: scale(1.08);
+}
+
+[data-theme="dark"] .refinement-group:hover .preview-empty-icon-wrap {
+    background: rgba(59, 130, 246, 0.28);
+    color: #ffffff;
+    border-color: #60a5fa;
+}
+
+.preview-empty-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-style: normal;
+}
+
+.preview-empty-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 320px;
+    line-height: 1.5;
+    font-style: normal;
+}
+
+.preview-empty-subtitle strong {
+    color: var(--text-primary);
 }
 
 /* Adjust Preview Meta Container to fit inside the group */
 .preview-meta-container {
-    background: transparent;
-    border-top: 1px solid rgba(0, 0, 0, 0.03);
-    /* Subtle separator */
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid var(--border-color);
     margin-top: 0;
-    /* Remove top margin, handled by padding/layout */
-    padding: 8px 12px 12px 12px;
-    /* Bottom padding for badges */
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
 }
 
-[data-theme="dark"] .refinement-group {
-    background: rgba(39, 39, 42, 0.4);
-    /* Dark mode semi-transparent */
+.preview-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 [data-theme="dark"] .preview-meta-container {
-    border-top-color: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+#copyPreviewAppreciationBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+#copyPreviewAppreciationBtn:hover {
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
 }
 
 /* === Button State: Regenerate (Discreet) === */

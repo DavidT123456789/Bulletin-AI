@@ -60,8 +60,12 @@ export const SettingsModalListeners = {
      */
     setup(addClickListener) {
         // Écouter l'ouverture des modales de paramétrage pour créer un snapshot
-        document.addEventListener('settings-modal-open', () => {
+        document.addEventListener('settings-modal-open', (e) => {
             SettingsUIManager.createSnapshot();
+            if (e.detail?.modalId === 'personalizationModal') {
+                this._updateNavArrowsState();
+                this._updateStudentContextAndPrompt();
+            }
         });
 
         DOM.periodSystemRadios.forEach(radio => {
@@ -186,6 +190,25 @@ export const SettingsModalListeners = {
                 }
             });
         }
+
+        // Copy preview appreciation button
+        const copyPreviewBtn = document.getElementById('copyPreviewAppreciationBtn');
+        if (copyPreviewBtn) {
+            copyPreviewBtn.addEventListener('click', async () => {
+                const previewEl = document.getElementById('settingsPreviewResult');
+                const text = previewEl?.textContent?.trim();
+                if (!text || previewEl?.classList.contains('placeholder') || previewEl?.classList.contains('has-error')) {
+                    UI.showNotification('Générez d\'abord une appréciation pour la copier.', 'warning');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    UI.showNotification('Appréciation copiée !', 'success');
+                } catch {
+                    UI.showNotification('Échec de la copie', 'error');
+                }
+            });
+        }
     },
 
     _setupApiKeysAccordion(addClickListener) {
@@ -236,7 +259,7 @@ export const SettingsModalListeners = {
                 const lengthVal = parseInt(e.target.value);
                 const approxChars = Math.round(lengthVal * 6.5);
                 const lengthDisplay = document.getElementById('iaLengthSliderValue');
-                if (lengthDisplay) lengthDisplay.textContent = `~ ${lengthVal} mots (≈ ${approxChars} car.)`;
+                if (lengthDisplay) lengthDisplay.textContent = `~${lengthVal} mots • ~${approxChars} car.`;
 
                 // [FIX] Update appState in real-time so generation uses current value immediately
                 if (!appState.subjects['MonStyle']) {
@@ -421,6 +444,19 @@ export const SettingsModalListeners = {
                 await this._handlePreviewRefresh();
             });
         }
+
+        const initialEmptyTrigger = document.getElementById('previewEmptyStateTrigger');
+        if (initialEmptyTrigger) {
+            initialEmptyTrigger.addEventListener('click', () => {
+                DOM.refreshPreviewBtn?.click();
+            });
+            initialEmptyTrigger.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    DOM.refreshPreviewBtn?.click();
+                }
+            });
+        }
     },
 
     /**
@@ -437,6 +473,27 @@ export const SettingsModalListeners = {
         // Sync text display
         if (nameDisplay && select.selectedIndex >= 0) {
             nameDisplay.textContent = select.options[select.selectedIndex].text;
+        }
+
+        const counterDisplay = document.getElementById('previewStudentCounter');
+        if (counterDisplay && select.options.length > 0 && select.selectedIndex >= 0) {
+            counterDisplay.textContent = `${select.selectedIndex + 1}/${select.options.length}`;
+        }
+
+        // Sync student avatar with photo
+        const avatarEl = document.getElementById('previewStudentAvatar');
+        if (avatarEl && select.selectedIndex >= 0) {
+            const studentId = select.options[select.selectedIndex].value;
+            const student = DEMO_STUDENT_PROFILES.find(s => s.id === studentId);
+            if (student) {
+                const photoUrl = student.photo || `./images/Demo/${student.nom.toLowerCase()}.jpg`;
+                const initials = `${student.prenom?.[0] || ''}${student.nom?.[0] || ''}`.toUpperCase();
+                avatarEl.innerHTML = `
+                    <img src="${photoUrl}" alt="${student.prenom} ${student.nom}" class="header-student-avatar-img"
+                        onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
+                    <span class="avatar-initials-fallback" style="display:none;">${initials}</span>
+                `;
+            }
         }
 
         // Sync arrow states
@@ -459,6 +516,45 @@ export const SettingsModalListeners = {
     },
 
     /**
+     * Renders the preview output empty state card
+     * @private
+     */
+    _renderPreviewEmptyState() {
+        const previewResult = document.getElementById('settingsPreviewResult');
+        const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult?.closest('.refinement-group');
+        if (previewResult) {
+            previewResult.innerHTML = `
+                <div class="preview-empty-state" role="button" tabindex="0" id="previewEmptyStateTrigger" aria-label="Générer l'aperçu">
+                    <div class="preview-empty-icon-wrap">
+                        <iconify-icon icon="solar:document-add-linear"></iconify-icon>
+                    </div>
+                    <div class="preview-empty-title">Prêt pour la prévisualisation</div>
+                    <div class="preview-empty-subtitle">Cliquez ici ou sur <strong>« Générer »</strong> pour tester vos réglages en direct sur cet élève.</div>
+                </div>
+            `;
+            previewResult.classList.add('placeholder');
+            previewResult.classList.remove('has-error');
+
+            const trigger = previewResult.querySelector('#previewEmptyStateTrigger');
+            if (trigger) {
+                trigger.addEventListener('click', () => {
+                    DOM.refreshPreviewBtn?.click();
+                });
+                trigger.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        DOM.refreshPreviewBtn?.click();
+                    }
+                });
+            }
+        }
+        if (groupEl) {
+            groupEl.classList.add('is-empty');
+            groupEl.classList.remove('has-content');
+        }
+    },
+
+    /**
      * Updates student context display and prompt preview (no AI call)
      */
     _updateStudentContextAndPrompt() {
@@ -476,6 +572,12 @@ export const SettingsModalListeners = {
                 const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(cached.appreciation));
                 previewResult.innerHTML = cleanText;
                 previewResult.classList.remove('placeholder', 'has-error');
+            }
+
+            const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult?.closest('.refinement-group');
+            if (groupEl) {
+                groupEl.classList.remove('is-empty');
+                groupEl.classList.add('has-content');
             }
 
             // Restore Meta Badges
@@ -508,24 +610,20 @@ export const SettingsModalListeners = {
 
             // Restore Button Style (Regenerate)
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:refresh-bold"></iconify-icon> Régénérer';
                 DOM.refreshPreviewBtn.classList.add('btn-regenerate');
             }
 
         } else {
             // NO CACHE -> RESET TO INITIAL STATE
-            if (previewResult) {
-                previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
-                previewResult.classList.add('placeholder');
-                previewResult.classList.remove('has-error');
-            }
+            this._renderPreviewEmptyState();
 
             if (metaContainer) {
                 metaContainer.style.display = 'none';
             }
 
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
         }
@@ -563,22 +661,29 @@ export const SettingsModalListeners = {
             // Appreciation content
             let pApp;
             if (isCurrent) {
-                pApp = '<em class="to-generate" style="opacity:0.7;">(à générer)</em>';
+                if (cached?.appreciation) {
+                    const shortApp = cached.appreciation.length > 70
+                        ? cached.appreciation.substring(0, 70) + '...'
+                        : cached.appreciation;
+                    pApp = `<span class="generated-preview-cell" title="Appréciation générée">${shortApp}</span>`;
+                } else {
+                    pApp = '<button type="button" class="to-generate-pill tooltip" id="previewTableGenerateBtn" data-tooltip="Cliquer pour générer l\'appréciation">À générer <iconify-icon icon="solar:arrow-right-linear"></iconify-icon></button>';
+                }
             } else {
-                pApp = pData?.appreciation ? (pData.appreciation.length > 60 ? pData.appreciation.substring(0, 60) + '...' : pData.appreciation) : '<em>-</em>';
+                pApp = pData?.appreciation ? (pData.appreciation.length > 60 ? pData.appreciation.substring(0, 60) + '...' : pData.appreciation) : '<span class="empty-val">-</span>';
             }
 
-            // Grade styling
-            let gradeHtml = '-';
+            // Grade styling - use gold-standard grade-bubble with semantic range colors
+            let gradeHtml = '<span class="empty-val">-</span>';
             if (pGrade !== null) {
                 const gradeClass = Utils.getGradeClass(pGrade);
-                gradeHtml = `<div class="grade-pill ${gradeClass}" style="margin:0;">${pGrade.toFixed(1).replace('.', ',')}</div>`;
+                gradeHtml = `<span class="grade-bubble ${gradeClass} ${isCurrent ? 'current-period-grade' : ''}">${pGrade.toFixed(1).replace('.', ',')}</span>`;
             }
 
             historyRows += `
-                <tr class="overview-row ${isCurrent ? 'current-period' : ''}">
-                    <td class="period-cell">${period}${isCurrent ? ' <span class="current-badge">ACTUEL</span>' : ''}</td>
-                    <td class="grade-cell" style="text-align:center;">${gradeHtml}</td>
+                <tr class="preview-row ${isCurrent ? 'is-current' : ''}">
+                    <td class="period-cell"><span class="period-name">${period}</span>${isCurrent ? ' <span class="current-badge">Actuel</span>' : ''}</td>
+                    <td class="grade-cell">${gradeHtml}</td>
                     <td class="appreciation-cell">${pApp}</td>
                 </tr>
             `;
@@ -597,15 +702,24 @@ export const SettingsModalListeners = {
             }).join(' ') || '';
 
             const newContent = `
-                <div class="preview-context-header" style="margin-bottom:15px;">
-                    ${statusBadges ? `<div class="preview-statuses" style="margin-bottom:8px;">${statusBadges}</div>` : ''}
-                    ${instructions ? `<div class="preview-instructions-full"><iconify-icon icon="solar:info-circle-bold"></iconify-icon> ${instructions}</div>` : ''}
+                <div class="preview-context-header">
+                    ${statusBadges ? `<div class="preview-statuses">${statusBadges}</div>` : ''}
+                    ${instructions ? `
+                        <div class="preview-context-callout">
+                            <span class="preview-context-tag"><iconify-icon icon="solar:notes-linear"></iconify-icon> Contexte</span>
+                            <span class="preview-context-text">${instructions}</span>
+                        </div>
+                    ` : ''}
                 </div>
                 
                 <div class="preview-history-section">
                     <table class="preview-history-table">
                         <thead>
-                            <tr><th>Période</th><th style="text-align:center;">Moyenne</th><th>Appréciation</th></tr>
+                            <tr>
+                                <th class="col-period">Période</th>
+                                <th class="col-grade">Moyenne</th>
+                                <th class="col-app">Appréciation</th>
+                            </tr>
                         </thead>
                         <tbody>
                             ${historyRows}
@@ -644,6 +758,15 @@ export const SettingsModalListeners = {
                     nameDisplay.style.opacity = '1';
                     nameDisplay.style.transform = 'translateX(0)';
                 }
+
+                // Interactive 'À générer' pill
+                const tableGenBtn = studentDataEl.querySelector('#previewTableGenerateBtn');
+                if (tableGenBtn) {
+                    tableGenBtn.addEventListener('click', () => {
+                        DOM.refreshPreviewBtn?.click();
+                    });
+                }
+                UI.initTooltips();
             }, 200);
         }
 
@@ -732,6 +855,11 @@ export const SettingsModalListeners = {
         if (previewResult) {
             previewResult.innerHTML = '<div class="loading-state-centered"><div class="loading-spinner"></div><span>Génération en cours...</span></div>';
             previewResult.classList.remove('placeholder');
+            const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
+            if (groupEl) {
+                groupEl.classList.remove('is-empty');
+                groupEl.classList.add('has-content');
+            }
         }
 
         try {
@@ -769,6 +897,11 @@ export const SettingsModalListeners = {
             if (previewResult) {
                 const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
                 previewResult.classList.remove('has-error', 'placeholder');
+                const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
+                if (groupEl) {
+                    groupEl.classList.remove('is-empty');
+                    groupEl.classList.add('has-content');
+                }
                 // Apply word-by-word reveal animation (compatible with HTML tags)
                 await UI.animateHtmlReveal(previewResult, cleanText, { speed: 'fast' });
             }
@@ -778,6 +911,15 @@ export const SettingsModalListeners = {
                 const wordCount = Utils.countWords(result.appreciation);
                 const charCount = Utils.countCharacters(result.appreciation);
                 wordCountEl.textContent = `${wordCount} mots • ${charCount} car.`;
+            }
+
+            // Update current period table cell with newly generated text
+            const currentAppCell = document.querySelector('.preview-row.is-current .appreciation-cell');
+            if (currentAppCell) {
+                const shortApp = result.appreciation.length > 70 
+                    ? result.appreciation.substring(0, 70) + '...' 
+                    : result.appreciation;
+                currentAppCell.innerHTML = `<span class="generated-preview-cell" title="Appréciation générée">${shortApp}</span>`;
             }
 
             // Display the AI model used for this generation
@@ -831,6 +973,11 @@ export const SettingsModalListeners = {
             }
 
             if (previewResult) {
+                const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
+                if (groupEl) {
+                    groupEl.classList.remove('is-empty');
+                    groupEl.classList.add('has-content');
+                }
                 previewResult.innerHTML = `
                     <div class="preview-error-message">
                         <strong><iconify-icon icon="solar:danger-circle-bold"></iconify-icon> Échec de la génération</strong>
@@ -849,10 +996,10 @@ export const SettingsModalListeners = {
 
         } finally {
             if (generationSuccess) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:refresh-bold"></iconify-icon> Régénérer';
                 DOM.refreshPreviewBtn.classList.add('btn-regenerate');
             } else {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
             DOM.refreshPreviewBtn.disabled = false;
@@ -865,17 +1012,12 @@ export const SettingsModalListeners = {
             this.previewCache = {};
 
             // Reset UI State immediately
-            const previewResult = document.getElementById('settingsPreviewResult');
-            if (previewResult) {
-                previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
-                previewResult.classList.add('placeholder');
-                previewResult.classList.remove('has-error');
-            }
+            this._renderPreviewEmptyState();
             const meta = document.getElementById('previewMetaContainer');
             if (meta) meta.style.display = 'none';
 
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
         };

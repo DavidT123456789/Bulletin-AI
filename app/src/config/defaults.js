@@ -76,9 +76,9 @@ export const SAMPLE_IMPORT_TEXT = `MARTIN Lucas |  | 12.5 | Bon début. | 13.2 |
 DURAND Sophie | PPRE | 9.1 | Doit s'investir. | 10.5 | Élève discrète.
 LEFEVRE Thomas |  | 15.0 | Très bonne participation. | 14.5 | Maintenir le cap.
 PETIT Camille |  | 8.2 | Difficultés persistantes. | 7.0 | Besoins spécifiques.
-ROUSSEAU Emma | Délégué | 17.1 | Excellents résultats. | 18.0 | Rôle moteur.
-MOREAU Axel |  | 10.5 | Résultats corrects mais bavardages inacceptables. | 11.2 | Trop de bavardages, concentration à revoir.
-THOMAS Léa |  | 8.5 | Des difficultés malgré du sérieux. | 9.8 | Poursuivre les efforts, ne pas se décourager.
+MOREAU Emma | Délégué | 17.1 | Excellents résultats. | 18.0 | Rôle moteur.
+ROBERT Axel |  | 10.5 | Résultats corrects mais bavardages inacceptables. | 11.2 | Trop de bavardages, concentration à revoir.
+SIMON Léa |  | 8.5 | Des difficultés malgré du sérieux. | 9.8 | Poursuivre les efforts, ne pas se décourager.
 BERNARD Hugo |  | 11.0 | Ensemble fragile. | 14.5 | Progression spectaculaire, bravo !`;
 
 /**
@@ -91,6 +91,7 @@ export const DEMO_STUDENT_PROFILES = [
         id: 'demo-martin',
         nom: 'MARTIN',
         prenom: 'Lucas',
+        photo: './images/Demo/martin.jpg',
         appreciation: '',
         studentData: {
             nom: 'MARTIN',
@@ -112,6 +113,7 @@ export const DEMO_STUDENT_PROFILES = [
         id: 'demo-durand',
         nom: 'DURAND',
         prenom: 'Sophie',
+        photo: './images/Demo/durand.jpg',
         appreciation: '',
         studentData: {
             nom: 'DURAND',
@@ -133,6 +135,7 @@ export const DEMO_STUDENT_PROFILES = [
         id: 'demo-lefevre',
         nom: 'LEFEVRE',
         prenom: 'Thomas',
+        photo: './images/Demo/lefevre.jpg',
         appreciation: '',
         studentData: {
             nom: 'LEFEVRE',
@@ -154,6 +157,7 @@ export const DEMO_STUDENT_PROFILES = [
         id: 'demo-petit',
         nom: 'PETIT',
         prenom: 'Camille',
+        photo: './images/Demo/petit.jpg',
         appreciation: '',
         studentData: {
             nom: 'PETIT',
@@ -172,12 +176,13 @@ export const DEMO_STUDENT_PROFILES = [
         isDemo: true
     },
     {
-        id: 'demo-rousseau',
-        nom: 'ROUSSEAU',
+        id: 'demo-moreau',
+        nom: 'MOREAU',
         prenom: 'Emma',
+        photo: './images/Demo/moreau.jpg',
         appreciation: '',
         studentData: {
-            nom: 'ROUSSEAU',
+            nom: 'MOREAU',
             prenom: 'Emma',
             periods: {
                 'T1': { grade: 17.1, appreciation: 'Excellents résultats.' },
@@ -193,12 +198,13 @@ export const DEMO_STUDENT_PROFILES = [
         isDemo: true
     },
     {
-        id: 'demo-moreau',
-        nom: 'MOREAU',
+        id: 'demo-robert',
+        nom: 'ROBERT',
         prenom: 'Axel',
+        photo: './images/Demo/robert.jpg',
         appreciation: '',
         studentData: {
-            nom: 'MOREAU',
+            nom: 'ROBERT',
             prenom: 'Axel',
             periods: {
                 'T1': { grade: 10.5, appreciation: 'Résultats corrects mais bavardages inacceptables.' },
@@ -214,12 +220,13 @@ export const DEMO_STUDENT_PROFILES = [
         isDemo: true
     },
     {
-        id: 'demo-thomas',
-        nom: 'THOMAS',
+        id: 'demo-simon',
+        nom: 'SIMON',
         prenom: 'Léa',
+        photo: './images/Demo/simon.jpg',
         appreciation: '',
         studentData: {
-            nom: 'THOMAS',
+            nom: 'SIMON',
             prenom: 'Léa',
             periods: {
                 'T1': { grade: 8.5, appreciation: 'Des difficultés malgré du sérieux.' },
@@ -238,6 +245,7 @@ export const DEMO_STUDENT_PROFILES = [
         id: 'demo-bernard',
         nom: 'BERNARD',
         prenom: 'Hugo',
+        photo: './images/Demo/bernard.jpg',
         appreciation: '',
         studentData: {
             nom: 'BERNARD',

@@ -1623,7 +1623,7 @@
                                 <div class="form-group">
                                     <div class="slider-header-row">
                                         <label for="iaLengthSlider">Cible de Mots</label>
-                                        <span id="iaLengthSliderValue" class="slider-value-display">~ 60 mots</span>
+                                        <span id="iaLengthSliderValue" class="slider-value-display">~60 mots • ~390 car.</span>
                                     </div>
                                     <div class="length-slider-container slider-container">
                                         <input type="range" id="iaLengthSlider" min="10" max="100" value="60" step="5">
@@ -1697,7 +1697,7 @@
                     <div class="settings-preview-column">
                         <div class="settings-card settings-card-full-height">
                             <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                    icon="solar:test-tube-linear"></iconify-icon> Aperçu</h3>
+                                    icon="solar:eye-linear"></iconify-icon> Aperçu en direct</h3>
                             <div class="settings-card-content">
                                 <!-- Unified Data Card -->
                                 <div class="preview-unified-card">
@@ -1710,8 +1710,13 @@
                                             aria-label="Élève précédent">
                                             <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
                                         </button>
-                                        <div class="header-student-name" id="previewStudentNameDisplay">
-                                            Chargement...</div>
+                                        <div class="header-student-info">
+                                            <span class="header-student-avatar" id="previewStudentAvatar" aria-hidden="true">
+                                                <iconify-icon icon="solar:user-bold"></iconify-icon>
+                                            </span>
+                                            <span class="header-student-name" id="previewStudentNameDisplay">Chargement...</span>
+                                            <span class="header-student-counter" id="previewStudentCounter" aria-label="Position de l'élève">1/8</span>
+                                        </div>
                                         <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
                                             aria-label="Élève suivant">
                                             <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
@@ -1727,25 +1732,35 @@
 
                                 <!-- Section Aperçu avec bouton de génération -->
                                 <div class="preview-result-header">
-                                    <div class="result-ia-title">
-                                        <iconify-icon class="iconify-inline"
-                                            icon="solar:magic-stick-3-bold"></iconify-icon> Appréciation
-                                    </div>
-                                    <button id="refreshPreviewBtn" class="btn btn-primary btn-small tooltip"
+                                    <div class="result-ia-title">Appréciation</div>
+                                    <button id="refreshPreviewBtn" class="btn btn-ai btn-small tooltip"
                                         data-tooltip="Générer une appréciation avec l'IA"><iconify-icon
-                                            class="iconify-inline" icon="solar:play-circle-bold"></iconify-icon>
+                                            class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon>
                                         Générer</button>
                                 </div>
-                                <div class="refinement-group">
-                                    <div class="refinement-content" id="settingsPreviewResult">Cliquez sur
-                                        "Générer" pour voir l'impact de vos réglages en direct.</div>
+                                <div class="refinement-group is-empty" id="settingsPreviewResultGroup">
+                                    <div class="refinement-content placeholder" id="settingsPreviewResult">
+                                        <div class="preview-empty-state" role="button" tabindex="0" id="previewEmptyStateTrigger" aria-label="Générer l'aperçu">
+                                            <div class="preview-empty-icon-wrap">
+                                                <iconify-icon icon="solar:document-add-linear"></iconify-icon>
+                                            </div>
+                                            <div class="preview-empty-title">Prêt pour la prévisualisation</div>
+                                            <div class="preview-empty-subtitle">Cliquez ici ou sur <strong>« Générer »</strong> pour tester vos réglages en direct sur cet élève.</div>
+                                        </div>
+                                    </div>
                                     <div class="preview-meta-container" id="previewMetaContainer"
                                         style="display: none;">
-                                        <div class="preview-model-badge" id="previewModelBadge" style="display: none;">
-                                            <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> —
+                                        <div class="preview-meta-left">
+                                            <div class="preview-model-badge" id="previewModelBadge" style="display: none;">
+                                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> —
+                                            </div>
+                                            <div class="word-count" id="settingsPreviewTokenCount"></div>
+                                            <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
                                         </div>
-                                        <div class="word-count" id="settingsPreviewTokenCount"></div>
-                                        <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
+                                        <button type="button" class="btn-icon-small tooltip" id="copyPreviewAppreciationBtn"
+                                            data-tooltip="Copier l'appréciation" aria-label="Copier l'appréciation">
+                                            <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -3172,7 +3187,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 3e993a6 · 4 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build dc6c906 · 4 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
