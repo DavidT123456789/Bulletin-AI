@@ -1332,6 +1332,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    cursor: default;
+    user-select: none;
 }
 
 .previous-grades-inline:empty {
@@ -1352,6 +1354,11 @@
     box-sizing: border-box;
     white-space: nowrap;
     transition: all var(--transition-fast);
+}
+
+.previous-grade-chip {
+    cursor: default;
+    user-select: none;
 }
 
 .previous-grade-chip:hover,
@@ -1412,6 +1419,8 @@
     font-weight: 700;
     line-height: 1;
     box-shadow: none !important;
+    cursor: default;
+    user-select: none;
 }
 
 .previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {
@@ -1492,6 +1501,8 @@ input.context-grade-input,
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: default;
+    user-select: none;
 }
 
 .previous-grades-inline .grade-evolution.positive {
