@@ -97,25 +97,18 @@ export const AppreciationsManager = {
             result.historyState = null;
         }
 
-        // Guard: If current period has history but no appreciation,
-        // the history is orphaned — reset it
-        const existingState = result.historyPerPeriod?.[currentPeriod];
-        if (existingState?.versions?.length > 0) {
-            const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
-            if (!hasAppreciation) {
-                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-            }
-        }
-
+        // 2. Return existing period history, or create empty state only if requested
         if (!result.historyPerPeriod?.[currentPeriod]) {
             if (createIfMissing) {
                 if (!result.historyPerPeriod) result.historyPerPeriod = {};
                 result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                HistoryUtils.seedInitialVersion(result.historyPerPeriod[currentPeriod], result, currentPeriod);
                 return result.historyPerPeriod[currentPeriod];
             }
             return { versions: [], currentIndex: -1 };
         }
 
+        HistoryUtils.seedInitialVersion(result.historyPerPeriod[currentPeriod], result, currentPeriod);
         return result.historyPerPeriod[currentPeriod];
     },
 
@@ -166,7 +159,15 @@ export const AppreciationsManager = {
             state.currentIndex = state.versions.length - 1;
         }
 
-        result.appreciation = state.versions[state.currentIndex];
+        const currentVersion = HistoryUtils.normalizeVersion(state.versions[state.currentIndex]);
+        result.appreciation = currentVersion.content;
+        const currentPeriod = appState.currentPeriod;
+        if (result.studentData?.periods) {
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+            result.studentData.periods[currentPeriod].appreciation = currentVersion.content;
+        }
         const isShowingOlder = state.currentIndex < state.versions.length - 1;
 
         // Mettre à jour la carte UI
@@ -450,10 +451,6 @@ export const AppreciationsManager = {
         originalResult.copied = false;
 
         try {
-            // Réinitialiser l'historique - la régénération est un nouveau départ
-            // L'"Original" sera la nouvelle génération IA
-            originalResult.historyState = null;
-
             // Mise à jour de certaines données si nécessaire
             const updatedStudentData = { ...originalResult.studentData };
             updatedStudentData.id = id; // Include ID for journal lookup
@@ -467,7 +464,9 @@ export const AppreciationsManager = {
                 appState.generatedResults[resultIndex],
                 newResult
             );
-            // historyState is reset - will be re-initialized on first access
+
+            // Enregistrer la nouvelle génération dans l'historique
+            this.pushToHistory(updatedResult, 'regenerate');
 
             // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);

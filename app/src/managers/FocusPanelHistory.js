@@ -54,27 +54,24 @@ export const FocusPanelHistory = {
             result.historyState = null;
         }
 
-        // 2. Guard: If current period has history but no appreciation,
-        // the history is orphaned (likely contaminated from another period) — reset it.
-        const existingState = result.historyPerPeriod?.[currentPeriod];
-        if (existingState?.versions?.length > 0) {
-            const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
-            if (!hasAppreciation) {
-                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-            }
-        }
-
-        // 3. Return existing period history, or create empty state only if requested
+        // 2. Return existing period history, or create empty state only if requested
         if (!result.historyPerPeriod?.[currentPeriod]) {
             if (createIfMissing) {
                 if (!result.historyPerPeriod) result.historyPerPeriod = {};
                 result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                this._seedInitialVersionIfNeeded(result, currentPeriod);
                 return result.historyPerPeriod[currentPeriod];
             }
             return { versions: [], currentIndex: -1 };
         }
 
+        this._seedInitialVersionIfNeeded(result, currentPeriod);
         return result.historyPerPeriod[currentPeriod];
+    },
+
+    _seedInitialVersionIfNeeded(result, period) {
+        if (!result || !result.historyPerPeriod?.[period]) return;
+        HistoryUtils.seedInitialVersion(result.historyPerPeriod[period], result, period);
     },
 
     _save() {
@@ -83,7 +80,13 @@ export const FocusPanelHistory = {
 
     load(resultId) {
         this._currentResultId = resultId;
-        this._getState(false); // Initialize if needed without mutating
+        const result = this._getResult();
+        const currentPeriod = appState.currentPeriod;
+        if (result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim()) {
+            this._getState(true);
+        } else {
+            this._getState(false);
+        }
         this._notifyHistoryChange();
     },
 
@@ -93,9 +96,10 @@ export const FocusPanelHistory = {
     },
 
     push(content, source = 'edit') {
-        if (!content) return;
-        const textEl = document.getElementById('focusAppreciationText');
-        if (textEl?.classList.contains('empty')) return;
+        if (!content || typeof content !== 'string') return;
+        const cleanContent = content.trim();
+        if (!cleanContent) return;
+        if (cleanContent.includes('Aucune appréciation')) return;
 
         const state = this._getState(true);
         // Capture all metadata from the result so the version carries full context
@@ -104,7 +108,7 @@ export const FocusPanelHistory = {
         const aiModel = result?.studentData?.currentAIModel ?? null;
         const tokenUsage = result?.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
 
-        if (HistoryUtils.pushToState(state, content, source, appreciationSource, aiModel, tokenUsage)) {
+        if (HistoryUtils.pushToState(state, cleanContent, source, appreciationSource, aiModel, tokenUsage)) {
             this._save();
             this._notifyHistoryChange();
         }
@@ -119,7 +123,20 @@ export const FocusPanelHistory = {
     },
 
     undo() {
-        const version = HistoryUtils.undo(this._getState());
+        const textEl = document.getElementById('focusAppreciationText');
+        const state = this._getState();
+        if (!state) return;
+
+        // Si l'utilisateur a effacé le texte dans l'éditeur, Undo restaure directement la version courante
+        const isCurrentlyEmpty = textEl?.classList.contains('empty') || !textEl?.textContent?.trim();
+        if (isCurrentlyEmpty && state.currentIndex >= 0 && state.versions[state.currentIndex]) {
+            const version = HistoryUtils.normalizeVersion(state.versions[state.currentIndex]);
+            this._save();
+            this._animateVersionChange(version, 'backward');
+            return;
+        }
+
+        const version = HistoryUtils.undo(state);
         if (version !== null) {
             this._save();
             this._animateVersionChange(version, 'backward');
@@ -177,11 +194,19 @@ export const FocusPanelHistory = {
     },
 
     showPopover() {
+        const indicator = document.getElementById('focusHistoryIndicator');
+        const existing = document.getElementById('historyPopover');
+        if (existing) {
+            existing.remove();
+            indicator?.classList.remove('active');
+            return;
+        }
+
         const state = this._getState();
         if (!HistoryUtils.hasMultipleVersions(state)) return;
 
-        const existing = document.getElementById('historyPopover');
-        if (existing) existing.remove();
+        indicator?._tippy?.hide();
+        indicator?.classList.add('active');
 
         const popover = document.createElement('div');
         popover.id = 'historyPopover';
@@ -284,7 +309,6 @@ export const FocusPanelHistory = {
         html += '</div>';
         popover.innerHTML = html;
 
-        const indicator = document.getElementById('focusHistoryIndicator');
         if (indicator) {
             const rect = indicator.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom - 20;
@@ -320,13 +344,15 @@ export const FocusPanelHistory = {
             item.addEventListener('click', () => {
                 this.restoreVersion(parseInt(item.dataset.index, 10));
                 popover.remove();
+                indicator?.classList.remove('active');
             });
         });
 
         setTimeout(() => {
             const closeHandler = (e) => {
-                if (!popover.contains(e.target)) {
+                if (!popover.contains(e.target) && !indicator?.contains(e.target)) {
                     popover.remove();
+                    indicator?.classList.remove('active');
                     document.removeEventListener('click', closeHandler);
                 }
             };
@@ -344,6 +370,15 @@ export const FocusPanelHistory = {
         // Restore ALL metadata on the result BEFORE notifying
         const result = this._getResult();
         if (result) {
+            result.appreciation = content;
+            const currentPeriod = appState.currentPeriod;
+            if (result.studentData?.periods) {
+                if (!result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod] = {};
+                }
+                result.studentData.periods[currentPeriod].appreciation = content;
+            }
+
             // 1. Source Indicator
             if (appreciationSource !== undefined) {
                 result.appreciationSource = appreciationSource;

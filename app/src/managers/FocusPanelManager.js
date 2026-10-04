@@ -435,6 +435,13 @@ export const FocusPanelManager = {
             }
 
             if (e.key === 'Escape') {
+                const popover = document.getElementById('historyPopover');
+                if (popover) {
+                    popover.remove();
+                    const indicator = document.getElementById('focusHistoryIndicator');
+                    indicator?.classList.remove('active');
+                    return;
+                }
                 if (SpeechRecognitionManager.isRecording()) {
                     SpeechRecognitionManager.stop();
                     return;
@@ -536,16 +543,16 @@ export const FocusPanelManager = {
             appreciationText.addEventListener('blur', () => {
                 if (!this._isAppreciationEdited) return;
 
-                const content = appreciationText.textContent?.trim();
+                const content = appreciationText.textContent?.trim() || '';
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
 
-                if (result && content !== undefined) {
+                if (result) {
                     const isRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (isRealContent) {
-                        const cleanHtml = appreciationText.innerHTML;
-                        if (cleanHtml !== this._initialAppreciationHtml) {
-                            FocusPanelHistory.push(cleanHtml);
+                        if (content !== this._initialAppreciationText) {
+                            FocusPanelHistory.push(content, 'edit');
+                            this._initialAppreciationText = content;
                         }
 
                         // Resync hash baseline for manual appreciations only.
@@ -579,8 +586,9 @@ export const FocusPanelManager = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
-                        this._initialAppreciationHtml = '';
+                        this._initialAppreciationText = '';
                         FocusPanelStatus.refreshAppreciationStatus();
+                        FocusPanelStatus.updateHistoryIndicator();
                         this._saveContext();
                     }
                 }
@@ -1049,6 +1057,10 @@ export const FocusPanelManager = {
             appreciationTitle.textContent = `Appréciation ${periodLabel}`;
         }
         this._renderAppreciationText(result);
+
+        // Reload history for the current student in the newly selected period & update indicator
+        FocusPanelHistory.load(this.currentStudentId);
+        FocusPanelStatus.updateHistoryIndicator();
 
         // 3. Generate button
         this._updateGenerateButton(result);
@@ -1760,14 +1772,11 @@ export const FocusPanelManager = {
                         this._isAppreciationEdited = false;
                     }
 
-                    // Réinitialiser l'historique - la régénération est un nouveau départ
-                    // L'"Original" sera la nouvelle génération IA
-                    // CRITICAL: Use captured generatingForPeriod, not appState.currentPeriod
-                    // (user may have switched periods during async generation)
+                    // Préserver l'historique lors d'une régénération et enregistrer la nouvelle version
                     if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                    result.historyPerPeriod[generatingForPeriod] = null;
-                    FocusPanelHistory.load(generatingForStudentId); // Re-init with fresh state
-                    FocusPanelHistory.push(newResult.appreciation, 'original');
+                    FocusPanelHistory.load(generatingForStudentId);
+                    const hasExistingVersions = FocusPanelHistory.getVersionCount() > 0;
+                    FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original');
 
                     // Show done badge
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
@@ -1907,9 +1916,9 @@ export const FocusPanelManager = {
             }
 
             if (!result.historyPerPeriod) result.historyPerPeriod = {};
-            result.historyPerPeriod[period] = null;
             FocusPanelHistory.load(studentId);
-            FocusPanelHistory.push(effectiveApp, 'original');
+            const hasExistingVersions = FocusPanelHistory.getVersionCount() > 0;
+            FocusPanelHistory.push(effectiveApp, hasExistingVersions ? 'regenerate' : 'original');
 
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
             FocusPanelStatus.updateSourceIndicator(result);
@@ -2377,6 +2386,9 @@ export const FocusPanelManager = {
 
         // === 13. JOURNAL DE BORD ===
         FocusPanelJournal.render(result);
+
+        // === 14. HISTORY INDICATOR ===
+        FocusPanelStatus.updateHistoryIndicator();
     },
 
 
@@ -2448,6 +2460,7 @@ export const FocusPanelManager = {
             }
         }
         this._initialAppreciationHtml = appreciationEl.innerHTML;
+        this._initialAppreciationText = appreciationEl.textContent?.trim() || '';
         this._isAppreciationEdited = false;
         FocusPanelStatus.updateWordCount();
     },

@@ -664,14 +664,23 @@ export const FocusPanelStatus = {
             if (countEl) {
                 countEl.textContent = `${current}/${total}`;
             }
-            indicator.setAttribute('data-tooltip', `Version ${current} sur ${total} • Cliquez pour l'historique`);
+            const tooltipText = `Version ${current} sur ${total} • Cliquez pour l'historique`;
+            indicator.setAttribute('data-tooltip', tooltipText);
+            if (indicator._tippy) {
+                indicator._tippy.setContent(tooltipText);
+            }
 
             // Update navigation buttons
-            if (prevBtn) prevBtn.disabled = !FocusPanelHistory.canUndo();
+            const textEl = document.getElementById('focusAppreciationText');
+            const isCurrentlyEmpty = textEl?.classList.contains('empty') || !textEl?.textContent?.trim();
+            if (prevBtn) prevBtn.disabled = !FocusPanelHistory.canUndo() && !isCurrentlyEmpty;
             if (nextBtn) nextBtn.disabled = !FocusPanelHistory.canRedo();
 
         } else {
             group.style.display = 'none';
+            indicator.classList.remove('active');
+            const popover = document.getElementById('historyPopover');
+            if (popover) popover.remove();
         }
     },
 

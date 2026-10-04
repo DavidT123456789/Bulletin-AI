@@ -175,6 +175,9 @@ export const MassImportManager = {
                         if (studentData._preservedData.history) {
                             newResultObject.history = studentData._preservedData.history;
                         }
+                        if (studentData._preservedData.historyPerPeriod) {
+                            newResultObject.historyPerPeriod = studentData._preservedData.historyPerPeriod;
+                        }
                         if (studentData._preservedData._lastModified) {
                             newResultObject._lastModified = studentData._preservedData._lastModified;
                         }
@@ -415,6 +418,7 @@ export const MassImportManager = {
                 studentPhoto: r.studentPhoto,
                 journal: r.journal,
                 history: r.history,
+                historyPerPeriod: r.historyPerPeriod,
                 _lastModified: r._lastModified
             }
         }));
@@ -473,6 +477,9 @@ export const MassImportManager = {
                 }
                 if (studentData._preservedData.history) {
                     tempResult.history = studentData._preservedData.history;
+                }
+                if (studentData._preservedData.historyPerPeriod) {
+                    tempResult.historyPerPeriod = studentData._preservedData.historyPerPeriod;
                 }
             }
 

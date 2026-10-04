@@ -152,10 +152,6 @@ export const SingleStudentManager = {
             if (existingStudentIndex > -1) {
                 const existingResult = appState.generatedResults[existingStudentIndex];
 
-                // Réinitialiser l'historique - la régénération est un nouveau départ
-                // L'"Original" sera la nouvelle génération IA
-                existingResult.historyState = null;
-
                 Object.assign(existingResult.studentData.periods, newResult.studentData.periods);
 
                 existingResult.appreciation = newResult.appreciation;
@@ -171,6 +167,7 @@ export const SingleStudentManager = {
                 // Transfer all generation metadata for dirty detection
                 StudentDataManager.transferGenerationMetadata(existingResult, newResult);
                 newResult.id = existingResult.id;
+                AppreciationsManager?.pushToHistory?.(existingResult, 'regenerate');
             }
 
             AppreciationsManager.renderResults(newResult.id, 'new');
@@ -218,10 +215,6 @@ export const SingleStudentManager = {
             if (studentIndex > -1) {
                 const existingResult = appState.generatedResults[studentIndex];
 
-                // Réinitialiser l'historique - la régénération est un nouveau départ
-                // L'"Original" sera la nouvelle génération IA
-                existingResult.historyState = null;
-
                 for (const periodKey in newResult.studentData.periods) {
                     if (Object.prototype.hasOwnProperty.call(newResult.studentData.periods, periodKey)) {
                         if (!existingResult.studentData.periods[periodKey]) {
@@ -242,6 +235,7 @@ export const SingleStudentManager = {
                 existingResult.studentData.prompts = newResult.studentData.prompts;
                 // Transfer all generation metadata for dirty detection
                 newResult.id = appState.currentEditingId;
+                AppreciationsManager?.pushToHistory?.(existingResult, 'regenerate');
 
                 await ListViewManager.updateRow(newResult.id, newResult, true);
                 UI.updateStats();

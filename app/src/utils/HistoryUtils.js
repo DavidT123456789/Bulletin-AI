@@ -188,3 +188,27 @@ export function getModificationCount(state) {
 export function hasMultipleVersions(state) {
     return state && state.versions.length > 1;
 }
+
+/**
+ * Seed initial version if state is empty and result has an appreciation
+ * @param {Object} state - The historyState object for the period
+ * @param {Object} result - The result object
+ * @param {string} period - The period key (e.g. 'T1')
+ * @returns {boolean} True if seeded
+ */
+export function seedInitialVersion(state, result, period) {
+    if (!state || !result || (state.versions && state.versions.length > 0)) return false;
+
+    const periodAppreciation = result.studentData?.periods?.[period]?.appreciation?.trim()
+        || (period === result.generationPeriod ? result.appreciation?.trim() : '');
+    if (!periodAppreciation) return false;
+
+    const isImported = result.appreciationSource === 'imported';
+    const isAI = result.wasGenerated === true || result.appreciationSource === 'ai';
+    const source = isImported ? 'imported' : (isAI ? 'original' : 'edit');
+    const appreciationSource = result.appreciationSource || (isAI ? 'ai' : 'manual');
+    const aiModel = result.studentData?.currentAIModel ?? null;
+    const tokenUsage = result.tokenUsage ? (typeof structuredClone === 'function' ? structuredClone(result.tokenUsage) : JSON.parse(JSON.stringify(result.tokenUsage))) : null;
+
+    return pushToState(state, periodAppreciation, source, appreciationSource, aiModel, tokenUsage);
+}

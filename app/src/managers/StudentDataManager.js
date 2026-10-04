@@ -95,6 +95,7 @@ export const StudentDataManager = {
             studentPhoto: existingResult.studentPhoto,
             journal: existingResult.journal,
             history: existingResult.history,
+            historyPerPeriod: existingResult.historyPerPeriod,
             _lastModified: existingResult._lastModified,
             _manualEdits: existingResult._manualEdits
         };
@@ -138,6 +139,7 @@ export const StudentDataManager = {
         existingResult.studentPhoto = preserved.studentPhoto;
         existingResult.journal = preserved.journal;
         existingResult.history = preserved.history;
+        if (preserved.historyPerPeriod) existingResult.historyPerPeriod = preserved.historyPerPeriod;
         if (preserved._lastModified) existingResult._lastModified = preserved._lastModified;
         if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
 
