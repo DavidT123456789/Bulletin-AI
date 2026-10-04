@@ -46,6 +46,7 @@ vi.mock('../utils/Utils.js', () => ({
         cleanMarkdown: vi.fn((text) => text || ''),
         normalizeName: vi.fn((nom, prenom) => `${nom.toLowerCase()}_${prenom.toLowerCase()}`),
         detectGender: vi.fn(() => 'indéterminé'),
+        deepClone: (obj) => JSON.parse(JSON.stringify(obj)),
         parseStudentLine: vi.fn((line, formatMap, currentPeriod) => {
             if (line.includes('|')) {
                 const parts = line.split('|').map(p => p.trim());

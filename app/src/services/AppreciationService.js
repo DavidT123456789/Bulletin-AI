@@ -16,7 +16,7 @@ export const AppreciationService = {
      * Crée un objet résultat standardisé pour un élève
      */
     createResultObject(nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage = null) {
-        const newStudentData = JSON.parse(JSON.stringify(studentData));
+        const newStudentData = Utils.deepClone(studentData);
 
         if (newStudentData.periods[newStudentData.currentPeriod]) {
             newStudentData.periods[newStudentData.currentPeriod].appreciation = appreciation;

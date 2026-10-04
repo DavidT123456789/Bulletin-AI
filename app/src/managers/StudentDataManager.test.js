@@ -358,4 +358,47 @@ describe('StudentDataManager', () => {
             expect(newStudent.statuses).toContain('Nouveau T2');
         });
     });
+
+    describe('syncFilteredStudent', () => {
+        afterEach(() => {
+            delete appState.filteredResults;
+        });
+
+        it('should replace the filtered copy with the up-to-date result', () => {
+            const stale = { id: 'a', nom: 'OLD' };
+            const fresh = { id: 'a', nom: 'NEW' };
+            appState.filteredResults = [{ id: 'b' }, stale];
+
+            StudentDataManager.syncFilteredStudent('a', fresh);
+
+            expect(appState.filteredResults[1]).toBe(fresh);
+            expect(appState.filteredResults[0]).toEqual({ id: 'b' });
+        });
+
+        it('should fall back to generatedResults when no result is provided', () => {
+            const fresh = { id: 'a', nom: 'NEW' };
+            appState.generatedResults = [fresh];
+            appState.filteredResults = [{ id: 'a', nom: 'OLD' }];
+
+            StudentDataManager.syncFilteredStudent('a');
+
+            expect(appState.filteredResults[0]).toBe(fresh);
+        });
+
+        it('should not add students absent from the filtered list', () => {
+            appState.filteredResults = [{ id: 'b' }];
+
+            StudentDataManager.syncFilteredStudent('a', { id: 'a' });
+
+            expect(appState.filteredResults).toHaveLength(1);
+        });
+
+        it('should not throw when filteredResults is undefined or id is missing', () => {
+            delete appState.filteredResults;
+            expect(() => StudentDataManager.syncFilteredStudent('a', { id: 'a' })).not.toThrow();
+
+            appState.filteredResults = [{ id: 'a' }];
+            expect(() => StudentDataManager.syncFilteredStudent(null, { id: 'a' })).not.toThrow();
+        });
+    });
 });

@@ -548,7 +548,7 @@ export const Utils = {
 
             if (!studentMap.has(key)) {
                 // Premier résultat pour cet élève - on le copie
-                studentMap.set(key, JSON.parse(JSON.stringify(result)));
+                studentMap.set(key, this.deepClone(result));
             } else {
                 // Fusionner avec l'existant
                 mergeCount++;

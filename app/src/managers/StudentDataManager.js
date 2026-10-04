@@ -163,7 +163,7 @@ export const StudentDataManager = {
      * for the current period in the imported data.
      */
     createPendingResult(studentData) {
-        const newStudentData = JSON.parse(JSON.stringify(studentData));
+        const newStudentData = Utils.deepClone(studentData);
         const currentPeriod = appState.currentPeriod;
 
         // Check if appreciation already exists for current period

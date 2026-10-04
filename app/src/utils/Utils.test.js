@@ -414,6 +414,35 @@ describe('Utils', () => {
         });
     });
 
+    describe('deepClone', () => {
+        it('devrait produire une copie profonde indépendante', () => {
+            const source = { nom: 'Sami', periods: { T1: { grade: 12 } }, statuses: ['PAI'] };
+            const copy = Utils.deepClone(source);
+
+            copy.periods.T1.grade = 18;
+            copy.statuses.push('ULIS');
+
+            expect(copy).not.toBe(source);
+            expect(source.periods.T1.grade).toBe(12);
+            expect(source.statuses).toEqual(['PAI']);
+        });
+
+        it('devrait renvoyer les primitives et null tels quels', () => {
+            expect(Utils.deepClone(null)).toBeNull();
+            expect(Utils.deepClone(5)).toBe(5);
+            expect(Utils.deepClone('a')).toBe('a');
+        });
+
+        it('devrait retomber sur la copie manuelle pour les valeurs non clonables', () => {
+            const source = { nom: 'Sami', onChange: () => 'ok', nested: { value: 1 } };
+            const copy = Utils.deepClone(source);
+
+            expect(copy.nested).toEqual({ value: 1 });
+            expect(copy.nested).not.toBe(source.nested);
+            expect(copy.nom).toBe('Sami');
+        });
+    });
+
     describe('highlightMatch', () => {
         it('devrait surligner les correspondances en gérant les accents et la casse', () => {
             expect(Utils.highlightMatch('Morgane', 'mor')).toContain('<mark class="search-highlight">Mor</mark>gane');
