@@ -31,14 +31,14 @@
 
 /* Wider modal for personalization - base width for 2 columns */
 .personalization-modal-content {
-    max-width: 900px;
+    max-width: 940px;
     width: 95%;
     transition: max-width 0.3s ease;
 }
 
 /* Expand modal when inspector is visible (3 columns) */
 .personalization-modal-content.inspector-visible {
-    max-width: 1200px;
+    max-width: 1240px;
 }
 
 /* 2-column grid when inspector is hidden (default) - equal 50/50 */
@@ -182,15 +182,19 @@
     margin-bottom: 14px;
 }
 
+#iaStyleInstructions,
 .personalization-grid .style-instructions-textarea {
-    min-height: 65px;
-    height: 75px;
-    max-height: 110px;
-    resize: vertical;
+    field-sizing: content;
+    min-height: 52px;
+    max-height: 180px;
+    height: auto;
+    resize: none;
     border-radius: var(--radius-md);
     padding: 8px 12px;
     font-size: 0.88rem;
     line-height: 1.45;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Copy button styling in Inspector */
@@ -276,18 +280,9 @@
     transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-/* "Mes consignes" behavior matching "Inspector" - Fills available space */
+/* "Mes consignes" - Clean natural layout without artificial flex stretch */
 .settings-card-content .form-group:last-child {
     margin-bottom: 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.settings-card-content .form-group:last-child textarea {
-    flex: 1;
-    max-height: 160px;
-    resize: none;
 }
 
 /* Fix scrollbar overlapping rounded corners */
@@ -1733,12 +1728,6 @@
     background: rgba(255, 255, 255, 0.015);
     border: 1.5px dashed var(--border-color);
     box-shadow: none;
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
-}
-
-.refinement-group.is-empty:hover {
-    border-color: rgba(59, 130, 246, 0.45);
-    background: rgba(59, 130, 246, 0.03);
 }
 
 [data-theme="dark"] .refinement-group {
@@ -1748,11 +1737,6 @@
 [data-theme="dark"] .refinement-group.is-empty {
     background: rgba(255, 255, 255, 0.015);
     border-color: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme="dark"] .refinement-group.is-empty:hover {
-    border-color: rgba(255, 255, 255, 0.32);
-    background: rgba(255, 255, 255, 0.035);
 }
 
 .refinement-content {
@@ -1781,7 +1765,7 @@
     text-align: center;
     padding: 24px 16px;
     user-select: none;
-    cursor: pointer;
+    cursor: default;
     width: 100%;
     border-radius: inherit;
 }
@@ -1798,23 +1782,13 @@
     justify-content: center;
     font-size: 24px;
     margin-bottom: 12px;
-    transition: transform var(--transition-base), background-color var(--transition-fast), border-color var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 [data-theme="dark"] .preview-empty-icon-wrap {
     background: rgba(59, 130, 246, 0.18);
     color: #93c5fd;
     border: 1px solid rgba(147, 197, 253, 0.35);
-}
-
-.refinement-group:hover .preview-empty-icon-wrap {
-    transform: scale(1.08);
-}
-
-[data-theme="dark"] .refinement-group:hover .preview-empty-icon-wrap {
-    background: rgba(59, 130, 246, 0.28);
-    color: #ffffff;
-    border-color: #60a5fa;
 }
 
 .preview-empty-title {

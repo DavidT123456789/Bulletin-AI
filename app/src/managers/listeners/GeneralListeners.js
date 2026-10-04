@@ -152,6 +152,7 @@ export const GeneralListeners = {
                     closeMenu();
                     UI.openModal(DOM.personalizationModal);
                     SettingsModalListeners._updateStudentContextAndPrompt();
+                    SettingsModalListeners._autoResizeStyleInstructions();
                 });
             }
 

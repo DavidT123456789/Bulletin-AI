@@ -65,6 +65,7 @@ export const SettingsModalListeners = {
             if (e.detail?.modalId === 'personalizationModal') {
                 this._updateNavArrowsState();
                 this._updateStudentContextAndPrompt();
+                this._autoResizeStyleInstructions();
             }
         });
 
@@ -83,6 +84,7 @@ export const SettingsModalListeners = {
             // Rafraîchir les valeurs affichées (sliders) pour refléter les nouvelles valeurs
             FormUI.updateSettingsFields();
             this._updateStudentContextAndPrompt();
+            this._autoResizeStyleInstructions();
         });
 
         // Toggle pour le basculement automatique entre APIs
@@ -136,7 +138,15 @@ export const SettingsModalListeners = {
         // Listen for reset events to update prompt preview
         document.addEventListener('personalizationReset', () => {
             this._updateStudentContextAndPrompt();
+            this._autoResizeStyleInstructions();
         });
+
+        // Re-calculate textarea size on window resize when modal is open
+        window.addEventListener('resize', Utils.debounce(() => {
+            if (DOM.personalizationModal && (DOM.personalizationModal.classList.contains('show') || DOM.personalizationModal.style.display === 'flex')) {
+                this._autoResizeStyleInstructions();
+            }
+        }, 150));
     },
 
     /**
@@ -316,6 +326,7 @@ export const SettingsModalListeners = {
 
         if (DOM.iaStyleInstructions) {
             DOM.iaStyleInstructions.addEventListener('input', () => {
+                this._autoResizeStyleInstructions();
                 // [FIX] Ensure MonStyle structure exists before updating
                 if (!appState.subjects['MonStyle']) {
                     appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
@@ -516,6 +527,31 @@ export const SettingsModalListeners = {
     },
 
     /**
+     * Auto-resizes the style instructions textarea to fit its text neatly without empty void
+     * @private
+     */
+    _autoResizeStyleInstructions(retryCount = 0) {
+        const textarea = DOM.iaStyleInstructions;
+        if (!textarea) return;
+
+        if (!textarea.offsetParent && textarea.offsetHeight === 0) {
+            if (retryCount < 5) {
+                requestAnimationFrame(() => this._autoResizeStyleInstructions(retryCount + 1));
+            }
+            return;
+        }
+
+        textarea.rows = 1;
+        textarea.style.height = '0px';
+        const minHeight = 52;
+        const maxHeight = 180;
+        const borderOffset = 2;
+        const targetHeight = Math.min(Math.max(textarea.scrollHeight + borderOffset, minHeight), maxHeight);
+        textarea.style.height = `${targetHeight}px`;
+        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    },
+
+    /**
      * Renders the preview output empty state card
      * @private
      */
@@ -524,29 +560,16 @@ export const SettingsModalListeners = {
         const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult?.closest('.refinement-group');
         if (previewResult) {
             previewResult.innerHTML = `
-                <div class="preview-empty-state" role="button" tabindex="0" id="previewEmptyStateTrigger" aria-label="Générer l'aperçu">
+                <div class="preview-empty-state">
                     <div class="preview-empty-icon-wrap">
-                        <iconify-icon icon="solar:document-add-linear"></iconify-icon>
+                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                     </div>
                     <div class="preview-empty-title">Prêt pour la prévisualisation</div>
-                    <div class="preview-empty-subtitle">Cliquez ici ou sur <strong>« Générer »</strong> pour tester vos réglages en direct sur cet élève.</div>
+                    <div class="preview-empty-subtitle">Ajustez vos réglages à gauche et cliquez sur <strong>« Générer »</strong> pour tester le rendu en direct.</div>
                 </div>
             `;
             previewResult.classList.add('placeholder');
             previewResult.classList.remove('has-error');
-
-            const trigger = previewResult.querySelector('#previewEmptyStateTrigger');
-            if (trigger) {
-                trigger.addEventListener('click', () => {
-                    DOM.refreshPreviewBtn?.click();
-                });
-                trigger.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        DOM.refreshPreviewBtn?.click();
-                    }
-                });
-            }
         }
         if (groupEl) {
             groupEl.classList.add('is-empty');
@@ -667,7 +690,7 @@ export const SettingsModalListeners = {
                         : cached.appreciation;
                     pApp = `<span class="generated-preview-cell" title="Appréciation générée">${shortApp}</span>`;
                 } else {
-                    pApp = '<button type="button" class="to-generate-pill tooltip" id="previewTableGenerateBtn" data-tooltip="Cliquer pour générer l\'appréciation">À générer <iconify-icon icon="solar:arrow-right-linear"></iconify-icon></button>';
+                    pApp = '<span class="pending-app-badge"><iconify-icon icon="solar:clock-circle-linear"></iconify-icon> En attente</span>';
                 }
             } else {
                 pApp = pData?.appreciation ? (pData.appreciation.length > 60 ? pData.appreciation.substring(0, 60) + '...' : pData.appreciation) : '<span class="empty-val">-</span>';
@@ -682,7 +705,7 @@ export const SettingsModalListeners = {
 
             historyRows += `
                 <tr class="preview-row ${isCurrent ? 'is-current' : ''}">
-                    <td class="period-cell"><span class="period-name">${period}</span>${isCurrent ? ' <span class="current-badge">Actuel</span>' : ''}</td>
+                    <td class="period-cell"><span class="period-name">${period}</span>${isCurrent ? '<span class="current-badge">Actuel</span>' : ''}</td>
                     <td class="grade-cell">${gradeHtml}</td>
                     <td class="appreciation-cell">${pApp}</td>
                 </tr>
@@ -759,13 +782,6 @@ export const SettingsModalListeners = {
                     nameDisplay.style.transform = 'translateX(0)';
                 }
 
-                // Interactive 'À générer' pill
-                const tableGenBtn = studentDataEl.querySelector('#previewTableGenerateBtn');
-                if (tableGenBtn) {
-                    tableGenBtn.addEventListener('click', () => {
-                        DOM.refreshPreviewBtn?.click();
-                    });
-                }
                 UI.initTooltips();
             }, 200);
         }
