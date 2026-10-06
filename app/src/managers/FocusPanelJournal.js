@@ -380,7 +380,26 @@ export const FocusPanelJournal = {
      */
     _setupDeleteHandlers(contentEl, result) {
         contentEl.querySelectorAll('.journal-entry-delete').forEach(btn => {
-            let deleteTimeout;
+            let deleteTimeout = null;
+            let outsideClickListener = null;
+            let escapeListener = null;
+
+            const resetConfirm = () => {
+                btn.classList.remove('confirm-delete');
+                btn.closest('.journal-entry-actions')?.classList.remove('has-confirm-delete');
+                if (deleteTimeout) {
+                    clearTimeout(deleteTimeout);
+                    deleteTimeout = null;
+                }
+                if (outsideClickListener) {
+                    document.removeEventListener('click', outsideClickListener);
+                    outsideClickListener = null;
+                }
+                if (escapeListener) {
+                    document.removeEventListener('keydown', escapeListener);
+                    escapeListener = null;
+                }
+            };
 
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -396,19 +415,11 @@ export const FocusPanelJournal = {
                     btn.closest('.journal-entry-actions')?.classList.add('has-confirm-delete');
                     btn._tippy?.hide();
 
-                    const resetConfirm = () => {
-                        btn.classList.remove('confirm-delete');
-                        btn.closest('.journal-entry-actions')?.classList.remove('has-confirm-delete');
-                        clearTimeout(deleteTimeout);
-                        document.removeEventListener('click', outsideClickListener);
-                        document.removeEventListener('keydown', escapeListener);
-                    };
-
-                    const outsideClickListener = (ev) => {
+                    outsideClickListener = (ev) => {
                         if (!btn.contains(ev.target)) resetConfirm();
                     };
 
-                    const escapeListener = (ev) => {
+                    escapeListener = (ev) => {
                         if (ev.key === 'Escape') resetConfirm();
                     };
 

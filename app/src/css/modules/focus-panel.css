@@ -28,7 +28,7 @@
 :root {
     --focus-header-offset: 114px;
     --focus-header-offset-tablet: 110px;
-    --focus-header-offset-mobile: 110px;
+    --focus-header-offset-mobile: 114px;
     --focus-header-offset-small: 96px;
     --focus-header-offset-editing: 162px;
     --focus-header-offset-editing-mobile: 178px;
@@ -526,8 +526,8 @@
 }
 
 [data-theme="dark"] .focus-nav-buttons {
-    background: var(--surface-color);
-    border: 1px solid transparent;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -621,8 +621,8 @@
 
 [data-theme="dark"] .focus-nav-btn.focus-close-btn,
 [data-theme="dark"] .focus-nav-btn.focus-analyze-btn {
-    background: var(--surface-color);
-    border: 1px solid transparent;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
     color: var(--text-secondary);
 }
@@ -1574,6 +1574,11 @@ input.context-grade-input,
     align-items: center;
     gap: 8px;
     margin: 0;
+    min-width: 0;
+}
+
+#focusAppreciationTitle {
+    white-space: nowrap;
 }
 
 
@@ -3741,10 +3746,56 @@ input.context-grade-input,
 
 /* Main Page (default visible) */
 .focus-main-page {
+    position: relative;
     transform: scale(1);
     opacity: 1;
     transform-origin: center center;
     transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Edge Scrim Continuum (Eased Scrim Gradient - Hardware Accelerated 120fps) */
+.focus-main-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: linear-gradient(
+        to bottom,
+        rgba(var(--bg-color-rgb), 0.85) 0%,
+        rgba(var(--bg-color-rgb), 0.60) 25%,
+        rgba(var(--bg-color-rgb), 0.28) 50%,
+        rgba(var(--bg-color-rgb), 0.08) 75%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+    transform: translateZ(0);
+    will-change: transform;
+    contain: paint;
+}
+
+.focus-main-page::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    background: linear-gradient(
+        to top,
+        rgba(var(--bg-color-rgb), 0.88) 0%,
+        rgba(var(--bg-color-rgb), 0.64) 25%,
+        rgba(var(--bg-color-rgb), 0.32) 50%,
+        rgba(var(--bg-color-rgb), 0.09) 75%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+    transform: translateZ(0);
+    will-change: transform;
+    contain: paint;
 }
 
 /* Analysis Page (hidden below) */
@@ -4708,7 +4759,7 @@ input.context-grade-input,
     .focus-header {
         flex-wrap: wrap;
         padding: 4px;
-        margin: 10px 8px 12px 8px;
+        margin: 14px 16px 12px 16px;
         gap: 8px;
     }
 
@@ -4758,7 +4809,15 @@ input.context-grade-input,
 
     /* Le focus content sur mobile: compensation du header compact */
     .focus-content {
-        padding: var(--focus-header-offset-mobile) 16px 24px 16px;
+        padding: var(--focus-header-offset-mobile) 16px max(20px, env(safe-area-inset-bottom, 0px)) 16px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .focus-content::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
     }
 
     /* Le focus content sur mobile + mode édition */
@@ -4916,7 +4975,7 @@ input.context-grade-input,
         --p: var(--scroll-p, 0);
         flex-wrap: nowrap !important;
         padding: calc(4px - 2px * var(--p)) calc(4px + 4px * var(--p)) calc(4px - 2px * var(--p)) calc(4px - 2px * var(--p)) !important;
-        margin: calc(10px - 4px * var(--p)) 8px calc(12px - 4px * var(--p)) 8px !important;
+        margin: calc(14px - 6px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px !important;
         gap: 8px !important;
         border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p)) !important;
         align-items: center !important;
@@ -5088,9 +5147,9 @@ input.context-grade-input,
         font-size: 12px;
     }
 
-    /* Content: Full width, less padding - Padding Top already managed */
-    .focus-content {
-        padding: var(--focus-header-offset-mobile) 16px 24px 16px;
+    /* Scrim gradient: compact on mobile */
+    .focus-main-page::after {
+        height: 22px;
     }
 
     /* Context group */
@@ -5118,6 +5177,66 @@ input.context-grade-input,
     /* Appreciation area */
     .focus-appreciation {
         padding: 0;
+    }
+
+    .focus-appreciation-header {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .focus-appreciation-label {
+        gap: 6px;
+        min-width: 0;
+        flex-shrink: 0;
+    }
+
+    #focusAppreciationTitle {
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .focus-audio-group {
+        gap: 2px;
+        flex-shrink: 0;
+    }
+
+    .focus-audio-group .focus-mic-btn,
+    .focus-audio-group .focus-speaker-btn {
+        width: 26px;
+        height: 26px;
+    }
+
+    .focus-appreciation-meta {
+        gap: 6px;
+        min-width: 0;
+        margin-left: auto;
+    }
+
+    .focus-appreciation-header #focusWordCount {
+        height: 22px;
+        padding: 0 6px;
+        font-size: 11px;
+    }
+
+    .focus-appreciation-header .history-navigation-group {
+        height: 24px;
+        padding: 1px 2px;
+    }
+
+    .focus-appreciation-header .history-nav-btn {
+        width: 20px;
+        height: 20px;
+    }
+
+    .focus-appreciation-header .history-indicator-btn {
+        height: 20px;
+        padding: 0 4px;
+        font-size: 10.5px;
+    }
+
+    .focus-appreciation-header .ai-indicator {
+        width: 22px;
+        height: 22px;
     }
 
     .focus-appreciation-text {
@@ -5187,7 +5306,7 @@ input.context-grade-input,
 
     .focus-header {
         padding: 3px;
-        margin: 8px 6px 10px 6px;
+        margin: 12px 12px 10px 12px;
         gap: 6px;
     }
 
@@ -5234,7 +5353,18 @@ input.context-grade-input,
     }
 
     .focus-content {
-        padding: var(--focus-header-offset-small) 12px 24px 12px;
+        padding: var(--focus-header-offset-small) 12px max(16px, env(safe-area-inset-bottom, 0px)) 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .focus-appreciation-header {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .focus-appreciation-meta {
+        gap: 4px;
     }
 
     /* Inline actions — small mobile */
