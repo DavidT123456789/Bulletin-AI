@@ -1376,7 +1376,7 @@
     }
 
     .journal-header {
-        padding: 10px 12px;
+        padding: 8px 14px;
     }
 
     .journal-header-left {
@@ -1385,8 +1385,22 @@
 
     /* Elimination of nested scrollbar on mobile */
     .journal-content {
-        padding: 10px 12px;
+        padding: 10px 14px;
         max-height: 480px;
+    }
+
+    .journal-empty {
+        padding: 10px 14px;
+        min-height: 54px;
+        gap: 12px;
+    }
+
+    .journal-empty iconify-icon {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        min-height: 22px;
+        font-size: 22px;
     }
 
     .journal-content:has(.journal-draft-preview.visible) {

@@ -28,8 +28,8 @@
 :root {
     --focus-header-offset: 116px;
     --focus-header-offset-tablet: 112px;
-    --focus-header-offset-mobile: 114px;
-    --focus-header-offset-small: 96px;
+    --focus-header-offset-mobile: 98px;
+    --focus-header-offset-small: 88px;
     --focus-header-offset-editing: 164px;
     --focus-header-offset-editing-mobile: 178px;
 }
@@ -4759,12 +4759,12 @@ input.context-grade-input,
     .focus-header {
         flex-wrap: wrap;
         padding: 4px;
-        margin: 14px 16px 12px 16px;
+        margin: 12px 12px 10px 12px;
         gap: 8px;
     }
 
     .focus-header.editing {
-        padding: 12px 16px 16px;
+        padding: 12px 14px 14px;
         align-items: flex-start;
     }
 
@@ -4809,7 +4809,8 @@ input.context-grade-input,
 
     /* Le focus content sur mobile: compensation du header compact */
     .focus-content {
-        padding: var(--focus-header-offset-mobile) 16px max(20px, env(safe-area-inset-bottom, 0px)) 16px;
+        padding: var(--focus-header-offset-mobile) 12px max(16px, env(safe-area-inset-bottom, 0px)) 12px;
+        gap: 12px;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -4975,7 +4976,7 @@ input.context-grade-input,
         --p: var(--scroll-p, 0);
         flex-wrap: nowrap !important;
         padding: calc(4px - 2px * var(--p)) calc(4px + 4px * var(--p)) calc(4px - 2px * var(--p)) calc(4px - 2px * var(--p)) !important;
-        margin: calc(14px - 6px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px !important;
+        margin: calc(12px - 6px * var(--p)) 12px calc(10px - 4px * var(--p)) 12px !important;
         gap: 8px !important;
         border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p)) !important;
         align-items: center !important;
@@ -5161,7 +5162,8 @@ input.context-grade-input,
         /* Restore row layout on mobile for header to save space */
         flex-direction: row;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        padding: 8px 14px;
     }
 
     .grades-wrapper {
@@ -5170,7 +5172,8 @@ input.context-grade-input,
     }
 
     .focus-context-textarea {
-        min-height: 60px;
+        min-height: 48px;
+        padding: 10px 14px;
         font-size: 14px;
     }
 
@@ -5180,7 +5183,7 @@ input.context-grade-input,
     }
 
     .focus-appreciation-header {
-        padding: 8px 12px;
+        padding: 8px 14px;
         gap: 8px;
     }
 
@@ -5240,15 +5243,16 @@ input.context-grade-input,
     }
 
     .focus-appreciation-text {
-        min-height: 72px;
+        min-height: 52px;
+        padding: 10px 14px;
         font-size: 14px;
         line-height: 1.5;
     }
 
     /* Refinement buttons: Horizontal scroll */
     .focus-refinement-options {
-        margin: 8px 0 0;
-        padding: 0 16px 8px;
+        margin: 6px 0 0;
+        padding: 0 14px 6px;
         gap: 6px;
     }
 
@@ -5260,7 +5264,7 @@ input.context-grade-input,
 
     /* Inline appreciation actions — mobile */
     .focus-appreciation-actions {
-        padding: 6px 12px 12px 12px;
+        padding: 6px 14px 10px 14px;
         gap: 8px;
     }
 
@@ -5287,7 +5291,8 @@ input.context-grade-input,
     /* Removed redundant title wrapping rules (handled globally) */
 
     .focus-analysis-content-area {
-        padding: 16px 16px 24px 16px;
+        padding: 12px 12px 20px 12px;
+        gap: 10px;
     }
 
     .analysis-card {
@@ -5306,7 +5311,7 @@ input.context-grade-input,
 
     .focus-header {
         padding: 3px;
-        margin: 12px 12px 10px 12px;
+        margin: 10px 10px 8px 10px;
         gap: 6px;
     }
 
@@ -5353,7 +5358,8 @@ input.context-grade-input,
     }
 
     .focus-content {
-        padding: var(--focus-header-offset-small) 12px max(16px, env(safe-area-inset-bottom, 0px)) 12px;
+        padding: var(--focus-header-offset-small) 10px max(14px, env(safe-area-inset-bottom, 0px)) 10px;
+        gap: 8px;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
