@@ -26,11 +26,11 @@
 
 /* §0 TOKENS — Header offset tokens, single source of truth */
 :root {
-    --focus-header-offset: 114px;
-    --focus-header-offset-tablet: 110px;
+    --focus-header-offset: 116px;
+    --focus-header-offset-tablet: 112px;
     --focus-header-offset-mobile: 114px;
     --focus-header-offset-small: 96px;
-    --focus-header-offset-editing: 162px;
+    --focus-header-offset-editing: 164px;
     --focus-header-offset-editing-mobile: 178px;
 }
 
@@ -109,7 +109,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 6px;
-    margin: 8px 16px 12px 16px;
+    margin: 10px 16px 12px 16px;
     background: transparent;
     border-radius: var(--radius-lg);
     box-shadow: none;
@@ -131,8 +131,8 @@
     --p: var(--scroll-p, 0);
     border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
     padding: calc(8px - 4px * var(--p)) calc(6px - 2px * var(--p));
-    margin: calc(8px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
-    transform: translateY(calc(-2px * var(--p)));
+    margin: calc(10px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
+    transform: translateZ(0);
     background: rgba(255, 255, 255, calc(0.85 * var(--p)));
     backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
     -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
