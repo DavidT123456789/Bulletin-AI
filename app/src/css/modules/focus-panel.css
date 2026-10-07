@@ -26,10 +26,10 @@
 
 /* §0 TOKENS — Header offset tokens, single source of truth */
 :root {
-    --focus-header-offset: 116px;
-    --focus-header-offset-tablet: 112px;
-    --focus-header-offset-mobile: 98px;
-    --focus-header-offset-small: 88px;
+    --focus-header-offset: 110px;
+    --focus-header-offset-tablet: 106px;
+    --focus-header-offset-mobile: 92px;
+    --focus-header-offset-small: 84px;
     --focus-header-offset-editing: 164px;
     --focus-header-offset-editing-mobile: 178px;
 }
@@ -108,8 +108,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 6px;
-    margin: 10px 16px 12px 16px;
+    padding: 7px 6px;
+    margin: 8px 16px 0 16px;
     background: transparent;
     border-radius: var(--radius-lg);
     box-shadow: none;
@@ -130,8 +130,8 @@
 .focus-header:not(.editing) {
     --p: var(--scroll-p, 0);
     border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
-    padding: calc(8px - 4px * var(--p)) calc(6px - 2px * var(--p));
-    margin: calc(10px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
+    padding: calc(7px - 3px * var(--p)) calc(6px + 5px * var(--p)) calc(7px - 3px * var(--p)) calc(6px - 2px * var(--p));
+    margin: calc(8px - 2px * var(--p)) 16px 0 16px;
     transform: translateZ(0);
     background: rgba(255, 255, 255, calc(0.85 * var(--p)));
     backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
@@ -4771,7 +4771,7 @@ input.context-grade-input,
     .focus-header {
         flex-wrap: wrap;
         padding: 4px;
-        margin: 12px 12px 10px 12px;
+        margin: 8px 12px 0 12px;
         gap: 8px;
     }
 
@@ -4988,7 +4988,7 @@ input.context-grade-input,
         --p: var(--scroll-p, 0);
         flex-wrap: nowrap !important;
         padding: calc(4px - 2px * var(--p)) calc(4px + 4px * var(--p)) calc(4px - 2px * var(--p)) calc(4px - 2px * var(--p)) !important;
-        margin: calc(12px - 6px * var(--p)) 12px calc(10px - 4px * var(--p)) 12px !important;
+        margin: calc(8px - 3px * var(--p)) 12px 0 12px !important;
         gap: 8px !important;
         border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p)) !important;
         align-items: center !important;
@@ -5323,7 +5323,7 @@ input.context-grade-input,
 
     .focus-header {
         padding: 3px;
-        margin: 10px 10px 8px 10px;
+        margin: 6px 10px 0 10px;
         gap: 6px;
     }
 

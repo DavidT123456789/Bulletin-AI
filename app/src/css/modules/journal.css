@@ -901,8 +901,8 @@
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    padding: 16px;
-    min-height: 84px;
+    padding: 10px 14px;
+    min-height: 52px;
     box-sizing: border-box;
     color: var(--text-tertiary);
     font-size: 13px;
@@ -914,11 +914,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    font-size: 28px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    font-size: 22px;
     opacity: 0.4;
     color: var(--text-tertiary);
     margin-bottom: 0;
