@@ -3772,8 +3772,14 @@ input.context-grade-input,
     pointer-events: none;
     z-index: 10;
     transform: translateZ(0);
-    will-change: transform;
+    will-change: transform, opacity;
     contain: paint;
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-main-page.can-scroll-top::before {
+    opacity: 1;
 }
 
 .focus-main-page::after {
@@ -3794,8 +3800,14 @@ input.context-grade-input,
     pointer-events: none;
     z-index: 10;
     transform: translateZ(0);
-    will-change: transform;
+    will-change: transform, opacity;
     contain: paint;
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-main-page.can-scroll-bottom::after {
+    opacity: 1;
 }
 
 /* Analysis Page (hidden below) */

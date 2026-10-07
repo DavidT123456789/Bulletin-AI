@@ -60,7 +60,8 @@ describe('FocusPanelNavigation', () => {
             saveContext: () => {},
             renderContent: () => {},
             updateAppreciationStatus: () => {},
-            onUpdateActiveRow: () => {}
+            onUpdateActiveRow: () => {},
+            updateScrollAffordances: () => {}
         };
     });
 
@@ -80,6 +81,7 @@ describe('FocusPanelNavigation', () => {
             expect(() => FocusPanelNavigation.callbacks.renderContent({})).not.toThrow();
             expect(() => FocusPanelNavigation.callbacks.updateAppreciationStatus()).not.toThrow();
             expect(() => FocusPanelNavigation.callbacks.onUpdateActiveRow('1')).not.toThrow();
+            expect(() => FocusPanelNavigation.callbacks.updateScrollAffordances()).not.toThrow();
         });
 
         it('should safely execute navigatePrev and navigateNext with default callbacks without throwing', () => {

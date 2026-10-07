@@ -157,7 +157,8 @@ export const FocusPanelManager = {
             saveContext: () => this._saveContext(),
             renderContent: (r) => this._renderContent(r),
             updateAppreciationStatus: (s, opts) => FocusPanelStatus.updateAppreciationStatus(s, opts),
-            onUpdateActiveRow: (id) => this._updateActiveRow(id)
+            onUpdateActiveRow: (id) => this._updateActiveRow(id),
+            updateScrollAffordances: () => this.updateScrollAffordances()
         });
 
         this._setupEventListeners();
@@ -199,14 +200,15 @@ export const FocusPanelManager = {
                 if (focusHeader.classList.contains('editing')) {
                     focusHeader.style.removeProperty('--scroll-p');
                     focusHeader.classList.remove('scrolled');
-                    return;
+                } else {
+                    const scrollTop = Math.max(0, focusContent.scrollTop);
+                    const progress = Math.min(1, scrollTop / SCROLL_RANGE);
+
+                    focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
+                    focusHeader.classList.toggle('scrolled', progress > 0.01);
                 }
 
-                const scrollTop = Math.max(0, focusContent.scrollTop);
-                const progress = Math.min(1, scrollTop / SCROLL_RANGE);
-
-                focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
-                focusHeader.classList.toggle('scrolled', progress > 0.01);
+                this.updateScrollAffordances();
             };
 
             focusContent.addEventListener('scroll', () => {
@@ -214,6 +216,13 @@ export const FocusPanelManager = {
                     scrollRafId = requestAnimationFrame(updateHeaderScrollProgress);
                 }
             }, { passive: true });
+
+            if (typeof ResizeObserver !== 'undefined') {
+                const resizeObserver = new ResizeObserver(() => {
+                    this.updateScrollAffordances();
+                });
+                resizeObserver.observe(focusContent);
+            }
         }
 
         // Set _isClosing flag on pointerdown (touch/mouse down) to defer synchronous
@@ -963,7 +972,33 @@ export const FocusPanelManager = {
             textarea.style.height = (targetHeight + borderTop + borderBottom) + 'px';
             textarea.style.overflowY = 'hidden';
         }
+        this.updateScrollAffordances();
     },
+
+    /**
+     * Met à jour les brumes d'indication de défilement (scrims) en haut et en bas.
+     * Masque la brume haute en butée haute (scrollTop <= 4) et la brume basse
+     * en butée basse ou lorsqu'il n'y a aucun débordement.
+     */
+    updateScrollAffordances() {
+        const panel = document.getElementById('focusPanel');
+        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
+        const focusMainPage = panel?.querySelector('.focus-main-page');
+        if (!focusContent || !focusMainPage) return;
+
+        const scrollTop = Math.max(0, focusContent.scrollTop);
+        const scrollHeight = focusContent.scrollHeight;
+        const clientHeight = focusContent.clientHeight;
+        const maxScroll = Math.max(0, scrollHeight - clientHeight);
+        const remaining = Math.max(0, maxScroll - scrollTop);
+
+        const canScrollTop = scrollTop > 4;
+        const canScrollBottom = maxScroll > 4 && remaining > 4;
+
+        focusMainPage.classList.toggle('can-scroll-top', canScrollTop);
+        focusMainPage.classList.toggle('can-scroll-bottom', canScrollBottom);
+    },
+
     /** Creation mode flag */
     isCreationMode: false,
 
@@ -1074,6 +1109,9 @@ export const FocusPanelManager = {
 
         // 6. Navigation controls
         FocusPanelNavigation.updateControls();
+
+        // 7. Scroll affordances
+        this.updateScrollAffordances();
     },
 
     /**
@@ -1144,6 +1182,7 @@ export const FocusPanelManager = {
             focusHeader.style.removeProperty('--scroll-p');
             focusHeader.classList.remove('scrolled');
         }
+        this.updateScrollAffordances();
 
         // Mark active row in list view for visual feedback
         this._updateActiveRow(studentId);
@@ -1210,6 +1249,10 @@ export const FocusPanelManager = {
         const backdrop = document.getElementById('focusPanelBackdrop');
         if (panel) panel.classList.add('open');
         if (backdrop) backdrop.classList.add('visible');
+
+        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
+        if (focusContent) focusContent.scrollTop = 0;
+        this.updateScrollAffordances();
 
         // Explicitly clear inputs handled by FocusPanelHeader
 
@@ -2389,6 +2432,9 @@ export const FocusPanelManager = {
 
         // === 14. HISTORY INDICATOR ===
         FocusPanelStatus.updateHistoryIndicator();
+
+        // === 15. SCROLL AFFORDANCES ===
+        this.updateScrollAffordances();
     },
 
 

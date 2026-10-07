@@ -24,7 +24,8 @@ export const FocusPanelNavigation = {
         saveContext: () => {},
         renderContent: () => {},
         updateAppreciationStatus: () => {},
-        onUpdateActiveRow: () => {}
+        onUpdateActiveRow: () => {},
+        updateScrollAffordances: () => {}
     },
 
     /**
@@ -250,6 +251,7 @@ export const FocusPanelNavigation = {
             if (filteredResult) {
                 const targetResult = appState.generatedResults?.find(r => r.id === filteredResult.id) || filteredResult;
                 this._switchToStudent(targetResult, targetIndex);
+                this.callbacks?.updateScrollAffordances?.();
             }
             return;
         }
@@ -322,6 +324,7 @@ export const FocusPanelNavigation = {
             navHeader.style.removeProperty('--scroll-p');
             navHeader.classList.remove('scrolled');
         }
+        this.callbacks?.updateScrollAffordances?.();
 
         // 4. Trigger Inline Animations (iOS Gallery Physics)
         requestAnimationFrame(() => {
