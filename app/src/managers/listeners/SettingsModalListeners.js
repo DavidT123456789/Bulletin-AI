@@ -1307,7 +1307,8 @@ export const SettingsModalListeners = {
                                 localClassCount: classCount,
                                 remoteStudentCount,
                                 lastSyncTime: SyncService.lastSyncTime || SyncService.remoteSyncTime,
-                                providerName
+                                providerName,
+                                syncState: SyncService._lastSyncState || (typeof SyncService._computeSyncState === 'function' ? SyncService._computeSyncState() : null)
                             });
                             if (!confirmed) return;
                         }
@@ -1400,7 +1401,8 @@ export const SettingsModalListeners = {
                         remoteClassCount: summary.classCount,
                         localStudentCount,
                         localClassCount,
-                        providerName
+                        providerName,
+                        syncState: SyncService._lastSyncState || (typeof SyncService._computeSyncState === 'function' ? SyncService._computeSyncState() : null)
                     });
 
                     if (!confirmed) return;

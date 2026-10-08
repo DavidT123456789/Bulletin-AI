@@ -434,7 +434,8 @@ export const GeneralListeners = {
                         localClassCount: classCount,
                         remoteStudentCount,
                         lastSyncTime,
-                        providerName
+                        providerName,
+                        syncState
                     });
                     if (!confirmed) return;
                 }
@@ -570,7 +571,8 @@ export const GeneralListeners = {
                         remoteClassCount: summary.classCount,
                         localStudentCount,
                         localClassCount,
-                        providerName: SyncService.currentProviderName || 'google'
+                        providerName: SyncService.currentProviderName || 'google',
+                        syncState: SyncService._lastSyncState || (typeof SyncService._computeSyncState === 'function' ? SyncService._computeSyncState() : null)
                     });
 
                     if (!confirmed) return;

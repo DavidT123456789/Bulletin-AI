@@ -754,7 +754,8 @@ export const ModalUI = {
                 localClassCount = 0,
                 providerName = 'google',
                 providerLabel = null,
-                providerIcon = null
+                providerIcon = null,
+                syncState = null
             } = options;
 
             const modalId = 'restoreConfirmationModal';
@@ -770,7 +771,22 @@ export const ModalUI = {
             const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
             const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
 
+            const isVolumeIdentical = (rStudentCount === lStudentCount) && (rClassCount === lClassCount);
+
+            const resolvedSyncState = syncState ||
+                window.SyncService?._lastSyncState ||
+                (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
+            const hasLocalChanges = resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict';
+
             const formattedTitleDate = this._formatRelativeDate(remoteDate) ?? 'Date inconnue';
+
+            const cloudSubStatHtml = isVolumeIdentical
+                ? `<div class="restore-card-sub-stat">Sauvegarde en ligne</div>`
+                : `<div class="restore-card-sub-stat">${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}</div>`;
+
+            const localSubStatHtml = isVolumeIdentical
+                ? `<div class="restore-card-sub-stat">Sur cet appareil</div>`
+                : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -786,7 +802,9 @@ export const ModalUI = {
                         <span>Restaurer depuis le Cloud</span>
                     </h3>
                     <div class="modal-alert-message">
-                        Vérifiez les données distantes avant de recharger votre espace de travail.
+                        ${hasLocalChanges
+                            ? 'Vérifiez les données distantes avant de remplacer votre session locale.'
+                            : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.'}
                     </div>
 
                     <div class="restore-comparison-grid">
@@ -799,12 +817,10 @@ export const ModalUI = {
                             <div class="restore-card-main-stat">
                                 ${formattedTitleDate}
                             </div>
-                            <div class="restore-card-sub-stat">
-                                ${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}
-                            </div>
+                            ${cloudSubStatHtml}
                             <div class="restore-card-date">
                                 <iconify-icon icon="solar:check-read-linear"></iconify-icon>
-                                <span>Sauvegarde complète</span>
+                                <span>Version en ligne</span>
                             </div>
                         </div>
 
@@ -817,20 +833,23 @@ export const ModalUI = {
                             <div class="restore-card-main-stat">
                                 Session actuelle
                             </div>
-                            <div class="restore-card-sub-stat">
-                                ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
-                            </div>
+                            ${localSubStatHtml}
                             <div class="restore-card-date">
                                 <iconify-icon icon="solar:laptop-minimalistic-linear"></iconify-icon>
-                                <span>Sur cet appareil</span>
+                                <span>Espace de travail</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="restore-safety-notice">
-                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                    <div class="restore-safety-notice ${hasLocalChanges ? 'warning' : ''}">
+                        <iconify-icon icon="${hasLocalChanges ? 'solar:danger-triangle-bold' : 'solar:check-circle-bold'}"></iconify-icon>
                         <div>
-                            <strong>Sécurité garantie :</strong> une copie de secours de votre espace local (élèves, appréciations, paramètres) sera automatiquement conservée.
+                            ${hasLocalChanges ? `
+                                <strong>Attention :</strong> Vous avez des modifications locales non sauvegardées sur cet appareil. La restauration va les remplacer par cette version Cloud.
+                            ` : `
+                                <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées avec le Cloud (rechargement sans perte de travail non sauvegardé).
+                            `}
+                            <div style="font-size: 0.76rem; margin-top: 4px; opacity: 0.85;">Une copie de secours de votre session locale sera automatiquement conservée.</div>
                         </div>
                     </div>
                 </div>
@@ -909,7 +928,8 @@ export const ModalUI = {
                 lastSyncTime = null,
                 providerName = 'google',
                 providerLabel = null,
-                providerIcon = null
+                providerIcon = null,
+                syncState = null
             } = options;
 
             const modalId = 'saveConfirmationModal';
@@ -922,6 +942,11 @@ export const ModalUI = {
 
             const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
             const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+
+            const resolvedSyncState = syncState ||
+                window.SyncService?._lastSyncState ||
+                (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
+            const hasLocalChanges = resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict';
 
             const formattedLastSync = this._formatRelativeDate(lastSyncTime);
             const subtitleDetail = formattedLastSync ? `Dernière sauvegarde : ${formattedLastSync}` : 'Prêt à synchroniser';
@@ -945,7 +970,9 @@ export const ModalUI = {
                         <span>Sauvegarder vers le Cloud</span>
                     </h3>
                     <div class="modal-alert-message">
-                        Vos données actuelles vont être sécurisées sur votre espace personnel.
+                        ${hasLocalChanges
+                            ? 'Vos modifications locales vont être sécurisées sur votre espace personnel.'
+                            : 'Votre espace de travail est déjà synchronisé. Cette action va confirmer l\'état actuel.'}
                     </div>
 
                     <div class="save-summary-card">
@@ -963,7 +990,7 @@ export const ModalUI = {
                             ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
                         </div>
                         <div class="restore-card-date">
-                            <iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color, #10b981);"></iconify-icon>
+                            <iconify-icon icon="${hasLocalChanges ? 'solar:cloud-upload-linear' : 'solar:check-circle-bold'}" style="color: ${hasLocalChanges ? 'var(--primary-color)' : 'var(--success-color, #10b981)'};"></iconify-icon>
                             <span>${subtitleDetail}</span>
                         </div>
                     </div>

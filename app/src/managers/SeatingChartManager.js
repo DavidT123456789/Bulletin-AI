@@ -24,6 +24,8 @@ const MAX_UNDO_LEVELS = 5;
 export const SeatingChartManager = {
     _isActive: false,
     _isLocked: false,
+    _wasLockedBeforeEdit: false,
+    _hasChangesSinceUnlock: false,
     _orientation: 'teacher',
     _gridState: [],
     _students: [],
@@ -1045,6 +1047,12 @@ export const SeatingChartManager = {
                 this._clearSelection();
                 this._closeSearch();
                 if (wasActive) {
+                    if (!this._hasChangesSinceUnlock && this._wasLockedBeforeEdit && !this._isLocked) {
+                        const currentClass = this._getCurrentClass();
+                        if (currentClass) currentClass.seatingLocked = true;
+                        this._isLocked = true;
+                        if (appState.seatingGrid) appState.seatingGrid.locked = true;
+                    }
                     this._savePositionsToState(true);
                     this._saveGridConfig();
                 }
@@ -1456,6 +1464,8 @@ export const SeatingChartManager = {
 
     _applyLockState(locked) {
         this._isLocked = locked;
+        this._wasLockedBeforeEdit = locked;
+        this._hasChangesSinceUnlock = false;
         this._dragSource = null;
         this._touchSourceInfo = null;
         const view = document.getElementById('seatingChartView');
@@ -1499,6 +1509,7 @@ export const SeatingChartManager = {
         const board = document.getElementById('scClassroomBoard');
         const rBefore = board?.getBoundingClientRect?.() || null;
 
+        const wasLocked = this._isLocked;
         this._isLocked = !this._isLocked;
         this._dragSource = null;
         this._touchSourceInfo = null;
@@ -1508,6 +1519,11 @@ export const SeatingChartManager = {
 
         // [UX Mobile] History integration for Edit Mode
         if (!this._isLocked) {
+            this._wasLockedBeforeEdit = wasLocked;
+            this._hasChangesSinceUnlock = false;
+            this._undoStack = [];
+            this._redoStack = [];
+            this._updateUndoRedoButtons();
             if (!HistoryManager.isOpen('seatingChartEdit')) {
                 HistoryManager.pushState('seatingChartEdit', () => {
                     if (!this._isLocked) {
@@ -1516,6 +1532,9 @@ export const SeatingChartManager = {
                 });
             }
         } else {
+            this._undoStack = [];
+            this._redoStack = [];
+            this._updateUndoRedoButtons();
             if (HistoryManager.isOpen('seatingChartEdit')) {
                 HistoryManager.handleManualClose('seatingChartEdit');
             }
@@ -1548,14 +1567,18 @@ export const SeatingChartManager = {
             if (this._isLocked) {
                 if (placedCount > 0) {
                     currentClass.seatingLocked = true;
-                    currentClass.seatingValidatedAt = Date.now();
-                    UI?.showNotification?.('Plan de classe validé et figé', 'success');
+                    if (this._hasChangesSinceUnlock || !currentClass.seatingValidatedAt) {
+                        currentClass.seatingValidatedAt = Date.now();
+                        UI?.showNotification?.('Plan de classe validé et figé', 'success');
+                    }
+                    this._hasChangesSinceUnlock = false;
                 } else {
                     currentClass.seatingLocked = false;
                 }
             } else {
-                currentClass.seatingLocked = false;
-                currentClass.seatingUpdatedAt = Date.now();
+                if (!this._wasLockedBeforeEdit) {
+                    currentClass.seatingLocked = false;
+                }
             }
         }
 
@@ -2673,9 +2696,13 @@ export const SeatingChartManager = {
         };
         const currentClass = this._getCurrentClass();
         if (currentClass) {
-            currentClass.seatingLocked = locked;
+            if (this._hasChangesSinceUnlock || !this._wasLockedBeforeEdit || locked) {
+                currentClass.seatingLocked = locked;
+            }
         }
-        StorageManager.saveAppState();
+        if (this._hasChangesSinceUnlock || locked || !this._wasLockedBeforeEdit) {
+            StorageManager.saveAppState();
+        }
     },
 
     _onGridConfigChange() {
@@ -2749,6 +2776,7 @@ export const SeatingChartManager = {
             });
         }
 
+        this._hasChangesSinceUnlock = true;
         this._savePositionsToState(true); // Conserve les coordonnées des élèves temporairement hors-grille
         this._render();
         this._saveGridConfig();
@@ -2828,6 +2856,8 @@ export const SeatingChartManager = {
             }
         }
 
+        this._hasChangesSinceUnlock = true;
+        if (currentClass) currentClass.seatingLocked = false;
         this._saveGridConfig();
         this._render();
     },
@@ -2861,6 +2891,8 @@ export const SeatingChartManager = {
             }
         }
 
+        this._hasChangesSinceUnlock = true;
+        if (currentClass) currentClass.seatingLocked = false;
         this._saveGridConfig();
         this._render();
     },
@@ -2915,7 +2947,7 @@ export const SeatingChartManager = {
             specialLayout: Utils.deepClone(appState.seatingGrid?.specialLayout || {}),
             classSpecialLayout: currentClass?.seatingSpecialLayout
                 ? Utils.deepClone(currentClass.seatingSpecialLayout)
-                : {},
+                : null,
             rows: this._getRows(),
             cols: this._getCols()
         };
@@ -2935,6 +2967,11 @@ export const SeatingChartManager = {
         this._redoStack.push(this._captureSnapshot());
         const snapshot = this._undoStack.pop();
         this._restoreSnapshot(snapshot);
+        if (this._undoStack.length === 0 && this._wasLockedBeforeEdit) {
+            this._hasChangesSinceUnlock = false;
+            const currentClass = this._getCurrentClass();
+            if (currentClass) currentClass.seatingLocked = true;
+        }
     },
 
     _redo() {
@@ -2942,6 +2979,9 @@ export const SeatingChartManager = {
         this._undoStack.push(this._captureSnapshot());
         const snapshot = this._redoStack.pop();
         this._restoreSnapshot(snapshot);
+        this._hasChangesSinceUnlock = true;
+        const currentClass = this._getCurrentClass();
+        if (currentClass) currentClass.seatingLocked = false;
     },
 
     _restoreSnapshot(snapshot) {
@@ -2954,9 +2994,11 @@ export const SeatingChartManager = {
 
         const currentClass = this._getCurrentClass();
         if (currentClass) {
-            currentClass.seatingSpecialLayout = snapshot.classSpecialLayout
-                ? Utils.deepClone(snapshot.classSpecialLayout)
-                : {};
+            if (snapshot.classSpecialLayout) {
+                currentClass.seatingSpecialLayout = Utils.deepClone(snapshot.classSpecialLayout);
+            } else {
+                delete currentClass.seatingSpecialLayout;
+            }
         }
         
         const rowSlider = document.getElementById('scRowsSlider');
@@ -3054,9 +3096,11 @@ export const SeatingChartManager = {
         });
 
         if (anyChanged) {
+            this._hasChangesSinceUnlock = true;
             const currentClass = this._getCurrentClass();
             if (currentClass) {
                 currentClass.seatingUpdatedAt = Date.now();
+                currentClass.seatingLocked = false;
             }
             StorageManager.saveAppState();
         }
@@ -3831,6 +3875,9 @@ export const SeatingChartManager = {
         const student = this._students.find(s => s.id === resultId);
         if (student) student.seatingPosition = { ...result.seatingPosition };
 
+        this._hasChangesSinceUnlock = true;
+        const currentClass = this._getCurrentClass();
+        if (currentClass) currentClass.seatingLocked = false;
         StorageManager.saveAppState();
         this._render();
         this._haptic(10);

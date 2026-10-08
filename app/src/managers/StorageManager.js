@@ -650,9 +650,15 @@ export const StorageManager = {
         // Exclure les horodatages transitoires des classes
         if (Array.isArray(dataSettings.classes)) {
             dataSettings.classes = dataSettings.classes.map(c => {
-                const { seatingUpdatedAt, ...rest } = c;
+                const { seatingUpdatedAt, seatingValidatedAt, ...rest } = c;
                 return rest;
             });
+        }
+
+        // Exclure le verrouillage transitoire de seatingGrid (géré individuellement par classe via seatingLocked)
+        if (dataSettings.seatingGrid) {
+            const { locked, ...gridRest } = dataSettings.seatingGrid;
+            dataSettings.seatingGrid = gridRest;
         }
 
         // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified) et états UI éphémères

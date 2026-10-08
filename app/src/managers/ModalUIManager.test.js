@@ -383,6 +383,44 @@ describe('ModalUIManager', () => {
             const result = await promise;
             expect(result).toBe(true);
         });
+
+        it('should hide redundant volume counts when remote and local volumes are identical', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: 1726000000000,
+                remoteStudentCount: 28,
+                remoteClassCount: 1,
+                localStudentCount: 28,
+                localClassCount: 1,
+                syncState: 'in-sync'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal).not.toBeNull();
+            // Should NOT duplicate redundant "28 élèves" counters
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat').textContent).toBe('Sauvegarde en ligne');
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat').textContent).toBe('Sur cet appareil');
+            expect(modal.textContent).toContain('Session alignée');
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            cancelBtn.click();
+            await promise;
+        });
+
+        it('should show warning notice when syncState indicates local-changes', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteStudentCount: 28,
+                localStudentCount: 28,
+                syncState: 'local-changes'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal.querySelector('.restore-safety-notice.warning')).not.toBeNull();
+            expect(modal.textContent).toContain('Vous avez des modifications locales non sauvegardées');
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            cancelBtn.click();
+            await promise;
+        });
     });
 
     describe('showSaveConfirmationModal', () => {
@@ -484,6 +522,30 @@ describe('ModalUIManager', () => {
             const okBtn = document.getElementById('saveConfirmOkBtn');
             okBtn.click();
             await promise;
+        });
+
+        it('should adapt alert message when syncState is in-sync vs local-changes', async () => {
+            const inSyncPromise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 28,
+                localClassCount: 1,
+                syncState: 'in-sync'
+            });
+
+            const inSyncModal = document.getElementById('saveConfirmationModal');
+            expect(inSyncModal.querySelector('.modal-alert-message').textContent).toContain('déjà synchronisé');
+            document.getElementById('saveConfirmCancelBtn').click();
+            await inSyncPromise;
+
+            const localChangesPromise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 28,
+                localClassCount: 1,
+                syncState: 'local-changes'
+            });
+
+            const localChangesModal = document.getElementById('saveConfirmationModal');
+            expect(localChangesModal.querySelector('.modal-alert-message').textContent).toContain('modifications locales');
+            document.getElementById('saveConfirmCancelBtn').click();
+            await localChangesPromise;
         });
     });
 });

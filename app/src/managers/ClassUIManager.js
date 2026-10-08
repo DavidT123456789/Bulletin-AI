@@ -698,6 +698,11 @@ export const ClassUIManager = {
         // Data swap happens while content is blurred but fully visible (opacity 0.85)
         await new Promise(resolve => setTimeout(resolve, 200));
 
+        if (SeatingChartManager?._isActive && !SeatingChartManager._hasChangesSinceUnlock && SeatingChartManager._wasLockedBeforeEdit && !SeatingChartManager._isLocked) {
+            const prevClass = ClassManager.getCurrentClass();
+            if (prevClass) prevClass.seatingLocked = true;
+        }
+
         await ClassManager.switchClass(classId);
         this.updateHeaderDisplay();
         this.closeDropdown();

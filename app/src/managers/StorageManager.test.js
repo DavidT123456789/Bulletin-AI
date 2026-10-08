@@ -273,7 +273,7 @@ describe('StorageManager', () => {
             expect(/^[0-9a-f]{16}$/.test(hash)).toBe(true);
         });
 
-        it('should keep data hash invariant when only _lastModified or seatingUpdatedAt changes', () => {
+        it('should keep data hash invariant when only _lastModified, seatingUpdatedAt or seatingValidatedAt changes', () => {
             runtimeState.data.generatedResults = [{
                 id: 'student_1',
                 _lastModified: 1000,
@@ -287,7 +287,8 @@ describe('StorageManager', () => {
             userSettings.academic.classes = [{
                 id: 'class_1',
                 name: '3ème A',
-                seatingUpdatedAt: 1000
+                seatingUpdatedAt: 1000,
+                seatingValidatedAt: 1000
             }];
 
             const initialHash = StorageManager.computeCurrentDataHash();
@@ -296,6 +297,7 @@ describe('StorageManager', () => {
             runtimeState.data.generatedResults[0]._lastModified = 9999999;
             runtimeState.data.generatedResults[0].studentData.periods.T1._lastModified = 8888888;
             userSettings.academic.classes[0].seatingUpdatedAt = 7777777;
+            userSettings.academic.classes[0].seatingValidatedAt = 6666666;
 
             const newHash = StorageManager.computeCurrentDataHash();
             expect(newHash).toBe(initialHash);
