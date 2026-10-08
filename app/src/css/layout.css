@@ -1125,6 +1125,7 @@ body.is-cloud-syncing label {
 /* Cloud button hints — state variants */
 .cloud-btn-hint.hint-in-sync {
     color: var(--success-color);
+    font-weight: 500;
 }
 
 [data-theme="dark"] .cloud-btn-hint.hint-in-sync {
@@ -1142,6 +1143,7 @@ body.is-cloud-syncing label {
 
 .cloud-btn-hint.hint-conflict {
     color: var(--warning-color);
+    font-weight: 500;
 }
 
 [data-theme="dark"] .cloud-btn-hint.hint-conflict {
@@ -1206,6 +1208,31 @@ body.is-cloud-syncing label {
     color: var(--text-secondary);
 }
 
+/* Preservation et affinement des couleurs d'état sémantiques au survol */
+.cloud-save-menu-item:hover .cloud-btn-hint.hint-in-sync {
+    color: var(--success-dark);
+}
+
+[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-in-sync {
+    color: var(--success-dark);
+}
+
+.cloud-save-menu-item:hover .cloud-btn-hint.hint-syncing {
+    color: var(--color-sky-deep);
+}
+
+[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-syncing {
+    color: var(--color-sky-bright);
+}
+
+.cloud-save-menu-item:hover .cloud-btn-hint.hint-conflict {
+    color: var(--warning-dark);
+}
+
+[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-conflict {
+    color: var(--warning-bright);
+}
+
 .cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint {
     color: var(--color-sky-deep);
     font-weight: 500;
@@ -1257,6 +1284,15 @@ body.is-cloud-syncing label {
     color: var(--text-tertiary);
 }
 
+.cloud-save-menu-item.disabled:hover {
+    background-color: transparent;
+}
+
+.cloud-save-menu-item.disabled:hover > iconify-icon,
+.cloud-save-menu-item.disabled:hover .cloud-save-label {
+    color: var(--text-tertiary);
+}
+
 /* Cloud sync state — action recommended (accent color applied to hint and icon, standard hover) */
 .cloud-save-menu-item.cloud-action-recommended > iconify-icon {
     color: var(--color-sky-deep);
@@ -1293,6 +1329,10 @@ body.is-cloud-syncing label {
     font-weight: 500;
 }
 
+[data-theme="dark"] .cloud-reconnect-item {
+    color: var(--warning-bright);
+}
+
 .cloud-reconnect-item:hover {
     color: var(--warning-dark);
 }
@@ -1311,6 +1351,10 @@ body.is-cloud-syncing label {
     height: 24px;
     color: var(--warning-color);
     transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+[data-theme="dark"] .cloud-reconnect-item iconify-icon {
+    color: var(--warning-bright);
 }
 
 .cloud-reconnect-item:hover iconify-icon {
