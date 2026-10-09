@@ -2381,18 +2381,26 @@
 }
 
 .restore-card-main-stat {
-    font-size: 1.05rem;
+    font-size: 1.12rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.restore-card-exact-date {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
     line-height: 1.25;
 }
 
 .restore-card-sub-stat {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     font-weight: 500;
     color: var(--text-secondary);
     line-height: 1.35;
+    margin-top: 2px;
 }
 
 .restore-card-date {
@@ -2441,6 +2449,88 @@
 
 .restore-safety-notice.warning iconify-icon {
     color: var(--warning-color, #f59e0b);
+}
+
+.restore-impact-box {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 12px);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.restore-impact-box.warning {
+    border-color: rgba(245, 158, 11, 0.22);
+    background: rgba(245, 158, 11, 0.035);
+}
+
+[data-theme="dark"] .restore-impact-box.warning {
+    border-color: rgba(245, 158, 11, 0.25);
+    background: rgba(245, 158, 11, 0.04);
+}
+
+.restore-impact-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+    font-size: 0.83rem;
+    color: var(--text-primary);
+}
+
+.restore-impact-header iconify-icon {
+    font-size: 1.1rem;
+    color: var(--warning-color, #f59e0b);
+    flex-shrink: 0;
+}
+
+.restore-impact-list {
+    margin: 0;
+    padding: 0 0 0 22px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.restore-impact-list li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-secondary);
+    font-size: 0.81rem;
+}
+
+.restore-impact-list li iconify-icon {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.restore-impact-footer {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.74rem;
+    color: var(--text-tertiary);
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1px;
+}
+
+[data-theme="dark"] .restore-impact-footer {
+    border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+.restore-impact-footer iconify-icon {
+    font-size: 0.92rem;
+    color: var(--success-color, #10b981);
+    flex-shrink: 0;
 }
 
 .save-summary-card {

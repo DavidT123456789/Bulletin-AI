@@ -398,7 +398,7 @@ describe('ModalUIManager', () => {
             expect(modal).not.toBeNull();
             // Should NOT duplicate redundant "28 élèves" counters
             expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat').textContent).toBe('Sauvegarde en ligne');
-            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat').textContent).toBe('Sur cet appareil');
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat').textContent).toBe('À jour');
             expect(modal.textContent).toContain('Session alignée');
 
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
@@ -406,20 +406,51 @@ describe('ModalUIManager', () => {
             await promise;
         });
 
-        it('should show warning notice when syncState indicates local-changes', async () => {
+        it('should show unified impact box and list local changes without accordion button when syncState is local-changes', async () => {
+            // Mock local changes with seating chart change
+            window.appState = {
+                classes: [{ id: 'c1', name: '6A', seatingUpdatedAt: Date.now() }]
+            };
+            window.runtimeState = {
+                data: { generatedResults: [] }
+            };
+
             const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: 1726000000000,
+                localDate: Date.now(),
                 remoteStudentCount: 28,
                 localStudentCount: 28,
-                syncState: 'local-changes'
+                syncState: 'local-changes',
+                lastSyncTime: 1726000000000
             });
 
             const modal = document.getElementById('restoreConfirmationModal');
-            expect(modal.querySelector('.restore-safety-notice.warning')).not.toBeNull();
-            expect(modal.textContent).toContain('Vous avez des modifications locales non sauvegardées');
+            expect(modal.querySelector('.restore-impact-box.warning')).not.toBeNull();
+            expect(modal.textContent).toContain('Sera remplacé sur cet appareil');
+
+            // No unnecessary accordion button
+            expect(document.getElementById('modalAlertDetailsBtn')).toBeNull();
+
+            // Directly lists seating chart change and safety assurance
+            const impactBox = modal.querySelector('.restore-impact-box.warning');
+            expect(impactBox.textContent).toContain('Plan de classe réorganisé');
+            expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
+
+            // Two-line date display: relative stat and exact timestamp
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-exact-date')).not.toBeNull();
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-exact-date')).not.toBeNull();
+
+            // Primary button has no duplicate icon
+            const okBtn = document.getElementById('restoreConfirmOkBtn');
+            expect(okBtn.querySelector('iconify-icon')).toBeNull();
+            expect(okBtn.textContent.trim()).toBe('Restaurer');
 
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
             cancelBtn.click();
             await promise;
+
+            delete window.appState;
+            delete window.runtimeState;
         });
     });
 

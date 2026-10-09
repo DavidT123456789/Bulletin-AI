@@ -571,6 +571,8 @@ export const GeneralListeners = {
                         remoteClassCount: summary.classCount,
                         localStudentCount,
                         localClassCount,
+                        localDate: parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null,
+                        lastSyncTime: SyncService.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || null,
                         providerName: SyncService.currentProviderName || 'google',
                         syncState: SyncService._lastSyncState || (typeof SyncService._computeSyncState === 'function' ? SyncService._computeSyncState() : null)
                     });

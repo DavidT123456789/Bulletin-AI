@@ -1404,7 +1404,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.style.transition).toBeDefined();
         });
 
-        it('devrait déclencher un rebond élastique sur le bord droit et le bord bas', () => {
+        it('devrait déclencher un rebond élastique sur le bord droit et le bord bas', async () => {
             const gridArea = document.getElementById('scGridArea');
             const board = document.getElementById('scClassroomBoard');
 
@@ -1434,6 +1434,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const touchEnd = new Event('touchend');
             touchEnd.touches = [];
             gridArea.dispatchEvent(touchEnd);
+            await new Promise(r => setTimeout(r, 100));
             expect(board.style.transform).toBe('translate3d(0, 0, 0)');
 
             // 2. Bord bas : scrollTop est au max (299px), glissement vers le haut (deltaY < 0)
@@ -1454,6 +1455,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const touchEnd2 = new Event('touchend');
             touchEnd2.touches = [];
             gridArea.dispatchEvent(touchEnd2);
+            await new Promise(r => setTimeout(r, 100));
             expect(board.style.transform).toBe('translate3d(0, 0, 0)');
         });
 
