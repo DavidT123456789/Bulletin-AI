@@ -303,6 +303,49 @@ export const SeatingChartManager = {
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
 
+        const sidebar = document.getElementById('scSidebar');
+        if (sidebar && !sidebar._hasDragDropListeners) {
+            sidebar._hasDragDropListeners = true;
+            let sidebarDragDepth = 0;
+
+            sidebar.addEventListener('dragenter', (e) => {
+                if (this._isLocked) return;
+                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                sidebarDragDepth++;
+                sidebar.classList.add('drag-over');
+            });
+
+            sidebar.addEventListener('dragover', (e) => {
+                if (this._isLocked) return;
+                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                e.preventDefault();
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'move';
+                }
+                if (!sidebar.classList.contains('drag-over')) {
+                    sidebar.classList.add('drag-over');
+                }
+            });
+
+            sidebar.addEventListener('dragleave', (e) => {
+                if (this._isLocked) return;
+                sidebarDragDepth = Math.max(0, sidebarDragDepth - 1);
+                if (sidebarDragDepth === 0 || !sidebar.contains(e.relatedTarget)) {
+                    sidebarDragDepth = 0;
+                    sidebar.classList.remove('drag-over');
+                }
+            });
+
+            sidebar.addEventListener('drop', (e) => {
+                sidebarDragDepth = 0;
+                sidebar.classList.remove('drag-over');
+                if (this._isLocked) return;
+                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                e.preventDefault();
+                this._handleRemoveFromSidebarDrop();
+            });
+        }
+
         const gridArea = document.getElementById('scGridArea');
         gridArea?.addEventListener('dblclick', (e) => {
             if (!e.target.closest('.sc-cell') && !e.target.closest('.sc-desk')) {
@@ -1430,19 +1473,18 @@ export const SeatingChartManager = {
             const chip = document.querySelector(`.sc-student-chip[data-result-id="${resultId}"]`);
             if (!chip) return;
             chip.classList.add('sc-chip-returning');
+            chip.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
             chip.addEventListener('animationend', () => chip.classList.remove('sc-chip-returning'), { once: true });
         });
     },
 
     _animateCounterBump() {
-        ['scFooterInfo', 'scSidebarTitle'].forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.classList.remove('sc-counter-bump');
-            void el.offsetWidth;
-            el.classList.add('sc-counter-bump');
-            el.addEventListener('animationend', () => el.classList.remove('sc-counter-bump'), { once: true });
-        });
+        const badge = document.querySelector('#scSidebarTitle .sc-dynamic-value');
+        if (!badge) return;
+        badge.classList.remove('sc-counter-bump');
+        void badge.offsetWidth;
+        badge.classList.add('sc-counter-bump');
+        badge.addEventListener('animationend', () => badge.classList.remove('sc-counter-bump'), { once: true });
     },
 
     /** Lock/Unlock morph animation */
@@ -1628,6 +1670,7 @@ export const SeatingChartManager = {
         cell.addEventListener('dragend', () => {
             cell.classList.remove('dragging');
             this._dragSource = null;
+            document.getElementById('scSidebar')?.classList.remove('drag-over');
         });
 
         this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
@@ -3408,8 +3451,18 @@ export const SeatingChartManager = {
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
         );
 
-        const searchTerm = (document.getElementById('scSearchInput')?.value || '').trim();
+        const searchInput = document.getElementById('scSearchInput');
+        let searchTerm = (searchInput?.value || '').trim();
         const currentClassName = this._getCurrentClass()?.name || '';
+
+        if (returningId && searchTerm) {
+            const returnedStudent = this._students.find(s => s.id === returningId);
+            if (returnedStudent && !Utils.matchesStudent(returnedStudent, searchTerm, { currentClassName })) {
+                if (searchInput) searchInput.value = '';
+                document.getElementById('scSearchClear')?.classList.remove('visible');
+                searchTerm = '';
+            }
+        }
 
         const filtered = searchTerm
             ? sorted.filter(s => Utils.matchesStudent(s, searchTerm, { currentClassName }))
@@ -3535,7 +3588,12 @@ export const SeatingChartManager = {
             } else if (unplaced === 0) {
                 sidebarTitle.innerHTML = '<span class="sc-all-placed-title"><iconify-icon icon="solar:check-circle-bold"></iconify-icon><span>Tous les élèves sont placés</span></span>';
             } else {
-                sidebarTitle.innerHTML = `<span>Élèves non placés</span><span class="sc-dynamic-value">${unplaced}</span>`;
+                const existingVal = sidebarTitle.querySelector('.sc-dynamic-value');
+                if (existingVal) {
+                    existingVal.textContent = unplaced;
+                } else {
+                    sidebarTitle.innerHTML = `<span>Élèves non placés</span><span class="sc-dynamic-value">${unplaced}</span>`;
+                }
             }
         }
 
@@ -4470,12 +4528,31 @@ export const SeatingChartManager = {
         if (type === 'cell') {
             this._animateCellRemove(row, col, () => {
                 this._gridState[row][col] = null;
+                this._savePositionsToState();
                 this._renderGrid();
+                this._haptic(12);
                 this._renderSidebar(resultId);
                 this._updateFooter();
                 this._updateSidebarLockState();
-                this._savePositionsToState();
                 this._onRemovalComplete();
+
+                if (this._isMobileView() && window.UI?.showNotification) {
+                    window.UI.showNotification('Élève retiré du plan', 'info', 4000, {
+                        group: 'sc-undo-toast',
+                        replaceExisting: true,
+                        bypassCoalescing: true,
+                        icon: 'solar:undo-left-round-linear',
+                        action: {
+                            label: 'Annuler',
+                            onClick: () => {
+                                this._undo();
+                                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                                    try { navigator.vibrate(15); } catch (_) {}
+                                }
+                            }
+                        }
+                    });
+                }
             });
         } else if (type === 'multi-cell') {
             const rows = this._getRows();
@@ -4502,10 +4579,31 @@ export const SeatingChartManager = {
             setTimeout(() => {
                 this._savePositionsToState();
                 this._renderGrid();
+                this._haptic(15);
                 this._renderSidebar();
                 this._updateFooter();
                 this._updateSidebarLockState();
                 this._onRemovalComplete();
+                this._clearSelection();
+
+                if (this._isMobileView() && window.UI?.showNotification) {
+                    const count = removedIds.length;
+                    window.UI.showNotification(`${count} élève${count > 1 ? 's' : ''} retiré${count > 1 ? 's' : ''} du plan`, 'info', 4000, {
+                        group: 'sc-undo-toast',
+                        replaceExisting: true,
+                        bypassCoalescing: true,
+                        icon: 'solar:undo-left-round-linear',
+                        action: {
+                            label: 'Annuler',
+                            onClick: () => {
+                                this._undo();
+                                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                                    try { navigator.vibrate(15); } catch (_) {}
+                                }
+                            }
+                        }
+                    });
+                }
             }, Math.min(delay * 30 + 300, 600));
         }
 

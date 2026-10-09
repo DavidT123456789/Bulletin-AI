@@ -2217,6 +2217,139 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(gridArea.scrollTop).toBeGreaterThan(0);
         });
     });
+
+    describe('Glisser-déposer vers la réserve / panneau latéral (Unseating via Sidebar Drop)', () => {
+        let testClass;
+
+        beforeEach(() => {
+            testClass = ClassManager.createClass('4ème B');
+            appState.currentClassId = testClass.id;
+            userSettings.academic.currentClassId = testClass.id;
+
+            appState.generatedResults = [
+                { id: 's-drop-1', classId: testClass.id, nom: 'Curie', prenom: 'Marie', seatingPosition: { row: 0, col: 0 } },
+                { id: 's-drop-2', classId: testClass.id, nom: 'Pasteur', prenom: 'Louis', seatingPosition: { row: 0, col: 1 } },
+                { id: 's-drop-3', classId: testClass.id, nom: 'Lovelace', prenom: 'Ada', seatingPosition: null }
+            ];
+
+            document.body.innerHTML = `
+                <div id="seatingChartView" data-locked="false">
+                    <div class="sc-sidebar" id="scSidebar">
+                        <div class="sc-sidebar-toolbar">
+                            <div id="scLockBtn" class="sc-toggle-switch"></div>
+                            <button id="scUndoBtn" disabled></button>
+                            <button id="scRedoBtn" disabled></button>
+                        </div>
+                        <div class="sc-sidebar-header">
+                            <div id="scSidebarTitle"></div>
+                            <span id="scFooterInfo"></span>
+                            <input type="text" id="scSearchInput" class="custom-input">
+                            <button id="scSearchClear"></button>
+                        </div>
+                        <div class="sc-student-list" id="scStudentList"></div>
+                    </div>
+                    <div class="sc-grid-area" id="scGridArea">
+                        <div id="scGridContainer"></div>
+                    </div>
+                </div>
+            `;
+
+            SeatingChartManager._isLocked = false;
+            testClass.seatingLocked = false;
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._initGrid(2, 2);
+            SeatingChartManager._loadPositionsFromState();
+            SeatingChartManager._renderGrid();
+            SeatingChartManager._renderSidebar();
+            SeatingChartManager._setupEventListeners();
+        });
+
+        it('devrait ajouter la classe drag-over sur la sidebar lors du dragenter/dragover d\'un élève du plan', () => {
+            const sidebar = document.getElementById('scSidebar');
+            expect(sidebar.classList.contains('drag-over')).toBe(false);
+
+            SeatingChartManager._dragSource = { type: 'cell', resultId: 's-drop-1', row: 0, col: 0 };
+
+            const dragEnterEv = new Event('dragenter', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dragEnterEv);
+            expect(sidebar.classList.contains('drag-over')).toBe(true);
+
+            const dragOverEv = new Event('dragover', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dragOverEv);
+            expect(dragOverEv.defaultPrevented).toBe(true);
+            expect(sidebar.classList.contains('drag-over')).toBe(true);
+
+            const dragLeaveEv = new Event('dragleave', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dragLeaveEv);
+            expect(sidebar.classList.contains('drag-over')).toBe(false);
+        });
+
+        it('devrait désassigner un élève et le replacer dans la réserve lors du drop sur la sidebar', () => {
+            const sidebar = document.getElementById('scSidebar');
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+
+            SeatingChartManager._dragSource = { type: 'cell', resultId: 's-drop-1', row: 0, col: 0 };
+
+            vi.useFakeTimers();
+            const dropEv = new Event('drop', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dropEv);
+
+            expect(dropEv.defaultPrevented).toBe(true);
+            vi.advanceTimersByTime(400);
+
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(sidebar.classList.contains('drag-over')).toBe(false);
+
+            // Vérifier que l'état appState est bien mis à jour
+            const studentResult = appState.generatedResults.find(r => r.id === 's-drop-1');
+            expect(studentResult.seatingPosition).toBeNull();
+
+            // Vérifier que l'élève apparaît dans la réserve non placée
+            const unplaced = SeatingChartManager._getUnplacedStudents();
+            expect(unplaced.some(s => s.id === 's-drop-1')).toBe(true);
+
+            vi.useRealTimers();
+        });
+
+        it('devrait supporter le drop multi-élèves sur la sidebar pour désassigner plusieurs élèves', () => {
+            const sidebar = document.getElementById('scSidebar');
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+            expect(SeatingChartManager._gridState[0][1]).toBe('s-drop-2');
+
+            SeatingChartManager._selectedChipIds = ['s-drop-1', 's-drop-2'];
+            SeatingChartManager._dragSource = { type: 'multi-cell', ids: ['s-drop-1', 's-drop-2'] };
+
+            vi.useFakeTimers();
+            const dropEv = new Event('drop', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dropEv);
+
+            expect(dropEv.defaultPrevented).toBe(true);
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[0][1]).toBeNull();
+
+            vi.advanceTimersByTime(400);
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+
+            const r1 = appState.generatedResults.find(r => r.id === 's-drop-1');
+            const r2 = appState.generatedResults.find(r => r.id === 's-drop-2');
+            expect(r1.seatingPosition).toBeNull();
+            expect(r2.seatingPosition).toBeNull();
+
+            vi.useRealTimers();
+        });
+
+        it('ne doit pas autoriser le drop sur la sidebar si le plan est verrouillé (Consultation)', () => {
+            const sidebar = document.getElementById('scSidebar');
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._dragSource = { type: 'cell', resultId: 's-drop-1', row: 0, col: 0 };
+
+            const dropEv = new Event('drop', { bubbles: true, cancelable: true });
+            sidebar.dispatchEvent(dropEv);
+
+            expect(dropEv.defaultPrevented).toBe(false);
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+        });
+    });
 });
 
 
