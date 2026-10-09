@@ -301,37 +301,6 @@
     pointer-events: none;
 }
 
-/* ────────── PROGRESS BAR ────────── */
-.sc-progress-track {
-    position: fixed;
-    top: 55px; /* Overlaps exactly on the header 1px border */
-    left: 0;
-    width: 100%;
-    z-index: 800; /* Above header (700), below modal-backdrop (900) */
-    height: 1px;
-    background: var(--border-color);
-    flex-shrink: 0;
-    overflow: visible; /* To allow glow effect */
-    transition: opacity 0.5s var(--ease-material), height 0.5s var(--ease-spring);
-}
-
-.sc-progress-track.sc-progress-complete {
-    opacity: 0;
-}
-
-.sc-progress-fill {
-    height: 2px; /* Légèrement plus épaisse que la piste pour accentuer la dynamique */
-    transform: translateY(-0.5px); /* Centre le remplissage de 2px sur la piste de 1px */
-    width: 0%;
-    background: var(--primary-color);
-    border-radius: 0 2px 2px 0;
-    transition: width 0.5s var(--ease-spring), background-color 0.5s var(--ease-material);
-}
-
-.sc-progress-fill[data-ratio="full"] {
-    background: var(--success-color);
-}
-
 /* Auto-place — Gentle icon waggle when empty */
 @keyframes scIconWaggle {
     0%, 30%, 100% {
@@ -1533,13 +1502,6 @@
     padding-bottom: var(--content-padding-x, 24px);
 }
 
-/* Progress bar: hidden in locked mode — it's an editing affordance */
-#seatingChartView[data-locked="true"] .sc-progress-track {
-    opacity: 0;
-    height: 0;
-    pointer-events: none;
-}
-
 /* Unplaced indicator styling */
 .sc-unplaced-hint {
     display: inline-flex;
@@ -2119,7 +2081,6 @@
 
     /* ── 4. Hide interactive elements ── */
     .sc-toolbar,
-    .sc-progress-track,
     .sc-sidebar,
     .sc-cell-remove,
     .sc-floating-actions,

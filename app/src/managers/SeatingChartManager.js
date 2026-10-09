@@ -100,7 +100,6 @@ export const SeatingChartManager = {
         view.id = 'seatingChartView';
         view.style.display = 'none';
         view.innerHTML = `
-            <div class="sc-progress-track"><div class="sc-progress-fill" id="scProgressFill"></div></div>
             <div class="sc-body">
                 <div class="sc-sidebar" id="scSidebar">
                     <div class="sc-sidebar-toolbar" id="scSidebarToolbar">
@@ -3605,24 +3604,6 @@ export const SeatingChartManager = {
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
         this._prevPlacedCount = placed;
-
-        const fill = document.getElementById('scProgressFill');
-        if (fill) {
-            const ratio = total > 0 ? Math.min(100, (placedActive / total) * 100) : 0;
-            fill.style.width = `${ratio}%`;
-            const isFull = placedActive >= total && total > 0;
-            fill.dataset.ratio = isFull ? 'full' : '';
-            const track = fill.closest('.sc-progress-track');
-            if (track) {
-                if (isFull) {
-                    clearTimeout(this._progressFadeTimer);
-                    this._progressFadeTimer = setTimeout(() => track.classList.add('sc-progress-complete'), 2000);
-                } else {
-                    clearTimeout(this._progressFadeTimer);
-                    track.classList.remove('sc-progress-complete');
-                }
-            }
-        }
 
         this._updateStatusPill();
     },
