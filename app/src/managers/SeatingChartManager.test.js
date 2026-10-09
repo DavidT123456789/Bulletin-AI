@@ -2264,24 +2264,28 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._setupEventListeners();
         });
 
-        it('devrait ajouter la classe drag-over sur la sidebar lors du dragenter/dragover d\'un élève du plan', () => {
+        it('devrait ajouter la classe drag-over sur la sidebar et sc-drag-over-sidebar sur body lors du dragenter/dragover d\'un élève du plan', () => {
             const sidebar = document.getElementById('scSidebar');
             expect(sidebar.classList.contains('drag-over')).toBe(false);
+            expect(document.body.classList.contains('sc-drag-over-sidebar')).toBe(false);
 
             SeatingChartManager._dragSource = { type: 'cell', resultId: 's-drop-1', row: 0, col: 0 };
 
             const dragEnterEv = new Event('dragenter', { bubbles: true, cancelable: true });
             sidebar.dispatchEvent(dragEnterEv);
             expect(sidebar.classList.contains('drag-over')).toBe(true);
+            expect(document.body.classList.contains('sc-drag-over-sidebar')).toBe(true);
 
             const dragOverEv = new Event('dragover', { bubbles: true, cancelable: true });
             sidebar.dispatchEvent(dragOverEv);
             expect(dragOverEv.defaultPrevented).toBe(true);
             expect(sidebar.classList.contains('drag-over')).toBe(true);
+            expect(document.body.classList.contains('sc-drag-over-sidebar')).toBe(true);
 
             const dragLeaveEv = new Event('dragleave', { bubbles: true, cancelable: true });
             sidebar.dispatchEvent(dragLeaveEv);
             expect(sidebar.classList.contains('drag-over')).toBe(false);
+            expect(document.body.classList.contains('sc-drag-over-sidebar')).toBe(false);
         });
 
         it('devrait désassigner un élève et le replacer dans la réserve lors du drop sur la sidebar', () => {
@@ -2348,6 +2352,75 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             expect(dropEv.defaultPrevented).toBe(false);
             expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+        });
+
+        it('devrait déclencher la classe sc-sidebar-receiving lors de l\'appel à _pulseSidebarReceiving', () => {
+            const sidebar = document.getElementById('scSidebar');
+            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
+
+            SeatingChartManager._pulseSidebarReceiving();
+            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(true);
+
+            sidebar.dispatchEvent(new Event('animationend'));
+            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
+        });
+
+        it('devrait déclencher le pulse d\'accueil du volet lors de la désassignation via la croix (_removeFromCell)', () => {
+            const sidebar = document.getElementById('scSidebar');
+            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
+
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._removeFromCell(0, 0);
+
+            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(true);
+        });
+
+        it('devrait exécuter _flyStudentToSidebar et nettoyer le token volant', () => {
+            const cell = document.createElement('div');
+            cell.className = 'sc-cell occupied';
+            cell.dataset.row = '0';
+            cell.dataset.col = '0';
+            document.body.appendChild(cell);
+
+            let completed = false;
+            SeatingChartManager._flyStudentToSidebar(cell, () => {
+                completed = true;
+            });
+
+            const flyer = document.querySelector('.sc-flight-token');
+            expect(flyer).not.toBeNull();
+
+            // Simuler la fin de transition
+            flyer.dispatchEvent(new Event('transitionend'));
+            expect(completed).toBe(true);
+            expect(document.querySelector('.sc-flight-token')).toBeNull();
+
+            cell.remove();
+        });
+
+        it('devrait ignorer l\'animation de vol si prefers-reduced-motion est activé', () => {
+            const originalMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockImplementation(query => ({
+                matches: query === '(prefers-reduced-motion: reduce)',
+                media: query,
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(),
+            }));
+
+            const cell = document.createElement('div');
+            let completed = false;
+            SeatingChartManager._flyStudentToSidebar(cell, () => {
+                completed = true;
+            });
+
+            expect(completed).toBe(true);
+            expect(document.querySelector('.sc-flight-token')).toBeNull();
+
+            window.matchMedia = originalMatchMedia;
         });
     });
 });

@@ -312,6 +312,7 @@ export const SeatingChartManager = {
                 if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
                 sidebarDragDepth++;
                 sidebar.classList.add('drag-over');
+                document.body.classList.add('sc-drag-over-sidebar');
             });
 
             sidebar.addEventListener('dragover', (e) => {
@@ -323,6 +324,7 @@ export const SeatingChartManager = {
                 }
                 if (!sidebar.classList.contains('drag-over')) {
                     sidebar.classList.add('drag-over');
+                    document.body.classList.add('sc-drag-over-sidebar');
                 }
             });
 
@@ -332,12 +334,14 @@ export const SeatingChartManager = {
                 if (sidebarDragDepth === 0 || !sidebar.contains(e.relatedTarget)) {
                     sidebarDragDepth = 0;
                     sidebar.classList.remove('drag-over');
+                    document.body.classList.remove('sc-drag-over-sidebar');
                 }
             });
 
             sidebar.addEventListener('drop', (e) => {
                 sidebarDragDepth = 0;
                 sidebar.classList.remove('drag-over');
+                document.body.classList.remove('sc-drag-over-sidebar');
                 if (this._isLocked) return;
                 if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
                 e.preventDefault();
@@ -1344,6 +1348,77 @@ export const SeatingChartManager = {
         setTimeout(done, 350);
     },
 
+    /** Ballistic flight animation from cell directly toward unplaced sidebar */
+    _flyStudentToSidebar(cell, onComplete) {
+        const sidebar = document.getElementById('scSidebar');
+        if (!sidebar || !cell) {
+            onComplete?.();
+            return;
+        }
+
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            onComplete?.();
+            return;
+        }
+
+        const startRect = cell.getBoundingClientRect();
+        const destRect = sidebar.getBoundingClientRect();
+
+        const isMobile = this._isMobileView();
+        const targetX = isMobile
+            ? destRect.left + destRect.width / 2
+            : destRect.right - 40;
+        const targetY = isMobile
+            ? destRect.top + 35
+            : Math.min(Math.max(startRect.top + startRect.height / 2, destRect.top + 80), destRect.bottom - 60);
+
+        const flyer = cell.cloneNode(true);
+        flyer.className = 'sc-cell occupied sc-flight-token';
+        flyer.removeAttribute('id');
+        flyer.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+
+        // Immediately hide content of the originating cell so it detaches cleanly
+        cell.style.opacity = '0';
+        cell.style.pointerEvents = 'none';
+
+        flyer.style.position = 'fixed';
+        flyer.style.left = `${startRect.left}px`;
+        flyer.style.top = `${startRect.top}px`;
+        flyer.style.width = `${startRect.width}px`;
+        flyer.style.height = `${startRect.height}px`;
+        flyer.style.margin = '0';
+        flyer.style.zIndex = '10001';
+        flyer.style.pointerEvents = 'none';
+        flyer.style.transformOrigin = 'center center';
+        flyer.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s cubic-bezier(0.4, 0, 1, 1), filter 0.28s ease';
+
+        document.body.appendChild(flyer);
+
+        this._pulseSidebarReceiving();
+
+        const dx = targetX - (startRect.left + startRect.width / 2);
+        const dy = targetY - (startRect.top + startRect.height / 2);
+
+        requestAnimationFrame(() => {
+            flyer.style.transform = `translate(${dx}px, ${dy}px) scale(0.35) rotate(-10deg)`;
+            flyer.style.opacity = '0';
+            flyer.style.filter = 'blur(1px)';
+        });
+
+        let finished = false;
+        const cleanup = () => {
+            if (finished) return;
+            finished = true;
+            flyer.remove();
+            cell.style.opacity = '';
+            cell.style.pointerEvents = '';
+            onComplete?.();
+        };
+
+        flyer.addEventListener('transitionend', cleanup, { once: true });
+        setTimeout(cleanup, 320);
+    },
+
     // ========================================================================
     // SELECTION — Click-to-select + Click-to-place
     // ========================================================================
@@ -1475,6 +1550,16 @@ export const SeatingChartManager = {
             chip.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
             chip.addEventListener('animationend', () => chip.classList.remove('sc-chip-returning'), { once: true });
         });
+    },
+
+    /** Brief welcoming pulse on sidebar when student is unassigned */
+    _pulseSidebarReceiving() {
+        const sidebar = document.getElementById('scSidebar');
+        if (!sidebar) return;
+        sidebar.classList.remove('sc-sidebar-receiving');
+        void sidebar.offsetWidth;
+        sidebar.classList.add('sc-sidebar-receiving');
+        sidebar.addEventListener('animationend', () => sidebar.classList.remove('sc-sidebar-receiving'), { once: true });
     },
 
     _animateCounterBump() {
@@ -1670,6 +1755,7 @@ export const SeatingChartManager = {
             cell.classList.remove('dragging');
             this._dragSource = null;
             document.getElementById('scSidebar')?.classList.remove('drag-over');
+            document.body.classList.remove('sc-drag-over-sidebar');
         });
 
         this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
@@ -3535,6 +3621,7 @@ export const SeatingChartManager = {
             chip.addEventListener('dragend', () => {
                 chip.classList.remove('dragging');
                 this._dragSource = null;
+                document.body.classList.remove('sc-drag-over-sidebar');
             });
 
             chip.addEventListener('click', (e) => {
@@ -3853,8 +3940,9 @@ export const SeatingChartManager = {
         this._snapshotGrid();
 
         const removedId = this._gridState[row][col];
+        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
 
-        this._animateCellRemove(row, col, () => {
+        this._flyStudentToSidebar(cell, () => {
             this._gridState[row][col] = null;
             this._savePositionsToState();
             this._renderGrid();
@@ -4084,6 +4172,7 @@ export const SeatingChartManager = {
     _cleanupTouch() {
         this._removeTouchGhost();
         this._touchSourceInfo = null;
+        document.body.classList.remove('sc-drag-over-sidebar');
         document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
         document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
     },
@@ -4092,10 +4181,12 @@ export const SeatingChartManager = {
         document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
         const sidebar = document.querySelector('.sc-sidebar');
         if (sidebar) sidebar.classList.remove('drag-over');
+        document.body.classList.remove('sc-drag-over-sidebar');
 
         if (this._isTouchOverSidebar(x, y)) {
             if (sidebar && !this._isLocked && this._touchSourceInfo && (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell')) {
                 sidebar.classList.add('drag-over');
+                document.body.classList.add('sc-drag-over-sidebar');
             }
         } else {
             const cell = this._getCellUnderPoint(x, y);
@@ -4423,6 +4514,7 @@ export const SeatingChartManager = {
 
         const onDragEnd = () => {
             clone.remove();
+            document.body.classList.remove('sc-drag-over-sidebar');
             sourceEl.removeEventListener('drag', onDrag);
             sourceEl.removeEventListener('dragend', onDragEnd);
         };
@@ -4438,6 +4530,7 @@ export const SeatingChartManager = {
 
         UI.showCustomConfirm('Les élèves seront retirés du plan mais resteront dans la liste.', () => {
             this._snapshotGrid();
+            this._pulseSidebarReceiving();
             const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
 
             occupiedCells.forEach((cell, index) => {

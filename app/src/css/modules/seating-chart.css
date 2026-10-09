@@ -105,11 +105,11 @@
     100% { transform: scale(1); }
 }
 
-/* Cell removed — shrink + float up */
+/* Cell removed — directional slide toward sidebar on the left */
 @keyframes scCellRemove {
-    0%   { opacity: 1; transform: scale(1) translateY(0); }
-    40%  { opacity: 0.7; transform: scale(0.85) translateY(-6px); }
-    100% { opacity: 0; transform: scale(0.3) translateY(-20px); }
+    0%   { opacity: 1; transform: scale(1) translateX(0); }
+    35%  { opacity: 0.85; transform: scale(0.92) translateX(-18px); }
+    100% { opacity: 0; transform: scale(0.6) translateX(-50px); }
 }
 
 /* Cell swap — quick pulse glow */
@@ -119,15 +119,21 @@
     100% { box-shadow: var(--shadow-sm); transform: scale(1); }
 }
 
-/* Sidebar chip re-entrance (after removal from grid) */
+/* Sidebar chip re-entrance (after removal from grid) — fluid spring entrance */
 @keyframes scChipReturn {
-    from {
+    0% {
         opacity: 0;
-        transform: translateX(-12px) scale(0.9);
+        transform: translateX(-18px) scale(0.92);
+        background-color: var(--highlight-standard-glow, rgba(255, 255, 255, 0.08));
     }
-    to {
+    60% {
+        opacity: 1;
+        transform: translateX(4px) scale(1.02);
+    }
+    100% {
         opacity: 1;
         transform: translateX(0) scale(1);
+        background-color: transparent;
     }
 }
 
@@ -1207,13 +1213,40 @@
     opacity: 1 !important;
     border: 1.5px solid var(--highlight-standard-border) !important;
     transform: translate(-50%, -50%) scale(1.05) !important;
-    transition: none !important;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     overflow: visible !important;
 }
 
 [data-theme="dark"] .sc-drag-clone {
     border-color: rgba(255, 255, 255, 0.65) !important;
     box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Atténuation fluide du clone au survol de la réserve pour laisser la place au réceptacle et ne pas masquer la liste */
+body.sc-drag-over-sidebar .sc-drag-clone,
+body:has(#scSidebar.drag-over) .sc-drag-clone {
+    opacity: 0.22 !important;
+    transform: translate(-50%, -50%) scale(0.82) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+}
+
+body.sc-drag-over-sidebar .sc-touch-ghost,
+body:has(#scSidebar.drag-over) .sc-touch-ghost {
+    opacity: 0.22 !important;
+    transform: translate(-50%, -85%) scale(0.82) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Ballistic flight token (suction toward unplaced sidebar) */
+.sc-flight-token {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 1.5px var(--highlight-standard-border) !important;
+    background: var(--surface-color) !important;
+    border-radius: var(--radius-md) !important;
+    will-change: transform, opacity;
+}
+
+[data-theme="dark"] .sc-flight-token {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 0 0 1.5px rgba(255, 255, 255, 0.7) !important;
 }
 
 /* Touch drag ghost — follows finger */
@@ -3398,6 +3431,46 @@
         border-top-color: var(--highlight-standard-border) !important;
         box-shadow: 0 -4px 24px var(--highlight-standard-glow),
                     var(--shadow-md) !important;
+    }
+}
+
+/* Sidebar brief welcoming glow when student returns via cross or clear */
+@keyframes scSidebarReceivePulse {
+    0% {
+        border-right-color: var(--highlight-standard-border);
+        box-shadow: 4px 0 24px var(--highlight-standard-glow), var(--shadow-md);
+    }
+    50% {
+        border-right-color: var(--highlight-standard-border);
+        box-shadow: 4px 0 20px var(--highlight-standard-glow), var(--shadow-md);
+    }
+    100% {
+        border-right-color: var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+.sc-sidebar.sc-sidebar-receiving {
+    animation: scSidebarReceivePulse 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 768px) {
+    @keyframes scSidebarReceivePulseMobile {
+        0% {
+            border-top-color: var(--highlight-standard-border);
+            box-shadow: 0 -4px 24px var(--highlight-standard-glow), var(--shadow-md);
+        }
+        50% {
+            border-top-color: var(--highlight-standard-border);
+            box-shadow: 0 -4px 20px var(--highlight-standard-glow), var(--shadow-md);
+        }
+        100% {
+            border-top-color: var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+    }
+    .sc-sidebar.sc-sidebar-receiving {
+        animation-name: scSidebarReceivePulseMobile;
     }
 }
 
