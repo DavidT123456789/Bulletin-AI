@@ -788,23 +788,37 @@
     }
 }
 
-/* ────────── FLOATING STATUS PILL ────────── */
-.sc-floating-status {
+/* ────────── FLOATING TOP CONTROLS (TOP-RIGHT) ────────── */
+.sc-floating-controls {
     position: absolute;
     top: calc(56px + var(--content-padding-x, 24px));
     right: var(--content-padding-x, 24px);
-    display: flex;
-    justify-content: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    pointer-events: none;
+    transition: top 0.35s cubic-bezier(0.25, 1, 0.3, 1), right 0.35s cubic-bezier(0.25, 1, 0.3, 1);
+}
+
+/* ────────── FLOATING STATUS PILL ────────── */
+.sc-floating-status {
+    position: relative;
+    display: inline-flex;
     align-items: center;
     height: 38px;
     padding: 0;
     pointer-events: none;
     z-index: 100;
+    flex-shrink: 0;
+}
+
+#seatingChartView[data-locked="true"] .sc-floating-status {
+    display: none !important;
 }
 
 #seatingChartView[data-locked="false"] .sc-floating-status {
-    right: calc(var(--content-padding-x, 24px) + 38px + 8px);
-    transition: right 0.35s cubic-bezier(0.25, 1, 0.3, 1);
+    display: inline-flex;
 }
 
 /* ────────── STATUS PILL (TOP-LEFT, ACTIONABLE CAPSULE) ────────── */
@@ -2102,6 +2116,7 @@
     .sc-sidebar,
     .sc-cell-remove,
     .sc-floating-actions,
+    .sc-floating-controls,
     .avatar-selection-overlay,
     .sc-floating-status,
     .sc-onboarding-hint,
@@ -2559,27 +2574,47 @@
         align-items: center !important;
     }
 
-    .sc-floating-status {
+    .sc-floating-controls {
         top: calc(56px + 10px) !important;
         left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        pointer-events: none !important;
+    }
+
+    #seatingChartView[data-locked="true"] .sc-floating-controls {
+        justify-content: flex-end !important;
+    }
+
+    .sc-floating-status {
+        top: auto !important;
+        left: auto !important;
         right: auto !important;
         transform: none !important;
         height: 34px !important;
-        max-width: calc(100vw - 64px) !important;
+        max-width: calc(100vw - 120px) !important;
         pointer-events: none;
         display: inline-flex !important;
         align-items: center !important;
     }
 
     #seatingChartView[data-locked="false"] .sc-floating-status {
-        left: 12px !important;
+        display: inline-flex !important;
+        left: auto !important;
         right: auto !important;
         transform: none !important;
     }
 
-    .sc-floating-actions {
-        top: calc(56px + 10px) !important;
-        right: 12px !important;
+    #seatingChartView[data-locked="true"] .sc-floating-status {
+        display: none !important;
+    }
+
+    .sc-floating-actions,
+    .sc-floating-controls .sc-floating-actions {
+        top: auto !important;
+        right: auto !important;
         left: auto !important;
         height: 34px !important;
         padding: 2px !important;
@@ -3348,7 +3383,15 @@
     transform: translateY(0);
     z-index: 100;
     visibility: visible;
+    flex-shrink: 0;
     transition: opacity 0.35s ease, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1), background var(--transition-fast);
+}
+
+.sc-floating-controls .sc-floating-actions {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
 }
 
 /* In Edit mode: hide orientation & print in floating capsule (already accessible in sidebar) */
@@ -4337,5 +4380,13 @@
         display: none !important;
     }
 }
+
+/* Responsive safety: hide status pill on narrow screens if floating search is open */
+@media (max-width: 600px) {
+    #seatingChartView .sc-floating-controls:has(.sc-floating-search.open) .sc-floating-status {
+        display: none !important;
+    }
+}
+
 
 
