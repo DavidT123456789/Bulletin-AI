@@ -173,6 +173,9 @@ export const SeatingChartManager = {
                             </div>
                         </div>
                     </div>
+                    <div class="sc-sidebar-status" id="scSidebarStatus">
+                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
+                    </div>
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
                         <div class="sc-search-box">
@@ -196,39 +199,31 @@ export const SeatingChartManager = {
                     </div>
                 </div>
 
-                <!-- Floating Top Controls: Status pill (edit mode) + Actions capsule -->
-                <div class="sc-floating-controls" id="scFloatingControls">
-                    <!-- Top Capacity Capsule (Edit Mode: on the right above grid) -->
-                    <div class="sc-floating-status" id="scFloatingStatus">
-                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
-                    </div>
-
-                    <!-- Floating Actions Capsule -->
-                    <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
-                        <div class="sc-floating-search" id="scFloatingSearch">
-                            <button class="sc-action-btn sc-search-toggle-btn" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/) " data-tooltip="Rechercher (/)">
-                                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                <!-- Floating Actions Capsule (Top-Right) -->
+                <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
+                    <div class="sc-floating-search" id="scFloatingSearch">
+                        <button class="sc-action-btn sc-search-toggle-btn" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/) " data-tooltip="Rechercher (/)">
+                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        </button>
+                        <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
+                            <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
+                            <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                            <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
+                            <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
-                            <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
-                                <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
-                                <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
-                                <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
-                                <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
-                                    <iconify-icon icon="ph:x"></iconify-icon>
-                                </button>
-                            </div>
-                            <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
                         </div>
-                        <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
-                            <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
-                        </button>
-                        <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
-                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                        </button>
-                        <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
-                            <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                        </button>
+                        <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
                     </div>
+                    <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
+                        <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
+                    </button>
+                    <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                    </button>
+                    <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
+                        <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                    </button>
                 </div>
             </div>
         `;
