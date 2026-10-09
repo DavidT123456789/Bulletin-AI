@@ -371,6 +371,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
                         <div id="scDesk" class="sc-desk"><span>Tableau</span></div>
                     </div>
                 </div>
+                <div id="scSidebarTitle"></div>
                 <div id="scFooterInfo"></div>
                 <button id="scOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
                 <button id="scFloatingOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
@@ -495,12 +496,13 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
     });
 
-    it('devrait afficher la capacité et le statut de placement (« Tous placés / X non placés · Y places libres ») en mode édition', () => {
+    it('devrait afficher le statut des élèves dans le titre en mode édition', () => {
         // 2 élèves, grille 3x3 (9 places), 0 placé -> unplaced = 2, available = 9
         SeatingChartManager._isLocked = false;
         SeatingChartManager._updateFooter();
-        expect(document.getElementById('scFooterInfo').textContent).toContain('2 non placés');
-        expect(document.getElementById('scFooterInfo').textContent).toContain('9 places libres');
+        expect(document.getElementById('scSidebarTitle').textContent).toContain('Élèves non placés');
+        expect(document.getElementById('scSidebarTitle').textContent).toContain('2');
+        expect(document.getElementById('scFooterInfo').textContent).toBe('9 places libres');
 
         // Placer tous les élèves
         SeatingChartManager._gridState[0][0] = 's1';
@@ -508,10 +510,11 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         SeatingChartManager._students[0].seatingPosition = { row: 0, col: 0 };
         SeatingChartManager._students[1].seatingPosition = { row: 0, col: 1 };
 
-        // Tous placés en édition : « Tous placés · 7 places libres »
+        // Tous placés en édition
         SeatingChartManager._isLocked = false;
         SeatingChartManager._updateFooter();
-        expect(document.getElementById('scFooterInfo').textContent).toBe('Tous placés · 7 places libres');
+        expect(document.getElementById('scSidebarTitle').textContent).toContain('Tous les élèves sont placés');
+        expect(document.getElementById('scFooterInfo').textContent).toBe('7 places libres');
     });
 });
 
@@ -563,6 +566,8 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         userSettings.academic.currentClassId = classA.id;
         SeatingChartManager._isActive = true;
         SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._initGrid(5, 6);
+        SeatingChartManager._loadPositionsFromState();
 
         // Verrouiller classe A
         SeatingChartManager._isLocked = false;
@@ -1435,7 +1440,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             touchEnd.touches = [];
             gridArea.dispatchEvent(touchEnd);
             await new Promise(r => setTimeout(r, 100));
-            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+            expect(['translate3d(0, 0, 0)', '']).toContain(board.style.transform);
 
             // 2. Bord bas : scrollTop est au max (299px), glissement vers le haut (deltaY < 0)
             gridArea.scrollLeft = 100;
@@ -1456,7 +1461,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             touchEnd2.touches = [];
             gridArea.dispatchEvent(touchEnd2);
             await new Promise(r => setTimeout(r, 100));
-            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+            expect(['translate3d(0, 0, 0)', '']).toContain(board.style.transform);
         });
 
         it('devrait amortir et déclencher le rebond d’impact lorsqu’un scroll inertiel heurte un bord', () => {

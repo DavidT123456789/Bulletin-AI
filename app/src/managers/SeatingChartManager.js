@@ -173,11 +173,9 @@ export const SeatingChartManager = {
                             </div>
                         </div>
                     </div>
-                    <div class="sc-sidebar-status" id="scSidebarStatus">
-                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
-                    </div>
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
+                        <span id="scFooterInfo" style="display: none;" aria-hidden="true"></span>
                         <div class="sc-search-box">
                             <input type="text" id="scSearchInput" class="custom-input" placeholder="Rechercher..." autocomplete="off">
                             <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
@@ -3535,20 +3533,16 @@ export const SeatingChartManager = {
             if (total === 0) {
                 sidebarTitle.innerHTML = '<span>Élèves non placés</span>';
             } else if (unplaced === 0) {
-                sidebarTitle.innerHTML = '<span>Tous les élèves sont placés</span>';
+                sidebarTitle.innerHTML = '<span class="sc-all-placed-title"><iconify-icon icon="solar:check-circle-bold"></iconify-icon><span>Tous les élèves sont placés</span></span>';
             } else {
                 sidebarTitle.innerHTML = `<span>Élèves non placés</span><span class="sc-dynamic-value">${unplaced}</span>`;
             }
         }
 
-        // --- Toolbar Pill Info (Mode Édition : capacité et statut de placement) ---
-        const seatsLabel = `<span class="sc-footer-seats"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
-        if (total === 0) {
-            info.innerHTML = seatsLabel;
-        } else if (unplaced > 0) {
-            info.innerHTML = `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon><span class="sc-unplaced-text"><strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span></span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
-        } else {
-            info.innerHTML = `<span class="sc-footer-all-placed"><iconify-icon icon="solar:check-circle-linear"></iconify-icon><span>Tous placés</span></span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
+        if (info) {
+            info.textContent = availableSeats > 0
+                ? `${availableSeats} place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}`
+                : 'Complet';
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
