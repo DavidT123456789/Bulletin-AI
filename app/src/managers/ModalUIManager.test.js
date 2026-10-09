@@ -470,7 +470,6 @@ describe('ModalUIManager', () => {
             expect(modal.textContent).toContain('305 élèves');
             expect(modal.textContent).toContain('13 classes');
             expect(modal.textContent).toContain('Google Drive');
-            expect(modal.textContent).toContain('Espace sécurisé');
             expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
 
             const okBtn = document.getElementById('saveConfirmOkBtn');

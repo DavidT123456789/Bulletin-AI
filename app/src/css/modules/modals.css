@@ -2553,21 +2553,6 @@
 .save-summary-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-}
-
-.save-card-destination {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.save-card-destination iconify-icon {
-    font-size: 0.95rem;
-    color: var(--primary-color);
 }
 
 .pre-restore-snapshot-row {

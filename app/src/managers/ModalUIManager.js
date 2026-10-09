@@ -1082,10 +1082,6 @@ export const ModalUI = {
                                 <iconify-icon icon="${resolvedProviderIcon}" style="font-size: 0.9em;"></iconify-icon>
                                 <span>${resolvedProviderLabel}</span>
                             </div>
-                            <span class="save-card-destination">
-                                <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
-                                <span>Espace sécurisé</span>
-                            </span>
                         </div>
                         <div class="restore-card-main-stat">
                             ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
