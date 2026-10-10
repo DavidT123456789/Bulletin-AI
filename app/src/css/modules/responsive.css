@@ -228,12 +228,21 @@
         padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 80px;
     }
 
-    /* Fullscreen modals */
+    /* Fullscreen modals - Native iOS Sheet slide presentation */
     .modal-content {
         width: 100%;
         height: 100%;
         max-height: 100%;
         border-radius: 0;
+        transform: translateY(24px);
+    }
+
+    .modal.modal-visible .modal-content {
+        transform: translateY(0);
+    }
+
+    .modal.modal-visible.modal-closing .modal-content {
+        transform: translateY(16px) !important;
     }
 
     .modal-help .modal-content {

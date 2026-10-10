@@ -911,8 +911,8 @@ export const UI = {
     // ====================================================================
 
     // Modal functions delegated to ModalUIManager
-    openModal(modalOrId) { ModalUI.openModal(modalOrId); },
-    closeModal(modalOrId) { ModalUI.closeModal(modalOrId); },
+    openModal(modalOrId, options = {}) { ModalUI.openModal(modalOrId, options); },
+    closeModal(modalOrId, options = {}) { ModalUI.closeModal(modalOrId, options); },
     closeAllModals() { ModalUI.closeAllModals(); },
 
     // Settings form functions delegated to FormUIManager
