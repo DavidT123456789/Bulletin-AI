@@ -50,6 +50,8 @@ export const PromptService = {
 
         if (overrideConfig) {
             iaConfig = overrideConfig;
+        } else if (!usePersonalization) {
+            iaConfig = appState.subjects?.['Générique']?.iaConfig || DEFAULT_PROMPT_TEMPLATES["Générique"]?.iaConfig || DEFAULT_IA_CONFIG;
         } else {
             // Priorité : 
             // 1. 'MonStyle' si présent (c'est le "Custom Profile" de l'utilisateur)

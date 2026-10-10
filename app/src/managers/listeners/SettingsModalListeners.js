@@ -34,16 +34,6 @@ export const SettingsModalListeners = {
      * @private
      */
     _getCurrentSettings() {
-        if (!appState.useSubjectPersonalization) {
-            return {
-                length: DEFAULT_IA_CONFIG.length,
-                tone: 3,
-                styleInstructions: '',
-                enableStyleInstructions: false,
-                voice: 'default',
-                discipline: ''
-            };
-        }
         return {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
             tone: parseInt(DOM.iaToneSlider?.value || 3),
@@ -80,14 +70,15 @@ export const SettingsModalListeners = {
             });
         });
 
-        DOM.personalizationToggle.addEventListener('change', async (e) => {
-            appState.useSubjectPersonalization = e.target.checked;
-            SettingsUIManager.updatePersonalizationState();
-            // Rafraîchir les valeurs affichées (sliders) pour refléter les nouvelles valeurs
-            FormUI.updateSettingsFields();
-            this._updateStudentContextAndPrompt();
-            this._autoResizeStyleInstructions();
-        });
+        if (DOM.personalizationToggle) {
+            DOM.personalizationToggle.addEventListener('change', async (e) => {
+                appState.useSubjectPersonalization = e.target.checked;
+                SettingsUIManager.updatePersonalizationState();
+                FormUI.updateSettingsFields();
+                this._updateStudentContextAndPrompt();
+                this._autoResizeStyleInstructions();
+            });
+        }
 
         // Toggle pour le basculement automatique entre APIs
         if (DOM.enableApiFallbackToggle) {
@@ -328,6 +319,7 @@ export const SettingsModalListeners = {
 
         if (DOM.iaStyleInstructions) {
             DOM.iaStyleInstructions.addEventListener('input', () => {
+                if (DOM.iaStyleInstructions.disabled) return;
                 this._autoResizeStyleInstructions();
                 // [FIX] Ensure MonStyle structure exists before updating
                 if (!appState.subjects['MonStyle']) {
@@ -342,10 +334,12 @@ export const SettingsModalListeners = {
             });
 
             DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
+                if (DOM.iaStyleInstructions.disabled) return;
                 this._updateStudentContextAndPrompt();
             }, 300));
 
             DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
+                if (DOM.iaStyleInstructions.disabled) return;
                 StorageManager.saveAppState();
             }, 1500)); // Save 1.5s after last keystroke
         }

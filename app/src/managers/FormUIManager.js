@@ -37,19 +37,9 @@ export const FormUI = {
      * Met à jour tous les champs des paramètres.
      */
     updateSettingsFields() {
-        const isGenericMode = !appState.useSubjectPersonalization;
-        let iaConfig;
-        let subjectName;
-
-        if (isGenericMode) {
-            subjectName = "Paramètres par défaut";
-            iaConfig = DEFAULT_IA_CONFIG;
-        } else {
-            // Mode personnalisé - utiliser MonStyle
-            subjectName = "Mon Style";
-            const subjectData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
-            iaConfig = subjectData?.iaConfig || DEFAULT_IA_CONFIG;
-        }
+        const subjectName = "Mon Style";
+        const subjectData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
+        const iaConfig = subjectData?.iaConfig || DEFAULT_IA_CONFIG;
 
         DOM.periodSystemRadios.forEach(r => r.checked = r.value === appState.periodSystem);
         DOM.settingsEvolutionThresholdPositive.value = appState.evolutionThresholds.positive;
@@ -62,25 +52,13 @@ export const FormUI = {
         }
         DOM.iaToneSlider.value = iaConfig.tone;
 
-        // [FIX] Always try to get styleInstructions from MonStyle first to prevent data loss
-        // even if iaConfig fallback was triggered due to corrupted structure
-        let styleInstructionsValue = '';
-        if (!isGenericMode) {
-            // Try direct access to MonStyle first
-            styleInstructionsValue = appState.subjects['MonStyle']?.iaConfig?.styleInstructions
-                || iaConfig.styleInstructions
-                || '';
-        }
+        // [FIX] Always preserve styleInstructions and discipline from MonStyle to prevent data loss
+        const monStyleIaConfig = appState.subjects?.['MonStyle']?.iaConfig || iaConfig || {};
+        const styleInstructionsValue = monStyleIaConfig.styleInstructions ?? '';
         DOM.iaStyleInstructions.value = styleInstructionsValue;
-        DOM.iaStyleInstructions?.dispatchEvent?.(new Event('input', { bubbles: true }));
 
         // Load discipline field (optional, for subject-specific vocabulary)
-        let disciplineValue = '';
-        if (!isGenericMode) {
-            disciplineValue = appState.subjects['MonStyle']?.iaConfig?.discipline
-                || iaConfig.discipline
-                || '';
-        }
+        const disciplineValue = monStyleIaConfig.discipline ?? '';
         if (DOM.iaDiscipline) {
             DOM.iaDiscipline.value = disciplineValue;
         }
@@ -91,24 +69,19 @@ export const FormUI = {
 
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            let headerText = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;
-            if (isGenericMode) {
-                headerText += ` <span class="generic-lock-icon tooltip" data-tooltip="Les réglages sont verrouillés sur les valeurs par défaut lorsque la personnalisation est désactivée."><iconify-icon icon="solar:lock-keyhole-linear"></iconify-icon></span>`;
-            }
-            iaStyleHeader.innerHTML = headerText;
+            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;
         }
 
-        const controlsToDisable = [
-            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaStyleInstructions, DOM.iaDiscipline,
+        const controlsToEnable = [
+            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaDiscipline,
             ...document.querySelectorAll('#iaVoiceSelector input'),
             ...document.querySelectorAll('#iaVoiceSelector label')
         ];
-        controlsToDisable.forEach(el => { if (el) el.disabled = isGenericMode; });
+        controlsToEnable.forEach(el => { if (el) el.disabled = false; });
 
-        // Ajouter/retirer la classe disabled sur la carte pour le style visuel
         const controlsPanel = document.getElementById('settings-controls-panel');
-        if (controlsPanel) {
-            controlsPanel.classList.toggle('disabled', isGenericMode);
+        if (controlsPanel?.classList?.toggle) {
+            controlsPanel.classList.toggle('disabled', false);
         }
 
         // Update slider display labels directly (dispatchEvent may fire before SettingsModal listeners are attached)

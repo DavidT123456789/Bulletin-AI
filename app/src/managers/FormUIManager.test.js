@@ -104,7 +104,7 @@ describe('FormUIManager', () => {
         document.getElementById = vi.fn((id) => {
             if (id === 'aiModelDescription') return { innerHTML: '' };
             if (id === 'iaStyleHeader') return { innerHTML: '' };
-            if (id === 'settings-controls-panel') return { classList: { toggle: vi.fn() } };
+            if (id === 'settings-controls-panel') return { classList: { toggle: vi.fn(), remove: vi.fn(), add: vi.fn() } };
             if (id === 'iaLengthSliderValue') return { textContent: '' };
             if (id === 'iaToneSliderValue') return { textContent: '' };
             if (id === 'missingApiKeyWarning') return { style: { display: '' } };
@@ -148,8 +148,8 @@ describe('FormUIManager', () => {
             expect(DOM.settingsEvolutionThresholdPositive.value).toBe(1.5);
         });
 
-        it('should set IA length slider to default in generic mode', () => {
-            appState.useSubjectPersonalization = false;
+        it('should set IA length slider to MonStyle config length', () => {
+            appState.subjects['MonStyle'].iaConfig.length = DEFAULT_IA_CONFIG.length;
             FormUI.updateSettingsFields();
             expect(DOM.iaLengthSlider.value).toBe(DEFAULT_IA_CONFIG.length);
         });
@@ -186,10 +186,27 @@ describe('FormUIManager', () => {
             expect(DOM.iaStyleInstructions.value).toBe('Custom instructions');
         });
 
-        it('should clear style instructions when personalization disabled', () => {
+        it('should retain style instructions from MonStyle even when personalization disabled', () => {
+            appState.useSubjectPersonalization = false;
+            appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Keep my instructions';
+            FormUI.updateSettingsFields();
+            expect(DOM.iaStyleInstructions.value).toBe('Keep my instructions');
+        });
+
+        it('should preserve styleInstructions across multiple disable/enable toggles without data loss', () => {
+            appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Important teacher instructions';
+
+            // 1. Toggled off
             appState.useSubjectPersonalization = false;
             FormUI.updateSettingsFields();
-            expect(DOM.iaStyleInstructions.value).toBe('');
+            expect(DOM.iaStyleInstructions.value).toBe('Important teacher instructions');
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Important teacher instructions');
+
+            // 2. Toggled on
+            appState.useSubjectPersonalization = true;
+            FormUI.updateSettingsFields();
+            expect(DOM.iaStyleInstructions.value).toBe('Important teacher instructions');
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Important teacher instructions');
         });
     });
 

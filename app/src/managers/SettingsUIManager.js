@@ -107,20 +107,20 @@ export const SettingsUIManager = {
 
         const styleData = appState.subjects['MonStyle'];
 
-        styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
-        styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
+        if (DOM.iaLengthSlider) styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
+        if (DOM.iaToneSlider) styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
 
         // [FIX] Preserve existing styleInstructions if DOM field is empty but state has value
         // This prevents data loss when field wasn't properly populated due to loading issues
-        const domValue = DOM.iaStyleInstructions.value;
+        const domValue = DOM.iaStyleInstructions?.value;
         const existingValue = styleData.iaConfig.styleInstructions || '';
         if (domValue || !existingValue) {
-            // Only update if user typed something OR if there was no existing value
-            styleData.iaConfig.styleInstructions = domValue;
+            styleData.iaConfig.styleInstructions = domValue ?? '';
         }
         // else: keep the existing value to prevent accidental data loss
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
         if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
+        if (DOM.iaDiscipline) styleData.iaConfig.discipline = DOM.iaDiscipline.value.trim();
 
         if (DOM.iaStyleInstructionsToggle) {
             styleData.iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
@@ -290,7 +290,6 @@ export const SettingsUIManager = {
      * Met à jour l'état de personnalisation.
      */
     updatePersonalizationState() {
-        // Renamed from useSubjectPersonalization to be generic
         const enabled = appState.useSubjectPersonalization;
         if (DOM.personalizationToggle) {
             DOM.personalizationToggle.checked = enabled;
@@ -302,12 +301,10 @@ export const SettingsUIManager = {
 
         if (DOM.iaStyleInstructionsToggle) {
             DOM.iaStyleInstructionsToggle.checked = styleInstructionsEnabled;
-            DOM.iaStyleInstructionsToggle.disabled = !enabled;
+            DOM.iaStyleInstructionsToggle.disabled = false;
         }
 
-        // Toggle visibility of the info message
-        if (DOM.genericSubjectInfo) {
-            // Use CSS class for smooth transition instead of display: none
+        if (DOM.genericSubjectInfo?.classList) {
             if (enabled) {
                 DOM.genericSubjectInfo.classList.add('collapsed');
             } else {
@@ -315,22 +312,21 @@ export const SettingsUIManager = {
             }
         }
 
-        // Disable/Enable inputs
+        // Main style controls are always enabled
         const inputsToToggle = [
             DOM.iaLengthSlider,
             DOM.iaToneSlider,
-            // DOM.iaStyleInstructions, // Handled separately below
+            DOM.iaDiscipline,
             ...document.querySelectorAll('input[name="iaVoiceRadio"]')
         ];
 
         inputsToToggle.forEach(input => {
-            if (input) input.disabled = !enabled;
+            if (input) input.disabled = false;
         });
 
-        // Specific logic for Style Instructions: Disabled if global OFF OR specific OFF
+        // Specific logic for Style Instructions: Controlled by its dedicated toggle
         if (DOM.iaStyleInstructions) {
-            DOM.iaStyleInstructions.disabled = !enabled || !styleInstructionsEnabled;
-            // Visual feedback
+            DOM.iaStyleInstructions.disabled = !styleInstructionsEnabled;
             if (DOM.iaStyleInstructions.disabled) {
                 DOM.iaStyleInstructions.classList.add('disabled-look');
                 DOM.iaStyleInstructions.parentElement.classList.add('opacity-reduced');
@@ -340,14 +336,11 @@ export const SettingsUIManager = {
             }
         }
 
-        // Add visual class to disabled container
         const controlsPanel = document.getElementById('settings-controls-panel');
         if (controlsPanel) {
-            if (!enabled) controlsPanel.classList.add('disabled');
-            else controlsPanel.classList.remove('disabled');
+            controlsPanel.classList.remove('disabled');
         }
 
-        // Keep header simple - no lock icon needed as the toggle is right there
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
             iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;

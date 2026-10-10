@@ -1738,28 +1738,14 @@
                                     <iconify-icon class="iconify-inline" icon="solar:tuning-2-linear"></iconify-icon>
                                     Style de Rédaction
                                 </h3>
-                                <div class="toggle-switch-container tooltip"
-                                    data-tooltip="Activer pour personnaliser le style de rédaction (Ton, Longueur, Voix, etc.)">
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="personalizationToggle">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
                             </div>
-
-                            <p id="genericSubjectInfo" class="generic-info-card"
-                                style="margin-top: 0; margin-bottom: 20px;">
-                                <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                Activez "Mon Style" pour modifier ces paramètres. Sinon, les réglages par défaut
-                                s'appliquent.
-                            </p>
 
                             <div class="settings-card-content">
 
                                 <div class="form-group">
                                     <label for="iaDiscipline">Ma discipline
                                         <span class="tooltip"
-                                            data-tooltip="Optionnel — Si renseigné, l'IA adaptera son vocabulaire à votre matière (à utiliser avec discernement). Si laissé vide, les appréciations restent généralistes.">
+                                            data-tooltip="Adapte le vocabulaire et les compétences mobilisées à votre matière (ex. démarche scientifique, analyse de texte...). Laissez vide pour des appréciations polyvalentes.">
                                             <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
                                                 style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
                                         </span>
@@ -1802,16 +1788,16 @@
                                         <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
                                             checked>
                                         <label for="voiceDefault" class="ui-segment tooltip"
-                                            data-tooltip="Laisse l'IA choisir le pronom (Je, Nous, impersonnel...).">Défaut</label>
+                                            data-tooltip="L'IA varie naturellement les formulations (Je, Nous ou tournures impersonnelles).">Défaut</label>
                                         <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
                                         <label for="voiceJe" class="ui-segment tooltip"
-                                            data-tooltip="Force l'IA à utiliser la première personne du singulier ('Je').">Je</label>
+                                            data-tooltip="Rédige à la première personne du singulier (« Je remarque », « J'encourage »).">Je</label>
                                         <input type="radio" id="voiceNous" name="iaVoiceRadio" value="nous">
                                         <label for="voiceNous" class="ui-segment tooltip"
-                                            data-tooltip="Force l'IA à utiliser la première personne du pluriel ('Nous'), plus formel.">Nous</label>
+                                            data-tooltip="Rédige à la première personne du pluriel ou de manière collégiale (« Nous constatons »).">Nous</label>
                                         <input type="radio" id="voiceNeutre" name="iaVoiceRadio" value="neutre">
                                         <label for="voiceNeutre" class="ui-segment tooltip"
-                                            data-tooltip="Style administratif strict : aucun prénom ni pronom (Je, Il, Elle...). Tournures nominales et impersonnelles, idéal LSU/Lycée.">Neutre</label>
+                                            data-tooltip="Style concis et administratif sans aucun pronom personnel (« Travail régulier », « Résultats en progrès »). Idéal LSU et lycée.">Neutre</label>
                                     </div>
                                 </div>
 
@@ -1819,7 +1805,7 @@
                                     <div class="slider-header-row">
                                         <label for="iaStyleInstructions" style="margin-bottom: 0;">Consignes spécifiques
                                             <span class="tooltip"
-                                                data-tooltip="Optionnel — Permet d'imposer des directives précises (ex: insister sur l'oral, éviter le vouvoiement). Laissez vide ou coupez l'interrupteur pour laisser l'IA rédiger librement.">
+                                                data-tooltip="Précisez vos directives clés (ex. valoriser l'oral, encourager l'autonomie, proscrire le vouvoiement). L'interrupteur permet de les suspendre temporairement sans effacer votre texte.">
                                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
                                                     style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
                                             </span>
@@ -3333,7 +3319,7 @@
                                     <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 2974ee8 · 10 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 4125c11 · 10 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

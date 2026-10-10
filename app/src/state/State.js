@@ -31,7 +31,7 @@ export const userSettings = {
     /** Configuration académique */
     academic: {
         periodSystem: 'trimestres',
-        useSubjectPersonalization: false,
+        useSubjectPersonalization: true,
         evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
         subjects: {},
         // Journal threshold: minimum occurrences for a tag to be included in AI prompt
