@@ -385,9 +385,6 @@
                                 <button id="helpButton" class="menu-item">
                                     <iconify-icon icon="solar:question-circle-linear"></iconify-icon> Aide
                                 </button>
-                                <a href="./index.html" id="landingReturnLink" class="menu-item" style="text-decoration: none; color: inherit;">
-                                    <iconify-icon icon="solar:home-2-linear"></iconify-icon> Page d'accueil
-                                </a>
                                 <div id="cloudSeparator" class="menu-separator"></div>
                                 <button id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
                                     style="display: none;" data-tooltip="Sauvegardez vos données dans votre espace personnel pour ne jamais les perdre et y accéder partout.">
@@ -3339,10 +3336,14 @@
                                     <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build d9f18ff · 10 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 99447e7 · 10 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
+                                    <a id="linkLanding" href="./index.html" class="btn btn-secondary btn-small">
+                                        <iconify-icon class="iconify-inline" icon="solar:home-2-linear"></iconify-icon>
+                                        Site vitrine
+                                    </a>
                                     <a id="linkGithub" href="https://github.com/dtrafial/Bulletin-AI" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-secondary btn-small">
                                         <iconify-icon class="iconify-inline" icon="mdi:github"></iconify-icon>
@@ -4182,7 +4183,7 @@
     <!-- Landing Return Transition -->
     <script>
         (function initLandingReturn() {
-            const returnLink = document.getElementById('landingReturnLink');
+            const returnLink = document.getElementById('linkLanding');
             if (returnLink) {
                 returnLink.addEventListener('click', (e) => {
                     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
