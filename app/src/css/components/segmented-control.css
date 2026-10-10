@@ -78,6 +78,20 @@
     color: var(--text-primary);
 }
 
+/* Fallback pill background for segmented controls without dynamic glider */
+.ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
+.ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
+    background: var(--surface-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
+[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .ui-segment.active i,
 .ui-segment.active iconify-icon,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment i,

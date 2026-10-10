@@ -437,99 +437,58 @@
 
 .slider-container {
     position: relative;
-    height: 34px;
-    /* Hauteur fixe pour la pilule */
-    margin-top: 2px;
-    margin-bottom: 24px;
-    border: 1px solid var(--border-color);
-    /* La "Pilule" */
-    border-radius: var(--radius-pill);
+    height: 24px;
+    margin-top: 4px;
+    margin-bottom: 8px;
     padding: 0 4px;
-    /* Espace interne */
     display: flex;
     align-items: center;
-    /* Centre l'input (et le thumb) verticalement */
-    background-color: var(--bg-secondary);
-    /* Fond optionnel pour renforcer l'effet pilule */
-    transition: border-color var(--transition-fast);
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-/* Pseudo-élément pour la bordure dégradée (hover) et animée (focus) sans remplir le fond */
 .slider-container::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    /* Couvre exactement la bordure existante */
-    border-radius: var(--radius-pill);
-    padding: 1px;
-    /* Épaisseur de la bordure animée */
-
-    /* Par défaut invisible */
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-    pointer-events: none;
-    z-index: 1;
-
-    /* Masque pour ne garder que la bordure (anneau) - crée un trou au milieu */
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-
-    /* Gradient par défaut (Hover) */
-    background: linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    display: none !important;
+    content: none !important;
 }
 
-.slider-container:hover::after {
-    opacity: 1;
-}
-
-/* État Focus : Animation rotative dynamique */
-.slider-container:focus-within::after {
-    opacity: 1;
-    background: conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    animation: rotate-gradient 10s linear infinite;
-    /* Ombre portée subtile en plus */
-    box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
+.slider-container:hover,
+.slider-container:focus,
+.slider-container:focus-within,
+.slider-container:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .slider-container input[type="range"] {
     position: relative;
     z-index: 5;
-    /* Au dessus de la bordure animée */
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    background: transparent;
+    background: transparent !important;
     cursor: pointer;
     height: 100%;
     margin: 0;
-    margin: 0;
-    height: 100%;
-    /* Occupe toute la hauteur pour faciliter le centrage */
     padding: 0;
     pointer-events: auto;
-    border: none;
-    outline: none;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-.slider-container input[type="range"]:focus {
-    outline: none;
+.slider-container input[type="range"]:focus,
+.slider-container input[type="range"]:focus-visible,
+.slider-container input[type="range"]:active {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
 }
 
 .slider-container input[type="range"]::-webkit-slider-thumb {
@@ -541,8 +500,8 @@
     border: var(--slider-thumb-border-premium);
     border-radius: var(--radius-full);
     box-shadow: var(--slider-thumb-shadow-premium);
-    /* Ajustement précis pour centrer le thumb de 18px sur la track de 4px */
-    margin-top: calc((4px - var(--slider-thumb-size-premium)) / 2);
+    /* Ajustement précis pour centrer le thumb de 18px sur la track de 6px */
+    margin-top: calc((6px - var(--slider-thumb-size-premium)) / 2);
     pointer-events: auto;
     cursor: grab;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -588,29 +547,38 @@
     transform: translateY(-50%);
     left: 4px;
     right: 4px;
-    height: 4px;
-    /* refined thickness */
+    height: 6px;
     background: var(--bg-tertiary);
-    /* Neutral track color */
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-pill);
     z-index: 0;
+    transition: background-color var(--transition-fast);
+}
+
+[data-theme="dark"] .slider-container::before {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.slider-container:hover::before {
+    background: var(--border-color);
+}
+
+[data-theme="dark"] .slider-container:hover::before {
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .slider-container input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
-    height: 4px;
+    height: 6px;
     background: transparent;
-    /* Transparent car géré par .slider-container::before */
-    border-radius: 2px;
+    border-radius: var(--radius-pill);
     border: none;
 }
 
 .slider-container input[type="range"]::-moz-range-track {
     width: 100%;
-    height: 4px;
+    height: 6px;
     background: transparent;
-    /* Transparent car géré par .slider-container::before */
-    border-radius: 2px;
+    border-radius: var(--radius-pill);
     border: none;
 }
 
@@ -630,8 +598,8 @@
 }
 
 .tick {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
     background-color: var(--border-color);
     border-radius: 50%;
     transition: all var(--transition-fast);
@@ -640,14 +608,18 @@
     cursor: pointer;
 }
 
+[data-theme="dark"] .tick {
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
 .tick:hover {
-    background-color: var(--text-secondary);
-    transform: scale(1.4);
+    background-color: var(--text-primary);
+    transform: scale(1.5);
 }
 
 .tick.active {
     background-color: var(--primary-color);
-    transform: scale(1.4);
+    transform: scale(1.5);
     opacity: 1;
 }
 
@@ -664,46 +636,8 @@
     cursor: pointer;
 }
 
-
-
 .slider-labels {
-    position: absolute;
-    bottom: -22px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 4px;
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 400;
-    opacity: 0.8;
-}
-
-.slider-labels span {
-    cursor: pointer;
-    transition: color var(--transition-fast);
-    flex: 1;
-}
-
-/* Premier label aligné à gauche */
-.slider-labels span:first-child {
-    text-align: left;
-}
-
-/* Dernier label aligné à droite */
-.slider-labels span:last-child {
-    text-align: right;
-}
-
-/* Labels du milieu centrés */
-.slider-labels span:not(:first-child):not(:last-child) {
-    text-align: center;
-}
-
-.slider-labels span.active {
-    color: var(--text-primary);
-    font-weight: 600;
+    display: none;
 }
 
 .slider-header-row {
@@ -734,10 +668,6 @@
     gap: 6px;
 }
 
-.length-slider-container {
-    position: relative;
-    /* Removed specific margin-top to match .slider-container (2px) */
-}
 
 .toggle-switch-container {
     display: flex;
@@ -1761,7 +1691,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 24px 16px;
+    padding: 14px 12px;
     user-select: none;
     cursor: default;
     width: 100%;
@@ -1769,8 +1699,8 @@
 }
 
 .preview-empty-icon-wrap {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: #eff6ff;
     color: #2563eb;
@@ -1778,8 +1708,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    margin-bottom: 12px;
+    font-size: 18px;
+    margin-bottom: 8px;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -1790,18 +1720,18 @@
 }
 
 .preview-empty-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-style: normal;
 }
 
 .preview-empty-subtitle {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     max-width: 320px;
-    line-height: 1.5;
+    line-height: 1.4;
     font-style: normal;
 }
 
