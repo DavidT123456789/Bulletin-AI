@@ -528,71 +528,16 @@
             /* text-zinc-500 */
         }
 
-        /* Rocket smoke animation on hover */
+        /* Rocket micro-interaction on hover */
         .rocket-container {
-            position: relative;
             display: inline-flex;
             align-items: center;
             margin-right: 6px;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .rocket-container::before {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.75);
-            filter: blur(1px);
-            pointer-events: none;
-            transform: translate(-1.5px, 1.5px) scale(0.9);
-            opacity: 0.7;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .rocket-container::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            filter: blur(1px);
-            pointer-events: none;
-            transform: translate(-3.5px, 3.5px) scale(0.7);
-            opacity: 0.45;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .landing-commencer-btn:hover .rocket-container::before {
-            animation: rocket-smoke 0.8s infinite linear;
-        }
-
-        .landing-commencer-btn:hover .rocket-container::after {
-            animation: rocket-smoke 0.8s infinite linear;
-            animation-delay: 0.4s;
-        }
-
-        @keyframes rocket-smoke {
-            0% {
-                transform: translate(0, 0) scale(0.6);
-                opacity: 0.8;
-                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
-            }
-            40% {
-                transform: translate(-3px, 3px) scale(1);
-                opacity: 0.6;
-                box-shadow: -2px 2px 2px rgba(255, 255, 255, 0.4);
-            }
-            80% {
-                transform: translate(-6px, 6px) scale(1.3);
-                opacity: 0;
-                box-shadow: -4px 4px 4px rgba(255, 255, 255, 0);
-            }
+        .landing-commencer-btn:hover .rocket-container {
+            transform: translate(2px, -2px) scale(1.08);
         }
 
         /* Play button circle drawing animation */
@@ -668,9 +613,8 @@
                 <img src="./assets/logo.png" alt="Bulletin AI" class="w-8 h-8 object-contain transition-transform duration-200 group-hover:scale-105" width="32" height="32">
                 <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin AI</span>
                 <span id="landingVersionDisplay"
-                    class="px-1.5 py-0.5 rounded-full bg-zinc-100/80 text-zinc-500 text-[9px] font-medium tracking-wide uppercase ring-1 ring-zinc-900/5 backdrop-blur-sm">
-                    <iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v0.1.1
-                    Beta
+                    class="px-2.5 py-0.5 rounded-full bg-zinc-100/90 text-zinc-600 text-[10px] font-medium tracking-normal ring-1 ring-zinc-900/5 backdrop-blur-sm">
+                    Accès libre
                 </span>
             </a>
             <div class="hidden md:flex items-center gap-8">
@@ -737,7 +681,7 @@
                     <h1 class="text-5xl lg:text-6xl font-semibold tracking-tightest text-zinc-800 leading-[1.1] mb-6">
                         L'assistant numérique
                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">des
-                            enseignants.</span>
+                            enseignants</span>
                     </h1>
                     <p class="text-lg text-zinc-500 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
                         Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves.
@@ -762,22 +706,19 @@
                             Voir comment ça marche
                         </a>
                     </div>
-                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[11.5px] font-medium text-zinc-400 list-none p-0"
+                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs font-medium text-zinc-500 list-none p-0"
                         aria-label="Points clés">
                         <li class="flex items-center gap-1.5">
-                            <iconify-icon icon="solar:shield-check-linear" class="text-green-500"></iconify-icon>
-                            Données anonymisées
+                            <iconify-icon icon="solar:shield-check-linear" class="text-emerald-600 text-sm"></iconify-icon>
+                            100% local & RGPD
                         </li>
                         <li class="flex items-center gap-1.5">
-                            <iconify-icon icon="solar:code-square-linear" class="text-zinc-800"></iconify-icon> Code
-                            source auditable
+                            <iconify-icon icon="solar:check-circle-linear" class="text-emerald-600 text-sm"></iconify-icon>
+                            Gratuit & sans compte
                         </li>
                         <li class="flex items-center gap-1.5">
-                            <iconify-icon icon="ph:check" class="text-blue-500"></iconify-icon> Gratuit
-                        </li>
-                        <li class="flex items-center gap-1.5">
-                            <iconify-icon icon="solar:bolt-linear" class="text-amber-500"></iconify-icon> Sans
-                            installation
+                            <iconify-icon icon="solar:code-square-linear" class="text-emerald-600 text-sm"></iconify-icon>
+                            Code auditable
                         </li>
                     </ul>
                 </div>
@@ -1132,7 +1073,8 @@
             if (!scrollTicking) {
                 requestAnimationFrame(() => {
                     const scrollY = window.scrollY;
-                    navbar.classList.toggle('border-white/40', scrollY > 20);
+                    navbar.classList.toggle('border-zinc-200/70', scrollY > 10);
+                    navbar.classList.toggle('shadow-[0_1px_3px_rgba(0,0,0,0.03)]', scrollY > 10);
                     scrollTopBtn.classList.toggle('is-visible', scrollY > 500);
                     scrollTicking = false;
                 });
@@ -1453,7 +1395,7 @@
 
             const t3 = setTimeout(() => {
                 typeWriter();
-                mockupLoopTimeout = setTimeout(startMockupLoop, 8000);
+                mockupLoopTimeout = setTimeout(startMockupLoop, 12000);
             }, 2000);
             mockupActiveTimeouts.push(t3);
         }
@@ -1472,7 +1414,7 @@
             .then(data => {
                 const badge = document.getElementById('landingVersionDisplay');
                 if (badge && data && data.version) {
-                    badge.innerHTML = `<iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v${data.version} Beta`;
+                    badge.textContent = `Accès libre · v${data.version}`;
                 }
             })
             .catch(() => {});
