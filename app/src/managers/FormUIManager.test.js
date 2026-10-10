@@ -46,6 +46,8 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdNegative: { value: '-1' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
         iaToneSlider: { value: '3' },
+        iaToneToggle: { checked: false, disabled: false },
+        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaStyleInstructions: { value: '' },
         iaDiscipline: { value: '' },
         aiModelSelect: { value: 'gpt-4' },
@@ -177,6 +179,28 @@ describe('FormUIManager', () => {
             appState.currentAIModel = 'gemini-pro';
             FormUI.updateSettingsFields();
             expect(DOM.aiModelSelect.value).toBe('gemini-pro');
+        });
+
+        it('should update tone slider, toggle, and display label properly', () => {
+            const toneDisplay = { textContent: '' };
+            const origGetElementById = document.getElementById;
+            document.getElementById = vi.fn((id) => {
+                if (id === 'iaToneSliderValue') return toneDisplay;
+                if (id === 'iaToneSliderContainer') return { classList: { toggle: vi.fn() } };
+                return origGetElementById(id);
+            });
+
+            // When enableTone is true and tone is 3
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
+            FormUI.updateSettingsFields();
+            expect(DOM.iaToneToggle.checked).toBe(true);
+            expect(toneDisplay.textContent).toBe('Neutre / Factuel');
+
+            // When enableTone is false
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
+            FormUI.updateSettingsFields();
+            expect(DOM.iaToneToggle.checked).toBe(false);
+            expect(toneDisplay.textContent).toBe('Adaptatif (libre)');
         });
 
         it('should set style instructions from MonStyle when personalization enabled', () => {

@@ -94,6 +94,18 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain('première personne du pluriel'); // voice nous
         });
 
+        it('should inject neutral tone when enableTone is true and tone is 3', () => {
+            const overrideCfg = { tone: 3, enableTone: true, voice: 'je', length: 40 };
+            const prompts = PromptService.getAllPrompts(mockStudentData, overrideCfg);
+            expect(prompts.appreciation).toContain('Adopte un ton neutre, factuel et mesuré.');
+        });
+
+        it('should not inject any tone instruction when enableTone is false', () => {
+            const overrideCfg = { tone: 1, enableTone: false, voice: 'je', length: 40 };
+            const prompts = PromptService.getAllPrompts(mockStudentData, overrideCfg);
+            expect(prompts.appreciation).not.toContain('Adopte un ton');
+        });
+
         it('should include context from periods', () => {
             const dataWithContext = {
                 ...mockStudentData,

@@ -1765,12 +1765,26 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group" id="iaToneGroup">
                                     <div class="slider-header-row">
-                                        <label for="iaToneSlider">Ton de l'appréciation</label>
-                                        <span id="iaToneSliderValue" class="slider-value-display">Libre (par défaut)</span>
+                                        <label for="iaToneSlider" style="margin-bottom: 0;">Ton de l'appréciation
+                                            <span class="tooltip"
+                                                data-tooltip="Laissez désactivé pour que l'IA adapte naturellement son style à chaque élève (félicitations, encouragements ou conseils). Activez pour imposer un ton uniforme (ex. neutre et factuel pour le livret officiel).">
+                                                <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
+                                                    style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
+                                            </span>
+                                        </label>
+                                        <div class="slider-header-controls">
+                                             <span id="iaToneSliderValue" class="slider-value-display">Adaptatif (libre)</span>
+                                             <div class="toggle-switch-container compact" style="margin: 0;">
+                                                 <label class="toggle-switch small">
+                                                     <input type="checkbox" id="iaToneToggle" title="Activer / désactiver le filtre de ton">
+                                                     <span class="slider"></span>
+                                                 </label>
+                                             </div>
+                                         </div>
                                     </div>
-                                    <div class="slider-container">
+                                    <div class="slider-container" id="iaToneSliderContainer">
                                         <input type="range" id="iaToneSlider" min="1" max="5" value="3">
                                         <div class="slider-ticks">
                                             <span class="tick"></span>
@@ -3319,7 +3333,7 @@
                                     <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 4125c11 · 10 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build c7da17c · 10 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

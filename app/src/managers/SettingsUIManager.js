@@ -109,6 +109,7 @@ export const SettingsUIManager = {
 
         if (DOM.iaLengthSlider) styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
         if (DOM.iaToneSlider) styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
+        if (DOM.iaToneToggle) styleData.iaConfig.enableTone = DOM.iaToneToggle.checked;
 
         // [FIX] Preserve existing styleInstructions if DOM field is empty but state has value
         // This prevents data loss when field wasn't properly populated due to loading issues
@@ -298,10 +299,36 @@ export const SettingsUIManager = {
         // Get current config for specific toggle
         const styleData = appState.subjects['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
         const styleInstructionsEnabled = styleData.enableStyleInstructions !== false; // Default true
+        const toneEnabled = styleData.enableTone ?? (styleData.tone !== 3 && styleData.tone !== undefined);
 
         if (DOM.iaStyleInstructionsToggle) {
             DOM.iaStyleInstructionsToggle.checked = styleInstructionsEnabled;
             DOM.iaStyleInstructionsToggle.disabled = false;
+        }
+
+        if (DOM.iaToneToggle) {
+            DOM.iaToneToggle.checked = toneEnabled;
+            DOM.iaToneToggle.disabled = false;
+        }
+
+        const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
+        if (toneContainer?.classList) {
+            toneContainer.classList.toggle('opacity-reduced', !toneEnabled);
+        }
+
+        if (DOM.iaToneSlider) {
+            const toneVal = parseInt(DOM.iaToneSlider.value, 10);
+            const toneLabels = {
+                1: 'Très encourageant',
+                2: 'Bienveillant',
+                3: 'Neutre / Factuel',
+                4: 'Exigeant',
+                5: 'Strict'
+            };
+            const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
+            if (toneDisplay) {
+                toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
+            }
         }
 
         if (DOM.genericSubjectInfo?.classList) {
@@ -316,6 +343,7 @@ export const SettingsUIManager = {
         const inputsToToggle = [
             DOM.iaLengthSlider,
             DOM.iaToneSlider,
+            DOM.iaToneToggle,
             DOM.iaDiscipline,
             ...document.querySelectorAll('input[name="iaVoiceRadio"]')
         ];

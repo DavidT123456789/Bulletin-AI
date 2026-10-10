@@ -53,6 +53,9 @@ vi.mock('../utils/DOM.js', () => ({
     DOM: {
         iaLengthSlider: { value: '50', disabled: false },
         iaToneSlider: { value: '3', disabled: false },
+        iaToneToggle: { checked: false, disabled: false },
+        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
+        iaToneSliderValue: { textContent: '' },
         iaStyleInstructions: { value: '', disabled: false, classList: { add: vi.fn(), remove: vi.fn() }, parentElement: { classList: { add: vi.fn(), remove: vi.fn() } } },
         iaStyleInstructionsToggle: { checked: true, disabled: false },
         openaiApiKey: { value: '' },
@@ -171,6 +174,7 @@ describe('SettingsUIManager', () => {
         it('should update MonStyle iaConfig from DOM values', () => {
             DOM.iaLengthSlider.value = '75';
             DOM.iaToneSlider.value = '4';
+            DOM.iaToneToggle.checked = true;
             DOM.iaStyleInstructions.value = 'Test style';
 
             const mockRadio = document.createElement('input');
@@ -184,6 +188,7 @@ describe('SettingsUIManager', () => {
 
             expect(appState.subjects['MonStyle'].iaConfig.length).toBe(75);
             expect(appState.subjects['MonStyle'].iaConfig.tone).toBe(4);
+            expect(appState.subjects['MonStyle'].iaConfig.enableTone).toBe(true);
 
             document.body.removeChild(mockRadio);
         });
@@ -293,6 +298,28 @@ describe('SettingsUIManager', () => {
             SettingsUIManager.updatePersonalizationState();
 
             expect(DOM.genericSubjectInfo.classList.add).toHaveBeenCalledWith('collapsed');
+        });
+
+        it('should sync tone toggle and slider display when tone is enabled', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
+            DOM.iaToneSlider.value = '3';
+
+            SettingsUIManager.updatePersonalizationState();
+
+            expect(DOM.iaToneToggle.checked).toBe(true);
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', false);
+            expect(DOM.iaToneSliderValue.textContent).toBe('Neutre / Factuel');
+        });
+
+        it('should display Adaptatif (libre) and dim container when tone is disabled', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
+            DOM.iaToneSlider.value = '3';
+
+            SettingsUIManager.updatePersonalizationState();
+
+            expect(DOM.iaToneToggle.checked).toBe(false);
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', true);
+            expect(DOM.iaToneSliderValue.textContent).toBe('Adaptatif (libre)');
         });
     });
 

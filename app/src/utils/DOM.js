@@ -314,6 +314,9 @@ export function initDOM() {
     DOM.iaLengthSlider = document.getElementById('iaLengthSlider');
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
     DOM.iaToneSlider = document.getElementById('iaToneSlider');
+    DOM.iaToneToggle = document.getElementById('iaToneToggle');
+    DOM.iaToneSliderValue = document.getElementById('iaToneSliderValue');
+    DOM.iaToneSliderContainer = document.getElementById('iaToneSliderContainer');
     DOM.genericSubjectInfo = document.getElementById('genericSubjectInfo');
     DOM.previewStudentSelect = document.getElementById('previewStudentSelect');
     DOM.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
@@ -323,7 +326,6 @@ export function initDOM() {
     DOM.settingsPreviewWordCount = document.getElementById('settingsPreviewWordCount');
     DOM.settingsPreviewTokenCount = document.getElementById('settingsPreviewTokenCount');
     DOM.previewMetaContainer = document.getElementById('previewMetaContainer');
-    DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
 
 
     DOM.previewStatus = document.getElementById('previewStatus');

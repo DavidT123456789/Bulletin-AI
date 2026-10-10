@@ -35,8 +35,9 @@ export const SettingsModalListeners = {
      */
     _getCurrentSettings() {
         return {
-            length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
-            tone: parseInt(DOM.iaToneSlider?.value || 3),
+            length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length, 10),
+            tone: parseInt(DOM.iaToneSlider?.value || 3, 10),
+            enableTone: DOM.iaToneToggle ? DOM.iaToneToggle.checked : false,
             styleInstructions: DOM.iaStyleInstructions?.value || '',
             enableStyleInstructions: DOM.iaStyleInstructionsToggle?.checked !== false,
             voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
@@ -280,25 +281,39 @@ export const SettingsModalListeners = {
 
         if (DOM.iaToneSlider) {
             DOM.iaToneSlider.addEventListener('input', (e) => {
-                const toneVal = parseInt(e.target.value);
+                const toneVal = parseInt(e.target.value, 10);
                 const toneLabels = {
                     1: 'Très encourageant',
                     2: 'Bienveillant',
-                    3: 'Libre (par défaut)',
+                    3: 'Neutre / Factuel',
                     4: 'Exigeant',
                     5: 'Strict'
                 };
-                const toneDisplay = document.getElementById('iaToneSliderValue');
-                if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Libre (par défaut)';
+
+                // Auto-enable tone toggle if user interacts with the slider
+                if (DOM.iaToneToggle && !DOM.iaToneToggle.checked) {
+                    DOM.iaToneToggle.checked = true;
+                    const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
+                    if (toneContainer?.classList) {
+                        toneContainer.classList.remove('opacity-reduced');
+                    }
+                }
+
+                const toneEnabled = DOM.iaToneToggle ? DOM.iaToneToggle.checked : true;
+                const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
+                if (toneDisplay) {
+                    toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
+                }
 
                 // [FIX] Update appState in real-time so generation uses current value immediately
                 if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: {} };
+                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
                 }
                 if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = {};
+                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
                 }
                 appState.subjects['MonStyle'].iaConfig.tone = toneVal;
+                appState.subjects['MonStyle'].iaConfig.enableTone = toneEnabled;
 
                 SettingsUIManager.showPreviewRefreshHint();
                 this._updateStudentContextAndPrompt();
@@ -315,6 +330,24 @@ export const SettingsModalListeners = {
                     });
                 });
             }
+        }
+
+        if (DOM.iaToneToggle) {
+            DOM.iaToneToggle.addEventListener('change', () => {
+                // Ensure MonStyle structure exists
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
+                }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
+                }
+                appState.subjects['MonStyle'].iaConfig.enableTone = DOM.iaToneToggle.checked;
+
+                SettingsUIManager.updatePersonalizationState();
+                SettingsUIManager.showPreviewRefreshHint();
+                this._updateStudentContextAndPrompt();
+                StorageManager.saveAppState();
+            });
         }
 
         if (DOM.iaStyleInstructions) {

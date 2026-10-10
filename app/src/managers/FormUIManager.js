@@ -50,7 +50,9 @@ export const FormUI = {
             DOM.iaLengthSlider.max = "90";
             DOM.iaLengthSlider.value = iaConfig.length;
         }
-        DOM.iaToneSlider.value = iaConfig.tone;
+        if (DOM.iaToneSlider) {
+            DOM.iaToneSlider.value = iaConfig.tone ?? 3;
+        }
 
         // [FIX] Always preserve styleInstructions and discipline from MonStyle to prevent data loss
         const monStyleIaConfig = appState.subjects?.['MonStyle']?.iaConfig || iaConfig || {};
@@ -73,7 +75,7 @@ export const FormUI = {
         }
 
         const controlsToEnable = [
-            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaDiscipline,
+            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaToneToggle, DOM.iaDiscipline,
             ...document.querySelectorAll('#iaVoiceSelector input'),
             ...document.querySelectorAll('#iaVoiceSelector label')
         ];
@@ -92,17 +94,30 @@ export const FormUI = {
             if (lengthDisplay) lengthDisplay.textContent = `~${lengthVal} mots • ~${approxChars} car.`;
         }
 
+        const toneEnabled = monStyleIaConfig.enableTone ?? (monStyleIaConfig.tone !== 3 && monStyleIaConfig.tone !== undefined);
+        if (DOM.iaToneToggle) {
+            DOM.iaToneToggle.checked = toneEnabled;
+            DOM.iaToneToggle.disabled = false;
+        }
+
+        const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
+        if (toneContainer?.classList) {
+            toneContainer.classList.toggle('opacity-reduced', !toneEnabled);
+        }
+
         if (DOM.iaToneSlider) {
-            const toneVal = parseInt(DOM.iaToneSlider.value);
+            const toneVal = parseInt(DOM.iaToneSlider.value, 10);
             const toneLabels = {
                 1: 'Très encourageant',
                 2: 'Bienveillant',
-                3: 'Libre (par défaut)',
+                3: 'Neutre / Factuel',
                 4: 'Exigeant',
                 5: 'Strict'
             };
-            const toneDisplay = document.getElementById('iaToneSliderValue');
-            if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Libre (par défaut)';
+            const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
+            if (toneDisplay) {
+                toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
+            }
         }
 
 

@@ -643,7 +643,7 @@
 .slider-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 6px;
 }
 
@@ -654,12 +654,23 @@
     font-size: 0.95rem;
 }
 
+.slider-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .slider-value-display {
     font-size: 0.9em;
     font-weight: 500;
     color: var(--text-primary);
     font-family: monospace;
     opacity: 0.9;
+}
+
+.opacity-reduced {
+    opacity: 0.45;
+    transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .form-group label[for="iaLengthSlider"] {

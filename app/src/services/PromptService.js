@@ -107,13 +107,14 @@ export const PromptService = {
         const toneMap = {
             1: 'très encourageant et positif',
             2: 'bienveillant et constructif',
-            3: null, // Mode libre: l'IA adapte selon le contexte
+            3: 'neutre, factuel et mesuré',
             4: 'exigeant mais constructif',
             5: 'strict et formel'
         };
-        const toneInstruction = toneMap[iaConfig.tone];
-        if (toneInstruction) {
-            styleParts.push(`Adopte un ton ${toneInstruction}.`);
+        const isToneActive = iaConfig.enableTone ?? (iaConfig.tone !== 3 && iaConfig.tone !== undefined);
+        const selectedTone = iaConfig.tone ?? 3;
+        if (isToneActive && toneMap[selectedTone]) {
+            styleParts.push(`Adopte un ton ${toneMap[selectedTone]}.`);
         }
 
         const voiceInstruction = {

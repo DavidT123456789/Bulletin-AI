@@ -183,8 +183,10 @@ describe('DOM', () => {
                 <input id="iaStyleHeader" />
                 <textarea id="iaStyleInstructions"></textarea>
                 <input type="range" id="iaLengthSlider" />
-                <span id="iaLengthSliderValue"></span>
                 <input type="range" id="iaToneSlider" />
+                <input type="checkbox" id="iaToneToggle" />
+                <span id="iaToneSliderValue"></span>
+                <div id="iaToneSliderContainer"></div>
                 <div id="genericSubjectInfo"></div>
                 <button id="deleteSubjectBtn"></button>
                 <button id="resetSubjectBtn"></button>
