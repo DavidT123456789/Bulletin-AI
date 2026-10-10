@@ -419,6 +419,83 @@
     animation-duration: 0.3s;
 }
 
+/* ====================================================================
+   SKELETON TABLE - Tableau d'élèves en chargement initial (Zéro void)
+   ==================================================================== */
+.student-list-view.skeleton-table-view {
+    pointer-events: none;
+    user-select: none;
+    border-radius: var(--radius-lg);
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--glass-surface-border);
+}
+
+.student-list-view.skeleton-table-view thead {
+    background: var(--item-idle-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.student-list-table tbody tr.skeleton-row {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.student-list-table tbody tr.skeleton-row:last-child {
+    border-bottom: none;
+}
+
+.student-list-table tbody tr.skeleton-row td {
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+.skeleton-shimmer-box {
+    background: linear-gradient(90deg,
+            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 0%,
+            var(--item-hover-bg, rgba(0, 0, 0, 0.08)) 50%,
+            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+[data-theme="dark"] .skeleton-shimmer-box {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.03) 0%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.03) 100%);
+    background-size: 200% 100%;
+}
+
+/* Stagger shimmer animations for organic luxury feel */
+.student-list-table tbody tr.skeleton-row:nth-child(1) .skeleton-shimmer-box { animation-delay: 0s; }
+.student-list-table tbody tr.skeleton-row:nth-child(2) .skeleton-shimmer-box { animation-delay: 0.12s; }
+.student-list-table tbody tr.skeleton-row:nth-child(3) .skeleton-shimmer-box { animation-delay: 0.24s; }
+.student-list-table tbody tr.skeleton-row:nth-child(4) .skeleton-shimmer-box { animation-delay: 0.36s; }
+.student-list-table tbody tr.skeleton-row:nth-child(5) .skeleton-shimmer-box { animation-delay: 0.48s; }
+
+/* Subtle fade in when real table replaces skeleton */
+@keyframes tableFadeIn {
+    from {
+        opacity: 0.75;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.student-list-view.table-fade-in {
+    animation: tableFadeIn 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* Micro-stagger déclaratif pur CSS pour les premières lignes (zéro calcul JS) */
+.student-list-view.table-fade-in tbody tr:nth-child(1) { animation: list-row-enter 0.2s cubic-bezier(0.32, 0.72, 0, 1) 0.02s both; }
+.student-list-view.table-fade-in tbody tr:nth-child(2) { animation: list-row-enter 0.2s cubic-bezier(0.32, 0.72, 0, 1) 0.04s both; }
+.student-list-view.table-fade-in tbody tr:nth-child(3) { animation: list-row-enter 0.2s cubic-bezier(0.32, 0.72, 0, 1) 0.06s both; }
+.student-list-view.table-fade-in tbody tr:nth-child(4) { animation: list-row-enter 0.2s cubic-bezier(0.32, 0.72, 0, 1) 0.08s both; }
+.student-list-view.table-fade-in tbody tr:nth-child(5) { animation: list-row-enter 0.2s cubic-bezier(0.32, 0.72, 0, 1) 0.10s both; }
 
 /* ====================================================================
    Responsive

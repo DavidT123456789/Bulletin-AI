@@ -232,6 +232,23 @@ describe('ModalUIManager', () => {
 
             expect(details.hasAttribute('open')).toBe(false);
         });
+
+        it('should not call HistoryManager.handleManualClose if modal is already closed or closing', async () => {
+            const { HistoryManager } = await import('./HistoryManager.js');
+            vi.clearAllMocks();
+
+            // Modale fermée initialement
+            testModal.style.display = 'none';
+            testModal.classList.remove('modal-visible', 'show', 'modal-closing');
+
+            ModalUI.closeModal(testModal);
+            expect(HistoryManager.handleManualClose).not.toHaveBeenCalled();
+
+            // Modale déjà en cours de fermeture
+            testModal.classList.add('modal-closing');
+            ModalUI.closeModal(testModal);
+            expect(HistoryManager.handleManualClose).not.toHaveBeenCalled();
+        });
     });
 
     describe('closeAllModals', () => {

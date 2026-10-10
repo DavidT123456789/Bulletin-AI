@@ -10,7 +10,6 @@ import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
 import { StorageManager } from '../StorageManager.js';
-import { HistoryManager } from '../HistoryManager.js';  // Import ajouté
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { MassImportManager } from '../MassImportManager.js';
@@ -48,12 +47,7 @@ export const GeneralListeners = {
             // Store original parent for clean restoration
             const originalParent = DOM.headerMenuDropdown.parentElement;
 
-            const closeMenu = (options = {}) => {
-                // [UX Mobile] History Cleanup
-                if (!options.causedByHistory) {
-                    HistoryManager.handleManualClose('headerMenu');
-                }
-
+            const closeMenu = () => {
                 DOM.headerMenuDropdown.classList.remove('open');
                 DOM.headerMenuBtn.classList.remove('active');
                 DOM.headerMenuBtn.blur();
@@ -76,9 +70,6 @@ export const GeneralListeners = {
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
-                    // [UX Mobile] Push History State
-                    HistoryManager.pushState('headerMenu', closeMenu);
-
                     DOM.headerMenuDropdown.classList.add('open');
                     DOM.headerMenuBtn.classList.add('active');
 

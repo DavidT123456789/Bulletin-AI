@@ -178,13 +178,17 @@ export const ModalUI = {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
-        // [UX Mobile] History Cleanup
-        // If closed via UI (X button) and NOT caused by back button, we must clean up history
-        if (!options.causedByHistory) {
-            HistoryManager.handleManualClose(modal.id);
+        if (modal.classList.contains('modal-closing') ||
+            modal.style.display === 'none' ||
+            (modal.style.display === '' && !modal.classList.contains('modal-visible') && !modal.classList.contains('show'))) {
+            return;
         }
 
-        if (modal.classList.contains('modal-closing') || modal.style.display === 'none') return;
+        // [UX Mobile] History Cleanup
+        // If closed via UI (X button) and NOT caused by back button, we must clean up history
+        if (!options.causedByHistory && !options.skipHistory) {
+            HistoryManager.handleManualClose(modal.id);
+        }
 
 
         this._isIgnoringTooltips = true;
@@ -1266,7 +1270,7 @@ export const ModalUI = {
         });
     },
 
-    closeAllModals() {
+    closeAllModals(options = {}) {
         this.stackedModal = null; // Prevent restoring stacked modals when closing all
         const modals = [
             DOM.settingsModal,
@@ -1281,7 +1285,7 @@ export const ModalUI = {
             DOM.importPreviewModal
         ];
         modals.forEach(m => {
-            if (m) this.closeModal(m);
+            if (m) this.closeModal(m, options);
         });
     }
 };

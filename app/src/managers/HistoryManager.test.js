@@ -107,4 +107,19 @@ describe('HistoryManager', () => {
 
         delete window.UI;
     });
+
+    it('ne devrait jamais appeler history.back() si l’état actif n’est pas un état UI (protection landing page)', () => {
+        HistoryManager.init();
+        const backSpy = vi.spyOn(history, 'back').mockImplementation(() => {});
+
+        // On simule un élément dans la pile mais l'état d'historique actuel est à la base (non uiOpen)
+        HistoryManager._stack.push({ id: 'desyncedModal', closeCallback: vi.fn() });
+        history.replaceState({ appBase: true }, '', '');
+
+        HistoryManager.handleManualClose('desyncedModal');
+
+        expect(HistoryManager.isOpen('desyncedModal')).toBe(false);
+        // back ne doit PAS avoir été appelé pour ne pas quitter app.html vers la landing page
+        expect(backSpy).not.toHaveBeenCalled();
+    });
 });

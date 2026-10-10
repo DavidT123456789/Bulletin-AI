@@ -11,7 +11,7 @@ import { ImportWizardManager } from './managers/ImportWizardManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     // Initialiser l'error boundary en premier pour capturer toutes les erreurs
     initErrorBoundary();
 
@@ -108,7 +108,13 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`Erreur d'initialisation : ${e.message}\n${e.stack}`);
         console.error(e);
     }
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 /**
  * Configures the PWA service worker update handler.

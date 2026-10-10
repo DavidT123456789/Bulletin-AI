@@ -547,18 +547,55 @@ iconify-icon.icon-spin,
 }
 
 /* ====================================================================
-   PAGE ENTRANCE ANIMATION (iOS 2025 Style)
+   PAGE ENTRANCE ANIMATION (iOS 2026 Fluidity)
    Triggered when user arrives from landing page
    ==================================================================== */
 
-/* Entry animation: Blur-to-sharp + Fade-in + slight scale-up */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root) {
+    animation: 240ms cubic-bezier(0.32, 0.72, 0, 1) both landingExitViewTransition;
+}
+
+::view-transition-new(root) {
+    animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both appEnterViewTransition;
+}
+
+@keyframes landingExitViewTransition {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.985);
+        filter: blur(8px);
+    }
+}
+
+@keyframes appEnterViewTransition {
+    0% {
+        opacity: 0;
+        transform: scale(1.015);
+        filter: blur(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Entry animation: Progressive de-blur + silky spring settle */
 @keyframes pageEnterBlur {
     0% {
         opacity: 0;
-        filter: blur(12px);
-        transform: scale(0.96);
+        filter: blur(10px);
+        transform: scale(0.985);
     }
-
     100% {
         opacity: 1;
         filter: blur(0);
@@ -566,23 +603,58 @@ iconify-icon.icon-spin,
     }
 }
 
-/* Applied to body when transitioning in from landing */
-body.is-transitioning-in {
-    animation: pageEnterBlur 0.7s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+@keyframes pageEnterSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Staggered entrance for key elements (optional enhancement) */
-body.is-transitioning-in .header {
-    animation: pageEnterBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.05s both;
+@keyframes pageEnterSlideUp {
+    0% {
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+    }
 }
 
-body.is-transitioning-in .main-content {
-    animation: pageEnterBlur 0.7s cubic-bezier(0.32, 0.72, 0, 1) 0.1s both;
+/* Smooth exit transition when returning to landing page */
+body.is-navigating-to-landing {
+    pointer-events: none;
+    transition: opacity 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+                filter 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+                transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(0.985);
 }
 
 /* Prevent flash of unstyled content during transition */
 body.preload-transition {
     opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none !important;
+    }
+    body.is-navigating-to-landing {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        transform: none !important;
+    }
 }
 
 /* ====================================================================

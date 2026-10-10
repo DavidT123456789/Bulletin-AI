@@ -79,7 +79,7 @@ export const ListViewManager = {
 
         if (!container) return;
 
-        const existingTable = container.querySelector('.student-list-table');
+        const existingTable = container.querySelector('.student-list-view:not(.skeleton-table-view) .student-list-table');
         const tbody = existingTable ? existingTable.querySelector('tbody') : null;
 
         // Handle empty results

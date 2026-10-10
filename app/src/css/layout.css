@@ -22,36 +22,36 @@
 
 /* App starts with blur applied, animation removes it progressively */
 .app-loading .header {
-    animation: appFadeInBlur 0.6s var(--ease-spring) both;
+    animation: appFadeInBlur 0.45s var(--ease-spring) both;
 }
 
 .app-loading .stats-container {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.08s both;
+    animation: appFadeInBlur 0.45s var(--ease-spring) 0.03s both;
 }
 
 .app-loading .output-header {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.15s both;
+    animation: appFadeInBlur 0.45s var(--ease-spring) 0.05s both;
 }
 
 .app-loading #outputList {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.22s both;
+    animation: appFadeInBlur 0.48s var(--ease-spring) 0.08s both;
 }
 
 .app-loading .fab-add-student {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.3s both;
+    animation: appFadeInBlur 0.48s var(--ease-spring) 0.12s both;
 }
 
 /* Individual stat cards for extra stagger effect */
 .app-loading .stat-card:nth-child(1) {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.05s both;
+    animation: appFadeInBlur 0.45s var(--ease-spring) 0.03s both;
 }
 
 .app-loading .stat-card:nth-child(2) {
-    animation: appFadeInBlur 0.6s var(--ease-spring) 0.1s both;
+    animation: appFadeInBlur 0.45s var(--ease-spring) 0.06s both;
 }
 
 .app-loading .stat-card:nth-child(3) {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.15s both;
+    animation: appFadeInBlur 0.45s cubic-bezier(0.32, 0.72, 0, 1) 0.09s both;
 }
 
 /* Respect reduced motion preference */

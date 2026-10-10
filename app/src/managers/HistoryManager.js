@@ -145,11 +145,18 @@ export const HistoryManager = {
      * @private
      */
     _triggerProgrammaticBack() {
+        if (typeof history === 'undefined' || !history.back) return;
+
+        // Protection anti-sortie : ne jamais appeler history.back() si l'état actif n'est pas un état UI ouvert.
+        // Si history.state a appBase: true ou n'a pas uiOpen: true, appeler back() quitterait
+        // physiquement app.html pour ramener l'utilisateur vers la landing page !
+        if (typeof window !== 'undefined' && !window.history?.state?.uiOpen) {
+            return;
+        }
+
         this._programmaticBackCount++;
         try {
-            if (typeof history !== 'undefined' && history.back) {
-                history.back();
-            }
+            history.back();
         } catch (_) {
             this._programmaticBackCount = Math.max(0, this._programmaticBackCount - 1);
         }
@@ -199,6 +206,11 @@ export const HistoryManager = {
         }
         this.clearStack();
         this._baseStateInitialized = false;
+        if (typeof history !== 'undefined' && history.replaceState) {
+            try {
+                history.replaceState(null, '', '');
+            } catch (_) {}
+        }
     },
 
     /**

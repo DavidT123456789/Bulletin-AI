@@ -61,21 +61,22 @@ export const App = {
 
         await this._safeInit('StorageManager.loadAppState', () => StorageManager.loadAppState());
 
-        // 2. Service Cloud Sync (reconnexion au provider sauvegardé)
-        await this._safeInit('SyncService', async () => {
+        // 2. Rendu UI critique immédiat (affiche le tableau sans attendre les services secondaires)
+        this.updateUIOnLoad();
+
+        // 3. Service Cloud Sync en tâche de fond (non bloquant pour l'affichage du tableau)
+        this._safeInit('SyncService', async () => {
             const { SyncService } = await import('../services/SyncService.js');
             SyncService.init();
             window.SyncService = SyncService;
         });
 
-        // 3. Rappel Cloud & Thème / Écouteurs de base
+        // 4. Rappel Cloud & Thème / Écouteurs de base
         await this._safeInit('UI & Listeners Setup', () => {
             GeneralListeners.initCloudReminder();
-            UI.applyTheme();
             UI.updateSettingsPromptFields();
             EventListenersManager.setupEventListeners();
             this.setupInteractiveSliders();
-            this.updateUIOnLoad();
             this.setupAutoSave();
             this.setupPWA();
         });

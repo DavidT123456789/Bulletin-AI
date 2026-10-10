@@ -485,47 +485,17 @@ export const ListViewRenderer = {
                 </div>
             `;
 
-            // ANTI-FLASH (Initial / class change): Hide container, replace content, then fade in
-            container.style.opacity = '0';
-            container.innerHTML = fullHtml;
+            const hadSkeleton = !!container.querySelector('.skeleton-table-view, #initialTableSkeleton');
 
-            // Force reflow
-            void container.offsetHeight;
-
-            // Quick fade-in of container
-            container.style.transition = 'opacity 0.15s ease-out';
             container.style.opacity = '1';
+            container.style.transition = '';
+            container.innerHTML = fullHtml;
 
             const viewElement = container.querySelector('.student-list-view');
             if (viewElement) {
-                const rows = viewElement.querySelectorAll('.student-row');
-                const rowCount = rows.length;
-
-                // Calculate staggered delays for premium effect
-                const maxTotalDuration = 300; // Max total stagger time in ms
-                const delayPerRow = Math.min(20, maxTotalDuration / Math.max(rowCount, 1));
-
-                // Apply staggered row animations after container fade
-                requestAnimationFrame(() => {
-                    rows.forEach((row, index) => {
-                        row.style.setProperty('--row-delay', `${index * delayPerRow}ms`);
-                        row.classList.add('row-animate-in');
-                    });
-                });
-
-                // Clean up after animations complete
-                const cleanupDelay = 200 + maxTotalDuration + 300; // fade + stagger + animation duration
-                setTimeout(() => {
-                    if (container) { // Check existence as view might have changed
-                        container.style.transition = '';
-                        container.style.opacity = '';
-                        rows.forEach(row => {
-                            row.classList.remove('row-animate-in');
-                            row.style.removeProperty('--row-delay');
-                        });
-                    }
-                }, cleanupDelay);
-
+                if (hadSkeleton) {
+                    viewElement.classList.add('table-fade-in');
+                }
                 this.callbacks.attachEventListeners(viewElement);
                 this.updateHeaderSortIcons(viewElement);
             }

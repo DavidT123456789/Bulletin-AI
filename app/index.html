@@ -651,6 +651,97 @@
         .landing-play-btn:hover .play-circle-fill {
             stroke-dashoffset: 0;
         }
+
+        /* ====================================================================
+           CROSS-PAGE VIEW TRANSITIONS & PAGE EXIT (iOS 2026 Fluidity)
+           ==================================================================== */
+        @view-transition {
+            navigation: auto;
+        }
+
+        ::view-transition-old(root) {
+            animation: 240ms cubic-bezier(0.32, 0.72, 0, 1) both landingExitViewTransition;
+        }
+
+        ::view-transition-new(root) {
+            animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both appEnterViewTransition;
+        }
+
+        @keyframes landingExitViewTransition {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.985);
+                filter: blur(8px);
+            }
+        }
+
+        @keyframes appEnterViewTransition {
+            0% {
+                opacity: 0;
+                transform: scale(1.015);
+                filter: blur(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        /* Tactile launch state for CTA buttons */
+        .landing-commencer-btn.is-launching {
+            transform: scale(0.96) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35) !important;
+            pointer-events: none;
+        }
+
+        .landing-commencer-btn.is-launching .rocket-container {
+            transform: translate(8px, -8px) scale(1.2) !important;
+            transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1) !important;
+        }
+
+        /* Smooth page exit for all browsers */
+        body.is-navigating-to-app {
+            pointer-events: none;
+        }
+
+        body.is-navigating-to-app main,
+        body.is-navigating-to-app nav,
+        body.is-navigating-to-app footer,
+        body.is-navigating-to-app .bg-orb {
+            transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+                        opacity 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+                        filter 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+            transform: scale(0.985);
+            filter: blur(8px);
+            opacity: 0;
+        }
+
+        body.is-navigating-to-app.target-dark {
+            background-color: #09090b !important;
+            transition: background-color 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            ::view-transition-old(root),
+            ::view-transition-new(root) {
+                animation: none !important;
+            }
+            body.is-navigating-to-app main,
+            body.is-navigating-to-app nav,
+            body.is-navigating-to-app footer,
+            body.is-navigating-to-app .bg-orb {
+                transition: none !important;
+                transform: none !important;
+                filter: none !important;
+                opacity: 1 !important;
+            }
+        }
     </style>
 </head>
 
@@ -1478,6 +1569,76 @@
                 }
             })
             .catch(() => {});
+
+        /* ── Transition vers l'application (fluidité iOS 2026) ── */
+        (function initAppTransition() {
+            const APP_PATH = './app.html';
+
+            // 1. Préchargement spéculatif (prefetch) pour une ouverture instantanée
+            let isPrefetched = false;
+            function prefetchApp() {
+                if (isPrefetched) return;
+                isPrefetched = true;
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = APP_PATH;
+                document.head.appendChild(link);
+
+                const scriptLink = document.createElement('link');
+                scriptLink.rel = 'modulepreload';
+                scriptLink.href = './src/main.js';
+                document.head.appendChild(scriptLink);
+            }
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(() => prefetchApp(), { timeout: 2500 });
+            } else {
+                setTimeout(prefetchApp, 2000);
+            }
+
+            const appLinks = document.querySelectorAll('a[href*="app.html"]');
+            appLinks.forEach(link => {
+                link.addEventListener('mouseenter', prefetchApp, { passive: true, once: true });
+                link.addEventListener('focus', prefetchApp, { passive: true, once: true });
+                link.addEventListener('touchstart', prefetchApp, { passive: true, once: true });
+            });
+
+            // 2. Déclenchement au clic avec rétroaction tactile & fondu spatial
+            appLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Respecter les clics avec modificateurs (nouvel onglet, clic molette, etc.)
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || link.target === '_blank') {
+                        return;
+                    }
+
+                    // Rétroaction tactile immédiate
+                    link.classList.add('is-launching');
+
+                    // Adaptation au thème de destination si l'utilisateur a configuré le mode sombre
+                    try {
+                        const savedTheme = localStorage.getItem('bulletin_theme');
+                        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        if (savedTheme === 'dark' || (savedTheme === 'system' && prefersDark)) {
+                            document.body.classList.add('target-dark');
+                        }
+                    } catch (_) {}
+
+                    e.preventDefault();
+                    document.body.classList.add('is-navigating-to-app');
+
+                    const targetHref = link.getAttribute('href') || APP_PATH;
+                    setTimeout(() => {
+                        window.location.href = targetHref;
+                    }, 130);
+                });
+            });
+
+            // 3. Réinitialisation en cas de retour arrière navigateur (bfcache)
+            window.addEventListener('pageshow', () => {
+                document.body.classList.remove('is-navigating-to-app', 'target-dark');
+                appLinks.forEach(link => link.classList.remove('is-launching'));
+            });
+        })();
     </script>
 </body>
 

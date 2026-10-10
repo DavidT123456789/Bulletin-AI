@@ -33,7 +33,7 @@ export const OtherModalsListeners = {
         addClickListener(DOM.closeHelpModalFooterBtn, () => UI.closeModal(DOM.helpModal));
         DOM.helpGoToSettingsBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            UI.closeAllModals();
+            UI.closeModal(DOM.helpModal, { skipHistory: true });
             UI.openModal(DOM.settingsModal);
             UI.showSettingsTab('advanced');
         });

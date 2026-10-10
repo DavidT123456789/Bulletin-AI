@@ -73,6 +73,9 @@ export const StorageManager = {
     init(ui, app) {
         UI = ui;
         App = app;
+        try {
+            Promise.resolve(DBService.open?.()).catch(() => {});
+        } catch (_) {}
     },
 
     _hashString(str) {

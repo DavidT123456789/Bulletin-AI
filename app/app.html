@@ -187,6 +187,9 @@
         body {
             background-color: inherit;
         }
+        @view-transition {
+            navigation: auto;
+        }
     </style>
 
     <!-- PWA Configuration -->
@@ -226,6 +229,7 @@
     <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
     <link rel="stylesheet" href="src/css/main.css?v=20260928-journal-header">
+    <link rel="modulepreload" href="./src/main.js">
 </head>
 
 <body style="background-color: inherit;">
@@ -381,6 +385,9 @@
                                 <button id="helpButton" class="menu-item">
                                     <iconify-icon icon="solar:question-circle-linear"></iconify-icon> Aide
                                 </button>
+                                <a href="./index.html" id="landingReturnLink" class="menu-item" style="text-decoration: none; color: inherit;">
+                                    <iconify-icon icon="solar:home-2-linear"></iconify-icon> Page d'accueil
+                                </a>
                                 <div id="cloudSeparator" class="menu-separator"></div>
                                 <button id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
                                     style="display: none;" data-tooltip="Sauvegardez vos données dans votre espace personnel pour ne jamais les perdre et y accéder partout.">
@@ -601,7 +608,152 @@
                         </div>
                     </div>
 
-                    <div id="outputList" role="region" aria-live="polite"></div>
+                    <div id="outputList" role="region" aria-live="polite">
+                        <div class="student-list-view skeleton-table-view" id="initialTableSkeleton" aria-hidden="true">
+                            <table class="student-list-table">
+                                <thead>
+                                    <tr>
+                                        <th class="name-header-with-search">
+                                            <div class="header-content-wrapper">Nom</div>
+                                        </th>
+                                        <th class="status-header">
+                                            <div class="header-content-wrapper">Statut</div>
+                                        </th>
+                                        <th class="grade-header">
+                                            <div class="header-content-wrapper">S1</div>
+                                        </th>
+                                        <th class="appreciation-header">
+                                            <div class="header-content-wrapper">
+                                                <span>Appréciation S1</span>
+                                            </div>
+                                        </th>
+                                        <th class="action-header">
+                                            <div class="header-content-wrapper">
+                                                <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg); opacity: 0.3; font-size: 16px;"></iconify-icon>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="student-row skeleton-row">
+                                        <td class="student-name-cell">
+                                            <div class="student-identity-wrapper">
+                                                <span class="skeleton-shimmer-box" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 110px; height: 14px; display: inline-block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 72px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="grade-cell" style="text-align: center;">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 36px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="appreciation-cell">
+                                            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                                                <span class="skeleton-shimmer-box" style="width: 90%; height: 12px; display: block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 65%; height: 12px; display: block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="action-cell">
+                                            <span class="skeleton-shimmer-box" style="width: 24px; height: 24px; border-radius: 50%; display: block; margin: 0 auto;"></span>
+                                        </td>
+                                    </tr>
+                                    <tr class="student-row skeleton-row">
+                                        <td class="student-name-cell">
+                                            <div class="student-identity-wrapper">
+                                                <span class="skeleton-shimmer-box" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 135px; height: 14px; display: inline-block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 64px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="grade-cell" style="text-align: center;">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 36px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="appreciation-cell">
+                                            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                                                <span class="skeleton-shimmer-box" style="width: 82%; height: 12px; display: block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 50%; height: 12px; display: block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="action-cell">
+                                            <span class="skeleton-shimmer-box" style="width: 24px; height: 24px; border-radius: 50%; display: block; margin: 0 auto;"></span>
+                                        </td>
+                                    </tr>
+                                    <tr class="student-row skeleton-row">
+                                        <td class="student-name-cell">
+                                            <div class="student-identity-wrapper">
+                                                <span class="skeleton-shimmer-box" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 95px; height: 14px; display: inline-block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 78px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="grade-cell" style="text-align: center;">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 36px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="appreciation-cell">
+                                            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                                                <span class="skeleton-shimmer-box" style="width: 95%; height: 12px; display: block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 70%; height: 12px; display: block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="action-cell">
+                                            <span class="skeleton-shimmer-box" style="width: 24px; height: 24px; border-radius: 50%; display: block; margin: 0 auto;"></span>
+                                        </td>
+                                    </tr>
+                                    <tr class="student-row skeleton-row">
+                                        <td class="student-name-cell">
+                                            <div class="student-identity-wrapper">
+                                                <span class="skeleton-shimmer-box" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 125px; height: 14px; display: inline-block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 70px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="grade-cell" style="text-align: center;">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 36px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="appreciation-cell">
+                                            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                                                <span class="skeleton-shimmer-box" style="width: 86%; height: 12px; display: block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 58%; height: 12px; display: block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="action-cell">
+                                            <span class="skeleton-shimmer-box" style="width: 24px; height: 24px; border-radius: 50%; display: block; margin: 0 auto;"></span>
+                                        </td>
+                                    </tr>
+                                    <tr class="student-row skeleton-row">
+                                        <td class="student-name-cell">
+                                            <div class="student-identity-wrapper">
+                                                <span class="skeleton-shimmer-box" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 115px; height: 14px; display: inline-block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 68px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="grade-cell" style="text-align: center;">
+                                            <span class="skeleton-shimmer-box" style="display: inline-block; width: 36px; height: 22px; border-radius: 9999px;"></span>
+                                        </td>
+                                        <td class="appreciation-cell">
+                                            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                                                <span class="skeleton-shimmer-box" style="width: 78%; height: 12px; display: block;"></span>
+                                                <span class="skeleton-shimmer-box" style="width: 45%; height: 12px; display: block;"></span>
+                                            </div>
+                                        </td>
+                                        <td class="action-cell">
+                                            <span class="skeleton-shimmer-box" style="width: 24px; height: 24px; border-radius: 50%; display: block; margin: 0 auto;"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div id="skeletonContainer" class="skeleton-grid" style="display: none;">
                         <!-- Skeletons générés dynamiquement -->
                     </div>
@@ -3187,7 +3339,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 6203880 · 10 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build b9d0a5e · 10 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -4027,24 +4179,19 @@
 
 
 
-    <!-- Page Entrance Transition from Landing Page -->
+    <!-- Landing Return Transition -->
     <script>
-        (function initPageEntrance() {
-            // Check if user is coming from landing page (within last 2 seconds)
-            const transitionTimestamp = sessionStorage.getItem('landingTransition');
-            const now = Date.now();
-
-            if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
-                // Clear the flag
-                sessionStorage.removeItem('landingTransition');
-
-                // Apply entrance animation class
-                document.body.classList.add('is-transitioning-in');
-
-                // Remove the class after animation completes
-                setTimeout(() => {
-                    document.body.classList.remove('is-transitioning-in');
-                }, 800); // Slightly longer than animation duration
+        (function initLandingReturn() {
+            const returnLink = document.getElementById('landingReturnLink');
+            if (returnLink) {
+                returnLink.addEventListener('click', (e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    document.body.classList.add('is-navigating-to-landing');
+                    setTimeout(() => {
+                        window.location.href = returnLink.href;
+                    }, 220);
+                });
             }
         })();
     </script>
