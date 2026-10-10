@@ -50,8 +50,6 @@ export const OtherModalsListeners = {
             setTimeout(() => {
                 const personalizationModal = document.getElementById('personalizationModal');
                 if (personalizationModal) UI.openModal(personalizationModal);
-                // Refresh Lab data on modal open
-                SettingsModalListeners._updateStudentContextAndPrompt();
                 // Highlight the entire style controls card for broader context
                 UI.highlightSettingsElement('settings-controls-panel', {
                     tab: 'templates',

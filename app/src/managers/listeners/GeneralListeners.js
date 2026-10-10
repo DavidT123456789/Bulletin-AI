@@ -142,8 +142,6 @@ export const GeneralListeners = {
                 addClickListener(DOM.personalizationBtn, () => {
                     closeMenu();
                     UI.openModal(DOM.personalizationModal);
-                    SettingsModalListeners._updateStudentContextAndPrompt();
-                    SettingsModalListeners._autoResizeStyleInstructions();
                 });
             }
 

@@ -35,10 +35,11 @@ export const ModalUI = {
     _animTimeouts: new WeakMap(),
 
     /**
-     * Ouvre une modale avec animation style Apple.
+     * Ouvre une modale avec animation style Apple / iOS 2026.
      * @param {HTMLElement|string} modalOrId - L'élément modale ou son ID
+     * @param {Object} [options={}] - Options d'ouverture (ex: { isStacked: true })
      */
-    openModal(modalOrId) {
+    openModal(modalOrId, options = {}) {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
@@ -56,39 +57,17 @@ export const ModalUI = {
         modal.classList.remove('modal-closing');
 
         // [UX Mobile] History Push via Manager
-        HistoryManager.pushState(modal.id, (options) => this.closeModal(modal, options));
+        HistoryManager.pushState(modal.id, (closeOptions) => this.closeModal(modal, closeOptions));
 
-        // Si une modale est déjà ouverte et qu'on ouvre helpModal, on la "stack"
-        if (this.activeModal && modal.id === 'helpModal') {
+        // Si une modale est déjà ouverte et qu'on ouvre helpModal (ou modale empilée), on la "stack"
+        if (this.activeModal && (modal.id === 'helpModal' || options.isStacked)) {
             this.stackedModal = this.activeModal;
         } else {
             this.lastFocusedElement = document.activeElement;
         }
 
         const modalContent = modal.querySelector('.modal-content');
-
-        // Calcul de l'origine de l'animation (effet "sortir du bouton")
-        if (this.lastFocusedElement && modalContent) {
-            try {
-                const rect = this.lastFocusedElement.getBoundingClientRect();
-                const triggerX = rect.left + rect.width / 2;
-                const triggerY = rect.top + rect.height / 2;
-
-                // Centre de l'écran (où la modale sera centrée)
-                const windowCenterX = window.innerWidth / 2;
-                const windowCenterY = window.innerHeight / 2;
-
-                // Décalage nécessaire par rapport au centre
-                const deltaX = triggerX - windowCenterX;
-                const deltaY = triggerY - windowCenterY;
-
-                // Appliquer l'origine dynamique
-                modalContent.style.transformOrigin = `calc(50% + ${deltaX}px) calc(50% + ${deltaY}px)`;
-            } catch (e) {
-                console.warn("Impossible de calculer l'origine de l'animation", e);
-                modalContent.style.transformOrigin = 'center center';
-            }
-        } else if (modalContent) {
+        if (modalContent) {
             modalContent.style.transformOrigin = 'center center';
         }
 
@@ -207,7 +186,7 @@ export const ModalUI = {
             modal.classList.remove('show');
 
             // Gestion des modales empilées
-            if (this.stackedModal && modal.id === 'helpModal') {
+            if (this.stackedModal && (modal.id === 'helpModal' || options.isStacked)) {
                 this.activeModal = this.stackedModal;
                 this.stackedModal = null;
                 // Rediriger le focus trap vers la modale restaurée
@@ -228,6 +207,11 @@ export const ModalUI = {
                     this.lastFocusedElement = null;
                 }
                 this.activeModal = null;
+
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.style.transformOrigin = '';
+                }
 
                 // Supprimer les modales de confirmation dynamiques
                 const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal', 'promptPreviewModal', 'conflictResolutionModal'];

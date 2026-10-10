@@ -33,7 +33,6 @@
 .personalization-modal-content {
     max-width: 940px;
     width: 95%;
-    transition: max-width 0.3s ease;
 }
 
 /* Expand modal when inspector is visible (3 columns) */

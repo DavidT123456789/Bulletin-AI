@@ -64,8 +64,10 @@ export const SettingsModalListeners = {
             SettingsUIManager.createSnapshot();
             if (e.detail?.modalId === 'personalizationModal') {
                 this._updateNavArrowsState();
-                this._updateStudentContextAndPrompt();
-                this._autoResizeStyleInstructions();
+                requestAnimationFrame(() => {
+                    this._updateStudentContextAndPrompt();
+                    this._autoResizeStyleInstructions();
+                });
             }
         });
 

@@ -13,8 +13,8 @@
     -webkit-backdrop-filter: blur(0px);
     align-items: center;
     justify-content: center;
-    transition: background 0.4s var(--ease-spring),
-        backdrop-filter 0.4s var(--ease-spring);
+    transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     /* GPU optimization for backdrop-filter */
     will-change: backdrop-filter;
 }
@@ -37,11 +37,13 @@
     display: flex;
     flex-direction: column;
     background: var(--modal-bg);
-    /* Apple Sheet / Card 120Hz Animation */
+    /* Modern 2026 Apple / Material 3 Expressive 120Hz Animation */
+    transform-origin: center center;
     opacity: 0;
-    transform: scale(0.95) translateY(14px);
-    transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.95) translateY(10px);
+    transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     /* GPU optimization - promote to own layer */
     will-change: transform, opacity;
     transform-style: preserve-3d;
@@ -56,9 +58,9 @@
 /* Animation de fermeture - Spécificité augmentée pour avoir priorité sur modal-visible */
 .modal.modal-visible.modal-closing .modal-content {
     opacity: 0 !important;
-    transform: scale(0.96) translateY(8px) !important;
-    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transform: scale(0.96) translateY(6px) !important;
+    transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
 /* Backdrop fade out during closing */
@@ -66,7 +68,7 @@
     background: rgba(0, 0, 0, 0) !important;
     backdrop-filter: blur(0px) !important;
     -webkit-backdrop-filter: blur(0px) !important;
-    transition: background 0.25s ease-out, backdrop-filter 0.25s ease-out !important;
+    transition: background 0.22s ease-out, backdrop-filter 0.22s ease-out !important;
 }
 
 #customConfirmModal {
