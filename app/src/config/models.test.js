@@ -28,6 +28,8 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should correctly identify groq models', () => {
+            expect(getProviderForModel('groq-gpt-oss-120b')).toBe('groq');
+            expect(getProviderForModel('groq-gpt-oss-20b')).toBe('groq');
             expect(getProviderForModel('groq-llama-3.3-70b')).toBe('groq');
             expect(getProviderForModel('groq-gemma-2-9b')).toBe('groq');
             expect(getProviderForModel('groq-llama-3.1-8b')).toBe('groq');
@@ -88,8 +90,8 @@ describe('models.js configuration & helpers', () => {
 
         it('should correctly configure groq fallback models', () => {
             expect(FALLBACK_CONFIG.groq).toEqual([
-                'groq-llama-3.3-70b',
-                'groq-llama-3.1-8b'
+                'groq-gpt-oss-120b',
+                'groq-gpt-oss-20b'
             ]);
         });
 
@@ -104,7 +106,7 @@ describe('models.js configuration & helpers', () => {
     describe('PROVIDER_DEFAULT_MODELS', () => {
         it('should map each provider to its primary recommended model', () => {
             expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.5-flash');
-            expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-llama-3.3-70b');
+            expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-gpt-oss-120b');
             expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.openrouter).toBe('llama-3.3-70b-free');
             expect(PROVIDER_DEFAULT_MODELS.openai).toBe('openai-o3-mini');
@@ -124,7 +126,7 @@ describe('models.js configuration & helpers', () => {
             expect(queue[1]).toBe('gemini-3.5-flash');
             expect(queue[2]).toBe('gemini-3.1-pro-preview');
             // Next provider should be groq (since groq is next in providerOrder after google)
-            expect(queue[3]).toBe('groq-llama-3.3-70b');
+            expect(queue[3]).toBe('groq-gpt-oss-120b');
         });
 
         it('should contain no duplicates', () => {
@@ -153,9 +155,11 @@ describe('models.js configuration & helpers', () => {
 
     describe('getApiModelName()', () => {
         it('should map Groq models to their technical API model names', () => {
-            expect(getApiModelName('groq-llama-3.3-70b')).toBe('llama-3.3-70b-versatile');
-            expect(getApiModelName('groq-gemma-2-9b')).toBe('llama-3.1-8b-instant');
-            expect(getApiModelName('groq-llama-3.1-8b')).toBe('llama-3.1-8b-instant');
+            expect(getApiModelName('groq-gpt-oss-120b')).toBe('openai/gpt-oss-120b');
+            expect(getApiModelName('groq-gpt-oss-20b')).toBe('openai/gpt-oss-20b');
+            expect(getApiModelName('groq-llama-3.3-70b')).toBe('openai/gpt-oss-120b');
+            expect(getApiModelName('groq-gemma-2-9b')).toBe('openai/gpt-oss-20b');
+            expect(getApiModelName('groq-llama-3.1-8b')).toBe('openai/gpt-oss-20b');
         });
 
         it('should map OpenRouter models to their technical API model names', () => {

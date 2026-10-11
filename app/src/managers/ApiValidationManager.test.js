@@ -222,7 +222,7 @@ describe('ApiValidationManager', () => {
                 expect.objectContaining({
                     isValidation: true,
                     validationProvider: 'groq',
-                    modelOverride: 'groq-llama-3.3-70b'
+                    modelOverride: 'groq-gpt-oss-120b'
                 })
             );
             expect(appState.apiKeyStatus.groq).toBe('valid');

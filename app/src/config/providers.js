@@ -22,7 +22,7 @@ export const PROVIDER_CONFIG = {
         style: 'color: #f55036;', // Groq coral orange
         keyProperty: 'groqApiKey',
         domKey: 'groqApiKey',
-        description: '<strong>Groq Cloud (Sprinteur)</strong> offre une vitesse fulgurante (~500 tokens/s) et héberge <strong>Llama 3.3</strong> et <strong>Gemma 2</strong> gratuitement sans carte bancaire.'
+        description: '<strong>Groq Cloud (Sprinteur)</strong> offre une vitesse fulgurante (~500 à 1 000 tokens/s) avec les modèles ouverts <strong>GPT-OSS 120B & 20B</strong> gratuitement sans carte bancaire.'
     },
     openrouter: {
         id: 'openrouter',

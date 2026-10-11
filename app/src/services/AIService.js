@@ -173,11 +173,18 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m, sys) => ({
-                    model: getApiModelName(m),
-                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
-                    max_tokens: MAX_RESPONSE_TOKENS
-                })
+                payload: (p, m, sys) => {
+                    const apiModel = getApiModelName(m);
+                    const body = {
+                        model: apiModel,
+                        messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
+                        max_tokens: MAX_RESPONSE_TOKENS
+                    };
+                    if (apiModel.includes('gpt-oss')) {
+                        body.reasoning_format = 'parsed';
+                    }
+                    return body;
+                }
             }
         };
 
@@ -222,7 +229,7 @@ export const AIService = {
     _getModelTimeout(model) {
         const m = model || '';
         if (m.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS;
-        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3');
+        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3') || m.includes('gpt-oss');
         if (isReasoningModel) return 40000;
         if (m.includes('pro') || m.includes('opus')) return 30000;
         return 22000;

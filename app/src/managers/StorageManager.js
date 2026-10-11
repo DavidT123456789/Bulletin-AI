@@ -131,8 +131,12 @@ export const StorageManager = {
                     // Journal threshold
                     if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
 
-                    // API Settings
-                    if (settings.currentAIModel !== undefined) userSettings.api.currentAIModel = settings.currentAIModel;
+                    if (settings.currentAIModel !== undefined) {
+                        let model = settings.currentAIModel;
+                        if (model === 'groq-llama-3.3-70b') model = 'groq-gpt-oss-120b';
+                        else if (model === 'groq-llama-3.1-8b' || model === 'groq-gemma-2-9b') model = 'groq-gpt-oss-20b';
+                        userSettings.api.currentAIModel = model;
+                    }
                     if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
                     if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
                     if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;

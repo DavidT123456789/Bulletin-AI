@@ -94,8 +94,8 @@ describe('ModelSelectionManager', () => {
         expect(flashItem.textContent).toContain('Gemini 3.5 Flash');
         expect(flashItem.classList.contains('active')).toBe(true);
 
-        // Ne doit pas contenir Groq Llama car la clé n'est pas configurée
-        const groqItem = Array.from(items).find(item => item.getAttribute('data-model-id') === 'groq-llama-3.3-70b');
+        // Ne doit pas contenir Groq GPT-OSS car la clé n'est pas configurée
+        const groqItem = Array.from(items).find(item => item.getAttribute('data-model-id') === 'groq-gpt-oss-120b');
         expect(groqItem).toBeFalsy();
 
         // Footer présent

@@ -103,14 +103,15 @@ describe('AIService', () => {
         it('should return correct config for Groq provider', async () => {
             const { appState } = await import('../state/State.js');
             appState.groqApiKey = 'gsk-test-groq-key';
-            appState.currentAIModel = 'groq-llama-3.3-70b';
+            appState.currentAIModel = 'groq-gpt-oss-120b';
 
             const config = AIService._getApiConfig('Test prompt');
 
             expect(config.apiKey).toBe('gsk-test-groq-key');
             expect(config.apiUrl).toContain('api.groq.com');
             expect(config.headers['Authorization']).toBe('Bearer gsk-test-groq-key');
-            expect(config.payload.model).toBe('llama-3.3-70b-versatile');
+            expect(config.payload.model).toBe('openai/gpt-oss-120b');
+            expect(config.payload.reasoning_format).toBe('parsed');
             expect(config.payload.messages[0].content).toBe('Test prompt');
         });
 
@@ -318,6 +319,7 @@ describe('AIService', () => {
         it('should return true when API key is configured for provider', async () => {
             const { appState } = await import('../state/State.js');
             appState.groqApiKey = 'gsk-valid-key-12345';
+            expect(AIService._hasApiKeyForModel('groq-gpt-oss-120b')).toBe(true);
             expect(AIService._hasApiKeyForModel('groq-llama-3.3-70b')).toBe(true);
 
             appState.googleApiKey = 'AIzaSyGoogle12345';
@@ -327,7 +329,7 @@ describe('AIService', () => {
         it('should return false when API key is missing or invalid', async () => {
             const { appState } = await import('../state/State.js');
             appState.groqApiKey = '';
-            expect(AIService._hasApiKeyForModel('groq-llama-3.3-70b')).toBe(false);
+            expect(AIService._hasApiKeyForModel('groq-gpt-oss-120b')).toBe(false);
 
             appState.mistralApiKey = 'short';
             expect(AIService._hasApiKeyForModel('mistral-direct-small-latest')).toBe(false);

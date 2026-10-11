@@ -13,7 +13,10 @@ export const COSTS_PER_MILLION_TOKENS = {
     'gemini-3.7-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
-    // Groq Cloud (clé API directe - Gratuit)
+    // Groq Cloud (clé API directe - Quota gratuit)
+    'groq-gpt-oss-120b': { input: 0, output: 0 },
+    'groq-gpt-oss-20b': { input: 0, output: 0 },
+    // Aliases rétrocompatibles pour configurations existantes
     'groq-llama-3.3-70b': { input: 0, output: 0 },
     'groq-gemma-2-9b': { input: 0, output: 0 },
     'groq-llama-3.1-8b': { input: 0, output: 0 },
@@ -87,9 +90,11 @@ export const MODEL_DESCRIPTIONS = {
     'mistral-direct-small-latest': "<strong>Français ⭐</strong> Mistral Small. Multimodal + raisonnement rapide.",
     'mistral-direct-large-latest': "<strong>Français</strong> Mistral Large. Le modèle le plus puissant de Mistral.",
     // Groq Cloud
-    'groq-llama-3.3-70b': "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> Llama 3.3 70B via Groq. Style et raisonnement de pointe, gratuit sans CB.",
-    'groq-gemma-2-9b': "<strong>⚡ Ultra-rapide</strong> Google Gemma 2 9B via Groq. Synthétique et fluide, gratuit sans CB.",
-    'groq-llama-3.1-8b': "<strong>⚡ Instantané</strong> Llama 3.1 8B via Groq. Retouches ultra-vives.",
+    'groq-gpt-oss-120b': "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> GPT-OSS 120B via Groq. Modèle ouvert phare d'OpenAI, raisonnement et style de pointe, gratuit sans CB.",
+    'groq-gpt-oss-20b': "<strong>⚡ Instantané (~1000 t/s)</strong> GPT-OSS 20B via Groq. Modèle ultra-vif, idéal pour retouches rapides, gratuit sans CB.",
+    'groq-llama-3.3-70b': "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> GPT-OSS 120B via Groq. Modèle ouvert phare d'OpenAI, gratuit sans CB.",
+    'groq-gemma-2-9b': "<strong>⚡ Instantané</strong> GPT-OSS 20B via Groq. Gratuit sans CB.",
+    'groq-llama-3.1-8b': "<strong>⚡ Instantané</strong> GPT-OSS 20B via Groq. Gratuit sans CB.",
 };
 
 /**
@@ -150,9 +155,11 @@ export const MODEL_SHORT_NAMES = {
     'mistral-direct-small-latest': 'Mistral Small',
     'mistral-direct-large-latest': 'Mistral Large',
     // Groq Cloud
-    'groq-llama-3.3-70b': 'Llama 3.3 70B (Groq)',
-    'groq-gemma-2-9b': 'Gemma 2 9B (Groq)',
-    'groq-llama-3.1-8b': 'Llama 3.1 8B (Groq)',
+    'groq-gpt-oss-120b': 'GPT-OSS 120B (Groq)',
+    'groq-gpt-oss-20b': 'GPT-OSS 20B (Groq)',
+    'groq-llama-3.3-70b': 'GPT-OSS 120B (Groq)',
+    'groq-gemma-2-9b': 'GPT-OSS 20B (Groq)',
+    'groq-llama-3.1-8b': 'GPT-OSS 20B (Groq)',
 };
 
 /**
@@ -171,8 +178,8 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: 'Groq Cloud — QUOTA GRATUIT',
         models: [
-            { id: 'groq-llama-3.3-70b', qualifier: 'Recommandé' },
-            { id: 'groq-llama-3.1-8b', qualifier: 'Instantané' },
+            { id: 'groq-gpt-oss-120b', qualifier: 'Recommandé' },
+            { id: 'groq-gpt-oss-20b', qualifier: 'Instantané' },
         ]
     },
     {
@@ -278,7 +285,7 @@ export const PROVIDER_DEFAULT_MODELS = {
  */
 export const PROVIDER_SHOWCASE_MODELS = {
     google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
-    groq: ['groq-llama-3.3-70b', 'groq-gemma-2-9b', 'groq-llama-3.1-8b'],
+    groq: ['groq-gpt-oss-120b', 'groq-gpt-oss-20b'],
     anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-opus-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
     openai: ['openai-gpt-4o-mini', 'openai-o3-mini'],
@@ -345,9 +352,12 @@ export const API_MODEL_MAPPINGS = {
     'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
     'mistral-large': 'mistralai/mistral-large-2411',
     // Groq Cloud
-    'groq-llama-3.3-70b': 'llama-3.3-70b-versatile',
-    'groq-gemma-2-9b': 'llama-3.1-8b-instant', // Fallback gracieux pour ancien modèle déprécié par Groq
-    'groq-llama-3.1-8b': 'llama-3.1-8b-instant',
+    'groq-gpt-oss-120b': 'openai/gpt-oss-120b',
+    'groq-gpt-oss-20b': 'openai/gpt-oss-20b',
+    // Aliases rétrocompatibles pour configurations / sélections antérieures
+    'groq-llama-3.3-70b': 'openai/gpt-oss-120b',
+    'groq-gemma-2-9b': 'openai/gpt-oss-20b',
+    'groq-llama-3.1-8b': 'openai/gpt-oss-20b',
 };
 
 /**
