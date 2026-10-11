@@ -36,11 +36,24 @@ const getCommonTippyConfig = () => {
         trigger: 'mouseenter',
         touch: ['hold', 500],
         zIndex: 10001,
+        popperOptions: {
+            strategy: 'fixed'
+        },
+        onTrigger(instance, event) {
+            if (ModalUI._isIgnoringTooltips || (event?.touches && event.touches.length > 1)) {
+                instance.hide?.();
+            }
+        },
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
             if (ModalUI._isIgnoringTooltips) return false;
             // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
+            if (typeof instance.setProps === 'function' && typeof instance.reference?.getBoundingClientRect === 'function') {
+                instance.setProps({
+                    getReferenceClientRect: () => instance.reference.getBoundingClientRect()
+                });
+            }
             return true;
         }
     };
@@ -108,6 +121,23 @@ export const TooltipsUI = {
      */
     getInstanceCount() {
         return _tippyInstances ? _tippyInstances.length : 0;
+    },
+
+    /**
+     * Masque immédiatement tous les tooltips actuellement affichés.
+     */
+    hideAll() {
+        if (typeof window.tippy?.hideAll === 'function') {
+            window.tippy.hideAll({ duration: 0 });
+            return;
+        }
+        if (_tippyInstances && _tippyInstances.length > 0) {
+            _tippyInstances.forEach(instance => {
+                if (instance?.state?.isVisible && typeof instance.hide === 'function') {
+                    instance.hide();
+                }
+            });
+        }
     },
 
     /**

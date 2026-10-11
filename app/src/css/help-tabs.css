@@ -3,9 +3,17 @@
    Design System Google / iOS 2026 — Surfaces sobres + Ponctuation sémantique
    ==================================================================== */
 
-/* --- Contenu d'onglet & Transitions --- */
+/* --- Coque Modale Guide & Contenu d'onglet --- */
+#helpModal > .modal-content {
+    height: min(635px, 88vh);
+}
+
+#helpModal > .modal-content > .modal-footer {
+    display: none;
+}
+
 #helpModal .ui-tabs-content {
-    padding: 16px 22px;
+    padding: 20px 24px;
 }
 
 .help-tab-content {
@@ -108,15 +116,15 @@
 .help-quickstart-flow {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 12px;
+    margin-bottom: 14px;
 }
 
 .help-step-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 9px 14px;
+    border-radius: var(--radius-lg);
+    padding: 15px 18px;
     transition: border-color var(--transition-fast);
 }
 
@@ -128,17 +136,17 @@
 .help-step-layout {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 13px;
 }
 
 .help-step-number {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: rgba(var(--primary-color-rgb), 0.12);
     color: var(--primary-color);
     font-weight: 700;
-    font-size: 0.80rem;
+    font-size: 0.82rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -162,7 +170,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .help-quick-title-row {
@@ -175,7 +183,7 @@
 
 .help-quick-card-title {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -183,38 +191,20 @@
 .help-step-body > p,
 .help-step-inline-desc {
     margin: 0;
-    font-size: 0.79rem;
+    font-size: 0.81rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 .help-step-inline-desc {
     flex: 1;
-    min-width: 180px;
+    min-width: 190px;
 }
 
 .help-step-body > p strong,
 .help-step-inline-desc strong {
     color: var(--text-primary);
     font-weight: 600;
-}
-
-/* Fournisseurs IA dans l'étape 1 */
-.help-provider-row {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    margin-top: 2px;
-}
-
-.provider-icon-groq,
-.provider-icon-mistral {
-    color: var(--color-orange);
-}
-
-.help-provider-actions {
-    display: flex;
-    align-items: center;
 }
 
 .help-btn-row {
@@ -229,35 +219,19 @@
     margin: 0;
 }
 
-.provider-tag {
-    font-size: 0.69rem;
-    padding: 1px 5px;
-    border-radius: var(--radius-pill);
-    font-weight: 600;
-    margin-left: 3px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .provider-tag {
-    background: rgba(var(--primary-color-rgb), 0.2);
-    color: var(--primary-bright);
-}
-
-/* Étape 2 : Ligne de tags + Boutons d'action */
+/* Étape 1 & 2 : Ligne de description + Boutons d'action */
 .help-step-footer-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
-    margin-top: 2px;
 }
 
 .help-format-tags {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -283,34 +257,33 @@
     color: var(--primary-bright);
 }
 
-/* Étape 3 : Grille 2 colonnes (Génération & Copie suivie) */
+/* Étape 3 : Grille 2 colonnes épurée (sans sous-bordures lourdes) */
 .help-step3-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 10px;
+    gap: 12px;
     margin-top: 2px;
 }
 
 .help-step3-box {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 9px 12px;
+    border-radius: var(--radius-md);
+    padding: 11px 14px;
 }
 
 .help-step3-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.80rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .help-step3-label iconify-icon {
     color: var(--primary-color);
-    font-size: 0.95rem;
+    font-size: 0.98rem;
 }
 
 [data-theme="dark"] .help-step3-label iconify-icon {
@@ -327,8 +300,8 @@
 
 .help-step3-box p {
     margin: 0;
-    font-size: 0.77rem;
-    line-height: 1.42;
+    font-size: 0.79rem;
+    line-height: 1.44;
     color: var(--text-secondary);
 }
 
@@ -394,18 +367,18 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
+    padding: 10px 14px;
     border-radius: var(--radius-md);
     background: rgba(var(--success-rgb), 0.06);
-    border: 1px solid rgba(var(--success-rgb), 0.22);
-    font-size: 0.79rem;
+    border: 1px solid rgba(var(--success-rgb), 0.2);
+    font-size: 0.80rem;
     line-height: 1.4;
     color: var(--text-secondary);
 }
 
 [data-theme="dark"] .help-privacy-reassurance {
-    background: rgba(var(--success-rgb), 0.09);
-    border-color: rgba(var(--success-rgb), 0.25);
+    background: rgba(var(--success-rgb), 0.08);
+    border-color: rgba(var(--success-rgb), 0.22);
 }
 
 .help-privacy-icon {
@@ -426,17 +399,17 @@
 }
 
 /* ====================================================================
-   ONGLET 2 : RÉDACTION & IA (Composants natifs Focus & Personnalisation)
+   ONGLET 2 : RÉDACTION & IA (Démo Focus + Grille 2×2 des 4 leviers)
    ==================================================================== */
 .help-interactive-demo {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 12px 15px;
-    margin-bottom: 10px;
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 11px;
 }
 
 .help-demo-top {
@@ -469,7 +442,7 @@
 
 .help-demo-title {
     margin: 0;
-    font-size: 0.90rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -508,7 +481,7 @@
     font-size: 0.78rem;
 }
 
-/* Adaptation compacte de .preview-unified-card dans le Guide */
+/* Adaptation épurée de .preview-unified-card dans le Guide */
 .help-preview-card.preview-unified-card {
     margin: 0;
     border-radius: var(--radius-md);
@@ -516,14 +489,16 @@
 }
 
 .help-preview-card .preview-card-header {
-    padding: 10px 14px;
+    padding: 9px 14px;
     justify-content: space-between;
+    gap: 10px;
 }
 
 .help-preview-card .header-student-info {
     justify-content: flex-start;
-    flex: 0 1 auto;
-    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 9px;
 }
 
 .help-preview-card .header-student-avatar {
@@ -535,33 +510,56 @@
 
 .help-preview-card .header-student-name {
     font-size: 0.86rem;
+    flex-shrink: 0;
+}
+
+.help-student-context-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.help-student-context-pill iconify-icon {
+    color: var(--primary-color);
+    font-size: 0.86rem;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .help-student-context-pill iconify-icon {
+    color: var(--primary-bright);
 }
 
 .help-preview-card .preview-card-body {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-}
-
-.help-preview-card .preview-context-callout {
-    padding: 7px 11px;
-    margin: 0;
+    gap: 0;
+    padding: 10px 12px;
 }
 
 .help-preview-card .refinement-group {
     margin-bottom: 0;
+    border: none;
 }
 
 .help-preview-card .refinement-content {
     min-height: 0;
-    padding: 11px 14px;
+    padding: 10px 12px;
     white-space: normal;
 }
 
 .help-preview-card .text-preview {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.86rem;
     line-height: 1.48;
     min-height: 2.96em;
     color: var(--text-primary);
@@ -573,7 +571,7 @@
     justify-content: space-between;
     flex-wrap: nowrap;
     gap: 12px;
-    padding: 7px 14px;
+    padding: 6px 12px;
     margin-top: 0;
 }
 
@@ -593,119 +591,122 @@
     margin-left: 0;
 }
 
-/* Ligne basse de l'onglet 2 : Atelier de style + 3 outils */
-.help-writing-bottom-grid {
+/* Grille 2×2 symétrique des 4 leviers de rédaction */
+.help-writing-pillars-grid {
     display: grid;
-    grid-template-columns: 1fr 1.15fr;
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
-.help-style-card,
-.help-tools-list-card {
+.help-pillar-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 11px 14px;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.help-style-card-top {
-    display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 11px;
 }
 
-.help-style-card-top h4 {
-    margin: 0 0 3px 0;
-    font-size: 0.87rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.help-style-card-top p {
-    margin: 0;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-.help-tools-list-card {
-    justify-content: center;
-    gap: 8px;
-}
-
-.help-mini-tool {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.35;
-}
-
-.help-mini-tool strong {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.help-mini-tool-icon {
-    width: 24px;
-    height: 24px;
+.help-pillar-icon {
+    width: 28px;
+    height: 28px;
     border-radius: var(--radius-xs);
+    background: rgba(var(--primary-color-rgb), 0.14);
+    color: var(--primary-color);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 0.92rem;
+    font-size: 1rem;
+    margin-top: 1px;
 }
 
-.help-mini-tool-icon.is-amber {
+[data-theme="dark"] .help-pillar-icon {
+    background: rgba(var(--primary-color-rgb), 0.24);
+    color: var(--primary-bright);
+}
+
+.help-pillar-icon.is-amber {
     background: color-mix(in srgb, var(--color-amber) 16%, transparent);
     color: var(--color-amber-deep);
 }
 
-.help-mini-tool-icon.is-rose {
+.help-pillar-icon.is-rose {
     background: color-mix(in srgb, var(--color-rose) 16%, transparent);
     color: var(--color-rose-deep);
 }
 
-.help-mini-tool-icon.is-emerald {
+.help-pillar-icon.is-emerald {
     background: color-mix(in srgb, var(--color-emerald) 16%, transparent);
     color: var(--color-emerald-deep);
 }
 
-[data-theme="dark"] .help-mini-tool-icon.is-amber {
+[data-theme="dark"] .help-pillar-icon.is-amber {
     background: color-mix(in srgb, var(--color-amber) 24%, transparent);
     color: var(--color-amber-bright);
 }
 
-[data-theme="dark"] .help-mini-tool-icon.is-rose {
+[data-theme="dark"] .help-pillar-icon.is-rose {
     background: color-mix(in srgb, var(--color-rose) 24%, transparent);
     color: var(--color-rose-bright);
 }
 
-[data-theme="dark"] .help-mini-tool-icon.is-emerald {
+[data-theme="dark"] .help-pillar-icon.is-emerald {
     background: color-mix(in srgb, var(--color-emerald) 24%, transparent);
     color: var(--color-emerald-bright);
 }
 
+.help-pillar-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.help-pillar-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.help-pillar-body h4 {
+    margin: 0;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.help-pillar-body p {
+    margin: 0;
+    font-size: 0.77rem;
+    color: var(--text-secondary);
+    line-height: 1.38;
+}
+
+.help-pillar-cta.btn-small {
+    padding: 3px 10px;
+    font-size: 0.74rem;
+    height: auto;
+    flex-shrink: 0;
+}
+
 /* ====================================================================
-   ONGLET 3 : PLAN & TROMBI (Vraie grille .sc-cell + vrai .sc-desk Tableau)
+   ONGLET 3 : PLAN & TROMBI (Vraie grille .sc-cell + 2 cartes d'action)
    ==================================================================== */
 .help-sc-canvas {
     background-color: var(--bg-color);
     background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.12) 1.2px, transparent 1.2px);
     background-size: 18px 18px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 10px 14px 11px;
-    margin-bottom: 9px;
+    border-radius: var(--radius-lg);
+    padding: 13px 16px 14px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .help-classroom-toolbar {
@@ -742,7 +743,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     padding: 2px 0;
     flex-wrap: wrap;
 }
@@ -755,8 +756,8 @@
 }
 
 .help-sc-cell.sc-cell {
-    width: 86px;
-    height: 92px;
+    width: 88px;
+    height: 94px;
     padding: 6px;
     cursor: default;
 }
@@ -857,55 +858,66 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Grille 3 repères compacts */
-.help-features-grid {
+/* 2 cartes d'action directes côte à côte (Plan de classe + Trombinoscope) */
+.help-seating-cards-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 9px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
 }
 
-.help-feature-card {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 10px 12px;
+.help-seating-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-}
-
-.help-feature-header-inline {
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
     display: flex;
-    align-items: center;
-    gap: 7px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.help-feature-header-inline h4 {
-    margin: 0;
-    font-size: 0.83rem;
+.help-seating-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+
+.help-seating-card-top h4 {
+    margin: 0 0 4px 0;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.help-feature-card p {
+.help-seating-card-top p {
     margin: 0;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    line-height: 1.38;
+    line-height: 1.44;
+}
+
+.help-seating-card-top p strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.help-seating-card-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .help-feature-icon {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--radius-xs);
     background: rgba(var(--primary-color-rgb), 0.14);
     color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.98rem;
+    font-size: 1rem;
     flex-shrink: 0;
+    margin-top: 1px;
 }
 
 [data-theme="dark"] .help-feature-icon {
@@ -933,62 +945,14 @@
     color: var(--color-emerald-bright);
 }
 
-/* Carte Action compacte */
-.help-action-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    flex-wrap: wrap;
-}
-
-.help-action-card-text {
-    flex: 1;
-    min-width: 190px;
-}
-
-.help-action-card-text h4 {
-    margin: 0 0 2px 0;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.help-action-card-text h4 iconify-icon {
-    color: var(--primary-color);
-    font-size: 1.05rem;
-}
-
-.help-action-card-text h4 iconify-icon.is-emerald {
-    color: var(--color-emerald);
-}
-
-[data-theme="dark"] .help-action-card-text h4 iconify-icon.is-emerald {
-    color: var(--color-emerald-bright);
-}
-
-.help-action-card-text p {
-    margin: 0;
-    font-size: 0.77rem;
-    color: var(--text-secondary);
-    line-height: 1.36;
-}
-
 /* ====================================================================
-   ONGLET 4 : DÉPANNAGE & FAQ (Ponctuation sémantique + Raccourcis 2×3)
+   ONGLET 4 : DÉPANNAGE & FAQ (Accordéons épurés + Raccourcis 2×3)
    ==================================================================== */
 .help-accordions-group {
     display: flex;
     flex-direction: column;
     gap: 7px;
-    margin-bottom: 9px;
+    margin-bottom: 12px;
 }
 
 .help-accordion {
@@ -1001,7 +965,7 @@
 
 .help-accordion summary {
     font-size: 0.84rem;
-    padding: 9px 14px;
+    padding: 10px 14px;
     cursor: pointer;
     list-style: none;
     display: flex;
@@ -1029,27 +993,14 @@
 .help-accordion-title {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
     min-width: 0;
     flex: 1;
 }
 
 .help-accordion-icon {
-    font-size: 1.05rem;
+    font-size: 1.08rem;
     color: var(--primary-color);
-    flex-shrink: 0;
-}
-
-.help-accordion-badge {
-    font-size: 0.67rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 2px 7px;
-    border-radius: var(--radius-pill);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    margin-left: auto;
     flex-shrink: 0;
 }
 
@@ -1057,69 +1008,37 @@
 .help-accordion[data-faq-accent="emerald"] .help-accordion-icon {
     color: var(--color-emerald);
 }
-.help-accordion[data-faq-accent="emerald"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-emerald) 14%, transparent);
-    color: var(--color-emerald-deep);
-}
 
 .help-accordion[data-faq-accent="amber"] .help-accordion-icon {
     color: var(--color-amber);
-}
-.help-accordion[data-faq-accent="amber"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-amber) 14%, transparent);
-    color: var(--color-amber-deep);
 }
 
 .help-accordion[data-faq-accent="sky"] .help-accordion-icon {
     color: var(--color-sky);
 }
-.help-accordion[data-faq-accent="sky"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-sky) 14%, transparent);
-    color: var(--color-sky-deep);
-}
 
 .help-accordion[data-faq-accent="violet"] .help-accordion-icon {
     color: var(--color-violet);
-}
-.help-accordion[data-faq-accent="violet"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-violet) 14%, transparent);
-    color: var(--color-violet-deep);
 }
 
 [data-theme="dark"] .help-accordion-icon {
     color: var(--primary-bright);
 }
-[data-theme="dark"] .help-accordion-badge {
-    background: rgba(var(--primary-color-rgb), 0.2);
-    color: var(--primary-bright);
-}
-[data-theme="dark"] .help-accordion[data-faq-accent="emerald"] .help-accordion-icon,
-[data-theme="dark"] .help-accordion[data-faq-accent="emerald"] .help-accordion-badge {
+
+[data-theme="dark"] .help-accordion[data-faq-accent="emerald"] .help-accordion-icon {
     color: var(--color-emerald-bright);
 }
-[data-theme="dark"] .help-accordion[data-faq-accent="emerald"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-emerald) 22%, transparent);
-}
-[data-theme="dark"] .help-accordion[data-faq-accent="amber"] .help-accordion-icon,
-[data-theme="dark"] .help-accordion[data-faq-accent="amber"] .help-accordion-badge {
+
+[data-theme="dark"] .help-accordion[data-faq-accent="amber"] .help-accordion-icon {
     color: var(--color-amber-bright);
 }
-[data-theme="dark"] .help-accordion[data-faq-accent="amber"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-amber) 22%, transparent);
-}
-[data-theme="dark"] .help-accordion[data-faq-accent="sky"] .help-accordion-icon,
-[data-theme="dark"] .help-accordion[data-faq-accent="sky"] .help-accordion-badge {
+
+[data-theme="dark"] .help-accordion[data-faq-accent="sky"] .help-accordion-icon {
     color: var(--color-sky-bright);
 }
-[data-theme="dark"] .help-accordion[data-faq-accent="sky"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-sky) 22%, transparent);
-}
-[data-theme="dark"] .help-accordion[data-faq-accent="violet"] .help-accordion-icon,
-[data-theme="dark"] .help-accordion[data-faq-accent="violet"] .help-accordion-badge {
+
+[data-theme="dark"] .help-accordion[data-faq-accent="violet"] .help-accordion-icon {
     color: var(--color-violet-bright);
-}
-[data-theme="dark"] .help-accordion[data-faq-accent="violet"] .help-accordion-badge {
-    background: color-mix(in srgb, var(--color-violet) 22%, transparent);
 }
 
 .help-accordion-chevron {
@@ -1141,9 +1060,9 @@
 .help-accordion-body {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
-    padding: 9px 14px;
-    font-size: 0.79rem;
-    line-height: 1.44;
+    padding: 10px 14px;
+    font-size: 0.80rem;
+    line-height: 1.45;
     color: var(--text-secondary);
 }
 
@@ -1155,7 +1074,7 @@
 
 .help-detail-list li {
     margin-bottom: 4px;
-    line-height: 1.4;
+    line-height: 1.42;
 }
 
 .help-detail-list li:last-child {
@@ -1176,25 +1095,25 @@
     color: var(--primary-bright);
 }
 
-/* Raccourcis clavier (Grille 2 colonnes sans débordement horizontal) */
+/* Raccourcis clavier (Grille 2×3 épurée sans sous-bordures) */
 .help-shortcuts-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 10px 13px;
+    padding: 11px 14px;
 }
 
 .help-shortcuts-header {
     display: flex;
     align-items: center;
     gap: 7px;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
 }
 
 .help-shortcuts-header h4 {
     margin: 0;
     font-weight: 600;
-    font-size: 0.83rem;
+    font-size: 0.84rem;
     color: var(--text-primary);
 }
 
@@ -1210,7 +1129,7 @@
 .help-shortcut-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    gap: 6px 14px;
 }
 
 .help-shortcut-row {
@@ -1221,8 +1140,7 @@
     padding: 5px 10px;
     border-radius: var(--radius-xs);
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    font-size: 0.76rem;
+    font-size: 0.77rem;
     min-width: 0;
 }
 
@@ -1245,7 +1163,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 1px 5px;
+    padding: 1px 6px;
     font-family: var(--font-mono);
     font-size: 0.69rem;
     font-weight: 600;
@@ -1253,7 +1171,6 @@
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xs);
-    box-shadow: var(--shadow-sm);
 }
 
 /* ====================================================================
@@ -1264,14 +1181,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     flex-wrap: wrap;
 }
 
 .about-header-main {
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 14px;
 }
 
 .about-logo-tile {
@@ -1347,19 +1264,18 @@
 }
 
 .about-tagline {
-    font-size: 0.83rem;
+    font-size: 0.84rem;
     color: var(--text-secondary);
-    margin: 0 0 12px 0;
-    line-height: 1.45;
+    margin: 0 0 14px 0;
+    line-height: 1.48;
 }
 
-/* Pastilles de réassurance légères (remplace le gros bloc 3 cartes) */
 .about-trust-pills {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 }
 
 .about-trust-pill {
@@ -1389,10 +1305,10 @@
 .support-card-premium {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    padding: 16px 20px;
+    padding: 18px 22px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    margin: 0 auto 16px auto;
+    margin: 0 auto 18px auto;
     text-align: center;
     max-width: 490px;
 }
@@ -1415,10 +1331,10 @@
 }
 
 .support-card-premium p {
-    margin: 0 0 12px 0;
+    margin: 0 0 14px 0;
     color: var(--text-secondary);
-    font-size: 0.80rem;
-    line-height: 1.44;
+    font-size: 0.81rem;
+    line-height: 1.45;
 }
 
 .btn-kofi {
@@ -1457,7 +1373,7 @@
     font-size: 0.75rem;
     color: var(--text-tertiary);
     text-align: center;
-    padding-top: 10px;
+    padding-top: 12px;
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -1479,13 +1395,13 @@
 }
 
 @media (max-width: 720px) {
-    .help-writing-bottom-grid,
-    .help-features-grid,
+    .help-writing-pillars-grid,
+    .help-seating-cards-grid,
     .help-shortcut-list {
         grid-template-columns: 1fr;
     }
 
-    .help-sc-aisle {
+    .help-student-context-pill {
         display: none;
     }
 }

@@ -190,5 +190,52 @@ describe('TooltipsManager', () => {
 
             expect(result).toBe(true);
         });
+
+        it('should synchronize getReferenceClientRect in onShow and use fixed Popper strategy so scaled ancestors never offset tooltips', () => {
+            let capturedOptions;
+            const mockTippy = vi.fn((selector, options) => {
+                capturedOptions = options;
+                return [];
+            });
+            window.tippy = mockTippy;
+
+            TooltipsUI.initTooltips();
+            expect(capturedOptions.popperOptions).toEqual({ strategy: 'fixed' });
+
+            const expectedRect = { left: 240, top: 180, width: 110, height: 120 };
+            const setPropsSpy = vi.fn();
+            const mockInstance = {
+                state: { isFocused: false },
+                reference: {
+                    matches: () => false,
+                    getBoundingClientRect: () => expectedRect
+                },
+                setProps: setPropsSpy
+            };
+
+            const result = capturedOptions.onShow(mockInstance);
+            expect(result).toBe(true);
+            expect(setPropsSpy).toHaveBeenCalledWith({
+                getReferenceClientRect: expect.any(Function)
+            });
+            const rectFn = setPropsSpy.mock.calls[0][0].getReferenceClientRect;
+            expect(rectFn()).toBe(expectedRect);
+        });
+    });
+
+    describe('hideAll', () => {
+        it('should hide visible tooltip instances when hideAll is called', () => {
+            const hideSpy = vi.fn();
+            const mockInstances = [
+                { state: { isVisible: true }, hide: hideSpy },
+                { state: { isVisible: false }, hide: hideSpy }
+            ];
+            window.tippy = vi.fn(() => mockInstances);
+
+            TooltipsUI.initTooltips();
+            TooltipsUI.hideAll();
+
+            expect(hideSpy).toHaveBeenCalledTimes(1);
+        });
     });
 });

@@ -352,7 +352,7 @@ export const SeatingChartManager = {
         const gridArea = document.getElementById('scGridArea');
         gridArea?.addEventListener('dblclick', (e) => {
             if (!e.target.closest('.sc-cell') && !e.target.closest('.sc-desk')) {
-                this._toggleZoom();
+                this._toggleZoom({ clientX: e.clientX, clientY: e.clientY });
             }
         });
 
@@ -373,7 +373,7 @@ export const SeatingChartManager = {
             if (dt > 40 && dt < 320 && dist < 24) {
                 lastTapTime = 0;
                 if (e.cancelable) e.preventDefault();
-                this._toggleZoom();
+                this._toggleZoom({ clientX: touch.clientX, clientY: touch.clientY });
             } else {
                 lastTapTime = now;
                 lastTapX = touch.clientX;
@@ -384,6 +384,32 @@ export const SeatingChartManager = {
         if (gridArea) {
             this._setupPinchAndWheelZoom(gridArea);
             this._setupOverscrollBounce(gridArea);
+
+            if (typeof ResizeObserver !== 'undefined') {
+                if (this._gridResizeObserver) {
+                    this._gridResizeObserver.disconnect();
+                }
+                this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
+                this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
+                this._gridResizeObserver = new ResizeObserver((entries) => {
+                    if (!this._isActive || this._isPinching || this._zoomAnimCleanup) return;
+                    const entry = entries[0];
+                    const borderBox = Array.isArray(entry?.borderBoxSize) ? entry.borderBoxSize[0] : entry?.borderBoxSize;
+                    const w = Math.round(borderBox?.inlineSize ?? gridArea.offsetWidth ?? entry?.contentRect?.width ?? gridArea.clientWidth ?? 0);
+                    const h = Math.round(borderBox?.blockSize ?? gridArea.offsetHeight ?? entry?.contentRect?.height ?? gridArea.clientHeight ?? 0);
+                    if (w <= 0 || h <= 0) return;
+                    if (Math.abs(w - (this._lastObservedGridW || 0)) < 2 && Math.abs(h - (this._lastObservedGridH || 0)) < 2) return;
+                    this._lastObservedGridW = w;
+                    this._lastObservedGridH = h;
+                    clearTimeout(this._resizeDebounceTimer);
+                    this._resizeDebounceTimer = setTimeout(() => {
+                        if (this._isActive && !this._isPinching && !this._zoomAnimCleanup) {
+                            this._applySmartFit();
+                        }
+                    }, 80);
+                });
+                this._gridResizeObserver.observe(gridArea);
+            }
         }
 
         if (!this._resizeListenerInitialized) {
@@ -1381,23 +1407,32 @@ export const SeatingChartManager = {
         cell.style.opacity = '0';
         cell.style.pointerEvents = 'none';
 
+        const naturalW = cell.offsetWidth || startRect.width || 88;
+        const naturalH = cell.offsetHeight || startRect.height || 96;
+        const startScale = (naturalW > 0 && startRect.width > 0)
+            ? Math.round((startRect.width / naturalW) * 1000) / 1000
+            : (this._zoomScale || this._fitScale || 1);
+        const startCenterX = startRect.left + startRect.width / 2;
+        const startCenterY = startRect.top + startRect.height / 2;
+
         flyer.style.position = 'fixed';
-        flyer.style.left = `${startRect.left}px`;
-        flyer.style.top = `${startRect.top}px`;
-        flyer.style.width = `${startRect.width}px`;
-        flyer.style.height = `${startRect.height}px`;
+        flyer.style.left = `${startCenterX - naturalW / 2}px`;
+        flyer.style.top = `${startCenterY - naturalH / 2}px`;
+        flyer.style.width = `${naturalW}px`;
+        flyer.style.height = `${naturalH}px`;
         flyer.style.margin = '0';
         flyer.style.zIndex = '10001';
         flyer.style.pointerEvents = 'none';
         flyer.style.transformOrigin = 'center center';
+        flyer.style.transform = `translate(0px, 0px) scale(${startScale})`;
         flyer.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s cubic-bezier(0.4, 0, 1, 1), filter 0.28s ease';
 
         document.body.appendChild(flyer);
 
         this._pulseSidebarReceiving();
 
-        const dx = targetX - (startRect.left + startRect.width / 2);
-        const dy = targetY - (startRect.top + startRect.height / 2);
+        const dx = targetX - startCenterX;
+        const dy = targetY - startCenterY;
 
         requestAnimationFrame(() => {
             flyer.style.transform = `translate(${dx}px, ${dy}px) scale(0.35) rotate(-10deg)`;
@@ -1797,6 +1832,31 @@ export const SeatingChartManager = {
     // SMART-FIT & MINIMALIST ZOOM
     // ========================================================================
 
+    _getTargetZoomScale(fitScale = this._fitScale || 1) {
+        return fitScale < 0.95
+            ? 1.0
+            : Math.round(fitScale * 1.25 * 100) / 100;
+    },
+
+    _applyBoardScale(board, scale) {
+        if (!board) return;
+        const s = Number(scale) || 1;
+        board.style.setProperty('--sc-scale', s.toString());
+        board.style.removeProperty('zoom');
+
+        const boardW = board.offsetWidth || 0;
+        const boardH = board.offsetHeight || 0;
+        if (boardW > 0 && boardH > 0) {
+            const mx = Math.round((boardW * (s - 1)) / 2 * 100) / 100;
+            const my = Math.round((boardH * (s - 1)) / 2 * 100) / 100;
+            board.style.setProperty('--sc-margin-x', `${mx}px`);
+            board.style.setProperty('--sc-margin-y', `${my}px`);
+        } else {
+            board.style.setProperty('--sc-margin-x', '0px');
+            board.style.setProperty('--sc-margin-y', '0px');
+        }
+    },
+
     _applySmartFit(forceFit = false) {
         const view = document.getElementById('seatingChartView');
         const gridArea = document.getElementById('scGridArea');
@@ -1813,15 +1873,17 @@ export const SeatingChartManager = {
         }
 
         if (!this._isFitted) {
-            const zoomScale = this._zoomScale || (this._fitScale < 0.95 ? 1.0 : 1.25);
-            board.style.setProperty('--sc-scale', zoomScale.toString());
-            board.style.zoom = zoomScale.toString();
+            const zoomScale = this._zoomScale || this._getTargetZoomScale(this._fitScale);
+            this._applyBoardScale(board, zoomScale);
             gridArea.setAttribute('data-fitted', 'false');
+            this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
+            this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
             this._updateZoomButtonUI(false, zoomScale);
             return;
         }
 
-        // Reset scroll when in fitted view so board is never clipped or stuck off-screen
+        // Apply fitted overflow state before reading dimensions so disappearing scrollbars do not shift measurements
+        gridArea.setAttribute('data-fitted', 'true');
         gridArea.style.scrollBehavior = 'auto';
         gridArea.scrollLeft = 0;
         gridArea.scrollTop = 0;
@@ -1829,6 +1891,8 @@ export const SeatingChartManager = {
 
         const areaWidth = gridArea.clientWidth || 0;
         const areaHeight = gridArea.clientHeight || 0;
+        this._lastObservedGridW = Math.round(gridArea.offsetWidth || areaWidth);
+        this._lastObservedGridH = Math.round(gridArea.offsetHeight || areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return;
 
         const isMobile = window.innerWidth <= 768;
@@ -1845,10 +1909,10 @@ export const SeatingChartManager = {
         board.style.removeProperty('transform-origin');
         board.style.removeProperty('transition');
 
-        const activeZoom = parseFloat(board.style.zoom) || parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
+        const activeScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
         const rect = board.getBoundingClientRect?.();
-        const boardW = (board.offsetWidth > 0 ? board.offsetWidth : (rect?.width && activeZoom > 0 ? rect.width / activeZoom : 0)) || board.scrollWidth;
-        const boardH = (board.offsetHeight > 0 ? board.offsetHeight : (rect?.height && activeZoom > 0 ? rect.height / activeZoom : 0)) || board.scrollHeight;
+        const boardW = (board.offsetWidth > 0 ? board.offsetWidth : (rect?.width && activeScale > 0 ? rect.width / activeScale : 0)) || board.scrollWidth;
+        const boardH = (board.offsetHeight > 0 ? board.offsetHeight : (rect?.height && activeScale > 0 ? rect.height / activeScale : 0)) || board.scrollHeight;
 
         if (!boardW || !boardH) return;
 
@@ -1856,22 +1920,23 @@ export const SeatingChartManager = {
         const scaleH = availH / boardH;
         let scale = Math.min(scaleW, scaleH);
 
-        scale = Math.min(1.0, Math.max(0.35, Math.round(scale * 100) / 100));
+        const maxFitScale = isMobile ? 1.0 : 1.65;
+        scale = Math.min(maxFitScale, Math.max(0.35, Math.round(scale * 100) / 100));
 
         this._fitScale = scale;
         this._zoomScale = scale;
         this._isFitted = true;
 
-        board.style.setProperty('--sc-scale', scale.toString());
-        board.style.zoom = scale.toString();
-        gridArea.setAttribute('data-fitted', 'true');
+        this._applyBoardScale(board, scale);
         this._updateZoomButtonUI(true, scale);
     },
 
-    _toggleZoom() {
+    _toggleZoom(focalPoint = null) {
         const gridArea = document.getElementById('scGridArea');
         const board = document.getElementById('scClassroomBoard');
         if (!gridArea || !board) return;
+
+        TooltipsUI?.hideAll?.();
 
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
@@ -1881,19 +1946,26 @@ export const SeatingChartManager = {
         const rBefore = board.getBoundingClientRect?.() || null;
 
         if (this._isFitted) {
-            // Zoom IN: 1.0 (100%) on mobile, 1.25 (125%) on PC/desktop
             this._isFitted = false;
-            const targetScale = this._fitScale < 0.95 ? 1.0 : 1.25;
+            const targetScale = this._getTargetZoomScale(this._fitScale);
             this._zoomScale = targetScale;
-            board.style.setProperty('--sc-scale', targetScale.toString());
-            board.style.zoom = targetScale.toString();
+            this._applyBoardScale(board, targetScale);
             gridArea.setAttribute('data-fitted', 'false');
+            this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
+            this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
             this._updateZoomButtonUI(false, targetScale);
 
-            const maxScrollX = (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0);
-            const maxScrollY = (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0);
-            if (maxScrollX > 0) gridArea.scrollLeft = Math.round(maxScrollX / 2);
-            if (maxScrollY > 0) gridArea.scrollTop = Math.round(maxScrollY / 2);
+            let ratioX = 0.5;
+            let ratioY = 0.5;
+            if (focalPoint && typeof focalPoint.clientX === 'number' && typeof focalPoint.clientY === 'number' && rBefore && rBefore.width > 0 && rBefore.height > 0) {
+                ratioX = Math.max(0, Math.min(1, (focalPoint.clientX - rBefore.left) / rBefore.width));
+                ratioY = Math.max(0, Math.min(1, (focalPoint.clientY - rBefore.top) / rBefore.height));
+            }
+
+            const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+            if (maxScrollX > 0) gridArea.scrollLeft = Math.round(maxScrollX * ratioX);
+            if (maxScrollY > 0) gridArea.scrollTop = Math.round(maxScrollY * ratioY);
         } else {
             this._applySmartFit(true);
         }
@@ -1915,41 +1987,55 @@ export const SeatingChartManager = {
             this._zoomAnimCleanup = null;
         }
 
-        let rAfter = board.getBoundingClientRect?.();
+        const rAfter = board.getBoundingClientRect?.();
         if (!rAfter || rAfter.width <= 0) {
-            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+            board.style.transition = 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
             board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+            let cleaned = false;
+            let onTransEnd = null;
             const cleanup = () => {
+                if (cleaned) return;
+                cleaned = true;
+                if (onTransEnd) {
+                    board.removeEventListener('transitionend', onTransEnd);
+                    onTransEnd = null;
+                }
                 board.style.removeProperty('transform');
                 board.style.removeProperty('transform-origin');
                 board.style.removeProperty('transition');
-                this._zoomAnimCleanup = null;
+                if (this._zoomAnimCleanup === cleanup) {
+                    this._zoomAnimCleanup = null;
+                }
             };
             this._zoomAnimCleanup = cleanup;
-            board.addEventListener('transitionend', (e) => {
+            onTransEnd = (e) => {
                 if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
                     cleanup();
                 }
-            }, { once: true });
+            };
+            board.addEventListener('transitionend', onTransEnd);
             return;
         }
 
-        const supportsZoom = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom', '1'));
-        const zAfter = supportsZoom ? (parseFloat(board.style.getPropertyValue('--sc-scale')) || parseFloat(board.style.zoom) || 1) : 1;
+        const zAfter = parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
         if (zAfter <= 0) return;
 
         const isLockToggle = Boolean(options.lockToggle);
+        const isMobile = this._isMobileView();
+        const sameScale = Math.abs(rBefore.width - rAfter.width) <= 2 && Math.abs(rBefore.height - rAfter.height) <= 2;
+        const isHorizontalDesktopDrawer = isLockToggle && !isMobile && sameScale;
 
         const centerBeforeX = rBefore.left + rBefore.width / 2;
         const centerBeforeY = rBefore.top + rBefore.height / 2;
         const centerAfterX = rAfter.left + rAfter.width / 2;
         const centerAfterY = rAfter.top + rAfter.height / 2;
 
-        const deltaCenterX = Math.round((centerBeforeX - centerAfterX) * 100) / 100;
-        // Lock toggle is strictly 1D (horizontal drawer opening/closing). deltaCenterY must be zero to eliminate any vertical jump or wobbling.
-        const deltaCenterY = isLockToggle ? 0 : (Math.round((centerBeforeY - centerAfterY) * 100) / 100);
-        const scaleX = isLockToggle ? 1 : (Math.round((rBefore.width / rAfter.width) * 1000) / 1000);
-        const scaleY = isLockToggle ? 1 : (Math.round((rBefore.height / rAfter.height) * 1000) / 1000);
+        const rawDeltaX = Math.round((centerBeforeX - centerAfterX) * 100) / 100;
+        const rawDeltaY = isHorizontalDesktopDrawer ? 0 : (Math.round((centerBeforeY - centerAfterY) * 100) / 100);
+        const deltaCenterX = Math.abs(rawDeltaX) <= 1.5 ? 0 : rawDeltaX;
+        const deltaCenterY = Math.abs(rawDeltaY) <= 1.5 ? 0 : rawDeltaY;
+        const scaleX = isHorizontalDesktopDrawer ? 1 : (Math.round((rBefore.width / rAfter.width) * 1000) / 1000);
+        const scaleY = isHorizontalDesktopDrawer ? 1 : (Math.round((rBefore.height / rAfter.height) * 1000) / 1000);
 
         if (Math.abs(deltaCenterX) < 1 && Math.abs(deltaCenterY) < 1 && Math.abs(scaleX - 1) < 0.01) {
             return;
@@ -1963,29 +2049,44 @@ export const SeatingChartManager = {
         board.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleX}, ${scaleY})`;
 
         void board.offsetWidth;
+        if (typeof window.getComputedStyle === 'function') {
+            void window.getComputedStyle(board).transform;
+        }
 
-        board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+        const isPureTranslationSettle = sameScale && Math.abs(scaleX - 1) < 0.015;
+        const transitionTiming = isPureTranslationSettle
+            ? 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)'
+            : 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
+        board.style.transition = transitionTiming;
         board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 
         let timer = null;
         let cleaned = false;
+        let onTransEnd = null;
         const cleanup = () => {
             if (cleaned) return;
             cleaned = true;
             if (timer) clearTimeout(timer);
+            if (onTransEnd) {
+                board.removeEventListener('transitionend', onTransEnd);
+                onTransEnd = null;
+            }
             board.style.removeProperty('transform');
             board.style.removeProperty('transform-origin');
             board.style.removeProperty('transition');
-            this._zoomAnimCleanup = null;
+            if (this._zoomAnimCleanup === cleanup) {
+                this._zoomAnimCleanup = null;
+            }
         };
         this._zoomAnimCleanup = cleanup;
 
-        timer = setTimeout(cleanup, 450);
-        board.addEventListener('transitionend', (e) => {
+        timer = setTimeout(cleanup, 580);
+        onTransEnd = (e) => {
             if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
                 cleanup();
             }
-        }, { once: true });
+        };
+        board.addEventListener('transitionend', onTransEnd);
     },
 
     _updateZoomButtonUI(isFitted, scale) {
@@ -1993,17 +2094,31 @@ export const SeatingChartManager = {
         if (!zoomBtn) return;
         const icon = zoomBtn.querySelector('iconify-icon');
 
-        if (isFitted) {
-            const nextLabel = (this._fitScale < 0.95) ? 'Agrandir (100%)' : 'Agrandir (125%)';
-            if (icon) icon.setAttribute('icon', 'solar:magnifer-zoom-in-linear');
-            zoomBtn.setAttribute('aria-label', nextLabel);
-            zoomBtn.setAttribute('data-tooltip', nextLabel);
-        } else {
-            if (icon) icon.setAttribute('icon', 'solar:minimize-square-linear');
-            zoomBtn.setAttribute('aria-label', 'Ajuster à l’écran');
-            zoomBtn.setAttribute('data-tooltip', 'Ajuster à l’écran');
+        zoomBtn.classList.toggle('is-zoomed', !isFitted);
+
+        const nextIcon = isFitted ? 'solar:magnifer-zoom-in-linear' : 'solar:minimize-square-linear';
+        const nextLabel = isFitted
+            ? ((this._fitScale < 0.95) ? 'Agrandir (100%)' : 'Agrandir (125%)')
+            : 'Ajuster à l’écran';
+
+        if (icon && icon.getAttribute('icon') !== nextIcon) {
+            icon.setAttribute('icon', nextIcon);
+            zoomBtn.classList.remove('sc-zoom-icon-pop');
+            void zoomBtn.offsetWidth;
+            zoomBtn.classList.add('sc-zoom-icon-pop');
         }
-        TooltipsUI?.initTooltips?.();
+
+        const prevLabel = zoomBtn.getAttribute('data-tooltip');
+        zoomBtn.setAttribute('aria-label', nextLabel);
+        zoomBtn.setAttribute('data-tooltip', nextLabel);
+
+        if (prevLabel !== nextLabel) {
+            if (typeof TooltipsUI?.updateTooltip === 'function') {
+                TooltipsUI.updateTooltip(zoomBtn, nextLabel);
+            } else {
+                TooltipsUI?.initTooltips?.();
+            }
+        }
     },
 
     _getMaxZoomScale(minScale = this._fitScale || 0.45) {
@@ -2014,25 +2129,57 @@ export const SeatingChartManager = {
     // PINCH & WHEEL GESTURE ZOOM
     // ========================================================================
 
+    _suppressTouchTooltips(cooldownMs = 400) {
+        if (TooltipsUI) {
+            TooltipsUI.isIgnoringTooltips = true;
+            TooltipsUI.hideAll?.();
+        }
+        if (this._tooltipSuppressTimer) {
+            clearTimeout(this._tooltipSuppressTimer);
+            this._tooltipSuppressTimer = null;
+        }
+        if (cooldownMs > 0) {
+            this._tooltipSuppressTimer = setTimeout(() => {
+                this._tooltipSuppressTimer = null;
+                if (!this._isPinching && !this._touchDragEl && TooltipsUI) {
+                    TooltipsUI.isIgnoringTooltips = false;
+                }
+            }, cooldownMs);
+        }
+    },
+
     _setupPinchAndWheelZoom(gridArea) {
         if (!gridArea) return;
 
         let pinchState = null;
         let rafPending = false;
+        let pinchEndTimer = null;
+
+        const clearPinchEndTimer = () => {
+            if (pinchEndTimer) {
+                clearTimeout(pinchEndTimer);
+                pinchEndTimer = null;
+            }
+        };
 
         const onTouchStart = (e) => {
             if (e.touches.length !== 2) {
+                clearPinchEndTimer();
                 if (pinchState) {
                     const stateToFinish = pinchState;
                     pinchState = null;
                     this._endPinch(stateToFinish, gridArea);
-                    this._isPinching = false;
+                    this._suppressTouchTooltips(450);
                 }
+                this._isPinching = false;
                 return;
             }
 
+            clearPinchEndTimer();
             if (e.cancelable) e.preventDefault();
             this._isPinching = true;
+            this._cleanupTouch();
+            this._suppressTouchTooltips(0);
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
@@ -2063,10 +2210,10 @@ export const SeatingChartManager = {
             const originPercentX = Math.round(((midX - boardRect.left) / bw) * 10000) / 100;
             const originPercentY = Math.round(((midY - boardRect.top) / bh) * 10000) / 100;
 
-            const maxScrollXBefore = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
-            const maxScrollYBefore = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
-            const scrollRatioX = maxScrollXBefore > 0 ? (gridArea.scrollLeft / maxScrollXBefore) : 0.5;
-            const scrollRatioY = maxScrollYBefore > 0 ? (gridArea.scrollTop / maxScrollYBefore) : 0.5;
+            const naturalW = board.offsetWidth > 0 ? board.offsetWidth : (bw / startScale);
+            const naturalH = board.offsetHeight > 0 ? board.offsetHeight : (bh / startScale);
+            const originCompX = -((originPercentX - 50) / 100) * naturalW * ((1 - startScale) / startScale);
+            const originCompY = -((originPercentY - 50) / 100) * naturalH * ((1 - startScale) / startScale);
 
             pinchState = {
                 startDist: dist,
@@ -2077,9 +2224,9 @@ export const SeatingChartManager = {
                 initialMidY: midY,
                 originPercentX,
                 originPercentY,
+                originCompX,
+                originCompY,
                 boardRect,
-                scrollRatioX,
-                scrollRatioY,
                 currentScale: startScale,
                 currentMidX: midX,
                 currentMidY: midY
@@ -2087,6 +2234,9 @@ export const SeatingChartManager = {
 
             board.style.transformOrigin = `${originPercentX.toFixed(2)}% ${originPercentY.toFixed(2)}%`;
             board.style.transition = 'none';
+            if (Math.abs(originCompX) > 0.05 || Math.abs(originCompY) > 0.05) {
+                board.style.transform = `translate3d(${originCompX.toFixed(2)}px, ${originCompY.toFixed(2)}px, 0)`;
+            }
         };
 
         const renderPinch = () => {
@@ -2094,11 +2244,11 @@ export const SeatingChartManager = {
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
 
-            const { currentScale, startScale, initialMidX, initialMidY, currentMidX, currentMidY, minScale } = pinchState;
+            const { currentScale, startScale, initialMidX, initialMidY, currentMidX, currentMidY, minScale, originCompX = 0, originCompY = 0 } = pinchState;
             const visualScale = currentScale / startScale;
 
-            const panX = (currentMidX - initialMidX) / startScale;
-            const panY = (currentMidY - initialMidY) / startScale;
+            const panX = originCompX + (currentMidX - initialMidX) / startScale;
+            const panY = originCompY + (currentMidY - initialMidY) / startScale;
 
             board.style.transform = (Math.abs(panX) > 0.1 || Math.abs(panY) > 0.1)
                 ? `translate3d(${panX.toFixed(2)}px, ${panY.toFixed(2)}px, 0) scale(${visualScale.toFixed(4)})`
@@ -2151,15 +2301,32 @@ export const SeatingChartManager = {
         };
 
         const onTouchEnd = (e) => {
-            if (!pinchState) return;
+            if (!pinchState) {
+                if (this._isPinching && (!e.touches || e.touches.length === 0)) {
+                    clearPinchEndTimer();
+                    this._isPinching = false;
+                    this._suppressTouchTooltips(450);
+                }
+                return;
+            }
             if (e.touches.length < 2) {
+                if (rafPending) {
+                    rafPending = false;
+                    renderPinch();
+                }
                 const stateToFinish = pinchState;
                 pinchState = null;
                 this._endPinch(stateToFinish, gridArea);
+                clearPinchEndTimer();
                 if (e.touches.length === 0) {
                     this._isPinching = false;
+                    this._suppressTouchTooltips(450);
                 } else {
-                    setTimeout(() => { this._isPinching = false; }, 200);
+                    pinchEndTimer = setTimeout(() => {
+                        pinchEndTimer = null;
+                        this._isPinching = false;
+                        this._suppressTouchTooltips(400);
+                    }, 200);
                 }
             }
         };
@@ -2174,6 +2341,7 @@ export const SeatingChartManager = {
         gridArea.addEventListener('wheel', (e) => {
             if (!e.ctrlKey) return;
             e.preventDefault();
+            TooltipsUI?.hideAll?.();
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
@@ -2212,9 +2380,10 @@ export const SeatingChartManager = {
             this._zoomScale = nextScale;
             this._isFitted = (Math.abs(nextScale - minScale) < 0.02);
 
-            board.style.setProperty('--sc-scale', nextScale.toString());
-            board.style.zoom = nextScale.toString();
+            this._applyBoardScale(board, nextScale);
             gridArea.setAttribute('data-fitted', this._isFitted ? 'true' : 'false');
+            this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
+            this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
             this._updateZoomButtonUI(this._isFitted, nextScale);
 
             const newScrollLeft = (prevScrollLeft + mouseX) * scaleRatio - mouseX;
@@ -2278,17 +2447,17 @@ export const SeatingChartManager = {
         if (isFitted) {
             this._zoomScale = minScale;
             this._isFitted = true;
-            board.style.setProperty('--sc-scale', minScale.toString());
-            board.style.zoom = minScale.toString();
+            this._applyBoardScale(board, minScale);
             gridArea.setAttribute('data-fitted', 'true');
             this._updateZoomButtonUI(true, minScale);
             this._applySmartFit(true);
         } else {
             this._zoomScale = targetScale;
             this._isFitted = false;
-            board.style.setProperty('--sc-scale', targetScale.toString());
-            board.style.zoom = targetScale.toString();
+            this._applyBoardScale(board, targetScale);
             gridArea.setAttribute('data-fitted', 'false');
+            this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
+            this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
             this._updateZoomButtonUI(false, targetScale);
 
             if (rBefore && rBefore.width > 0) {
@@ -2328,72 +2497,79 @@ export const SeatingChartManager = {
     _setupOverscrollBounce(gridArea) {
         if (!gridArea) return;
 
+        const MAX_RAW_EXCESS = 75;
         let touchStartX = 0;
         let touchStartY = 0;
-        let startScrollLeft = 0;
-        let startScrollTop = 0;
+        let prevTouchX = 0;
+        let prevTouchY = 0;
+        let prevScrollLeft = 0;
+        let prevScrollTop = 0;
+        let baseMaxScrollX = 0;
+        let baseMaxScrollY = 0;
+        let rawExcessX = 0;
+        let rawExcessY = 0;
         let isTouching = false;
         let isOverscrolling = false;
         let currentOverscrollX = 0;
         let currentOverscrollY = 0;
+        let lastTouchEndTime = 0;
+        let releaseScrollLeft = 0;
+        let releaseScrollTop = 0;
 
-        let touchSamples = [];
-        const recordTouchSample = (x, y) => {
-            const now = performance.now();
-            touchSamples.push({ t: now, x, y });
-            if (touchSamples.length > 6) touchSamples.shift();
-            while (touchSamples.length > 2 && (now - touchSamples[0].t) > 120) {
-                touchSamples.shift();
-            }
-        };
+        const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
 
-        const getReleaseVelocity = () => {
-            if (touchSamples.length < 2) return { vx: 0, vy: 0 };
-            const first = touchSamples[0];
-            const last = touchSamples[touchSamples.length - 1];
-            const dt = last.t - first.t;
-            if (dt <= 5) return { vx: 0, vy: 0 };
-            return {
-                vx: (last.x - first.x) / dt,
-                vy: (last.y - first.y) / dt
-            };
-        };
-
-        const clampOverscroll = (excess, maxOvershoot = 64, resistance = 0.35) => {
+        const clampOverscroll = (excess, maxOvershoot = 56, resistance = 0.34) => {
             if (Math.abs(excess) < 1) return 0;
             const sign = Math.sign(excess);
             const abs = Math.abs(excess);
-            const damped = (abs * resistance) / (1 + (abs * resistance) / maxOvershoot);
+            const scaleComp = Math.max(1, this._zoomScale || 1);
+            const damped = ((abs * resistance) / (1 + (abs * resistance) / maxOvershoot)) / scaleComp;
             return Math.round(sign * damped * 10) / 10;
+        };
+
+        const effectiveExcess = (val, deadZone = 5) => {
+            if (Math.abs(val) <= deadZone) return 0;
+            return val - Math.sign(val) * deadZone;
         };
 
         const onTouchStart = (e) => {
             if (this._isPinching || e.touches.length !== 1 || this._dragSource || this._touchSourceInfo) {
-                if (isOverscrolling) {
+                if (isOverscrolling && !this._isPinching && (!e.touches || e.touches.length < 2)) {
                     this._releaseOverscrollBounce();
-                    isOverscrolling = false;
                 }
+                isOverscrolling = false;
                 isTouching = false;
+                rawExcessX = 0;
+                rawExcessY = 0;
                 return;
             }
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
 
-            if (this._zoomAnimCleanup) {
-                this._zoomAnimCleanup();
-                this._zoomAnimCleanup = null;
+            // If an inertial edge impact bounce is still in its outward 85ms phase, halt the outward push immediately
+            // and let it glide back toward 0 so it never fights a new pan toward the center
+            if (this._overscrollApexTimer) {
+                clearTimeout(this._overscrollApexTimer);
+                this._overscrollApexTimer = null;
+                board.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)';
+                board.style.transform = 'translate3d(0, 0, 0)';
             }
 
             isTouching = true;
             isOverscrolling = false;
             currentOverscrollX = 0;
             currentOverscrollY = 0;
+            rawExcessX = 0;
+            rawExcessY = 0;
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
-            startScrollLeft = gridArea.scrollLeft;
-            startScrollTop = gridArea.scrollTop;
-            touchSamples = [{ t: performance.now(), x: touchStartX, y: touchStartY }];
+            prevTouchX = touchStartX;
+            prevTouchY = touchStartY;
+            prevScrollLeft = gridArea.scrollLeft;
+            prevScrollTop = gridArea.scrollTop;
+            baseMaxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            baseMaxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
         };
 
         const onTouchMove = (e) => {
@@ -2403,42 +2579,92 @@ export const SeatingChartManager = {
             if (!board) return;
 
             const touch = e.touches[0];
-            recordTouchSample(touch.clientX, touch.clientY);
 
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
+            const stepX = touch.clientX - prevTouchX;
+            const stepY = touch.clientY - prevTouchY;
+            const dScrollX = gridArea.scrollLeft - prevScrollLeft;
+            const dScrollY = gridArea.scrollTop - prevScrollTop;
 
-            const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
-            const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+            prevTouchX = touch.clientX;
+            prevTouchY = touch.clientY;
+            prevScrollLeft = gridArea.scrollLeft;
+            prevScrollTop = gridArea.scrollTop;
 
-            let excessX = 0;
-            let excessY = 0;
+            if (Math.abs(touch.clientX - touchStartX) > 6 || Math.abs(touch.clientY - touchStartY) > 6) {
+                this._suppressTouchTooltips(400);
+            }
+
+            const maxScrollX = baseMaxScrollX > 0
+                ? baseMaxScrollX
+                : Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            const maxScrollY = baseMaxScrollY > 0
+                ? baseMaxScrollY
+                : Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+
+            // If native scroll has started moving away from an overscrolled edge toward the center,
+            // immediately hand off the elastic return to the GPU compositor so main-thread transform
+            // never fights 120Hz native scrolling or snaps on diagonal movement
+            const scrollingBackX = (rawExcessX > 0 && (dScrollX > 0.5 || gridArea.scrollLeft > 1.5)) ||
+                                   (rawExcessX < 0 && (dScrollX < -0.5 || gridArea.scrollLeft < maxScrollX - 2));
+            const scrollingBackY = (rawExcessY > 0 && (dScrollY > 0.5 || gridArea.scrollTop > 1.5)) ||
+                                   (rawExcessY < 0 && (dScrollY < -0.5 || gridArea.scrollTop < maxScrollY - 2));
+
+            if (scrollingBackX || scrollingBackY) {
+                rawExcessX = 0;
+                rawExcessY = 0;
+                if (isOverscrolling) {
+                    isOverscrolling = false;
+                    currentOverscrollX = 0;
+                    currentOverscrollY = 0;
+                    this._releaseOverscrollBounce();
+                }
+                return;
+            }
 
             if (maxScrollX > 0) {
-                if (gridArea.scrollLeft <= 1 && deltaX > 0) {
-                    excessX = deltaX - (startScrollLeft - gridArea.scrollLeft);
-                } else if (gridArea.scrollLeft >= maxScrollX - 2.5 && deltaX < 0) {
-                    excessX = deltaX + (gridArea.scrollLeft - startScrollLeft);
+                if (gridArea.scrollLeft <= 1 && stepX > 0 && rawExcessX >= 0 && Math.abs(dScrollY) < 1) {
+                    rawExcessX = clamp(rawExcessX + Math.max(0, stepX + dScrollX), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (gridArea.scrollLeft >= maxScrollX - 1.5 && stepX < 0 && rawExcessX <= 0 && Math.abs(dScrollY) < 1) {
+                    rawExcessX = clamp(rawExcessX + Math.min(0, stepX + dScrollX), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (rawExcessX !== 0) {
+                    const decayX = Math.max(Math.abs(stepX), Math.abs(dScrollX)) * 1.15;
+                    rawExcessX = rawExcessX > 0
+                        ? Math.max(0, rawExcessX - decayX)
+                        : Math.min(0, rawExcessX + decayX);
                 }
-            } else {
-                excessX = deltaX;
+            } else if (Math.abs(dScrollY) < 1) {
+                const factorX = (rawExcessX !== 0 && Math.sign(stepX) !== Math.sign(rawExcessX)) ? 1.5 : 1;
+                rawExcessX = clamp(rawExcessX + stepX * factorX, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
             }
 
             if (maxScrollY > 0) {
-                if (gridArea.scrollTop <= 1 && deltaY > 0) {
-                    excessY = deltaY - (startScrollTop - gridArea.scrollTop);
-                } else if (gridArea.scrollTop >= maxScrollY - 2.5 && deltaY < 0) {
-                    excessY = deltaY + (gridArea.scrollTop - startScrollTop);
+                if (gridArea.scrollTop <= 1 && stepY > 0 && rawExcessY >= 0 && Math.abs(dScrollX) < 1) {
+                    rawExcessY = clamp(rawExcessY + Math.max(0, stepY + dScrollY), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (gridArea.scrollTop >= maxScrollY - 1.5 && stepY < 0 && rawExcessY <= 0 && Math.abs(dScrollX) < 1) {
+                    rawExcessY = clamp(rawExcessY + Math.min(0, stepY + dScrollY), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (rawExcessY !== 0) {
+                    const decayY = Math.max(Math.abs(stepY), Math.abs(dScrollY)) * 1.15;
+                    rawExcessY = rawExcessY > 0
+                        ? Math.max(0, rawExcessY - decayY)
+                        : Math.min(0, rawExcessY + decayY);
                 }
-            } else {
-                excessY = deltaY;
+            } else if (Math.abs(dScrollX) < 1) {
+                const factorY = (rawExcessY !== 0 && Math.sign(stepY) !== Math.sign(rawExcessY)) ? 1.5 : 1;
+                rawExcessY = clamp(rawExcessY + stepY * factorY, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
             }
 
-            if (Math.abs(excessX) > 4 || Math.abs(excessY) > 4) {
-                const ox = clampOverscroll(excessX);
-                const oy = clampOverscroll(excessY);
+            const effX = effectiveExcess(rawExcessX, 5);
+            const effY = effectiveExcess(rawExcessY, 5);
+
+            if (effX !== 0 || effY !== 0) {
+                const ox = clampOverscroll(effX);
+                const oy = clampOverscroll(effY);
 
                 if (Math.abs(ox) > 0 || Math.abs(oy) > 0) {
+                    if (!isOverscrolling && this._zoomAnimCleanup) {
+                        this._zoomAnimCleanup();
+                        this._zoomAnimCleanup = null;
+                    }
                     isOverscrolling = true;
                     currentOverscrollX = ox;
                     currentOverscrollY = oy;
@@ -2447,22 +2673,26 @@ export const SeatingChartManager = {
                     board.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
                 }
             } else if (isOverscrolling) {
-                board.style.transform = 'translate3d(0, 0, 0)';
+                isOverscrolling = false;
                 currentOverscrollX = 0;
                 currentOverscrollY = 0;
+                this._releaseOverscrollBounce();
             }
         };
 
         const onTouchEnd = () => {
             if (!isTouching) return;
             isTouching = false;
-
-            const { vx, vy } = getReleaseVelocity();
+            lastTouchEndTime = performance.now();
+            releaseScrollLeft = gridArea.scrollLeft;
+            releaseScrollTop = gridArea.scrollTop;
 
             if (isOverscrolling && (currentOverscrollX !== 0 || currentOverscrollY !== 0)) {
-                this._releaseOverscrollBounce(currentOverscrollX, currentOverscrollY, vx, vy);
+                this._releaseOverscrollBounce();
             }
             isOverscrolling = false;
+            rawExcessX = 0;
+            rawExcessY = 0;
         };
 
         gridArea.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -2479,10 +2709,14 @@ export const SeatingChartManager = {
         let lastBounceTime = 0;
 
         const onScroll = () => {
-            if (this._isPinching || isTouching || this._dragSource || this._touchSourceInfo) {
+            TooltipsUI?.hideAll?.();
+
+            if (this._isPinching || isTouching || this._dragSource || this._touchSourceInfo || this._zoomAnimCleanup || this._isFitted) {
                 lastScrollX = gridArea.scrollLeft;
                 lastScrollY = gridArea.scrollTop;
                 lastScrollTime = performance.now();
+                lastVelocityX = 0;
+                lastVelocityY = 0;
                 return;
             }
 
@@ -2497,7 +2731,10 @@ export const SeatingChartManager = {
             const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
             const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
 
-            const cooldownElapsed = (now - lastBounceTime) > 350;
+            const cooldownElapsed = (now - lastBounceTime) > 380;
+            const traveledSinceReleaseX = Math.abs(currentX - releaseScrollLeft);
+            const traveledSinceReleaseY = Math.abs(currentY - releaseScrollTop);
+            const recentlyReleased = (now - lastTouchEndTime) < 650;
 
             if (cooldownElapsed) {
                 let hitEdgeX = 0;
@@ -2506,20 +2743,24 @@ export const SeatingChartManager = {
                 const speedX = currentX < lastScrollX ? Math.min(vx, lastVelocityX) : Math.max(vx, lastVelocityX);
                 const speedY = currentY < lastScrollY ? Math.min(vy, lastVelocityY) : Math.max(vy, lastVelocityY);
 
+                const canBounceX = !recentlyReleased || traveledSinceReleaseX > 36;
+                const canBounceY = !recentlyReleased || traveledSinceReleaseY > 36;
+                const scaleComp = Math.max(1, this._zoomScale || 1);
+
                 // Left boundary collision: moving left into 0
-                if (currentX <= 2 && currentX < lastScrollX && lastScrollX > 0.5 && speedX < -0.12) {
-                    hitEdgeX = Math.min(36, Math.max(12, Math.round(Math.abs(speedX) * 24)));
+                if (canBounceX && currentX <= 2 && currentX < lastScrollX && lastScrollX > 0.5 && speedX < -0.42) {
+                    hitEdgeX = Math.round((Math.min(22, Math.max(7, Math.abs(speedX) * 16)) / scaleComp) * 10) / 10;
                 // Right boundary collision: moving right into maxScrollX (with subpixel tolerance)
-                } else if (maxScrollX > 0 && currentX >= maxScrollX - 3 && currentX > lastScrollX && lastScrollX < maxScrollX - 0.5 && speedX > 0.12) {
-                    hitEdgeX = -Math.min(36, Math.max(12, Math.round(Math.abs(speedX) * 24)));
+                } else if (canBounceX && maxScrollX > 0 && currentX >= maxScrollX - 2.5 && currentX > lastScrollX && lastScrollX < maxScrollX - 0.5 && speedX > 0.42) {
+                    hitEdgeX = -Math.round((Math.min(22, Math.max(7, Math.abs(speedX) * 16)) / scaleComp) * 10) / 10;
                 }
 
                 // Top boundary collision: moving up into 0
-                if (currentY <= 2 && currentY < lastScrollY && lastScrollY > 0.5 && speedY < -0.12) {
-                    hitEdgeY = Math.min(36, Math.max(12, Math.round(Math.abs(speedY) * 24)));
+                if (canBounceY && currentY <= 2 && currentY < lastScrollY && lastScrollY > 0.5 && speedY < -0.42) {
+                    hitEdgeY = Math.round((Math.min(22, Math.max(7, Math.abs(speedY) * 16)) / scaleComp) * 10) / 10;
                 // Bottom boundary collision: moving down into maxScrollY (with subpixel tolerance)
-                } else if (maxScrollY > 0 && currentY >= maxScrollY - 3 && currentY > lastScrollY && lastScrollY < maxScrollY - 0.5 && speedY > 0.12) {
-                    hitEdgeY = -Math.min(36, Math.max(12, Math.round(Math.abs(speedY) * 24)));
+                } else if (canBounceY && maxScrollY > 0 && currentY >= maxScrollY - 2.5 && currentY > lastScrollY && lastScrollY < maxScrollY - 0.5 && speedY > 0.42) {
+                    hitEdgeY = -Math.round((Math.min(22, Math.max(7, Math.abs(speedY) * 16)) / scaleComp) * 10) / 10;
                 }
 
                 if (hitEdgeX !== 0 || hitEdgeY !== 0) {
@@ -2538,7 +2779,7 @@ export const SeatingChartManager = {
         gridArea.addEventListener('scroll', onScroll, { passive: true });
     },
 
-    _releaseOverscrollBounce(ox = 0, oy = 0, vx = 0, vy = 0) {
+    _releaseOverscrollBounce() {
         const board = document.getElementById('scClassroomBoard');
         if (!board) return;
 
@@ -2549,9 +2790,11 @@ export const SeatingChartManager = {
 
         let cleaned = false;
         let onTransEnd = null;
+        let timer = null;
         const cleanup = () => {
             if (cleaned) return;
             cleaned = true;
+            if (timer) clearTimeout(timer);
             if (onTransEnd) {
                 board.removeEventListener('transitionend', onTransEnd);
                 onTransEnd = null;
@@ -2564,35 +2807,13 @@ export const SeatingChartManager = {
         };
         this._zoomAnimCleanup = cleanup;
 
-        const impulseX = (Math.sign(vx) === Math.sign(ox) && Math.abs(vx) > 0.2)
-            ? Math.min(32, Math.round(Math.abs(vx) * 28)) * Math.sign(vx)
-            : 0;
-        const impulseY = (Math.sign(vy) === Math.sign(oy) && Math.abs(vy) > 0.2)
-            ? Math.min(32, Math.round(Math.abs(vy) * 28)) * Math.sign(vy)
-            : 0;
+        board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+        board.style.transform = 'translate3d(0, 0, 0)';
 
-        if (Math.abs(impulseX) > 4 || Math.abs(impulseY) > 4) {
-            const apexX = ox + impulseX;
-            const apexY = oy + impulseY;
-
-            board.style.transition = 'transform 0.09s cubic-bezier(0.1, 0.9, 0.2, 1)';
-            board.style.transform = `translate3d(${apexX}px, ${apexY}px, 0)`;
-
-            setTimeout(() => {
-                if (cleaned) return;
-                board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
-                board.style.transform = 'translate3d(0, 0, 0)';
-            }, 85);
-        } else {
-            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
-            board.style.transform = 'translate3d(0, 0, 0)';
-        }
-
-        const timer = setTimeout(cleanup, 520);
+        timer = setTimeout(cleanup, 460);
         onTransEnd = (e) => {
             if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
                 if (board.style.transform.includes('0px, 0px, 0') || board.style.transform === 'translate3d(0, 0, 0)') {
-                    clearTimeout(timer);
                     cleanup();
                 }
             }
@@ -2614,9 +2835,16 @@ export const SeatingChartManager = {
 
         let cleaned = false;
         let onTransEnd = null;
+        let apexTimer = null;
+        let timer = null;
         const cleanup = () => {
             if (cleaned) return;
             cleaned = true;
+            if (apexTimer) clearTimeout(apexTimer);
+            if (this._overscrollApexTimer === apexTimer) {
+                this._overscrollApexTimer = null;
+            }
+            if (timer) clearTimeout(timer);
             if (onTransEnd) {
                 board.removeEventListener('transitionend', onTransEnd);
                 onTransEnd = null;
@@ -2629,17 +2857,18 @@ export const SeatingChartManager = {
         };
         this._zoomAnimCleanup = cleanup;
 
-        setTimeout(() => {
+        apexTimer = setTimeout(() => {
+            this._overscrollApexTimer = null;
             if (cleaned) return;
             board.style.transition = 'transform 0.38s cubic-bezier(0.25, 1, 0.3, 1)';
             board.style.transform = 'translate3d(0, 0, 0)';
         }, 85);
+        this._overscrollApexTimer = apexTimer;
 
-        const timer = setTimeout(cleanup, 500);
+        timer = setTimeout(cleanup, 500);
         onTransEnd = (e) => {
             if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
                 if (board.style.transform.includes('0px, 0px, 0') || board.style.transform === 'translate3d(0, 0, 0)') {
-                    clearTimeout(timer);
                     cleanup();
                 }
             }
@@ -2903,6 +3132,7 @@ export const SeatingChartManager = {
         this._hasChangesSinceUnlock = true;
         this._savePositionsToState(true); // Conserve les coordonnées des élèves temporairement hors-grille
         this._render();
+        this._applySmartFit(true);
         this._saveGridConfig();
         this._staggerCellEntrance();
     },
@@ -3138,6 +3368,7 @@ export const SeatingChartManager = {
 
         this._savePositionsToState();
         this._render();
+        this._applySmartFit(true);
         this._saveGridConfig();
         this._staggerCellEntrance();
     },
@@ -4016,9 +4247,18 @@ export const SeatingChartManager = {
         let startX, startY, hasMoved = false;
         let isScrolling = false;
         let longPressTimer = null;
+        let pendingSourceInfo = null;
 
         element.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1 || this._isLocked || element.classList.contains('pinned')) return;
+            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned')) {
+                clearTimeout(longPressTimer);
+                if (this._longPressTimer) {
+                    clearTimeout(this._longPressTimer);
+                    this._longPressTimer = null;
+                }
+                pendingSourceInfo = null;
+                return;
+            }
             this._dismissOnboardingHint();
             const touch = e.touches[0];
             startX = touch.clientX;
@@ -4038,47 +4278,71 @@ export const SeatingChartManager = {
             if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
             }
-            this._touchSourceInfo = activeSourceInfo;
+            pendingSourceInfo = activeSourceInfo;
 
-            // Long-press affordance on mobile (280ms hold triggers drag in any direction with subtle haptic):
+            // Long-press affordance on touch (280ms hold triggers drag in any direction with subtle haptic):
             // - Sidebar chips: hold unlocks free omnidirectional drag
             // - Board cells: hold lifts the desk to drag, leaving quick swipes to pan/scroll the board!
-            if (this._isMobileView()) {
-                clearTimeout(longPressTimer);
-                longPressTimer = setTimeout(() => {
-                    if (!hasMoved && !isScrolling && this._touchSourceInfo) {
-                        hasMoved = true;
-                        this._haptic(18);
-                        if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                            this._clearSelection();
-                        }
-                        this._createTouchGhost(element, touch);
+            clearTimeout(longPressTimer);
+            if (this._longPressTimer) clearTimeout(this._longPressTimer);
+            longPressTimer = setTimeout(() => {
+                this._longPressTimer = null;
+                if (!hasMoved && !isScrolling && !this._isPinching && pendingSourceInfo) {
+                    hasMoved = true;
+                    this._touchSourceInfo = pendingSourceInfo;
+                    this._suppressTouchTooltips(0);
+                    this._haptic(18);
+                    if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                        this._clearSelection();
                     }
-                }, 280);
-            }
+                    this._createTouchGhost(element, touch);
+                }
+            }, 280);
+            this._longPressTimer = longPressTimer;
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
-            if (!this._touchSourceInfo || this._isLocked || isScrolling || element.classList.contains('pinned')) return;
+            if (this._isPinching || (e.touches && e.touches.length > 1)) {
+                clearTimeout(longPressTimer);
+                isScrolling = true;
+                pendingSourceInfo = null;
+                this._cleanupTouch();
+                return;
+            }
+            if ((!pendingSourceInfo && !this._touchSourceInfo) || this._isLocked || isScrolling || element.classList.contains('pinned')) return;
             const touch = e.touches[0];
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
 
-            // Mobile gestures disambiguation
-            if (!hasMoved && this._isMobileView()) {
+            // Touch gestures disambiguation
+            if (!hasMoved) {
                 if (sourceInfo.type === 'sidebar') {
-                    // Horizontal motion in bottom tray: prioritize native horizontal list scrolling
-                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
-                        isScrolling = true;
-                        clearTimeout(longPressTimer);
-                        this._touchSourceInfo = null;
-                        return;
-                    }
+                    if (this._isMobileView()) {
+                        // Horizontal motion in bottom tray: prioritize native horizontal list scrolling
+                        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+                            isScrolling = true;
+                            clearTimeout(longPressTimer);
+                            pendingSourceInfo = null;
+                            this._touchSourceInfo = null;
+                            return;
+                        }
 
-                    // Vertical motion pulling upward toward the board: engage drag immediately
-                    if (dy < -12 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                        // Vertical motion pulling upward toward the board: engage drag immediately
+                        if (dy < -12 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                            clearTimeout(longPressTimer);
+                            hasMoved = true;
+                            this._touchSourceInfo = pendingSourceInfo;
+                            this._suppressTouchTooltips(0);
+                            if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                                this._clearSelection();
+                            }
+                            this._createTouchGhost(element, touch);
+                        }
+                    } else if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
                         clearTimeout(longPressTimer);
                         hasMoved = true;
+                        this._touchSourceInfo = pendingSourceInfo;
+                        this._suppressTouchTooltips(0);
                         if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
                             this._clearSelection();
                         }
@@ -4089,17 +4353,11 @@ export const SeatingChartManager = {
                     if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
                         isScrolling = true;
                         clearTimeout(longPressTimer);
+                        pendingSourceInfo = null;
                         this._touchSourceInfo = null;
                         return;
                     }
                 }
-            } else if (!hasMoved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-                clearTimeout(longPressTimer);
-                hasMoved = true;
-                if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                    this._clearSelection();
-                }
-                this._createTouchGhost(element, touch);
             }
 
             if (hasMoved && this._touchDragEl) {
@@ -4107,12 +4365,13 @@ export const SeatingChartManager = {
                 this._touchDragEl.style.left = `${touch.clientX}px`;
                 this._touchDragEl.style.top = `${touch.clientY}px`;
                 this._highlightCellUnderTouch(touch.clientX, touch.clientY);
+                this._updateTouchAutoScroll(touch.clientX, touch.clientY);
             }
         }, { passive: false });
 
         element.addEventListener('touchend', (e) => {
             clearTimeout(longPressTimer);
-            if (!hasMoved || !this._touchSourceInfo) {
+            if (this._isPinching || !hasMoved || !this._touchSourceInfo) {
                 this._cleanupTouch();
                 return;
             }
@@ -4169,9 +4428,92 @@ export const SeatingChartManager = {
         this._touchDragEl = null;
     },
 
+    _updateTouchAutoScroll(x, y) {
+        this._lastTouchDragX = x;
+        this._lastTouchDragY = y;
+
+        if (this._isFitted || !this._touchDragEl || this._isTouchOverSidebar(x, y)) {
+            this._stopTouchAutoScroll();
+            return;
+        }
+
+        const gridArea = document.getElementById('scGridArea');
+        if (!gridArea) return;
+
+        const rect = gridArea.getBoundingClientRect?.();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+        const edgeThreshold = 48;
+        const maxSpeed = 9;
+        let vx = 0;
+        let vy = 0;
+
+        if (x - rect.left < edgeThreshold && x >= rect.left) {
+            vx = -Math.round(((edgeThreshold - (x - rect.left)) / edgeThreshold) * maxSpeed);
+        } else if (rect.right - x < edgeThreshold && x <= rect.right) {
+            vx = Math.round(((edgeThreshold - (rect.right - x)) / edgeThreshold) * maxSpeed);
+        }
+
+        const topBoundary = rect.top + 56;
+        if (y - topBoundary < edgeThreshold && y >= rect.top) {
+            vy = -Math.round(((edgeThreshold - Math.max(0, y - topBoundary)) / edgeThreshold) * maxSpeed);
+        } else if (rect.bottom - y < edgeThreshold && y <= rect.bottom) {
+            vy = Math.round(((edgeThreshold - (rect.bottom - y)) / edgeThreshold) * maxSpeed);
+        }
+
+        this._touchAutoScrollVx = vx;
+        this._touchAutoScrollVy = vy;
+
+        if (vx === 0 && vy === 0) {
+            this._stopTouchAutoScroll();
+            return;
+        }
+
+        if (!this._touchAutoScrollRaf) {
+            const step = () => {
+                if (!this._touchDragEl || this._isFitted || (this._touchAutoScrollVx === 0 && this._touchAutoScrollVy === 0)) {
+                    this._touchAutoScrollRaf = null;
+                    return;
+                }
+                const ga = document.getElementById('scGridArea');
+                if (ga) {
+                    const maxScrollX = Math.max(0, (ga.scrollWidth || 0) - (ga.clientWidth || 0));
+                    const maxScrollY = Math.max(0, (ga.scrollHeight || 0) - (ga.clientHeight || 0));
+                    if (maxScrollX > 0 && this._touchAutoScrollVx !== 0) {
+                        ga.scrollLeft = Math.max(0, Math.min(maxScrollX, ga.scrollLeft + this._touchAutoScrollVx));
+                    }
+                    if (maxScrollY > 0 && this._touchAutoScrollVy !== 0) {
+                        ga.scrollTop = Math.max(0, Math.min(maxScrollY, ga.scrollTop + this._touchAutoScrollVy));
+                    }
+                    this._highlightCellUnderTouch(this._lastTouchDragX, this._lastTouchDragY);
+                }
+                this._touchAutoScrollRaf = requestAnimationFrame(step);
+            };
+            this._touchAutoScrollRaf = requestAnimationFrame(step);
+        }
+    },
+
+    _stopTouchAutoScroll() {
+        this._touchAutoScrollVx = 0;
+        this._touchAutoScrollVy = 0;
+        if (this._touchAutoScrollRaf) {
+            cancelAnimationFrame(this._touchAutoScrollRaf);
+            this._touchAutoScrollRaf = null;
+        }
+    },
+
     _cleanupTouch() {
+        const hadActiveDrag = Boolean(this._touchDragEl || this._touchSourceInfo);
+        if (this._longPressTimer) {
+            clearTimeout(this._longPressTimer);
+            this._longPressTimer = null;
+        }
+        this._stopTouchAutoScroll();
         this._removeTouchGhost();
         this._touchSourceInfo = null;
+        if (hadActiveDrag && !this._isPinching) {
+            this._suppressTouchTooltips(400);
+        }
         document.body.classList.remove('sc-drag-over-sidebar');
         document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
         document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
@@ -4493,6 +4835,12 @@ export const SeatingChartManager = {
         }
         clone.classList.remove('sc-chip-selected');
         clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+
+        const board = sourceEl.closest?.('#scClassroomBoard');
+        if (board) {
+            const boardScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1;
+            clone.style.setProperty('--sc-drag-scale', boardScale.toString());
+        }
 
         if (count > 1) {
             const badge = document.createElement('div');

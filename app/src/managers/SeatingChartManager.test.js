@@ -5,6 +5,7 @@ import { ClassManager } from './ClassManager';
 import { HistoryManager } from './HistoryManager';
 import { FocusPanelManager } from './FocusPanelManager';
 import { ClassUIManager } from './ClassUIManager';
+import { TooltipsUI } from './TooltipsManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -1101,12 +1102,12 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(gridArea.getAttribute('data-fitted')).toBe('true');
         });
 
-        it('devrait permettre d’agrandir à 125% sur PC où la vue est déjà ajustée à 100%', () => {
+        it('devrait cadrer automatiquement jusqu’à 1.65x sur grand écran PC et agrandir à +125% relatif au clic sur la loupe', () => {
             SeatingChartManager._isLocked = true;
             const gridArea = document.getElementById('scGridArea');
             const board = document.getElementById('scClassroomBoard');
 
-            // Dimensions larges PC
+            // Dimensions larges PC (availW = 1400 - 260 - 48 = 1092, availH = 800 - 80 - 24 = 696)
             Object.defineProperty(gridArea, 'clientWidth', { value: 1400, configurable: true });
             Object.defineProperty(gridArea, 'clientHeight', { value: 800, configurable: true });
             Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
@@ -1114,14 +1115,43 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             SeatingChartManager._applySmartFit(true);
             expect(SeatingChartManager._isFitted).toBe(true);
+            expect(SeatingChartManager._fitScale).toBe(1.39);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1.39');
+            expect(board.style.getPropertyValue('zoom')).toBe('');
+            expect(board.style.getPropertyValue('--sc-margin-x')).toBe('117px');
+            expect(board.style.getPropertyValue('--sc-margin-y')).toBe('97.5px');
+
+            // Sur grand écran PC, le premier clic zoome à 125% de l'échelle ajustée (1.39 * 1.25 = 1.74)
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(false);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1.74');
+            expect(board.style.getPropertyValue('zoom')).toBe('');
+
+            // Le deuxième clic revient à 1.39 (ajusté)
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1.39');
+        });
+
+        it('devrait agrandir à 125% (1.25) lorsque la vue ajustée est à 100% (1.0)', () => {
+            SeatingChartManager._isLocked = true;
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            // availW = 908 - 260 - 48 = 600, availH = 604 - 80 - 24 = 500 -> fitScale = 1.0
+            Object.defineProperty(gridArea, 'clientWidth', { value: 908, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 604, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+            expect(SeatingChartManager._isFitted).toBe(true);
             expect(SeatingChartManager._fitScale).toBe(1.0);
 
-            // Sur PC, le premier clic doit zoomer à 1.25 (125%)
             SeatingChartManager._toggleZoom();
             expect(SeatingChartManager._isFitted).toBe(false);
             expect(board.style.getPropertyValue('--sc-scale')).toBe('1.25');
 
-            // Le deuxième clic revient à 1.0 (ajusté)
             SeatingChartManager._toggleZoom();
             expect(SeatingChartManager._isFitted).toBe(true);
             expect(board.style.getPropertyValue('--sc-scale')).toBe('1');
@@ -1193,6 +1223,26 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Vérifie que transform-origin est centré à 50% 50%
             expect(board.style.transformOrigin).toBe('50% 50%');
             expect(board.style.transform).toContain('scale(');
+        });
+
+        it('devrait interpoler l’échelle dans _animateFLIPTransition lors d’un lockToggle si l’utilisateur était zoomé', () => {
+            const board = document.getElementById('scClassroomBoard');
+            board.style.setProperty('--sc-scale', '1');
+            const rBefore = { left: 100, top: 80, width: 750, height: 625 };
+
+            const spy = vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 230,
+                top: 80,
+                width: 600,
+                height: 500
+            });
+
+            // _animateFLIPTransition applique d'abord scale(1.25, 1.25) puis déclenche la transition vers scale(1, 1)
+            SeatingChartManager._animateFLIPTransition(rBefore, { lockToggle: true });
+            expect(board.style.transformOrigin).toBe('50% 50%');
+            expect(board.style.transition).toContain('transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)');
+
+            spy.mockRestore();
         });
 
         it('devrait supporter le pinch-to-zoom à deux doigts et rebondir élastiquement vers le fitScale', () => {
@@ -1391,22 +1441,23 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.style.transition).toBe('');
         });
 
-        it('devrait propulser un rebond élastique dynamique avec vitesse lors d’un lancer (fling) au bord', async () => {
+        it('devrait interrompre immédiatement la phase sortante d’un rebond d’impact si l’utilisateur pose le doigt pour repartir', () => {
+            const gridArea = document.getElementById('scGridArea');
             const board = document.getElementById('scClassroomBoard');
-            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
 
-            // Appel de _releaseOverscrollBounce avec overscroll existant et vitesse positive (lancer)
-            SeatingChartManager._releaseOverscrollBounce(20, 25, 0.8, 0.9);
-
-            expect(hapticSpy).not.toHaveBeenCalled();
+            SeatingChartManager._triggerEdgeImpactBounce(20, 15);
             expect(board.style.transition).toContain('0.09s');
-            expect(board.style.transform).toContain('translate3d');
+            expect(board.style.transform).toBe('translate3d(20px, 15px, 0)');
+            expect(SeatingChartManager._overscrollApexTimer).not.toBeNull();
 
-            // Simuler l'arrivée à l'apex
-            await new Promise(r => setTimeout(r, 100));
+            // L'utilisateur pose le doigt pendant les 85ms de poussée sortante
+            const touchStart = new Event('touchstart');
+            touchStart.touches = [{ clientX: 200, clientY: 200 }];
+            gridArea.dispatchEvent(touchStart);
 
-            // Rebond final vers 0
-            expect(board.style.transition).toBeDefined();
+            expect(SeatingChartManager._overscrollApexTimer).toBeNull();
+            expect(board.style.transition).toContain('0.22s');
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
         });
 
         it('devrait déclencher un rebond élastique sur le bord droit et le bord bas', async () => {
@@ -1483,22 +1534,88 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.style.transform).toBe('translate3d(0px, -26px, 0)');
         });
 
-        it('devrait propulser un rebond élastique dynamique avec vitesse négative lors d’un lancer vers la droite/bas', async () => {
+        it('devrait ramener directement la carte vers 0 sans poussée sortante parasite lors de _releaseOverscrollBounce', () => {
             const board = document.getElementById('scClassroomBoard');
-            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+            board.style.transform = 'translate3d(-20px, -25px, 0)';
 
-            // Appel de _releaseOverscrollBounce avec overscroll négatif et vitesse négative
-            SeatingChartManager._releaseOverscrollBounce(-20, -25, -0.8, -0.9);
+            SeatingChartManager._releaseOverscrollBounce();
 
-            expect(hapticSpy).not.toHaveBeenCalled();
-            expect(board.style.transition).toContain('0.09s');
-            expect(board.style.transform).toMatch(/translate3d\(-[0-9.]+px, -[0-9.]+px/);
+            expect(board.style.transition).toContain('0.42s');
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+        });
 
-            // Simuler l'arrivée à l'apex
-            await new Promise(r => setTimeout(r, 100));
+        it('devrait bloquer strictement les tooltips (isIgnoringTooltips) pendant tout le zoom à deux doigts et durant le cooldown post-geste', () => {
+            const gridArea = document.getElementById('scGridArea');
+            TooltipsUI.isIgnoringTooltips = false;
 
-            // Rebond final vers 0
-            expect(board.style.transition).toBeDefined();
+            const touchStart = new Event('touchstart', { cancelable: true });
+            touchStart.touches = [
+                { clientX: 140, clientY: 140 },
+                { clientX: 260, clientY: 260 }
+            ];
+            gridArea.dispatchEvent(touchStart);
+
+            // Dès le début du pinch à 2 doigts, le flag global bloque le timer hold (500ms) de Tippy
+            expect(TooltipsUI.isIgnoringTooltips).toBe(true);
+
+            const touchEnd = new Event('touchend');
+            touchEnd.touches = [];
+            gridArea.dispatchEvent(touchEnd);
+
+            // Reste bloqué immédiatement après le relâchement pour absorber les événements synthétiques
+            expect(TooltipsUI.isIgnoringTooltips).toBe(true);
+        });
+
+        it('devrait résorber progressivement l’overscroll au bord puis passer le relais au GPU dès que le scroll natif repart vers le centre', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 800, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 600, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 300, configurable: true });
+
+            // Au bord gauche (scrollLeft = 0)
+            gridArea.scrollLeft = 0;
+            gridArea.scrollTop = 100;
+
+            const touchStart = new Event('touchstart');
+            touchStart.touches = [{ clientX: 200, clientY: 200 }];
+            gridArea.dispatchEvent(touchStart);
+
+            // Étirement au-delà du bord gauche (+80px vers la droite)
+            const moveOut = new Event('touchmove');
+            moveOut.touches = [{ clientX: 280, clientY: 200 }];
+            gridArea.dispatchEvent(moveOut);
+
+            const matchStretch = board.style.transform.match(/translate3d\(([0-9.]+)px/);
+            expect(matchStretch).not.toBeNull();
+            const stretchOx = parseFloat(matchStretch[1]);
+            expect(stretchOx).toBeGreaterThan(10);
+
+            // 1. Inversion du doigt tant que scrollLeft reste à 0 : l'étirement diminue progressivement
+            const moveUnwind = new Event('touchmove');
+            moveUnwind.touches = [{ clientX: 265, clientY: 200 }];
+            gridArea.dispatchEvent(moveUnwind);
+
+            const matchUnwind = board.style.transform.match(/translate3d\(([0-9.]+)px/);
+            expect(matchUnwind).not.toBeNull();
+            const unwindOx = parseFloat(matchUnwind[1]);
+            expect(unwindOx).toBeGreaterThan(0);
+            expect(unwindOx).toBeLessThan(stretchOx);
+
+            // 2. Dès que le scroll natif repart vers le centre (scrollLeft = 5), relais immédiat par transition GPU fluide sans saccade
+            gridArea.scrollLeft = 5;
+            const moveBack = new Event('touchmove');
+            moveBack.touches = [{ clientX: 250, clientY: 200 }];
+            gridArea.dispatchEvent(moveBack);
+
+            expect(board.style.transition).toContain('cubic-bezier');
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+
+            const touchEnd = new Event('touchend');
+            touchEnd.touches = [];
+            gridArea.dispatchEvent(touchEnd);
         });
     });
 
@@ -2051,7 +2168,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._zoomScale = initialFit;
             SeatingChartManager._isFitted = true;
             board.style.setProperty('--sc-scale', initialFit.toString());
-            board.style.zoom = initialFit.toString();
 
             // Dézoom violent au trackpad (deltaY très positif)
             const zoomOutEvent = new WheelEvent('wheel', {
@@ -2098,7 +2214,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._zoomScale = initialFit;
             SeatingChartManager._isFitted = true;
             board.style.setProperty('--sc-scale', initialFit.toString());
-            board.style.zoom = initialFit.toString();
 
             const flipSpy = vi.spyOn(SeatingChartManager, '_animateFLIPTransition');
 
@@ -2151,7 +2266,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._zoomScale = 1.0;
             SeatingChartManager._isFitted = false;
             board.style.setProperty('--sc-scale', '1');
-            board.style.zoom = '1';
 
             const flipSpy = vi.spyOn(SeatingChartManager, '_animateFLIPTransition');
             const maxScale = SeatingChartManager._getMaxZoomScale(initialFit);
@@ -2185,7 +2299,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._zoomScale = 1.0;
             SeatingChartManager._isFitted = false;
             board.style.setProperty('--sc-scale', '1');
-            board.style.zoom = '1';
 
             Object.defineProperty(gridArea, 'scrollWidth', { value: 1200, configurable: true });
             Object.defineProperty(gridArea, 'clientWidth', { value: 600, configurable: true });
