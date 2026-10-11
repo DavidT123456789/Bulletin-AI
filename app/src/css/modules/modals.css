@@ -665,86 +665,8 @@
 }
 
 .modal-help .modal-content {
-    height: min(640px, 90vh);
+    height: min(670px, 90vh);
     max-height: var(--modal-max-height);
-}
-
-.modal-help .help-intro-text {
-    margin-top: 0;
-}
-
-.modal-help .ui-accordion summary .fas,
-.modal-help .ui-accordion summary iconify-icon {
-    width: 20px;
-    text-align: center;
-}
-
-.modal-help .ui-accordion .icon-start {
-    color: var(--primary-color);
-}
-
-.modal-help .ui-accordion .icon-key {
-    color: var(--warning-color);
-}
-
-.modal-help .ui-accordion .icon-format {
-    color: var(--success-color);
-}
-
-.modal-help .ui-accordion .icon-privacy {
-    color: var(--success-color);
-}
-
-.modal-help .ui-accordion .icon-customize {
-    color: var(--purple-color);
-}
-
-.modal-help .ui-accordion .icon-expert {
-    color: var(--text-secondary);
-}
-
-.modal-help .ui-accordion .ui-accordion-content ol {
-    list-style: none;
-    padding-left: 0;
-    counter-reset: help-counter;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-
-.modal-help .ui-accordion .ui-accordion-content ol>li {
-    counter-increment: help-counter;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 15px;
-    text-align: left;
-}
-
-.modal-help .ui-accordion .ui-accordion-content ol>li::before {
-    content: counter(help-counter);
-    background-color: var(--primary-color);
-    color: white;
-    font-weight: 700;
-    font-size: 0.8em;
-    min-width: 22px;
-    height: 22px;
-    border-radius: var(--radius-pill);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.modal-help .ui-accordion .ui-accordion-content li p {
-    display: block;
-    margin: 0;
-}
-
-.modal-help .ui-accordion-content p:has(> span.badge:only-child) {
-    text-align: center;
-    margin-top: 20px;
 }
 
 

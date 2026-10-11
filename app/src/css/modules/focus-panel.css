@@ -2792,9 +2792,8 @@ input.context-grade-input,
 @media (hover: hover) {
     .btn[data-refine-type]:hover {
         color: var(--chip-hover-color) !important;
-        border-color: rgba(var(--chip-rgb), 0.3) !important;
-        background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.12)) !important;
-        box-shadow: none !important;
+        background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.14)) !important;
+        box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb), 0.35) !important;
     }
     .btn[data-refine-type]:hover iconify-icon,
     .btn[data-refine-type]:hover i {
@@ -2830,14 +2829,20 @@ input.context-grade-input,
 }
 
 .btn-ai-outline.active {
-    background: rgb(var(--chip-rgb, var(--primary-color-rgb)));
-    color: white !important;
-    box-shadow: 0 4px 12px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.25);
+    background: rgba(var(--chip-rgb, var(--primary-color-rgb)), var(--chip-bg-opacity, 0.16)) !important;
+    color: var(--chip-hover-color, var(--primary-color)) !important;
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.45) !important;
+}
+
+.btn-ai-outline.active:hover {
+    background: rgba(var(--chip-rgb, var(--primary-color-rgb)), var(--chip-bg-opacity, 0.22)) !important;
+    box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.6) !important;
 }
 
 .btn-ai-outline.active i,
 .btn-ai-outline.active iconify-icon {
-    color: white !important;
+    color: var(--chip-color, var(--primary-color));
 }
 
 /* État désactivé pour les boutons de raffinement et contrôles */
@@ -2905,7 +2910,7 @@ input.context-grade-input,
     /* Elevated visual treatment - static, no pulse to let icon animation shine */
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.12);
     color: var(--chip-hover-color, var(--primary-color));
-    box-shadow: 0 4px 12px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.15);
+    box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.35);
 }
 
 .btn-ai-outline.is-generating i,
@@ -2957,9 +2962,7 @@ input.context-grade-input,
 /* Dark mode adjustments */
 [data-theme="dark"] .btn-ai-outline.is-generating {
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.18);
-    box-shadow:
-        0 0 0 1px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.4),
-        0 4px 20px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.25);
+    box-shadow: inset 0 0 0 1px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.45);
 }
 
 [data-theme="dark"] .btn-ai-outline.is-generating::before {

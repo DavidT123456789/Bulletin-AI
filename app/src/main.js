@@ -8,6 +8,7 @@ import { WelcomeManager } from './managers/WelcomeManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
 import { SeatingChartManager } from './managers/SeatingChartManager.js';
 import { ImportWizardManager } from './managers/ImportWizardManager.js';
+import { TrombinoscopeManager } from './managers/TrombinoscopeManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -35,6 +36,7 @@ const init = () => {
         window.StorageManager = StorageManager;
         window.RestoreTransitionManager = RestoreTransitionManager;
         window.SeatingChartManager = SeatingChartManager;
+        window.TrombinoscopeManager = TrombinoscopeManager;
         window.appState = appState;
         window.DOM = DOM;
 
@@ -54,11 +56,15 @@ const init = () => {
             if (contentArea) contentArea.dataset.direction = direction;
 
             // Remove active class from all buttons and contents in this container
-            buttons.forEach(b => b.classList.remove('active'));
+            buttons.forEach(b => {
+                b.classList.remove('active');
+                if (b.hasAttribute('aria-selected')) b.setAttribute('aria-selected', 'false');
+            });
             container.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
 
             // Add active class to clicked button and corresponding content
             btn.classList.add('active');
+            if (btn.hasAttribute('aria-selected')) btn.setAttribute('aria-selected', 'true');
 
             // Search inside the container first for scoped IDs, fallback to global
             const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
@@ -90,6 +96,13 @@ const init = () => {
             }, 200);
         };
 
+        window.openTrombiWizardFromHelp = () => {
+            UI.closeAllModals();
+            setTimeout(() => {
+                TrombinoscopeManager.open();
+            }, 200);
+        };
+
         window.openSeatingChartFromHelp = () => {
             UI.closeAllModals();
             setTimeout(() => {
@@ -104,12 +117,18 @@ const init = () => {
                 const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${tabId}"]`);
                 if (tabBtn) tabBtn.click();
             }
+            window.dispatchEvent(new CustomEvent('help-modal-opened'));
             if (sectionId) {
                 setTimeout(() => {
                     const section = document.getElementById(sectionId);
                     if (section) {
-                        if (section.tagName === 'DETAILS') section.open = true;
-                        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (section.tagName === 'DETAILS') {
+                            DOM.helpModal?.querySelectorAll('.help-accordion[open]').forEach(acc => {
+                                if (acc !== section) acc.open = false;
+                            });
+                            section.open = true;
+                        }
+                        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
                 }, 150);
             }

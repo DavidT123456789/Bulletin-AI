@@ -444,7 +444,7 @@
     transition: transform 0.3s ease;
 }
 
-.import-mapping-details[open] .import-mapping-summary i:last-child {
+.import-mapping-details[open]:not(.is-closing) .import-mapping-summary i:last-child {
     transform: rotate(180deg);
 }
 

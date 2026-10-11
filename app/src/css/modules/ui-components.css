@@ -40,9 +40,8 @@
     border-radius: calc(var(--radius-lg) - 1px);
 }
 
-.ui-accordion[open]>summary {
+.ui-accordion[open]:not(.is-closing)>summary {
     background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -62,45 +61,24 @@
     background-color: var(--text-secondary);
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
-    transition: transform var(--transition-fast);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     margin-left: auto;
     flex-shrink: 0;
     order: 1;
 }
 
-.ui-accordion[open]>summary::before {
+.ui-accordion[open]:not(.is-closing)>summary::before {
     transform: rotate(90deg);
 }
 
 .ui-accordion-content {
     overflow: hidden;
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease-out, opacity 0.2s ease-out;
-    opacity: 0;
-}
-
-.ui-accordion[open]>.ui-accordion-content {
-    grid-template-rows: 1fr;
-    opacity: 1;
-}
-
-@starting-style {
-    .ui-accordion[open]>.ui-accordion-content {
-        grid-template-rows: 0fr;
-        opacity: 0;
-    }
+    border-top: 1px solid var(--border-color);
 }
 
 .ui-accordion-content-inner {
     min-height: 0;
     padding: 12px 14px;
-    transform: translateY(0);
-    transition: transform 0.25s ease-out;
-}
-
-.ui-accordion:not([open])>.ui-accordion-content>.ui-accordion-content-inner {
-    transform: translateY(-8px);
 }
 
 .ui-accordion.danger-accordion>summary {
@@ -212,9 +190,9 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     border-right: 1px solid var(--border-color);
-    padding: 24px 14px;
+    padding: 20px 12px;
     background: var(--surface-color);
     height: 100%;
     overflow-y: auto;
@@ -223,83 +201,100 @@
 }
 
 .ui-tabs-btn {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 16px;
+    gap: 11px;
+    padding: 10px 14px;
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: 10px;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     font-weight: 500;
-    font-size: 0.92em;
+    font-size: 0.90em;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
     text-align: left;
     width: 100%;
 }
 
-.ui-tabs-btn:hover {
+.ui-tabs-btn:hover:not(.active) {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 
 .ui-tabs-btn.active {
-    background: rgba(var(--primary-color-rgb), 0.10);
-    border-color: rgba(var(--primary-color-rgb), 0.20);
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--bg-secondary));
+    border-color: color-mix(in srgb, var(--primary-color) 22%, transparent);
     color: var(--text-primary) !important;
     font-weight: 600;
-    position: relative;
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .ui-tabs-btn.active:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    border-color: rgba(var(--primary-color-rgb), 0.28);
-}
-
-.ui-tabs-btn.active iconify-icon,
-.ui-tabs-btn.active i {
-    color: var(--primary-color) !important;
-    transform: scale(1.08);
+    background: color-mix(in srgb, var(--primary-color) 16%, var(--bg-secondary));
+    border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 .ui-tabs-btn.active::before {
-    display: none;
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--primary-color);
 }
 
 .ui-tabs-btn iconify-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: 22px;
     text-align: center;
-    font-size: 1.2em;
-    color: var(--icon-btn-color);
+    font-size: 1.18em;
+    color: var(--text-tertiary);
     transition: transform var(--transition-fast), color var(--transition-fast), filter var(--transition-fast);
 }
 
-.ui-tabs-btn:hover iconify-icon:not(.rotate-icon):not(.icon-spin) {
-    transform: scale(1.1);
+.ui-tabs-btn:hover:not(.active) iconify-icon:not(.rotate-icon):not(.icon-spin) {
+    transform: scale(1.06);
     color: var(--text-primary);
 }
 
-/* Dark Mode: Harmonisé avec les badges de cartes (.help-step-number) */
+.ui-tabs-btn.active iconify-icon,
+.ui-tabs-btn.active i {
+    color: var(--primary-color) !important;
+    transform: scale(1.05);
+}
+
+/* Dark Mode: Surface vitrée contrastée + barre d'ancrage lumineuse */
+[data-theme="dark"] .ui-tabs-btn {
+    color: var(--text-secondary);
+}
+
 [data-theme="dark"] .ui-tabs-btn.active {
-    background: rgba(var(--primary-color-rgb), 0.18);
-    border-color: rgba(var(--primary-color-rgb), 0.18);
+    background: color-mix(in srgb, var(--primary-bright) 22%, rgba(255, 255, 255, 0.10));
+    border-color: color-mix(in srgb, var(--primary-bright) 35%, rgba(255, 255, 255, 0.12));
     color: var(--text-primary) !important;
-    box-shadow: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .ui-tabs-btn.active:hover {
-    background: rgba(var(--primary-color-rgb), 0.22);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
+    background: color-mix(in srgb, var(--primary-bright) 26%, rgba(255, 255, 255, 0.13));
+    border-color: color-mix(in srgb, var(--primary-bright) 42%, rgba(255, 255, 255, 0.16));
+}
+
+[data-theme="dark"] .ui-tabs-btn.active::before {
+    background: var(--primary-bright);
+    box-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.5);
 }
 
 [data-theme="dark"] .ui-tabs-btn.active iconify-icon,
 [data-theme="dark"] .ui-tabs-btn.active i {
     color: var(--primary-bright) !important;
+    filter: brightness(1.15);
 }
 
 .ui-tabs-actions-wrapper {

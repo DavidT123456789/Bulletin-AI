@@ -81,8 +81,13 @@ export const AnimationManager = {
      */
     async typewriterReveal(container, text, options = {}) {
         if (!container) return;
+        const safeText = text ?? '';
 
         await this.fadeOutSkeleton(container);
+        if (!safeText || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            container.textContent = safeText;
+            return;
+        }
         container.innerHTML = '';
 
         const speedConfig = {
@@ -92,18 +97,19 @@ export const AnimationManager = {
         };
         const config = speedConfig[options.speed] || speedConfig.normal;
 
-        const words = text.split(/(\s+)/);
+        const words = safeText.split(/(\s+)/);
 
         const revealContainer = document.createElement('span');
         revealContainer.className = 'progressive-reveal';
         container.appendChild(revealContainer);
 
         const adaptiveDelay = Math.max(15, Math.min(config.wordDelay, 2000 / words.length));
-        const isFast = text.length > 200;
+        const isFast = safeText.length > 200;
 
         let wordIndex = 0;
         while (wordIndex < words.length) {
             const batch = words.slice(wordIndex, wordIndex + config.wordsPerBatch);
+            let batchWordIdx = 0;
 
             for (const word of batch) {
                 if (word.trim() === '') {
@@ -112,8 +118,9 @@ export const AnimationManager = {
                     const wordSpan = document.createElement('span');
                     wordSpan.className = 'reveal-word' + (isFast ? ' fast' : '');
                     wordSpan.textContent = word;
-                    wordSpan.style.animationDelay = `${(wordIndex % config.wordsPerBatch) * 30}ms`;
+                    wordSpan.style.animationDelay = `${batchWordIdx * 30}ms`;
                     revealContainer.appendChild(wordSpan);
+                    batchWordIdx++;
                 }
             }
 
@@ -123,7 +130,7 @@ export const AnimationManager = {
 
         await new Promise(r => setTimeout(r, 300));
 
-        container.textContent = text;
+        container.textContent = safeText;
     },
 
     /**
@@ -134,8 +141,13 @@ export const AnimationManager = {
      */
     async animateHtmlReveal(container, htmlContent, options = {}) {
         if (!container) return;
+        const safeHtml = htmlContent ?? '';
 
         await this.fadeOutSkeleton(container);
+        if (!safeHtml || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            container.innerHTML = safeHtml;
+            return;
+        }
 
         const speedConfig = {
             slow: { wordDelay: 60, wordsPerBatch: 2 },
@@ -145,7 +157,7 @@ export const AnimationManager = {
         const config = speedConfig[options.speed] || speedConfig.normal;
 
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
+        tempDiv.innerHTML = safeHtml;
 
         const textNodes = [];
         const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
@@ -195,7 +207,7 @@ export const AnimationManager = {
             textNode.parentNode.replaceChild(fragment, textNode);
         });
         container.innerHTML = '';
-        container.className += ' progressive-reveal-container';
+        container.classList.add('progressive-reveal-container');
 
         while (tempDiv.firstChild) {
             container.appendChild(tempDiv.firstChild);
@@ -205,7 +217,7 @@ export const AnimationManager = {
 
         await new Promise(r => setTimeout(r, totalDuration + 400));
 
-        container.innerHTML = htmlContent;
+        container.innerHTML = safeHtml;
         container.classList.remove('progressive-reveal-container');
     },
 

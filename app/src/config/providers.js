@@ -12,7 +12,7 @@ export const PROVIDER_CONFIG = {
         class: 'provider-google',
         keyProperty: 'googleApiKey',
         domKey: 'googleApiKey',
-        description: '<strong>Google Gemini (Recommandé)</strong> est la solution idéale : <strong>100% gratuite et sans carte bancaire</strong> via Google AI Studio (15 req/min, 1 500 req/jour).'
+        description: '<strong>Google Gemini (Recommandé)</strong> : solution officielle, <strong>100% gratuite et sans carte bancaire</strong>, idéale pour débuter sereinement.'
     },
     groq: {
         id: 'groq',
@@ -22,7 +22,7 @@ export const PROVIDER_CONFIG = {
         style: 'color: #f55036;', // Groq coral orange
         keyProperty: 'groqApiKey',
         domKey: 'groqApiKey',
-        description: '<strong>Groq Cloud (Sprinteur)</strong> offre une vitesse fulgurante (~500 à 1 000 tokens/s) avec les modèles ouverts <strong>GPT-OSS 120B & 20B</strong> gratuitement sans carte bancaire.'
+        description: '<strong>Groq Cloud</strong> : génération ultra-rapide avec des modèles libres, également gratuit sans carte bancaire.'
     },
     openrouter: {
         id: 'openrouter',
@@ -32,7 +32,7 @@ export const PROVIDER_CONFIG = {
         style: 'color: var(--secondary-color);', // Adapte la couleur si nécessaire
         keyProperty: 'openrouterApiKey',
         domKey: 'openrouterApiKey',
-        description: '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès aux meilleurs modèles ouverts (Llama 3.3, Gemma 2) et propriétaires (Claude, DeepSeek…)'
+        description: '<strong>OpenRouter</strong> : passerelle multi-modèles donnant accès à Claude, DeepSeek et aux modèles ouverts.'
     },
     openai: {
         id: 'openai',
@@ -58,7 +58,7 @@ export const PROVIDER_CONFIG = {
         style: 'color: #fd6f00;', // Orange Mistral
         keyProperty: 'mistralApiKey',
         domKey: 'mistralApiKey',
-        description: '<strong>Mistral AI</strong> est une solution française performante (nécessite un compte La Plateforme avec crédits pay-as-you-go).'
+        description: '<strong>Mistral AI</strong> : solution française de grande qualité, <strong>payante</strong> (crédits à acheter sur son site).'
     },
     ollama: {
         id: 'ollama',

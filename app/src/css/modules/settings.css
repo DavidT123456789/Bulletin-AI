@@ -1135,11 +1135,13 @@
 .provider-status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: 0.72rem;
     font-weight: 600;
-    padding: 2px 8px;
+    line-height: 1.2;
+    padding: 3px 9px;
     border-radius: var(--radius-pill);
+    border: 1px solid transparent;
     transition: all 0.2s ease;
 }
 
@@ -1148,37 +1150,42 @@
     height: 6px;
     border-radius: 50%;
     background: currentColor;
+    flex-shrink: 0;
 }
 
 .provider-status-badge.status-connected {
-    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.12);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
+    border-color: rgba(var(--success-rgb, 16, 185, 129), 0.25);
     color: var(--success-color);
 }
 
 [data-theme="dark"] .provider-status-badge.status-connected {
-    color: var(--success-bright, #34d399);
+    color: var(--success-bright);
 }
 
 .provider-status-badge.status-warning {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.12);
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
+    border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.25);
     color: var(--warning-color);
 }
 
 [data-theme="dark"] .provider-status-badge.status-warning {
-    color: var(--warning-bright, #fbbf24);
+    color: var(--warning-bright);
 }
 
 .provider-status-badge.status-error {
-    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.12);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+    border-color: rgba(var(--error-rgb, 239, 68, 68), 0.25);
     color: var(--error-color);
 }
 
 [data-theme="dark"] .provider-status-badge.status-error {
-    color: var(--error-bright, #f87171);
+    color: var(--error-bright);
 }
 
 .provider-status-badge.status-unconfigured {
     background: var(--item-hover-bg);
+    border-color: var(--border-color);
     color: var(--text-tertiary);
     font-weight: 500;
 }
@@ -1585,16 +1592,6 @@
 
 .privacy-note i {
     font-size: 0.9em;
-}
-
-/* === Preview Meta Container (Lab) === */
-.preview-meta-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
-    flex-wrap: wrap;
 }
 
 /* Preview Model Badge - Shows AI model used for generation */

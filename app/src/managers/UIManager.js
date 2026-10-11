@@ -1546,71 +1546,148 @@ export const UI = {
     },
 
     /**
-     * Initialise les accordéons avec une animation fluide.
-     * Intercepte le toggle pour permettre à l'animation CSS de se jouer à la fermeture.
+     * Anime l'ouverture ou la fermeture d'un élément <details> avec fluidité (WAAPI).
+     * Anime la hauteur externe de <details> (sans plancher de padding) pour éviter toute saccade.
+     * @param {HTMLDetailsElement} details
+     * @param {boolean} shouldOpen
+     */
+    toggleAccordion(details, shouldOpen) {
+        if (!details) return;
+        const summary = details.querySelector(':scope > summary') || details.querySelector('summary');
+        const content = Array.from(details.children).find(el => el.tagName !== 'SUMMARY');
+        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+        if (!summary || !content || reducedMotion || typeof details.animate !== 'function') {
+            details.classList.remove('is-closing');
+            details.open = shouldOpen;
+            return;
+        }
+
+        const currentHeight = details.getBoundingClientRect().height;
+
+        if (details._accordionAnim) {
+            details._accordionAnim.cancel();
+            details._accordionAnim = null;
+        }
+        if (details._accordionContentAnim) {
+            details._accordionContentAnim.cancel();
+            details._accordionContentAnim = null;
+        }
+
+        const style = window.getComputedStyle(details);
+        const borderAndPadding =
+            (parseFloat(style.borderTopWidth) || 0) +
+            (parseFloat(style.borderBottomWidth) || 0) +
+            (parseFloat(style.paddingTop) || 0) +
+            (parseFloat(style.paddingBottom) || 0);
+        const closedHeight = summary.getBoundingClientRect().height + borderAndPadding;
+
+        if (shouldOpen) {
+            const startHeight = details.open ? currentHeight : closedHeight;
+            details.classList.remove('is-closing');
+            details.open = true;
+            const endHeight = details.getBoundingClientRect().height;
+            if (Math.abs(endHeight - startHeight) < 1) return;
+
+            details.style.overflow = 'hidden';
+            const anim = details.animate([
+                { height: `${startHeight}px` },
+                { height: `${endHeight}px` }
+            ], {
+                duration: 260,
+                easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+            });
+            details._accordionAnim = anim;
+            if (typeof content.animate === 'function') {
+                details._accordionContentAnim = content.animate([
+                    { opacity: 0, transform: 'translateY(-4px)' },
+                    { opacity: 1, transform: 'translateY(0)' }
+                ], {
+                    duration: 220,
+                    easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                });
+            }
+            const cleanup = () => {
+                details.style.overflow = '';
+                details._accordionAnim = null;
+                details._accordionContentAnim = null;
+            };
+            anim.onfinish = cleanup;
+            anim.oncancel = cleanup;
+        } else {
+            const startHeight = currentHeight;
+            const endHeight = closedHeight;
+            if (Math.abs(startHeight - endHeight) < 1) {
+                details.classList.remove('is-closing');
+                details.open = false;
+                return;
+            }
+
+            details.classList.add('is-closing');
+            details.style.overflow = 'hidden';
+            const anim = details.animate([
+                { height: `${startHeight}px` },
+                { height: `${endHeight}px` }
+            ], {
+                duration: 240,
+                easing: 'cubic-bezier(0.32, 0.72, 0, 1)'
+            });
+            details._accordionAnim = anim;
+            if (typeof content.animate === 'function') {
+                details._accordionContentAnim = content.animate([
+                    { opacity: 1, transform: 'translateY(0)' },
+                    { opacity: 0, transform: 'translateY(-3px)' }
+                ], {
+                    duration: 180,
+                    easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+                    fill: 'forwards'
+                });
+            }
+            anim.onfinish = () => {
+                details.open = false;
+                details.classList.remove('is-closing');
+                details.style.overflow = '';
+                details._accordionContentAnim?.cancel();
+                details._accordionAnim = null;
+                details._accordionContentAnim = null;
+            };
+            anim.oncancel = () => {
+                details.classList.remove('is-closing');
+                details.style.overflow = '';
+                details._accordionContentAnim?.cancel();
+                details._accordionAnim = null;
+                details._accordionContentAnim = null;
+            };
+        }
+    },
+
+    /**
+     * Initialise les accordéons (<details>) de toute l'application avec une animation fluide.
      */
     initAccordions() {
-        document.querySelectorAll('.ui-accordion').forEach(details => {
-            // Éviter d'ajouter plusieurs fois le listener
-            if (details.dataset.accordionInit) return;
-            details.dataset.accordionInit = 'true';
+        if (this._accordionsDelegated) return;
+        this._accordionsDelegated = true;
 
-            const summary = details.querySelector('summary');
+        document.addEventListener('click', (e) => {
+            const summary = e.target.closest('details > summary');
             if (!summary) return;
+            if (e.target.closest('a, button, input, select')) return;
 
-            summary.addEventListener('click', (e) => {
-                e.preventDefault();
+            const details = summary.parentElement;
+            if (!details || details.tagName !== 'DETAILS') return;
 
-                // Éviter les clics multiples pendant l'animation
-                if (details.dataset.animating === 'true') return;
+            e.preventDefault();
+            const isClosing = details.open && !details.classList.contains('is-closing');
+            const shouldOpen = !isClosing;
 
-                const content = details.querySelector('.ui-accordion-content');
-                if (!content) {
-                    details.open = !details.open;
-                    return;
-                }
+            if (shouldOpen && details.classList.contains('help-accordion')) {
+                const group = details.closest('.help-accordions-group') || details.parentElement;
+                group?.querySelectorAll('details.help-accordion[open]').forEach(other => {
+                    if (other !== details) this.toggleAccordion(other, false);
+                });
+            }
 
-                if (details.open) {
-                    // Fermeture avec animation
-                    details.dataset.animating = 'true';
-
-                    // Forcer le navigateur à calculer l'état actuel
-                    content.style.gridTemplateRows = '1fr';
-                    content.style.opacity = '1';
-
-                    // Déclencher le reflow
-                    content.offsetHeight;
-
-                    // Appliquer l'animation de fermeture
-                    content.style.gridTemplateRows = '0fr';
-                    content.style.opacity = '0';
-
-                    // Écouter la fin de la transition
-                    const onTransitionEnd = (e) => {
-                        if (e.propertyName === 'grid-template-rows' || e.propertyName === 'opacity') {
-                            content.removeEventListener('transitionend', onTransitionEnd);
-                            details.open = false;
-                            content.style.gridTemplateRows = '';
-                            content.style.opacity = '';
-                            details.dataset.animating = 'false';
-                        }
-                    };
-                    content.addEventListener('transitionend', onTransitionEnd);
-
-                    // Fallback si transitionend ne se déclenche pas
-                    setTimeout(() => {
-                        if (details.dataset.animating === 'true') {
-                            details.open = false;
-                            content.style.gridTemplateRows = '';
-                            content.style.opacity = '';
-                            details.dataset.animating = 'false';
-                        }
-                    }, 400);
-                } else {
-                    // Ouverture normale (CSS gère l'animation)
-                    details.open = true;
-                }
-            });
+            this.toggleAccordion(details, shouldOpen);
         });
     },
 

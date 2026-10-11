@@ -1250,6 +1250,10 @@
                                 <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                                 Charger un exemple
                             </button>
+                            <button type="button" class="help-context-trigger mt-2" onclick="window.openHelpTab('help-data', 'help-faq-import')">
+                                <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
+                                Fichier non reconnu ? Aide
+                            </button>
                         </div>
                     </div>
 
@@ -1715,6 +1719,11 @@
                     <span class="modal-title-text">Personnalisation du style</span>
                 </h2>
                 <div class="modal-header-actions spaced">
+                    <button type="button" class="icon-button tooltip"
+                        onclick="window.openHelpTab('help-writing')"
+                        data-tooltip="Guide Rédaction & Style" aria-label="Ouvrir le guide Rédaction & Style">
+                        <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
+                    </button>
                     <button type="button" class="icon-button tooltip" id="resetLabStyleBtn"
                         data-tooltip="Réinitialiser les réglages" aria-label="Réinitialiser les réglages">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon>
@@ -1975,8 +1984,8 @@
                         </button>
 
                         <div class="ui-tabs-actions-wrapper">
-                            <button class="ui-tabs-action-btn"
-                                onclick="UI.openModal(DOM.helpModal, { isStacked: true })">
+                            <button type="button" class="ui-tabs-action-btn"
+                                onclick="window.openHelpTab('help-apikey')">
                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"></iconify-icon>
                                 Guide
                             </button>
@@ -2049,7 +2058,13 @@
                                     <div class="help-step-number"><iconify-icon icon="solar:key-bold"></iconify-icon>
                                     </div>
                                     <div class="help-step-body" style="width: 100%;">
-                                        <strong>Configuration des Clés API</strong>
+                                        <div class="help-step-title-row">
+                                            <strong>Configuration des Clés API</strong>
+                                            <button type="button" class="help-context-trigger" onclick="window.openHelpTab('help-data', 'help-faq-quota')">
+                                                <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
+                                                Aide & Quotas
+                                            </button>
+                                        </div>
                                         <div class="mt-2">
                                             <small id="aiModelDescription" style="display: none;">Description du modèle
                                                 sélectionné...</small>
@@ -2903,125 +2918,120 @@
             </div>
             <div class="modal-body modal-body-flex">
                 <div class="ui-tabs-vertical">
-                    <!-- Sidebar Navigation (5 streamlined tabs) -->
-                    <div class="ui-tabs-sidebar">
-                        <button class="ui-tabs-btn active" onclick="switchHelpTab(this, 'help-apikey')">
+                    <!-- Navigation latérale accessible (5 onglets) -->
+                    <div class="ui-tabs-sidebar" role="tablist" aria-label="Rubriques du guide">
+                        <button class="ui-tabs-btn active" id="helpTabBtnApikey" role="tab" aria-selected="true" aria-controls="help-apikey" onclick="switchHelpTab(this, 'help-apikey')">
                             <iconify-icon class="iconify-inline icon-key" icon="solar:rocket-2-linear"></iconify-icon>
                             Démarrage
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-writing')">
+                        <button class="ui-tabs-btn" id="helpTabBtnWriting" role="tab" aria-selected="false" aria-controls="help-writing" onclick="switchHelpTab(this, 'help-writing')">
                             <iconify-icon class="iconify-inline icon-customize" icon="solar:pen-new-square-linear"></iconify-icon>
-                            Rédaction & Style
+                            Rédaction & IA
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-seating')">
+                        <button class="ui-tabs-btn" id="helpTabBtnSeating" role="tab" aria-selected="false" aria-controls="help-seating" onclick="switchHelpTab(this, 'help-seating')">
                             <iconify-icon class="iconify-inline icon-actions" icon="solar:streets-map-point-linear"></iconify-icon>
                             Plan & Trombi
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-data')">
+                        <button class="ui-tabs-btn" id="helpTabBtnData" role="tab" aria-selected="false" aria-controls="help-data" onclick="switchHelpTab(this, 'help-data')">
                             <iconify-icon class="iconify-inline icon-privacy" icon="solar:question-circle-linear"></iconify-icon>
-                            Astuces & FAQ
+                            Dépannage & FAQ
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-about')">
+                        <button class="ui-tabs-btn" id="helpTabBtnAbout" role="tab" aria-selected="false" aria-controls="help-about" onclick="switchHelpTab(this, 'help-about')">
                             <iconify-icon class="iconify-inline icon-about" icon="solar:info-circle-linear"></iconify-icon>
                             À propos
                         </button>
 
-                        <!-- Bottom Action Button -->
                         <div class="ui-tabs-actions-wrapper">
-                            <button class="ui-tabs-action-btn" id="relaunchWelcomeGuideBtn" onclick="relaunchSetupWizard()">
+                            <button type="button" class="ui-tabs-action-btn" id="relaunchWelcomeGuideBtn">
                                 <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
                                 Relancer setup
                             </button>
                         </div>
                     </div>
 
-                    <!-- Content Area -->
+                    <!-- Contenu des onglets -->
                     <div class="ui-tabs-content">
-                        <!-- Tab 1: Démarrage rapide (Processus 1-2-3) -->
-                        <div id="help-apikey" class="help-tab-content active">
-                            <div class="help-section-header">
-                                <div class="help-section-icon">
-                                    <iconify-icon icon="solar:rocket-2-bold"></iconify-icon>
-                                </div>
-                                <div class="help-section-header-text">
-                                    <h3 class="help-section-title">Prise en main en 3 étapes</h3>
-                                    <p>Deux minutes suffisent pour connecter l'IA, charger vos élèves et générer vos premiers bilans.</p>
-                                </div>
-                            </div>
-
+                        <!-- Onglet 1 : Démarrage (Prise en main en 3 étapes) -->
+                        <div id="help-apikey" class="help-tab-content active" role="tabpanel" aria-labelledby="helpTabBtnApikey">
                             <div class="help-quickstart-flow">
-                                <!-- Étape 1 : Clé IA -->
-                                <div class="help-quick-card">
-                                    <div class="help-quick-card-header">
-                                        <span class="help-quick-badge">1</span>
-                                        <div class="help-quick-card-header-text">
-                                            <h4 class="help-quick-card-title">Connecter une IA</h4>
-                                            <p>Choisissez un moteur d'IA gratuit sans carte bancaire pour propulser l'assistant.</p>
-                                        </div>
-                                    </div>
-                                    <div class="help-provider-row">
-                                        <div class="ui-segmented-control has-glider" id="helpProviderSelector">
-                                            <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google" checked>
-                                            <label for="helpProviderGoogle" class="ui-segment">
-                                                <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                                <span>Google <small class="provider-tag">Gratuit</small></span>
-                                            </label>
-                                            <input type="radio" id="helpProviderGroq" name="helpProvider" value="groq">
-                                            <label for="helpProviderGroq" class="ui-segment">
-                                                <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold" style="color: #f55036;"></iconify-icon>
-                                                <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
-                                            </label>
-                                            <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral">
-                                            <label for="helpProviderMistral" class="ui-segment">
-                                                <iconify-icon class="iconify-inline" icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>
-                                                <span>Mistral <small class="provider-tag">🇫🇷</small></span>
-                                            </label>
-                                            <input type="radio" id="helpProviderOpenRouter" name="helpProvider" value="openrouter">
-                                            <label for="helpProviderOpenRouter" class="ui-segment">
-                                                <iconify-icon class="iconify-inline" icon="solar:bolt-bold-duotone"></iconify-icon>
-                                                <span>OpenRouter</span>
-                                            </label>
-                                            <div class="ui-glider"></div>
-                                        </div>
-                                        <div class="help-provider-actions">
-                                            <div id="helpContentGoogle" class="provider-help-content">
-                                                <div class="help-btn-row">
-                                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Google (Gratuit)
-                                                    </a>
-                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
-                                                    </button>
-                                                </div>
+                                <!-- Étape 1 : Connecter une IA -->
+                                <div class="help-step-card">
+                                    <div class="help-step-layout">
+                                        <span class="help-step-number">1</span>
+                                        <div class="help-step-body">
+                                            <div class="help-quick-title-row">
+                                                <h3 class="help-quick-card-title">Connecter un moteur d'IA</h3>
+                                                <span class="provider-status-badge status-unconfigured" id="helpProviderStatusBadge">
+                                                    <span class="status-dot"></span>
+                                                    <span>Non configuré</span>
+                                                </span>
                                             </div>
-                                            <div id="helpContentGroq" class="provider-help-content" style="display: none;">
-                                                <div class="help-btn-row">
-                                                    <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Groq (100% Gratuit)
-                                                    </a>
-                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
-                                                    </button>
+                                            <p id="helpProviderDesc"><strong>Google Gemini (Recommandé)</strong> : solution officielle, <strong>100% gratuite et sans carte bancaire</strong>, idéale pour débuter sereinement.</p>
+                                            <div class="help-provider-row">
+                                                <div class="ui-segmented-control has-glider" id="helpProviderSelector" role="radiogroup" aria-label="Fournisseur d'IA">
+                                                    <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google" checked>
+                                                    <label for="helpProviderGoogle" class="ui-segment">
+                                                        <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
+                                                        <span>Google <small class="provider-tag">Gratuit</small></span>
+                                                    </label>
+                                                    <input type="radio" id="helpProviderGroq" name="helpProvider" value="groq">
+                                                    <label for="helpProviderGroq" class="ui-segment">
+                                                        <iconify-icon class="iconify-inline provider-icon-groq" icon="solar:bolt-circle-bold"></iconify-icon>
+                                                        <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
+                                                    </label>
+                                                    <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral">
+                                                    <label for="helpProviderMistral" class="ui-segment">
+                                                        <iconify-icon class="iconify-inline provider-icon-mistral" icon="solar:cat-bold"></iconify-icon>
+                                                        <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                                    </label>
+                                                    <input type="radio" id="helpProviderOpenRouter" name="helpProvider" value="openrouter">
+                                                    <label for="helpProviderOpenRouter" class="ui-segment">
+                                                        <iconify-icon class="iconify-inline" icon="solar:bolt-bold-duotone"></iconify-icon>
+                                                        <span>OpenRouter</span>
+                                                    </label>
+                                                    <div class="ui-glider"></div>
                                                 </div>
-                                            </div>
-                                            <div id="helpContentMistral" class="provider-help-content" style="display: none;">
-                                                <div class="help-btn-row">
-                                                    <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Mistral
-                                                    </a>
-                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
-                                                <div class="help-btn-row">
-                                                    <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé OpenRouter
-                                                    </a>
-                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
-                                                    </button>
+                                                <div class="help-provider-actions">
+                                                    <div id="helpContentGoogle" class="provider-help-content">
+                                                        <div class="help-btn-row">
+                                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> 1. Obtenir une clé Google (Gratuit)
+                                                            </a>
+                                                            <button type="button" class="btn btn-primary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
+                                                                <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> 2. Coller dans Paramètres
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div id="helpContentGroq" class="provider-help-content" hidden>
+                                                        <div class="help-btn-row">
+                                                            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> 1. Obtenir une clé Groq (Gratuit)
+                                                            </a>
+                                                            <button type="button" class="btn btn-primary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
+                                                                <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> 2. Coller dans Paramètres
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div id="helpContentMistral" class="provider-help-content" hidden>
+                                                        <div class="help-btn-row">
+                                                            <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> 1. Obtenir une clé Mistral
+                                                            </a>
+                                                            <button type="button" class="btn btn-primary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
+                                                                <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> 2. Coller dans Paramètres
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div id="helpContentOpenRouter" class="provider-help-content" hidden>
+                                                        <div class="help-btn-row">
+                                                            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> 1. Obtenir une clé OpenRouter
+                                                            </a>
+                                                            <button type="button" class="btn btn-primary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
+                                                                <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> 2. Coller dans Paramètres
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -3029,359 +3039,459 @@
                                 </div>
 
                                 <!-- Étape 2 : Importer vos élèves -->
-                                <div class="help-quick-card">
-                                    <div class="help-quick-card-header">
-                                        <span class="help-quick-badge">2</span>
-                                        <div class="help-quick-card-header-text">
-                                            <h4 class="help-quick-card-title">Importer vos élèves</h4>
-                                            <p>Déposez votre relevé ou collez vos notes. Détection automatique des colonnes sans risque d'écrasement.</p>
+                                <div class="help-step-card">
+                                    <div class="help-step-layout">
+                                        <span class="help-step-number">2</span>
+                                        <div class="help-step-body">
+                                            <div class="help-quick-title-row">
+                                                <h3 class="help-quick-card-title">Importer votre classe</h3>
+                                                <div class="help-format-tags">
+                                                    <span class="help-chip-tag"><iconify-icon icon="solar:file-text-bold"></iconify-icon> PDF Pronote / MBN</span>
+                                                    <span class="help-chip-tag"><iconify-icon icon="solar:document-bold"></iconify-icon> Excel & CSV</span>
+                                                    <span class="help-chip-tag"><iconify-icon icon="solar:clipboard-text-bold"></iconify-icon> Copier-coller</span>
+                                                </div>
+                                            </div>
+                                            <div class="help-step-footer-row">
+                                                <p class="help-step-inline-desc">Glissez un relevé ou un trombinoscope : colonnes et visages sont détectés sans écraser l'existant.</p>
+                                                <div class="help-btn-row">
+                                                    <button type="button" class="btn btn-secondary btn-small" onclick="window.openTrombiWizardFromHelp()">
+                                                        <iconify-icon class="iconify-inline" icon="solar:camera-linear"></iconify-icon>
+                                                        Trombinoscope
+                                                    </button>
+                                                    <button type="button" class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
+                                                        <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon>
+                                                        Importer des élèves
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="help-step-footer-row">
-                                        <div class="help-format-tags">
-                                            <span class="help-chip-tag"><iconify-icon icon="solar:file-text-bold"></iconify-icon> PDF Pronote / MBN</span>
-                                            <span class="help-chip-tag"><iconify-icon icon="solar:document-bold"></iconify-icon> Excel & CSV</span>
-                                            <span class="help-chip-tag"><iconify-icon icon="solar:clipboard-text-bold"></iconify-icon> Copier-coller</span>
-                                        </div>
-                                        <button class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
-                                            <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-linear"></iconify-icon>
-                                            Assistant d'import
-                                        </button>
                                     </div>
                                 </div>
 
-                                <!-- Étape 3 : Générer & Exporter vers Pronote -->
-                                <div class="help-quick-card">
-                                    <div class="help-quick-card-header">
-                                        <span class="help-quick-badge">3</span>
-                                        <div class="help-quick-card-header-text">
-                                            <h4 class="help-quick-card-title">Générer & Coller dans Pronote</h4>
-                                            <p>Générez toute la classe en 1 clic depuis le bandeau supérieur ou peaufinez chaque élève à votre rythme.</p>
-                                        </div>
-                                    </div>
-                                    <div class="help-pronote-callout">
-                                        <iconify-icon icon="solar:clipboard-check-bold" class="help-callout-icon"></iconify-icon>
-                                        <div class="help-callout-text">
-                                            <strong>Gain de temps Pronote :</strong> Cliquez sur <span class="help-inline-badge">Copier Pronote</span> dans l'en-tête, puis dans Pronote, collez (<kbd class="help-kbd-badge">Ctrl + V</kbd>) dans la première case : toute la classe se remplit d'un seul coup sans décalage.
+                                <!-- Étape 3 : Générer & Exporter -->
+                                <div class="help-step-card">
+                                    <div class="help-step-layout">
+                                        <span class="help-step-number">3</span>
+                                        <div class="help-step-body">
+                                            <h3 class="help-quick-card-title">Générer & copier vos appréciations</h3>
+                                            <div class="help-step3-grid">
+                                                <div class="help-step3-box">
+                                                    <div class="help-step3-label">
+                                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                                        <span>En série ou à l'unité</span>
+                                                    </div>
+                                                    <p>Baguette <span class="help-ui-pill is-ai"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> 28</span> en tête de colonne pour toute la classe, ou clic sur un élève pour ouvrir sa fiche.</p>
+                                                </div>
+                                                <div class="help-step3-box">
+                                                    <div class="help-step3-label is-emerald">
+                                                        <iconify-icon icon="solar:clipboard-check-bold"></iconify-icon>
+                                                        <span>Copie suivie & Export</span>
+                                                    </div>
+                                                    <p>Bouton <span class="help-ui-pill is-emerald"><iconify-icon icon="solar:copy-bold"></iconify-icon> Copier</span> (pastille verte <span class="help-dot-inline is-copied"></span>) ou menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> pour tout exporter.</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Bannière réassurance RGPD -->
+                            <!-- Bandeau concis RGPD -->
                             <div class="help-privacy-reassurance" id="help-privacy-section">
                                 <div class="help-privacy-icon">
                                     <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
                                 </div>
                                 <div class="help-privacy-text">
-                                    <strong>100% Local-First & Conforme RGPD :</strong> Vos données et photos d'élèves ne sont stockées sur aucun serveur. Avant chaque appel à l'IA, les noms de famille sont automatiquement supprimés pour préserver l'anonymat.
+                                    <strong>100% Local & RGPD :</strong> Données et photos restent sur votre ordinateur. Les noms de famille sont systématiquement filtrés avant tout envoi à l'IA.
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tab 2: Rédaction & Style -->
-                        <div id="help-writing" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon">
-                                    <iconify-icon icon="solar:pen-new-square-bold"></iconify-icon>
+                        <!-- Onglet 2 : Rédaction & IA (Vrais composants natifs du Panneau Focus & Personnalisation) -->
+                        <div id="help-writing" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnWriting">
+                            <div class="help-interactive-demo" id="helpRefineDemo">
+                                <div class="help-demo-top">
+                                    <div class="help-demo-title-group">
+                                        <span class="help-demo-eyebrow"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Démo interactive · Panneau Focus</span>
+                                        <h3 class="help-demo-title">Cliquez sur une retouche pour tester son effet en direct</h3>
+                                    </div>
+                                    <button type="button" class="help-demo-reset-pill" id="helpRefineResetBtn" hidden title="Revenir au premier jet">
+                                        <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                                        <span>Premier jet</span>
+                                    </button>
                                 </div>
-                                <div class="help-section-header-text">
-                                    <h3 class="help-section-title">Rédaction & Style sur-mesure</h3>
-                                    <p>Conservez votre liberté pédagogique : pilotez le ton de l'IA et retouchez chaque appréciation en un instant.</p>
+
+                                <!-- Les 5 vrais boutons .btn-ai-outline[data-refine-type] avec couleurs et micro-animations natives -->
+                                <div class="focus-refinement-options help-native-refine-bar" role="group" aria-label="Outils de retouche IA">
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="concise" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:minimize-square-linear"></iconify-icon> Concise
+                                    </button>
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="detailed" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:maximize-square-linear"></iconify-icon> Détaillée
+                                    </button>
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="encouraging" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:heart-linear"></iconify-icon> Encourageante
+                                    </button>
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="variations" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon> Variation
+                                    </button>
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="polish" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:stars-line-linear"></iconify-icon> Peaufiner
+                                    </button>
+                                </div>
+
+                                <!-- Vraie carte .preview-unified-card avec l'élève exemple Lucas MARTIN et sa photo -->
+                                <div class="preview-unified-card help-preview-card">
+                                    <div class="preview-card-header">
+                                        <div class="header-student-info">
+                                            <div class="header-student-avatar">
+                                                <img src="images/Demo/martin.jpg" alt="Lucas MARTIN" class="header-student-avatar-img">
+                                            </div>
+                                            <span class="header-student-name">Lucas MARTIN</span>
+                                        </div>
+                                        <div class="grades-wrapper" aria-label="Moyennes trimestrielles">
+                                            <div class="previous-grades-inline">
+                                                <span class="previous-grade-chip" title="Trimestre 1 : 12,5">
+                                                    <span class="period-prefix">T1</span>
+                                                    <span class="prev-grade-value grade-value grade-range-12-16">12,5</span>
+                                                </span>
+                                                <span class="evolution-container-inline">
+                                                    <span class="grade-evolution positive" title="+0,7 pt">
+                                                        <iconify-icon icon="ph:trend-up-bold"></iconify-icon>
+                                                    </span>
+                                                </span>
+                                                <span class="previous-grade-chip" title="Trimestre 2 (Période actuelle) : 13,2">
+                                                    <span class="period-prefix">T2</span>
+                                                    <span class="prev-grade-value grade-value grade-range-12-16">13,2</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-card-body">
+                                        <div class="preview-context-callout">
+                                            <span class="preview-context-tag">
+                                                <iconify-icon icon="solar:chat-round-line-linear"></iconify-icon> CONTEXTE
+                                            </span>
+                                            <span class="preview-context-text">Participation active, élève moteur de la classe</span>
+                                        </div>
+                                        <div class="refinement-group">
+                                            <div class="refinement-content"><p class="text-preview" id="helpRefineDemoText">Un bon premier trimestre. Lucas s'investit avec sérieux en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p></div>
+                                            <div class="preview-meta-container help-preview-meta">
+                                                <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus</span>
+                                                <span class="word-count" id="helpRefineDemoWords">23 mots</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- 2 modes de travail -->
-                            <div class="help-cards-dual">
-                                <div class="help-mode-card">
-                                    <div class="help-mode-icon">
-                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                            <!-- Ligne basse compacte : Atelier de style + 3 outils clés -->
+                            <div class="help-writing-bottom-grid">
+                                <div class="help-style-card">
+                                    <div class="help-style-card-top">
+                                        <div class="help-feature-icon">
+                                            <iconify-icon icon="solar:tuning-2-bold"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4>Atelier de personnalisation</h4>
+                                            <p>Ton, pronom (<em>Je / Nous / Neutre</em>), longueur cible et consignes fixes.</p>
+                                        </div>
                                     </div>
-                                    <div class="help-mode-info">
-                                        <h4>Génération en série</h4>
-                                        <p>Cliquez sur <strong>« Tout générer »</strong> dans l'en-tête pour rédiger le premier jet de toute la classe automatiquement.</p>
+                                    <button type="button" class="btn btn-primary btn-small" id="helpToPersonalizationBtn">
+                                        <iconify-icon class="iconify-inline" icon="solar:tuning-2-linear"></iconify-icon>
+                                        Configurer mon style
+                                    </button>
+                                </div>
+
+                                <div class="help-tools-list-card">
+                                    <div class="help-mini-tool">
+                                        <span class="help-mini-tool-icon is-amber"><iconify-icon icon="solar:notebook-bold"></iconify-icon></span>
+                                        <div><strong>Journal (+/−)</strong> · Faits marquants intégrés selon votre seuil</div>
+                                    </div>
+                                    <div class="help-mini-tool">
+                                        <span class="help-mini-tool-icon is-rose"><iconify-icon icon="solar:microphone-3-bold"></iconify-icon></span>
+                                        <div><strong>Dictée vocale</strong> · Dictez vos observations au micro dans la fiche</div>
+                                    </div>
+                                    <div class="help-mini-tool">
+                                        <span class="help-mini-tool-icon is-emerald"><iconify-icon icon="solar:chart-square-bold"></iconify-icon></span>
+                                        <div><strong>Synthèse IA</strong> · Bouton <em>Analyser</em> pour le bilan du conseil</div>
                                     </div>
                                 </div>
-                                <div class="help-mode-card">
-                                    <div class="help-mode-icon">
-                                        <iconify-icon icon="solar:user-bold"></iconify-icon>
+                            </div>
+                        </div>
+
+                        <!-- Onglet 3 : Plan & Trombi (Vraie grille .sc-cell + vrai .sc-desk Tableau) -->
+                        <div id="help-seating" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnSeating">
+                            <div class="help-sc-canvas" aria-hidden="true">
+                                <div class="help-classroom-toolbar">
+                                    <span class="help-classroom-pill"><iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Agencer : A→Z · Mélanger · Disperser</span>
+                                    <span class="help-classroom-pill"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Vue Prof ⇄ Vue Élèves</span>
+                                </div>
+
+                                <!-- Rangée fidèle au vrai Plan de Classe (5 cellules .sc-cell + Tableau en bas) -->
+                                <div class="help-sc-grid-row">
+                                    <!-- 1. Élève épinglé (.sc-cell.occupied.pinned) -->
+                                    <div class="help-sc-col">
+                                        <div class="sc-cell occupied pinned help-sc-cell">
+                                            <span class="sc-cell-pin"><iconify-icon icon="solar:pin-bold"></iconify-icon></span>
+                                            <div class="student-avatar">
+                                                <img src="images/Demo/moreau.jpg" alt="Julie M." class="student-avatar__img">
+                                            </div>
+                                            <span class="sc-cell-name">Julie <span class="sc-cell-initial">M.</span></span>
+                                        </div>
+                                        <span class="help-sc-col-tag is-primary"><iconify-icon icon="solar:pin-bold"></iconify-icon> Place fixe</span>
                                     </div>
-                                    <div class="help-mode-info">
-                                        <h4>Panneau Focus individuel</h4>
-                                        <p>Cliquez sur un élève pour ouvrir sa fiche complète : notes, observations, historique des versions et retouches directes.</p>
+
+                                    <!-- 2. Élève placé (.sc-cell.occupied) -->
+                                    <div class="help-sc-col">
+                                        <div class="sc-cell occupied help-sc-cell">
+                                            <div class="student-avatar">
+                                                <img src="images/Demo/martin.jpg" alt="Lucas M." class="student-avatar__img">
+                                            </div>
+                                            <span class="sc-cell-name">Lucas <span class="sc-cell-initial">M.</span></span>
+                                        </div>
+                                        <span class="help-sc-col-tag"><iconify-icon icon="solar:cursor-linear"></iconify-icon> Clic = Fiche</span>
+                                    </div>
+
+                                    <!-- 3. Vraie case Allée (.sc-cell.empty.sc-cell-special-aisle en mode Édition) -->
+                                    <div class="help-sc-col">
+                                        <div class="sc-cell empty help-sc-cell help-sc-aisle-cell">
+                                            <iconify-icon icon="solar:ghost-linear" class="sc-special-icon"></iconify-icon>
+                                            <span class="sc-cell-name">Allée</span>
+                                        </div>
+                                        <span class="help-sc-col-tag"><iconify-icon icon="solar:ghost-linear"></iconify-icon> Case Allée</span>
+                                    </div>
+
+                                    <!-- 4. Élève placé (.sc-cell.occupied) -->
+                                    <div class="help-sc-col">
+                                        <div class="sc-cell occupied help-sc-cell">
+                                            <div class="student-avatar">
+                                                <img src="images/Demo/bernard.jpg" alt="Thomas B." class="student-avatar__img">
+                                            </div>
+                                            <span class="sc-cell-name">Thomas <span class="sc-cell-initial">B.</span></span>
+                                        </div>
+                                        <span class="help-sc-col-tag"><iconify-icon icon="solar:hand-stars-linear"></iconify-icon> Glisser</span>
+                                    </div>
+
+                                    <!-- 5. Table vide avec les 3 vrais outils au survol (Allée / AESH / Condamner) -->
+                                    <div class="help-sc-col">
+                                        <div class="sc-cell empty help-sc-cell help-sc-tools-cell">
+                                            <div class="help-sc-special-tools-preview">
+                                                <span class="sc-special-btn" title="Allée"><iconify-icon icon="solar:ghost-linear"></iconify-icon></span>
+                                                <span class="sc-special-btn" title="Place AESH"><iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon></span>
+                                                <span class="sc-special-btn" title="Condamner"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></span>
+                                            </div>
+                                            <span class="help-sc-tools-label">Au survol</span>
+                                        </div>
+                                        <span class="help-sc-col-tag">Allée · AESH · Condamner</span>
+                                    </div>
+                                </div>
+
+                                <!-- Vrai Tableau (.sc-desk) en bas du plan -->
+                                <div class="sc-desk-row help-sc-desk-row">
+                                    <div class="sc-desk help-sc-desk">
+                                        <iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon>
+                                        <span>Tableau</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Les 5 commandes de retouche rapide -->
-                            <div class="help-sub-block">
-                                <div class="help-sub-block-header">
-                                    <iconify-icon icon="solar:tuning-square-bold"></iconify-icon>
-                                    <h4>Les 5 outils de retouche magique (Panneau Focus)</h4>
+                            <!-- 3 repères synthétiques avec icônes sémantiques -->
+                            <div class="help-features-grid is-compact">
+                                <div class="help-feature-card">
+                                    <div class="help-feature-header-inline">
+                                        <div class="help-feature-icon"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></div>
+                                        <h4>Mode Édition & Placement</h4>
+                                    </div>
+                                    <p>Glissez vos élèves, épinglez les places fixes et transformez n'importe quelle case en allée ou place AESH.</p>
                                 </div>
-                                <p class="help-sub-block-intro">Dans la fiche élève, 5 boutons permettent d'ajuster le texte instantanément sans devoir tout réécrire :</p>
-                                <div class="help-tools-grid">
-                                    <div class="help-tool-item">
-                                        <div class="help-tool-badge"><iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise</div>
-                                        <div class="help-tool-desc">Allège le texte (-20%) et va droit au but</div>
+                                <div class="help-feature-card">
+                                    <div class="help-feature-header-inline">
+                                        <div class="help-feature-icon is-emerald"><iconify-icon icon="solar:pen-new-square-bold"></iconify-icon></div>
+                                        <h4>Mode Consultation</h4>
                                     </div>
-                                    <div class="help-tool-item">
-                                        <div class="help-tool-badge"><iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Détaillée</div>
-                                        <div class="help-tool-desc">Développe l'analyse et donne des conseils précis</div>
+                                    <p>Une fois le plan verrouillé, cliquez sur la table d'un élève pour ouvrir sa fiche Focus ou son Journal (+/−).</p>
+                                </div>
+                                <div class="help-feature-card">
+                                    <div class="help-feature-header-inline">
+                                        <div class="help-feature-icon is-violet"><iconify-icon icon="solar:camera-bold"></iconify-icon></div>
+                                        <h4>Trombinoscope IA</h4>
                                     </div>
-                                    <div class="help-tool-item">
-                                        <div class="help-tool-badge"><iconify-icon icon="solar:heart-linear"></iconify-icon> Encourager</div>
-                                        <div class="help-tool-desc">Renforce la bienveillance et valorise les efforts</div>
-                                    </div>
-                                    <div class="help-tool-item">
-                                        <div class="help-tool-badge"><iconify-icon icon="solar:restart-linear"></iconify-icon> Varier</div>
-                                        <div class="help-tool-desc">Propose une formulation alternative équivalente</div>
-                                    </div>
-                                    <div class="help-tool-item">
-                                        <div class="help-tool-badge"><iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner</div>
-                                        <div class="help-tool-desc">Corrige la syntaxe et parfait le style sans dénaturer</div>
-                                    </div>
+                                    <p>Découpe et associe automatiquement les visages depuis un PDF Pronote ou une photo de classe.</p>
                                 </div>
                             </div>
 
-                            <!-- Atelier de style & Consignes -->
-                            <div class="help-action-card">
+                            <div class="help-action-card is-compact">
                                 <div class="help-action-card-text">
-                                    <h4><iconify-icon icon="solar:tuning-2-bold"></iconify-icon> Atelier de personnalisation</h4>
-                                    <p>Réglez le ton (Bienveillant vs Factuel), la longueur idéale et vos consignes d'écriture (ex: <em>"Ne jamais commencer par le prénom"</em>).</p>
+                                    <h4><iconify-icon class="is-emerald" icon="solar:shield-check-bold"></iconify-icon> Photos 100% locales (IndexedDB)</h4>
+                                    <p>Les visages restent dans votre navigateur et ne sont jamais envoyés aux serveurs d'IA.</p>
                                 </div>
-                                <button class="btn btn-secondary btn-small" id="helpToPersonalizationBtn">
-                                    <iconify-icon class="iconify-inline" icon="solar:tuning-2-bold"></iconify-icon>
-                                    Personnaliser le style
-                                </button>
-                            </div>
-
-                            <!-- Productivité : Journal & Micro -->
-                            <div class="help-productivity-row">
-                                <div class="help-prod-item">
-                                    <iconify-icon icon="solar:notebook-bold"></iconify-icon>
-                                    <div>
-                                        <strong>Journal d'observations :</strong> Notez des remarques tout au long du trimestre. L'IA les intègre au bilan final.
-                                    </div>
-                                </div>
-                                <div class="help-prod-item">
-                                    <iconify-icon icon="solar:microphone-3-bold"></iconify-icon>
-                                    <div>
-                                        <strong>Dictée vocale au micro :</strong> Dictez oralement vos commentaires sans saisir au clavier pour un gain de temps précieux.
-                                    </div>
+                                <div class="help-btn-row">
+                                    <button type="button" class="btn btn-secondary btn-small" onclick="window.openTrombiWizardFromHelp()">
+                                        <iconify-icon class="iconify-inline" icon="solar:camera-linear"></iconify-icon>
+                                        Importer un Trombi
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-small" onclick="window.openSeatingChartFromHelp()">
+                                        <iconify-icon class="iconify-inline" icon="solar:streets-map-point-linear"></iconify-icon>
+                                        Ouvrir le Plan
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tab 3: Plan & Trombi -->
-                        <div id="help-seating" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon">
-                                    <iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>
-                                </div>
-                                <div class="help-section-header-text">
-                                    <h3 class="help-section-title">Plan de classe & Trombinoscope</h3>
-                                    <p>Visualisez la disposition réelle de votre salle de classe et associez automatiquement les photos de vos élèves.</p>
-                                </div>
-                            </div>
-
-                            <div class="help-features-grid">
-                                <!-- Feature 1: Plan interactif -->
-                                <div class="help-feature-card">
-                                    <div class="help-feature-icon">
-                                        <iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-feature-body">
-                                        <h4>Disposition de la salle</h4>
-                                        <p>Glissez-déposez les élèves sur les tables interactives. Les élèves non assignés restent disponibles dans la réserve inférieure.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Feature 2: Trombi Pronote auto -->
-                                <div class="help-feature-card">
-                                    <div class="help-feature-icon">
-                                        <iconify-icon icon="solar:camera-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-feature-body">
-                                        <h4>Trombinoscope Pronote automatique</h4>
-                                        <p>Glissez le PDF trombinoscope officiel de Pronote : les visages sont extraits, découpés et affectés à chaque élève en quelques secondes.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Feature 3: Rédiger depuis la table -->
-                                <div class="help-feature-card">
-                                    <div class="help-feature-icon">
-                                        <iconify-icon icon="solar:pen-new-square-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-feature-body">
-                                        <h4>Rédaction & Suivi en direct</h4>
-                                        <p>Cliquez sur n'importe quel élève assis pour ouvrir sa fiche. Les pastilles colorées indiquent le statut : gris (à rédiger), bleu (généré), vert (validé).</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="help-btn-row" style="margin-bottom: 12px;">
-                                <button class="btn btn-secondary btn-small" onclick="window.openSeatingChartFromHelp()">
-                                    <iconify-icon class="iconify-inline" icon="solar:streets-map-point-linear"></iconify-icon>
-                                    Basculer vers le Plan de classe
-                                </button>
-                            </div>
-
-                            <!-- Confidentialité photos -->
-                            <div class="help-privacy-reassurance">
-                                <div class="help-privacy-icon">
-                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                                </div>
-                                <div class="help-privacy-text">
-                                    <strong>Photos 100% locales & Vie privée garantie :</strong> Les photos d'élèves sont stockées exclusivement dans le stockage local de votre navigateur (IndexedDB). Elles ne sont <em>jamais transmises à l'IA</em> ni à aucun serveur distant.
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab 4: Astuces & FAQ -->
-                        <div id="help-data" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon">
-                                    <iconify-icon icon="solar:question-circle-bold"></iconify-icon>
-                                </div>
-                                <div class="help-section-header-text">
-                                    <h3 class="help-section-title">Astuces & Dépannage rapide</h3>
-                                    <p>Les réponses concrètes aux questions courantes pour vous débloquer immédiatement.</p>
-                                </div>
-                            </div>
-
+                        <!-- Onglet 4 : Dépannage & FAQ -->
+                        <div id="help-data" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnData">
                             <div class="help-accordions-group">
-                                <!-- FAQ 1: Coller dans Pronote -->
-                                <details class="help-accordion" id="help-faq-pronote" open>
+                                <!-- FAQ 1 : Pronote & Export -->
+                                <details class="help-accordion" id="help-faq-pronote" data-faq-accent="emerald" open>
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:clipboard-check-bold"></iconify-icon>
-                                            <span>Comment coller dans Pronote en 1 clic sans décalage ?</span>
-                                            <span class="help-accordion-badge">Pronote</span>
+                                            <span>Comment transférer mes appréciations vers Pronote ou Excel ?</span>
+                                            <span class="help-accordion-badge">Export</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <ol class="help-num-list">
-                                            <li>Dans Bulletin AI, cliquez sur le bouton vert <strong>« Copier Pronote »</strong> dans la barre supérieure.</li>
-                                            <li>Ouvrez Pronote dans votre navigateur et placez le curseur dans l'appréciation du <strong>premier élève</strong> de la liste.</li>
-                                            <li>Appuyez simplement sur <kbd class="help-kbd-badge">Ctrl + V</kbd> (ou <kbd class="help-kbd-badge">Cmd + V</kbd> sur Mac). Pronote remplit automatiquement toute la colonne dans l'ordre exact.</li>
-                                        </ol>
+                                        <ul class="help-detail-list">
+                                            <li><strong>Élève par élève :</strong> Cliquez sur <strong>Copier</strong> dans la fiche élève. La ligne passe au vert <span class="help-dot-inline is-copied"></span> pour suivre votre avancement dans Pronote.</li>
+                                            <li><strong>En lot :</strong> Menu <kbd class="help-kbd-badge">⋮</kbd> en haut de liste pour <em>Tout copier</em>, <em>Exporter en CSV (Excel)</em> ou <em>Imprimer PDF</em>.</li>
+                                        </ul>
                                     </div>
                                 </details>
 
-                                <!-- FAQ 2: Erreur 429 / Quota dépassé -->
-                                <details class="help-accordion" id="help-faq-quota">
+                                <!-- FAQ 2 : Erreur 429 / Quota dépassé -->
+                                <details class="help-accordion" id="help-faq-quota" data-faq-accent="amber">
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:bolt-bold"></iconify-icon>
-                                            <span>Erreur 429 ou « Quota dépassé » avec l'IA : que faire ?</span>
-                                            <span class="help-accordion-badge">IA</span>
+                                            <span>Erreur 429 « Quota dépassé » ou lenteur de l'IA : que faire ?</span>
+                                            <span class="help-accordion-badge">Quota IA</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <p>Le service gratuit Google AI Studio impose une limite de requêtes par minute.</p>
-                                        <p><strong>Solution 1 :</strong> Patientez 60 secondes avant de relancer la génération.</p>
-                                        <p><strong>Solution 2 (Recommandée) :</strong> Basculez sur <strong>Groq Cloud</strong> dans les Paramètres : son accès est 100% gratuit, extrêmement rapide et sans temps d'attente.</p>
+                                        <ul class="help-detail-list">
+                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Groq Cloud</strong> et activez <em>Relais auto.</em> pour basculer sans coupure au-delà de 15 req/min.</li>
+                                            <li><strong>100% hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre PC sans aucune limite.</li>
+                                        </ul>
+                                        <div class="help-btn-row mt-2">
+                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer Groq & le Relais IA
+                                            </button>
+                                        </div>
                                     </div>
                                 </details>
 
-                                <!-- FAQ 3: Clé API invalide -->
-                                <details class="help-accordion" id="help-faq-apikey">
+                                <!-- FAQ 3 : Clé API refusée -->
+                                <details class="help-accordion" id="help-faq-apikey" data-faq-accent="primary">
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:key-bold"></iconify-icon>
-                                            <span>Ma clé d'API est refusée ou indique une erreur</span>
+                                            <span>Ma clé API est indiquée comme invalide ou refusée</span>
                                             <span class="help-accordion-badge">Clé API</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li>Vérifiez qu'aucun espace involontaire n'a été inséré avant ou après la clé lors du copier-coller.</li>
-                                            <li>Pour Google Gemini, la clé doit commencer par <code>AIzaSy...</code>.</li>
-                                            <li>Si nécessaire, générez une nouvelle clé gratuite en 1 clic sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a> ou sur <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
+                                            <li>Vérifiez l'absence d'espace au début/fin (format : <code>AIzaSy…</code> pour Google, <code>gsk_…</code> pour Groq).</li>
+                                            <li>Régénérez une clé gratuite sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
                                         </ul>
                                     </div>
                                 </details>
 
-                                <!-- FAQ 4: Import raté / fichier non reconnu -->
-                                <details class="help-accordion" id="help-faq-import">
+                                <!-- FAQ 4 : Import non reconnu -->
+                                <details class="help-accordion" id="help-faq-import" data-faq-accent="sky">
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold"></iconify-icon>
-                                            <span>Mon fichier Pronote ou Excel ne semble pas reconnu</span>
+                                            <span>Mon fichier PDF, Excel ou CSV est mal découpé à l'import</span>
                                             <span class="help-accordion-badge">Import</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <p>L'assistant d'import requiert au minimum une colonne contenant le <strong>Nom</strong> et une colonne pour les <strong>Notes / Moyennes</strong>.</p>
-                                        <p><strong>Astuce universelle :</strong> Ouvrez votre fichier dans Excel ou LibreOffice, sélectionnez les colonnes, faites <kbd class="help-kbd-badge">Ctrl + C</kbd>, puis collez directement dans l'onglet « Coller des données » de l'Assistant d'import.</p>
+                                        <ul class="help-detail-list">
+                                            <li><strong>Séparateur :</strong> À l'étape 2 de l'import, changez le séparateur (Tabulation, Point-virgule, Virgule).</li>
+                                            <li><strong>Astuce universelle :</strong> Copiez vos lignes dans Excel/Pronote (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les directement dans l'Assistant.</li>
+                                        </ul>
+                                        <div class="help-btn-row mt-2">
+                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openImportWizardFromHelp()">
+                                                <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon> Ouvrir l'Assistant d'import
+                                            </button>
+                                        </div>
                                     </div>
                                 </details>
 
-                                <!-- FAQ 5: Sauvegardes & synchronisation -->
-                                <details class="help-accordion" id="help-faq-backup">
+                                <!-- FAQ 5 : Sauvegardes & Changement de PC -->
+                                <details class="help-accordion" id="help-faq-backup" data-faq-accent="violet">
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:cloud-upload-bold"></iconify-icon>
-                                            <span>Sauvegarder et retrouver mes classes sur un autre ordinateur</span>
-                                            <span class="help-accordion-badge">Sauvegarde</span>
+                                            <span>Sauvegarder mes classes ou changer d'ordinateur</span>
+                                            <span class="help-accordion-badge">Données</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <p>Dans <strong>Paramètres > Données</strong> :</p>
                                         <ul class="help-detail-list">
-                                            <li><strong>Google Drive personnel :</strong> Connectez votre compte Drive pour sauvegarder et synchroniser automatiquement votre travail sur n'importe quel ordinateur.</li>
-                                            <li><strong>Fichier JSON universel :</strong> Téléchargez une archive complète à emporter sur clé USB.</li>
+                                            <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un PC à l'autre.</li>
+                                            <li><strong>Archive JSON :</strong> Exportez une sauvegarde complète sur clé USB depuis <em>Paramètres &gt; Données</em>.</li>
                                         </ul>
-                                        <div class="help-btn-row" style="margin-top: 8px;">
-                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
-                                                <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer les Sauvegardes
+                                        <div class="help-btn-row mt-2">
+                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
+                                                <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer mes sauvegardes
                                             </button>
                                         </div>
                                     </div>
                                 </details>
                             </div>
 
-                            <!-- Raccourcis clavier -->
+                            <!-- Raccourcis clavier réels (grille compacte sans débordement) -->
                             <div class="help-shortcuts-card">
                                 <div class="help-shortcuts-header">
                                     <iconify-icon icon="solar:keyboard-bold"></iconify-icon>
-                                    <h4>Raccourcis clavier indispensables</h4>
+                                    <h4>Raccourcis clavier</h4>
                                 </div>
                                 <div class="help-shortcut-list">
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Valider et passer à l'élève suivant</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">Entrée</kbd></span>
+                                        <span class="help-shortcut-desc">Générer le bilan</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">Entrée</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Fermer la fiche élève ou la fenêtre active</span>
+                                        <span class="help-shortcut-desc">Élève préc. / suiv.</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">←</kbd> <kbd class="help-kbd-badge">→</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Version préc. / suiv.</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">Z</kbd>/<kbd class="help-kbd-badge">Y</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Chercher un élève</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">F</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Sélection multiple</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Maj</kbd>+<kbd class="help-kbd-badge">Clic</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Fermer la fenêtre</span>
                                         <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Échap</kbd></span>
-                                    </div>
-                                    <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Passer à l'élève précédent / suivant</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">↑</kbd> <kbd class="help-kbd-badge">↓</kbd></span>
-                                    </div>
-                                    <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Recherche rapide de classe ou d'élève</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">K</kbd></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tab 5: À propos -->
-                        <div id="help-about" class="help-tab-content">
+                        <!-- Onglet 5 : À propos (Épuré & Icône soignée) -->
+                        <div id="help-about" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnAbout">
                             <div class="about-header">
                                 <div class="about-header-main">
-                                    <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
+                                    <div class="about-logo-tile">
+                                        <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
+                                    </div>
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build bc068d5 · 11 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build d7eaa84 · 11 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3403,26 +3513,22 @@
 
                             <div class="about-content">
                                 <p class="about-tagline">
-                                    L'assistant intelligent pensé par et pour les enseignants afin de simplifier la rédaction des appréciations scolaires, concevoir leurs plans de classe et valoriser le suivi pédagogique de chaque élève.
+                                    Conçu par et pour les enseignants afin d'alléger la rédaction des bulletins scolaires, organiser les plans de classe et suivre chaque élève sereinement.
                                 </p>
 
-                                <!-- Engagements éthiques & RGPD -->
-                                <div class="help-privacy-reassurance" style="margin-bottom: 16px;">
-                                    <div class="help-privacy-icon">
-                                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-privacy-text">
-                                        <strong>Local-First, Éthique & Sans pistage :</strong> Vos élèves, notes et photos restent sur votre appareil. Les requêtes IA sont anonymisées (noms de famille supprimés). Développé bénévolement pour soulager la charge mentale des professeurs.
-                                    </div>
+                                <div class="about-trust-pills">
+                                    <span class="about-trust-pill"><iconify-icon icon="solar:shield-check-bold"></iconify-icon> 100% Local (Navigateur)</span>
+                                    <span class="about-trust-pill"><iconify-icon icon="solar:user-block-rounded-bold"></iconify-icon> Anonymisation IA auto</span>
+                                    <span class="about-trust-pill"><iconify-icon icon="solar:code-circle-bold"></iconify-icon> Open-Source & Gratuit</span>
                                 </div>
 
-                                <!-- Donation Section -->
+                                <!-- Soutien Ko-fi -->
                                 <div class="support-card-premium">
                                     <h4>
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Cette application est 100% gratuite et open-source. Si elle vous est utile au quotidien, vous pouvez encourager son développement indépendant en offrant un café !
+                                        Bulletin AI est développé bénévolement, sans publicité ni abonnement. Si l'outil vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez encourager son évolution en offrant un café !
                                     </p>
                                     <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-kofi">
@@ -3432,8 +3538,7 @@
                                 </div>
 
                                 <div class="about-footer">
-                                    <p>Développé pour les enseignants par David Trafial</p>
-                                    <p>© 2025-2026 Bulletin AI - Tous droits réservés</p>
+                                    <p>Développé pour les enseignants par David Trafial · © 2025-2026 Bulletin AI</p>
                                     <p class="license-text">
                                         Sous licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
                                     </p>

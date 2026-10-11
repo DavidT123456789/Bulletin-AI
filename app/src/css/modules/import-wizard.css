@@ -880,7 +880,7 @@
     }
 }
 
-.status-text {
+.drop-zone-status .status-text {
     font-size: 0.9rem;
     color: var(--text-secondary);
     font-weight: 500;
