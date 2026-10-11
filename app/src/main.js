@@ -98,6 +98,23 @@ const init = () => {
             }, 200);
         };
 
+        window.openHelpTab = (tabId, sectionId) => {
+            UI.openModal(DOM.helpModal, { isStacked: true });
+            if (tabId) {
+                const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${tabId}"]`);
+                if (tabBtn) tabBtn.click();
+            }
+            if (sectionId) {
+                setTimeout(() => {
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        if (section.tagName === 'DETAILS') section.open = true;
+                        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 150);
+            }
+        };
+
         // PWA Update Handler
         setupPWAUpdateHandler();
 

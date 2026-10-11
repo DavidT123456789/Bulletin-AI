@@ -2918,8 +2918,8 @@
                             Plan & Trombi
                         </button>
                         <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-data')">
-                            <iconify-icon class="iconify-inline icon-privacy" icon="solar:shield-check-linear"></iconify-icon>
-                            Export & Données
+                            <iconify-icon class="iconify-inline icon-privacy" icon="solar:question-circle-linear"></iconify-icon>
+                            Astuces & FAQ
                         </button>
                         <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-about')">
                             <iconify-icon class="iconify-inline icon-about" icon="solar:info-circle-linear"></iconify-icon>
@@ -2928,24 +2928,25 @@
 
                         <!-- Bottom Action Button -->
                         <div class="ui-tabs-actions-wrapper">
-                            <button class="ui-tabs-action-btn" onclick="relaunchSetupWizard()">
-                                <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon> Relancer
-                                setup
+                            <button class="ui-tabs-action-btn" id="relaunchWelcomeGuideBtn" onclick="relaunchSetupWizard()">
+                                <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
+                                Relancer setup
                             </button>
                         </div>
                     </div>
 
                     <!-- Content Area -->
                     <div class="ui-tabs-content">
-                        <!-- Tab 1: Démarrage rapide (IA & Import) -->
+                        <!-- Tab 1: Démarrage rapide (Processus 1-2-3) -->
                         <div id="help-apikey" class="help-tab-content active">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
                                     <iconify-icon icon="solar:rocket-2-bold"></iconify-icon>
                                 </div>
-                                <p>
-                                    Deux étapes simples suffisent pour commencer à générer vos premières appréciations.
-                                </p>
+                                <div class="help-section-header-text">
+                                    <h3 class="help-section-title">Prise en main en 3 étapes</h3>
+                                    <p>Deux minutes suffisent pour connecter l'IA, charger vos élèves et générer vos premiers bilans.</p>
+                                </div>
                             </div>
 
                             <div class="help-quickstart-flow">
@@ -2955,7 +2956,7 @@
                                         <span class="help-quick-badge">1</span>
                                         <div class="help-quick-card-header-text">
                                             <h4 class="help-quick-card-title">Connecter une IA</h4>
-                                            <p>Choisissez un fournisseur gratuit et enregistrez votre clé d'API.</p>
+                                            <p>Choisissez un moteur d'IA gratuit sans carte bancaire pour propulser l'assistant.</p>
                                         </div>
                                     </div>
                                     <div class="help-provider-row">
@@ -2970,15 +2971,15 @@
                                                 <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold" style="color: #f55036;"></iconify-icon>
                                                 <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
                                             </label>
-                                            <input type="radio" id="helpProviderOpenRouter" name="helpProvider" value="openrouter">
-                                            <label for="helpProviderOpenRouter" class="ui-segment">
-                                                <iconify-icon class="iconify-inline" icon="solar:bolt-bold-duotone"></iconify-icon>
-                                                <span>OpenRouter</span>
-                                            </label>
                                             <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral">
                                             <label for="helpProviderMistral" class="ui-segment">
                                                 <iconify-icon class="iconify-inline" icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>
                                                 <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                            </label>
+                                            <input type="radio" id="helpProviderOpenRouter" name="helpProvider" value="openrouter">
+                                            <label for="helpProviderOpenRouter" class="ui-segment">
+                                                <iconify-icon class="iconify-inline" icon="solar:bolt-bold-duotone"></iconify-icon>
+                                                <span>OpenRouter</span>
                                             </label>
                                             <div class="ui-glider"></div>
                                         </div>
@@ -2986,40 +2987,40 @@
                                             <div id="helpContentGoogle" class="provider-help-content">
                                                 <div class="help-btn-row">
                                                     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (gratuit)
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Google (Gratuit)
                                                     </a>
                                                     <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
                                                     </button>
                                                 </div>
                                             </div>
                                             <div id="helpContentGroq" class="provider-help-content" style="display: none;">
                                                 <div class="help-btn-row">
                                                     <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (100% gratuit)
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Groq (100% Gratuit)
                                                     </a>
                                                     <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
                                                     </button>
                                                 </div>
                                             </div>
                                             <div id="helpContentMistral" class="provider-help-content" style="display: none;">
                                                 <div class="help-btn-row">
                                                     <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé Mistral
                                                     </a>
                                                     <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
                                                     </button>
                                                 </div>
                                             </div>
                                             <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
                                                 <div class="help-btn-row">
                                                     <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé OpenRouter
                                                     </a>
                                                     <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Saisir dans Paramètres
                                                     </button>
                                                 </div>
                                             </div>
@@ -3027,60 +3028,54 @@
                                     </div>
                                 </div>
 
-                                <!-- Étape 2 : Importer sa classe -->
-                                <div class="help-quick-card help-quick-card-compact">
+                                <!-- Étape 2 : Importer vos élèves -->
+                                <div class="help-quick-card">
                                     <div class="help-quick-card-header">
                                         <span class="help-quick-badge">2</span>
                                         <div class="help-quick-card-header-text">
                                             <h4 class="help-quick-card-title">Importer vos élèves</h4>
-                                            <p>Glissez un fichier PDF Pronote/MBN, un tableur Excel ou collez directement vos notes.</p>
+                                            <p>Déposez votre relevé ou collez vos notes. Détection automatique des colonnes sans risque d'écrasement.</p>
                                         </div>
                                     </div>
-                                    <div class="help-quick-card-cta">
+                                    <div class="help-step-footer-row">
+                                        <div class="help-format-tags">
+                                            <span class="help-chip-tag"><iconify-icon icon="solar:file-text-bold"></iconify-icon> PDF Pronote / MBN</span>
+                                            <span class="help-chip-tag"><iconify-icon icon="solar:document-bold"></iconify-icon> Excel & CSV</span>
+                                            <span class="help-chip-tag"><iconify-icon icon="solar:clipboard-text-bold"></iconify-icon> Copier-coller</span>
+                                        </div>
                                         <button class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
                                             <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-linear"></iconify-icon>
                                             Assistant d'import
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Étape 3 : Générer & Exporter vers Pronote -->
+                                <div class="help-quick-card">
+                                    <div class="help-quick-card-header">
+                                        <span class="help-quick-badge">3</span>
+                                        <div class="help-quick-card-header-text">
+                                            <h4 class="help-quick-card-title">Générer & Coller dans Pronote</h4>
+                                            <p>Générez toute la classe en 1 clic depuis le bandeau supérieur ou peaufinez chaque élève à votre rythme.</p>
+                                        </div>
+                                    </div>
+                                    <div class="help-pronote-callout">
+                                        <iconify-icon icon="solar:clipboard-check-bold" class="help-callout-icon"></iconify-icon>
+                                        <div class="help-callout-text">
+                                            <strong>Gain de temps Pronote :</strong> Cliquez sur <span class="help-inline-badge">Copier Pronote</span> dans l'en-tête, puis dans Pronote, collez (<kbd class="help-kbd-badge">Ctrl + V</kbd>) dans la première case : toute la classe se remplit d'un seul coup sans décalage.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="help-accordions-group">
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:cpu-bold"></iconify-icon>
-                                            <span>Quel modèle d'IA choisir ? Quotas & Performances</span>
-                                            <span class="help-accordion-badge">Conseils</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Google Gemini (Recommandé) :</strong> 100% gratuit sans carte bancaire sur Google AI Studio. Rapide, précis et idéal pour les appréciations scolaires.</li>
-                                            <li><strong>Groq Cloud (Sprinteur Ultra-rapide) :</strong> Vitesse fulgurante (~500 à 1 000 tokens/s), 100% gratuit sans carte bancaire avec les modèles ouverts de pointe (GPT-OSS 120B et 20B).</li>
-                                            <li><strong>OpenRouter & Modèles Open-Source :</strong> Accès universel gratuit ou très économique aux meilleurs modèles avec une seule clé unifiée.</li>
-                                            <li><strong>Mistral AI :</strong> Solution française performante (nécessite des crédits sur La Plateforme Mistral).</li>
-                                            <li><strong>Ollama (100% Local & Hors-ligne) :</strong> Faites tourner Gemma 2 ou Qwen directement sur votre ordinateur sans connexion internet.</li>
-                                        </ul>
-                                    </div>
-                                </details>
-
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold"></iconify-icon>
-                                            <span>Formats acceptés & Import sans perte de données</span>
-                                            <span class="help-accordion-badge">Fichiers</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <p>L'assistant d'import reconnaît les formats <strong>PDF (Pronote, MonBureauNumérique)</strong>, <strong>Excel (.xlsx, .xls)</strong>, <strong>CSV</strong> et le simple copier-coller de cellules.</p>
-                                        <div class="help-code-sample">Nom | Prénom | Moyenne | Appréciation (optionnel)</div>
-                                        <p>Les colonnes sont détectées automatiquement. Lors d'une mise à jour en cours de trimestre, l'assistant identifie les nouveaux élèves, les élèves mis à jour et les départs. <strong>Vos appréciations existantes ne sont jamais écrasées.</strong></p>
-                                    </div>
-                                </details>
+                            <!-- Bannière réassurance RGPD -->
+                            <div class="help-privacy-reassurance" id="help-privacy-section">
+                                <div class="help-privacy-icon">
+                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                </div>
+                                <div class="help-privacy-text">
+                                    <strong>100% Local-First & Conforme RGPD :</strong> Vos données et photos d'élèves ne sont stockées sur aucun serveur. Avant chaque appel à l'IA, les noms de famille sont automatiquement supprimés pour préserver l'anonymat.
+                                </div>
                             </div>
                         </div>
 
@@ -3090,130 +3085,91 @@
                                 <div class="help-section-icon">
                                     <iconify-icon icon="solar:pen-new-square-bold"></iconify-icon>
                                 </div>
-                                <p>
-                                    Générez vos bilans en conservant votre style d'écriture et affinez chaque appréciation avec précision.
-                                </p>
-                            </div>
-
-                            <div class="help-highlight-list">
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:magic-stick-3-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Génération globale ou élève par élève</strong>
-                                        Générez toute la classe en 1 clic depuis le badge d'en-tête, ou traitez chaque élève à votre rythme.
-                                    </div>
-                                </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:user-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Le Panneau Focus</strong>
-                                        Cliquez sur un élève pour ouvrir son profil complet : notes, observations, historique et retouche directe.
-                                    </div>
-                                </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:tuning-2-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Style & Consignes sur-mesure</strong>
-                                        Réglez le ton, la longueur et vos consignes d'écriture dans l'Atelier de personnalisation.
-                                    </div>
+                                <div class="help-section-header-text">
+                                    <h3 class="help-section-title">Rédaction & Style sur-mesure</h3>
+                                    <p>Conservez votre liberté pédagogique : pilotez le ton de l'IA et retouchez chaque appréciation en un instant.</p>
                                 </div>
                             </div>
 
-                            <div class="help-btn-row">
+                            <!-- 2 modes de travail -->
+                            <div class="help-cards-dual">
+                                <div class="help-mode-card">
+                                    <div class="help-mode-icon">
+                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-mode-info">
+                                        <h4>Génération en série</h4>
+                                        <p>Cliquez sur <strong>« Tout générer »</strong> dans l'en-tête pour rédiger le premier jet de toute la classe automatiquement.</p>
+                                    </div>
+                                </div>
+                                <div class="help-mode-card">
+                                    <div class="help-mode-icon">
+                                        <iconify-icon icon="solar:user-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-mode-info">
+                                        <h4>Panneau Focus individuel</h4>
+                                        <p>Cliquez sur un élève pour ouvrir sa fiche complète : notes, observations, historique des versions et retouches directes.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Les 5 commandes de retouche rapide -->
+                            <div class="help-sub-block">
+                                <div class="help-sub-block-header">
+                                    <iconify-icon icon="solar:tuning-square-bold"></iconify-icon>
+                                    <h4>Les 5 outils de retouche magique (Panneau Focus)</h4>
+                                </div>
+                                <p class="help-sub-block-intro">Dans la fiche élève, 5 boutons permettent d'ajuster le texte instantanément sans devoir tout réécrire :</p>
+                                <div class="help-tools-grid">
+                                    <div class="help-tool-item">
+                                        <div class="help-tool-badge"><iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise</div>
+                                        <div class="help-tool-desc">Allège le texte (-20%) et va droit au but</div>
+                                    </div>
+                                    <div class="help-tool-item">
+                                        <div class="help-tool-badge"><iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Détaillée</div>
+                                        <div class="help-tool-desc">Développe l'analyse et donne des conseils précis</div>
+                                    </div>
+                                    <div class="help-tool-item">
+                                        <div class="help-tool-badge"><iconify-icon icon="solar:heart-linear"></iconify-icon> Encourager</div>
+                                        <div class="help-tool-desc">Renforce la bienveillance et valorise les efforts</div>
+                                    </div>
+                                    <div class="help-tool-item">
+                                        <div class="help-tool-badge"><iconify-icon icon="solar:restart-linear"></iconify-icon> Varier</div>
+                                        <div class="help-tool-desc">Propose une formulation alternative équivalente</div>
+                                    </div>
+                                    <div class="help-tool-item">
+                                        <div class="help-tool-badge"><iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner</div>
+                                        <div class="help-tool-desc">Corrige la syntaxe et parfait le style sans dénaturer</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Atelier de style & Consignes -->
+                            <div class="help-action-card">
+                                <div class="help-action-card-text">
+                                    <h4><iconify-icon icon="solar:tuning-2-bold"></iconify-icon> Atelier de personnalisation</h4>
+                                    <p>Réglez le ton (Bienveillant vs Factuel), la longueur idéale et vos consignes d'écriture (ex: <em>"Ne jamais commencer par le prénom"</em>).</p>
+                                </div>
                                 <button class="btn btn-secondary btn-small" id="helpToPersonalizationBtn">
                                     <iconify-icon class="iconify-inline" icon="solar:tuning-2-bold"></iconify-icon>
-                                    Ouvrir la Personnalisation
+                                    Personnaliser le style
                                 </button>
                             </div>
 
-                            <div class="help-accordions-group">
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:tuning-2-bold"></iconify-icon>
-                                            <span>Tonalité, Longueur & Consignes sur-mesure</span>
-                                            <span class="help-accordion-badge">Style</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Interrupteur de ton :</strong> Basculez à volonté entre le mode <em>Bienveillant & encourageant</em> (chaleureux, valorisant les progrès) et le mode <em>Neutre & factuel</em> (sobre, concis, direct et centré sur les faits).</li>
-                                            <li><strong>Jauge de longueur :</strong> Ajustez le curseur de brièveté pour adapter les appréciations aux exigences de votre établissement ou de votre discipline.</li>
-                                            <li><strong>Consignes globales & par élève :</strong> Définissez des directives valables pour toute la classe (ex: <em>"Ne jamais commencer par le prénom"</em>) et ajoutez des mémos privés pour un élève spécifique directement dans sa fiche.</li>
-                                        </ul>
+                            <!-- Productivité : Journal & Micro -->
+                            <div class="help-productivity-row">
+                                <div class="help-prod-item">
+                                    <iconify-icon icon="solar:notebook-bold"></iconify-icon>
+                                    <div>
+                                        <strong>Journal d'observations :</strong> Notez des remarques tout au long du trimestre. L'IA les intègre au bilan final.
                                     </div>
-                                </details>
-
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:magic-stick-3-bold"></iconify-icon>
-                                            <span>Les 5 commandes de retouche rapide (Raffinement)</span>
-                                            <span class="help-accordion-badge">Outils</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <div class="ui-table-container">
-                                            <table class="ui-table responsive-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th style="width: 130px;">Commande</th>
-                                                        <th style="width: 110px;">Effet</th>
-                                                        <th>Consigne transmise à l'IA</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise</span></td>
-                                                        <td style="font-weight: 500; color: var(--text-primary);">-20% taille</td>
-                                                        <td class="prompt-cell">"Rends cette appréciation plus concise. Garde l'essentiel."</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Détaillée</span></td>
-                                                        <td style="font-weight: 500; color: var(--text-primary);">+20% taille</td>
-                                                        <td class="prompt-cell">"Développe les points, sois plus précis. N'invente pas de faits."</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante</span></td>
-                                                        <td style="font-weight: 500; color: var(--text-primary);">Bienveillance</td>
-                                                        <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif."</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:restart-linear"></iconify-icon> Variation</span></td>
-                                                        <td style="font-weight: 500; color: var(--text-primary);">Alternative</td>
-                                                        <td class="prompt-cell">"Reformule différemment en gardant le même sens."</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner</span></td>
-                                                        <td style="font-weight: 500; color: var(--text-primary);">Pro & fluide</td>
-                                                        <td class="prompt-cell">"Peaufine : corrige fautes, améliore fluidité, adopte un ton pro."</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <p style="margin-top: 10px;"><strong>Historique des versions :</strong> Chaque modification génère un instantané. Vous pouvez comparer les variantes et restaurer n'importe quelle version antérieure d'un clic.</p>
+                                </div>
+                                <div class="help-prod-item">
+                                    <iconify-icon icon="solar:microphone-3-bold"></iconify-icon>
+                                    <div>
+                                        <strong>Dictée vocale au micro :</strong> Dictez oralement vos commentaires sans saisir au clavier pour un gain de temps précieux.
                                     </div>
-                                </details>
-
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:notebook-bold"></iconify-icon>
-                                            <span>Journal d'observations, Dictée vocale & Synthèse audio</span>
-                                            <span class="help-accordion-badge">Productivité</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Journal de bord au fil de l'eau :</strong> Notez des observations courtes tout au long du trimestre (attitude, progrès, incidents). L'IA les intègre automatiquement à l'appréciation finale.</li>
-                                            <li><strong>Dictée vocale au micro :</strong> Dictez oralement vos remarques sans saisir au clavier pour un gain de temps précieux.</li>
-                                            <li><strong>Synthèse vocale (lecture audio) :</strong> Écoutez l'appréciation lue à voix haute pour valider le rythme, l'équilibre et la fluidité des phrases.</li>
-                                        </ul>
-                                    </div>
-                                </details>
+                                </div>
                             </div>
                         </div>
 
@@ -3223,192 +3179,198 @@
                                 <div class="help-section-icon">
                                     <iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>
                                 </div>
-                                <p>
-                                    Organisez votre salle dans l'espace et associez instantanément les photos de vos élèves.
-                                </p>
-                            </div>
-
-                            <div class="help-highlight-list">
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:streets-map-point-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Bascule Liste ↔ Plan de classe</strong>
-                                        Passez de la liste au plan d'un clic dans l'en-tête pour visualiser la disposition réelle de votre salle.
-                                    </div>
-                                </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:hand-stars-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Placement & Réserve fluide</strong>
-                                        Glissez les élèves sur leurs tables et libérez-les vers la réserve d'un simple geste.
-                                    </div>
-                                </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:camera-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Trombinoscope Pronote automatique</strong>
-                                        Déposez votre PDF trombinoscope : les visages sont découpés et attribués aux élèves automatiquement.
-                                    </div>
+                                <div class="help-section-header-text">
+                                    <h3 class="help-section-title">Plan de classe & Trombinoscope</h3>
+                                    <p>Visualisez la disposition réelle de votre salle de classe et associez automatiquement les photos de vos élèves.</p>
                                 </div>
                             </div>
 
-                            <div class="help-btn-row">
+                            <div class="help-features-grid">
+                                <!-- Feature 1: Plan interactif -->
+                                <div class="help-feature-card">
+                                    <div class="help-feature-icon">
+                                        <iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-feature-body">
+                                        <h4>Disposition de la salle</h4>
+                                        <p>Glissez-déposez les élèves sur les tables interactives. Les élèves non assignés restent disponibles dans la réserve inférieure.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Feature 2: Trombi Pronote auto -->
+                                <div class="help-feature-card">
+                                    <div class="help-feature-icon">
+                                        <iconify-icon icon="solar:camera-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-feature-body">
+                                        <h4>Trombinoscope Pronote automatique</h4>
+                                        <p>Glissez le PDF trombinoscope officiel de Pronote : les visages sont extraits, découpés et affectés à chaque élève en quelques secondes.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Feature 3: Rédiger depuis la table -->
+                                <div class="help-feature-card">
+                                    <div class="help-feature-icon">
+                                        <iconify-icon icon="solar:pen-new-square-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-feature-body">
+                                        <h4>Rédaction & Suivi en direct</h4>
+                                        <p>Cliquez sur n'importe quel élève assis pour ouvrir sa fiche. Les pastilles colorées indiquent le statut : gris (à rédiger), bleu (généré), vert (validé).</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-btn-row" style="margin-bottom: 12px;">
                                 <button class="btn btn-secondary btn-small" onclick="window.openSeatingChartFromHelp()">
                                     <iconify-icon class="iconify-inline" icon="solar:streets-map-point-linear"></iconify-icon>
                                     Basculer vers le Plan de classe
                                 </button>
                             </div>
 
-                            <div class="help-accordions-group">
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:streets-map-point-bold"></iconify-icon>
-                                            <span>Astuces & Gestuelle du Plan de classe</span>
-                                            <span class="help-accordion-badge">Salle</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Générer sans changer de vue :</strong> Cliquez sur n'importe quelle table occupée pour ouvrir la fiche de l'élève et générer, retoucher ou valider son appréciation sur place.</li>
-                                            <li><strong>Désassignation fluide :</strong> Glissez un élève de sa table vers la barre inférieure de réserve, ou survolez la table pour le libérer avec vol balistique de retour à sa place.</li>
-                                            <li><strong>Suivi visuel par pastilles :</strong> Chaque table reflète en temps réel l'état du bulletin : à rédiger (gris), en cours (bleu) ou validé (vert).</li>
-                                            <li><strong>Export PDF imprimable :</strong> Téléchargez le plan complet avec photos pour l'afficher en classe ou le transmettre à un professeur remplaçant.</li>
-                                        </ul>
-                                    </div>
-                                </details>
-
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:shield-check-bold"></iconify-icon>
-                                            <span>Trombinoscope & Protection absolue des photos</span>
-                                            <span class="help-accordion-badge">Confidentialité</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <p>Les photos sont traitées et conservées <strong>exclusivement sur votre machine</strong> (dans le stockage local IndexedDB de votre navigateur).</p>
-                                        <p>Elles ne sont <strong>jamais transmises à l'IA</strong> ni stockées sur des serveurs externes. La vie privée et le droit à l'image des élèves sont garantis à 100%.</p>
-                                    </div>
-                                </details>
+                            <!-- Confidentialité photos -->
+                            <div class="help-privacy-reassurance">
+                                <div class="help-privacy-icon">
+                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                </div>
+                                <div class="help-privacy-text">
+                                    <strong>Photos 100% locales & Vie privée garantie :</strong> Les photos d'élèves sont stockées exclusivement dans le stockage local de votre navigateur (IndexedDB). Elles ne sont <em>jamais transmises à l'IA</em> ni à aucun serveur distant.
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Tab 4: Export & Données -->
+                        <!-- Tab 4: Astuces & FAQ -->
                         <div id="help-data" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
-                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                    <iconify-icon icon="solar:question-circle-bold"></iconify-icon>
                                 </div>
-                                <p>
-                                    Copiez vos appréciations vers Pronote, sauvegardez sur Google Drive et gardez le contrôle total sur vos données.
-                                </p>
-                            </div>
-
-                            <div class="help-highlight-list">
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:export-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Copier vers Pronote en 1 clic</strong>
-                                        Les appréciations sont copiées dans l'ordre exact de votre classe pour être collées en série dans Pronote.
-                                    </div>
+                                <div class="help-section-header-text">
+                                    <h3 class="help-section-title">Astuces & Dépannage rapide</h3>
+                                    <p>Les réponses concrètes aux questions courantes pour vous débloquer immédiatement.</p>
                                 </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:cloud-upload-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>Sauvegarde Cloud Google Drive</strong>
-                                        Liez votre compte Google Drive personnel dans le menu pour retrouver vos classes sur n'importe quel ordinateur.
-                                    </div>
-                                </div>
-                                <div class="help-highlight-item">
-                                    <iconify-icon class="help-highlight-icon" icon="solar:lock-keyhole-bold"></iconify-icon>
-                                    <div class="help-highlight-text">
-                                        <strong>100% Local-First & Anonymisation</strong>
-                                        Aucun serveur intermédiaire : les noms de famille sont supprimés avant chaque appel au modèle d'IA.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="help-btn-row">
-                                <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
-                                    <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon>
-                                    Gérer les Sauvegardes
-                                </button>
                             </div>
 
                             <div class="help-accordions-group">
-                                <details class="help-accordion">
+                                <!-- FAQ 1: Coller dans Pronote -->
+                                <details class="help-accordion" id="help-faq-pronote" open>
                                     <summary>
                                         <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:export-bold"></iconify-icon>
-                                            <span>Coller dans Pronote & Exports tableurs</span>
+                                            <iconify-icon class="help-accordion-icon" icon="solar:clipboard-check-bold"></iconify-icon>
+                                            <span>Comment coller dans Pronote en 1 clic sans décalage ?</span>
                                             <span class="help-accordion-badge">Pronote</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <p><strong>Collage en série dans Pronote :</strong> Cliquez sur le bouton de copie Pronote. Dans votre navigateur Pronote, placez le curseur dans la première appréciation et collez (<kbd class="help-kbd-badge">Ctrl + V</kbd>). L'ordre des élèves correspond exactement à celui de votre relevé officiel.</p>
-                                        <p><strong>Exports Excel & CSV :</strong> Vous pouvez également exporter un tableau récapitulatif complet de vos notes et appréciations pour vos archives personnelles.</p>
+                                        <ol class="help-num-list">
+                                            <li>Dans Bulletin AI, cliquez sur le bouton vert <strong>« Copier Pronote »</strong> dans la barre supérieure.</li>
+                                            <li>Ouvrez Pronote dans votre navigateur et placez le curseur dans l'appréciation du <strong>premier élève</strong> de la liste.</li>
+                                            <li>Appuyez simplement sur <kbd class="help-kbd-badge">Ctrl + V</kbd> (ou <kbd class="help-kbd-badge">Cmd + V</kbd> sur Mac). Pronote remplit automatiquement toute la colonne dans l'ordre exact.</li>
+                                        </ol>
                                     </div>
                                 </details>
 
-                                <details class="help-accordion">
+                                <!-- FAQ 2: Erreur 429 / Quota dépassé -->
+                                <details class="help-accordion" id="help-faq-quota">
+                                    <summary>
+                                        <div class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:bolt-bold"></iconify-icon>
+                                            <span>Erreur 429 ou « Quota dépassé » avec l'IA : que faire ?</span>
+                                            <span class="help-accordion-badge">IA</span>
+                                        </div>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                    </summary>
+                                    <div class="help-accordion-body">
+                                        <p>Le service gratuit Google AI Studio impose une limite de requêtes par minute.</p>
+                                        <p><strong>Solution 1 :</strong> Patientez 60 secondes avant de relancer la génération.</p>
+                                        <p><strong>Solution 2 (Recommandée) :</strong> Basculez sur <strong>Groq Cloud</strong> dans les Paramètres : son accès est 100% gratuit, extrêmement rapide et sans temps d'attente.</p>
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 3: Clé API invalide -->
+                                <details class="help-accordion" id="help-faq-apikey">
+                                    <summary>
+                                        <div class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:key-bold"></iconify-icon>
+                                            <span>Ma clé d'API est refusée ou indique une erreur</span>
+                                            <span class="help-accordion-badge">Clé API</span>
+                                        </div>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                    </summary>
+                                    <div class="help-accordion-body">
+                                        <ul class="help-detail-list">
+                                            <li>Vérifiez qu'aucun espace involontaire n'a été inséré avant ou après la clé lors du copier-coller.</li>
+                                            <li>Pour Google Gemini, la clé doit commencer par <code>AIzaSy...</code>.</li>
+                                            <li>Si nécessaire, générez une nouvelle clé gratuite en 1 clic sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a> ou sur <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 4: Import raté / fichier non reconnu -->
+                                <details class="help-accordion" id="help-faq-import">
+                                    <summary>
+                                        <div class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold"></iconify-icon>
+                                            <span>Mon fichier Pronote ou Excel ne semble pas reconnu</span>
+                                            <span class="help-accordion-badge">Import</span>
+                                        </div>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                    </summary>
+                                    <div class="help-accordion-body">
+                                        <p>L'assistant d'import requiert au minimum une colonne contenant le <strong>Nom</strong> et une colonne pour les <strong>Notes / Moyennes</strong>.</p>
+                                        <p><strong>Astuce universelle :</strong> Ouvrez votre fichier dans Excel ou LibreOffice, sélectionnez les colonnes, faites <kbd class="help-kbd-badge">Ctrl + C</kbd>, puis collez directement dans l'onglet « Coller des données » de l'Assistant d'import.</p>
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 5: Sauvegardes & synchronisation -->
+                                <details class="help-accordion" id="help-faq-backup">
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:cloud-upload-bold"></iconify-icon>
-                                            <span>Sauvegardes (Google Drive & Fichier JSON)</span>
-                                            <span class="help-accordion-badge">Sécurité</span>
+                                            <span>Sauvegarder et retrouver mes classes sur un autre ordinateur</span>
+                                            <span class="help-accordion-badge">Sauvegarde</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
                                     <div class="help-accordion-body">
-                                        <p><strong>Synchronisation Google Drive personnelle :</strong> Connectez votre Drive dans l'onglet <em>Données</em> pour sauvegarder et synchroniser automatiquement votre travail d'un ordinateur à un autre en toute simplicité.</p>
-                                        <p><strong>Fichier de sauvegarde universel (.json) :</strong> Téléchargez à tout moment une archive intégrale de vos données pour la conserver sur clé USB ou la restaurer sur un autre navigateur.</p>
+                                        <p>Dans <strong>Paramètres > Données</strong> :</p>
+                                        <ul class="help-detail-list">
+                                            <li><strong>Google Drive personnel :</strong> Connectez votre compte Drive pour sauvegarder et synchroniser automatiquement votre travail sur n'importe quel ordinateur.</li>
+                                            <li><strong>Fichier JSON universel :</strong> Téléchargez une archive complète à emporter sur clé USB.</li>
+                                        </ul>
+                                        <div class="help-btn-row" style="margin-top: 8px;">
+                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
+                                                <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer les Sauvegardes
+                                            </button>
+                                        </div>
                                     </div>
                                 </details>
+                            </div>
 
-                                <details class="help-accordion">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:keyboard-bold"></iconify-icon>
-                                            <span>Raccourcis clavier & Application installable (PWA)</span>
-                                            <span class="help-accordion-badge">Productivité</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <div class="help-subheading">
-                                            <iconify-icon icon="solar:keyboard-bold"></iconify-icon>
-                                            <span>Raccourcis clavier</span>
-                                        </div>
-                                        <div class="help-shortcut-list">
-                                            <div class="help-shortcut-row">
-                                                <span class="help-shortcut-desc">Valider et passer à l'élève suivant</span>
-                                                <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">Entrée</kbd></span>
-                                            </div>
-                                            <div class="help-shortcut-row">
-                                                <span class="help-shortcut-desc">Fermer le panneau Focus ou une modale</span>
-                                                <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Échap</kbd></span>
-                                            </div>
-                                            <div class="help-shortcut-row">
-                                                <span class="help-shortcut-desc">Naviguer d'un élève à l'autre</span>
-                                                <span class="help-shortcut-keys"><kbd class="help-kbd-badge">↑</kbd> <kbd class="help-kbd-badge">↓</kbd></span>
-                                            </div>
-                                            <div class="help-shortcut-row">
-                                                <span class="help-shortcut-desc">Recherche rapide de classe ou d'élève</span>
-                                                <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">K</kbd></span>
-                                            </div>
-                                        </div>
-
-                                        <div class="help-subheading" style="margin-top: 14px;">
-                                            <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon>
-                                            <span>Application installable (PWA)</span>
-                                        </div>
-                                        <p>Installez Bulletin AI sur votre ordinateur (Chrome, Edge) ou votre tablette (Safari / iPad) pour l'ouvrir d'un clic depuis vos applications et profiter d'une expérience fluide et hors-ligne.</p>
+                            <!-- Raccourcis clavier -->
+                            <div class="help-shortcuts-card">
+                                <div class="help-shortcuts-header">
+                                    <iconify-icon icon="solar:keyboard-bold"></iconify-icon>
+                                    <h4>Raccourcis clavier indispensables</h4>
+                                </div>
+                                <div class="help-shortcut-list">
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Valider et passer à l'élève suivant</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">Entrée</kbd></span>
                                     </div>
-                                </details>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Fermer la fiche élève ou la fenêtre active</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Échap</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Passer à l'élève précédent / suivant</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">↑</kbd> <kbd class="help-kbd-badge">↓</kbd></span>
+                                    </div>
+                                    <div class="help-shortcut-row">
+                                        <span class="help-shortcut-desc">Recherche rapide de classe ou d'élève</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> + <kbd class="help-kbd-badge">K</kbd></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -3419,7 +3381,7 @@
                                     <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build efb9acc · 11 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build bc068d5 · 11 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3434,7 +3396,7 @@
                                     </a>
                                     <a id="linkFeedback" href="https://forms.gle/4yQ3o5sZqKzQ6Z6c8" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-secondary btn-small">
-                                        <iconify-icon icon="solar:chat-line-bold"></iconify-icon> Avis
+                                        <iconify-icon class="iconify-inline" icon="solar:chat-line-bold"></iconify-icon> Avis
                                     </a>
                                 </div>
                             </div>
@@ -3444,33 +3406,23 @@
                                     L'assistant intelligent pensé par et pour les enseignants afin de simplifier la rédaction des appréciations scolaires, concevoir leurs plans de classe et valoriser le suivi pédagogique de chaque élève.
                                 </p>
 
-                                <div class="help-accordions-group" style="margin-bottom: 16px;">
-                                    <details class="help-accordion">
-                                        <summary>
-                                            <div class="help-accordion-title">
-                                                <iconify-icon class="help-accordion-icon" icon="solar:shield-check-bold"></iconify-icon>
-                                                <span>Éthique, Sécurité des données & Open-Source</span>
-                                                <span class="help-accordion-badge">Engagement</span>
-                                            </div>
-                                            <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                        </summary>
-                                        <div class="help-accordion-body">
-                                            <ul class="help-detail-list">
-                                                <li><strong>Architecture Local-First :</strong> Vos élèves, notes et photos ne sont stockés sur aucun serveur tiers. Tout reste sur votre appareil.</li>
-                                                <li><strong>Anonymisation stricte (RGPD) :</strong> Les noms de famille sont systématiquement tronqués avant chaque envoi aux modèles d'IA.</li>
-                                                <li><strong>Projet indépendant & libre :</strong> Développé bénévolement pour soulager la charge mentale des professeurs, sous licence Creative Commons BY-NC-SA 4.0.</li>
-                                            </ul>
-                                        </div>
-                                    </details>
+                                <!-- Engagements éthiques & RGPD -->
+                                <div class="help-privacy-reassurance" style="margin-bottom: 16px;">
+                                    <div class="help-privacy-icon">
+                                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-privacy-text">
+                                        <strong>Local-First, Éthique & Sans pistage :</strong> Vos élèves, notes et photos restent sur votre appareil. Les requêtes IA sont anonymisées (noms de famille supprimés). Développé bénévolement pour soulager la charge mentale des professeurs.
+                                    </div>
                                 </div>
 
-                                <!-- Donation Section (Refined) -->
+                                <!-- Donation Section -->
                                 <div class="support-card-premium">
                                     <h4>
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Cette application est 100% gratuite et open source. Si elle vous est utile au quotidien, vous pouvez encourager son développement indépendant en offrant un café !
+                                        Cette application est 100% gratuite et open-source. Si elle vous est utile au quotidien, vous pouvez encourager son développement indépendant en offrant un café !
                                     </p>
                                     <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-kofi">

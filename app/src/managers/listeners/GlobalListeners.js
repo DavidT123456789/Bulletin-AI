@@ -366,9 +366,14 @@ export const GlobalListeners = {
                 e.preventDefault();
                 if (link.dataset.action === "open-help") {
                     UI.openModal(DOM.helpModal, { isStacked: true });
+                    const targetTab = link.dataset.targetTab;
+                    if (targetTab) {
+                        const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${targetTab}"]`);
+                        if (tabBtn) tabBtn.click();
+                    }
                     const section = document.getElementById(link.dataset.targetSection);
                     if (section) {
-                        section.open = true;
+                        if (section.tagName === 'DETAILS') section.open = true;
                         setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
                     }
                 } else {
