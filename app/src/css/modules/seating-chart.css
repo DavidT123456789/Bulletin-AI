@@ -282,7 +282,7 @@
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    padding: 0 16px;
+    padding: 0 15px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--glass-surface-border);
     box-shadow: var(--shadow-sm);
@@ -364,7 +364,7 @@
 .sc-sidebar-header {
     padding: 12px var(--content-padding-x, 24px) 8px;
     flex-shrink: 0;
-    max-height: 150px;
+    max-height: 200px;
     transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
                 opacity 0.3s ease,
                 padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -668,8 +668,8 @@
     /* Use safe center to avoid cutting off left content on mobile when the grid overflows */
     align-items: safe center;
     justify-content: safe center;
-    gap: 16px;
-    padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) var(--content-padding-x, 24px);
+    gap: 14px;
+    padding: calc(56px + 18px) var(--content-padding-x, 24px) var(--content-padding-x, 24px);
     overflow: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -698,12 +698,12 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xl);
-    padding: 20px 24px;
+    padding: 16px 20px;
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     align-items: safe center;
-    gap: 16px;
+    gap: 12px;
     position: relative;
     transform-origin: center center;
     margin: var(--sc-margin-y, 0px) var(--sc-margin-x, 0px);
@@ -806,19 +806,141 @@
     display: contents;
 }
 
-/* ────────── STATUS PILL (TOP-LEFT, ACTIONABLE CAPSULE) ────────── */
-.sc-status-pill {
+/* ────────── TOP-LEFT BAR (PLAN MODE SWITCHER + STATUS PILL) ────────── */
+.sc-top-left-bar {
     position: absolute;
-    top: calc(56px + var(--content-padding-x, 24px));
+    top: calc(56px + 20px);
     left: var(--content-padding-x, 24px);
     right: auto;
+    z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    transition: left 0.42s cubic-bezier(0.25, 1, 0.3, 1);
+}
+
+#seatingChartView[data-locked="false"] .sc-top-left-bar {
+    left: calc(260px + var(--content-padding-x, 24px));
+}
+
+.sc-plan-mode-switch {
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    height: 38px;
+    padding: 3px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-surface-border);
+    border-radius: var(--radius-pill, 999px);
+    box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
+    pointer-events: auto;
+    user-select: none;
+    animation: scToolbarEnter 0.4s var(--ease-spring) 0.1s both;
+}
+
+[data-theme="dark"] .sc-plan-mode-switch {
+    background: rgba(30, 30, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sc-plan-mode-switch.sc-mode-switch-hidden {
+    display: none !important;
+}
+
+.sc-mode-glider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    transition: transform 0.35s cubic-bezier(0.34, 1.35, 0.64, 1);
+    z-index: 0;
+    pointer-events: none;
+}
+
+[data-theme="dark"] .sc-mode-glider {
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.sc-plan-mode-switch[data-mode="activity"] .sc-mode-glider,
+.sc-plan-mode-switch[data-active-mode="activity"] .sc-mode-glider {
+    transform: translateX(100%);
+}
+
+.sc-mode-btn,
+.sc-mode-tab {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 100%;
+    padding: 0 13px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-pill, 999px);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.sc-mode-btn iconify-icon,
+.sc-mode-tab iconify-icon {
+    font-size: 0.96rem;
+    flex-shrink: 0;
+}
+
+.sc-mode-btn.active,
+.sc-mode-tab.active {
+    color: var(--text-primary);
+}
+
+@media (hover: hover) {
+    .sc-mode-btn:not(.active):hover,
+    .sc-mode-tab:not(.active):hover {
+        color: var(--text-primary);
+    }
+}
+
+.sc-mode-btn:active,
+.sc-mode-tab:active {
+    transform: scale(0.96);
+}
+
+.sc-mode-btn:focus-visible,
+.sc-mode-tab:focus-visible {
+    outline: 2px solid var(--primary-color, #4f46e5);
+    outline-offset: 2px;
+}
+
+/* ────────── STATUS PILL (BOTTOM-LEFT, DISCREET ACTIONABLE CAPSULE) ────────── */
+.sc-status-pill {
+    position: absolute;
+    bottom: 20px;
+    left: var(--content-padding-x, 24px);
+    right: auto;
+    top: auto;
     z-index: 100;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     height: 38px;
     box-sizing: border-box;
-    padding: 0 14px;
+    padding: 0 15px;
     border-radius: var(--radius-pill, 999px);
     font-size: 0.8rem;
     font-weight: 600;
@@ -831,6 +953,7 @@
     transition: background var(--transition-fast, 0.2s),
                 border-color var(--transition-fast, 0.2s),
                 box-shadow var(--transition-fast, 0.2s),
+                padding 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
     overflow: hidden;
@@ -2118,6 +2241,9 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-toolbar,
     .sc-sidebar,
     .sc-cell-remove,
+    .sc-stacked-member-remove,
+    .sc-top-left-bar,
+    .sc-status-pill,
     .sc-floating-actions,
     .avatar-selection-overlay,
     .sc-floating-status,
@@ -2185,7 +2311,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         break-inside: avoid;
     }
 
-    .sc-cell .student-avatar {
+    .sc-cell:not(.sc-cell-stacked) .student-avatar {
         width: 42px !important;
         height: 42px !important;
         font-size: 0.8rem !important;
@@ -2202,7 +2328,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         opacity: 0.8 !important;
         box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important;
     }
-    
+
+    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
     .sc-cell.empty.sc-cell-special-aisle {
         border: none !important;
         background: transparent !important;
@@ -2562,16 +2689,42 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-toolbar-btn span { display: none; }
 
     /* ── Floating elements: aligned on mobile, never overlapping ── */
-    .sc-status-pill {
+    .sc-top-left-bar,
+    #seatingChartView[data-locked="false"] .sc-top-left-bar {
         top: calc(56px + 10px) !important;
+        left: 12px !important;
+        right: auto !important;
+        gap: 6px;
+        max-width: calc(100vw - 128px);
+    }
+
+    .sc-plan-mode-switch {
+        height: 34px !important;
+        padding: 2.5px;
+    }
+
+    .sc-mode-btn {
+        font-size: 0.72rem;
+        padding: 0 9px;
+        gap: 4px;
+    }
+
+    .sc-mode-btn iconify-icon {
+        font-size: 0.88rem;
+    }
+
+    .sc-status-pill {
+        position: absolute !important;
+        top: auto !important;
+        bottom: 12px !important;
         left: 12px !important;
         right: auto !important;
         transform: none !important;
         font-size: 0.72rem;
-        height: 34px !important;
-        padding: 0 12px;
+        height: 32px !important;
+        padding: 0 11px;
         white-space: nowrap !important;
-        max-width: calc(100vw - 128px) !important;
+        max-width: calc(100vw - 24px) !important;
         display: inline-flex !important;
         align-items: center !important;
     }
@@ -3328,14 +3481,14 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 /* Zoom, Orientation toggle, and Print action capsule */
 .sc-floating-actions {
     position: absolute;
-    top: calc(56px + var(--content-padding-x, 24px));
+    top: calc(56px + 20px);
     right: var(--content-padding-x, 24px);
     left: auto;
     display: inline-flex;
     align-items: center;
     height: 38px;
     box-sizing: border-box;
-    gap: 3px;
+    gap: 2px;
     padding: 0 4px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(16px);
@@ -3538,27 +3691,260 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 }
 
-/* ────────── CELLULE EMPILÉE (MULTI-ÉLÈVES) ────────── */
-.sc-cell.sc-cell-stacked {
-    padding: 6px 4px;
-    gap: 4px;
-    background: var(--card-bg, rgba(var(--surface-color-rgb), 0.65));
-    border: 1.5px solid rgba(99, 102, 241, 0.4);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(99, 102, 241, 0.15);
+/* ────────── ACTIVITÉ & CELLULE EMPILÉE (BINÔMES / GROUPES / POSTES) ────────── */
+#seatingChartView[data-plan-mode="activity"] {
+    --sc-cell-w: 118px;
+    --sc-cell-h: 114px;
+}
+
+@media (max-width: 768px) {
+    #seatingChartView[data-plan-mode="activity"] {
+        --sc-cell-w: 82px;
+        --sc-cell-h: 86px;
+    }
+}
+
+#seatingChartView[data-plan-mode="activity"] .sc-grid-container {
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    #seatingChartView[data-plan-mode="activity"] .sc-grid-container {
+        gap: 7px;
+    }
+}
+
+@keyframes scBoardModeSwitch {
+    0% {
+        opacity: 0.35;
+        transform: scale(0.96) translateY(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.sc-classroom-board.sc-mode-switching {
+    animation: scBoardModeSwitch 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sc-station-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 5px;
+    font-size: 0.56rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4.5px;
+    border-radius: 5px;
+    color: var(--text-tertiary);
+    background: rgba(var(--text-secondary-rgb, 113, 113, 122), 0.1);
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -0.01em;
+    z-index: 3;
+    transition: color 0.2s ease, background 0.2s ease, opacity 0.18s ease, top 0.18s ease;
+}
+
+.sc-cell.occupied .sc-station-badge {
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .sc-cell.occupied .sc-station-badge {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#seatingChartView[data-locked="true"] .sc-cell.empty .sc-station-badge {
+    opacity: 0.45;
+}
+
+/* In Activity Consultation mode: hide empty non-special stations and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-desk-row {
+    display: none !important;
+}
+
+/* Quick 1-click group creation button in Sidebar Header when 2..4 students are selected in Activity mode */
+.sc-quick-group-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 12px;
+    border: none;
+    border-radius: var(--radius-md, 10px);
+    background: var(--primary-color, #4f46e5);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
     cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.18s var(--ease-spring), filter 0.18s ease, box-shadow 0.18s ease;
+    animation: scFadeUp 0.22s var(--ease-spring) both;
+}
+
+.sc-quick-group-btn iconify-icon {
+    font-size: 0.96rem;
+    flex-shrink: 0;
+}
+
+@media (hover: hover) {
+    .sc-quick-group-btn:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+.sc-quick-group-btn:active {
+    transform: scale(0.97);
+}
+
+/* Occupied station badge in Activity mode (stacked OR solo student): position badge at top-left inside card, clear of avatars & pin */
+.sc-cell.sc-cell-stacked .sc-station-badge,
+#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied .sc-station-badge {
+    top: 4px;
+    bottom: auto;
+    left: 4px;
+    font-size: 0.53rem;
+    padding: 1.5px 4px;
+}
+
+.sc-cell.sc-cell-stacked.pinned .sc-station-badge,
+#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge {
+    top: 14px;
+    left: 4px;
+    right: auto;
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
+        opacity: 0;
+    }
+}
+
+/* Harmonize 1-student occupied station in Activity mode with stacked group cards */
+#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) {
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
+    width: 54px;
+    height: 54px;
+    font-size: 0.95rem;
+}
+
+#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
+    font-size: 0.74rem;
+    margin-top: 6px;
+    max-width: 104px;
+}
+
+/* Drop indicator when dragging onto an occupied station to form a binôme / group */
+.sc-cell.drag-over.drag-over-join::after {
+    content: '+ Associer';
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color, #4f46e5);
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: var(--radius-pill, 999px);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    z-index: 60;
+    pointer-events: none;
+    animation: scFadeIn 0.15s ease both;
+}
+
+/* Drop indicator when dragging onto a FULL group (4 max) */
+.sc-cell.drag-over.drag-over-full {
+    border-color: var(--warning-color, #d97706) !important;
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.22) !important;
+}
+
+.sc-cell.drag-over.drag-over-full::after {
+    content: 'Complet (4 max)';
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--warning-color, #d97706);
+    color: #ffffff;
+    font-size: 0.56rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: var(--radius-pill, 999px);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    z-index: 60;
+    pointer-events: none;
+    animation: scFadeIn 0.15s ease both;
+}
+
+@keyframes scCellShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+
+.sc-cell.sc-cell-shake {
+    animation: scCellShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    border-color: var(--warning-color, #d97706) !important;
+}
+
+.sc-cell.sc-cell-stacked {
+    padding: 6px 5px 5px;
+    gap: 3px;
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    cursor: grab;
     overflow: visible;
 }
 
-[data-theme="dark"] .sc-cell.sc-cell-stacked {
-    background: rgba(30, 32, 48, 0.7);
-    border-color: rgba(129, 140, 248, 0.35);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(129, 140, 248, 0.2);
+#seatingChartView[data-locked="true"] .sc-cell.sc-cell-stacked {
+    cursor: pointer;
 }
 
-.sc-cell.sc-cell-stacked:hover {
-    transform: translateY(-2px) scale(1.02);
-    border-color: var(--primary-color, #6366f1);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+[data-theme="dark"] .sc-cell.sc-cell-stacked {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-sm);
+}
+
+@media (hover: hover) {
+    .sc-cell.sc-cell-stacked:hover {
+        transform: translateY(-2px);
+        border-color: var(--highlight-standard-border);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 .sc-stacked-avatar-cluster {
@@ -3566,83 +3952,292 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 38px;
+    height: 34px;
     padding: 0 4px;
+    flex-shrink: 0;
 }
 
 .sc-stacked-avatar {
     position: relative;
-    transition: transform 0.2s var(--ease-spring), z-index 0.2s;
+    transition: transform 0.2s var(--ease-spring), z-index 0.2s, opacity 0.2s ease;
     cursor: pointer;
 }
 
-.sc-stacked-avatar:not(:first-child) {
-    margin-left: -12px;
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-avatar {
+    cursor: grab;
 }
 
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-avatar:active {
+    cursor: grabbing;
+}
+
+.sc-stacked-avatar.dragging-member,
+.sc-stacked-member.dragging-member {
+    opacity: 0.35;
+    transform: scale(0.92);
+}
+
+.sc-stacked-avatar:not(:first-child) {
+    margin-left: -9px;
+}
+
+.sc-stacked-avatar .student-avatar,
 .sc-stacked-avatar .student-avatar-wrap {
+    width: 31px !important;
+    height: 31px !important;
+    font-size: 0.66rem !important;
     border: 2px solid var(--surface-color, #ffffff);
     box-shadow: var(--shadow-xs);
     border-radius: 50%;
     transition: transform 0.2s var(--ease-spring);
 }
 
+[data-theme="dark"] .sc-stacked-avatar .student-avatar,
 [data-theme="dark"] .sc-stacked-avatar .student-avatar-wrap {
-    border-color: #1e2030;
+    border-color: var(--bg-tertiary, #1e2030);
 }
 
-.sc-stacked-avatar:hover {
-    transform: scale(1.18) translateY(-2px);
-    z-index: 10 !important;
+@media (hover: hover) {
+    .sc-stacked-avatar:hover {
+        transform: scale(1.16) translateY(-2px);
+        z-index: 10 !important;
+    }
 }
 
 .sc-stacked-count-pill {
     position: absolute;
-    top: -4px;
-    right: -6px;
-    min-width: 17px;
-    height: 17px;
+    top: -3px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
     padding: 0 4px;
     border-radius: var(--radius-pill);
-    background: var(--primary-color, #6366f1);
-    color: #ffffff;
-    font-size: 0.65rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.6rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-xs);
     z-index: 15;
     pointer-events: none;
+}
+
+#seatingChartView[data-plan-mode="activity"] .sc-cell-stacked .sc-stacked-count-pill {
+    display: none;
 }
 
 .sc-stacked-names-list {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    align-items: stretch;
+    gap: 1px;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
 }
 
+.sc-stacked-member {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    border-radius: var(--radius-xs);
+    padding: 1px 14px;
+    box-sizing: border-box;
+    transition: background var(--transition-fast), color var(--transition-fast), opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+    .sc-stacked-member:hover {
+        background: var(--item-hover-bg);
+    }
+}
+
 .sc-stacked-name {
-    font-size: 0.67rem;
+    font-size: 0.65rem;
     font-weight: 550;
-    line-height: 1.15;
-    color: color-mix(in srgb, var(--text-primary) 65%, var(--text-secondary));
+    line-height: 1.24;
+    color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary));
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 1px 4px;
-    border-radius: var(--radius-xs);
-    transition: background var(--transition-fast), color var(--transition-fast);
+    text-align: center;
+    cursor: pointer;
 }
 
-.sc-stacked-name:hover {
-    background: var(--item-hover-bg);
-    color: var(--primary-color);
+/* ── Adaptive Internal Density by Group Size (Binôme / Trinôme / Quatuor) ── */
+.sc-cell.sc-cell-stacked[data-group-size="2"] {
+    gap: 6px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar-cluster {
+    height: 44px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar:not(:first-child) {
+    margin-left: -8px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar,
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar-wrap {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 0.78rem !important;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-member {
+    padding: 1.5px 12px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
+    font-size: 0.7rem;
+    line-height: 1.26;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] {
+    gap: 4px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar-cluster {
+    height: 36px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar:not(:first-child) {
+    margin-left: -8px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar,
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar-wrap {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.68rem !important;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-name {
+    font-size: 0.65rem;
+    line-height: 1.2;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] {
+    padding: 5px 5px 4px;
+    gap: 2.5px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar-cluster {
+    height: 30px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar:not(:first-child) {
+    margin-left: -7px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar,
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar-wrap {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.6rem !important;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-names-list {
+    gap: 0.5px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-member {
+    padding: 0.5px 12px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-name {
+    font-size: 0.61rem;
+    line-height: 1.15;
+}
+
+.sc-stacked-name-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (hover: hover) {
+    .sc-stacked-member:hover .sc-stacked-name,
+    .sc-stacked-name:hover {
+        color: var(--text-primary);
+    }
+}
+
+/* Individual member remove button inside stacked station (Edit Mode only, Neutral Dark Mode contrast) */
+.sc-stacked-member-remove {
+    position: absolute;
+    right: 1px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.68rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-stacked-member:hover .sc-stacked-member-remove {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .sc-stacked-member-remove:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+        transform: translateY(-50%) scale(1.12);
+    }
+}
+
+#seatingChartView[data-locked="true"] .sc-stacked-member-remove {
+    display: none !important;
+}
+
+@media (hover: none) {
+    .sc-stacked-member-remove {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .sc-stacked-member-remove {
+        display: none !important;
+    }
+
+    .sc-cell.sc-cell-stacked .sc-stacked-avatar .student-avatar,
+    .sc-cell.sc-cell-stacked .sc-stacked-avatar .student-avatar-wrap {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.56rem !important;
+    }
+
+    .sc-cell.sc-cell-stacked .sc-stacked-avatar-cluster {
+        height: 26px;
+    }
+
+    .sc-cell.sc-cell-stacked .sc-stacked-name {
+        font-size: 0.54rem;
+        line-height: 1.1;
+    }
 }
 
 /* ==========================================================================
@@ -4393,6 +4988,28 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         border-color: #ffffff;
         box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.28), 0 20px 42px rgba(0, 0, 0, 0.85);
     }
+}
+
+/* Precision spotlight inside multi-student group cards */
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-dimmed,
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-dimmed {
+    opacity: 0.42;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-match {
+    z-index: 6;
+    transform: translateY(-2px) scale(1.06);
 }
 
 /* Dimming tableau desk row during active search */

@@ -765,11 +765,13 @@ export const ModalUI = {
         const lastSync = options.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10);
         const items = [];
 
-        // 1. Plan de classe
+        // 1. Plan de classe / activité
         const classes = window.appState?.classes || [];
         const seatingChanged = classes.some(c =>
             (c.seatingUpdatedAt && c.seatingUpdatedAt > lastSync) ||
-            (c.seatingValidatedAt && c.seatingValidatedAt > lastSync)
+            (c.seatingValidatedAt && c.seatingValidatedAt > lastSync) ||
+            (c.seatingActivityUpdatedAt && c.seatingActivityUpdatedAt > lastSync) ||
+            (c.seatingActivityValidatedAt && c.seatingActivityValidatedAt > lastSync)
         );
         if (seatingChanged) {
             items.push({ icon: 'solar:chair-bold', text: 'Plan de classe réorganisé' });

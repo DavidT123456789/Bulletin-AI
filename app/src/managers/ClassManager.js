@@ -78,6 +78,9 @@ export const ClassManager = {
             seatingLocked: false,
             seatingValidatedAt: null,
             seatingUpdatedAt: null,
+            seatingActivityLocked: false,
+            seatingActivityValidatedAt: null,
+            seatingActivityUpdatedAt: null,
             createdAt: now,
             updatedAt: now
         };

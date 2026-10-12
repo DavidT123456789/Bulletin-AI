@@ -19,6 +19,9 @@ import { ClassUIManager } from './ClassUIManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
+const DEFAULT_ACTIVITY_COLS = 5;
+const DEFAULT_ACTIVITY_ROWS = 3;
+const MAX_ACTIVITY_GROUP_SIZE = 4;
 const MAX_UNDO_LEVELS = 5;
 
 export const SeatingChartManager = {
@@ -26,6 +29,7 @@ export const SeatingChartManager = {
     _isLocked: false,
     _wasLockedBeforeEdit: false,
     _hasChangesSinceUnlock: false,
+    _planMode: 'course',
     _orientation: 'teacher',
     _gridState: [],
     _students: [],
@@ -98,6 +102,7 @@ export const SeatingChartManager = {
 
         const view = document.createElement('div');
         view.id = 'seatingChartView';
+        view.dataset.planMode = this._planMode || 'course';
         view.style.display = 'none';
         view.innerHTML = `
             <div class="sc-body">
@@ -116,28 +121,7 @@ export const SeatingChartManager = {
                                         <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
-                                        <button class="sc-popover-item" data-mode="alpha-asc" type="button">
-                                            <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                                            <span>Alphabétique (A → Z)</span>
-                                        </button>
-                                        <button class="sc-popover-item" data-mode="alpha-desc" type="button">
-                                            <iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>
-                                            <span>Inversé (Z → A)</span>
-                                        </button>
-                                        <button class="sc-popover-item" data-mode="random" type="button">
-                                            <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                                            <span>Mélanger (regroupé)</span>
-                                        </button>
-                                        <button class="sc-popover-item" data-mode="random-disperse" type="button">
-                                            <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
-                                            <span>Disperser (toute la salle)</span>
-                                        </button>
-                                        <div class="sc-popover-divider"></div>
-                                        <div class="sc-popover-item sc-popover-item-disabled" title="Disponible prochainement">
-                                            <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>
-                                            <span>Intelligent (Journal)</span>
-                                            <span class="sc-popover-badge">Bientôt</span>
-                                        </div>
+                                        ${this._getPlacementPopoverHTML()}
                                     </div>
                                 </div>
                                 <button class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
@@ -174,6 +158,7 @@ export const SeatingChartManager = {
                     </div>
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
+                        <button type="button" class="sc-quick-group-btn" id="scQuickGroupBtn" style="display: none;"></button>
                         <span id="scFooterInfo" style="display: none;" aria-hidden="true"></span>
                         <div class="sc-search-box">
                             <input type="text" id="scSearchInput" class="custom-input" placeholder="Rechercher..." autocomplete="off">
@@ -185,7 +170,22 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-                    <!-- Top Status Capsule (Consultation Mode: on the left next to sidebar origin) -->
+                    <!-- Top-Left Bar: Plan Mode Switcher (Cours | Activité) -->
+                    <div class="sc-top-left-bar" id="scTopLeftBar">
+                        <div class="sc-plan-mode-switch" id="scPlanModeSwitch" role="tablist" aria-label="Mode du plan de classe">
+                            <div class="sc-mode-glider" aria-hidden="true"></div>
+                            <button class="sc-mode-tab active" data-plan-mode="course" role="tab" aria-selected="true" type="button">
+                                <iconify-icon icon="solar:chair-linear"></iconify-icon>
+                                <span>Cours</span>
+                            </button>
+                            <button class="sc-mode-tab" data-plan-mode="activity" role="tab" aria-selected="false" type="button">
+                                <iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>
+                                <span>Activité</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bottom-Left Status Pill (Consultation mode) -->
                     <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
 
                     <div class="sc-classroom-board" id="scClassroomBoard">
@@ -233,6 +233,15 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _setupEventListeners() {
+        document.getElementById('scPlanModeSwitch')?.addEventListener('click', (e) => {
+            const tab = e.target.closest('.sc-mode-tab');
+            if (!tab) return;
+            const targetMode = tab.dataset.planMode;
+            if (targetMode && targetMode !== this._planMode) {
+                this.switchPlanMode(targetMode);
+            }
+        });
+
         document.getElementById('scFloatingSearchBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._openSearch();
@@ -307,17 +316,20 @@ export const SeatingChartManager = {
             sidebar._hasDragDropListeners = true;
             let sidebarDragDepth = 0;
 
+            const isRemovableDrag = () => {
+                const t = this._dragSource?.type;
+                return t === 'cell' || t === 'multi-cell' || t === 'group-member';
+            };
+
             sidebar.addEventListener('dragenter', (e) => {
-                if (this._isLocked) return;
-                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                if (this._isLocked || !isRemovableDrag()) return;
                 sidebarDragDepth++;
                 sidebar.classList.add('drag-over');
                 document.body.classList.add('sc-drag-over-sidebar');
             });
 
             sidebar.addEventListener('dragover', (e) => {
-                if (this._isLocked) return;
-                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                if (this._isLocked || !isRemovableDrag()) return;
                 e.preventDefault();
                 if (e.dataTransfer) {
                     e.dataTransfer.dropEffect = 'move';
@@ -342,8 +354,7 @@ export const SeatingChartManager = {
                 sidebarDragDepth = 0;
                 sidebar.classList.remove('drag-over');
                 document.body.classList.remove('sc-drag-over-sidebar');
-                if (this._isLocked) return;
-                if (!this._dragSource || (this._dragSource.type !== 'cell' && this._dragSource.type !== 'multi-cell')) return;
+                if (this._isLocked || !isRemovableDrag()) return;
                 e.preventDefault();
                 this._handleRemoveFromSidebarDrop();
             });
@@ -511,6 +522,11 @@ export const SeatingChartManager = {
             }
         });
 
+        document.getElementById('scQuickGroupBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._placeSelectedAsGroupInFirstFreeStation();
+        });
+
         document.getElementById('viewToggle')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.view-toggle-btn');
             if (!btn) return;
@@ -542,6 +558,7 @@ export const SeatingChartManager = {
                 if (this._selectedChipIds.length > 0 && 
                     !e.target.closest('.sc-student-chip') && 
                     !e.target.closest('.sc-cell') && 
+                    !e.target.closest('#scQuickGroupBtn') &&
                     !e.target.closest('.sc-mobile-sheet') && 
                     !e.target.closest('.sc-mobile-sheet-backdrop')) {
                     this._clearSelection();
@@ -584,6 +601,13 @@ export const SeatingChartManager = {
                     }
                 }
 
+                if (e.key === 'Enter' && !isTyping && this._isActivityMode() && !this._isLocked &&
+                    this._selectedChipIds.length >= 2 && this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
+                    e.preventDefault();
+                    this._placeSelectedAsGroupInFirstFreeStation();
+                    return;
+                }
+
                 if (e.key === 'Escape') {
                     if (this._isSearchOpen()) {
                         e.preventDefault();
@@ -613,6 +637,75 @@ export const SeatingChartManager = {
     // CONFIG & PLACEMENT POPOVERS
     // ========================================================================
 
+    _getPlacementPopoverHTML(mode = this._planMode) {
+        if (mode === 'activity') {
+            return `
+                <button class="sc-popover-item" data-mode="pairs-random" type="button">
+                    <iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>
+                    <span>Binômes aléatoires (par 2)</span>
+                </button>
+                <button class="sc-popover-item" data-mode="pairs-neighbors" type="button">
+                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                    <span>Binômes voisins du cours</span>
+                </button>
+                <button class="sc-popover-item" data-mode="pairs-alpha" type="button">
+                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                    <span>Binômes (A → Z)</span>
+                </button>
+                <div class="sc-popover-divider"></div>
+                <button class="sc-popover-item" data-mode="groups-3" type="button">
+                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                    <span>Groupes de 3 (Îlots)</span>
+                </button>
+                <button class="sc-popover-item" data-mode="groups-4" type="button">
+                    <iconify-icon icon="solar:widget-4-linear"></iconify-icon>
+                    <span>Groupes de 4 / Terrains</span>
+                </button>
+                <div class="sc-popover-divider"></div>
+                <button class="sc-popover-item" data-mode="random" type="button">
+                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                    <span>Individuel aléatoire (1/poste)</span>
+                </button>
+                <button class="sc-popover-item" data-mode="alpha-asc" type="button">
+                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                    <span>Individuel (A → Z)</span>
+                </button>
+            `;
+        }
+
+        return `
+            <button class="sc-popover-item" data-mode="alpha-asc" type="button">
+                <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                <span>Alphabétique (A → Z)</span>
+            </button>
+            <button class="sc-popover-item" data-mode="alpha-desc" type="button">
+                <iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>
+                <span>Inversé (Z → A)</span>
+            </button>
+            <button class="sc-popover-item" data-mode="random" type="button">
+                <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                <span>Mélanger (regroupé)</span>
+            </button>
+            <button class="sc-popover-item" data-mode="random-disperse" type="button">
+                <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                <span>Disperser (toute la salle)</span>
+            </button>
+            <div class="sc-popover-divider"></div>
+            <div class="sc-popover-item sc-popover-item-disabled" title="Disponible prochainement">
+                <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>
+                <span>Intelligent (Journal)</span>
+                <span class="sc-popover-badge">Bientôt</span>
+            </div>
+        `;
+    },
+
+    _syncPlacementPopover() {
+        const popover = document.getElementById('scPlacementPopover');
+        if (popover) {
+            popover.innerHTML = this._getPlacementPopoverHTML(this._planMode);
+        }
+    },
+
     _togglePlacementPopover() {
         this._placementPopoverOpen ? this._closePlacementPopover() : this._openPlacementPopover();
     },
@@ -621,6 +714,7 @@ export const SeatingChartManager = {
         this._closeConfigPopover();
         const popover = document.getElementById('scPlacementPopover');
         if (!popover) return;
+        this._syncPlacementPopover();
         popover.classList.add('open');
         document.getElementById('scAutoPlaceBtn')?.classList.add('active');
         this._placementPopoverOpen = true;
@@ -690,7 +784,10 @@ export const SeatingChartManager = {
             const row = this._gridState[r];
             if (!Array.isArray(row)) continue;
             for (let c = 0; c < row.length; c++) {
-                if (row[c] === studentId) return { row: r, col: c };
+                const val = row[c];
+                if (val === studentId || (Array.isArray(val) && val.includes(studentId))) {
+                    return { row: r, col: c };
+                }
             }
         }
         return null;
@@ -699,22 +796,31 @@ export const SeatingChartManager = {
     _swapGridPositions(r1, c1, r2, c2) {
         if (this._isLocked) return;
         this._snapshotGrid();
-        const id1 = this._gridState[r1]?.[c1];
-        const id2 = this._gridState[r2]?.[c2];
-        if (!id1 || !id2) return;
+        const val1 = this._gridState[r1]?.[c1];
+        const val2 = this._gridState[r2]?.[c2];
+        if (!val1 || !val2) return;
 
-        this._gridState[r1][c1] = id2;
-        this._gridState[r2][c2] = id1;
+        this._gridState[r1][c1] = Array.isArray(val2) ? [...val2] : val2;
+        this._gridState[r2][c2] = Array.isArray(val1) ? [...val1] : val1;
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
         this._animateCellSwap(r1, c1, r2, c2);
         this._haptic([12, 40, 12]);
 
-        const s1 = this._studentMap?.get(id1) || this._students.find(s => s.id === id1);
-        const s2 = this._studentMap?.get(id2) || this._students.find(s => s.id === id2);
-        if (s1 && s2) {
-            UI?.showNotification?.(`Échange : ${s1.prenom || s1.nom} ↔ ${s2.prenom || s2.nom}`, 'success', 4000, {
+        const ids1 = Array.isArray(val1) ? val1 : [val1];
+        const ids2 = Array.isArray(val2) ? val2 : [val2];
+        const label1 = ids1.map(id => {
+            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
+            return s ? (s.prenom || s.nom) : '';
+        }).filter(Boolean).join(' & ');
+        const label2 = ids2.map(id => {
+            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
+            return s ? (s.prenom || s.nom) : '';
+        }).filter(Boolean).join(' & ');
+
+        if (label1 && label2) {
+            UI?.showNotification?.(`Échange : ${label1} ↔ ${label2}`, 'success', 4000, {
                 action: {
                     label: 'Annuler',
                     onClick: () => this._undo()
@@ -723,10 +829,33 @@ export const SeatingChartManager = {
         }
     },
 
+    _notifyGroupFull(row, col) {
+        this._haptic([20, 40, 20]);
+        const cell = document.querySelector(`#scGridContainer .sc-cell[data-row="${row}"][data-col="${col}"]`);
+        if (cell) {
+            cell.classList.remove('sc-cell-shake');
+            void cell.offsetWidth;
+            cell.classList.add('sc-cell-shake');
+            cell.addEventListener('animationend', () => cell.classList.remove('sc-cell-shake'), { once: true });
+        }
+        UI?.showNotification?.(`Groupe complet (${MAX_ACTIVITY_GROUP_SIZE} élèves maximum par poste).`, 'warning');
+    },
+
     _replaceOccupantWithUnplaced(row, col, unplacedId) {
         if (this._isLocked) return;
+        if (this._isActivityMode()) {
+            const existingIds = this._getCellStudentIds(row, col);
+            if (existingIds.length >= MAX_ACTIVITY_GROUP_SIZE) {
+                this._notifyGroupFull(row, col);
+                return;
+            }
+            if (existingIds.length > 0) {
+                this._joinStudentsToCell(row, col, [unplacedId]);
+                return;
+            }
+        }
         this._snapshotGrid();
-        const prevOccupantId = this._gridState[row]?.[col];
+        const prevIds = this._getCellStudentIds(row, col);
         this._gridState[row][col] = unplacedId;
         this._dismissOnboardingHint();
         this._savePositionsToState();
@@ -734,7 +863,7 @@ export const SeatingChartManager = {
         this._animateCellPlaced(row, col);
 
         const sNew = this._studentMap?.get(unplacedId) || this._students.find(s => s.id === unplacedId);
-        const sOld = this._studentMap?.get(prevOccupantId) || this._students.find(s => s.id === prevOccupantId);
+        const sOld = prevIds[0] ? (this._studentMap?.get(prevIds[0]) || this._students.find(s => s.id === prevIds[0])) : null;
         if (sNew) {
             const msg = sOld 
                 ? `${sNew.prenom || sNew.nom} remplace ${sOld.prenom || sOld.nom}` 
@@ -748,12 +877,75 @@ export const SeatingChartManager = {
         }
     },
 
-    _openOccupiedCellSheet(row, col, student) {
+    _joinStudentsToCell(row, col, studentIdsToJoin) {
+        if (this._isLocked) return false;
+        const incoming = (Array.isArray(studentIdsToJoin) ? studentIdsToJoin : [studentIdsToJoin]).filter(Boolean);
+        if (incoming.length === 0) return false;
+
+        const targetIds = this._getCellStudentIds(row, col);
+        const newIds = incoming.filter(id => !targetIds.includes(id));
+        if (newIds.length === 0 || targetIds.length + newIds.length > MAX_ACTIVITY_GROUP_SIZE) {
+            return false;
+        }
+
+        this._snapshotGrid();
+
+        const rows = this._getRows();
+        const cols = this._getCols();
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (r === row && c === col) continue;
+                const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.some(id => newIds.includes(id))) {
+                    this._setCellStudentIds(r, c, cellIds.filter(id => !newIds.includes(id)));
+                }
+            }
+        }
+
+        const combined = [...targetIds, ...newIds];
+        this._setCellStudentIds(row, col, combined);
+        this._dismissOnboardingHint();
+        this._savePositionsToState();
+        this._render();
+        this._animateCellPlaced(row, col);
+        this._haptic(15);
+
+        const names = combined.map(id => {
+            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
+            return s ? (s.prenom || s.nom) : '';
+        }).filter(Boolean).join(' + ');
+
+        if (names) {
+            const groupLabel = combined.length === 2 ? 'Binôme' : `Groupe (${combined.length})`;
+            UI?.showNotification?.(`${groupLabel} : ${names}`, 'success', 4000, {
+                action: {
+                    label: 'Annuler',
+                    onClick: () => this._undo()
+                }
+            });
+        }
+        return true;
+    },
+
+    _openOccupiedCellSheet(row, col, student, cellStudents = null) {
         this._closeMobileSheet(true);
         if (!HistoryManager.isOpen('scMobileSheet')) {
             HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
         }
-        const isPinned = !!student?.seatingPosition?.pinned;
+
+        const students = Array.isArray(cellStudents) && cellStudents.length > 0
+            ? cellStudents
+            : (this._getCellStudentIds(row, col).map(id => this._studentMap?.get(id)).filter(Boolean));
+        const primary = students[0] || student;
+        if (!primary) return;
+
+        const isMulti = students.length > 1;
+        const posKey = this._getActivePositionKey();
+        const isPinned = students.some(s => !!s?.[posKey]?.pinned);
+        const isActivity = this._isActivityMode();
+        const stationNum = isActivity ? this._getStationNumber(row, col) : null;
+        const unplaced = (isActivity && students.length < MAX_ACTIVITY_GROUP_SIZE) ? this._getUnplacedStudents() : [];
+
         const backdrop = document.createElement('div');
         backdrop.className = 'sc-mobile-sheet-backdrop';
         backdrop.id = 'scMobileSheetBackdrop';
@@ -764,14 +956,58 @@ export const SeatingChartManager = {
         sheet.setAttribute('role', 'dialog');
         sheet.setAttribute('aria-modal', 'true');
 
+        const locationLabel = stationNum
+            ? `Poste #${stationNum} • Rangée ${row + 1}, Col ${col + 1}`
+            : `Rangée ${row + 1} • Table ${col + 1}`;
+
+        const headerTitle = isMulti
+            ? (students.length === 2 ? `Binôme (${students.length} élèves)` : `Groupe (${students.length} élèves)`)
+            : `${primary.prenom || ''} ${primary.nom || ''}`;
+
+        const headerAvatarHTML = isMulti
+            ? `<div class="sc-sheet-desk-icon"><iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon></div>`
+            : StudentPhotoManager.getAvatarHTML(primary, 'md');
+
+        const membersSectionHTML = isMulti ? `
+            <div class="sc-sheet-section-title">Membres du poste (${students.length}/${MAX_ACTIVITY_GROUP_SIZE})</div>
+            <div class="sc-sheet-picker-list sc-sheet-members-list">
+                ${students.map(s => `
+                    <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${s.id}">
+                        <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${s.id}" type="button">
+                            ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                            <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                        </button>
+                        <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${s.prenom || s.nom}">
+                            <iconify-icon icon="ph:x"></iconify-icon> Retirer
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        const addTeammateSectionHTML = (isActivity && students.length < MAX_ACTIVITY_GROUP_SIZE && unplaced.length > 0) ? `
+            <div class="sc-sheet-section-title">Associer un élève sur ce poste (${students.length}/${MAX_ACTIVITY_GROUP_SIZE})</div>
+            <div class="sc-sheet-picker-list sc-sheet-compact-picker" id="scSheetJoinList">
+                ${unplaced.map(s => `
+                    <button class="sc-sheet-picker-item" data-join-student-id="${s.id}" type="button">
+                        <div class="sc-sheet-picker-user">
+                            ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                            <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                        </div>
+                        <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:user-plus-linear"></iconify-icon> Associer</span>
+                    </button>
+                `).join('')}
+            </div>
+        ` : '';
+
         sheet.innerHTML = `
             <div class="sc-sheet-handle"></div>
             <div class="sc-sheet-header">
                 <div class="sc-sheet-entity-info">
-                    ${StudentPhotoManager.getAvatarHTML(student, 'md')}
+                    ${headerAvatarHTML}
                     <div class="sc-sheet-entity-text">
-                        <h3 class="sc-sheet-entity-name">${student.prenom || ''} ${student.nom || ''}</h3>
-                        <p class="sc-sheet-entity-meta">Rangée ${row + 1} • Table ${col + 1}${isPinned ? ' • 📌 Place fixée' : ''}</p>
+                        <h3 class="sc-sheet-entity-name">${headerTitle}</h3>
+                        <p class="sc-sheet-entity-meta">${locationLabel}${isPinned ? ' • 📌 Place fixée' : ''}</p>
                     </div>
                 </div>
                 <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
@@ -779,14 +1015,16 @@ export const SeatingChartManager = {
                 </button>
             </div>
             <div class="sc-sheet-content">
+                ${membersSectionHTML}
+                ${addTeammateSectionHTML}
                 <div class="sc-sheet-actions">
                     <button class="sc-sheet-action-btn" data-action="move" type="button">
                         <div class="sc-sheet-action-icon sc-icon-primary">
                             <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
                         </div>
                         <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">Déplacer ou permuter</span>
-                            <span class="sc-sheet-action-hint">Touchez ensuite la table de destination</span>
+                            <span class="sc-sheet-action-label">${isMulti ? 'Déplacer ou permuter le groupe' : 'Déplacer ou permuter'}</span>
+                            <span class="sc-sheet-action-hint">Touchez ensuite le poste de destination</span>
                         </div>
                     </button>
                     <button class="sc-sheet-action-btn" data-action="pin" type="button">
@@ -794,8 +1032,8 @@ export const SeatingChartManager = {
                             <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                         </div>
                         <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">${isPinned ? 'Détacher la place' : 'Épingler à cette place'}</span>
-                            <span class="sc-sheet-action-hint">${isPinned ? 'La place redeviendra mobile' : 'Fige la place lors des réagencements'}</span>
+                            <span class="sc-sheet-action-label">${isPinned ? 'Détacher la place' : 'Épingler à ce poste'}</span>
+                            <span class="sc-sheet-action-hint">${isPinned ? 'Le poste redeviendra mobile' : 'Fige ce poste lors des réagencements'}</span>
                         </div>
                     </button>
                     <button class="sc-sheet-action-btn sc-action-danger" data-action="remove" type="button">
@@ -803,19 +1041,21 @@ export const SeatingChartManager = {
                             <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                         </div>
                         <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">Retirer du plan</span>
-                            <span class="sc-sheet-action-hint">Renvoie l'élève dans les non placés</span>
+                            <span class="sc-sheet-action-label">${isMulti ? 'Libérer tout le poste' : 'Retirer du plan'}</span>
+                            <span class="sc-sheet-action-hint">Renvoie ${isMulti ? 'les élèves' : "l'élève"} dans les non placés</span>
                         </div>
                     </button>
-                    <button class="sc-sheet-action-btn" data-action="profile" type="button">
-                        <div class="sc-sheet-action-icon sc-icon-secondary">
-                            <iconify-icon icon="solar:user-id-linear"></iconify-icon>
-                        </div>
-                        <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">Voir la fiche élève</span>
-                            <span class="sc-sheet-action-hint">Notes, observations et historique</span>
-                        </div>
-                    </button>
+                    ${!isMulti ? `
+                        <button class="sc-sheet-action-btn" data-action="profile" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Voir la fiche élève</span>
+                                <span class="sc-sheet-action-hint">Notes, observations et historique</span>
+                            </div>
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -833,19 +1073,46 @@ export const SeatingChartManager = {
         backdrop.addEventListener('click', close);
         sheet.querySelector('#scSheetCloseBtn')?.addEventListener('click', close);
 
+        sheet.querySelectorAll('[data-profile-id]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const pid = btn.dataset.profileId;
+                close();
+                if (pid) FocusPanelManager.open(pid);
+            });
+        });
+
+        sheet.querySelectorAll('[data-remove-member-id]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const mid = btn.dataset.removeMemberId;
+                close();
+                if (mid) this._removeStudentFromCell(row, col, mid);
+            });
+        });
+
+        sheet.querySelectorAll('[data-join-student-id]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const jid = btn.dataset.joinStudentId;
+                close();
+                if (jid) this._joinStudentsToCell(row, col, [jid]);
+            });
+        });
+
         sheet.querySelector('[data-action="move"]')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._closeMobileSheet(true);
             this._clearSelection();
-            this._toggleChipSelection(student.id);
+            this._toggleChipSelection(primary.id);
             this._lastSelectedGridPos = { row, col };
-            UI?.showNotification?.(`Touchez une table libre pour déplacer ${student.prenom || 'l’élève'}, ou occupée pour permuter.`, 'info');
+            UI?.showNotification?.(`Touchez un poste libre pour déplacer, ou occupé pour permuter.`, 'info');
         });
 
         sheet.querySelector('[data-action="pin"]')?.addEventListener('click', (e) => {
             e.stopPropagation();
             close();
-            this._togglePin(student.id);
+            this._toggleCellPin(row, col);
         });
 
         sheet.querySelector('[data-action="remove"]')?.addEventListener('click', (e) => {
@@ -857,7 +1124,7 @@ export const SeatingChartManager = {
         sheet.querySelector('[data-action="profile"]')?.addEventListener('click', (e) => {
             e.stopPropagation();
             close();
-            FocusPanelManager.open(student.id);
+            FocusPanelManager.open(primary.id);
         });
     },
 
@@ -878,7 +1145,9 @@ export const SeatingChartManager = {
         sheet.setAttribute('role', 'dialog');
         sheet.setAttribute('aria-modal', 'true');
 
-        let statusLabel = 'Place libre';
+        const isActivity = this._isActivityMode();
+        const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
+        let statusLabel = isActivity ? 'Poste libre' : 'Place libre';
         let deskIcon = 'solar:chair-linear';
         if (special?.type === 'aisle') {
             statusLabel = 'Allée (Espace vide)';
@@ -891,6 +1160,10 @@ export const SeatingChartManager = {
             deskIcon = 'solar:forbidden-circle-linear';
         }
 
+        const headerEntityName = stationNum
+            ? `Poste #${stationNum} • Rangée ${row + 1}, Col ${col + 1}`
+            : `Rangée ${row + 1} • Table ${col + 1}`;
+
         sheet.innerHTML = `
             <div class="sc-sheet-handle"></div>
             <div class="sc-sheet-header">
@@ -899,7 +1172,7 @@ export const SeatingChartManager = {
                         <iconify-icon icon="${deskIcon}"></iconify-icon>
                     </div>
                     <div class="sc-sheet-entity-text">
-                        <h3 class="sc-sheet-entity-name">Rangée ${row + 1} • Table ${col + 1}</h3>
+                        <h3 class="sc-sheet-entity-name">${headerEntityName}</h3>
                         <p class="sc-sheet-entity-meta">${statusLabel}</p>
                     </div>
                 </div>
@@ -1080,6 +1353,152 @@ export const SeatingChartManager = {
     },
 
     // ========================================================================
+    // PLAN MODE SWITCHING (Cours ↔ Activité)
+    // ========================================================================
+
+    _isActivityMode() {
+        return this._planMode === 'activity';
+    },
+
+    _getActiveGridKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivityGrid' : 'seatingGrid';
+    },
+
+    _getActivePositionKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivityPosition' : 'seatingPosition';
+    },
+
+    _getActiveClassLockKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivityLocked' : 'seatingLocked';
+    },
+
+    _getActiveClassValidatedKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivityValidatedAt' : 'seatingValidatedAt';
+    },
+
+    _getActiveClassUpdatedKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivityUpdatedAt' : 'seatingUpdatedAt';
+    },
+
+    _getActiveClassSpecialKey(mode = this._planMode) {
+        return mode === 'activity' ? 'seatingActivitySpecialLayout' : 'seatingSpecialLayout';
+    },
+
+    _getStudentPos(student, mode = this._planMode) {
+        return mode === 'activity' ? student?.seatingActivityPosition : student?.seatingPosition;
+    },
+
+    _hasClassCoursePlan(cls = this._getCurrentClass()) {
+        if (!cls) return false;
+        const students = ClassManager.getStudentsForClass(cls.id);
+        return students.some(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null);
+    },
+
+    _hasClassActivityPlan(cls = this._getCurrentClass()) {
+        if (!cls) return false;
+        const students = ClassManager.getStudentsForClass(cls.id);
+        return students.some(r => r.seatingActivityPosition?.row != null && r.seatingActivityPosition?.col != null);
+    },
+
+    _restoreUnmodifiedClassLock() {
+        if (!this._hasChangesSinceUnlock && this._wasLockedBeforeEdit && !this._isLocked) {
+            const currentClass = this._getCurrentClass();
+            const lockKey = this._getActiveClassLockKey();
+            const gridKey = this._getActiveGridKey();
+            if (currentClass) currentClass[lockKey] = true;
+            this._isLocked = true;
+            if (appState[gridKey]) appState[gridKey].locked = true;
+        }
+    },
+
+    _updatePlanModeSwitchUI() {
+        const view = document.getElementById('seatingChartView');
+        const switchEl = document.getElementById('scPlanModeSwitch');
+        const hasActivity = this._hasClassActivityPlan();
+
+        if (view) {
+            view.dataset.planMode = this._planMode;
+            view.dataset.hasActivity = hasActivity ? 'true' : 'false';
+        }
+
+        if (!switchEl) return;
+
+        switchEl.dataset.activeMode = this._planMode;
+        switchEl.querySelectorAll('.sc-mode-tab').forEach(tab => {
+            const isActive = tab.dataset.planMode === this._planMode;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        // Progressive disclosure: hide completely in Consultation mode when class has no Activity plan
+        const shouldHide = this._isLocked && !hasActivity && this._planMode === 'course';
+        switchEl.classList.toggle('sc-mode-switch-hidden', shouldHide);
+    },
+
+    switchPlanMode(mode, options = {}) {
+        if (mode !== 'course' && mode !== 'activity') return;
+        const { force = false, animate = true } = options;
+        if (mode === this._planMode && !force) return;
+
+        // 1. Persist current mode state before switching
+        if (this._isActive) {
+            this._restoreUnmodifiedClassLock();
+            this._savePositionsToState(true);
+            this._saveGridConfig();
+        }
+
+        this._clearSelection();
+        this._closeMobileSheet(true);
+        this._closeConfigPopover();
+        this._closePlacementPopover();
+
+        // Remove any existing onboarding hint so the new mode can render its own contextual hint
+        document.querySelector('.sc-onboarding-hint')?.remove();
+
+        this._planMode = mode;
+        this._prevPlacedCount = 0;
+        this._undoStack = [];
+        this._redoStack = [];
+
+        this._students = this._getCurrentClassStudents();
+        this._loadGridConfig();
+        this._loadPositionsFromState();
+
+        const currentClass = this._getCurrentClass();
+        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        let locked = false;
+        if (isVirtual) {
+            locked = true;
+        } else {
+            const lockKey = this._getActiveClassLockKey(mode);
+            const gridKey = this._getActiveGridKey(mode);
+            const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
+            locked = this._getPlacedIds().size === 0
+                ? false
+                : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
+        }
+
+        this._applyLockState(locked, { skipSmartFit: true });
+        this._syncPlacementPopover();
+        this._render();
+        this._applySmartFit(true);
+
+        if (animate) {
+            const board = document.getElementById('scClassroomBoard');
+            if (board) {
+                board.classList.remove('sc-mode-switching');
+                void board.offsetWidth;
+                board.classList.add('sc-mode-switching');
+                setTimeout(() => board.classList.remove('sc-mode-switching'), 380);
+            }
+            this._staggerCellEntrance(40);
+        }
+
+        this._scrollToDesk();
+        this._maybeShowOnboardingHint();
+    },
+
+    // ========================================================================
     // VIEW SWITCHING — with entrance/exit animations
     // ========================================================================
 
@@ -1153,12 +1572,7 @@ export const SeatingChartManager = {
                 this._clearSelection();
                 this._closeSearch();
                 if (wasActive) {
-                    if (!this._hasChangesSinceUnlock && this._wasLockedBeforeEdit && !this._isLocked) {
-                        const currentClass = this._getCurrentClass();
-                        if (currentClass) currentClass.seatingLocked = true;
-                        this._isLocked = true;
-                        if (appState.seatingGrid) appState.seatingGrid.locked = true;
-                    }
+                    this._restoreUnmodifiedClassLock();
                     this._savePositionsToState(true);
                     this._saveGridConfig();
                 }
@@ -1188,17 +1602,25 @@ export const SeatingChartManager = {
                 viewEl.style.display = '';
                 if (fab) fab.style.display = 'none';
                 this._isActive = true;
+                if (this._planMode === 'activity' && !this._hasClassActivityPlan()) {
+                    this._planMode = 'course';
+                } else if (this._planMode === 'course' && !this._hasClassCoursePlan() && this._hasClassActivityPlan()) {
+                    this._planMode = 'activity';
+                }
                 this._loadGridConfig();
                 this._loadPositionsFromState();
                 const currentClass = this._getCurrentClass();
-                const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
+                const lockKey = this._getActiveClassLockKey();
+                const gridKey = this._getActiveGridKey();
+                const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
                 const locked = this._getPlacedIds().size === 0
                     ? false
-                    : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
-                this._applyLockState(locked);
+                    : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
+                this._applyLockState(locked, { skipSmartFit: true });
                 this._updateSidebarLockState();
                 this._undoStack = [];
                 this._redoStack = [];
+                this._syncPlacementPopover();
                 this._render();
                 this._applySmartFit(true);
                 if (animateEnter) {
@@ -1252,25 +1674,34 @@ export const SeatingChartManager = {
             return;
         }
 
+        const currentClass = this._getCurrentClass();
+        if (this._planMode === 'activity' && !this._hasClassActivityPlan(currentClass)) {
+            this._planMode = 'course';
+        } else if (this._planMode === 'course' && !this._hasClassCoursePlan(currentClass) && this._hasClassActivityPlan(currentClass)) {
+            this._planMode = 'activity';
+        }
+
         this._prevPlacedCount = 0;
         this._students = this._getCurrentClassStudents();
         this._loadGridConfig();
         this._loadPositionsFromState();
 
-        const currentClass = this._getCurrentClass();
         const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const lockKey = this._getActiveClassLockKey();
+        const gridKey = this._getActiveGridKey();
         
         // Les classes reconstituées sont verrouillées en mode consultation par défaut
         let locked = false;
         if (isVirtual) {
             locked = true;
         } else {
-            const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
+            const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
             locked = this._getPlacedIds().size === 0
                 ? false
-                : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
+                : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
         }
         this._applyLockState(locked);
+        this._syncPlacementPopover();
 
         this._render();
         this._applySmartFit(true);
@@ -1548,16 +1979,19 @@ export const SeatingChartManager = {
         const maxR = Math.max(r1, r2);
         const minC = Math.min(c1, c2);
         const maxC = Math.max(c1, c2);
+        const posKey = this._getActivePositionKey();
 
         for (let r = minR; r <= maxR; r++) {
             for (let c = minC; c <= maxC; c++) {
-                const id = this._gridState[r][c];
-                if (id && !this._selectedChipIds.includes(id)) {
-                    const student = this._studentMap?.get(id);
-                    if (student && !student.seatingPosition?.pinned) {
-                        this._selectedChipIds.push(id);
+                const cellIds = this._getCellStudentIds(r, c);
+                cellIds.forEach(id => {
+                    if (id && !this._selectedChipIds.includes(id)) {
+                        const student = this._studentMap?.get(id);
+                        if (student && !student[posKey]?.pinned) {
+                            this._selectedChipIds.push(id);
+                        }
                     }
-                }
+                });
             }
         }
         this._applyChipSelectionUI();
@@ -1598,6 +2032,67 @@ export const SeatingChartManager = {
     _updateSelectionAttribute() {
         const view = document.getElementById('seatingChartView');
         if (view) view.dataset.hasSelection = this._selectedChipIds.length > 0;
+        this._updateQuickGroupButton();
+    },
+
+    _updateQuickGroupButton() {
+        const btn = document.getElementById('scQuickGroupBtn');
+        const labelEl = document.getElementById('scQuickGroupBtnLabel');
+        if (!btn || !labelEl) return;
+
+        const count = this._selectedChipIds.length;
+        const canQuickGroup = this._isActivityMode() && !this._isLocked && count >= 2 && count <= MAX_ACTIVITY_GROUP_SIZE;
+
+        if (!canQuickGroup) {
+            btn.style.display = 'none';
+            return;
+        }
+
+        const label = count === 2
+            ? 'Former le binôme (2)'
+            : `Former le groupe (${count})`;
+        labelEl.textContent = label;
+        btn.style.display = 'flex';
+    },
+
+    _placeSelectedAsGroupInFirstFreeStation() {
+        const ids = [...this._selectedChipIds];
+        if (!this._isActivityMode() || this._isLocked || ids.length < 2 || ids.length > MAX_ACTIVITY_GROUP_SIZE) return;
+
+        let rows = this._getRows();
+        let cols = this._getCols();
+        let targetRow = -1;
+        let targetCol = -1;
+
+        for (let r = 0; r < rows && targetRow === -1; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!this._isSpecialSpot(r, c) && this._getCellStudentIds(r, c).length === 0) {
+                    targetRow = r;
+                    targetCol = c;
+                    break;
+                }
+            }
+        }
+
+        // Auto-expand by one row if all current stations are full
+        if (targetRow === -1 && rows < 10) {
+            const rowSlider = document.getElementById('scRowsSlider');
+            rows += 1;
+            if (rowSlider) {
+                rowSlider.value = rows;
+                const valEl = document.getElementById('scRowsValue');
+                if (valEl) valEl.textContent = rows;
+            }
+            this._onGridConfigChange();
+            targetRow = rows - 1;
+            targetCol = 0;
+        }
+
+        if (targetRow !== -1 && targetCol !== -1) {
+            this._placeSelectedAt(targetRow, targetCol);
+        } else {
+            UI.showNotification('Aucun poste libre disponible.', 'warning');
+        }
     },
 
     _placeSelectedAt(startRow, startCol) {
@@ -1610,28 +2105,40 @@ export const SeatingChartManager = {
         
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (ids.includes(this._gridState[r][c])) {
-                    this._gridState[r][c] = null;
+                const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.some(id => ids.includes(id))) {
+                    this._setCellStudentIds(r, c, cellIds.filter(id => !ids.includes(id)));
                 }
             }
         }
 
-        let currentRow = startRow;
-        let currentCol = startCol;
         const placedCells = [];
 
-        for (const id of ids) {
-            let found = false;
-            while (currentRow < rows && !found) {
-                if (!this._gridState[currentRow][currentCol] && !this._isSpecialSpot(currentRow, currentCol)) {
-                    this._gridState[currentRow][currentCol] = id;
-                    placedCells.push({ row: currentRow, col: currentCol, index: placedCells.length });
-                    found = true;
-                }
-                currentCol++;
-                if (currentCol >= cols) {
-                    currentCol = 0;
-                    currentRow++;
+        // In Activity mode, if 2..4 students are selected and target station is empty, group them together on that station
+        if (this._isActivityMode() &&
+            ids.length >= 2 &&
+            ids.length <= MAX_ACTIVITY_GROUP_SIZE &&
+            this._getCellStudentIds(startRow, startCol).length === 0 &&
+            !this._isSpecialSpot(startRow, startCol)) {
+            this._setCellStudentIds(startRow, startCol, ids);
+            placedCells.push({ row: startRow, col: startCol, index: 0 });
+        } else {
+            let currentRow = startRow;
+            let currentCol = startCol;
+
+            for (const id of ids) {
+                let found = false;
+                while (currentRow < rows && !found) {
+                    if (!this._gridState[currentRow][currentCol] && !this._isSpecialSpot(currentRow, currentCol)) {
+                        this._gridState[currentRow][currentCol] = id;
+                        placedCells.push({ row: currentRow, col: currentCol, index: placedCells.length });
+                        found = true;
+                    }
+                    currentCol++;
+                    if (currentCol >= cols) {
+                        currentCol = 0;
+                        currentRow++;
+                    }
                 }
             }
         }
@@ -1644,7 +2151,7 @@ export const SeatingChartManager = {
         this._updateSelectionAttribute();
 
         requestAnimationFrame(() => {
-            placedCells.forEach(({ row, col, index }) => {
+            placedCells.forEach(({ row, col }) => {
                 this._animateCellPlaced(row, col);
             });
         });
@@ -1693,7 +2200,8 @@ export const SeatingChartManager = {
     // LOCK
     // ========================================================================
 
-    _applyLockState(locked) {
+    _applyLockState(locked, options = {}) {
+        const { skipSmartFit = false } = options;
         this._isLocked = locked;
         this._wasLockedBeforeEdit = locked;
         this._hasChangesSinceUnlock = false;
@@ -1713,8 +2221,11 @@ export const SeatingChartManager = {
             floatingUnlockBtn.setAttribute('aria-label', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
             floatingUnlockBtn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
         }
+        this._updatePlanModeSwitchUI();
         this._updateCellsDraggability();
-        this._applySmartFit(true);
+        if (!skipSmartFit) {
+            this._applySmartFit(true);
+        }
 
         // [UX Mobile] History integration for Edit Mode
         if (!locked) {
@@ -1793,26 +2304,33 @@ export const SeatingChartManager = {
         }
 
         const currentClass = this._getCurrentClass();
+        const lockKey = this._getActiveClassLockKey();
+        const validatedKey = this._getActiveClassValidatedKey();
         if (currentClass) {
             const placedCount = this._getPlacedIds().size;
             if (this._isLocked) {
                 if (placedCount > 0) {
-                    currentClass.seatingLocked = true;
-                    if (this._hasChangesSinceUnlock || !currentClass.seatingValidatedAt) {
-                        currentClass.seatingValidatedAt = Date.now();
-                        UI?.showNotification?.('Plan de classe validé et figé', 'success');
+                    currentClass[lockKey] = true;
+                    if (this._hasChangesSinceUnlock || !currentClass[validatedKey]) {
+                        currentClass[validatedKey] = Date.now();
+                        const planLabel = this._isActivityMode() ? "Plan d'activité" : 'Plan de classe';
+                        UI?.showNotification?.(`${planLabel} validé et figé`, 'success');
                     }
                     this._hasChangesSinceUnlock = false;
                 } else {
-                    currentClass.seatingLocked = false;
+                    currentClass[lockKey] = false;
                 }
             } else {
                 if (!this._wasLockedBeforeEdit) {
-                    currentClass.seatingLocked = false;
+                    currentClass[lockKey] = false;
                 }
             }
         }
 
+        if (this._isActivityMode()) {
+            this._renderGrid();
+        }
+        this._updatePlanModeSwitchUI();
         this._updateCellsDraggability();
         this._updateSidebarLockState();
         this._updateFooter();
@@ -1826,7 +2344,7 @@ export const SeatingChartManager = {
 
         TooltipsUI?.initTooltips?.();
         window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
-            detail: { classId: currentClass?.id, locked: this._isLocked }
+            detail: { classId: currentClass?.id, locked: this._isLocked, planMode: this._planMode }
         }));
     },
 
@@ -1841,22 +2359,26 @@ export const SeatingChartManager = {
             }
             const currentRow = parseInt(cell.dataset.row, 10);
             const currentCol = parseInt(cell.dataset.col, 10);
-            const isSelected = this._selectedChipIds.includes(student.id);
+            const r = isNaN(currentRow) ? row : currentRow;
+            const c = isNaN(currentCol) ? col : currentCol;
+            const cellIds = this._getCellStudentIds(r, c);
+            const primaryId = cellIds[0] || student.id;
+            const isSelected = this._selectedChipIds.includes(primaryId);
             if (!isSelected) {
                 this._clearSelection();
                 this._dragSource = {
                     type: 'cell',
-                    resultId: student.id,
-                    row: isNaN(currentRow) ? row : currentRow,
-                    col: isNaN(currentCol) ? col : currentCol
+                    resultId: primaryId,
+                    row: r,
+                    col: c
                 };
-                e.dataTransfer.setData('text/plain', student.id);
+                e.dataTransfer.setData('text/plain', primaryId);
             } else {
                 this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
                 e.dataTransfer.setData('text/plain', 'multi');
             }
             e.dataTransfer.effectAllowed = 'move';
-            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
+            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : cellIds.length || 1);
             requestAnimationFrame(() => cell.classList.add('dragging'));
         });
 
@@ -1870,25 +2392,85 @@ export const SeatingChartManager = {
         this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
     },
 
+    _attachMemberAvatarDragListeners(cell, students, row, col) {
+        if (!cell || !Array.isArray(students) || students.length <= 1) return;
+        cell.querySelectorAll('.sc-stacked-avatar').forEach(avatarEl => {
+            if (avatarEl._hasMemberDragListeners) return;
+            avatarEl._hasMemberDragListeners = true;
+
+            avatarEl.addEventListener('dragstart', (e) => {
+                if (this._isLocked || cell.classList.contains('pinned')) {
+                    e.preventDefault();
+                    return;
+                }
+                e.stopPropagation();
+                TooltipsUI?.hideAll?.();
+                this._dismissOnboardingHint();
+                this._clearSelection();
+
+                const memberId = avatarEl.dataset.resultId;
+                const memberStudent = students.find(st => st.id === memberId) || this._studentMap?.get(memberId);
+                const currentRow = parseInt(cell.dataset.row, 10);
+                const currentCol = parseInt(cell.dataset.col, 10);
+                const r = isNaN(currentRow) ? row : currentRow;
+                const c = isNaN(currentCol) ? col : currentCol;
+
+                this._dragSource = {
+                    type: 'group-member',
+                    resultId: memberId,
+                    row: r,
+                    col: c
+                };
+                e.dataTransfer?.setData?.('text/plain', memberId);
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+                this._setCleanMemberDragImage(e, memberStudent, avatarEl);
+                requestAnimationFrame(() => {
+                    avatarEl.classList.add('dragging-member');
+                    cell.querySelector(`.sc-stacked-member[data-result-id="${memberId}"]`)?.classList.add('dragging-member');
+                });
+            });
+
+            avatarEl.addEventListener('dragend', (e) => {
+                e.stopPropagation();
+                avatarEl.classList.remove('dragging-member');
+                cell.querySelectorAll('.dragging-member').forEach(el => el.classList.remove('dragging-member'));
+                this._dragSource = null;
+                document.getElementById('scSidebar')?.classList.remove('drag-over');
+                document.body.classList.remove('sc-drag-over-sidebar');
+            });
+        });
+    },
+
     _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
             cell.draggable = !this._isLocked && !isPinned;
+            cell.querySelectorAll('.sc-stacked-avatar').forEach(av => {
+                av.draggable = !this._isLocked && !isPinned;
+            });
+            const row = parseInt(cell.dataset.row, 10);
+            const col = parseInt(cell.dataset.col, 10);
+            const cellIds = (!isNaN(row) && !isNaN(col)) ? this._getCellStudentIds(row, col) : [cell.dataset.resultId].filter(Boolean);
+            const students = cellIds.map(id => this._studentMap?.get(id)).filter(Boolean);
+
             if (this._isLocked) {
-                const student = this._studentMap?.get(cell.dataset.resultId);
-                if (student) {
+                if (students.length === 1) {
+                    const student = students[0];
                     let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
                     if (student.isNew) tooltipText += ' • Nouveau';
                     if (student.isDeparted) tooltipText += ' • Départ';
                     cell.setAttribute('data-tooltip', tooltipText);
+                } else {
+                    cell.removeAttribute('data-tooltip');
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
-                const row = parseInt(cell.dataset.row, 10);
-                const col = parseInt(cell.dataset.col, 10);
-                const student = this._studentMap?.get(cell.dataset.resultId);
-                if (student && !isNaN(row) && !isNaN(col)) {
-                    this._attachCellDragListeners(cell, student, row, col);
+                const primary = students[0];
+                if (primary && !isNaN(row) && !isNaN(col)) {
+                    this._attachCellDragListeners(cell, primary, row, col);
+                    if (students.length > 1) {
+                        this._attachMemberAvatarDragListeners(cell, students, row, col);
+                    }
                 }
             }
         });
@@ -1979,6 +2561,10 @@ export const SeatingChartManager = {
         const availW = Math.max(80, effectiveAreaW - reservedHoriz);
         const availH = Math.max(80, areaHeight - reservedTop - reservedBottom);
 
+        const gridContainer = document.getElementById('scGridContainer');
+        if (gridContainer) {
+            gridContainer.style.transition = 'none';
+        }
         board.style.removeProperty('transform');
         board.style.removeProperty('transform-origin');
         board.style.removeProperty('transition');
@@ -1987,6 +2573,9 @@ export const SeatingChartManager = {
         const rect = board.getBoundingClientRect?.();
         const boardW = (board.offsetWidth > 0 ? board.offsetWidth : (rect?.width && activeScale > 0 ? rect.width / activeScale : 0)) || board.scrollWidth;
         const boardH = (board.offsetHeight > 0 ? board.offsetHeight : (rect?.height && activeScale > 0 ? rect.height / activeScale : 0)) || board.scrollHeight;
+        if (gridContainer) {
+            gridContainer.style.removeProperty('transition');
+        }
 
         if (!boardW || !boardH) return;
 
@@ -3037,7 +3626,8 @@ export const SeatingChartManager = {
 
         const originalTitle = document.title;
         const safeName = className.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-');
-        document.title = `Plan-de-classe_${safeName}_${new Date().toISOString().slice(0, 10)}`;
+        const filePrefix = this._isActivityMode() ? 'Plan-activite' : 'Plan-de-classe';
+        document.title = `${filePrefix}_${safeName}_${new Date().toISOString().slice(0, 10)}`;
 
         const placed = activeStudents.filter(s => this._getPlacedIds().has(s.id)).length;
         const unplaced = Math.max(0, studentCount - placed);
@@ -3045,14 +3635,27 @@ export const SeatingChartManager = {
             ? `<div class="sc-print-warning">⚠ ${unplaced} élève${unplaced > 1 ? 's' : ''} non placé${unplaced > 1 ? 's' : ''}</div>`
             : '';
 
+        const isActivity = this._isActivityMode();
         const isStudent = this._orientation === 'student';
-        const orientationLabel = isStudent ? ' — Vue Élèves (Projection)' : ' — Vue Enseignant';
+        const modeLabel = isActivity ? ' — Mode Activité' : '';
+        const orientationLabel = isActivity ? '' : (isStudent ? ' — Vue Élèves (Projection)' : ' — Vue Enseignant');
+        let occupiedStations = 0;
+        if (isActivity && this._gridState) {
+            for (let r = 0; r < this._gridState.length; r++) {
+                for (let c = 0; c < (this._gridState[r]?.length || 0); c++) {
+                    if (this._getCellStudentIds(r, c).length > 0) occupiedStations++;
+                }
+            }
+        }
+        const countLabel = isActivity && occupiedStations > 0
+            ? `(${studentCount} élèves · ${occupiedStations} poste${occupiedStations > 1 ? 's' : ''})`
+            : `(${studentCount} élèves)`;
 
         const header = document.createElement('div');
         header.className = 'sc-print-header';
         header.innerHTML = `
             <span class="sc-print-date">${dateStr}</span>
-            <span class="sc-print-class">${className}${orientationLabel} <span class="sc-print-count">(${studentCount} élèves)</span></span>
+            <span class="sc-print-class">${className}${modeLabel}${orientationLabel} <span class="sc-print-count">${countLabel}</span></span>
             <span class="sc-print-brand">Bulletin AI</span>
             ${unplacedHtml}
         `;
@@ -3079,43 +3682,63 @@ export const SeatingChartManager = {
     // GRID CONFIGURATION
     // ========================================================================
 
+    _getDefaultRows(mode = this._planMode) {
+        return mode === 'activity' ? DEFAULT_ACTIVITY_ROWS : DEFAULT_ROWS;
+    },
+
+    _getDefaultCols(mode = this._planMode) {
+        return mode === 'activity' ? DEFAULT_ACTIVITY_COLS : DEFAULT_COLS;
+    },
+
     _getRows() {
+        const gridKey = this._getActiveGridKey();
         const sliderVal = parseInt(document.getElementById('scRowsSlider')?.value);
-        return !isNaN(sliderVal) ? sliderVal : (appState.seatingGrid?.rows ?? DEFAULT_ROWS);
+        return !isNaN(sliderVal) ? sliderVal : (appState[gridKey]?.rows ?? this._getDefaultRows());
     },
 
     _getCols() {
+        const gridKey = this._getActiveGridKey();
         const sliderVal = parseInt(document.getElementById('scColsSlider')?.value);
-        return !isNaN(sliderVal) ? sliderVal : (appState.seatingGrid?.cols ?? DEFAULT_COLS);
+        return !isNaN(sliderVal) ? sliderVal : (appState[gridKey]?.cols ?? this._getDefaultCols());
     },
 
     _loadGridConfig() {
-        const config = appState.seatingGrid;
-        const rows = config?.rows || DEFAULT_ROWS;
-        const cols = config?.cols || DEFAULT_COLS;
-        this._orientation = localStorage.getItem('bulletin_seating_orientation') || config?.orientation || 'teacher';
-        this._applyOrientation(this._orientation);
+        const gridKey = this._getActiveGridKey();
+        const config = appState[gridKey];
+        const rows = config?.rows || this._getDefaultRows();
+        const cols = config?.cols || this._getDefaultCols();
 
         const rowSlider = document.getElementById('scRowsSlider');
         const colSlider = document.getElementById('scColsSlider');
         if (rowSlider) { rowSlider.value = rows; document.getElementById('scRowsValue').textContent = rows; }
         if (colSlider) { colSlider.value = cols; document.getElementById('scColsValue').textContent = cols; }
+
+        this._orientation = localStorage.getItem('bulletin_seating_orientation') || config?.orientation || 'teacher';
+        this._applyOrientation(this._orientation);
     },
 
     _saveGridConfig() {
         const rows = this._getRows();
         const cols = this._getCols();
         const locked = this._isLocked;
-        const currentGrid = appState.seatingGrid;
+        const gridKey = this._getActiveGridKey();
+        const lockKey = this._getActiveClassLockKey();
+        const currentGrid = appState[gridKey];
 
         const isSame = currentGrid &&
             currentGrid.rows === rows &&
             currentGrid.cols === cols &&
             currentGrid.locked === locked;
 
-        if (isSame) return;
+        const isDefaultUnmodified = !currentGrid &&
+            !this._hasChangesSinceUnlock &&
+            !locked &&
+            rows === this._getDefaultRows() &&
+            cols === this._getDefaultCols();
 
-        appState.seatingGrid = {
+        if (isSame || isDefaultUnmodified) return;
+
+        appState[gridKey] = {
             rows,
             cols,
             locked,
@@ -3124,7 +3747,7 @@ export const SeatingChartManager = {
         const currentClass = this._getCurrentClass();
         if (currentClass) {
             if (this._hasChangesSinceUnlock || !this._wasLockedBeforeEdit || locked) {
-                currentClass.seatingLocked = locked;
+                currentClass[lockKey] = locked;
             }
         }
         if (this._hasChangesSinceUnlock || locked || !this._wasLockedBeforeEdit) {
@@ -3136,26 +3759,35 @@ export const SeatingChartManager = {
         const newRows = this._getRows();
         const newCols = this._getCols();
         const oldRows = this._gridState ? this._gridState.length : newRows;
+        const posKey = this._getActivePositionKey();
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
         
         // Récupère toutes les positions connues des étudiants (y compris ceux temporairement hors de la grille visible)
         const placed = {};
         this._students.forEach(s => {
-            const pos = s.seatingPosition;
+            const pos = s[posKey];
             if (pos?.row != null && pos?.col != null) {
-                placed[s.id] = { row: pos.row, col: pos.col, pinned: pos.pinned || false };
+                placed[s.id] = {
+                    row: pos.row,
+                    col: pos.col,
+                    pinned: pos.pinned || false,
+                    order: pos.order ?? 0
+                };
             }
         });
         if (this._gridState) {
             for (let r = 0; r < this._gridState.length; r++) {
                 for (let c = 0; c < this._gridState[r].length; c++) {
-                    const id = this._gridState[r][c];
-                    if (id) {
+                    const cellIds = this._getCellStudentIds(r, c);
+                    cellIds.forEach((id, idx) => {
                         placed[id] = {
                             row: r,
                             col: c,
-                            pinned: placed[id]?.pinned || false
+                            pinned: placed[id]?.pinned || false,
+                            order: idx
                         };
-                    }
+                    });
                 }
             }
         }
@@ -3166,39 +3798,46 @@ export const SeatingChartManager = {
         // car le bureau (bottom) est l'origine visuelle.
         const rowOffset = newRows - oldRows;
 
-        // Repositionne les étudiants
+        // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
+        const cellBuckets = new Map();
         for (const [resultId, pos] of Object.entries(placed)) {
             const newR = pos.row + rowOffset;
             pos.row = newR;
             if (newR >= 0 && newR < newRows && pos.col < newCols) {
-                this._gridState[newR][pos.col] = resultId;
+                const key = `${newR},${pos.col}`;
+                if (!cellBuckets.has(key)) cellBuckets.set(key, []);
+                cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
             }
         }
 
+        for (const [key, items] of cellBuckets.entries()) {
+            const [r, c] = key.split(',').map(Number);
+            items.sort((a, b) => a.order - b.order);
+            this._setCellStudentIds(r, c, items.map(item => item.id));
+        }
+
         // Repositionne également la cartographie des places spéciales (allées, AESH...)
-        // La condition de limites a été sciemment retirée : on conserve les attributs en mémoire
-        // même s'ils "tombent" momentanément hors de la grille. S'ils reviennent, ils s'afficheront !
         if (rowOffset !== 0) {
-            if (appState.seatingGrid?.specialLayout) {
+            if (appState[gridKey]?.specialLayout) {
                 const newSpecialLayout = {};
-                for (const [key, type] of Object.entries(appState.seatingGrid.specialLayout)) {
+                for (const [key, type] of Object.entries(appState[gridKey].specialLayout)) {
                     const [r, c] = key.split(',').map(Number);
                     const newR = r + rowOffset;
                     newSpecialLayout[`${newR},${c}`] = type;
                 }
-                appState.seatingGrid.specialLayout = newSpecialLayout;
+                appState[gridKey].specialLayout = newSpecialLayout;
             }
 
             const classes = appState.classes || [];
             classes.forEach(cls => {
-                if (cls?.seatingSpecialLayout) {
+                if (cls?.[classSpecialKey]) {
                     const newClassSpecial = {};
-                    for (const [key, type] of Object.entries(cls.seatingSpecialLayout)) {
+                    for (const [key, type] of Object.entries(cls[classSpecialKey])) {
                         const [r, c] = key.split(',').map(Number);
                         const newR = r + rowOffset;
                         newClassSpecial[`${newR},${c}`] = type;
                     }
-                    cls.seatingSpecialLayout = newClassSpecial;
+                    cls[classSpecialKey] = newClassSpecial;
                 }
             });
         }
@@ -3219,13 +3858,15 @@ export const SeatingChartManager = {
 
     _getCellSpecial(row, col) {
         const key = `${row},${col}`;
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
         // 1. Structure globale (salle entière : allée, place condamnée salle, legacy)
-        const globalType = appState.seatingGrid?.specialLayout?.[key];
+        const globalType = appState[gridKey]?.specialLayout?.[key];
         if (globalType) return { type: globalType, scope: 'global' };
 
         // 2. Dispositif spécifique à la classe en cours (place AESH, place condamnée classe)
         const currentClass = this._getCurrentClass();
-        const classType = currentClass?.seatingSpecialLayout?.[key];
+        const classType = currentClass?.[classSpecialKey]?.[key];
         if (classType) return { type: classType, scope: 'class' };
 
         return null;
@@ -3239,53 +3880,56 @@ export const SeatingChartManager = {
         this._snapshotGrid();
         const key = `${row},${col}`;
         const currentClass = this._getCurrentClass();
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const lockKey = this._getActiveClassLockKey();
 
         if (!type) {
             // Rétablir : libérer des deux niveaux (global et classe)
-            if (appState.seatingGrid?.specialLayout) {
-                delete appState.seatingGrid.specialLayout[key];
+            if (appState[gridKey]?.specialLayout) {
+                delete appState[gridKey].specialLayout[key];
             }
-            if (currentClass?.seatingSpecialLayout) {
-                delete currentClass.seatingSpecialLayout[key];
+            if (currentClass?.[classSpecialKey]) {
+                delete currentClass[classSpecialKey][key];
             }
         } else if (type === 'aisle') {
             // Allée : structure physique de la salle (salle entière / global)
-            if (!appState.seatingGrid) appState.seatingGrid = {};
-            if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
-            appState.seatingGrid.specialLayout[key] = 'aisle';
-            if (currentClass?.seatingSpecialLayout) {
-                delete currentClass.seatingSpecialLayout[key];
+            if (!appState[gridKey]) appState[gridKey] = {};
+            if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+            appState[gridKey].specialLayout[key] = 'aisle';
+            if (currentClass?.[classSpecialKey]) {
+                delete currentClass[classSpecialKey][key];
             }
         } else if (type === 'aesh') {
             // AESH : spécifique à la classe en cours
             if (currentClass) {
-                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
-                currentClass.seatingSpecialLayout[key] = 'aesh';
-                if (appState.seatingGrid?.specialLayout?.[key]) {
-                    delete appState.seatingGrid.specialLayout[key];
+                if (!currentClass[classSpecialKey]) currentClass[classSpecialKey] = {};
+                currentClass[classSpecialKey][key] = 'aesh';
+                if (appState[gridKey]?.specialLayout?.[key]) {
+                    delete appState[gridKey].specialLayout[key];
                 }
             } else {
-                if (!appState.seatingGrid) appState.seatingGrid = {};
-                if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
-                appState.seatingGrid.specialLayout[key] = 'aesh';
+                if (!appState[gridKey]) appState[gridKey] = {};
+                if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+                appState[gridKey].specialLayout[key] = 'aesh';
             }
         } else if (type === 'blocked') {
             // Condamné : spécifique à la classe en cours par défaut
             if (currentClass) {
-                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
-                currentClass.seatingSpecialLayout[key] = 'blocked';
-                if (appState.seatingGrid?.specialLayout?.[key]) {
-                    delete appState.seatingGrid.specialLayout[key];
+                if (!currentClass[classSpecialKey]) currentClass[classSpecialKey] = {};
+                currentClass[classSpecialKey][key] = 'blocked';
+                if (appState[gridKey]?.specialLayout?.[key]) {
+                    delete appState[gridKey].specialLayout[key];
                 }
             } else {
-                if (!appState.seatingGrid) appState.seatingGrid = {};
-                if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
-                appState.seatingGrid.specialLayout[key] = 'blocked';
+                if (!appState[gridKey]) appState[gridKey] = {};
+                if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+                appState[gridKey].specialLayout[key] = 'blocked';
             }
         }
 
         this._hasChangesSinceUnlock = true;
-        if (currentClass) currentClass.seatingLocked = false;
+        if (currentClass) currentClass[lockKey] = false;
         this._saveGridConfig();
         this._render();
     },
@@ -3295,23 +3939,26 @@ export const SeatingChartManager = {
         const key = `${row},${col}`;
         const currentClass = this._getCurrentClass();
         const className = currentClass?.name || 'la classe';
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const lockKey = this._getActiveClassLockKey();
 
-        const isGlobal = !!appState.seatingGrid?.specialLayout?.[key];
-        const isClass = !!currentClass?.seatingSpecialLayout?.[key];
+        const isGlobal = !!appState[gridKey]?.specialLayout?.[key];
+        const isClass = !!currentClass?.[classSpecialKey]?.[key];
 
         if (isClass) {
             // Passer en portée globale (toutes les classes / salle)
-            delete currentClass.seatingSpecialLayout[key];
-            if (!appState.seatingGrid) appState.seatingGrid = {};
-            if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
-            appState.seatingGrid.specialLayout[key] = 'blocked';
+            delete currentClass[classSpecialKey][key];
+            if (!appState[gridKey]) appState[gridKey] = {};
+            if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+            appState[gridKey].specialLayout[key] = 'blocked';
             UI.showNotification('Place condamnée pour toutes les classes (salle)', 'info');
         } else if (isGlobal) {
             // Restreindre à la classe en cours
-            delete appState.seatingGrid.specialLayout[key];
+            delete appState[gridKey].specialLayout[key];
             if (currentClass) {
-                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
-                currentClass.seatingSpecialLayout[key] = 'blocked';
+                if (!currentClass[classSpecialKey]) currentClass[classSpecialKey] = {};
+                currentClass[classSpecialKey][key] = 'blocked';
                 UI.showNotification(`Place condamnée pour ${className} uniquement`, 'info');
             } else {
                 UI.showNotification('Aucune classe active sélectionnée', 'warning');
@@ -3320,7 +3967,7 @@ export const SeatingChartManager = {
         }
 
         this._hasChangesSinceUnlock = true;
-        if (currentClass) currentClass.seatingLocked = false;
+        if (currentClass) currentClass[lockKey] = false;
         this._saveGridConfig();
         this._render();
     },
@@ -3333,14 +3980,47 @@ export const SeatingChartManager = {
         this._gridState = Array.from({ length: rows }, () => Array(cols).fill(null));
     },
 
+    _getCellStudentIds(row, col) {
+        const val = this._gridState?.[row]?.[col];
+        if (!val) return [];
+        return Array.isArray(val) ? val.filter(Boolean) : [val];
+    },
+
+    _setCellStudentIds(row, col, ids) {
+        if (!this._gridState?.[row]) return;
+        const clean = (Array.isArray(ids) ? ids : (ids ? [ids] : [])).filter(Boolean);
+        if (clean.length === 0) {
+            this._gridState[row][col] = null;
+        } else if (clean.length === 1) {
+            this._gridState[row][col] = clean[0];
+        } else {
+            this._gridState[row][col] = clean;
+        }
+    },
+
+    _getStationNumber(targetRow, targetCol) {
+        if (this._isSpecialSpot(targetRow, targetCol)) return null;
+        const rows = this._gridState?.length || this._getRows();
+        const cols = this._gridState?.[0]?.length || this._getCols();
+        let count = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (this._isSpecialSpot(r, c)) continue;
+                count++;
+                if (r === targetRow && c === targetCol) return count;
+            }
+        }
+        return null;
+    },
+
     _getPlacedMap() {
         const map = {};
         this._gridState.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (Array.isArray(val)) {
-                    val.forEach(id => { if (id) map[id] = { row: r, col: c }; });
+                    val.forEach((id, idx) => { if (id) map[id] = { row: r, col: c, order: idx }; });
                 } else if (val) {
-                    map[val] = { row: r, col: c };
+                    map[val] = { row: r, col: c, order: 0 };
                 }
             });
         });
@@ -3370,11 +4050,13 @@ export const SeatingChartManager = {
 
     _captureSnapshot() {
         const currentClass = this._getCurrentClass();
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
         return {
-            gridState: this._gridState.map(row => [...row]),
-            specialLayout: Utils.deepClone(appState.seatingGrid?.specialLayout || {}),
-            classSpecialLayout: currentClass?.seatingSpecialLayout
-                ? Utils.deepClone(currentClass.seatingSpecialLayout)
+            gridState: this._gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell)),
+            specialLayout: Utils.deepClone(appState[gridKey]?.specialLayout || {}),
+            classSpecialLayout: currentClass?.[classSpecialKey]
+                ? Utils.deepClone(currentClass[classSpecialKey])
                 : null,
             rows: this._getRows(),
             cols: this._getCols()
@@ -3398,7 +4080,8 @@ export const SeatingChartManager = {
         if (this._undoStack.length === 0 && this._wasLockedBeforeEdit) {
             this._hasChangesSinceUnlock = false;
             const currentClass = this._getCurrentClass();
-            if (currentClass) currentClass.seatingLocked = true;
+            const lockKey = this._getActiveClassLockKey();
+            if (currentClass) currentClass[lockKey] = true;
         }
     },
 
@@ -3409,23 +4092,26 @@ export const SeatingChartManager = {
         this._restoreSnapshot(snapshot);
         this._hasChangesSinceUnlock = true;
         const currentClass = this._getCurrentClass();
-        if (currentClass) currentClass.seatingLocked = false;
+        const lockKey = this._getActiveClassLockKey();
+        if (currentClass) currentClass[lockKey] = false;
     },
 
     _restoreSnapshot(snapshot) {
-        this._gridState = snapshot.gridState;
-        if (appState.seatingGrid) {
-            appState.seatingGrid.specialLayout = snapshot.specialLayout;
-            if (snapshot.rows) appState.seatingGrid.rows = snapshot.rows;
-            if (snapshot.cols) appState.seatingGrid.cols = snapshot.cols;
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
+        if (appState[gridKey]) {
+            appState[gridKey].specialLayout = snapshot.specialLayout;
+            if (snapshot.rows) appState[gridKey].rows = snapshot.rows;
+            if (snapshot.cols) appState[gridKey].cols = snapshot.cols;
         }
 
         const currentClass = this._getCurrentClass();
         if (currentClass) {
             if (snapshot.classSpecialLayout) {
-                currentClass.seatingSpecialLayout = Utils.deepClone(snapshot.classSpecialLayout);
+                currentClass[classSpecialKey] = Utils.deepClone(snapshot.classSpecialLayout);
             } else {
-                delete currentClass.seatingSpecialLayout;
+                delete currentClass[classSpecialKey];
             }
         }
         
@@ -3472,27 +4158,33 @@ export const SeatingChartManager = {
     _loadPositionsFromState() {
         const rows = this._getRows();
         const cols = this._getCols();
+        const posKey = this._getActivePositionKey();
         this._initGrid(rows, cols);
 
+        const cellBuckets = new Map();
         this._students.forEach(s => {
-            const pos = s.seatingPosition;
+            const pos = s[posKey];
             if (pos?.row != null && pos?.col != null &&
-                pos.row < rows && pos.col < cols &&
+                pos.row >= 0 && pos.row < rows && pos.col >= 0 && pos.col < cols &&
                 !this._isSpecialSpot(pos.row, pos.col)) {
-                const existing = this._gridState[pos.row][pos.col];
-                if (!existing) {
-                    this._gridState[pos.row][pos.col] = s.id;
-                } else if (Array.isArray(existing)) {
-                    if (!existing.includes(s.id)) existing.push(s.id);
-                } else if (existing !== s.id) {
-                    this._gridState[pos.row][pos.col] = [existing, s.id];
-                }
+                const key = `${pos.row},${pos.col}`;
+                if (!cellBuckets.has(key)) cellBuckets.set(key, []);
+                cellBuckets.get(key).push({ id: s.id, order: pos.order ?? 0 });
             }
         });
+
+        for (const [key, items] of cellBuckets.entries()) {
+            const [r, c] = key.split(',').map(Number);
+            items.sort((a, b) => a.order - b.order);
+            this._setCellStudentIds(r, c, items.map(item => item.id));
+        }
     },
 
     _savePositionsToState(preserveOutOfBounds = false) {
         const placed = this._getPlacedMap();
+        const posKey = this._getActivePositionKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
+        const lockKey = this._getActiveClassLockKey();
         let anyChanged = false;
 
         this._students.forEach(s => {
@@ -3500,27 +4192,34 @@ export const SeatingChartManager = {
             if (!result) return;
 
             const pos = placed[s.id];
+            const oldPos = result[posKey];
             let newPos = null;
             if (pos) {
+                const cellIds = this._getCellStudentIds(pos.row, pos.col);
                 newPos = {
                     row: pos.row,
                     col: pos.col,
-                    pinned: result.seatingPosition?.pinned || false
+                    pinned: oldPos?.pinned || false,
+                    ...(cellIds.length > 1 || pos.order > 0 ? { order: pos.order ?? 0 } : {})
                 };
-            } else if (preserveOutOfBounds && result.seatingPosition) {
-                newPos = result.seatingPosition;
+            } else if (preserveOutOfBounds && oldPos) {
+                newPos = oldPos;
             }
 
-            const oldPos = result.seatingPosition;
             const changed = (!oldPos && newPos) ||
                 (oldPos && !newPos) ||
-                (oldPos && newPos && (oldPos.row !== newPos.row || oldPos.col !== newPos.col || (oldPos.pinned || false) !== (newPos.pinned || false)));
+                (oldPos && newPos && (
+                    oldPos.row !== newPos.row ||
+                    oldPos.col !== newPos.col ||
+                    (oldPos.pinned || false) !== (newPos.pinned || false) ||
+                    (oldPos.order ?? 0) !== (newPos.order ?? 0)
+                ));
 
             if (changed) {
                 anyChanged = true;
-                result.seatingPosition = newPos;
+                result[posKey] = newPos;
                 result._lastModified = Date.now();
-                s.seatingPosition = newPos;
+                s[posKey] = newPos;
             }
         });
 
@@ -3528,8 +4227,8 @@ export const SeatingChartManager = {
             this._hasChangesSinceUnlock = true;
             const currentClass = this._getCurrentClass();
             if (currentClass) {
-                currentClass.seatingUpdatedAt = Date.now();
-                currentClass.seatingLocked = false;
+                currentClass[updatedKey] = Date.now();
+                currentClass[lockKey] = false;
             }
             StorageManager.saveAppState();
         }
@@ -3540,11 +4239,13 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _render() {
+        this._updatePlanModeSwitchUI();
         this._renderGrid();
         this._renderSidebar();
         this._updateFooter();
         this._updateSidebarLockState();
         this._updateUndoRedoButtons();
+        this._updateQuickGroupButton();
         TooltipsUI.initTooltips();
 
         if (this._activeSearchTerm) {
@@ -3566,14 +4267,32 @@ export const SeatingChartManager = {
         const cols = this._getCols();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
 
+        let effectiveRows = rows;
+        if (this._isActivityMode() && this._isLocked && rows > 1) {
+            let maxActiveRow = -1;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const hasStudents = this._getCellStudentIds(r, c).length > 0;
+                    const special = this._getCellSpecial(r, c);
+                    if (hasStudents || (special && special !== 'aisle')) {
+                        maxActiveRow = r;
+                        break;
+                    }
+                }
+            }
+            if (maxActiveRow >= 0) {
+                effectiveRows = maxActiveRow + 1;
+            }
+        }
+
         container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
-        container.style.gridTemplateRows = `repeat(${rows}, var(--sc-cell-h, 96px))`;
+        container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;
         container.innerHTML = '';
 
         const isStudent = this._orientation === 'student';
-        for (let displayR = 0; displayR < rows; displayR++) {
+        for (let displayR = 0; displayR < effectiveRows; displayR++) {
             for (let displayC = 0; displayC < cols; displayC++) {
-                const r = isStudent ? (rows - 1 - displayR) : displayR;
+                const r = isStudent ? (effectiveRows - 1 - displayR) : displayR;
                 const c = isStudent ? (cols - 1 - displayC) : displayC;
                 container.appendChild(this._createCell(r, c));
             }
@@ -3586,14 +4305,19 @@ export const SeatingChartManager = {
         cell.dataset.row = row;
         cell.dataset.col = col;
 
-        const cellContent = this._gridState[row]?.[col];
-        const studentIds = Array.isArray(cellContent) ? cellContent : (cellContent ? [cellContent] : []);
+        const posKey = this._getActivePositionKey();
+        const isActivity = this._isActivityMode();
+        const special = this._getCellSpecial(row, col);
+        const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
+        const stationBadgeHTML = stationNum ? `<span class="sc-station-badge" aria-hidden="true">#${stationNum}</span>` : '';
+
+        const studentIds = this._getCellStudentIds(row, col);
         const students = studentIds.map(id => this._studentMap?.get(id)).filter(Boolean);
 
         if (students.length === 1) {
             const student = students[0];
             cell.dataset.resultId = student.id;
-            const isPinned = student.seatingPosition?.pinned || false;
+            const isPinned = student[posKey]?.pinned || false;
             const isDeparted = this._isStudentDeparted(student);
             const isNew = this._isStudentNew(student);
 
@@ -3620,6 +4344,7 @@ export const SeatingChartManager = {
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
                 <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
                 ${statusBadgeHTML}
+                ${stationBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -3633,21 +4358,28 @@ export const SeatingChartManager = {
                 if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
                 if (this._isLocked) {
                     FocusPanelManager.open(student.id);
-                } else if (this._selectedChipIds.length === 1 && this._selectedChipIds[0] !== student.id) {
-                    // Tap-to-Place / Swap: 1 student was selected, user tapped another desk -> Swap or Replace!
-                    const selectedId = this._selectedChipIds[0];
-                    const srcPos = this._findStudentGridPos(selectedId);
-                    if (srcPos) {
-                        this._swapGridPositions(srcPos.row, srcPos.col, row, col);
-                    } else {
-                        this._replaceOccupantWithUnplaced(row, col, selectedId);
+                } else if (this._selectedChipIds.length > 0 && !this._selectedChipIds.includes(student.id)) {
+                    if (isActivity && !isPinned && !this._lastSelectedGridPos) {
+                        if (1 + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
+                            this._joinStudentsToCell(row, col, this._selectedChipIds);
+                            this._clearSelection();
+                        } else {
+                            this._notifyGroupFull(row, col);
+                        }
+                    } else if (this._selectedChipIds.length === 1) {
+                        const selectedId = this._selectedChipIds[0];
+                        const srcPos = this._findStudentGridPos(selectedId);
+                        if (srcPos) {
+                            this._swapGridPositions(srcPos.row, srcPos.col, row, col);
+                        } else {
+                            this._replaceOccupantWithUnplaced(row, col, selectedId);
+                        }
+                        this._clearSelection();
                     }
-                    this._clearSelection();
                 } else if (this._selectedChipIds.length === 1 && this._selectedChipIds[0] === student.id) {
                     this._clearSelection();
                 } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
-                    // Mobile: Tap on occupied desk opens modern bottom action sheet
-                    this._openOccupiedCellSheet(row, col, student);
+                    this._openOccupiedCellSheet(row, col, student, students);
                 } else if (!isPinned) {
                     if (e.shiftKey && this._lastSelectedGridPos) {
                         this._selectGridRange(this._lastSelectedGridPos.row, this._lastSelectedGridPos.col, row, col);
@@ -3656,7 +4388,7 @@ export const SeatingChartManager = {
                         this._lastSelectedGridPos = { row, col };
                     }
                 } else if (isPinned && this._isMobileView()) {
-                    this._openOccupiedCellSheet(row, col, student);
+                    this._openOccupiedCellSheet(row, col, student, students);
                 }
             });
 
@@ -3672,21 +4404,28 @@ export const SeatingChartManager = {
 
             this._attachCellDragListeners(cell, student, row, col);
         } else if (students.length > 1) {
-            // Empilement moderne pour plusieurs élèves sur la même place (ex: classe reconstituée)
+            // Binôme / Groupe / Classe reconstituée (2 à 4 élèves sur un même poste)
+            const isPinned = students.some(s => s[posKey]?.pinned);
             cell.classList.add('occupied', 'sc-cell-stacked');
+            if (isPinned) cell.classList.add('pinned');
+            cell.draggable = !this._isLocked && !isPinned;
             cell.dataset.resultId = students[0].id;
+            cell.dataset.groupSize = String(students.length);
 
-            const tooltipNames = students.map(s => Utils.formatStudentFirstLastName(s.nom, s.prenom)).join(' • ');
-            cell.setAttribute('data-tooltip', tooltipNames);
-
+            const canExtractMember = !this._isLocked && !isPinned;
             const avatarsHtml = students.map((s, idx) => `
-                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" title="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">
+                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                 </div>
             `).join('');
 
             const namesHtml = students.map(s => `
-                <span class="sc-stacked-name" data-result-id="${s.id}" title="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
+                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}">
+                    <span class="sc-stacked-name-text" data-tooltip="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
+                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
+                        <iconify-icon icon="ph:x-bold"></iconify-icon>
+                    </button>
+                </span>
             `).join('');
 
             cell.innerHTML = `
@@ -3697,18 +4436,72 @@ export const SeatingChartManager = {
                 <div class="sc-stacked-names-list">
                     ${namesHtml}
                 </div>
+                ${stationBadgeHTML}
+                <button class="sc-cell-remove" data-result-id="${students[0].id}" aria-label="Libérer le poste" data-tooltip="Libérer le poste">
+                    <iconify-icon icon="ph:x"></iconify-icon>
+                </button>
+                <button class="sc-cell-pin" data-result-id="${students[0].id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
+                    <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
+                </button>
             `;
 
-            // Clic sur la cellule ou un élève spécifique ouvre le FocusPanel
-            cell.addEventListener('click', (e) => {
-                const targetStudentEl = e.target.closest('[data-result-id]');
-                const targetId = targetStudentEl?.dataset?.resultId || students[0].id;
-                FocusPanelManager.open(targetId);
+            cell.querySelectorAll('.sc-stacked-member-remove').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const memberId = btn.dataset.memberId;
+                    if (memberId) this._removeStudentFromCell(row, col, memberId);
+                });
             });
+
+            cell.querySelector('.sc-cell-remove')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._removeFromCell(row, col);
+            });
+
+            cell.querySelector('.sc-cell-pin')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._toggleCellPin(row, col);
+            });
+
+            cell.addEventListener('click', (e) => {
+                if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin') || e.target.closest('.sc-stacked-member-remove')) return;
+                if (this._isLocked) {
+                    const targetStudentEl = e.target.closest('[data-result-id]');
+                    const targetId = targetStudentEl?.dataset?.resultId || students[0].id;
+                    FocusPanelManager.open(targetId);
+                } else if (this._selectedChipIds.length > 0 && !this._selectedChipIds.some(id => studentIds.includes(id))) {
+                    if (isActivity && !isPinned && !this._lastSelectedGridPos) {
+                        if (students.length + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
+                            this._joinStudentsToCell(row, col, this._selectedChipIds);
+                            this._clearSelection();
+                        } else {
+                            this._notifyGroupFull(row, col);
+                        }
+                    } else if (this._selectedChipIds.length === 1) {
+                        const selectedId = this._selectedChipIds[0];
+                        const srcPos = this._findStudentGridPos(selectedId);
+                        if (srcPos && (srcPos.row !== row || srcPos.col !== col)) {
+                            this._swapGridPositions(srcPos.row, srcPos.col, row, col);
+                        }
+                        this._clearSelection();
+                    }
+                } else if (this._selectedChipIds.length === 1 && studentIds.includes(this._selectedChipIds[0])) {
+                    this._clearSelection();
+                } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
+                    this._openOccupiedCellSheet(row, col, students[0], students);
+                } else if (!isPinned) {
+                    this._toggleChipSelection(students[0].id);
+                    this._lastSelectedGridPos = { row, col };
+                } else if (isPinned && this._isMobileView()) {
+                    this._openOccupiedCellSheet(row, col, students[0], students);
+                }
+            });
+
+            this._attachCellDragListeners(cell, students[0], row, col);
+            this._attachMemberAvatarDragListeners(cell, students, row, col);
         } else {
             cell.classList.add('empty');
             
-            const special = this._getCellSpecial(row, col);
             if (special) {
                 cell.classList.add(`sc-cell-special-${special.type}`);
                 cell.classList.add(`sc-cell-scope-${special.scope}`);
@@ -3731,6 +4524,8 @@ export const SeatingChartManager = {
                         <span class="sc-cell-scope-badge ${isClassScope ? 'scope-class' : 'scope-global'}" data-tooltip="${scopeTooltip}">${scopeLabel}</span>
                     `;
                 }
+            } else if (stationBadgeHTML) {
+                cell.innerHTML = stationBadgeHTML;
             }
 
             const totalRows = this._getRows();
@@ -3779,8 +4574,9 @@ export const SeatingChartManager = {
                     const srcPos = this._selectedChipIds.length === 1 ? this._findStudentGridPos(selectedId) : null;
                     if (srcPos) {
                         this._snapshotGrid();
+                        const srcVal = this._gridState[srcPos.row][srcPos.col];
                         this._gridState[srcPos.row][srcPos.col] = null;
-                        this._gridState[row][col] = selectedId;
+                        this._gridState[row][col] = Array.isArray(srcVal) ? [...srcVal] : srcVal;
                         this._clearSelection();
                         this._savePositionsToState();
                         this._render();
@@ -3804,14 +4600,18 @@ export const SeatingChartManager = {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             cell.classList.add('drag-over');
+            cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col));
+            cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col));
         });
 
-        cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+        cell.addEventListener('dragleave', () => {
+            cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+        });
 
         cell.addEventListener('drop', (e) => {
             if (this._isLocked) return;
             e.preventDefault();
-            cell.classList.remove('drag-over');
+            cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
             this._handleDrop(row, col);
         });
 
@@ -3961,12 +4761,17 @@ export const SeatingChartManager = {
         const rows = this._getRows();
         const cols = this._getCols();
         let specialSpotsCount = 0;
+        let occupiedStations = 0;
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (this._isSpecialSpot(r, c)) specialSpotsCount++;
+                if (this._isSpecialSpot(r, c)) {
+                    specialSpotsCount++;
+                } else if (this._getCellStudentIds(r, c).length > 0) {
+                    occupiedStations++;
+                }
             }
         }
-        const availableSeats = Math.max(0, (rows * cols) - specialSpotsCount - placed);
+        const availableSeats = Math.max(0, (rows * cols) - specialSpotsCount - occupiedStations);
 
         const prev = this._prevPlacedCount;
         const unplaced = Math.max(0, total - placedActive);
@@ -3989,8 +4794,9 @@ export const SeatingChartManager = {
         }
 
         if (info) {
+            const unitLabel = this._isActivityMode() ? 'poste' : 'place';
             info.textContent = availableSeats > 0
-                ? `${availableSeats} place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}`
+                ? `${availableSeats} ${unitLabel}${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}`
                 : 'Complet';
         }
 
@@ -4058,14 +4864,19 @@ export const SeatingChartManager = {
         return false;
     },
 
-    getClassSeatingStatus(cls) {
+    getClassSeatingStatus(cls, mode = 'course') {
         if (!cls) return { status: 'empty', label: 'À faire', shortLabel: 'À faire', icon: 'solar:map-point-linear', unplaced: 0, placed: 0, total: 0 };
+
+        const posKey = this._getActivePositionKey(mode);
+        const lockKey = this._getActiveClassLockKey(mode);
+        const validatedKey = this._getActiveClassValidatedKey(mode);
+        const updatedKey = this._getActiveClassUpdatedKey(mode);
 
         const classResults = ClassManager.getStudentsForClass(cls.id);
         const activeResults = classResults.filter(r => !this._isStudentDeparted(r));
         const total = activeResults.length;
-        const placedActive = activeResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
-        const totalPlaced = classResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
+        const placedActive = activeResults.filter(r => r[posKey]?.row != null && r[posKey]?.col != null).length;
+        const totalPlaced = classResults.filter(r => r[posKey]?.row != null && r[posKey]?.col != null).length;
         const unplaced = Math.max(0, total - placedActive);
 
         if (total === 0 || totalPlaced === 0) {
@@ -4080,8 +4891,8 @@ export const SeatingChartManager = {
             };
         }
 
-        if (cls.seatingLocked) {
-            const dateStr = this._formatShortDate(cls.seatingValidatedAt);
+        if (cls[lockKey]) {
+            const dateStr = this._formatShortDate(cls[validatedKey]);
             const label = dateStr ? `Validé (${dateStr})` : 'Validé';
             return {
                 status: 'locked',
@@ -4095,7 +4906,7 @@ export const SeatingChartManager = {
             };
         }
 
-        const dateStr = this._formatShortDate(cls.seatingUpdatedAt);
+        const dateStr = this._formatShortDate(cls[updatedKey]);
         const label = dateStr ? `En test (${dateStr})` : 'En test';
         return {
             status: 'testing',
@@ -4121,7 +4932,7 @@ export const SeatingChartManager = {
         }
 
         const currentClass = this._getCurrentClass();
-        const info = this.getClassSeatingStatus(currentClass);
+        const info = this.getClassSeatingStatus(currentClass, this._planMode);
 
         if (info.status === 'empty') {
             pill.style.display = 'none';
@@ -4143,9 +4954,6 @@ export const SeatingChartManager = {
         const iconRest = isLocked ? 'solar:lock-bold' : 'solar:test-tube-linear';
         const labelRest = isLocked ? 'Validé' : 'En test';
         const actionLabel = 'Modifier';
-        const tooltipText = info.unplaced > 0 
-            ? `Plan ${isLocked ? 'validé' : 'en test'}${dateText} (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}) • Cliquer pour modifier` 
-            : `Plan ${isLocked ? 'validé' : 'en test'}${dateText} • Cliquer pour modifier`;
 
         pill.innerHTML = `
             <div class="sc-status-pill-inner">
@@ -4158,7 +4966,6 @@ export const SeatingChartManager = {
                     <iconify-icon class="sc-status-pill-icon" icon="solar:pen-linear"></iconify-icon>
                     <span class="sc-status-pill-text">${actionLabel}</span>
                     ${dateText ? `<span class="sc-status-pill-date">${dateText}</span>` : ''}
-                    ${unplacedWarning}
                 </div>
             </div>
         `;
@@ -4172,10 +4979,87 @@ export const SeatingChartManager = {
     // DRAG & DROP — with animation hooks
     // ========================================================================
 
+    _willDropJoinGroup(targetRow, targetCol, customSource = null) {
+        if (!this._isActivityMode() || this._isLocked) return false;
+        const dragSource = customSource || this._dragSource || this._touchSourceInfo;
+        if (!dragSource) return false;
+
+        const targetIds = this._getCellStudentIds(targetRow, targetCol);
+        if (targetIds.length === 0 || targetIds.length >= MAX_ACTIVITY_GROUP_SIZE) return false;
+
+        const posKey = this._getActivePositionKey();
+        if (targetIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return false;
+
+        if (dragSource.type === 'sidebar') {
+            return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 <= MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'group-member') {
+            if (Number(dragSource.row) === Number(targetRow) && Number(dragSource.col) === Number(targetCol)) return false;
+            return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 <= MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'multi-cell') {
+            const incoming = (dragSource.ids || []).filter(id => !targetIds.includes(id));
+            return incoming.length > 0 && (targetIds.length + incoming.length <= MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'cell') {
+            if (Number(dragSource.row) === Number(targetRow) && Number(dragSource.col) === Number(targetCol)) return false;
+            const srcIds = this._getCellStudentIds(dragSource.row, dragSource.col);
+            return srcIds.length === 1 && (targetIds.length + 1 <= MAX_ACTIVITY_GROUP_SIZE);
+        }
+        return false;
+    },
+
+    _willDropOverflowGroup(targetRow, targetCol, customSource = null) {
+        if (!this._isActivityMode() || this._isLocked) return false;
+        const dragSource = customSource || this._dragSource || this._touchSourceInfo;
+        if (!dragSource) return false;
+
+        const targetIds = this._getCellStudentIds(targetRow, targetCol);
+        if (targetIds.length === 0) return false;
+
+        const posKey = this._getActivePositionKey();
+        if (targetIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return false;
+
+        if (dragSource.type === 'sidebar') {
+            return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 > MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'group-member') {
+            if (Number(dragSource.row) === Number(targetRow) && Number(dragSource.col) === Number(targetCol)) return false;
+            return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 > MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'multi-cell') {
+            const incoming = (dragSource.ids || []).filter(id => !targetIds.includes(id));
+            return incoming.length > 0 && (targetIds.length + incoming.length > MAX_ACTIVITY_GROUP_SIZE);
+        }
+        if (dragSource.type === 'cell') {
+            if (Number(dragSource.row) === Number(targetRow) && Number(dragSource.col) === Number(targetCol)) return false;
+            const srcIds = this._getCellStudentIds(dragSource.row, dragSource.col);
+            return srcIds.length === 1 && (targetIds.length + 1 > MAX_ACTIVITY_GROUP_SIZE);
+        }
+        return false;
+    },
+
     _handleDrop(targetRow, targetCol) {
         if (!this._dragSource || !this._isValidDropTarget(targetRow, targetCol)) return;
 
         const { type, resultId, row: srcRow, col: srcCol, ids } = this._dragSource;
+
+        // Activity mode: dropping onto an occupied station with available capacity joins the group/binôme
+        if (this._willDropJoinGroup(targetRow, targetCol)) {
+            const incomingIds = type === 'multi-cell' ? ids : [resultId];
+            this._dragSource = null;
+            this._selectedChipIds = [];
+            this._updateSelectionAttribute();
+            this._joinStudentsToCell(targetRow, targetCol, incomingIds);
+            return;
+        }
+
+        // Activity mode: protect full group (4 max) from being overwritten on overflow drop
+        if (this._willDropOverflowGroup(targetRow, targetCol)) {
+            this._dragSource = null;
+            this._notifyGroupFull(targetRow, targetCol);
+            return;
+        }
 
         if (type === 'multi-cell') {
             this._selectedChipIds = ids;
@@ -4184,23 +5068,28 @@ export const SeatingChartManager = {
             return;
         }
 
-        const targetId = this._gridState[targetRow]?.[targetCol];
+        const targetVal = this._gridState[targetRow]?.[targetCol];
 
-        if (type === 'cell' && targetRow === srcRow && targetCol === srcCol) return;
+        if ((type === 'cell' || type === 'group-member') && targetRow === srcRow && targetCol === srcCol) return;
 
         this._snapshotGrid();
 
-        const isSwap = type === 'cell' && targetId;
+        const isSwap = type === 'cell' && Boolean(targetVal);
 
         if (type === 'sidebar') {
             this._gridState[targetRow][targetCol] = resultId;
+        } else if (type === 'group-member') {
+            const srcIds = this._getCellStudentIds(srcRow, srcCol).filter(id => id !== resultId);
+            this._setCellStudentIds(srcRow, srcCol, srcIds);
+            this._gridState[targetRow][targetCol] = resultId;
         } else if (type === 'cell') {
-            if (targetId) {
-                this._gridState[srcRow][srcCol] = targetId;
-                this._gridState[targetRow][targetCol] = resultId;
+            const srcVal = this._gridState[srcRow]?.[srcCol] ?? resultId;
+            if (targetVal) {
+                this._gridState[srcRow][srcCol] = Array.isArray(targetVal) ? [...targetVal] : targetVal;
+                this._gridState[targetRow][targetCol] = Array.isArray(srcVal) ? [...srcVal] : srcVal;
             } else {
                 this._gridState[srcRow][srcCol] = null;
-                this._gridState[targetRow][targetCol] = resultId;
+                this._gridState[targetRow][targetCol] = Array.isArray(srcVal) ? [...srcVal] : srcVal;
             }
         }
 
@@ -4210,7 +5099,7 @@ export const SeatingChartManager = {
         this._render();
         this._haptic(isSwap ? [12, 40, 12] : 15);
 
-        if (type === 'sidebar') {
+        if (type === 'sidebar' || type === 'group-member') {
             this._animateCellPlaced(targetRow, targetCol);
         } else if (isSwap) {
             this._animateCellSwap(srcRow, srcCol, targetRow, targetCol);
@@ -4240,11 +5129,34 @@ export const SeatingChartManager = {
         }
     },
 
+    _removeStudentFromCell(row, col, studentId) {
+        if (this._isLocked || !studentId) return;
+        const currentIds = this._getCellStudentIds(row, col);
+        if (!currentIds.includes(studentId)) return;
+
+        if (currentIds.length <= 1) {
+            this._removeFromCell(row, col);
+            return;
+        }
+
+        this._snapshotGrid();
+        const remainingIds = currentIds.filter(id => id !== studentId);
+        this._setCellStudentIds(row, col, remainingIds);
+        this._savePositionsToState();
+        this._renderGrid();
+        this._haptic(12);
+        this._renderSidebar(studentId);
+        this._updateFooter();
+        this._updateSidebarLockState();
+        this._onRemovalComplete();
+    },
+
     _removeFromCell(row, col) {
         if (this._isLocked) return;
         this._snapshotGrid();
 
-        const removedId = this._gridState[row][col];
+        const removedIds = this._getCellStudentIds(row, col);
+        const primaryRemovedId = removedIds[0] || null;
         const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
 
         this._flyStudentToSidebar(cell, () => {
@@ -4252,13 +5164,14 @@ export const SeatingChartManager = {
             this._savePositionsToState();
             this._renderGrid();
             this._haptic(12);
-            this._renderSidebar(removedId);
+            this._renderSidebar(primaryRemovedId);
             this._updateFooter();
             this._updateSidebarLockState();
             this._onRemovalComplete();
 
             if (this._isMobileView() && window.UI?.showNotification) {
-                window.UI.showNotification('Élève retiré du plan', 'info', 4000, {
+                const msg = removedIds.length > 1 ? 'Poste libéré' : 'Élève retiré du plan';
+                window.UI.showNotification(msg, 'info', 4000, {
                     group: 'sc-undo-toast',
                     replaceExisting: true,
                     bypassCoalescing: true,
@@ -4290,18 +5203,57 @@ export const SeatingChartManager = {
 
     _togglePin(resultId) {
         if (this._isLocked) return;
+        const posKey = this._getActivePositionKey();
+        const lockKey = this._getActiveClassLockKey();
         const result = appState.generatedResults?.find(r => r.id === resultId);
-        if (!result?.seatingPosition) return;
+        if (!result?.[posKey]) return;
 
-        result.seatingPosition.pinned = !result.seatingPosition.pinned;
+        result[posKey].pinned = !result[posKey].pinned;
         result._lastModified = Date.now();
 
         const student = this._students.find(s => s.id === resultId);
-        if (student) student.seatingPosition = { ...result.seatingPosition };
+        if (student) student[posKey] = { ...result[posKey] };
 
         this._hasChangesSinceUnlock = true;
         const currentClass = this._getCurrentClass();
-        if (currentClass) currentClass.seatingLocked = false;
+        if (currentClass) currentClass[lockKey] = false;
+        StorageManager.saveAppState();
+        this._render();
+        this._haptic(10);
+    },
+
+    _toggleCellPin(row, col) {
+        if (this._isLocked) return;
+        const cellIds = this._getCellStudentIds(row, col);
+        if (cellIds.length === 0) return;
+        if (cellIds.length === 1) {
+            this._togglePin(cellIds[0]);
+            return;
+        }
+
+        const posKey = this._getActivePositionKey();
+        const lockKey = this._getActiveClassLockKey();
+        const anyPinned = cellIds.some(id => {
+            const r = appState.generatedResults?.find(x => x.id === id);
+            return Boolean(r?.[posKey]?.pinned);
+        });
+        const nextPinned = !anyPinned;
+
+        cellIds.forEach(id => {
+            const result = appState.generatedResults?.find(r => r.id === id);
+            if (result?.[posKey]) {
+                result[posKey].pinned = nextPinned;
+                result._lastModified = Date.now();
+            }
+            const student = this._students.find(s => s.id === id);
+            if (student && result?.[posKey]) {
+                student[posKey] = { ...result[posKey] };
+            }
+        });
+
+        this._hasChangesSinceUnlock = true;
+        const currentClass = this._getCurrentClass();
+        if (currentClass) currentClass[lockKey] = false;
         StorageManager.saveAppState();
         this._render();
         this._haptic(10);
@@ -4589,18 +5541,22 @@ export const SeatingChartManager = {
             this._suppressTouchTooltips(400);
         }
         document.body.classList.remove('sc-drag-over-sidebar');
-        document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
+        document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
+            c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+        });
         document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
     },
 
     _highlightCellUnderTouch(x, y) {
-        document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
+        document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
+            c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+        });
         const sidebar = document.querySelector('.sc-sidebar');
         if (sidebar) sidebar.classList.remove('drag-over');
         document.body.classList.remove('sc-drag-over-sidebar');
 
         if (this._isTouchOverSidebar(x, y)) {
-            if (sidebar && !this._isLocked && this._touchSourceInfo && (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell')) {
+            if (sidebar && !this._isLocked && this._touchSourceInfo && (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell' || this._touchSourceInfo.type === 'group-member')) {
                 sidebar.classList.add('drag-over');
                 document.body.classList.add('sc-drag-over-sidebar');
             }
@@ -4611,6 +5567,11 @@ export const SeatingChartManager = {
                 const col = parseInt(cell.dataset.col);
                 if (this._isValidDropTarget(row, col)) {
                     cell.classList.add('drag-over');
+                    if (this._willDropJoinGroup(row, col, this._touchSourceInfo)) {
+                        cell.classList.add('drag-over-join');
+                    } else if (this._willDropOverflowGroup(row, col, this._touchSourceInfo)) {
+                        cell.classList.add('drag-over-full');
+                    }
                 }
             }
         }
@@ -4627,16 +5588,203 @@ export const SeatingChartManager = {
     _autoPlace(mode = 'alpha-asc') {
         if (this._isLocked) return;
 
-        const rows = this._getRows();
-        const cols = this._getCols();
+        let rows = this._getRows();
+        let cols = this._getCols();
 
         if (!this._gridState || this._gridState.length !== rows) {
             this._initGrid(rows, cols);
         }
 
+        const posKey = this._getActivePositionKey();
         const unplaced = this._getUnplacedStudents();
         const placedIds = this._getPlacedIds();
         const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
+
+        const isCellPinned = (r, c) => {
+            const ids = this._getCellStudentIds(r, c);
+            return ids.some(id => Boolean(resultsMap.get(id)?.[posKey]?.pinned));
+        };
+
+        const animatePlacedCells = (placedCells) => {
+            requestAnimationFrame(() => {
+                placedCells.forEach(({ row, col, index }) => {
+                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+                    if (!cell) return;
+                    cell.style.setProperty('--place-i', index);
+                    cell.classList.add('sc-auto-placed');
+                    cell.addEventListener('animationend', () => {
+                        cell.classList.remove('sc-auto-placed');
+                        cell.style.removeProperty('--place-i');
+                    }, { once: true });
+                });
+            });
+        };
+
+        // Cas Groupes / Binômes (Activité : pairs-random, pairs-neighbors, pairs-alpha, groups-3, groups-4)
+        const groupModeSizes = {
+            'pairs-random': 2,
+            'pairs-neighbors': 2,
+            'pairs-alpha': 2,
+            'groups-3': 3,
+            'groups-4': 4
+        };
+
+        if (groupModeSizes[mode]) {
+            const groupSize = groupModeSizes[mode];
+            let studentsToGroup = [];
+
+            if (unplaced.length > 0) {
+                studentsToGroup = [...unplaced];
+            } else if (placedIds.size > 0) {
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (isCellPinned(r, c)) continue;
+                        const ids = this._getCellStudentIds(r, c);
+                        ids.forEach(id => {
+                            const student = this._students.find(s => s.id === id) || resultsMap.get(id);
+                            if (student) studentsToGroup.push(student);
+                        });
+                    }
+                }
+                if (studentsToGroup.length === 0) {
+                    UI.showNotification('Tous les postes occupés sont épinglés.', 'info');
+                    return;
+                }
+            } else {
+                return;
+            }
+
+            this._snapshotGrid();
+
+            // Si on réorganise un plan déjà rempli, libérer les postes non épinglés
+            if (unplaced.length === 0) {
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (!isCellPinned(r, c)) {
+                            this._gridState[r][c] = null;
+                        }
+                    }
+                }
+            }
+
+            // Auto-dimensionnement intelligent de la grille Activité pour accueillir 100% des groupes sans effort
+            const neededFreeStations = Math.ceil(studentsToGroup.length / groupSize);
+            let specialOrPinnedOrOccupiedCount = 0;
+            let currentFreeSpots = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (this._isSpecialSpot(r, c) || this._getCellStudentIds(r, c).length > 0) {
+                        specialOrPinnedOrOccupiedCount++;
+                    } else {
+                        currentFreeSpots++;
+                    }
+                }
+            }
+
+            let targetRows = rows;
+            let targetCols = cols;
+            if (specialOrPinnedOrOccupiedCount === 0) {
+                targetCols = neededFreeStations <= 4
+                    ? Math.max(2, neededFreeStations)
+                    : (neededFreeStations <= 9 ? 3 : 4);
+                targetRows = Math.min(10, Math.max(2, Math.ceil(neededFreeStations / targetCols)));
+                if (targetRows * targetCols < neededFreeStations) {
+                    targetCols = Math.min(10, Math.ceil(neededFreeStations / targetRows));
+                }
+            } else if (currentFreeSpots < neededFreeStations) {
+                const totalNeededCells = specialOrPinnedOrOccupiedCount + neededFreeStations;
+                targetRows = Math.min(10, Math.max(rows, Math.ceil(totalNeededCells / cols)));
+                if (targetRows * targetCols < totalNeededCells) {
+                    targetCols = Math.min(10, Math.max(cols, Math.ceil(totalNeededCells / targetRows)));
+                }
+            }
+
+            if (targetRows !== rows || targetCols !== cols) {
+                const newGrid = Array.from({ length: targetRows }, (_, r) =>
+                    Array.from({ length: targetCols }, (__, c) => (this._gridState[r]?.[c] ?? null))
+                );
+                this._gridState = newGrid;
+                rows = targetRows;
+                cols = targetCols;
+                const rowSlider = document.getElementById('scRowsSlider');
+                const colSlider = document.getElementById('scColsSlider');
+                if (rowSlider) {
+                    rowSlider.value = rows;
+                    const rv = document.getElementById('scRowsValue');
+                    if (rv) rv.textContent = rows;
+                }
+                if (colSlider) {
+                    colSlider.value = cols;
+                    const cv = document.getElementById('scColsValue');
+                    if (cv) cv.textContent = cols;
+                }
+                this._hasChangesSinceUnlock = true;
+                this._saveGridConfig();
+            }
+
+            const targetSpots = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (this._isSpecialSpot(r, c)) continue;
+                    if (this._getCellStudentIds(r, c).length === 0) {
+                        targetSpots.push({ r, c });
+                    }
+                }
+            }
+
+            if (targetSpots.length === 0) {
+                UI.showNotification('Aucun poste disponible.', 'warning');
+                return;
+            }
+
+            const ordered = [...studentsToGroup];
+            if (mode === 'pairs-alpha') {
+                ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
+            } else if (mode === 'pairs-neighbors') {
+                ordered.sort((a, b) => {
+                    const posA = resultsMap.get(a.id)?.seatingPosition || a.seatingPosition;
+                    const posB = resultsMap.get(b.id)?.seatingPosition || b.seatingPosition;
+                    const hasA = typeof posA?.row === 'number' && typeof posA?.col === 'number';
+                    const hasB = typeof posB?.row === 'number' && typeof posB?.col === 'number';
+                    if (hasA && hasB) {
+                        if (posA.row !== posB.row) return posA.row - posB.row;
+                        return posA.col - posB.col;
+                    }
+                    if (hasA) return -1;
+                    if (hasB) return 1;
+                    return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' });
+                });
+            } else {
+                for (let i = ordered.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+                }
+            }
+
+            let cursor = 0;
+            let stationIdx = 0;
+            const placedCells = [];
+
+            while (cursor < ordered.length && stationIdx < targetSpots.length) {
+                const spot = targetSpots[stationIdx];
+                const chunk = ordered.slice(cursor, cursor + groupSize);
+                this._setCellStudentIds(spot.r, spot.c, chunk.map(s => s.id));
+                placedCells.push({ row: spot.r, col: spot.c, index: stationIdx });
+                cursor += chunk.length;
+                stationIdx++;
+            }
+
+            this._dismissOnboardingHint();
+            this._savePositionsToState();
+            this._render();
+            animatePlacedCells(placedCells);
+
+            const remaining = ordered.length - cursor;
+            if (remaining > 0) {
+                UI.showNotification(`${cursor} élèves placés. ${remaining} ne rentrent pas — ajoutez des postes.`, 'warning');
+            }
+            return;
+        }
 
         // Cas : Dispersion aléatoire sur l'ensemble de la salle (idéal examen / devoir surveillé)
         if (mode === 'random-disperse') {
@@ -4644,14 +5792,14 @@ export const SeatingChartManager = {
             const movableStudents = [];
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const id = this._gridState[r]?.[c];
-                    if (id) {
-                        const studentResult = resultsMap.get(id);
-                        if (!studentResult?.seatingPosition?.pinned) {
-                            const student = this._students.find(s => s.id === id) || studentResult;
+                    if (isCellPinned(r, c)) continue;
+                    const ids = this._getCellStudentIds(r, c);
+                    ids.forEach(id => {
+                        const student = this._students.find(s => s.id === id) || resultsMap.get(id);
+                        if (student && !movableStudents.some(m => m.id === student.id)) {
                             movableStudents.push(student);
                         }
-                    }
+                    });
                 }
             }
             unplaced.forEach(s => {
@@ -4669,11 +5817,7 @@ export const SeatingChartManager = {
             const candidateSpots = [];
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    if (this._isSpecialSpot(r, c)) continue;
-                    const currentId = this._gridState[r]?.[c];
-                    if (currentId && resultsMap.get(currentId)?.seatingPosition?.pinned) {
-                        continue;
-                    }
+                    if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
                     candidateSpots.push({ r, c });
                 }
             }
@@ -4688,8 +5832,7 @@ export const SeatingChartManager = {
             // 3. Vider les places mobiles actuelles
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const id = this._gridState[r]?.[c];
-                    if (id && !resultsMap.get(id)?.seatingPosition?.pinned) {
+                    if (!isCellPinned(r, c)) {
                         this._gridState[r][c] = null;
                     }
                 }
@@ -4720,19 +5863,7 @@ export const SeatingChartManager = {
             this._dismissOnboardingHint();
             this._savePositionsToState();
             this._render();
-
-            requestAnimationFrame(() => {
-                placedCells.forEach(({ row, col, index }) => {
-                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-                    if (!cell) return;
-                    cell.style.setProperty('--place-i', index);
-                    cell.classList.add('sc-auto-placed');
-                    cell.addEventListener('animationend', () => {
-                        cell.classList.remove('sc-auto-placed');
-                        cell.style.removeProperty('--place-i');
-                    }, { once: true });
-                });
-            });
+            animatePlacedCells(placedCells);
 
             this._scrollToDesk();
 
@@ -4750,14 +5881,13 @@ export const SeatingChartManager = {
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const id = this._gridState[r]?.[c];
-                    if (id) {
-                        const studentResult = resultsMap.get(id);
-                        if (!studentResult?.seatingPosition?.pinned) {
-                            const student = this._students.find(s => s.id === id) || studentResult;
-                            movable.push(student);
-                            occupiedSpots.push({ r, c });
-                        }
+                    const ids = this._getCellStudentIds(r, c);
+                    if (ids.length > 0 && !isCellPinned(r, c)) {
+                        occupiedSpots.push({ r, c });
+                        ids.forEach(id => {
+                            const student = this._students.find(s => s.id === id) || resultsMap.get(id);
+                            if (student) movable.push(student);
+                        });
                     }
                 }
             }
@@ -4791,29 +5921,32 @@ export const SeatingChartManager = {
                 this._gridState[spot.r][spot.c] = null;
             });
 
+            // Si on était en binômes et qu'on passe en 1/poste, étendre aux postes vides disponibles
+            let targetSpots = occupiedSpots;
+            if (targetSpots.length < ordered.length) {
+                targetSpots = [];
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (!this._isSpecialSpot(r, c) && this._getCellStudentIds(r, c).length === 0) {
+                            targetSpots.push({ r, c });
+                        }
+                    }
+                }
+            }
+
             // Réassigner dans l'ordre choisi
             const placedCells = [];
-            ordered.forEach((student, i) => {
-                const spot = occupiedSpots[i];
+            const k = Math.min(targetSpots.length, ordered.length);
+            for (let i = 0; i < k; i++) {
+                const spot = targetSpots[i];
+                const student = ordered[i];
                 this._gridState[spot.r][spot.c] = student.id;
                 placedCells.push({ row: spot.r, col: spot.c, index: i });
-            });
+            }
 
             this._savePositionsToState();
             this._render();
-
-            requestAnimationFrame(() => {
-                placedCells.forEach(({ row, col, index }) => {
-                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-                    if (!cell) return;
-                    cell.style.setProperty('--place-i', index);
-                    cell.classList.add('sc-auto-placed');
-                    cell.addEventListener('animationend', () => {
-                        cell.classList.remove('sc-auto-placed');
-                        cell.style.removeProperty('--place-i');
-                    }, { once: true });
-                });
-            });
+            animatePlacedCells(placedCells);
 
             return;
         }
@@ -4829,7 +5962,7 @@ export const SeatingChartManager = {
         const availableSpots = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (!this._gridState[r]?.[c] && !this._isSpecialSpot(r, c)) {
+                if (this._getCellStudentIds(r, c).length === 0 && !this._isSpecialSpot(r, c)) {
                     availableSpots.push({ r, c });
                 }
             }
@@ -4851,8 +5984,8 @@ export const SeatingChartManager = {
             ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
         }
 
-        // On prend les K dernières places (les plus proches du bureau au fond)
-        const spotsToFill = availableSpots.slice(-k);
+        // En mode Activité, remplir depuis le Poste #1 ; en mode Cours, remplir au plus près du bureau
+        const spotsToFill = this._isActivityMode() ? availableSpots.slice(0, k) : availableSpots.slice(-k);
         let placed = 0;
         const placedCells = [];
 
@@ -4869,21 +6002,11 @@ export const SeatingChartManager = {
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
+        animatePlacedCells(placedCells);
 
-        requestAnimationFrame(() => {
-            placedCells.forEach(({ row, col, index }) => {
-                const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-                if (!cell) return;
-                cell.style.setProperty('--place-i', index);
-                cell.classList.add('sc-auto-placed');
-                cell.addEventListener('animationend', () => {
-                    cell.classList.remove('sc-auto-placed');
-                    cell.style.removeProperty('--place-i');
-                }, { once: true });
-            });
-        });
-
-        this._scrollToDesk();
+        if (!this._isActivityMode()) {
+            this._scrollToDesk();
+        }
 
         const remaining = unplaced.length - placed;
         if (remaining > 0) {
@@ -4891,9 +6014,32 @@ export const SeatingChartManager = {
         }
     },
 
-    /** Shuffles non-pinned students across valid seats */
+    /** Shuffles non-pinned students across valid seats while preserving current group format in Activity mode */
     _shuffle() {
-        this._autoPlace('random');
+        if (!this._isActivityMode()) {
+            this._autoPlace('random');
+            return;
+        }
+        let maxGroupSize = 0;
+        let occupiedStations = 0;
+        for (let r = 0; r < (this._gridState?.length || 0); r++) {
+            for (let c = 0; c < (this._gridState[r]?.length || 0); c++) {
+                const len = this._getCellStudentIds(r, c).length;
+                if (len > 0) {
+                    occupiedStations++;
+                    if (len > maxGroupSize) maxGroupSize = len;
+                }
+            }
+        }
+        if (maxGroupSize >= 4) {
+            this._autoPlace('groups-4');
+        } else if (maxGroupSize === 3) {
+            this._autoPlace('groups-3');
+        } else if (maxGroupSize === 1 && occupiedStations >= 2) {
+            this._autoPlace('random');
+        } else {
+            this._autoPlace('pairs-random');
+        }
     },
 
     /** Hides native ghost and creates a floating clone that follows the cursor */
@@ -4908,7 +6054,7 @@ export const SeatingChartManager = {
             clone.classList.add('has-status-badge');
         }
         clone.classList.remove('sc-chip-selected');
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove').forEach(el => el.remove());
 
         const board = sourceEl.closest?.('#scClassroomBoard');
         if (board) {
@@ -4945,12 +6091,63 @@ export const SeatingChartManager = {
         sourceEl.addEventListener('dragend', onDragEnd);
     },
 
+    _setCleanMemberDragImage(e, student, sourceEl) {
+        const blank = new Image();
+        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer?.setDragImage?.(blank, 0, 0);
+
+        const clone = document.createElement('div');
+        clone.className = 'sc-drag-clone sc-student-chip';
+        if (student) {
+            clone.innerHTML = `
+                ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
+                <span class="sc-student-chip-name">${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
+            `;
+        } else {
+            clone.innerHTML = sourceEl.innerHTML;
+        }
+
+        const board = sourceEl.closest?.('#scClassroomBoard');
+        if (board) {
+            const boardScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1;
+            clone.style.setProperty('--sc-drag-scale', boardScale.toString());
+        }
+
+        clone.style.left = `${e.clientX}px`;
+        clone.style.top = `${e.clientY}px`;
+        document.body.appendChild(clone);
+
+        const onDrag = (ev) => {
+            if (ev.clientX === 0 && ev.clientY === 0) return;
+            clone.style.left = `${ev.clientX}px`;
+            clone.style.top = `${ev.clientY}px`;
+        };
+
+        const onDragEnd = () => {
+            clone.remove();
+            document.body.classList.remove('sc-drag-over-sidebar');
+            sourceEl.removeEventListener('drag', onDrag);
+            sourceEl.removeEventListener('dragend', onDragEnd);
+        };
+
+        sourceEl.addEventListener('drag', onDrag);
+        sourceEl.addEventListener('dragend', onDragEnd);
+    },
+
     _clearAll() {
         if (this._isLocked) return;
         const placedCount = this._getPlacedIds().size;
         if (placedCount === 0) return;
 
-        UI.showCustomConfirm('Les élèves seront retirés du plan mais resteront dans la liste.', () => {
+        const isActivity = this._isActivityMode();
+        const modalTitle = isActivity
+            ? `Vider le plan d'activité (${placedCount}) ?`
+            : `Vider le plan de classe (${placedCount}) ?`;
+        const modalDesc = isActivity
+            ? 'Les élèves seront retirés des postes d\'activité (le plan de cours habituel reste intact).'
+            : 'Les élèves seront retirés du plan mais resteront dans la liste.';
+
+        UI.showCustomConfirm(modalDesc, () => {
             this._snapshotGrid();
             this._pulseSidebarReceiving();
             const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
@@ -4975,7 +6172,7 @@ export const SeatingChartManager = {
                 this._staggerCellEntrance();
                 this._maybeShowOnboardingHint();
             }, animDuration);
-        }, null, { title: `Vider le plan de classe (${placedCount}) ?`, isDanger: true });
+        }, null, { title: modalTitle, isDanger: true });
     },
 
     // ========================================================================
@@ -4993,16 +6190,20 @@ export const SeatingChartManager = {
         if (isSpecial) return false;
 
         // 2. Check if there is a pinned student in this cell
-        const targetId = this._gridState[r]?.[c];
-        if (targetId) {
-            const targetStudent = this._students.find(s => s.id === targetId);
-            if (targetStudent?.seatingPosition?.pinned) return false;
+        const posKey = this._getActivePositionKey();
+        const targetIds = this._getCellStudentIds(r, c);
+        if (targetIds.length > 0) {
+            const anyPinned = targetIds.some(id => {
+                const targetStudent = this._students.find(s => s.id === id);
+                return Boolean(targetStudent?.[posKey]?.pinned);
+            });
+            if (anyPinned) return false;
         }
 
         // 3. Check if dragging cell onto itself
         const dragSource = this._dragSource || this._touchSourceInfo;
         if (dragSource) {
-            if (dragSource.type === 'cell' && Number(dragSource.row) === r && Number(dragSource.col) === c) {
+            if ((dragSource.type === 'cell' || dragSource.type === 'group-member') && Number(dragSource.row) === r && Number(dragSource.col) === c) {
                 return false;
             }
         }
@@ -5019,21 +6220,29 @@ export const SeatingChartManager = {
 
         const { type, resultId, row, col, ids } = this._dragSource;
 
+        if (type === 'group-member') {
+            this._removeStudentFromCell(row, col, resultId);
+            this._dragSource = null;
+            return;
+        }
+
         this._snapshotGrid();
 
         if (type === 'cell') {
+            const removedIds = this._getCellStudentIds(row, col);
             this._animateCellRemove(row, col, () => {
                 this._gridState[row][col] = null;
                 this._savePositionsToState();
                 this._renderGrid();
                 this._haptic(12);
-                this._renderSidebar(resultId);
+                this._renderSidebar(resultId || removedIds[0]);
                 this._updateFooter();
                 this._updateSidebarLockState();
                 this._onRemovalComplete();
 
                 if (this._isMobileView() && window.UI?.showNotification) {
-                    window.UI.showNotification('Élève retiré du plan', 'info', 4000, {
+                    const msg = removedIds.length > 1 ? 'Poste libéré' : 'Élève retiré du plan';
+                    window.UI.showNotification(msg, 'info', 4000, {
                         group: 'sc-undo-toast',
                         replaceExisting: true,
                         bypassCoalescing: true,
@@ -5058,16 +6267,20 @@ export const SeatingChartManager = {
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const id = this._gridState[r][c];
-                    if (id && ids.includes(id)) {
-                        const cell = document.querySelector(`.sc-cell[data-row="${r}"][data-col="${c}"]`);
-                        if (cell) {
-                            cell.style.setProperty('--cell-i', delay);
-                            cell.classList.add('sc-cell-removing');
-                            delay++;
+                    const cellIds = this._getCellStudentIds(r, c);
+                    const matching = cellIds.filter(id => ids.includes(id));
+                    if (matching.length > 0) {
+                        const remaining = cellIds.filter(id => !ids.includes(id));
+                        if (remaining.length === 0) {
+                            const cell = document.querySelector(`.sc-cell[data-row="${r}"][data-col="${c}"]`);
+                            if (cell) {
+                                cell.style.setProperty('--cell-i', delay);
+                                cell.classList.add('sc-cell-removing');
+                                delay++;
+                            }
                         }
-                        this._gridState[r][c] = null;
-                        removedIds.push(id);
+                        this._setCellStudentIds(r, c, remaining);
+                        removedIds.push(...matching);
                     }
                 }
             }
@@ -5113,6 +6326,7 @@ export const SeatingChartManager = {
                 id: r.id, nom: r.nom, prenom: r.prenom,
                 studentPhoto: r.studentPhoto,
                 seatingPosition: r.seatingPosition,
+                seatingActivityPosition: r.seatingActivityPosition,
                 evolution: r.evolution,
                 studentData: r.studentData,
                 isDeparted: this._isStudentDeparted(r),
@@ -5147,31 +6361,59 @@ export const SeatingChartManager = {
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea || gridArea.querySelector('.sc-onboarding-hint')) return;
 
+        const isActivity = this._isActivityMode();
         const hint = document.createElement('div');
         hint.className = 'sc-onboarding-hint';
-        hint.innerHTML = `
-            <div class="sc-onboarding-hint-text">
-                <div class="sc-hint-title">Plan de classe vide</div>
-                <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
-            </div>
-            <div class="sc-onboarding-actions">
-                <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
-                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                    <span>Placer (A → Z)</span>
-                </button>
-                <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
-                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                    <span>Mélanger (regroupé)</span>
-                </button>
-                <button type="button" class="sc-onboarding-btn secondary" id="scHintDisperseBtn">
-                    <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
-                    <span>Disperser (toute la salle)</span>
-                </button>
-                <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
-                    <span>Placer manuellement</span>
-                </button>
-            </div>
-        `;
+
+        if (isActivity) {
+            hint.innerHTML = `
+                <div class="sc-onboarding-hint-text">
+                    <div class="sc-hint-title">Plan d'activité vide</div>
+                    <div class="sc-hint-subtitle">Créez des binômes, groupes ou postes de travail.</div>
+                </div>
+                <div class="sc-onboarding-actions">
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintPairsRandomBtn">
+                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                        <span>Binômes aléatoires</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintPairsNeighborsBtn">
+                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                        <span>Binômes voisins du cours</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintGroups4Btn">
+                        <iconify-icon icon="solar:widget-4-linear"></iconify-icon>
+                        <span>Groupes de 4 / Terrains</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
+                        <span>Placer manuellement</span>
+                    </button>
+                </div>
+            `;
+        } else {
+            hint.innerHTML = `
+                <div class="sc-onboarding-hint-text">
+                    <div class="sc-hint-title">Plan de classe vide</div>
+                    <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
+                </div>
+                <div class="sc-onboarding-actions">
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
+                        <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                        <span>Placer (A → Z)</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
+                        <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                        <span>Mélanger (regroupé)</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintDisperseBtn">
+                        <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                        <span>Disperser (toute la salle)</span>
+                    </button>
+                    <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
+                        <span>Placer manuellement</span>
+                    </button>
+                </div>
+            `;
+        }
 
         gridArea.appendChild(hint);
 
@@ -5187,12 +6429,25 @@ export const SeatingChartManager = {
             e.stopPropagation();
             this._autoPlace('random-disperse');
         });
+        hint.querySelector('#scHintPairsRandomBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace('pairs-random');
+        });
+        hint.querySelector('#scHintPairsNeighborsBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace('pairs-neighbors');
+        });
+        hint.querySelector('#scHintGroups4Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace('groups-4');
+        });
         hint.querySelector('#scHintManualBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._dismissOnboardingHint();
         });
 
-        if (!appState.seatingGrid) {
+        const gridKey = this._getActiveGridKey();
+        if (!appState[gridKey]) {
             document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
         }
     },
@@ -5266,7 +6521,8 @@ export const SeatingChartManager = {
             const targetStudent = matchedStudents[index];
             this._searchMatchIndex = (index + 1) % matchedStudents.length;
 
-            const targetCell = document.querySelector(`#scGridContainer .sc-cell[data-result-id="${targetStudent.id}"]`);
+            const targetCell = document.querySelector(`#scGridContainer .sc-cell[data-result-id="${targetStudent.id}"]`)
+                || document.querySelector(`#scGridContainer .sc-stacked-member[data-result-id="${targetStudent.id}"]`)?.closest('.sc-cell');
             if (targetCell && typeof targetCell.scrollIntoView === 'function') {
                 targetCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
             }
@@ -5324,6 +6580,9 @@ export const SeatingChartManager = {
             document.querySelectorAll('#scGridContainer .sc-cell').forEach(cell => {
                 cell.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed', 'sc-spotlight-single');
             });
+            document.querySelectorAll('#scGridContainer .sc-stacked-member, #scGridContainer .sc-stacked-avatar').forEach(el => {
+                el.classList.remove('sc-member-match', 'sc-member-dimmed');
+            });
             document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
                 chip.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed');
             });
@@ -5361,9 +6620,17 @@ export const SeatingChartManager = {
                 cell.classList.remove('sc-spotlight-dimmed');
                 cell.classList.add('sc-spotlight-match');
                 cell.classList.toggle('sc-spotlight-single', matchCount === 1);
+                cell.querySelectorAll('.sc-stacked-member, .sc-stacked-avatar').forEach(el => {
+                    const memberMatch = matchedStudentIds.has(el.dataset.resultId);
+                    el.classList.toggle('sc-member-match', memberMatch);
+                    el.classList.toggle('sc-member-dimmed', !memberMatch);
+                });
             } else {
                 cell.classList.remove('sc-spotlight-match', 'sc-spotlight-single');
                 cell.classList.add('sc-spotlight-dimmed');
+                cell.querySelectorAll('.sc-stacked-member, .sc-stacked-avatar').forEach(el => {
+                    el.classList.remove('sc-member-match', 'sc-member-dimmed');
+                });
             }
         });
 

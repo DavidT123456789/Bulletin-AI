@@ -49,6 +49,18 @@ const getCommonTippyConfig = () => {
             if (ModalUI._isIgnoringTooltips) return false;
             // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
+            // Prevent parent tooltip from showing if a child [data-tooltip] is currently hovered
+            if (typeof instance.reference?.querySelector === 'function' && instance.reference.querySelector('[data-tooltip]:hover')) {
+                return false;
+            }
+            // Hide any other visible tooltip so two tooltips never overlap
+            if (_tippyInstances && _tippyInstances.length > 0) {
+                _tippyInstances.forEach(other => {
+                    if (other && other !== instance && other.state?.isVisible && typeof other.hide === 'function') {
+                        other.hide();
+                    }
+                });
+            }
             if (typeof instance.setProps === 'function' && typeof instance.reference?.getBoundingClientRect === 'function') {
                 instance.setProps({
                     getReferenceClientRect: () => instance.reference.getBoundingClientRect()

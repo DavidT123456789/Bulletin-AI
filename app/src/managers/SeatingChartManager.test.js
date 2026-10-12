@@ -2574,7 +2574,173 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             window.matchMedia = originalMatchMedia;
         });
     });
+
+    describe('Mode Duo Universel (Cours ⇄ Activité) & Gestion des Binômes / Groupes', () => {
+        let classAct;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="plan">
+                    <div class="main-content">
+                        <section class="output-section"></section>
+                    </div>
+                </div>
+            `;
+
+            userSettings.academic.classes = [];
+            userSettings.academic.currentClassId = null;
+            userSettings.academic.seatingGrid = {
+                rows: 4,
+                cols: 5,
+                locked: false,
+                specialLayout: {}
+            };
+            userSettings.academic.seatingActivityGrid = null;
+            appState.classes = userSettings.academic.classes;
+            appState.seatingGrid = userSettings.academic.seatingGrid;
+            appState.seatingActivityGrid = null;
+
+            classAct = ClassManager.createClass('3ème Techno');
+            appState.currentClassId = classAct.id;
+            userSettings.academic.currentClassId = classAct.id;
+
+            appState.generatedResults = [
+                { id: 'u1', classId: classAct.id, nom: 'Alpha', prenom: 'Alice', seatingPosition: { row: 0, col: 0 }, seatingActivityPosition: null },
+                { id: 'u2', classId: classAct.id, nom: 'Bravo', prenom: 'Bob', seatingPosition: { row: 0, col: 1 }, seatingActivityPosition: null },
+                { id: 'u3', classId: classAct.id, nom: 'Charlie', prenom: 'Chloé', seatingPosition: { row: 1, col: 0 }, seatingActivityPosition: null },
+                { id: 'u4', classId: classAct.id, nom: 'Delta', prenom: 'David', seatingPosition: { row: 1, col: 1 }, seatingActivityPosition: null }
+            ];
+
+            SeatingChartManager._planMode = 'course';
+            SeatingChartManager._injectView();
+            SeatingChartManager._setupEventListeners();
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+            SeatingChartManager._loadGridConfig();
+            SeatingChartManager._initGrid(SeatingChartManager._getRows(), SeatingChartManager._getCols());
+            SeatingChartManager._loadPositionsFromState();
+        });
+
+        afterEach(() => {
+            SeatingChartManager._planMode = 'course';
+        });
+
+        it('devrait masquer le sélecteur Cours | Activité en consultation si aucun plan Activité n\'existe (0 intrusion)', () => {
+            classAct.seatingLocked = true;
+            SeatingChartManager._applyLockState(true);
+
+            const switcher = document.getElementById('scPlanModeSwitch');
+            expect(switcher.classList.contains('sc-mode-switch-hidden')).toBe(true);
+
+            // En mode Édition, le sélecteur apparaît pour permettre de créer un plan Activité
+            SeatingChartManager._applyLockState(false);
+            expect(switcher.classList.contains('sc-mode-switch-hidden')).toBe(false);
+        });
+
+        it('devrait afficher le sélecteur Cours | Activité en consultation dès qu\'un plan Activité existe pour la classe', () => {
+            // On place un élève en mode Activité
+            appState.generatedResults[0].seatingActivityPosition = { row: 0, col: 0 };
+            classAct.seatingLocked = true;
+            SeatingChartManager._applyLockState(true);
+
+            const switcher = document.getElementById('scPlanModeSwitch');
+            expect(switcher.classList.contains('sc-mode-switch-hidden')).toBe(false);
+        });
+
+        it('devrait isoler totalement les placements et dimensions entre Cours et Activité', () => {
+            // En mode Cours : 4x5, 4 élèves placés
+            expect(SeatingChartManager._isActivityMode()).toBe(false);
+            expect(SeatingChartManager._getRows()).toBe(4);
+            expect(SeatingChartManager._getCols()).toBe(5);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(4);
+
+            // Basculer en mode Activité : grille par défaut 3x5, 0 élève placé
+            SeatingChartManager.switchPlanMode('activity');
+            expect(SeatingChartManager._isActivityMode()).toBe(true);
+            expect(SeatingChartManager._getRows()).toBe(3);
+            expect(SeatingChartManager._getCols()).toBe(5);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+
+            // Placer des binômes en mode Activité
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('pairs-alpha');
+
+            expect(SeatingChartManager._getPlacedIds().size).toBe(4);
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1', 'u2']);
+            expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['u3', 'u4']);
+
+            // Vérifier que seatingActivityPosition est sauvegardé sans altérer seatingPosition du mode Cours
+            const r1 = appState.generatedResults.find(r => r.id === 'u1');
+            const r2 = appState.generatedResults.find(r => r.id === 'u2');
+            expect(r1.seatingActivityPosition).toEqual({ row: 0, col: 0, pinned: false, order: 0 });
+            expect(r2.seatingActivityPosition).toEqual({ row: 0, col: 0, pinned: false, order: 1 });
+            expect(r1.seatingPosition).toEqual({ row: 0, col: 0 });
+            expect(r2.seatingPosition).toEqual({ row: 0, col: 1 });
+
+            // Revenir en mode Cours : les élèves sont toujours sur leurs tables individuelles
+            SeatingChartManager.switchPlanMode('course');
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1']);
+            expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['u2']);
+        });
+
+        it('devrait associer un élève en binôme lors d\'un glisser-déposer sur un poste occupé en mode Activité', () => {
+            SeatingChartManager.switchPlanMode('activity');
+            SeatingChartManager._isLocked = false;
+
+            // Placer u1 sur le Poste #1 (0, 0)
+            SeatingChartManager._dragSource = { type: 'sidebar', resultId: 'u1' };
+            SeatingChartManager._handleDrop(0, 0);
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1']);
+
+            // Déposer u2 sur le même Poste #1 (0, 0) -> rejoint u1 en binôme au lieu d'écraser
+            SeatingChartManager._dragSource = { type: 'sidebar', resultId: 'u2' };
+            expect(SeatingChartManager._willDropJoinGroup(0, 0, SeatingChartManager._dragSource)).toBe(true);
+            SeatingChartManager._handleDrop(0, 0);
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1', 'u2']);
+
+            // Retirer uniquement u1 du binôme -> u2 reste sur le Poste #1
+            SeatingChartManager._removeStudentFromCell(0, 0, 'u1');
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u2']);
+        });
+
+        it('devrait former des binômes voisins du cours avec pairs-neighbors et des groupes de 4 avec groups-4', () => {
+            // En Cours : u1 est en (0,0), u3 est en (0,1), u2 est en (1,0), u4 est en (1,1)
+            appState.generatedResults.find(r => r.id === 'u1').seatingPosition = { row: 0, col: 0 };
+            appState.generatedResults.find(r => r.id === 'u3').seatingPosition = { row: 0, col: 1 };
+            appState.generatedResults.find(r => r.id === 'u2').seatingPosition = { row: 1, col: 0 };
+            appState.generatedResults.find(r => r.id === 'u4').seatingPosition = { row: 1, col: 1 };
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._loadPositionsFromState();
+
+            SeatingChartManager.switchPlanMode('activity');
+            SeatingChartManager._isLocked = false;
+
+            // Placement par voisins du cours : (u1, u3) sur Poste #1 et (u2, u4) sur Poste #2
+            SeatingChartManager._autoPlace('pairs-neighbors');
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1', 'u3']);
+            expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['u2', 'u4']);
+
+            // Réorganisation en groupe de 4 (Terrain #1)
+            SeatingChartManager._autoPlace('groups-4');
+            expect(SeatingChartManager._getCellStudentIds(0, 0).length).toBe(4);
+            expect(SeatingChartManager._getCellStudentIds(0, 1).length).toBe(0);
+        });
+
+        it('devrait numéroter séquentiellement les postes actifs (#1, #2...) en ignorant les allées et places condamnées', () => {
+            SeatingChartManager.switchPlanMode('activity');
+            SeatingChartManager._isLocked = false;
+
+            expect(SeatingChartManager._getStationNumber(0, 0)).toBe(1);
+            expect(SeatingChartManager._getStationNumber(0, 1)).toBe(2);
+
+            // Si (0, 0) devient une allée, (0, 0) n'a plus de numéro et (0, 1) devient le Poste #1
+            SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
+            expect(SeatingChartManager._getStationNumber(0, 0)).toBeNull();
+            expect(SeatingChartManager._getStationNumber(0, 1)).toBe(1);
+        });
+    });
 });
+
 
 
 

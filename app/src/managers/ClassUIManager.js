@@ -759,10 +759,7 @@ export const ClassUIManager = {
         // Phase 1 : Sortie rapide (110ms) avant remplacement des données
         await new Promise(resolve => setTimeout(resolve, 110));
 
-        if (SeatingChartManager?._isActive && !SeatingChartManager._hasChangesSinceUnlock && SeatingChartManager._wasLockedBeforeEdit && !SeatingChartManager._isLocked) {
-            const prevClass = ClassManager.getCurrentClass();
-            if (prevClass) prevClass.seatingLocked = true;
-        }
+        SeatingChartManager?._restoreUnmodifiedClassLock?.();
 
         await ClassManager.switchClass(classId);
         this.updateHeaderDisplay();
@@ -972,22 +969,30 @@ export const ClassUIManager = {
                 `.class-seating-badge[data-class-id="${cls.id}"]`
             );
             if (seatingBadge && SeatingChartManager?.getClassSeatingStatus) {
-                const seatingInfo = SeatingChartManager.getClassSeatingStatus(cls);
+                const courseInfo = SeatingChartManager.getClassSeatingStatus(cls, 'course');
+                const activityInfo = SeatingChartManager.getClassSeatingStatus(cls, 'activity');
+                const primaryInfo = courseInfo.status !== 'empty' ? courseInfo : activityInfo;
+                const isActivityOnly = courseInfo.status === 'empty' && activityInfo.status !== 'empty';
+                const planPrefix = isActivityOnly ? 'Plan d\'activité' : 'Plan de classe';
+                const activitySuffix = (!isActivityOnly && activityInfo.status !== 'empty')
+                    ? ` · Activité : ${activityInfo.shortLabel || (activityInfo.status === 'locked' ? 'Validé' : 'En test')}`
+                    : '';
+
                 seatingBadge.removeAttribute('title');
-                if (seatingInfo.status === 'locked') {
+                if (primaryInfo.status === 'locked') {
                     seatingBadge.className = 'class-seating-badge is-locked';
                     seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
-                    const dateNote = seatingInfo.dateStr ? ` (${seatingInfo.dateStr})` : '';
-                    const unplacedNote = seatingInfo.unplaced > 0 ? ` · ${seatingInfo.unplaced} non placé${seatingInfo.unplaced > 1 ? 's' : ''}` : '';
-                    const seatingTooltip = `Plan de classe : Validé${dateNote}${unplacedNote}`;
+                    const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
+                    const unplacedNote = (!isActivityOnly && primaryInfo.unplaced > 0) ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const seatingTooltip = `${planPrefix} : Validé${dateNote}${unplacedNote}${activitySuffix}`;
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
-                } else if (seatingInfo.status === 'testing') {
+                } else if (primaryInfo.status === 'testing') {
                     seatingBadge.className = 'class-seating-badge is-testing';
                     seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
-                    const dateNote = seatingInfo.dateStr ? ` (${seatingInfo.dateStr})` : '';
-                    const unplacedNote = seatingInfo.unplaced > 0 ? ` · ${seatingInfo.unplaced} non placé${seatingInfo.unplaced > 1 ? 's' : ''}` : '';
-                    const seatingTooltip = `Plan de classe : En test${dateNote}${unplacedNote}`;
+                    const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
+                    const unplacedNote = (!isActivityOnly && primaryInfo.unplaced > 0) ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const seatingTooltip = `${planPrefix} : En test${dateNote}${unplacedNote}${activitySuffix}`;
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else if (SeatingChartManager._isActive) {

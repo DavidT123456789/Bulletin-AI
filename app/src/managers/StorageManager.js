@@ -127,6 +127,7 @@ export const StorageManager = {
                     if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
                     if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
                     if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
+                    if (settings.seatingActivityGrid !== undefined) userSettings.academic.seatingActivityGrid = settings.seatingActivityGrid;
 
                     // Journal threshold
                     if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
@@ -287,7 +288,8 @@ export const StorageManager = {
                     theme: userSettings.ui.theme,
                     periodSystem: userSettings.academic.periodSystem,
                     subjects: userSettings.academic.subjects,
-                    seatingGrid: userSettings.academic.seatingGrid || null
+                    seatingGrid: userSettings.academic.seatingGrid || null,
+                    seatingActivityGrid: userSettings.academic.seatingActivityGrid || null
                 },
                 classes: userSettings.academic.classes || [],
                 currentClassId: userSettings.academic.currentClassId,
@@ -617,6 +619,7 @@ export const StorageManager = {
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId || null,
             seatingGrid: userSettings.academic.seatingGrid || null,
+            seatingActivityGrid: userSettings.academic.seatingActivityGrid || null,
 
             currentAIModel: userSettings.api.currentAIModel,
             enableApiFallback: userSettings.api.enableApiFallback,
@@ -657,7 +660,7 @@ export const StorageManager = {
         // Exclure les horodatages transitoires des classes
         if (Array.isArray(dataSettings.classes)) {
             dataSettings.classes = dataSettings.classes.map(c => {
-                const { seatingUpdatedAt, seatingValidatedAt, ...rest } = c;
+                const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, ...rest } = c;
                 return rest;
             });
         }
@@ -666,6 +669,10 @@ export const StorageManager = {
         if (dataSettings.seatingGrid) {
             const { locked, ...gridRest } = dataSettings.seatingGrid;
             dataSettings.seatingGrid = gridRest;
+        }
+        if (dataSettings.seatingActivityGrid) {
+            const { locked, ...actGridRest } = dataSettings.seatingActivityGrid;
+            dataSettings.seatingActivityGrid = actGridRest;
         }
 
         // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified) et états UI éphémères
@@ -1105,6 +1112,7 @@ export const StorageManager = {
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,
+                    seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid,
                     journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
                     activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                 });
@@ -1267,6 +1275,11 @@ export const StorageManager = {
                         if (rClass.seatingLocked !== undefined) localC.seatingLocked = rClass.seatingLocked;
                         if (rClass.seatingSpecialLayout !== undefined) localC.seatingSpecialLayout = rClass.seatingSpecialLayout;
                     }
+                    if (localC && rClass.seatingActivityUpdatedAt && (!localC.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt > localC.seatingActivityUpdatedAt)) {
+                        localC.seatingActivityUpdatedAt = rClass.seatingActivityUpdatedAt;
+                        if (rClass.seatingActivityLocked !== undefined) localC.seatingActivityLocked = rClass.seatingActivityLocked;
+                        if (rClass.seatingActivitySpecialLayout !== undefined) localC.seatingActivitySpecialLayout = rClass.seatingActivitySpecialLayout;
+                    }
                 }
             });
             userSettings.academic.classes = localClasses;
@@ -1418,7 +1431,7 @@ export const StorageManager = {
                     }
                 }
 
-                // E. Fusion du placement du plan de classe (seatingPosition)
+                // E. Fusion du placement du plan de classe (seatingPosition & seatingActivityPosition)
                 if (remoteStudent.seatingPosition) {
                     const localClasses = userSettings.academic.classes || [];
                     const rClass = Array.isArray(remoteData.classes) ? remoteData.classes.find(c => c.id === remoteStudent.classId) : null;
@@ -1429,6 +1442,20 @@ export const StorageManager = {
                         const rPos = remoteStudent.seatingPosition;
                         if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false)) {
                             localStudent.seatingPosition = { ...rPos };
+                            hasStudentUpdates = true;
+                        }
+                    }
+                }
+                if (remoteStudent.seatingActivityPosition) {
+                    const localClasses = userSettings.academic.classes || [];
+                    const rClass = Array.isArray(remoteData.classes) ? remoteData.classes.find(c => c.id === remoteStudent.classId) : null;
+                    const lClass = localClasses.find(c => c.id === localStudent.classId);
+                    const isRemoteActNewer = rClass?.seatingActivityUpdatedAt && (!lClass?.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt >= lClass.seatingActivityUpdatedAt);
+                    if (!localStudent.seatingActivityPosition || isRemoteActNewer) {
+                        const lPos = localStudent.seatingActivityPosition;
+                        const rPos = remoteStudent.seatingActivityPosition;
+                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false) || (lPos.order ?? 0) !== (rPos.order ?? 0)) {
+                            localStudent.seatingActivityPosition = { ...rPos };
                             hasStudentUpdates = true;
                         }
                     }
@@ -1497,7 +1524,8 @@ export const StorageManager = {
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
-                    seatingGrid: settings.seatingGrid || appState.seatingGrid
+                    seatingGrid: settings.seatingGrid || appState.seatingGrid,
+                    seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid
                 });
                 if (appState.wordCountLimit) {
                     delete appState.wordCountLimit;

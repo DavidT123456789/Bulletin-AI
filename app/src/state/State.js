@@ -40,7 +40,8 @@ export const userSettings = {
         classes: [],           // Array of Class objects: { id, name, year, subject, createdAt, updatedAt }
         currentClassId: null,  // Currently selected class ID (null = default/legacy mode)
         // Seating chart grid configuration
-        seatingGrid: null,     // { rows, cols }
+        seatingGrid: null,         // { rows, cols, specialLayout }
+        seatingActivityGrid: null, // { rows, cols, specialLayout }
     },
 
     /** Configuration API */
@@ -169,6 +170,7 @@ const propertyMap = {
     classes: () => userSettings.academic,
     currentClassId: () => userSettings.academic,
     seatingGrid: () => userSettings.academic,
+    seatingActivityGrid: () => userSettings.academic,
 
     // userSettings.api
     currentAIModel: () => userSettings.api,
