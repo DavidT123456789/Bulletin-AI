@@ -174,13 +174,13 @@ export const SeatingChartManager = {
                     <div class="sc-top-left-bar" id="scTopLeftBar">
                         <div class="sc-plan-mode-switch" id="scPlanModeSwitch" role="tablist" aria-label="Mode du plan de classe">
                             <div class="sc-mode-glider" aria-hidden="true"></div>
-                            <button class="sc-mode-tab active" data-plan-mode="course" role="tab" aria-selected="true" type="button">
+                            <button class="sc-mode-tab active" data-plan-mode="course" data-full-label="Cours" role="tab" aria-selected="true" aria-label="Mode Cours" type="button">
                                 <iconify-icon icon="solar:chair-linear"></iconify-icon>
-                                <span>Cours</span>
+                                <span class="sc-mode-label period-label-text is-expanded">Cours</span>
                             </button>
-                            <button class="sc-mode-tab" data-plan-mode="activity" role="tab" aria-selected="false" type="button">
-                                <iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>
-                                <span>Activité</span>
+                            <button class="sc-mode-tab" data-plan-mode="activity" data-full-label="Activité" role="tab" aria-selected="false" aria-label="Mode Activité" data-tooltip="Passer en mode Activité" type="button">
+                                <iconify-icon icon="solar:monitor-linear"></iconify-icon>
+                                <span class="sc-mode-label period-label-text is-collapsed">Activité</span>
                             </button>
                         </div>
                     </div>
@@ -1426,8 +1426,24 @@ export const SeatingChartManager = {
         switchEl.dataset.activeMode = this._planMode;
         switchEl.querySelectorAll('.sc-mode-tab').forEach(tab => {
             const isActive = tab.dataset.planMode === this._planMode;
+            const fullLabel = tab.dataset.fullLabel || (tab.dataset.planMode === 'activity' ? 'Activité' : 'Cours');
             tab.classList.toggle('active', isActive);
             tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+
+            const labelEl = tab.querySelector('.sc-mode-label');
+            if (labelEl) {
+                labelEl.classList.toggle('is-expanded', isActive);
+                labelEl.classList.toggle('is-collapsed', !isActive);
+            }
+
+            if (isActive) {
+                tab.removeAttribute('data-tooltip');
+                if (tab._tippy) {
+                    tab._tippy.destroy();
+                }
+            } else {
+                tab.setAttribute('data-tooltip', `Passer en mode ${fullLabel}`);
+            }
         });
 
         // Progressive disclosure: hide completely in Consultation mode when class has no Activity plan

@@ -825,12 +825,14 @@
 }
 
 .sc-plan-mode-switch {
+    --sc-padding: 3px;
+    --sc-inactive-w: 32px;
     position: relative;
-    display: inline-grid;
-    grid-template-columns: 1fr 1fr;
+    display: inline-flex;
     align-items: center;
+    gap: 0;
     height: 38px;
-    padding: 3px;
+    padding: var(--sc-padding);
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(16px);
@@ -838,6 +840,7 @@
     border: 1px solid var(--glass-surface-border);
     border-radius: var(--radius-pill, 999px);
     box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
+    isolation: isolate;
     pointer-events: auto;
     user-select: none;
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.1s both;
@@ -854,15 +857,15 @@
 
 .sc-mode-glider {
     position: absolute;
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    width: calc(50% - 3px);
+    top: var(--sc-padding, 3px);
+    bottom: var(--sc-padding, 3px);
+    left: var(--sc-padding, 3px);
+    width: calc(100% - (var(--sc-padding, 3px) * 2) - var(--sc-inactive-w, 32px));
     border-radius: var(--radius-pill, 999px);
     background: var(--surface-color);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
-    transition: transform 0.35s cubic-bezier(0.34, 1.35, 0.64, 1);
-    z-index: 0;
+    transition: left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 1;
     pointer-events: none;
 }
 
@@ -873,17 +876,16 @@
 
 .sc-plan-mode-switch[data-mode="activity"] .sc-mode-glider,
 .sc-plan-mode-switch[data-active-mode="activity"] .sc-mode-glider {
-    transform: translateX(100%);
+    left: calc(var(--sc-padding, 3px) + var(--sc-inactive-w, 32px));
 }
 
-.sc-mode-btn,
 .sc-mode-tab {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     height: 100%;
     padding: 0 13px;
     border: none;
@@ -895,33 +897,50 @@
     color: var(--text-secondary);
     cursor: pointer;
     white-space: nowrap;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
     transition: color 0.2s ease, transform 0.15s ease;
 }
 
-.sc-mode-btn iconify-icon,
-.sc-mode-tab iconify-icon {
-    font-size: 0.96rem;
-    flex-shrink: 0;
+.sc-mode-tab:not(.active) {
+    width: var(--sc-inactive-w, 32px);
+    padding: 0;
+    gap: 0;
 }
 
-.sc-mode-btn.active,
+.sc-mode-tab:not(.active) .sc-mode-label {
+    display: none;
+}
+
+.sc-mode-tab iconify-icon {
+    font-size: 1.1rem;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.sc-mode-tab[data-plan-mode="course"] iconify-icon {
+    font-size: 1.15rem;
+}
+
 .sc-mode-tab.active {
     color: var(--text-primary);
 }
 
 @media (hover: hover) {
-    .sc-mode-btn:not(.active):hover,
     .sc-mode-tab:not(.active):hover {
         color: var(--text-primary);
     }
 }
 
-.sc-mode-btn:active,
 .sc-mode-tab:active {
     transform: scale(0.96);
 }
 
-.sc-mode-btn:focus-visible,
 .sc-mode-tab:focus-visible {
     outline: 2px solid var(--primary-color, #4f46e5);
     outline-offset: 2px;
@@ -2699,18 +2718,29 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 
     .sc-plan-mode-switch {
+        --sc-padding: 2.5px;
+        --sc-inactive-w: 29px;
         height: 34px !important;
-        padding: 2.5px;
+        padding: var(--sc-padding);
     }
 
-    .sc-mode-btn {
+    .sc-mode-tab {
         font-size: 0.72rem;
-        padding: 0 9px;
+        padding: 0 10px;
         gap: 4px;
     }
 
-    .sc-mode-btn iconify-icon {
-        font-size: 0.88rem;
+    .sc-mode-tab:not(.active) {
+        padding: 0;
+        gap: 0;
+    }
+
+    .sc-mode-tab iconify-icon {
+        font-size: 1rem;
+    }
+
+    .sc-mode-tab[data-plan-mode="course"] iconify-icon {
+        font-size: 1.04rem;
     }
 
     .sc-status-pill {
