@@ -2378,7 +2378,8 @@ export const SeatingChartManager = {
                 e.dataTransfer.setData('text/plain', 'multi');
             }
             e.dataTransfer.effectAllowed = 'move';
-            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : cellIds.length || 1);
+            TooltipsUI?.hideAll?.();
+            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
             requestAnimationFrame(() => cell.classList.add('dragging'));
         });
 
@@ -5432,8 +5433,15 @@ export const SeatingChartManager = {
         this._removeTouchGhost();
         const ghost = element.cloneNode(true);
         ghost.className = 'sc-touch-ghost';
+        if (element.classList.contains('sc-cell-stacked')) {
+            ghost.classList.add('sc-cell', 'sc-cell-stacked');
+        }
+        if (element.offsetWidth > 0 && element.offsetHeight > 0 && element.classList.contains('sc-cell')) {
+            ghost.style.setProperty('--sc-cell-w', `${element.offsetWidth}px`);
+            ghost.style.setProperty('--sc-cell-h', `${element.offsetHeight}px`);
+        }
         ghost.classList.remove('sc-chip-selected');
-        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill').forEach(el => el.remove());
 
         if (this._touchSourceInfo?.type === 'multi-cell' && this._touchSourceInfo.ids.length > 1) {
             const badge = document.createElement('div');
@@ -6050,11 +6058,21 @@ export const SeatingChartManager = {
 
         const clone = sourceEl.cloneNode(true);
         clone.className = 'sc-drag-clone';
+        if (sourceEl.classList.contains('sc-cell-stacked')) {
+            clone.classList.add('sc-cell', 'sc-cell-stacked');
+        }
         if (sourceEl.classList.contains('has-status-badge')) {
             clone.classList.add('has-status-badge');
         }
+        if (sourceEl.offsetWidth > 0 && sourceEl.offsetHeight > 0 && sourceEl.classList.contains('sc-cell')) {
+            clone.style.setProperty('--sc-cell-w', `${sourceEl.offsetWidth}px`);
+            clone.style.setProperty('--sc-cell-h', `${sourceEl.offsetHeight}px`);
+        } else if (this._isActivityMode() && sourceEl.classList.contains('sc-cell')) {
+            clone.style.setProperty('--sc-cell-w', '118px');
+            clone.style.setProperty('--sc-cell-h', '114px');
+        }
         clone.classList.remove('sc-chip-selected');
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove').forEach(el => el.remove());
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill').forEach(el => el.remove());
 
         const board = sourceEl.closest?.('#scClassroomBoard');
         if (board) {

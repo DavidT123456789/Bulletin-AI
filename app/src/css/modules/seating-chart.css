@@ -1399,9 +1399,9 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
 }
 
-.sc-cell .student-avatar,
-.sc-drag-clone .student-avatar,
-.sc-touch-ghost .student-avatar {
+.sc-cell:not(.sc-cell-stacked) .student-avatar,
+.sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
+.sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
     width: 54px;
     height: 54px;
     font-size: 1rem;
