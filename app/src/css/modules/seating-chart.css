@@ -730,8 +730,8 @@
     margin-bottom: 4px;
 }
 
-/* Prevent scrollbar flicker while card rotates */
-#seatingChartView:has(.sc-classroom-board.sc-orienting) .sc-grid-area {
+/* Prevent scrollbar flicker while card rotates or slides in mode carousel */
+#seatingChartView:has(.sc-classroom-board.sc-orienting, .sc-classroom-board.sc-mode-carousel-in-right, .sc-classroom-board.sc-mode-carousel-in-left) .sc-grid-area {
     overflow: hidden;
 }
 
@@ -864,7 +864,7 @@
     border-radius: var(--radius-pill, 999px);
     background: var(--surface-color);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
-    transition: left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: left 0.44s cubic-bezier(0.22, 1.03, 0.36, 1), width 0.44s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 1;
     pointer-events: none;
 }
@@ -899,7 +899,20 @@
     white-space: nowrap;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    transition: color 0.2s ease, transform 0.15s ease;
+    transition: color 0.25s ease,
+                transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+                padding 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                gap 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sc-mode-tab .sc-mode-label {
+    display: inline-block;
+    overflow: hidden;
+    max-width: 72px;
+    opacity: 1;
+    transition: max-width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.26s ease,
+                transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sc-mode-tab:not(.active) {
@@ -909,7 +922,9 @@
 }
 
 .sc-mode-tab:not(.active) .sc-mode-label {
-    display: none;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .sc-mode-tab iconify-icon {
@@ -3056,6 +3071,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-desk.sc-desk-entering,
     .sc-classroom-board.sc-orienting,
     .sc-classroom-board.sc-orienting .sc-desk,
+    .sc-classroom-board.sc-mode-carousel-in-right,
+    .sc-classroom-board.sc-mode-carousel-in-left,
+    .sc-classroom-board.sc-mode-carousel-in-right .sc-cell,
+    .sc-classroom-board.sc-mode-carousel-in-left .sc-cell,
+    .sc-classroom-board.sc-mode-carousel-in-right .sc-desk,
+    .sc-classroom-board.sc-mode-carousel-in-left .sc-desk,
+    .sc-board-carousel-ghost,
     .sc-action-btn.sc-orientation-btn.active iconify-icon,
     #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
@@ -3722,41 +3744,178 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* ────────── ACTIVITÉ & CELLULE EMPILÉE (BINÔMES / GROUPES / POSTES) ────────── */
-#seatingChartView[data-plan-mode="activity"] {
+.sc-classroom-board[data-plan-mode="course"] {
+    --sc-cell-w: 88px;
+    --sc-cell-h: 96px;
+}
+
+#seatingChartView[data-plan-mode="activity"],
+.sc-classroom-board[data-plan-mode="activity"] {
     --sc-cell-w: 118px;
     --sc-cell-h: 114px;
 }
 
 @media (max-width: 768px) {
-    #seatingChartView[data-plan-mode="activity"] {
+    .sc-classroom-board[data-plan-mode="course"] {
+        --sc-cell-w: 60px;
+        --sc-cell-h: 68px;
+    }
+
+    #seatingChartView[data-plan-mode="activity"],
+    .sc-classroom-board[data-plan-mode="activity"] {
         --sc-cell-w: 82px;
         --sc-cell-h: 86px;
     }
 }
 
-#seatingChartView[data-plan-mode="activity"] .sc-grid-container {
+.sc-classroom-board[data-plan-mode="activity"] .sc-grid-container,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-grid-container {
     gap: 10px;
 }
 
 @media (max-width: 768px) {
-    #seatingChartView[data-plan-mode="activity"] .sc-grid-container {
+    .sc-classroom-board[data-plan-mode="activity"] .sc-grid-container,
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-grid-container {
         gap: 7px;
     }
 }
 
-@keyframes scBoardModeSwitch {
+/* ── Cours ↔ Activité Directional Carousel (iOS 2026 Supple Spring + Column Inertia) ── */
+@keyframes scBoardCarouselInRight {
     0% {
-        opacity: 0.35;
-        transform: scale(0.96) translateY(4px);
+        opacity: 0;
+        transform: translate3d(52px, 0, 0) scale(0.97);
+    }
+    70% {
+        opacity: 1;
+        transform: translate3d(-1.2px, 0, 0) scale(1.002);
     }
     100% {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translate3d(0, 0, 0) scale(1);
     }
 }
 
-.sc-classroom-board.sc-mode-switching {
-    animation: scBoardModeSwitch 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes scBoardCarouselInLeft {
+    0% {
+        opacity: 0;
+        transform: translate3d(-52px, 0, 0) scale(0.97);
+    }
+    70% {
+        opacity: 1;
+        transform: translate3d(1.2px, 0, 0) scale(1.002);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes scBoardCarouselOutLeft {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(-54px, 0, 0) scale(0.955);
+        filter: blur(3px);
+    }
+}
+
+@keyframes scBoardCarouselOutRight {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(54px, 0, 0) scale(0.955);
+        filter: blur(3px);
+    }
+}
+
+@keyframes scCellCarouselWaveRight {
+    0% {
+        opacity: 0;
+        transform: translate3d(18px, 0, 0) scale(0.96);
+    }
+    68% {
+        opacity: 1;
+        transform: translate3d(-1px, 0, 0) scale(1.006);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes scCellCarouselWaveLeft {
+    0% {
+        opacity: 0;
+        transform: translate3d(-18px, 0, 0) scale(0.96);
+    }
+    68% {
+        opacity: 1;
+        transform: translate3d(1px, 0, 0) scale(1.006);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+.sc-classroom-board.sc-mode-carousel-in-right {
+    animation: scBoardCarouselInRight 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+.sc-classroom-board.sc-mode-carousel-in-left {
+    animation: scBoardCarouselInLeft 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+.sc-classroom-board.sc-mode-carousel-in-right .sc-cell:not([class*="sc-cell-special-"]) {
+    animation: scCellCarouselWaveRight 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--carousel-col-i, 0) * 24ms);
+    will-change: transform, opacity;
+}
+
+.sc-classroom-board.sc-mode-carousel-in-left .sc-cell:not([class*="sc-cell-special-"]) {
+    animation: scCellCarouselWaveLeft 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--carousel-col-i, 0) * 24ms);
+    will-change: transform, opacity;
+}
+
+.sc-classroom-board.sc-mode-carousel-in-right .sc-desk {
+    animation: scCellCarouselWaveRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 35ms both;
+}
+
+.sc-classroom-board.sc-mode-carousel-in-left .sc-desk {
+    animation: scCellCarouselWaveLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) 35ms both;
+}
+
+.sc-board-carousel-ghost {
+    z-index: 5;
+    pointer-events: none !important;
+    user-select: none !important;
+    will-change: transform, opacity, filter;
+}
+
+.sc-board-carousel-ghost * {
+    pointer-events: none !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+.sc-board-carousel-ghost.sc-mode-carousel-out-left {
+    animation: scBoardCarouselOutLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.sc-board-carousel-ghost.sc-mode-carousel-out-right {
+    animation: scBoardCarouselOutRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .sc-station-badge {
@@ -3787,12 +3946,14 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     background: rgba(255, 255, 255, 0.08);
 }
 
-#seatingChartView[data-locked="true"] .sc-cell.empty .sc-station-badge {
+#seatingChartView[data-locked="true"] .sc-cell.empty .sc-station-badge,
+.sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge {
     opacity: 0.45;
 }
 
 /* In Activity Consultation mode: hide empty non-special stations and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+.sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 0 !important;
     pointer-events: none !important;
     border-color: transparent !important;
@@ -3800,7 +3961,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     box-shadow: none !important;
 }
 
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-desk-row {
+.sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-desk-row,
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row {
     display: none !important;
 }
 
@@ -3845,7 +4007,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Occupied station badge in Activity mode (stacked OR solo student): position badge at top-left inside card, clear of avatars & pin */
 .sc-cell.sc-cell-stacked .sc-station-badge,
-#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied .sc-station-badge {
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied .sc-station-badge,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied .sc-station-badge {
     top: 4px;
     bottom: auto;
     left: 4px;
@@ -3854,7 +4017,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked.pinned .sc-station-badge,
-#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge {
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
     top: 14px;
     left: 4px;
     right: auto;
@@ -3862,28 +4026,33 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 @media (hover: hover) {
     #seatingChartView[data-locked="false"] .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
-    #seatingChartView[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
+    .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"][data-locked="false"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
         opacity: 0;
     }
 }
 
 /* Harmonize 1-student occupied station in Activity mode with stacked group cards */
-#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) {
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
     border: 1.5px solid var(--border-color);
     box-shadow: var(--shadow-sm);
 }
 
-[data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) {
+[data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
+[data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
     border-color: rgba(255, 255, 255, 0.12);
 }
 
-#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
     width: 54px;
     height: 54px;
     font-size: 0.95rem;
 }
 
-#seatingChartView[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
     font-size: 0.74rem;
     margin-top: 6px;
     max-width: 104px;

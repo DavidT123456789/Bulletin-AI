@@ -839,40 +839,57 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         expect(updateGliderSpy).toHaveBeenCalledWith(document.getElementById('viewToggle'), true);
     });
 
-    it('devrait animer horizontalement la transition Liste <-> Plan (view-slide-out-left -> sc-entering et sc-exiting -> view-slide-in-left)', async () => {
+    it('devrait animer horizontalement la transition Liste <-> Plan avec apparition progressive des cartes et lignes', async () => {
         vi.useFakeTimers();
         appState.currentClassId = classA.id;
         SeatingChartManager._isActive = false;
 
         const outputSection = document.querySelector('.output-section');
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'stats-container';
+        statsContainer.innerHTML = '<div class="stat-card"></div><div class="stat-card"></div>';
+        outputSection.insertBefore(statsContainer, document.getElementById('seatingChartView'));
+
         const outputList = document.createElement('div');
         outputList.id = 'outputList';
+        outputList.innerHTML = '<table class="student-list-table"><tbody><tr class="student-row"></tr><tr class="student-row"></tr></tbody></table>';
         outputSection.insertBefore(outputList, document.getElementById('seatingChartView'));
 
         const viewEl = document.getElementById('seatingChartView');
         const wrapper = document.querySelector('.main-content-wrapper');
 
-        // 1. Liste -> Plan : sortie gauche de la liste puis entrée droite du plan
+        // 1. Liste -> Plan : sortie gauche de la liste puis entrée droite du plan + apparition progressive des cellules
         SeatingChartManager.switchToView('plan');
         expect(outputList.classList.contains('view-slide-out-left')).toBe(true);
 
         await vi.advanceTimersByTimeAsync(95);
         expect(wrapper.dataset.view).toBe('plan');
         expect(viewEl.classList.contains('sc-entering')).toBe(true);
+        const cells = document.querySelectorAll('#scGridContainer .sc-cell');
+        expect(cells.length).toBeGreaterThan(0);
+        expect(cells[0].classList.contains('sc-cell-stagger')).toBe(true);
 
         await vi.advanceTimersByTimeAsync(260);
         expect(viewEl.classList.contains('sc-entering')).toBe(false);
 
-        // 2. Plan -> Liste : sortie droite du plan puis entrée gauche de la liste
+        // 2. Plan -> Liste : sortie droite du plan puis entrée gauche de la liste + apparition progressive des cartes et lignes
         SeatingChartManager.switchToView('list');
         expect(viewEl.classList.contains('sc-exiting')).toBe(true);
 
         await vi.advanceTimersByTimeAsync(95);
         expect(wrapper.dataset.view).toBe('list');
         expect(outputList.classList.contains('view-slide-in-left')).toBe(true);
+        const statCards = statsContainer.querySelectorAll('.stat-card');
+        const studentRows = outputList.querySelectorAll('.student-row');
+        expect(statCards[0].classList.contains('stat-card-stagger')).toBe(true);
+        expect(studentRows[0].classList.contains('row-stagger-enter')).toBe(true);
 
         await vi.advanceTimersByTimeAsync(260);
         expect(outputList.classList.contains('view-slide-in-left')).toBe(false);
+
+        await vi.advanceTimersByTimeAsync(600);
+        expect(statCards[0].classList.contains('stat-card-stagger')).toBe(false);
+        expect(studentRows[0].classList.contains('row-stagger-enter')).toBe(false);
 
         vi.useRealTimers();
     });
@@ -2737,6 +2754,51 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
             expect(SeatingChartManager._getStationNumber(0, 0)).toBeNull();
             expect(SeatingChartManager._getStationNumber(0, 1)).toBe(1);
+        });
+
+        it('devrait animer le passage Cours <-> Activité avec un effet carrousel directionnel sans ré-animer les cartes une à une', () => {
+            localStorage.setItem('bulletin_seating_orientation', 'teacher');
+            SeatingChartManager._orientation = 'teacher';
+            const board = document.getElementById('scClassroomBoard');
+            const bodyEl = document.querySelector('#seatingChartView .sc-body');
+
+            // Simuler des dimensions réelles pour la capture du clone sortant (ghost)
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 120, top: 80, width: 520, height: 340, right: 640, bottom: 420
+            });
+            vi.spyOn(bodyEl, 'getBoundingClientRect').mockReturnValue({
+                left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
+            });
+
+            // 1. Cours -> Activité : le plateau entrant glisse depuis la droite, le clone sortant vers la gauche, avec onde d'inertie gauche -> droite
+            SeatingChartManager.switchPlanMode('activity', { animate: true });
+            expect(board.classList.contains('sc-mode-carousel-in-right')).toBe(true);
+            expect(board.dataset.planMode).toBe('activity');
+            const ghostToLeft = document.querySelector('#seatingChartView .sc-board-carousel-ghost');
+            expect(ghostToLeft).not.toBeNull();
+            expect(ghostToLeft.classList.contains('sc-mode-carousel-out-left')).toBe(true);
+            expect(ghostToLeft.dataset.planMode).toBe('course');
+            expect(document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').length).toBe(0);
+            const firstColCellAct = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            const lastColCellAct = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="4"]');
+            expect(parseFloat(firstColCellAct.style.getPropertyValue('--carousel-col-i'))).toBeLessThan(
+                parseFloat(lastColCellAct.style.getPropertyValue('--carousel-col-i'))
+            );
+
+            // 2. Activité -> Cours : le plateau entrant glisse depuis la gauche, le clone sortant vers la droite, avec onde d'inertie droite -> gauche
+            SeatingChartManager.switchPlanMode('course', { animate: true });
+            expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(true);
+            expect(board.dataset.planMode).toBe('course');
+            const ghostToRight = document.querySelector('#seatingChartView .sc-board-carousel-ghost');
+            expect(ghostToRight).not.toBeNull();
+            expect(ghostToRight.classList.contains('sc-mode-carousel-out-right')).toBe(true);
+            expect(ghostToRight.dataset.planMode).toBe('activity');
+            expect(document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').length).toBe(0);
+            const firstColCellCourse = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            const lastColCellCourse = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="4"]');
+            expect(parseFloat(lastColCellCourse.style.getPropertyValue('--carousel-col-i'))).toBeLessThan(
+                parseFloat(firstColCellCourse.style.getPropertyValue('--carousel-col-i'))
+            );
         });
     });
 });

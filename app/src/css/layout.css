@@ -2028,6 +2028,41 @@ button > .icon-spin-wrapper {
     will-change: transform, opacity;
 }
 
+@keyframes list-card-stagger-reveal {
+    from {
+        opacity: 0;
+        transform: scale(0.88) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes list-row-stagger-reveal {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.stat-card.stat-card-stagger,
+.empty-state-hub-card.stat-card-stagger {
+    animation: list-card-stagger-reveal 0.35s var(--ease-bounce) both;
+    animation-delay: calc(30ms + var(--card-i, 0) * 40ms);
+    will-change: transform, opacity;
+}
+
+.student-list-table tbody tr.row-stagger-enter {
+    animation: list-row-stagger-reveal 0.34s var(--ease-bounce) both;
+    animation-delay: calc(45ms + var(--row-i, 0) * 18ms);
+    will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .class-switch-out-down,
     .class-switch-in-down,
@@ -2038,7 +2073,10 @@ button > .icon-spin-wrapper {
     #headerClassName.header-class-out-up,
     #headerClassName.header-class-in-up,
     .view-slide-out-left,
-    .view-slide-in-left {
+    .view-slide-in-left,
+    .stat-card.stat-card-stagger,
+    .empty-state-hub-card.stat-card-stagger,
+    .student-list-table tbody tr.row-stagger-enter {
         animation: none !important;
     }
 }
