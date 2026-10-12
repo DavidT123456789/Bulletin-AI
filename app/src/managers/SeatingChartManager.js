@@ -1448,7 +1448,9 @@ export const SeatingChartManager = {
                     tab._tippy.destroy();
                 }
             } else {
-                tab.setAttribute('data-tooltip', `Passer en mode ${fullLabel}`);
+                const nextTooltip = `Passer en mode ${fullLabel}`;
+                tab.setAttribute('data-tooltip', nextTooltip);
+                TooltipsUI?.updateTooltip?.(tab, nextTooltip);
             }
         });
 
@@ -2472,44 +2474,33 @@ export const SeatingChartManager = {
         badge.addEventListener('animationend', () => badge.classList.remove('sc-counter-bump'), { once: true });
     },
 
-    /** Lock/Unlock morph animation */
-    _animateLockMorph() {
-        const gridArea = document.getElementById('scGridArea');
-        if (!gridArea) return;
-        gridArea.classList.add('sc-lock-morph');
-        gridArea.addEventListener('animationend', () => gridArea.classList.remove('sc-lock-morph'), { once: true });
-        setTimeout(() => gridArea.classList.remove('sc-lock-morph'), 400);
-    },
-
     // ========================================================================
     // LOCK
     // ========================================================================
 
-    _applyLockState(locked, options = {}) {
-        const { skipSmartFit = false } = options;
-        this._isLocked = locked;
-        this._wasLockedBeforeEdit = locked;
-        this._hasChangesSinceUnlock = false;
-        this._dragSource = null;
-        this._touchSourceInfo = null;
+    _syncLockControlsUI(locked) {
         const view = document.getElementById('seatingChartView');
         if (view) view.dataset.locked = locked;
+
+        const sidebar = document.getElementById('scSidebar');
+        if (sidebar) sidebar.inert = Boolean(locked);
+
         const btn = document.getElementById('scLockBtn');
         if (btn) {
+            const btnLabel = locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan';
             btn.classList.toggle('locked', locked);
             btn.setAttribute('aria-checked', (!locked).toString());
-            btn.setAttribute('aria-label', locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
-            btn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
+            btn.setAttribute('aria-label', btnLabel);
+            btn.setAttribute('data-tooltip', btnLabel);
+            TooltipsUI?.updateTooltip?.(btn, btnLabel);
         }
+
         const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
         if (floatingUnlockBtn) {
-            floatingUnlockBtn.setAttribute('aria-label', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
-            floatingUnlockBtn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
-        }
-        this._updatePlanModeSwitchUI();
-        this._updateCellsDraggability();
-        if (!skipSmartFit) {
-            this._applySmartFit(true);
+            const floatLabel = locked ? 'Déverrouiller pour ajuster' : 'Mode Édition';
+            floatingUnlockBtn.setAttribute('aria-label', floatLabel);
+            floatingUnlockBtn.setAttribute('data-tooltip', floatLabel);
+            TooltipsUI?.updateTooltip?.(floatingUnlockBtn, floatLabel);
         }
 
         // [UX Mobile] History integration for Edit Mode
@@ -2521,11 +2512,56 @@ export const SeatingChartManager = {
                     }
                 });
             }
-        } else {
-            if (HistoryManager.isOpen('seatingChartEdit')) {
-                HistoryManager.handleManualClose('seatingChartEdit');
-            }
+        } else if (HistoryManager.isOpen('seatingChartEdit')) {
+            HistoryManager.handleManualClose('seatingChartEdit');
         }
+    },
+
+    _applyLockState(locked, options = {}) {
+        const { skipSmartFit = false } = options;
+        const board = document.getElementById('scClassroomBoard');
+        if (board) board.style.transition = 'none';
+        this._isLocked = locked;
+        this._wasLockedBeforeEdit = locked;
+        this._hasChangesSinceUnlock = false;
+        this._dragSource = null;
+        this._touchSourceInfo = null;
+        this._syncLockControlsUI(locked);
+        this._updatePlanModeSwitchUI();
+        this._updateCellsDraggability();
+        if (!skipSmartFit) {
+            this._applySmartFit(true);
+        } else if (board) {
+            void board.offsetWidth;
+            board.style.removeProperty('transition');
+        }
+    },
+
+    _bindBoardSlideCleanup(board, timeoutMs = 600) {
+        if (!board) return;
+        let timer = null;
+        let cleaned = false;
+        const onTransEnd = (e) => {
+            if (e.target === board && (!e.propertyName || e.propertyName === 'transform' || e.propertyName === 'translate')) {
+                cleanup();
+            }
+        };
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (timer) clearTimeout(timer);
+            board.removeEventListener('transitionend', onTransEnd);
+            board.classList.remove('sc-lock-sliding');
+            board.style.removeProperty('transform');
+            board.style.removeProperty('transform-origin');
+            board.style.removeProperty('transition');
+            if (this._zoomAnimCleanup === cleanup) {
+                this._zoomAnimCleanup = null;
+            }
+        };
+        this._zoomAnimCleanup = cleanup;
+        if (timeoutMs > 0) timer = setTimeout(cleanup, timeoutMs);
+        board.addEventListener('transitionend', onTransEnd);
     },
 
     _toggleLock() {
@@ -2533,51 +2569,25 @@ export const SeatingChartManager = {
             this._zoomAnimCleanup();
             this._zoomAnimCleanup = null;
         }
-        const board = document.getElementById('scClassroomBoard');
-        const rBefore = board?.getBoundingClientRect?.() || null;
-
-        const wasLocked = this._isLocked;
-        this._isLocked = !this._isLocked;
-        this._dragSource = null;
-        this._touchSourceInfo = null;
         const view = document.getElementById('seatingChartView');
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
 
-        // [UX Mobile] History integration for Edit Mode
+        const board = document.getElementById('scClassroomBoard');
+        const wasLocked = this._isLocked;
+        this._isLocked = !this._isLocked;
+        this._dragSource = null;
+        this._touchSourceInfo = null;
+        this._undoStack = [];
+        this._redoStack = [];
+        this._updateUndoRedoButtons();
         if (!this._isLocked) {
             this._wasLockedBeforeEdit = wasLocked;
             this._hasChangesSinceUnlock = false;
-            this._undoStack = [];
-            this._redoStack = [];
-            this._updateUndoRedoButtons();
-            if (!HistoryManager.isOpen('seatingChartEdit')) {
-                HistoryManager.pushState('seatingChartEdit', () => {
-                    if (!this._isLocked) {
-                        this._toggleLock();
-                    }
-                });
-            }
-        } else {
-            this._undoStack = [];
-            this._redoStack = [];
-            this._updateUndoRedoButtons();
-            if (HistoryManager.isOpen('seatingChartEdit')) {
-                HistoryManager.handleManualClose('seatingChartEdit');
-            }
         }
 
-        btn.classList.toggle('locked', this._isLocked);
-        btn.setAttribute('aria-checked', (!this._isLocked).toString());
-        btn.setAttribute('aria-label', this._isLocked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
-        btn.setAttribute('data-tooltip', this._isLocked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
-        view.dataset.locked = this._isLocked;
-
-        const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
-        if (floatingUnlockBtn) {
-            floatingUnlockBtn.setAttribute('aria-label', this._isLocked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
-            floatingUnlockBtn.setAttribute('data-tooltip', this._isLocked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
-        }
+        // Freeze child cell transitions before flipping data-locked so the GPU slides a static texture at 120Hz
+        board?.classList.add('sc-lock-sliding');
 
         this._clearSelection();
         this._closeMobileSheet();
@@ -2605,29 +2615,49 @@ export const SeatingChartManager = {
                 } else {
                     currentClass[lockKey] = false;
                 }
-            } else {
-                if (!this._wasLockedBeforeEdit) {
-                    currentClass[lockKey] = false;
-                }
+            } else if (!this._wasLockedBeforeEdit) {
+                currentClass[lockKey] = false;
             }
         }
 
-        if (this._isActivityMode()) {
+        const gridContainer = document.getElementById('scGridContainer');
+        const expectedCells = this._getEffectiveRowCount() * this._getCols();
+        const didRebuildGrid = this._isActivityMode() && gridContainer?.children.length !== expectedCells;
+        if (didRebuildGrid) {
             this._renderGrid();
+        } else {
+            this._updateCellsDraggability();
         }
         this._updatePlanModeSwitchUI();
-        this._updateCellsDraggability();
         this._updateSidebarLockState();
         this._updateFooter();
         this._saveGridConfig();
 
-        this._applySmartFit(true);
+        const isNativeDesktopSlide = !this._isMobileView()
+            && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
+            && !didRebuildGrid;
 
-        if (rBefore && rBefore.width > 0) {
-            this._animateFLIPTransition(rBefore, { lockToggle: true });
+        if (isNativeDesktopSlide) {
+            this._syncLockControlsUI(this._isLocked);
+            this._bindBoardSlideCleanup(board, 600);
+        } else {
+            const rBefore = board?.getBoundingClientRect?.() || null;
+            if (board) board.style.transition = 'none';
+            this._syncLockControlsUI(this._isLocked);
+            this._applySmartFit(true);
+            if (rBefore && rBefore.width > 0) {
+                this._animateFLIPTransition(rBefore, { lockToggle: true });
+            } else {
+                board?.classList.remove('sc-lock-sliding');
+                board?.style.removeProperty('transition');
+            }
         }
 
-        TooltipsUI?.initTooltips?.();
+        if (didRebuildGrid) {
+            setTimeout(() => {
+                if (this._isActive) TooltipsUI?.initTooltips?.();
+            }, 540);
+        }
         window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
             detail: { classId: currentClass?.id, locked: this._isLocked, planMode: this._planMode }
         }));
@@ -2746,11 +2776,14 @@ export const SeatingChartManager = {
                     if (student.isNew) tooltipText += ' • Nouveau';
                     if (student.isDeparted) tooltipText += ' • Départ';
                     cell.setAttribute('data-tooltip', tooltipText);
+                    TooltipsUI?.updateTooltip?.(cell, tooltipText);
                 } else {
                     cell.removeAttribute('data-tooltip');
+                    if (cell._tippy) cell._tippy.destroy();
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
+                if (cell._tippy) cell._tippy.destroy();
                 const primary = students[0];
                 if (primary && !isNaN(row) && !isNaN(col)) {
                     this._attachCellDragListeners(cell, primary, row, col);
@@ -2780,14 +2813,14 @@ export const SeatingChartManager = {
             : Math.round(fitScale * 1.25 * 100) / 100;
     },
 
-    _applyBoardScale(board, scale) {
+    _applyBoardScale(board, scale, knownW = 0, knownH = 0) {
         if (!board) return;
         const s = Number(scale) || 1;
         board.style.setProperty('--sc-scale', s.toString());
         board.style.removeProperty('zoom');
 
-        const boardW = board.offsetWidth || 0;
-        const boardH = board.offsetHeight || 0;
+        const boardW = knownW > 0 ? knownW : (board.offsetWidth || 0);
+        const boardH = knownH > 0 ? knownH : (board.offsetHeight || 0);
         if (boardW > 0 && boardH > 0) {
             const mx = Math.round((boardW * (s - 1)) / 2 * 100) / 100;
             const my = Math.round((boardH * (s - 1)) / 2 * 100) / 100;
@@ -2810,6 +2843,10 @@ export const SeatingChartManager = {
             this._zoomAnimCleanup = null;
         }
 
+        board.style.transition = 'none';
+        board.style.removeProperty('transform');
+        board.style.removeProperty('transform-origin');
+
         if (forceFit) {
             this._isFitted = true;
         }
@@ -2821,6 +2858,8 @@ export const SeatingChartManager = {
             this._lastObservedGridW = Math.round(gridArea.offsetWidth || gridArea.clientWidth || 0);
             this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
             this._updateZoomButtonUI(false, zoomScale);
+            void board.offsetWidth;
+            board.style.removeProperty('transition');
             return;
         }
 
@@ -2835,15 +2874,18 @@ export const SeatingChartManager = {
         const areaHeight = gridArea.clientHeight || 0;
         this._lastObservedGridW = Math.round(gridArea.offsetWidth || areaWidth);
         this._lastObservedGridH = Math.round(gridArea.offsetHeight || areaHeight);
-        if (areaWidth <= 0 || areaHeight <= 0) return;
+        if (areaWidth <= 0 || areaHeight <= 0) {
+            board.style.removeProperty('transition');
+            return;
+        }
 
         const isMobile = window.innerWidth <= 768;
         const reservedTop = isMobile ? (56 + 48) : (56 + 24);
         const reservedBottom = isMobile ? 20 : 24;
         const reservedHoriz = isMobile ? 24 : 48;
 
-        // When locked on desktop, account for the sidebar so fit scale is perfectly stable between modes
-        const effectiveAreaW = (!isMobile && this._isLocked && areaWidth >= 600) ? (areaWidth - 260) : areaWidth;
+        // On desktop, always account for the 260px sidebar so fit scale is identical between locked and unlocked modes
+        const effectiveAreaW = (!isMobile && areaWidth >= 600) ? (areaWidth - 260) : areaWidth;
         const availW = Math.max(80, effectiveAreaW - reservedHoriz);
         const availH = Math.max(80, areaHeight - reservedTop - reservedBottom);
 
@@ -2851,19 +2893,21 @@ export const SeatingChartManager = {
         if (gridContainer) {
             gridContainer.style.transition = 'none';
         }
-        board.style.removeProperty('transform');
-        board.style.removeProperty('transform-origin');
-        board.style.removeProperty('transition');
 
         const activeScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
-        const rect = board.getBoundingClientRect?.();
-        const boardW = (board.offsetWidth > 0 ? board.offsetWidth : (rect?.width && activeScale > 0 ? rect.width / activeScale : 0)) || board.scrollWidth;
-        const boardH = (board.offsetHeight > 0 ? board.offsetHeight : (rect?.height && activeScale > 0 ? rect.height / activeScale : 0)) || board.scrollHeight;
+        const offsetW = board.offsetWidth;
+        const offsetH = board.offsetHeight;
+        const rect = (offsetW > 0 && offsetH > 0) ? null : board.getBoundingClientRect?.();
+        const boardW = (offsetW > 0 ? offsetW : (rect?.width && activeScale > 0 ? rect.width / activeScale : 0)) || board.scrollWidth;
+        const boardH = (offsetH > 0 ? offsetH : (rect?.height && activeScale > 0 ? rect.height / activeScale : 0)) || board.scrollHeight;
         if (gridContainer) {
             gridContainer.style.removeProperty('transition');
         }
 
-        if (!boardW || !boardH) return;
+        if (!boardW || !boardH) {
+            board.style.removeProperty('transition');
+            return;
+        }
 
         const scaleW = availW / boardW;
         const scaleH = availH / boardH;
@@ -2876,8 +2920,10 @@ export const SeatingChartManager = {
         this._zoomScale = scale;
         this._isFitted = true;
 
-        this._applyBoardScale(board, scale);
+        this._applyBoardScale(board, scale, boardW, boardH);
         this._updateZoomButtonUI(true, scale);
+        void board.offsetWidth;
+        board.style.removeProperty('transition');
     },
 
     _toggleZoom(focalPoint = null) {
@@ -2893,6 +2939,7 @@ export const SeatingChartManager = {
         }
 
         const rBefore = board.getBoundingClientRect?.() || null;
+        board.style.transition = 'none';
 
         if (this._isFitted) {
             this._isFitted = false;
@@ -2921,15 +2968,19 @@ export const SeatingChartManager = {
 
         if (rBefore && rBefore.width > 0) {
             this._animateFLIPTransition(rBefore);
+        } else {
+            board.style.removeProperty('transition');
         }
     },
 
     _animateFLIPTransition(rBefore, options = {}) {
         const board = document.getElementById('scClassroomBoard');
-        if (!board || !rBefore || rBefore.width <= 0) return;
-
         const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-        if (prefersReducedMotion) return;
+        if (!board || !rBefore || rBefore.width <= 0 || prefersReducedMotion) {
+            board?.classList.remove('sc-lock-sliding');
+            board?.style.removeProperty('transition');
+            return;
+        }
 
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
@@ -2940,34 +2991,16 @@ export const SeatingChartManager = {
         if (!rAfter || rAfter.width <= 0) {
             board.style.transition = 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
             board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
-            let cleaned = false;
-            let onTransEnd = null;
-            const cleanup = () => {
-                if (cleaned) return;
-                cleaned = true;
-                if (onTransEnd) {
-                    board.removeEventListener('transitionend', onTransEnd);
-                    onTransEnd = null;
-                }
-                board.style.removeProperty('transform');
-                board.style.removeProperty('transform-origin');
-                board.style.removeProperty('transition');
-                if (this._zoomAnimCleanup === cleanup) {
-                    this._zoomAnimCleanup = null;
-                }
-            };
-            this._zoomAnimCleanup = cleanup;
-            onTransEnd = (e) => {
-                if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
-                    cleanup();
-                }
-            };
-            board.addEventListener('transitionend', onTransEnd);
+            this._bindBoardSlideCleanup(board, 0);
             return;
         }
 
         const zAfter = parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
-        if (zAfter <= 0) return;
+        if (zAfter <= 0) {
+            board.classList.remove('sc-lock-sliding');
+            board.style.removeProperty('transition');
+            return;
+        }
 
         const isLockToggle = Boolean(options.lockToggle);
         const isMobile = this._isMobileView();
@@ -2987,12 +3020,21 @@ export const SeatingChartManager = {
         const scaleY = isHorizontalDesktopDrawer ? 1 : (Math.round((rBefore.height / rAfter.height) * 1000) / 1000);
 
         if (Math.abs(deltaCenterX) < 1 && Math.abs(deltaCenterY) < 1 && Math.abs(scaleX - 1) < 0.01) {
+            board.style.removeProperty('transition');
+            if (isLockToggle && !isMobile) {
+                this._bindBoardSlideCleanup(board, 600);
+            } else {
+                board.classList.remove('sc-lock-sliding');
+            }
             return;
         }
 
         const tx = Math.round((deltaCenterX / zAfter) * 100) / 100;
         const ty = Math.round((deltaCenterY / zAfter) * 100) / 100;
 
+        if (isLockToggle) {
+            board.classList.add('sc-lock-sliding');
+        }
         board.style.transformOrigin = '50% 50%';
         board.style.transition = 'none';
         board.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleX}, ${scaleY})`;
@@ -3003,39 +3045,12 @@ export const SeatingChartManager = {
         }
 
         const isPureTranslationSettle = sameScale && Math.abs(scaleX - 1) < 0.015;
-        const transitionTiming = isPureTranslationSettle
-            ? 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)'
+        board.style.transition = isPureTranslationSettle
+            ? 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1)'
             : 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
-        board.style.transition = transitionTiming;
         board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 
-        let timer = null;
-        let cleaned = false;
-        let onTransEnd = null;
-        const cleanup = () => {
-            if (cleaned) return;
-            cleaned = true;
-            if (timer) clearTimeout(timer);
-            if (onTransEnd) {
-                board.removeEventListener('transitionend', onTransEnd);
-                onTransEnd = null;
-            }
-            board.style.removeProperty('transform');
-            board.style.removeProperty('transform-origin');
-            board.style.removeProperty('transition');
-            if (this._zoomAnimCleanup === cleanup) {
-                this._zoomAnimCleanup = null;
-            }
-        };
-        this._zoomAnimCleanup = cleanup;
-
-        timer = setTimeout(cleanup, 580);
-        onTransEnd = (e) => {
-            if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
-                cleanup();
-            }
-        };
-        board.addEventListener('transitionend', onTransEnd);
+        this._bindBoardSlideCleanup(board, 600);
     },
 
     _updateZoomButtonUI(isFitted, scale) {
@@ -4545,6 +4560,22 @@ export const SeatingChartManager = {
         }
     },
 
+    _getEffectiveRowCount(rows = this._getRows(), cols = this._getCols()) {
+        if (!this._isActivityMode() || !this._isLocked || rows <= 1) return rows;
+        let maxActiveRow = -1;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const hasStudents = this._getCellStudentIds(r, c).length > 0;
+                const special = this._getCellSpecial(r, c);
+                if (hasStudents || (special && special !== 'aisle')) {
+                    maxActiveRow = r;
+                    break;
+                }
+            }
+        }
+        return maxActiveRow >= 0 ? maxActiveRow + 1 : rows;
+    },
+
     _renderGrid() {
         const container = document.getElementById('scGridContainer');
         if (!container) return;
@@ -4552,24 +4583,7 @@ export const SeatingChartManager = {
         const rows = this._getRows();
         const cols = this._getCols();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
-
-        let effectiveRows = rows;
-        if (this._isActivityMode() && this._isLocked && rows > 1) {
-            let maxActiveRow = -1;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const hasStudents = this._getCellStudentIds(r, c).length > 0;
-                    const special = this._getCellSpecial(r, c);
-                    if (hasStudents || (special && special !== 'aisle')) {
-                        maxActiveRow = r;
-                        break;
-                    }
-                }
-            }
-            if (maxActiveRow >= 0) {
-                effectiveRows = maxActiveRow + 1;
-            }
-        }
+        const effectiveRows = this._getEffectiveRowCount(rows, cols);
 
         container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
         container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;

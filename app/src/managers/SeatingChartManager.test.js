@@ -2800,6 +2800,34 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 parseFloat(firstColCellCourse.style.getPropertyValue('--carousel-col-i'))
             );
         });
+
+        it('devrait figer les transitions enfants via sc-lock-sliding pendant le glissement FLIP de _toggleLock pour garantir le 120Hz', () => {
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._isLocked = true;
+            const board = document.getElementById('scClassroomBoard');
+            const sidebar = document.getElementById('scSidebar');
+
+            let callCount = 0;
+            vi.spyOn(board, 'getBoundingClientRect').mockImplementation(() => {
+                callCount++;
+                return callCount === 1
+                    ? { left: 100, top: 80, width: 600, height: 400 }
+                    : { left: 230, top: 80, width: 600, height: 400 };
+            });
+
+            SeatingChartManager._toggleLock();
+
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(sidebar.inert).toBe(false);
+            expect(board.classList.contains('sc-lock-sliding')).toBe(true);
+            expect(board.style.transition).toContain('transform 0.52s cubic-bezier(0.32, 0.72, 0, 1)');
+
+            const endEvent = new Event('transitionend');
+            Object.defineProperty(endEvent, 'propertyName', { value: 'transform' });
+            board.dispatchEvent(endEvent);
+
+            expect(board.classList.contains('sc-lock-sliding')).toBe(false);
+        });
     });
 });
 

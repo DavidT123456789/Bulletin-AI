@@ -6,6 +6,7 @@
 :root {
     --sc-cell-w: 88px;
     --sc-cell-h: 96px;
+    --sc-drawer-transition: 0.52s var(--ease-spring, cubic-bezier(0.32, 0.72, 0, 1));
 }
 
 /* ────────── VIEW TOGGLE (Header) ────────── */
@@ -179,14 +180,6 @@
     100% { transform: scale(1); }
 }
 
-/* Lock button toggle pulse */
-@keyframes scLockToggle {
-    0%   { transform: scale(1); }
-    35%  { transform: scale(0.88); }
-    70%  { transform: scale(1.06); }
-    100% { transform: scale(1); }
-}
-
 /* ────────── ANIMATION CLASSES ────────── */
 
 /* View enter */
@@ -258,11 +251,6 @@
 .sc-dynamic-value {
     color: var(--text-primary);
     font-weight: 600;
-}
-
-/* Lock button toggle animation */
-.sc-toolbar-btn.sc-lock-btn.sc-lock-toggling {
-    animation: scLockToggle 0.35s var(--ease-bounce);
 }
 
 /* ────────── PLAN TOOLBAR (REMOVED - Replaced by Sidebar Toolbar) ────────── */
@@ -351,11 +339,11 @@
     box-shadow: var(--shadow-sm);
     translate: 0 0;
     opacity: 1;
-    transition: translate 0.42s cubic-bezier(0.25, 1, 0.3, 1),
-                opacity 0.35s ease,
-                visibility 0.42s,
+    will-change: translate;
+    contain: layout style;
+    transition: translate var(--sc-drawer-transition),
                 border-color var(--transition-fast),
-                box-shadow var(--transition-fast),
+                box-shadow var(--sc-drawer-transition),
                 background-color var(--transition-fast);
     padding-top: 56px;
     overflow: visible;
@@ -707,10 +695,12 @@
     position: relative;
     transform-origin: center center;
     margin: var(--sc-margin-y, 0px) var(--sc-margin-x, 0px);
+    translate: 0 0;
     scale: var(--sc-scale, 1);
     flex-shrink: 0;
-    will-change: transform, scale;
-    transition: box-shadow 0.54s cubic-bezier(0.22, 1, 0.36, 1),
+    will-change: translate, transform, scale;
+    transition: translate var(--sc-drawer-transition),
+                box-shadow 0.54s cubic-bezier(0.22, 1, 0.36, 1),
                 border-color 0.2s ease,
                 background-color 0.2s ease;
     width: fit-content;
@@ -733,6 +723,17 @@
 /* Prevent scrollbar flicker while card rotates or slides in mode carousel */
 #seatingChartView:has(.sc-classroom-board.sc-orienting, .sc-classroom-board.sc-mode-carousel-in-right, .sc-classroom-board.sc-mode-carousel-in-left) .sc-grid-area {
     overflow: hidden;
+}
+
+/* Freeze descendant transitions during lock-toggle slide so GPU moves a static texture at 120Hz */
+.sc-classroom-board.sc-lock-sliding *,
+.sc-classroom-board.sc-lock-sliding *::before,
+.sc-classroom-board.sc-lock-sliding *::after {
+    transition: none !important;
+}
+
+#seatingChartView:has(.sc-classroom-board.sc-lock-sliding) .sc-grid-area[data-fitted="true"] {
+    overflow: visible;
 }
 
 #seatingChartView[data-orientation="student"] .sc-classroom-board.sc-orienting {
@@ -817,11 +818,13 @@
     align-items: center;
     gap: 8px;
     pointer-events: none;
-    transition: left 0.42s cubic-bezier(0.25, 1, 0.3, 1);
+    translate: 0 0;
+    will-change: translate;
+    transition: translate var(--sc-drawer-transition);
 }
 
 #seatingChartView[data-locked="false"] .sc-top-left-bar {
-    left: calc(260px + var(--content-padding-x, 24px));
+    translate: 260px 0;
 }
 
 .sc-plan-mode-switch {
@@ -1660,22 +1663,18 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 /* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
     translate: -100% 0;
-    opacity: 0;
+    box-shadow: none;
+    border-right-color: transparent;
     pointer-events: none;
-    visibility: hidden;
-    transition: translate 0.42s cubic-bezier(0.25, 1, 0.3, 1),
-                opacity 0.35s ease,
-                visibility 0.42s;
 }
 
-#seatingChartView[data-locked="false"] .sc-grid-area {
+#seatingChartView[data-locked="false"] .sc-grid-area:not([data-fitted="false"]) .sc-classroom-board {
+    translate: 130px 0;
+}
+
+#seatingChartView[data-locked="false"] .sc-grid-area[data-fitted="false"] {
     margin-left: 260px;
     width: calc(100% - 260px);
-}
-
-#seatingChartView[data-locked="true"] .sc-grid-area {
-    margin-left: 0;
-    width: 100%;
 }
 
 .sc-grid-area[data-fitted="true"] {
@@ -1771,20 +1770,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     display: none !important;
 }
 
-
-/* Lock button icon pulse when all students placed — invite to lock */
-#seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn iconify-icon {
-    animation: scIconWaggle 3.5s infinite var(--ease-material);
-}
-
-@media (hover: hover) {
-    #seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn:hover iconify-icon {
-        animation: none;
-    }
-}
-
-
-
 /* ────────── SPECIAL CELLS & TOOLS (AISLE, AESH, CONDAMNE) ────────── */
 .sc-cell.empty.sc-cell-special-aisle {
     background: transparent;
@@ -1859,17 +1844,17 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     font-weight: 600;
 }
 
-/* In consultation/locked mode, "Condamné" becomes quiet neutral zinc so it doesn't distract from students */
+/* In consultation/locked mode, "Condamné" blends into a quiet empty desk silhouette without visual noise */
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
-    border-color: var(--border-color);
-    background: rgba(var(--surface-color-rgb), 0.18);
-    opacity: 0.45;
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.45);
+    opacity: 1;
 }
 
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
-    color: var(--text-tertiary);
-    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .sc-special-icon {
@@ -1877,6 +1862,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     margin-bottom: 2px;
     color: var(--text-tertiary);
     opacity: 0.8;
+    transition: opacity 0.2s ease;
 }
 
 .sc-cell-scope-badge {
@@ -2469,6 +2455,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     /* Locked sidebar collapses vertically on mobile */
     #seatingChartView[data-locked="true"] .sc-sidebar {
         translate: none !important;
+        opacity: 0;
         width: 100%;
         max-height: 0;
         margin-left: 0;
@@ -2477,9 +2464,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         overflow: hidden;
     }
 
-    .sc-classroom-board,
-    #seatingChartView[data-locked="true"] .sc-classroom-board {
-        translate: 0 0 !important;
+    #seatingChartView[data-locked="false"] .sc-grid-area[data-fitted="false"] {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-grid-area:not([data-fitted="false"]) .sc-classroom-board {
+        translate: 0 0;
     }
 
     /* ── Sidebar Toolbar: single compact pill ── */
@@ -2728,6 +2719,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         top: calc(56px + 10px) !important;
         left: 12px !important;
         right: auto !important;
+        translate: none !important;
         gap: 6px;
         max-width: calc(100vw - 128px);
     }
@@ -2984,7 +2976,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* Dark theme empty desks: subtle visible silhouette in consultation, clear in edit */
-[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
     border: 1.5px solid transparent;
     background: rgba(255, 255, 255, 0.025);
 }
@@ -3067,7 +3060,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-cell.sc-cell-swapped,
     .sc-cell.sc-auto-placed,
     .sc-student-chip.sc-chip-returning,
-    .sc-grid-area.sc-lock-morph,
     .sc-desk.sc-desk-entering,
     .sc-classroom-board.sc-orienting,
     .sc-classroom-board.sc-orienting .sc-desk,
@@ -3082,7 +3074,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
-    .sc-toolbar-btn.sc-lock-btn.sc-lock-toggling,
     .sc-empty-sidebar {
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
@@ -3176,11 +3167,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     background: var(--bg-secondary);
     border-radius: 20px;
     padding: 4px;
-}
-
-#seatingChartView[data-locked="true"] .sc-edit-only {
-    opacity: 0;
-    pointer-events: none;
 }
 
 /* Action Buttons */
@@ -3951,9 +3937,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     opacity: 0.45;
 }
 
-/* In Activity Consultation mode: hide empty non-special stations and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
+/* In Activity Consultation mode: hide empty non-special stations, condemned stations, and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
 .sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
+.sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty.sc-cell-special-blocked {
     opacity: 0 !important;
     pointer-events: none !important;
     border-color: transparent !important;
@@ -4037,6 +4025,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
     border: 1.5px solid var(--border-color);
     box-shadow: var(--shadow-sm);
+    padding-bottom: 12px;
 }
 
 [data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
@@ -4046,14 +4035,23 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
-    width: 54px;
-    height: 54px;
-    font-size: 0.95rem;
+    width: 46px;
+    height: 46px;
+    font-size: 0.86rem;
+    border: 2px solid var(--surface-color, #ffffff);
+    box-shadow: var(--shadow-xs);
+    border-radius: 50%;
+}
+
+[data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar,
+[data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
+    border-color: var(--bg-tertiary, #1e2030);
 }
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
-    font-size: 0.74rem;
+    font-size: 0.7rem;
+    line-height: 1.26;
     margin-top: 6px;
     max-width: 104px;
 }
@@ -4299,8 +4297,17 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     line-height: 1.26;
 }
 
+.sc-cell.sc-cell-stacked[data-group-size="3"]:not(.pinned) .sc-station-badge,
+.sc-cell.sc-cell-stacked[data-group-size="4"]:not(.pinned) .sc-station-badge {
+    top: 3px;
+    left: 3px;
+    font-size: 0.49rem;
+    padding: 1px 3.5px;
+}
+
 .sc-cell.sc-cell-stacked[data-group-size="3"] {
-    gap: 4px;
+    padding: 10px 5px 4px;
+    gap: 3.5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar-cluster {
@@ -4324,8 +4331,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] {
-    padding: 5px 5px 4px;
-    gap: 2.5px;
+    padding: 10px 5px 3px;
+    gap: 2px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar-cluster {
@@ -4420,6 +4427,18 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 @media (max-width: 768px) {
     .sc-stacked-member-remove {
         display: none !important;
+    }
+
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
+        padding-bottom: 6px;
+    }
+
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar,
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar {
+        width: 34px;
+        height: 34px;
+        font-size: 0.7rem;
     }
 
     .sc-cell.sc-cell-stacked .sc-stacked-avatar .student-avatar,
