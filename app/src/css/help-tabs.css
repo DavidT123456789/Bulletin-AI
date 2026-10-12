@@ -352,27 +352,6 @@
     color: var(--color-emerald-bright);
 }
 
-.help-dot-inline {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    vertical-align: middle;
-    margin: 0 2px;
-}
-
-.help-dot-inline.is-empty {
-    background: var(--text-quaternary);
-}
-
-.help-dot-inline.is-generated {
-    background: var(--color-blue);
-}
-
-.help-dot-inline.is-copied {
-    background: var(--color-emerald);
-}
-
 /* --- Bannière Réassurance RGPD & Confidentialité (Onglet 1) --- */
 .help-privacy-reassurance {
     display: flex;
