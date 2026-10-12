@@ -2241,12 +2241,6 @@ input.context-grade-input,
 }
 
 
-.word-count:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-
 /* Word Count Badge - Premium UI (Specific ID override) */
 #focusWordCount {
     border: none;

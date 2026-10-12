@@ -228,7 +228,7 @@
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
-    <link rel="stylesheet" href="src/css/main.css?v=20261010-slider-clean">
+    <link rel="stylesheet" href="src/css/main.css?v=20261012-about-pro">
     <link rel="modulepreload" href="./src/main.js">
 </head>
 
@@ -3044,7 +3044,7 @@
                                     <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
                                 </div>
                                 <div class="help-privacy-text">
-                                    <strong>100% Local & RGPD :</strong> Données et photos restent sur votre ordinateur. Les noms de famille sont systématiquement filtrés avant tout envoi à l'IA.
+                                    <strong>Confidentialité & RGPD :</strong> Aucun serveur tiers — vos données restent dans votre navigateur (ou votre Google Drive privé). Noms de famille et photos ne sont jamais transmis à l'IA.
                                 </div>
                             </div>
                         </div>
@@ -3082,7 +3082,7 @@
                                     </button>
                                 </div>
 
-                                <!-- Carte élève Lucas MARTIN épurée -->
+                                <!-- Carte élève Lucas MARTIN épurée (sans boîte imbriquée) -->
                                 <div class="preview-unified-card help-preview-card">
                                     <div class="preview-card-header">
                                         <div class="header-student-info">
@@ -3113,14 +3113,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="preview-card-body">
-                                        <div class="refinement-group">
-                                            <div class="refinement-content"><p class="text-preview" id="helpRefineDemoText">Un bon premier trimestre. Lucas s'investit avec sérieux en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p></div>
-                                            <div class="preview-meta-container help-preview-meta">
-                                                <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus</span>
-                                                <span class="word-count" id="helpRefineDemoWords">23 mots</span>
-                                            </div>
-                                        </div>
+                                    <div class="help-preview-text-area">
+                                        <p class="text-preview" id="helpRefineDemoText">Un bon premier trimestre. Lucas s'investit avec sérieux en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p>
+                                    </div>
+                                    <div class="help-preview-meta">
+                                        <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus</span>
+                                        <span class="word-count" id="helpRefineDemoWords">23 mots</span>
                                     </div>
                                 </div>
                             </div>
@@ -3250,7 +3248,8 @@
                                         <div class="help-feature-icon"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></div>
                                         <div>
                                             <h4>Plan de classe interactif</h4>
-                                            <p><strong>Édition :</strong> placez vos élèves, épinglez les places fixes, créez des allées.<br><strong>Consultation :</strong> un clic sur une table ouvre la fiche ou le Journal (+/−).</p>
+                                            <p><strong>Édition :</strong> placez vos élèves, épinglez les places fixes, créez des allées.</p>
+                                            <p><strong>Consultation :</strong> un clic sur une table ouvre la fiche ou le Journal (+/−).</p>
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
@@ -3265,8 +3264,8 @@
                                     <div class="help-seating-card-top">
                                         <div class="help-feature-icon is-emerald"><iconify-icon icon="solar:camera-bold"></iconify-icon></div>
                                         <div>
-                                            <h4>Trombinoscope IA · 100% local</h4>
-                                            <p>Découpe et associe automatiquement les visages depuis un PDF Pronote ou une photo de classe. Les photos ne quittent jamais votre navigateur.</p>
+                                            <h4>Trombinoscope IA · Détection locale</h4>
+                                            <p>Découpe et associe automatiquement les visages depuis un PDF Pronote ou une photo de classe, directement dans votre navigateur sans envoi à l'IA.</p>
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
@@ -3313,7 +3312,7 @@
                                             <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Groq Cloud</strong> et activez <em>Relais auto.</em> pour basculer sans coupure au-delà de 15 requêtes/min.</li>
                                             <li><strong>100% hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
                                         </ul>
-                                        <div class="help-btn-row mt-2">
+                                        <div class="help-btn-row">
                                             <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
                                                 <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer Groq & le Relais IA
                                             </button>
@@ -3352,7 +3351,7 @@
                                             <li><strong>Séparateur :</strong> À l'étape 2 de l'import, changez le séparateur (Tabulation, Point-virgule, Virgule).</li>
                                             <li><strong>Astuce universelle :</strong> Copiez vos lignes dans Excel ou Pronote (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les directement dans l'Assistant.</li>
                                         </ul>
-                                        <div class="help-btn-row mt-2">
+                                        <div class="help-btn-row">
                                             <button type="button" class="btn btn-secondary btn-small" onclick="window.openImportWizardFromHelp()">
                                                 <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon> Ouvrir l'Assistant d'import
                                             </button>
@@ -3371,8 +3370,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Anonymisation stricte :</strong> Les noms de famille et les photos ne quittent jamais votre ordinateur. Seuls le prénom (ou une balise neutre), les moyennes et vos observations sont transmis le temps de rédiger l'appréciation.</li>
-                                            <li><strong>Stockage 100% local :</strong> Vos classes sont enregistrées uniquement dans votre navigateur (et avec <em>Ollama</em>, même l'IA tourne sans Internet).</li>
+                                            <li><strong>Anonymisation stricte :</strong> Les noms de famille et les photos ne sont jamais transmis aux modèles d'IA. Seuls le prénom (ou une balise neutre), les moyennes et vos observations servent à générer l'appréciation.</li>
+                                            <li><strong>Aucun serveur intermédiaire :</strong> Vos classes sont enregistrées dans votre navigateur (et sur votre propre Google Drive si vous activez la sauvegarde cloud). Avec <em>Ollama</em>, même l'IA tourne hors-ligne.</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3391,7 +3390,7 @@
                                             <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un poste à l'autre.</li>
                                             <li><strong>Archive JSON :</strong> Exportez une sauvegarde complète sur clé USB depuis <em>Paramètres &gt; Données</em>.</li>
                                         </ul>
-                                        <div class="help-btn-row mt-2">
+                                        <div class="help-btn-row">
                                             <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
                                                 <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer mes sauvegardes
                                             </button>
@@ -3437,65 +3436,96 @@
 
                         <!-- Onglet 5 : À propos -->
                         <div id="help-about" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnAbout">
-                            <div class="about-header">
-                                <div class="about-header-main">
-                                    <div class="about-logo-tile">
-                                        <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
+                            <!-- Zone 1 : En-tête Identité & Mission -->
+                            <div class="about-hero">
+                                <div class="about-header">
+                                    <div class="about-header-main">
+                                        <div class="about-logo-tile">
+                                            <img src="assets/logo.png?v=20261010" alt="Bulletin AI" class="about-logo">
+                                        </div>
+                                        <div class="about-title-group">
+                                            <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
+                                            <div class="about-build-date" id="aboutBuildDate">Build 1fa3905 · 12 octobre 2026</div>
+                                        </div>
                                     </div>
-                                    <div class="about-title-group">
-                                        <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 92ec71d · 12 octobre 2026</div>
+                                    <div class="about-actions">
+                                        <a id="linkLanding" href="./index.html" class="btn btn-secondary btn-small">
+                                            <iconify-icon class="iconify-inline" icon="solar:home-2-linear"></iconify-icon>
+                                            Site vitrine
+                                        </a>
+                                        <a id="linkGithub" href="https://github.com/dtrafial/Bulletin-AI" target="_blank" rel="noopener noreferrer"
+                                            class="btn btn-secondary btn-small">
+                                            <iconify-icon class="iconify-inline" icon="mdi:github"></iconify-icon>
+                                            GitHub
+                                        </a>
+                                        <a id="linkFeedback" href="https://forms.gle/4yQ3o5sZqKzQ6Z6c8" target="_blank" rel="noopener noreferrer"
+                                            class="btn btn-secondary btn-small">
+                                            <iconify-icon class="iconify-inline" icon="solar:chat-line-bold"></iconify-icon> Avis
+                                        </a>
                                     </div>
                                 </div>
-                                <div class="about-actions">
-                                    <a id="linkLanding" href="./index.html" class="btn btn-secondary btn-small">
-                                        <iconify-icon class="iconify-inline" icon="solar:home-2-linear"></iconify-icon>
-                                        Site vitrine
-                                    </a>
-                                    <a id="linkGithub" href="https://github.com/dtrafial/Bulletin-AI" target="_blank" rel="noopener noreferrer"
-                                        class="btn btn-secondary btn-small">
-                                        <iconify-icon class="iconify-inline" icon="mdi:github"></iconify-icon>
-                                        GitHub
-                                    </a>
-                                    <a id="linkFeedback" href="https://forms.gle/4yQ3o5sZqKzQ6Z6c8" target="_blank" rel="noopener noreferrer"
-                                        class="btn btn-secondary btn-small">
-                                        <iconify-icon class="iconify-inline" icon="solar:chat-line-bold"></iconify-icon> Avis
-                                    </a>
-                                </div>
-                            </div>
 
-                            <div class="about-content">
                                 <p class="about-tagline">
                                     Conçu par et pour les enseignants afin d'alléger la rédaction des bulletins scolaires, organiser les plans de classe et suivre chaque élève sereinement.
                                 </p>
+                            </div>
 
-                                <div class="about-trust-pills">
-                                    <span class="about-trust-pill"><iconify-icon icon="solar:shield-check-bold"></iconify-icon> 100% Local (Navigateur)</span>
-                                    <span class="about-trust-pill"><iconify-icon icon="solar:user-block-rounded-bold"></iconify-icon> Anonymisation IA auto</span>
-                                    <span class="about-trust-pill"><iconify-icon icon="solar:code-circle-bold"></iconify-icon> Open-Source & Gratuit</span>
+                            <!-- Zone 2 : Fiche sobre d'architecture & confidentialité (3 lignes horizontales) -->
+                            <div class="about-specs-card">
+                                <div class="about-spec-row">
+                                    <div class="about-pillar-icon is-emerald">
+                                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                    </div>
+                                    <div class="about-pillar-text">
+                                        <h4>Stockage sans serveur tiers</h4>
+                                        <p>Données enregistrées dans votre navigateur, avec sauvegarde optionnelle sur votre propre Google Drive ou en fichier local.</p>
+                                    </div>
                                 </div>
 
-                                <!-- Soutien Ko-fi -->
-                                <div class="support-card-premium">
+                                <div class="about-spec-row">
+                                    <div class="about-pillar-icon is-primary">
+                                        <iconify-icon icon="solar:user-block-rounded-bold"></iconify-icon>
+                                    </div>
+                                    <div class="about-pillar-text">
+                                        <h4>Filtrage RGPD avant envoi IA</h4>
+                                        <p>Les noms de famille et les photos d'élèves sont écartés localement et ne sont jamais transmis aux modèles d'IA.</p>
+                                    </div>
+                                </div>
+
+                                <div class="about-spec-row">
+                                    <div class="about-pillar-icon is-violet">
+                                        <iconify-icon icon="solar:code-circle-bold"></iconify-icon>
+                                    </div>
+                                    <div class="about-pillar-text">
+                                        <h4>Code ouvert &amp; indépendant</h4>
+                                        <p>Application open-source gratuite, utilisable sans création de compte, sans pistage ni publicité.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Zone 3 : Bandeau Soutien Ko-fi pleine largeur -->
+                            <div class="support-card-premium">
+                                <div class="support-card-body">
                                     <h4>
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Bulletin AI est développé bénévolement, sans publicité ni abonnement. Si l'outil vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez encourager son évolution en offrant un café !
+                                        Bulletin AI est développé bénévolement sur mon temps libre. Si l'outil vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez encourager son évolution en offrant un café !
                                     </p>
-                                    <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
-                                        class="btn btn-kofi">
-                                        <iconify-icon class="iconify-inline" icon="solar:cup-hot-bold"></iconify-icon>
-                                        Soutenir sur Ko-fi
-                                    </a>
                                 </div>
+                                <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
+                                    class="btn btn-kofi">
+                                    <iconify-icon class="iconify-inline" icon="solar:cup-hot-bold"></iconify-icon>
+                                    Soutenir sur Ko-fi
+                                </a>
+                            </div>
 
-                                <div class="about-footer">
-                                    <p>Développé pour les enseignants par David Trafial · © 2025-2026 Bulletin AI</p>
-                                    <p class="license-text">
-                                        Sous licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
-                                    </p>
-                                </div>
+                            <!-- Zone 4 : Pied de page ancré en bas -->
+                            <div class="about-footer">
+                                <p>Développé pour les enseignants par David Trafial · © 2025-2026 Bulletin AI</p>
+                                <p class="license-text">
+                                    Licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
+                                </p>
                             </div>
                         </div>
                     </div>

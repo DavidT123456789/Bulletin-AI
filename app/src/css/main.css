@@ -14,7 +14,6 @@
 /* Modules refactorisés */
 @import './modules/ui-components.css';
 @import './modules/modals.css';
-@import './modules/help.css';
 @import './modules/close-button.css';
 @import './modules/stats.css';
 @import './modules/cards.css';
@@ -44,6 +43,7 @@
 @import './modules/focus-panel.css';
 @import './modules/history-nav.css';
 /* New History Navigation */
+@import './modules/help.css';
 @import './modules/responsive.css';
 @import './modules/theme-control.css';
 @import './modules/selection-toolbar.css';

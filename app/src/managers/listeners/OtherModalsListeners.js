@@ -8,7 +8,7 @@ import { UI } from '../UIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
-import { PROVIDER_CONFIG, getProviderApiKey, isValidKeyFormat } from '../../config/providers.js';
+import { getConfiguredProviders } from '../../config/providers.js';
 import { appState } from '../../state/State.js';
 
 const HELP_REFINE_DEMO_DATA = {
@@ -101,108 +101,23 @@ export const OtherModalsListeners = {
             tabs[nextIndex]?.click();
         });
 
-        // Sélecteur de fournisseur IA (Étape 1) avec statut de clé en temps réel
-        const helpProviderRadios = document.querySelectorAll('input[name="helpProvider"]');
-        const helpContainer = document.getElementById('helpProviderSelector');
-        const helpGlider = helpContainer?.querySelector('.ui-glider');
-
-        const syncActiveProviderRadio = () => {
-            const supported = ['google', 'groq', 'mistral', 'openrouter'];
-            const current = appState?.currentProvider;
-            let targetProvider = supported.includes(current) ? current : null;
-            if (!targetProvider) {
-                targetProvider = supported.find(id => isValidKeyFormat(getProviderApiKey(id, { state: appState, dom: DOM }))) || 'google';
-            }
-            const targetRadio = document.querySelector(`input[name="helpProvider"][value="${targetProvider}"]`);
-            if (targetRadio && !targetRadio.checked) {
-                targetRadio.checked = true;
-            }
-        };
-
-        const updateHelpProviderUI = (animate = false) => {
-            const checked = document.querySelector('input[name="helpProvider"]:checked');
-            if (!checked) return;
-
-            if (helpGlider && checked.nextElementSibling) {
-                const label = checked.nextElementSibling;
-                requestAnimationFrame(() => {
-                    if (label.offsetWidth > 0) {
-                        helpGlider.style.width = `${label.offsetWidth}px`;
-                        helpGlider.style.left = `${label.offsetLeft}px`;
-                    }
-                });
-            }
-
-            const value = checked.value;
-            const contentMap = {
-                google: 'helpContentGoogle',
-                groq: 'helpContentGroq',
-                mistral: 'helpContentMistral',
-                openrouter: 'helpContentOpenRouter'
-            };
-
-            const descEl = document.getElementById('helpProviderDesc');
-            const providerInfo = PROVIDER_CONFIG[value];
-            if (descEl && providerInfo?.description) {
-                descEl.innerHTML = providerInfo.description;
-            }
-
+        // Mise à jour dynamique du badge de statut IA (Étape 1)
+        const updateHelpProviderStatus = () => {
             const statusBadge = document.getElementById('helpProviderStatusBadge');
-            if (statusBadge) {
-                const rawKey = getProviderApiKey(value, { state: appState, dom: DOM });
-                const hasKey = isValidKeyFormat(rawKey);
-                statusBadge.classList.toggle('status-connected', hasKey);
-                statusBadge.classList.toggle('status-unconfigured', !hasKey);
-                statusBadge.innerHTML = `<span class="status-dot"></span><span>${hasKey ? 'Clé configurée' : 'Non configuré'}</span>`;
-            }
+            if (!statusBadge) return;
 
-            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-            const contents = document.querySelectorAll('.provider-help-content');
-            contents.forEach(el => {
-                const isTarget = el.id === contentMap[value];
-                el.hidden = !isTarget;
-                if (isTarget) {
-                    if (animate && !reducedMotion && typeof el.animate === 'function') {
-                        el.animate([
-                            { opacity: 0, transform: 'translateY(4px)' },
-                            { opacity: 1, transform: 'translateY(0)' }
-                        ], {
-                            duration: 200,
-                            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                            fill: 'forwards'
-                        });
-                    }
-                }
-            });
+            const configured = getConfiguredProviders({ state: appState, dom: DOM });
+            const hasOllama = appState?.ollamaEnabled === true;
+            const isReady = configured.length > 0 || hasOllama;
+
+            statusBadge.classList.toggle('status-connected', isReady);
+            statusBadge.classList.toggle('status-unconfigured', !isReady);
+            statusBadge.innerHTML = `<span class="status-dot"></span><span>${isReady ? 'Clé configurée' : 'À configurer'}</span>`;
         };
 
-        if (helpProviderRadios.length > 0) {
-            helpProviderRadios.forEach(radio => {
-                radio.addEventListener('change', () => updateHelpProviderUI(true));
-            });
-
-            setTimeout(() => {
-                syncActiveProviderRadio();
-                updateHelpProviderUI(false);
-            }, 200);
-
-            const refreshHelpProviderOnOpen = () => {
-                syncActiveProviderRadio();
-                setTimeout(() => updateHelpProviderUI(false), 60);
-            };
-
-            DOM.helpBtn?.addEventListener('click', refreshHelpProviderOnOpen);
-            window.addEventListener('help-modal-opened', refreshHelpProviderOnOpen);
-
-            const helpTabs = DOM.helpModal?.querySelectorAll('.ui-tabs-btn') || [];
-            helpTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    if (tab.getAttribute('aria-controls') === 'help-apikey') {
-                        setTimeout(() => updateHelpProviderUI(false), 50);
-                    }
-                });
-            });
-        }
+        setTimeout(updateHelpProviderStatus, 200);
+        DOM.helpBtn?.addEventListener('click', updateHelpProviderStatus);
+        window.addEventListener('help-modal-opened', updateHelpProviderStatus);
 
         // Simulateur interactif utilisant les vrais boutons .btn-ai-outline[data-refine-type]
         const refineDemoContainer = document.getElementById('helpRefineDemo');
