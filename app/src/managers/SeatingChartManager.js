@@ -1090,12 +1090,50 @@ export const SeatingChartManager = {
         const fab = document.getElementById('addStudentFab');
         if (!wrapper || !viewEl) return;
 
+        const isList = view === 'list';
+
+        if (!immediate && !this._viewExitTimeout) {
+            if (isList && !this._isActive && wrapper.dataset.view === 'list') return;
+            if (!isList && this._isActive && wrapper.dataset.view === 'plan') return;
+        }
+
         if (this._viewExitTimeout) {
             clearTimeout(this._viewExitTimeout);
             this._viewExitTimeout = null;
         }
+        this._clearListViewTransitionClasses();
 
-        const isList = view === 'list';
+        if (!isList) {
+            this._students = this._getCurrentClassStudents();
+            if (this._students.length === 0) {
+                if (!silent) {
+                    UI.showNotification('Aucun élève dans cette classe.', 'warning');
+                }
+                wrapper.dataset.view = 'list';
+                if (appState.activeView !== 'list') {
+                    appState.activeView = 'list';
+                    StorageManager?.saveAppState();
+                }
+                document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'list'));
+                const toggleWrapper = document.getElementById('viewToggle');
+                if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
+                    window.UI.updateGlider(toggleWrapper, immediate);
+                }
+                return;
+            }
+        }
+
+        if (appState.activeView !== view) {
+            appState.activeView = view;
+            StorageManager?.saveAppState();
+        }
+
+        document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+
+        const toggleWrapper = document.getElementById('viewToggle');
+        if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
+            window.UI.updateGlider(toggleWrapper, immediate);
+        }
 
         if (isList) {
             // [UX Mobile] History state cleanup for plan view and sub-modes
@@ -1105,7 +1143,7 @@ export const SeatingChartManager = {
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
             if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
 
-            const finishList = () => {
+            const finishList = (animateEnter = false) => {
                 const wasActive = this._isActive;
                 viewEl.classList.remove('sc-exiting', 'sc-entering');
                 wrapper.dataset.view = 'list';
@@ -1126,75 +1164,57 @@ export const SeatingChartManager = {
                 }
                 this._closeConfigPopover();
                 this._closePlacementPopover();
+
+                if (animateEnter) {
+                    this._animateListViewEnter();
+                }
             };
 
-            if (immediate) {
-                finishList();
+            if (immediate || wrapper.dataset.view === 'list') {
+                finishList(false);
             } else {
-                this._animateViewExit(viewEl, finishList);
+                this._animateViewExit(viewEl, () => finishList(true));
             }
         } else {
-            this._students = this._getCurrentClassStudents();
-            if (this._students.length === 0) {
-                if (!silent) {
-                    UI.showNotification('Aucun élève dans cette classe.', 'warning');
+            const finishPlan = (animateEnter = false) => {
+                this._clearListViewTransitionClasses();
+                wrapper.dataset.view = 'plan';
+                // [UX Mobile] History integration for plan view (Back returns to list)
+                if (!HistoryManager.isOpen('viewPlan')) {
+                    HistoryManager.pushState('viewPlan', () => {
+                        this.switchToView('list');
+                    });
                 }
-                wrapper.dataset.view = 'list';
-                if (appState.activeView !== 'list') {
-                    appState.activeView = 'list';
-                    StorageManager?.saveAppState();
+                viewEl.style.display = '';
+                if (fab) fab.style.display = 'none';
+                this._isActive = true;
+                this._loadGridConfig();
+                this._loadPositionsFromState();
+                const currentClass = this._getCurrentClass();
+                const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
+                const locked = this._getPlacedIds().size === 0
+                    ? false
+                    : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
+                this._applyLockState(locked);
+                this._updateSidebarLockState();
+                this._undoStack = [];
+                this._redoStack = [];
+                this._render();
+                this._applySmartFit(true);
+                if (animateEnter) {
+                    this._animateViewEnter(viewEl);
+                    this._scrollToDesk();
+                    this._maybeShowOnboardingHint();
+                } else {
+                    viewEl.classList.remove('sc-exiting', 'sc-entering');
+                    this._scrollToDesk();
                 }
-                document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'list'));
-                const toggleWrapper = document.getElementById('viewToggle');
-                if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
-                    window.UI.updateGlider(toggleWrapper, immediate);
-                }
-                return;
-            }
-            wrapper.dataset.view = 'plan';
-            // [UX Mobile] History integration for plan view (Back returns to list)
-            if (!HistoryManager.isOpen('viewPlan')) {
-                HistoryManager.pushState('viewPlan', () => {
-                    this.switchToView('list');
-                });
-            }
-            viewEl.style.display = '';
-            if (fab) fab.style.display = 'none';
-            this._isActive = true;
-            this._loadGridConfig();
-            this._loadPositionsFromState();
-            const currentClass = this._getCurrentClass();
-            const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
-            const locked = this._getPlacedIds().size === 0
-                ? false
-                : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
-            this._applyLockState(locked);
-            this._updateSidebarLockState();
-            this._undoStack = [];
-            this._redoStack = [];
-            this._render();
-            this._applySmartFit(true);
-            if (!immediate) {
-                this._animateViewEnter(viewEl);
-                this._scrollToDesk();
-                this._maybeShowOnboardingHint();
+            };
+
+            if (immediate || wrapper.dataset.view === 'plan') {
+                finishPlan(false);
             } else {
-                viewEl.classList.remove('sc-exiting', 'sc-entering');
-                this._scrollToDesk();
-            }
-        }
-
-        if (appState.activeView !== view) {
-            appState.activeView = view;
-            StorageManager?.saveAppState();
-        }
-
-        document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-        
-        const toggleWrapper = document.getElementById('viewToggle');
-        if (toggleWrapper) {
-            if (window.UI && typeof window.UI.updateGlider === 'function') {
-                window.UI.updateGlider(toggleWrapper, immediate);
+                this._animateListViewExit(() => finishPlan(true));
             }
         }
     },
@@ -1254,11 +1274,6 @@ export const SeatingChartManager = {
 
         this._render();
         this._applySmartFit(true);
-        this._staggerCellEntrance();
-        
-        const desk = document.getElementById('scDesk');
-        desk?.classList.add('sc-desk-entering');
-        setTimeout(() => desk?.classList.remove('sc-desk-entering'), 500);
 
         this._scrollToDesk();
         this._maybeShowOnboardingHint();
@@ -1279,30 +1294,89 @@ export const SeatingChartManager = {
     // ANIMATION ORCHESTRATORS
     // ========================================================================
 
-    /** View entrance — toolbar slides down, body fades up, cells stagger */
+    _clearListViewTransitionClasses() {
+        if (this._listEnterCleanupTimer) {
+            clearTimeout(this._listEnterCleanupTimer);
+            this._listEnterCleanupTimer = null;
+        }
+        document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination').forEach(el => {
+            el.classList.remove('view-slide-out-left', 'view-slide-in-left');
+        });
+    },
+
+    /** List view exit — horizontal micro-slide to left before Plan enters from right */
+    _animateListViewExit(onComplete) {
+        const containers = Array.from(
+            document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination')
+        ).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
+
+        if (containers.length === 0) {
+            onComplete();
+            return;
+        }
+
+        containers.forEach(el => {
+            el.classList.remove('view-slide-in-left');
+            void el.offsetWidth;
+            el.classList.add('view-slide-out-left');
+        });
+
+        let called = false;
+        const done = () => {
+            if (called) return;
+            called = true;
+            this._viewExitTimeout = null;
+            containers.forEach(el => el.classList.remove('view-slide-out-left'));
+            onComplete();
+        };
+        this._viewExitTimeout = setTimeout(done, 95);
+    },
+
+    /** List view entrance — horizontal micro-slide from left after Plan exits to right */
+    _animateListViewEnter() {
+        const containers = Array.from(
+            document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination')
+        ).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
+
+        containers.forEach(el => {
+            el.classList.remove('view-slide-out-left');
+            void el.offsetWidth;
+            el.classList.add('view-slide-in-left');
+        });
+
+        this._listEnterCleanupTimer = setTimeout(() => {
+            this._listEnterCleanupTimer = null;
+            containers.forEach(el => el.classList.remove('view-slide-in-left'));
+        }, 260);
+    },
+
+    /** View entrance — horizontal micro-slide from right (Liste -> Plan) */
     _animateViewEnter(viewEl) {
         viewEl.classList.remove('sc-exiting');
+        void viewEl.offsetWidth;
         viewEl.classList.add('sc-entering');
-        this._staggerCellEntrance();
-
-        const desk = document.getElementById('scDesk');
-        desk?.classList.add('sc-desk-entering');
 
         const cleanup = () => {
             viewEl.classList.remove('sc-entering');
-            desk?.classList.remove('sc-desk-entering');
         };
         viewEl.addEventListener('animationend', cleanup, { once: true });
-        setTimeout(cleanup, 600);
+        setTimeout(cleanup, 260);
     },
 
-    /** View exit — dissolve then callback */
+    /** View exit — horizontal micro-slide to right (Plan -> Liste) */
     _animateViewExit(viewEl, onComplete) {
         if (this._viewExitTimeout) {
             clearTimeout(this._viewExitTimeout);
             this._viewExitTimeout = null;
         }
         viewEl.classList.remove('sc-entering');
+        void viewEl.offsetWidth;
         viewEl.classList.add('sc-exiting');
 
         let called = false;
@@ -1314,7 +1388,7 @@ export const SeatingChartManager = {
             onComplete();
         };
         viewEl.addEventListener('animationend', done, { once: true });
-        this._viewExitTimeout = setTimeout(done, 350);
+        this._viewExitTimeout = setTimeout(done, 95);
     },
 
     /** Stagger cell entrance (used after render) */

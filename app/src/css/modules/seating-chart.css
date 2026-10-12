@@ -68,21 +68,28 @@
 
 /* ────────── MASTER KEYFRAMES ────────── */
 
-/* View entrance: toolbar slides down, body fades up */
-@keyframes scToolbarEnter {
-    from { opacity: 0; transform: translateY(-12px); }
-    to   { opacity: 1; transform: translateY(0); }
+/* View entrance: horizontal micro-slide from right (Liste -> Plan) */
+@keyframes scViewEnter {
+    from {
+        opacity: 0;
+        transform: translate3d(24px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
 }
 
-@keyframes scBodyEnter {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* View exit: smooth dissolve for returning to list */
+/* View exit: horizontal micro-slide to right (Plan -> Liste) */
 @keyframes scViewExit {
-    from { opacity: 1; transform: scale(1); }
-    to   { opacity: 0; transform: scale(0.97); }
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(18px, 0, 0);
+    }
 }
 
 /* Cell entrance (staggered per cell via --cell-i) */
@@ -183,17 +190,15 @@
 /* ────────── ANIMATION CLASSES ────────── */
 
 /* View enter */
-#seatingChartView.sc-entering .sc-toolbar {
-    animation: scToolbarEnter 0.35s var(--ease-spring) both;
-}
-
-#seatingChartView.sc-entering .sc-body {
-    animation: scBodyEnter 0.45s var(--ease-spring) 0.08s both;
+#seatingChartView.sc-entering {
+    animation: scViewEnter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
 }
 
 /* View exit */
 #seatingChartView.sc-exiting {
-    animation: scViewExit 0.3s var(--ease-material) forwards;
+    animation: scViewExit 0.095s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
     pointer-events: none;
 }
 

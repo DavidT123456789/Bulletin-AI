@@ -421,48 +421,7 @@ export const ClassUIManager = {
             </button>
         ` : '';
 
-        // Préparation des classes réelles et reconstituées
-        const regularItems = classes.map(cls => ({
-            ...cls,
-            displayName: Utils.formatClassDisplayName(cls.name),
-            isVirtual: false
-        }));
-
-        const virtualItems = hasVirtualClasses
-            ? virtualClasses.map(vClass => ({
-                ...vClass,
-                displayName: Utils.formatClassDisplayName(vClass.name),
-                isVirtual: true
-            }))
-            : [];
-
-        let allItems;
-        if (userSettings.academic?.classesCustomOrder) {
-            // Respecter l'ordre personnalisé défini par l'enseignant (Drag & Drop)
-            allItems = [...regularItems];
-            if (virtualItems.length > 0) {
-                // Insérer les classes reconstituées juste après leur groupe source ou en fin de liste
-                virtualItems.forEach(vItem => {
-                    const firstSourceIndex = allItems.findIndex(item =>
-                        vItem.sourceGroupIds?.includes(item.id)
-                    );
-                    if (firstSourceIndex !== -1) {
-                        let insertAt = firstSourceIndex + 1;
-                        while (insertAt < allItems.length && vItem.sourceGroupIds?.includes(allItems[insertAt].id)) {
-                            insertAt++;
-                        }
-                        allItems.splice(insertAt, 0, vItem);
-                    } else {
-                        allItems.push(vItem);
-                    }
-                });
-            }
-        } else {
-            // Ordre pédagogique officiel par défaut (6e -> 5e -> 4e -> 3e -> 2nde -> 1ere -> Terminale)
-            allItems = [...regularItems, ...virtualItems].sort((a, b) =>
-                compareClassesPedagogically(a, b)
-            );
-        }
+        const allItems = this._getOrderedClassItems(classes, virtualClasses);
 
         const classItemsHtml = allItems.map(item => {
             if (item.isVirtual) {
@@ -531,6 +490,10 @@ export const ClassUIManager = {
             const selectClass = async () => {
                 if (item.classList.contains('is-collapsed')) return;
                 const classId = item.dataset.classId;
+                if (classId === appState.currentClassId) {
+                    this.closeDropdown();
+                    return;
+                }
                 await this.handleClassSwitch(classId);
             };
 
@@ -676,27 +639,125 @@ export const ClassUIManager = {
     },
 
     /**
-     * Gère le changement de classe
+     * Retourne la liste ordonnée des classes (réelles + reconstituées) telle qu'affichée dans le menu
+     * @private
+     */
+    _getOrderedClassItems(classes = ClassManager.getAllClasses(), virtualClasses = ClassManager.getVirtualClasses()) {
+        const regularItems = (classes || []).map(cls => ({
+            ...cls,
+            displayName: Utils.formatClassDisplayName(cls.name),
+            isVirtual: false
+        }));
+
+        const virtualItems = (virtualClasses && virtualClasses.length > 0)
+            ? virtualClasses.map(vClass => ({
+                ...vClass,
+                displayName: Utils.formatClassDisplayName(vClass.name),
+                isVirtual: true
+            }))
+            : [];
+
+        if (userSettings.academic?.classesCustomOrder) {
+            const allItems = [...regularItems];
+            if (virtualItems.length > 0) {
+                virtualItems.forEach(vItem => {
+                    const firstSourceIndex = allItems.findIndex(item =>
+                        vItem.sourceGroupIds?.includes(item.id)
+                    );
+                    if (firstSourceIndex !== -1) {
+                        let insertAt = firstSourceIndex + 1;
+                        while (insertAt < allItems.length && vItem.sourceGroupIds?.includes(allItems[insertAt].id)) {
+                            insertAt++;
+                        }
+                        allItems.splice(insertAt, 0, vItem);
+                    } else {
+                        allItems.push(vItem);
+                    }
+                });
+            }
+            return allItems;
+        }
+
+        return [...regularItems, ...virtualItems].sort((a, b) =>
+            compareClassesPedagogically(a, b)
+        );
+    },
+
+    /**
+     * Détermine le sens du glissement vertical selon la position de la classe cible dans la liste :
+     * - 'down' (du haut vers le bas) si on va vers une classe située AU-DESSUS dans la liste
+     * - 'up' (du bas vers le haut) si on va vers une classe située EN DESSOUS dans la liste
+     * @private
+     */
+    _getClassSwitchDirection(fromClassId, toClassId) {
+        if (!fromClassId || !toClassId || fromClassId === toClassId) return 'up';
+
+        const domIds = Array.from(
+            DOM.classDropdownList?.querySelectorAll('.class-dropdown-item:not(.is-collapsed)') || []
+        ).map(el => el.dataset.classId).filter(Boolean);
+
+        let fromIndex = domIds.indexOf(fromClassId);
+        let toIndex = domIds.indexOf(toClassId);
+
+        if (fromIndex === -1 || toIndex === -1) {
+            const orderedIds = this._getOrderedClassItems().map(item => item.id);
+            fromIndex = orderedIds.indexOf(fromClassId);
+            toIndex = orderedIds.indexOf(toClassId);
+        }
+
+        if (fromIndex !== -1 && toIndex !== -1 && toIndex < fromIndex) {
+            return 'down';
+        }
+        return 'up';
+    },
+
+    /**
+     * Gère le changement de classe avec micro-glisse verticale directionnelle (sans flou GPU)
      */
     async handleClassSwitch(classId, highlightId = null) {
-        // Trigger generic page refresh animation
-        // Target dynamic containers ONLY to keep the title "Bilan de la classe" visible (avoiding black screen)
-        const containersToAnimate = Array.from(
-            document.querySelectorAll('.stats-container, #outputList, .output-header, #seatingChartView, #empty-state-card')
-        ).filter(el => {
+        if (this._classSwitchCleanupTimer) {
+            clearTimeout(this._classSwitchCleanupTimer);
+            this._classSwitchCleanupTimer = null;
+        }
+
+        const prevClassId = appState.currentClassId;
+        const direction = this._getClassSwitchDirection(prevClassId, classId);
+        const outClass = direction === 'down' ? 'class-switch-out-down' : 'class-switch-out-up';
+        const inClass = direction === 'down' ? 'class-switch-in-down' : 'class-switch-in-up';
+        const headerOutClass = direction === 'down' ? 'header-class-out-down' : 'header-class-out-up';
+        const headerInClass = direction === 'down' ? 'header-class-in-down' : 'header-class-in-up';
+        const selector = '.stats-container, #outputList, .output-header, #seatingChartView, #empty-state-card, #statsPagination';
+        const allAnimClasses = [
+            'class-switch-out-down', 'class-switch-out-up',
+            'class-switch-in-down', 'class-switch-in-up',
+            'view-slide-out-left', 'view-slide-in-left'
+        ];
+
+        // Fermer le menu immédiatement au clic pour une réactivité instantanée
+        this.closeDropdown();
+
+        const outgoingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
+            el.classList.remove(...allAnimClasses);
             const style = window.getComputedStyle(el);
             return style.display !== 'none' && style.visibility !== 'hidden';
         });
 
-        containersToAnimate.forEach(el => {
-            el.classList.remove('card-refresh-animation');
-            void el.offsetWidth; // Force reflow
-            el.classList.add('card-refresh-animation');
+        outgoingContainers.forEach(el => {
+            void el.offsetWidth;
+            el.classList.add(outClass);
         });
 
-        // Sync with the PEAK BLUR of the animation (50% of 400ms = 200ms)
-        // Data swap happens while content is blurred but fully visible (opacity 0.85)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        if (DOM.headerClassName && prevClassId !== classId) {
+            DOM.headerClassName.classList.remove(
+                'header-class-out-down', 'header-class-out-up',
+                'header-class-in-down', 'header-class-in-up'
+            );
+            void DOM.headerClassName.offsetWidth;
+            DOM.headerClassName.classList.add(headerOutClass);
+        }
+
+        // Phase 1 : Sortie rapide (110ms) avant remplacement des données
+        await new Promise(resolve => setTimeout(resolve, 110));
 
         if (SeatingChartManager?._isActive && !SeatingChartManager._hasChangesSinceUnlock && SeatingChartManager._wasLockedBeforeEdit && !SeatingChartManager._isLocked) {
             const prevClass = ClassManager.getCurrentClass();
@@ -705,7 +766,13 @@ export const ClassUIManager = {
 
         await ClassManager.switchClass(classId);
         this.updateHeaderDisplay();
-        this.closeDropdown();
+
+        if (DOM.headerClassName && prevClassId !== classId) {
+            DOM.headerClassName.classList.remove('header-class-out-down', 'header-class-out-up');
+            void DOM.headerClassName.offsetWidth;
+            DOM.headerClassName.classList.add(headerInClass);
+        }
+
         // Refresh the results list with the new class data
         AppreciationsManager.renderResults(highlightId, 'new');
         UI?.updateStats?.();
@@ -717,25 +784,25 @@ export const ClassUIManager = {
             : (appState.generatedResults || []).some(r => r.classId === classId);
         SeatingChartManager.onClassChange(hasResults);
 
-        // Si l'état vide est affiché pour cette classe, déclencher l'apparition fluide en cascade
-        if (DOM.emptyStateCard && DOM.emptyStateCard.style.display !== 'none') {
-            DOM.emptyStateCard.classList.remove('card-refresh-animation');
-            DOM.emptyStateCard.classList.remove('empty-state-entrance');
-            if (DOM.emptyStateCard.offsetWidth !== undefined) {
-                void DOM.emptyStateCard.offsetWidth;
-            }
-            DOM.emptyStateCard.classList.add('empty-state-entrance');
-            setTimeout(() => {
-                DOM.emptyStateCard?.classList.remove('empty-state-entrance');
-            }, 600);
-        }
+        // Phase 2 : Entrée directionnelle fluide (240ms) des conteneurs visibles
+        const incomingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
+            el.classList.remove('class-switch-out-down', 'class-switch-out-up');
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
 
-        // Cleanup after animation finishes (400ms + buffer)
-        setTimeout(() => {
-            containersToAnimate.forEach(el => {
-                el.classList.remove('card-refresh-animation');
+        incomingContainers.forEach(el => {
+            void el.offsetWidth;
+            el.classList.add(inClass);
+        });
+
+        this._classSwitchCleanupTimer = setTimeout(() => {
+            this._classSwitchCleanupTimer = null;
+            document.querySelectorAll(selector).forEach(el => {
+                el.classList.remove('class-switch-in-down', 'class-switch-in-up');
             });
-        }, 450);
+            DOM.headerClassName?.classList.remove('header-class-in-down', 'header-class-in-up');
+        }, 260);
     },
 
     /**

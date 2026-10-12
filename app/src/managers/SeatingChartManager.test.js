@@ -838,6 +838,44 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         expect(planBtn.classList.contains('active')).toBe(false);
         expect(updateGliderSpy).toHaveBeenCalledWith(document.getElementById('viewToggle'), true);
     });
+
+    it('devrait animer horizontalement la transition Liste <-> Plan (view-slide-out-left -> sc-entering et sc-exiting -> view-slide-in-left)', async () => {
+        vi.useFakeTimers();
+        appState.currentClassId = classA.id;
+        SeatingChartManager._isActive = false;
+
+        const outputSection = document.querySelector('.output-section');
+        const outputList = document.createElement('div');
+        outputList.id = 'outputList';
+        outputSection.insertBefore(outputList, document.getElementById('seatingChartView'));
+
+        const viewEl = document.getElementById('seatingChartView');
+        const wrapper = document.querySelector('.main-content-wrapper');
+
+        // 1. Liste -> Plan : sortie gauche de la liste puis entrée droite du plan
+        SeatingChartManager.switchToView('plan');
+        expect(outputList.classList.contains('view-slide-out-left')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(95);
+        expect(wrapper.dataset.view).toBe('plan');
+        expect(viewEl.classList.contains('sc-entering')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(260);
+        expect(viewEl.classList.contains('sc-entering')).toBe(false);
+
+        // 2. Plan -> Liste : sortie droite du plan puis entrée gauche de la liste
+        SeatingChartManager.switchToView('list');
+        expect(viewEl.classList.contains('sc-exiting')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(95);
+        expect(wrapper.dataset.view).toBe('list');
+        expect(outputList.classList.contains('view-slide-in-left')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(260);
+        expect(outputList.classList.contains('view-slide-in-left')).toBe(false);
+
+        vi.useRealTimers();
+    });
 });
 
 describe('SeatingChartManager - Classes reconstituées et empilement des élèves', () => {

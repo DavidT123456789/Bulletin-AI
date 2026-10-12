@@ -273,3 +273,72 @@ describe('ClassUIManager - Création instantanée et renommage in-situ', () => {
     });
 });
 
+describe('ClassUIManager - Animations verticales directionnelles de changement de classe', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="headerClassChip"><span id="headerClassName"></span></div>
+            <div id="classDropdown"><div id="classDropdownList"></div></div>
+            <div id="outputList"></div>
+        `;
+        DOM.classDropdown = document.getElementById('classDropdown');
+        DOM.classDropdownList = document.getElementById('classDropdownList');
+        DOM.headerClassName = document.getElementById('headerClassName');
+        DOM.headerClassChip = document.getElementById('headerClassChip');
+
+        userSettings.academic.classes = [];
+        userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.currentClassId = null;
+        appState.currentClassId = null;
+        appState.generatedResults = [];
+    });
+
+    it('devrait retourner "down" (haut vers le bas) quand on sélectionne une classe située au-dessus dans la liste et "up" quand elle est en dessous', () => {
+        const class6A = ClassManager.createClass('6 1');
+        const class5A = ClassManager.createClass('5 1');
+        const class4A = ClassManager.createClass('4 1');
+
+        ClassUIManager.renderClassList();
+
+        // De 5e vers 6e (au-dessus dans la liste) -> glisse du haut vers le bas ('down')
+        expect(ClassUIManager._getClassSwitchDirection(class5A.id, class6A.id)).toBe('down');
+
+        // De 5e vers 4e (en dessous dans la liste) -> glisse du bas vers le haut ('up')
+        expect(ClassUIManager._getClassSwitchDirection(class5A.id, class4A.id)).toBe('up');
+    });
+
+    it('devrait appliquer les classes CSS directionnelles (out puis in) lors de handleClassSwitch', async () => {
+        vi.useFakeTimers();
+        const { AppreciationsManager } = await import('./AppreciationsManager.js');
+        const renderSpy = vi.spyOn(AppreciationsManager, 'renderResults').mockImplementation(() => {});
+
+        const class6A = ClassManager.createClass('6 1');
+        const class5A = ClassManager.createClass('5 1');
+
+        await ClassManager.switchClass(class5A.id);
+        ClassUIManager.renderClassList();
+
+        const outputList = document.getElementById('outputList');
+        const switchPromise = ClassUIManager.handleClassSwitch(class6A.id);
+
+        // Phase 1 : sortie vers le bas (car 6e est au-dessus de 5e)
+        expect(outputList.classList.contains('class-switch-out-down')).toBe(true);
+        expect(DOM.headerClassName.classList.contains('header-class-out-down')).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(110);
+        await switchPromise;
+
+        // Phase 2 : entrée depuis le haut vers le bas
+        expect(outputList.classList.contains('class-switch-in-down')).toBe(true);
+        expect(DOM.headerClassName.classList.contains('header-class-in-down')).toBe(true);
+
+        // Nettoyage après la fin de l'animation
+        await vi.advanceTimersByTimeAsync(260);
+        expect(outputList.classList.contains('class-switch-in-down')).toBe(false);
+        expect(DOM.headerClassName.classList.contains('header-class-in-down')).toBe(false);
+
+        renderSpy.mockRestore();
+        vi.useRealTimers();
+    });
+});
+
+

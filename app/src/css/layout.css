@@ -1855,46 +1855,192 @@ button > .icon-spin-wrapper {
 }
 
 /* ====================================================================
-   ANIMATION: Class Switch (Premium Focus Switch)
-   Blur + Pulse effect to mask data transition while keeping cards visible
+   ANIMATION: Class Switch (Directional Vertical Micro-Slide - iOS 2026)
+   GPU-composited translate3d + opacity (zero blur for optimal eye comfort)
+   - Going to a class ABOVE in the list -> glides DOWN (top to bottom)
+   - Going to a class BELOW in the list -> glides UP (bottom to top)
    ==================================================================== */
-@keyframes premium-context-switch {
-    0% {
-        transform: scale(1);
-        filter: blur(0);
+@keyframes class-switch-out-down {
+    from {
         opacity: 1;
+        transform: translate3d(0, 0, 0);
     }
-
-    30% {
-        transform: scale(0.98);
-        filter: blur(4px);
-        opacity: 0.85;
-    }
-
-    50% {
-        transform: scale(0.98);
-        filter: blur(8px);
-        opacity: 0.85;
-    }
-
-    70% {
-        transform: scale(0.98);
-        filter: blur(4px);
-        opacity: 0.85;
-    }
-
-    100% {
-        transform: scale(1);
-        filter: blur(0);
-        opacity: 1;
+    to {
+        opacity: 0;
+        transform: translate3d(0, 14px, 0);
     }
 }
 
-.card-refresh-animation,
-#empty-state-card.card-refresh-animation {
-    animation: premium-context-switch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    will-change: transform, filter, opacity;
-    backface-visibility: hidden;
+@keyframes class-switch-in-down {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -16px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes class-switch-out-up {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, -14px, 0);
+    }
+}
+
+@keyframes class-switch-in-up {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.class-switch-out-down {
+    animation: class-switch-out-down 0.11s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+.class-switch-in-down {
+    animation: class-switch-in-down 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+.class-switch-out-up {
+    animation: class-switch-out-up 0.11s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+.class-switch-in-up {
+    animation: class-switch-in-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+/* Header Class Chip Name Odometer Roll */
+#headerClassName {
+    display: inline-block;
+}
+
+@keyframes header-class-out-down {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, 7px, 0);
+    }
+}
+
+@keyframes header-class-in-down {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -8px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes header-class-out-up {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, -7px, 0);
+    }
+}
+
+@keyframes header-class-in-up {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 8px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+#headerClassName.header-class-out-down {
+    animation: header-class-out-down 0.11s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+#headerClassName.header-class-in-down {
+    animation: header-class-in-down 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#headerClassName.header-class-out-up {
+    animation: header-class-out-up 0.11s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+#headerClassName.header-class-in-up {
+    animation: header-class-in-up 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ====================================================================
+   ANIMATION: View Switch (Directional Horizontal Micro-Slide - Liste <-> Plan)
+   Aligned with the horizontal [ Liste | Plan ] segmented control glider
+   ==================================================================== */
+@keyframes view-slide-out-left {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(-18px, 0, 0);
+    }
+}
+
+@keyframes view-slide-in-left {
+    from {
+        opacity: 0;
+        transform: translate3d(-24px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.view-slide-out-left {
+    animation: view-slide-out-left 0.095s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+.view-slide-in-left {
+    animation: view-slide-in-left 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .class-switch-out-down,
+    .class-switch-in-down,
+    .class-switch-out-up,
+    .class-switch-in-up,
+    #headerClassName.header-class-out-down,
+    #headerClassName.header-class-in-down,
+    #headerClassName.header-class-out-up,
+    #headerClassName.header-class-in-up,
+    .view-slide-out-left,
+    .view-slide-in-left {
+        animation: none !important;
+    }
 }
 
 /* ====================================================================
