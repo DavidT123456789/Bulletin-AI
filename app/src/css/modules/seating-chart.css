@@ -4023,14 +4023,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 /* Harmonize 1-student occupied station in Activity mode with stacked group cards */
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
-    border: 1.5px solid var(--border-color);
+    border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     padding-bottom: 12px;
 }
 
 [data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
 [data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-sm);
 }
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):not(.has-status-badge) .student-avatar,
@@ -4120,7 +4121,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     padding: 6px 5px 5px;
     gap: 3px;
     background: var(--surface-color);
-    border: 1.5px solid var(--border-color);
+    border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     cursor: grab;
     overflow: visible;
@@ -4132,16 +4133,23 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 [data-theme="dark"] .sc-cell.sc-cell-stacked {
     background: var(--bg-tertiary);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.08);
     box-shadow: var(--shadow-sm);
 }
 
 @media (hover: hover) {
-    .sc-cell.sc-cell-stacked:hover {
+    .sc-cell.sc-cell-stacked:hover,
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
         transform: translateY(-2px);
-        border-color: var(--highlight-standard-border);
+        border-color: rgba(24, 24, 27, 0.22);
         box-shadow: var(--shadow-md);
+        z-index: 10;
     }
+}
+
+[data-theme="dark"] .sc-cell.sc-cell-stacked:hover,
+[data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .sc-stacked-avatar-cluster {
