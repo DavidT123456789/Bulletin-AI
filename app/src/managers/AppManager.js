@@ -76,6 +76,7 @@ export const App = {
 
         // 2. Rendu UI critique immédiat (affiche le tableau sans attendre les services secondaires)
         this.updateUIOnLoad();
+        document.documentElement.classList.remove('is-first-visit');
 
         // 3. Service Cloud Sync en tâche de fond (non bloquant pour l'affichage du tableau)
         this._safeInit('SyncService', async () => {

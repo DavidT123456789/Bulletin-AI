@@ -138,8 +138,12 @@ export const PwaInstallManager = {
      * Called when browser install prompt is available (Chrome/Edge)
      */
     _onInstallAvailable() {
-        // Show menu button; banner display is handled by _scheduleBannerDisplay
         this._showMenuButton();
+
+        const isWelcomeOpen = DOM.welcomeModal?.classList.contains('modal-visible');
+        if (!Platform.isDesktop() && !isWelcomeOpen && !this.bannerShown && this._shouldShowBanner()) {
+            this._showBanner();
+        }
     },
 
     /**

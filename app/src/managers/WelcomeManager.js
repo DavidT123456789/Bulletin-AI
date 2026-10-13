@@ -288,7 +288,6 @@ export const WelcomeManager = {
 
         const finishWelcome = () => {
             localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
-            document.documentElement.classList.remove('is-first-visit');
             const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
             if (appState.periodSystem !== selectedSystem) {
                 appState.periodSystem = selectedSystem;
@@ -535,7 +534,6 @@ export const WelcomeManager = {
     async activateDemoMode() {
         appState.isDemoMode = true;
         localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
-        document.documentElement.classList.remove('is-first-visit');
 
         try {
             await this._injectDemoClass(appState.periodSystem);

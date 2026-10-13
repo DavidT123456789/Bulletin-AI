@@ -207,6 +207,8 @@ export const StorageManager = {
                 if (runtimeState.data.generatedResults.length < originalCount) {
                     await DBService.clear('generatedResults');
                     await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
+                } else if (this._lastMigrationChanged) {
+                    await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
                 }
             } else if (!runtimeState.data.generatedResults || runtimeState.data.generatedResults.length === 0) {
                 runtimeState.data.generatedResults = [];
@@ -596,6 +598,7 @@ export const StorageManager = {
 
             return result;
         });
+        this._lastMigrationChanged = migrationNeeded;
         if (migrationNeeded && UI) UI.showNotification("Données mises à jour vers le nouveau format.", 'info');
         return migratedResults;
     },
@@ -761,7 +764,8 @@ export const StorageManager = {
         const currentDataHash = this.computeCurrentDataHash();
         const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
 
-        if (!this._isFirstLoadSave) {
+        const isFirstLoad = this._isFirstLoadSave;
+        if (!isFirstLoad) {
             if (lastSyncHash && currentDataHash === lastSyncHash) {
                 // If we reverted back to the exact cloud version, clear local changes
                 const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
@@ -786,7 +790,7 @@ export const StorageManager = {
 
         localStorage.setItem(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
 
-        if (runtimeState.data.generatedResults) {
+        if (!isFirstLoad && runtimeState.data.generatedResults) {
             await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
         }
 
