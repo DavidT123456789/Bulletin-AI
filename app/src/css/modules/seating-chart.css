@@ -3855,12 +3855,12 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-classroom-board.sc-mode-carousel-in-right {
     animation: scBoardCarouselInRight 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
-    will-change: transform, opacity;
+    will-change: translate, transform, scale, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left {
     animation: scBoardCarouselInLeft 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
-    will-change: transform, opacity;
+    will-change: translate, transform, scale, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right .sc-cell:not([class*="sc-cell-special-"]) {
@@ -3949,8 +3949,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     box-shadow: none !important;
 }
 
-.sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-desk-row,
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row {
+.sc-classroom-board[data-plan-mode="activity"] .sc-desk-row,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row {
     display: none !important;
 }
 

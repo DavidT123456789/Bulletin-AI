@@ -1745,7 +1745,7 @@ export const SeatingChartManager = {
                 ? false
                 : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
         }
-        this._applyLockState(locked);
+        this._applyLockState(locked, { skipSmartFit: true });
         this._syncPlacementPopover();
 
         this._render();
@@ -2623,6 +2623,15 @@ export const SeatingChartManager = {
         const gridContainer = document.getElementById('scGridContainer');
         const expectedCells = this._getEffectiveRowCount() * this._getCols();
         const didRebuildGrid = this._isActivityMode() && gridContainer?.children.length !== expectedCells;
+        const isNativeDesktopSlide = !this._isMobileView()
+            && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
+            && !didRebuildGrid;
+        const rBefore = isNativeDesktopSlide ? null : (board?.getBoundingClientRect?.() || null);
+
+        if (!isNativeDesktopSlide && board) {
+            board.style.transition = 'none';
+        }
+
         if (didRebuildGrid) {
             this._renderGrid();
         } else {
@@ -2633,16 +2642,10 @@ export const SeatingChartManager = {
         this._updateFooter();
         this._saveGridConfig();
 
-        const isNativeDesktopSlide = !this._isMobileView()
-            && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
-            && !didRebuildGrid;
-
         if (isNativeDesktopSlide) {
             this._syncLockControlsUI(this._isLocked);
             this._bindBoardSlideCleanup(board, 600);
         } else {
-            const rBefore = board?.getBoundingClientRect?.() || null;
-            if (board) board.style.transition = 'none';
             this._syncLockControlsUI(this._isLocked);
             this._applySmartFit(true);
             if (rBefore && rBefore.width > 0) {
