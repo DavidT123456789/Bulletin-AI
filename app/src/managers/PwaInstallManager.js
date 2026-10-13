@@ -138,13 +138,8 @@ export const PwaInstallManager = {
      * Called when browser install prompt is available (Chrome/Edge)
      */
     _onInstallAvailable() {
-        // Show menu button
+        // Show menu button; banner display is handled by _scheduleBannerDisplay
         this._showMenuButton();
-
-        // Also consider showing banner if not dismissed
-        if (!this.bannerShown && this._shouldShowBanner()) {
-            this._showBanner();
-        }
     },
 
     /**
@@ -167,6 +162,14 @@ export const PwaInstallManager = {
             // Native browser install prompt is available in Chrome/Edge
             if (Platform.isDesktop()) {
                 if (this.deferredPrompt || !Platform.isStandalone()) {
+                    this._showMenuButton();
+                }
+                return;
+            }
+
+            // Do not interrupt the Welcome onboarding modal on first visit
+            if (DOM.welcomeModal?.classList.contains('modal-visible')) {
+                if (!Platform.isStandalone()) {
                     this._showMenuButton();
                 }
                 return;

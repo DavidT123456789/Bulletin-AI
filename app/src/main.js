@@ -160,12 +160,14 @@ function setupPWAUpdateHandler() {
     // Check if service worker is available
     if (!('serviceWorker' in navigator)) return;
 
+    const hadController = !!navigator.serviceWorker.controller;
     let isRefreshing = false;
     let isUpdating = false;
 
-    // Direct listener on controller change (ensures instant reload as soon as new SW takes over)
+    // Reload on controllerchange only when a user-initiated update is in progress
+    // and never on initial first-visit Service Worker installation
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (isRefreshing) return;
+        if (isRefreshing || !isUpdating || !hadController) return;
         isRefreshing = true;
         window.location.reload();
     });

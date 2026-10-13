@@ -64,6 +64,9 @@
                             document.documentElement.classList.add('is-restoring-transition');
                         }
                     }
+                    if (!localStorage.getItem('appreciationGeneratorFirstVisit_v4')) {
+                        document.documentElement.classList.add('is-first-visit');
+                    }
                 } catch (_) {}
 
                 // Accent Color Pre-calculation
@@ -186,6 +189,12 @@
         }
         body {
             background-color: inherit;
+        }
+        html.is-first-visit #initialTableSkeleton,
+        html.is-first-visit .stats-container,
+        html.is-first-visit #statsPagination,
+        html.is-first-visit #outputHeader {
+            display: none !important;
         }
         @view-transition {
             navigation: auto;
@@ -3446,7 +3455,7 @@
                                         </div>
                                         <div class="about-title-group">
                                             <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                            <div class="about-build-date" id="aboutBuildDate">Build 351d2f5 · 14 octobre 2026</div>
+                                            <div class="about-build-date" id="aboutBuildDate">Build 2dd3358 · 14 octobre 2026</div>
                                         </div>
                                     </div>
                                     <div class="about-actions">

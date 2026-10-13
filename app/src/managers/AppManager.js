@@ -59,7 +59,20 @@ export const App = {
         EventListenersManager.init(this);
         StorageManager.init(UI, this);
 
-        await this._safeInit('StorageManager.loadAppState', () => StorageManager.loadAppState());
+        // Démarrer le chargement de l'état (la lecture localStorage s'exécute de façon synchrone avant l'attente IndexedDB)
+        const loadStatePromise = this._safeInit('StorageManager.loadAppState', () => StorageManager.loadAppState());
+
+        // Ouvrir immédiatement la modale de bienvenue dès la première frame (0ms) sans attendre IndexedDB
+        await this._safeInit('Welcome & API Validation', () => {
+            WelcomeManager.setValidateApiKeyCallback((provider, input, error, btn, onSuccess) =>
+                ApiValidationManager.validateApiKeyUI(provider, input, error, btn, onSuccess)
+            );
+            if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
+            WelcomeManager.handleFirstVisit();
+            document.querySelectorAll('#actions-irreversibles-container details').forEach(d => d.removeAttribute('open'));
+        });
+
+        await loadStatePromise;
 
         // 2. Rendu UI critique immédiat (affiche le tableau sans attendre les services secondaires)
         this.updateUIOnLoad();
@@ -81,11 +94,11 @@ export const App = {
             this.setupPWA();
         });
 
-        // 4. Services audio & reconnaissance vocale
+        // 5. Services audio & reconnaissance vocale
         await this._safeInit('SpeechRecognitionManager', () => SpeechRecognitionManager.init());
         await this._safeInit('SpeechSynthesisManager', () => SpeechSynthesisManager.init());
 
-        // 5. Menus déroulants personnalisés et sélecteur de modèle IA
+        // 6. Menus déroulants personnalisés et sélecteur de modèle IA
         await this._safeInit('Dropdowns & Model Selection', () => {
             DropdownManager.init();
             ModelSelectionManager.init();
@@ -95,16 +108,6 @@ export const App = {
             if (DOM.loadStudentSelect) DropdownManager.enhance(DOM.loadStudentSelect);
             if (DOM.previewStudentSelect) DropdownManager.enhance(DOM.previewStudentSelect);
             if (DOM.settingsSubjectSelect) DropdownManager.enhance(DOM.settingsSubjectSelect);
-        });
-
-        // 6. Accueil et validation de clés API
-        await this._safeInit('Welcome & API Validation', () => {
-            WelcomeManager.setValidateApiKeyCallback((provider, input, error, btn, onSuccess) =>
-                ApiValidationManager.validateApiKeyUI(provider, input, error, btn, onSuccess)
-            );
-            if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
-            WelcomeManager.handleFirstVisit();
-            document.querySelectorAll('#actions-irreversibles-container details').forEach(d => d.removeAttribute('open'));
         });
 
         // 7. Gestion des classes
