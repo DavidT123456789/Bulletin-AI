@@ -4238,7 +4238,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
     width: 100%;
     max-width: 100%;
     overflow: visible;
@@ -4250,28 +4250,36 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     align-items: center;
     justify-content: center;
     width: fit-content;
-    max-width: calc(100% - 16px);
-    margin: 0 auto;
-    border-radius: var(--radius-pill);
-    padding: 1.5px 8px;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: var(--radius-xs);
+    padding: 1px 6px;
     box-sizing: border-box;
-    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), opacity 0.2s ease;
+    z-index: 1;
+    transition: color var(--transition-fast), opacity 0.2s ease;
 }
 
-#seatingChartView[data-locked="true"] .sc-stacked-member {
-    cursor: pointer;
+#seatingChartView[data-locked="false"] .sc-stacked-member {
+    max-width: calc(100% - 24px);
 }
 
-#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-member {
-    cursor: grab;
+.sc-stacked-member::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    z-index: -1;
+    pointer-events: none;
+    transition: background var(--transition-fast);
 }
 
-#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-member:active {
-    cursor: grabbing;
+#seatingChartView[data-locked="false"] .sc-stacked-member::before {
+    right: -13px;
 }
 
 @media (hover: hover) {
-    .sc-stacked-member:hover {
+    .sc-stacked-member:hover::before {
         background: var(--item-hover-bg);
     }
 }
@@ -4283,9 +4291,17 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary));
     max-width: 100%;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
     text-align: center;
+    cursor: pointer;
+}
+
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-name {
+    cursor: grab;
+}
+
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-name:active {
+    cursor: grabbing;
 }
 
 /* ── Adaptive Internal Density by Group Size (Binôme / Trinôme / Quatuor) ── */
@@ -4309,7 +4325,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-member {
-    padding: 2px 10px;
+    padding: 1.5px 6px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
@@ -4345,10 +4361,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     font-size: 0.68rem !important;
 }
 
-.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-member {
-    padding: 1px 8px;
-}
-
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-name {
     font-size: 0.65rem;
     line-height: 1.2;
@@ -4379,7 +4391,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-member {
-    padding: 0.5px 7px;
+    padding: 0.5px 5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-name {
@@ -4388,11 +4400,12 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-stacked-name-text {
-    display: inline-block;
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    pointer-events: none;
 }
 
 @media (hover: hover) {
@@ -4404,15 +4417,19 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Individual member remove button inside stacked station (Edit Mode only, Neutral Dark Mode contrast) */
 .sc-stacked-member-remove {
+    position: absolute;
+    left: calc(100% - 3px);
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 0;
+    width: 14px;
     height: 14px;
     padding: 0;
-    margin-left: 0;
     border: none;
-    border-radius: var(--radius-pill);
+    border-radius: 50%;
     background: transparent;
     color: var(--text-tertiary);
     font-size: 0.68rem;
@@ -4420,14 +4437,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     flex-shrink: 0;
     opacity: 0;
     pointer-events: none;
-    overflow: hidden;
-    transition: width 0.18s var(--ease-spring), opacity 0.15s ease, margin-left 0.18s var(--ease-spring), background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
 @media (hover: hover) {
     #seatingChartView[data-locked="false"] .sc-stacked-member:hover .sc-stacked-member-remove {
-        width: 14px;
-        margin-left: 4px;
         opacity: 1;
         pointer-events: auto;
     }
@@ -4435,7 +4449,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-stacked-member-remove:hover {
         background: var(--item-hover-bg);
         color: var(--text-primary);
-        transform: scale(1.15);
+        transform: translateY(-50%) scale(1.12);
     }
 }
 

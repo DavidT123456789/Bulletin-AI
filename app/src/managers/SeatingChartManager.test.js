@@ -2828,6 +2828,34 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
         });
+
+        it('devrait activer data-tooltip sur la pilule .sc-stacked-member uniquement en mode Lecture et le retirer en mode Édition', () => {
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('pairs-alpha');
+
+            const cell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="0"]');
+            expect(cell).not.toBeNull();
+            const memberPills = cell.querySelectorAll('.sc-stacked-member');
+            expect(memberPills.length).toBe(2);
+
+            // En mode Édition : aucun tooltip sur les pilules de prénoms pour ne pas masquer les avatars
+            memberPills.forEach(pill => {
+                expect(pill.hasAttribute('data-tooltip')).toBe(false);
+                expect(pill.querySelector('.sc-stacked-name-text').hasAttribute('data-tooltip')).toBe(false);
+            });
+
+            // Passage en mode Lecture : data-tooltip attaché directement sur .sc-stacked-member
+            SeatingChartManager._applyLockState(true);
+            expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
+
+            // Retour en mode Édition : data-tooltip retiré de .sc-stacked-member
+            SeatingChartManager._applyLockState(false);
+            memberPills.forEach(pill => {
+                expect(pill.hasAttribute('data-tooltip')).toBe(false);
+            });
+        });
     });
 });
 

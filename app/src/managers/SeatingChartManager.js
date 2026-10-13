@@ -2783,10 +2783,21 @@ export const SeatingChartManager = {
                 } else {
                     cell.removeAttribute('data-tooltip');
                     if (cell._tippy) cell._tippy.destroy();
+                    cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
+                        const s = this._studentMap?.get(memberEl.dataset.resultId);
+                        if (!s) return;
+                        const tooltipText = Utils.formatStudentFirstLastName(s.nom, s.prenom);
+                        memberEl.setAttribute('data-tooltip', tooltipText);
+                        TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
+                    });
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
                 if (cell._tippy) cell._tippy.destroy();
+                cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
+                    memberEl.removeAttribute('data-tooltip');
+                    if (memberEl._tippy) memberEl._tippy.destroy();
+                });
                 const primary = students[0];
                 if (primary && !isNaN(row) && !isNaN(col)) {
                     this._attachCellDragListeners(cell, primary, row, col);
@@ -2796,7 +2807,6 @@ export const SeatingChartManager = {
                 }
             }
         });
-        TooltipsUI?.initTooltips?.();
     },
 
     /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
@@ -4591,7 +4601,6 @@ export const SeatingChartManager = {
 
         container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
         container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;
-        TooltipsUI?.cleanupTooltipsIn?.(container);
         container.innerHTML = '';
 
         const isStudent = this._orientation === 'student';
@@ -4602,7 +4611,6 @@ export const SeatingChartManager = {
                 container.appendChild(this._createCell(r, c));
             }
         }
-        TooltipsUI?.initTooltips?.();
     },
 
     _createCell(row, col) {
@@ -4726,16 +4734,18 @@ export const SeatingChartManager = {
             `).join('');
 
             const namesHtml = students.map(s => {
-                const fullName = Utils.formatStudentFirstLastName(s.nom, s.prenom);
-                const removeLabel = `Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe`;
+                const memberTooltipAttr = this._isLocked
+                    ? ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}"`
+                    : '';
                 return `
-                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}" data-tooltip="${fullName}">
+                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
-                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="${removeLabel}" data-tooltip="${removeLabel}">
+                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
                 </span>
-            `;}).join('');
+            `;
+            }).join('');
 
             cell.innerHTML = `
                 <div class="sc-stacked-avatar-cluster">
