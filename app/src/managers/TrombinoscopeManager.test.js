@@ -1576,4 +1576,32 @@ describe('TrombinoscopeManager Mid-Year Student Re-upload & Data Safety', () => 
             { studentId: 'mock-student-LECLERC', photoData: 'data:leclerc-new' }
         ]);
     });
+
+    it('should not treat students of the active class as existing when importing an unknown group', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+
+        appState.generatedResults = [
+            { id: 'student-dupont', nom: 'DUPONT', prenom: 'Jean', classId: 'c-31' }
+        ];
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([{ id: 'c-31', name: '3°1' }]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c-31', name: '3°1' });
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '3 TECHNOLOGIE G1',
+            isGroup: true,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'MARTIN', prenom: 'Sophie' }
+            ],
+            numPages: 1,
+            pages: [{ zones: [] }]
+        };
+
+        const info = TrombinoscopeManager._getTargetClassInfo();
+
+        expect(info.targetClass).toBeUndefined();
+        expect(info.existingClassStudents).toEqual([]);
+        expect(info.isUpdate).toBe(false);
+        expect(info.newStudents).toHaveLength(2);
+    });
 });

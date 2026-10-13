@@ -751,13 +751,10 @@ export const TrombinoscopeManager = {
         const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
         const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
 
-        const candidateClasses = currentClass && !existingClasses.some(c => c.id === currentClass.id)
-            ? [...existingClasses, currentClass]
-            : existingClasses;
         const pdfStudents = this._parsedPdfData.students || [];
 
         // 1. Recherche correspondance exacte (insensible à la casse sur nom formaté ou brut)
-        let targetClass = candidateClasses.find(c =>
+        let targetClass = existingClasses.find(c =>
             c.name.toLowerCase() === targetName.toLowerCase() ||
             c.name.toLowerCase() === rawTargetName.toLowerCase()
         );
@@ -767,7 +764,7 @@ export const TrombinoscopeManager = {
             const targetNorm = Utils.normalizeClassName(targetName);
             const rawNorm = Utils.normalizeClassName(rawTargetName);
             if (targetNorm || rawNorm) {
-                targetClass = candidateClasses.find(c => {
+                targetClass = existingClasses.find(c => {
                     const cNorm = Utils.normalizeClassName(c.name);
                     return (targetNorm && cNorm === targetNorm) || (rawNorm && cNorm === rawNorm);
                 });
@@ -3643,20 +3640,14 @@ export const TrombinoscopeManager = {
             const assignments = [];
 
             if (this._parsedPdfData) {
-                const targetInfo = initialTargetInfo || this._getTargetClassInfo();
-                const shouldUpdateExisting = !targetInfo.isUpdate
-                    ? true
-                    : (this._updateExistingPhotos ?? (targetInfo.newStudents.length === 0));
+                const shouldUpdateExisting = !initialTargetInfo.isUpdate
+                    || (this._updateExistingPhotos ?? initialTargetInfo.newStudents.length === 0);
 
                 for (const item of assignedItems) {
                     const { studentId, cx, cy } = item.zone;
-                    const lookupId = item.originalStudentId || studentId;
-                    const isNew = !targetInfo.isUpdate || newlyAddedStudentIds.has(studentId);
 
-                    // If existing student and user chose NOT to update existing photos: SKIP photo extraction!
-                    if (targetInfo.isUpdate && !isNew && !shouldUpdateExisting) {
-                        continue;
-                    }
+                    // Élève existant et actualisation des photos désactivée : on conserve sa photo
+                    if (!newlyAddedStudentIds.has(studentId) && !shouldUpdateExisting) continue;
 
                     const page = this._parsedPdfData.pages[item.pageIndex];
                     if (!page || !page.canvas) continue;
@@ -3673,7 +3664,7 @@ export const TrombinoscopeManager = {
                         ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
                         photoData = canvas.toDataURL('image/jpeg', 0.85);
                     } else {
-                        const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === lookupId || s.id === studentId || s.id === item.zone.studentId);
+                        const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === item.originalStudentId);
                         photoData = matchedPdfStudent?.photoData || 'data:image/jpeg;base64,mock';
                     }
                     assignments.push({ studentId, photoData });
