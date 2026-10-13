@@ -751,8 +751,13 @@ export const TrombinoscopeManager = {
         const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
         const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
 
+        const candidateClasses = currentClass && !existingClasses.some(c => c.id === currentClass.id)
+            ? [...existingClasses, currentClass]
+            : existingClasses;
+        const pdfStudents = this._parsedPdfData.students || [];
+
         // 1. Recherche correspondance exacte (insensible à la casse sur nom formaté ou brut)
-        let targetClass = existingClasses.find(c =>
+        let targetClass = candidateClasses.find(c =>
             c.name.toLowerCase() === targetName.toLowerCase() ||
             c.name.toLowerCase() === rawTargetName.toLowerCase()
         );
@@ -762,7 +767,7 @@ export const TrombinoscopeManager = {
             const targetNorm = Utils.normalizeClassName(targetName);
             const rawNorm = Utils.normalizeClassName(rawTargetName);
             if (targetNorm || rawNorm) {
-                targetClass = existingClasses.find(c => {
+                targetClass = candidateClasses.find(c => {
                     const cNorm = Utils.normalizeClassName(c.name);
                     return (targetNorm && cNorm === targetNorm) || (rawNorm && cNorm === rawNorm);
                 });
@@ -770,15 +775,18 @@ export const TrombinoscopeManager = {
         }
 
         // 3. Réutilisation de la classe active si vide et non-démo
-        if (!targetClass && currentClass && !hasStudents && !isDemo) {
+        const reusedEmptyClass = Boolean(!targetClass && currentClass && !hasStudents && !isDemo);
+        if (reusedEmptyClass) {
             targetClass = currentClass;
         }
 
+        const hasRealPdfClassName = Boolean(this._parsedPdfData.className) && !/^(classe|nouvelle classe)$/i.test(rawTargetName);
+        const shouldRename = reusedEmptyClass && hasRealPdfClassName;
+
         const existingClassStudents = targetClass
             ? (appState.generatedResults || []).filter(r => r.classId === targetClass.id)
-            : (currentClass ? (appState.generatedResults || []).filter(r => r.classId === currentClass.id) : []);
+            : [];
 
-        const pdfStudents = this._parsedPdfData.students || [];
         const existingStudents = [];
         const newStudents = [];
 
@@ -796,6 +804,8 @@ export const TrombinoscopeManager = {
 
         return {
             targetClass,
+            targetName,
+            shouldRename,
             existingClassStudents,
             newStudents,
             existingStudents,
@@ -828,6 +838,7 @@ export const TrombinoscopeManager = {
                 page.originalZones = page.zones.map(z => ({ ...z }));
             });
             this._parsedPdfData = parsed;
+            this._updateExistingPhotos = null;
 
             const firstPage = parsed.pages[0];
             if (!firstPage) {
@@ -1022,6 +1033,7 @@ export const TrombinoscopeManager = {
     _removeImage() {
         this._imageSrc = null;
         this._parsedPdfData = null;
+        this._updateExistingPhotos = null;
         this._currentPageIndex = 0;
         this._imageNaturalWidth = 0;
         this._imageNaturalHeight = 0;
@@ -3351,9 +3363,11 @@ export const TrombinoscopeManager = {
             }
         }
 
-        // Initialize photo update preference: default to false if new students exist, true if only updating photos
-        if (typeof this._updateExistingPhotos !== 'boolean') {
-            this._updateExistingPhotos = targetInfo.isUpdate && newAssignedCount === 0;
+        // Initialize photo update preference: true for initial import or photo-only update, false by default when adding new students to an existing class
+        if (!targetInfo.isUpdate || newAssignedCount === 0) {
+            this._updateExistingPhotos = true;
+        } else if (typeof this._updateExistingPhotos !== 'boolean') {
+            this._updateExistingPhotos = false;
         }
 
         // Render sleek reassurance bar
@@ -3416,7 +3430,8 @@ export const TrombinoscopeManager = {
             if (confirmInfo) {
                 if (targetInfo.isUpdate && newAssignedCount > 0) {
                     if (!updateExisting) {
-                        confirmInfo.innerHTML = `<strong>${newAssignedCount}</strong> nouvel élève à ajouter • ${existingAssignedCount} élève${existingAssignedCount > 1 ? 's' : ''} existant${existingAssignedCount > 1 ? 's' : ''} inchangé${existingAssignedCount > 1 ? 's' : ''}`;
+                        const newLabel = newAssignedCount > 1 ? 'nouveaux élèves à ajouter' : 'nouvel élève à ajouter';
+                        confirmInfo.innerHTML = `<strong>${newAssignedCount}</strong> ${newLabel} • ${existingAssignedCount} élève${existingAssignedCount > 1 ? 's' : ''} existant${existingAssignedCount > 1 ? 's' : ''} inchangé${existingAssignedCount > 1 ? 's' : ''}`;
                     } else {
                         confirmInfo.innerHTML = `<strong>${assignedCount}</strong> élèves prêts • <span class="trombi-stat-badge is-new">+${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}</span> • ${existingAssignedCount} déjà inscrit${existingAssignedCount > 1 ? 's' : ''}`;
                     }
@@ -3498,7 +3513,8 @@ export const TrombinoscopeManager = {
 
     async _drawPreview(canvas, zone, pageIndex = 0) {
         if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext?.('2d');
+        if (!ctx) return;
         const targetSize = canvas.width;
         const r = zone.r || this._globalRadius;
         const diameter = r * 2;
@@ -3569,33 +3585,27 @@ export const TrombinoscopeManager = {
         try {
             let targetClass = null;
             let newStudentsAddedCount = 0;
+            let initialTargetInfo = null;
+            const newlyAddedStudentIds = new Set();
 
             // If from parsed PDF, ensure class and students exist
             if (this._parsedPdfData) {
-                const targetInfo = this._getTargetClassInfo();
-                targetClass = targetInfo.targetClass;
-                const rawTargetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
-                const targetName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(rawTargetName) : rawTargetName;
-                const currentClass = ClassManager.getCurrentClass?.();
-                const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
-                const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
+                initialTargetInfo = this._getTargetClassInfo();
+                targetClass = initialTargetInfo.targetClass;
 
-                // Si toujours non trouvée mais la classe active est vide et n'est pas la démo :
                 if (!targetClass) {
-                    if (currentClass && !hasStudents && !isDemo) {
-                        ClassManager.updateClass?.(currentClass.id, {
-                            name: targetName,
-                            year: this._parsedPdfData.schoolYear || currentClass.year
-                        });
-                        targetClass = currentClass;
-                    } else {
-                        targetClass = ClassManager.createClass(targetName, this._parsedPdfData.schoolYear);
-                    }
+                    targetClass = ClassManager.createClass(initialTargetInfo.targetName, this._parsedPdfData.schoolYear);
+                } else if (initialTargetInfo.shouldRename) {
+                    ClassManager.updateClass?.(targetClass.id, {
+                        name: initialTargetInfo.targetName,
+                        year: this._parsedPdfData.schoolYear || targetClass.year
+                    });
                 }
                 await ClassManager.switchClass(targetClass.id);
 
                 // Create any pending student that was in the PDF and assigned to a zone
                 for (const item of assignedItems) {
+                    item.originalStudentId = item.zone.studentId;
                     let existing = appState.generatedResults.find(r => r.id === item.zone.studentId);
                     if (!existing && this._parsedPdfData.students) {
                         const pdfStudent = this._parsedPdfData.students.find(s => s.id === item.zone.studentId);
@@ -3616,6 +3626,7 @@ export const TrombinoscopeManager = {
                                 newStudentResult.classId = targetClass.id;
                                 appState.generatedResults.push(newStudentResult);
                                 item.zone.studentId = newStudentResult.id;
+                                newlyAddedStudentIds.add(newStudentResult.id);
                                 newStudentsAddedCount++;
                             }
                         }
@@ -3632,16 +3643,15 @@ export const TrombinoscopeManager = {
             const assignments = [];
 
             if (this._parsedPdfData) {
-                const targetInfo = this._getTargetClassInfo();
-                const shouldUpdateExisting = this._updateExistingPhotos ?? (targetInfo.isUpdate && targetInfo.newStudents.length === 0);
+                const targetInfo = initialTargetInfo || this._getTargetClassInfo();
+                const shouldUpdateExisting = !targetInfo.isUpdate
+                    ? true
+                    : (this._updateExistingPhotos ?? (targetInfo.newStudents.length === 0));
 
                 for (const item of assignedItems) {
                     const { studentId, cx, cy } = item.zone;
-
-                    const isNew = targetInfo.isUpdate && targetInfo.newStudents.some(ns =>
-                        ns.id === studentId ||
-                        (this._parsedPdfData?.students?.find(ps => ps.id === studentId && Utils.normalizeName(ps.nom, ps.prenom) === Utils.normalizeName(ns.nom, ns.prenom)))
-                    );
+                    const lookupId = item.originalStudentId || studentId;
+                    const isNew = !targetInfo.isUpdate || newlyAddedStudentIds.has(studentId);
 
                     // If existing student and user chose NOT to update existing photos: SKIP photo extraction!
                     if (targetInfo.isUpdate && !isNew && !shouldUpdateExisting) {
@@ -3663,7 +3673,7 @@ export const TrombinoscopeManager = {
                         ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
                         photoData = canvas.toDataURL('image/jpeg', 0.85);
                     } else {
-                        const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === studentId || s.id === item.zone.studentId);
+                        const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === lookupId || s.id === studentId || s.id === item.zone.studentId);
                         photoData = matchedPdfStudent?.photoData || 'data:image/jpeg;base64,mock';
                     }
                     assignments.push({ studentId, photoData });
@@ -3710,11 +3720,15 @@ export const TrombinoscopeManager = {
             UI?.updateControlButtons?.();
             UI?.updateAIButtonsState?.();
 
-            if (newStudentsAddedCount > 0) {
+            const wasUpdate = initialTargetInfo?.isUpdate ?? false;
+            if (wasUpdate && newStudentsAddedCount > 0) {
                 const shouldUpdateExisting = this._updateExistingPhotos ?? false;
+                const addedLabel = newStudentsAddedCount > 1
+                    ? `${newStudentsAddedCount} nouveaux élèves ajoutés`
+                    : `${newStudentsAddedCount} nouvel élève ajouté`;
                 const notifText = (shouldUpdateExisting && count > newStudentsAddedCount)
-                    ? `${newStudentsAddedCount} nouvel élève ajouté, ${count} photos importées • Données conservées`
-                    : `${newStudentsAddedCount} nouvel élève ajouté • Photos existantes et données conservées`;
+                    ? `${addedLabel}, ${count} photos importées • Données conservées`
+                    : `${addedLabel} • Photos existantes et données conservées`;
                 UI.showNotification(notifText, 'success');
                 window.dispatchEvent(new CustomEvent('studentsUpdated'));
             } else if (count > 0) {

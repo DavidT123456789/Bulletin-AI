@@ -1462,8 +1462,118 @@ describe('TrombinoscopeManager Mid-Year Student Re-upload & Data Safety', () => 
         expect(row2OptionTexts).toContain('PAILLARD Léonie');
         expect(row2OptionTexts.some(t => t.includes('Inscrit') || t.includes('Nouveau'))).toBe(false);
     });
+
+    it('should extract all photos and rename empty active class on first-time PDF import after Step 3', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { StudentPhotoManager } = await import('./StudentPhotoManager.js');
+        const { UI } = await import('./UIManager.js');
+
+        appState.generatedResults = [];
+        const emptyCurrentClass = { id: 'c-new', name: 'Nouvelle classe', year: '2025-2026' };
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([emptyCurrentClass]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue(emptyCurrentClass);
+        ClassManager.updateClass = vi.fn();
+        StudentPhotoManager.bulkAssignPhotos.mockResolvedValue(2);
+
+        document.body.innerHTML = `
+            <div id="trombiStep3">
+                <div id="trombiReassuranceBanner"></div>
+                <div id="trombiPreviewGrid"></div>
+                <div id="trombiConfirmInfo"></div>
+                <button id="trombiConfirmBtn"></button>
+            </div>
+        `;
+
+        const mockCanvas = { width: 1000, height: 1400, getContext: vi.fn() };
+        TrombinoscopeManager._parsedPdfData = {
+            className: '5 1',
+            schoolYear: '2026-2027',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'AUBERT', prenom: 'Noe', photoData: 'data:aubert' },
+                { id: 'pdf-s2', nom: 'BOUILLOT', prenom: 'Agathe', photoData: 'data:bouillot' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                canvas: mockCanvas,
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+                    { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = TrombinoscopeManager._parsedPdfData.pages[0].zones;
+
+        // Go through Step 3 first (simulating normal wizard progression)
+        TrombinoscopeManager._initStep3();
+        expect(TrombinoscopeManager._updateExistingPhotos).toBe(true);
+
+        await TrombinoscopeManager._handleImport();
+
+        // Empty active class was renamed to the PDF class name
+        expect(ClassManager.updateClass).toHaveBeenCalledWith('c-new', {
+            name: '5 1',
+            year: '2026-2027'
+        });
+
+        // Both students were created and BOTH photos were extracted and assigned
+        expect(appState.generatedResults).toHaveLength(2);
+        expect(StudentPhotoManager.bulkAssignPhotos).toHaveBeenCalledWith([
+            { studentId: 'mock-student-AUBERT', photoData: expect.any(String) },
+            { studentId: 'mock-student-BOUILLOT', photoData: expect.any(String) }
+        ]);
+
+        // Initial import notification is shown (not the mid-year "Photos existantes conservées" message)
+        expect(UI.showNotification).toHaveBeenCalledWith('2 photos importées avec succès', 'success');
+    });
+
+    it('should extract photo for newly added student during mid-year re-upload when _updateExistingPhotos is false', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { StudentPhotoManager } = await import('./StudentPhotoManager.js');
+
+        const existingStudent = {
+            id: 'student-dupont',
+            nom: 'DUPONT',
+            prenom: 'Jean',
+            classId: 'c-43',
+            studentPhoto: { data: 'data:old-photo', source: 'manual' }
+        };
+        appState.generatedResults = [existingStudent];
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([{ id: 'c-43', name: '4°3' }]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c-43', name: '4°3' });
+        StudentPhotoManager.bulkAssignPhotos.mockResolvedValue(1);
+
+        const mockCanvas = { width: 1000, height: 1400, getContext: vi.fn() };
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean', photoData: 'data:dupont-new' },
+                { id: 'pdf-s2', nom: 'LECLERC', prenom: 'Arthur', photoData: 'data:leclerc-new' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                canvas: mockCanvas,
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+                    { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = TrombinoscopeManager._parsedPdfData.pages[0].zones;
+        TrombinoscopeManager._updateExistingPhotos = false;
+
+        await TrombinoscopeManager._handleImport();
+
+        // Only the new student's photo is extracted and assigned; existing student's photo is skipped
+        expect(StudentPhotoManager.bulkAssignPhotos).toHaveBeenCalledWith([
+            { studentId: 'mock-student-LECLERC', photoData: 'data:leclerc-new' }
+        ]);
+    });
 });
-
-
-
-
