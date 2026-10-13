@@ -4023,7 +4023,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 /* Harmonize 1-student occupied station in Activity mode with stacked group cards */
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     box-shadow: var(--shadow-sm);
     padding-bottom: 12px;
 }
@@ -4121,7 +4121,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     padding: 6px 5px 5px;
     gap: 3px;
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     box-shadow: var(--shadow-sm);
     cursor: grab;
     overflow: visible;
@@ -4141,7 +4141,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-cell.sc-cell-stacked:hover,
     .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
         transform: translateY(-2px);
-        border-color: rgba(24, 24, 27, 0.22);
+        border-color: transparent;
         box-shadow: var(--shadow-md);
         z-index: 10;
     }
@@ -4237,24 +4237,37 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-stacked-names-list {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 1px;
+    align-items: center;
+    gap: 2px;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .sc-stacked-member {
     position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    min-width: 0;
-    border-radius: var(--radius-xs);
-    padding: 1px 14px;
+    width: fit-content;
+    max-width: calc(100% - 16px);
+    margin: 0 auto;
+    border-radius: var(--radius-pill);
+    padding: 1.5px 8px;
     box-sizing: border-box;
-    transition: background var(--transition-fast), color var(--transition-fast), opacity 0.2s ease;
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), opacity 0.2s ease;
+}
+
+#seatingChartView[data-locked="true"] .sc-stacked-member {
+    cursor: pointer;
+}
+
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-member {
+    cursor: grab;
+}
+
+#seatingChartView[data-locked="false"] .sc-cell-stacked:not(.pinned) .sc-stacked-member:active {
+    cursor: grabbing;
 }
 
 @media (hover: hover) {
@@ -4273,7 +4286,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    cursor: pointer;
 }
 
 /* ── Adaptive Internal Density by Group Size (Binôme / Trinôme / Quatuor) ── */
@@ -4297,7 +4309,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-member {
-    padding: 1.5px 12px;
+    padding: 2px 10px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
@@ -4333,6 +4345,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     font-size: 0.68rem !important;
 }
 
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-member {
+    padding: 1px 8px;
+}
+
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-name {
     font-size: 0.65rem;
     line-height: 1.2;
@@ -4363,7 +4379,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-member {
-    padding: 0.5px 12px;
+    padding: 0.5px 7px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-name {
@@ -4372,10 +4388,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-stacked-name-text {
-    display: block;
+    display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    pointer-events: none;
 }
 
 @media (hover: hover) {
@@ -4387,18 +4404,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Individual member remove button inside stacked station (Edit Mode only, Neutral Dark Mode contrast) */
 .sc-stacked-member-remove {
-    position: absolute;
-    right: 1px;
-    top: 50%;
-    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
+    width: 0;
     height: 14px;
     padding: 0;
+    margin-left: 0;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     background: transparent;
     color: var(--text-tertiary);
     font-size: 0.68rem;
@@ -4406,11 +4420,14 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     flex-shrink: 0;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    overflow: hidden;
+    transition: width 0.18s var(--ease-spring), opacity 0.15s ease, margin-left 0.18s var(--ease-spring), background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 @media (hover: hover) {
     #seatingChartView[data-locked="false"] .sc-stacked-member:hover .sc-stacked-member-remove {
+        width: 14px;
+        margin-left: 4px;
         opacity: 1;
         pointer-events: auto;
     }
@@ -4418,7 +4435,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-stacked-member-remove:hover {
         background: var(--item-hover-bg);
         color: var(--text-primary);
-        transform: translateY(-50%) scale(1.12);
+        transform: scale(1.15);
     }
 }
 

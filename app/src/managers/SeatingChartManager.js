@@ -2796,6 +2796,7 @@ export const SeatingChartManager = {
                 }
             }
         });
+        TooltipsUI?.initTooltips?.();
     },
 
     /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
@@ -4590,6 +4591,7 @@ export const SeatingChartManager = {
 
         container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
         container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;
+        TooltipsUI?.cleanupTooltipsIn?.(container);
         container.innerHTML = '';
 
         const isStudent = this._orientation === 'student';
@@ -4600,6 +4602,7 @@ export const SeatingChartManager = {
                 container.appendChild(this._createCell(r, c));
             }
         }
+        TooltipsUI?.initTooltips?.();
     },
 
     _createCell(row, col) {
@@ -4722,14 +4725,17 @@ export const SeatingChartManager = {
                 </div>
             `).join('');
 
-            const namesHtml = students.map(s => `
-                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}">
-                    <span class="sc-stacked-name-text" data-tooltip="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
-                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
+            const namesHtml = students.map(s => {
+                const fullName = Utils.formatStudentFirstLastName(s.nom, s.prenom);
+                const removeLabel = `Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe`;
+                return `
+                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}" data-tooltip="${fullName}">
+                    <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
+                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="${removeLabel}" data-tooltip="${removeLabel}">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
                 </span>
-            `).join('');
+            `;}).join('');
 
             cell.innerHTML = `
                 <div class="sc-stacked-avatar-cluster">
