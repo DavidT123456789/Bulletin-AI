@@ -3060,6 +3060,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         padding-top: calc(56px + 48px);
         margin-left: 0 !important;
         width: 100% !important;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .sc-grid-area::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
     }
 
     #seatingChartView[data-locked="false"] .sc-grid-area,
@@ -3082,7 +3087,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         justify-content: safe center;
         align-items: safe center;
         padding-top: calc(56px + 48px);
-        padding-bottom: 20px;
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
     }
 
     :root {
@@ -3096,7 +3101,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
     .sc-cell .student-avatar { width: 36px; height: 36px; font-size: 0.72rem; }
 
-    .sc-cell-name { font-size: 0.55rem; max-width: 56px; margin-top: 3px; }
+    .sc-cell-name { font-size: 0.55rem; max-width: 56px; margin-top: 3px; line-height: 1.3; }
 
     .sc-toolbar {
         flex-wrap: wrap;
@@ -3237,7 +3242,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         text-align: center !important;
-        line-height: 1.1 !important;
+        line-height: 1.3 !important;
         color: var(--text-secondary) !important;
     }
 
