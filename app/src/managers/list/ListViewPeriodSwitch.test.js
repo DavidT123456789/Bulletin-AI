@@ -150,6 +150,7 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
 
         // After 290ms, cleanup removes the exiting elements
         vi.useFakeTimers();
+        container.querySelector('.student-list-view').classList.add('table-fade-in');
         // Trigger renderFresh again with fake timers to test timer behavior
         ListViewRenderer.renderFresh(container, results, periods, 0, {
             isPeriodSwitch: true,
@@ -158,9 +159,11 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
             previousPeriod: 'S2',
             currentPeriod: 'S1'
         });
+        expect(container.querySelector('.student-list-view').classList.contains('table-fade-in')).toBe(false);
         expect(container.querySelectorAll('.period-column-exit').length).toBeGreaterThan(0);
         vi.advanceTimersByTime(290);
         expect(container.querySelectorAll('.period-column-exit').length).toBe(0);
         vi.useRealTimers();
     });
 });
+

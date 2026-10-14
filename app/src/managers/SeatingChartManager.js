@@ -21,6 +21,10 @@ import { SeatingSearch } from './seating/SeatingSearch.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
+const MIN_COLS = 2;
+const MAX_COLS = 10;
+const MIN_ROWS = 2;
+const MAX_ROWS = 10;
 const DEFAULT_ACTIVITY_COLS = 5;
 const DEFAULT_ACTIVITY_ROWS = 3;
 const MAX_ACTIVITY_GROUP_SIZE = 4;
@@ -2565,10 +2569,13 @@ export const SeatingChartManager = {
 
     _isRoomConfigured(mode = this._planMode) {
         if (mode === 'activity') return true;
-        const grid = appState.seatingGrid;
-        if (grid && typeof grid === 'object') return true;
         const classes = appState.classes || [];
-        return classes.some(c => this._hasClassCoursePlan(c));
+        if (classes.some(c => this._hasClassCoursePlan(c))) return true;
+        const grid = appState.seatingGrid;
+        if (!grid || typeof grid !== 'object') return false;
+        if (grid.roomConfigured) return true;
+        if (grid.specialLayout && Object.keys(grid.specialLayout).length > 0) return true;
+        return false;
     },
 
     _getRoomCapacityInfo() {
@@ -2698,6 +2705,7 @@ export const SeatingChartManager = {
                     rows: this._getRows(),
                     cols: this._getCols(),
                     locked: this._isLocked,
+                    roomConfigured: true,
                     specialLayout: {}
                 };
             }
@@ -2814,6 +2822,7 @@ export const SeatingChartManager = {
             rows: targetRows,
             cols: targetCols,
             locked: this._isLocked,
+            roomConfigured: true,
             specialLayout: newSpecialLayout
         };
 
@@ -2834,7 +2843,9 @@ export const SeatingChartManager = {
     _getRows() {
         const gridKey = this._getActiveGridKey();
         const sliderVal = parseInt(document.getElementById('scRowsSlider')?.value);
-        return !isNaN(sliderVal) ? sliderVal : (appState[gridKey]?.rows ?? this._getDefaultRows());
+        if (!isNaN(sliderVal)) return sliderVal;
+        const defaultRows = this._getDefaultRows();
+        return this._isRoomConfigured() ? (appState[gridKey]?.rows ?? defaultRows) : Math.max(appState[gridKey]?.rows ?? 0, defaultRows);
     },
 
     _getCols() {
@@ -2846,7 +2857,8 @@ export const SeatingChartManager = {
     _loadGridConfig() {
         const gridKey = this._getActiveGridKey();
         const config = appState[gridKey];
-        const rows = config?.rows || this._getDefaultRows();
+        const defaultRows = this._getDefaultRows();
+        const rows = this._isRoomConfigured() ? (config?.rows || defaultRows) : Math.max(config?.rows || 0, defaultRows);
         const cols = config?.cols || this._getDefaultCols();
 
         const rowSlider = document.getElementById('scRowsSlider');
@@ -2881,12 +2893,16 @@ export const SeatingChartManager = {
 
         if (isSame || isDefaultUnmodified) return;
 
-        appState[gridKey] = {
+        const nextGrid = {
             rows,
             cols,
             locked,
             specialLayout: currentGrid?.specialLayout || {}
         };
+        if (currentGrid?.roomConfigured || this._hasChangesSinceUnlock) {
+            nextGrid.roomConfigured = true;
+        }
+        appState[gridKey] = nextGrid;
         if (currentClass && this._hasChangesSinceUnlock && !locked) {
             currentClass[lockKey] = false;
         }
@@ -5063,7 +5079,8 @@ export const SeatingChartManager = {
             appState[gridKey] = {
                 rows: this._getRows(),
                 cols: this._getCols(),
-                specialSpots: { ...this._getSpecialSpots() }
+                locked: this._isLocked,
+                specialLayout: {}
             };
         }
         document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
@@ -5140,6 +5157,7 @@ export const SeatingChartManager = {
             const cols = this._getCols();
             const activePreset = this._detectCurrentRoomPreset();
             const capInfo = this._getRoomCapacityInfo();
+            const isWarning = capInfo.isShortForCurrent || capInfo.isShortForMax;
 
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
@@ -5149,12 +5167,12 @@ export const SeatingChartManager = {
                 </div>
 
                 <div class="sc-room-preset-grid" role="radiogroup" aria-label="Disposition des tables">
-                    <button type="button" class="sc-room-preset-card ${activePreset === 'double-aisles' ? 'active' : ''}" data-room-preset="double-aisles" role="radio" aria-checked="${activePreset === 'double-aisles'}">
+                    <button type="button" class="sc-room-preset-card ${activePreset === 'compact' ? 'active' : ''}" data-room-preset="compact" role="radio" aria-checked="${activePreset === 'compact'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-double-aisles"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                            <span class="sc-mini-diagram is-compact"><i></i><i></i><i></i><i></i><i></i><i></i></span>
                         </span>
-                        <span class="sc-preset-card-title">3 doubles</span>
-                        <span class="sc-preset-card-sub">2 allées</span>
+                        <span class="sc-preset-card-title">Sans allée</span>
+                        <span class="sc-preset-card-sub">6 colonnes continues</span>
                     </button>
                     <button type="button" class="sc-room-preset-card ${activePreset === 'center-aisle' ? 'active' : ''}" data-room-preset="center-aisle" role="radio" aria-checked="${activePreset === 'center-aisle'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
@@ -5163,12 +5181,12 @@ export const SeatingChartManager = {
                         <span class="sc-preset-card-title">2 îlots</span>
                         <span class="sc-preset-card-sub">1 allée centrale</span>
                     </button>
-                    <button type="button" class="sc-room-preset-card ${activePreset === 'compact' ? 'active' : ''}" data-room-preset="compact" role="radio" aria-checked="${activePreset === 'compact'}">
+                    <button type="button" class="sc-room-preset-card ${activePreset === 'double-aisles' ? 'active' : ''}" data-room-preset="double-aisles" role="radio" aria-checked="${activePreset === 'double-aisles'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-compact"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            <span class="sc-mini-diagram is-double-aisles"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
                         </span>
-                        <span class="sc-preset-card-title">Sans allée</span>
-                        <span class="sc-preset-card-sub">6 colonnes continues</span>
+                        <span class="sc-preset-card-title">3 doubles</span>
+                        <span class="sc-preset-card-sub">2 allées</span>
                     </button>
                 </div>
 
@@ -5192,7 +5210,7 @@ export const SeatingChartManager = {
                             </div>
                         </div>
                     </div>
-                    <div class="sc-hint-capacity-pill ${capInfo.isInsufficient ? 'is-warning' : 'is-ok'}" id="scHintCapacityBadge" role="status">
+                    <div class="sc-hint-capacity-pill ${isWarning ? 'is-warning' : 'is-ok'}" id="scHintCapacityBadge" role="status">
                         ${this._getCapacityBadgeInnerHTML(capInfo)}
                     </div>
                 </div>
@@ -5208,13 +5226,13 @@ export const SeatingChartManager = {
             const capInfo = this._getRoomCapacityInfo();
             const rows = this._getRows();
             let capacityWarningHTML = '';
-            if (capInfo.isInsufficientForCurrent && rows < MAX_ROWS) {
-                const desksPerRow = Math.max(1, Math.round(capInfo.availableDesks / Math.max(1, rows)));
-                const missingSeats = capInfo.activeStudentsCount - capInfo.availableDesks;
+            if (capInfo.isShortForCurrent && rows < MAX_ROWS) {
+                const desksPerRow = Math.max(1, Math.round(capInfo.totalSeats / Math.max(1, rows)));
+                const missingSeats = capInfo.activeClassStudents - capInfo.totalSeats;
                 const extraRowsNeeded = Math.min(MAX_ROWS - rows, Math.max(1, Math.ceil(missingSeats / desksPerRow)));
                 capacityWarningHTML = `
                     <div class="sc-onboarding-capacity-alert">
-                        <span><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> ${capInfo.availableDesks} places pour ${capInfo.activeStudentsCount} élèves</span>
+                        <span><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> ${capInfo.totalSeats} places pour ${capInfo.activeClassStudents} élèves</span>
                         <button type="button" class="sc-onboarding-adapt-btn" id="scHintAutoExpandRowsBtn" data-extra-rows="${extraRowsNeeded}">
                             Adapter (+${extraRowsNeeded} rangée${extraRowsNeeded > 1 ? 's' : ''})
                         </button>
@@ -5336,6 +5354,7 @@ export const SeatingChartManager = {
         const cols = this._getCols();
         const activePreset = this._detectCurrentRoomPreset();
         const capInfo = this._getRoomCapacityInfo();
+        const isWarning = capInfo.isShortForCurrent || capInfo.isShortForMax;
 
         const colsVal = hint.querySelector('#scHintColsVal');
         const rowsVal = hint.querySelector('#scHintRowsVal');
@@ -5361,8 +5380,8 @@ export const SeatingChartManager = {
         const capBadge = hint.querySelector('#scHintCapacityBadge');
         if (capBadge) {
             capBadge.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
-            capBadge.classList.toggle('is-warning', capInfo.isInsufficient);
-            capBadge.classList.toggle('is-ok', !capInfo.isInsufficient);
+            capBadge.classList.toggle('is-warning', isWarning);
+            capBadge.classList.toggle('is-ok', !isWarning);
         }
     },
 

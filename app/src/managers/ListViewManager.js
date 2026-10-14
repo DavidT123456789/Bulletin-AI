@@ -211,9 +211,11 @@ export const ListViewManager = {
         // existingTable is already defined above
         const existingRows = existingTable ? Array.from(existingTable.querySelectorAll('.student-row')) : [];
 
+        existingTable?.closest('.student-list-view')?.classList.remove('table-fade-in');
+
         // Clean up any stuck animation classes from previous animations
         existingRows.forEach(row => {
-            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter', 'row-import-refresh');
+            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter', 'row-import-refresh', 'row-animate-in', 'row-stagger-enter');
             row.style.transform = '';
             row.style.transition = '';
         });

@@ -119,4 +119,18 @@ describe('ListView - Progressive import reveal', () => {
         ListViewManager.render(buildResults(), container);
         expect(container.querySelectorAll('.row-animate-in')).toHaveLength(0);
     });
+
+    it('should remove table-fade-in after the initial skeleton fade completes so later row staggers are not blocked', () => {
+        vi.useFakeTimers();
+        container.innerHTML = '<div id="initialTableSkeleton"></div>';
+
+        ListViewManager.render(buildResults(), container);
+        const listView = container.querySelector('.student-list-view');
+        expect(listView.classList.contains('table-fade-in')).toBe(true);
+
+        vi.advanceTimersByTime(350);
+        expect(listView.classList.contains('table-fade-in')).toBe(false);
+        vi.useRealTimers();
+    });
 });
+

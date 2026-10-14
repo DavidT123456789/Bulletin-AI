@@ -17,6 +17,9 @@ export const SeatingAnimations = {
         document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination').forEach(el => {
             el.classList.remove('view-slide-out-left', 'view-slide-in-left');
         });
+        document.querySelectorAll('#outputList .student-list-view.table-fade-in').forEach(view => {
+            view.classList.remove('table-fade-in');
+        });
         document.querySelectorAll('.stat-card.stat-card-stagger, .empty-state-hub-card.stat-card-stagger').forEach(card => {
             card.classList.remove('stat-card-stagger');
             card.style.removeProperty('--card-i');
@@ -84,21 +87,33 @@ export const SeatingAnimations = {
             this._listStaggerCleanupTimer = null;
         }
 
+        document.querySelectorAll('#outputList .student-list-view.table-fade-in').forEach(view => {
+            view.classList.remove('table-fade-in');
+        });
+
         const cards = document.querySelectorAll('.stats-container .stat-card, #empty-state-card .empty-state-hub-card');
         const rows = document.querySelectorAll('#outputList .student-list-table tbody tr.student-row');
         if (cards.length === 0 && rows.length === 0) return;
 
         const maxStaggerRows = 18;
         cards.forEach((card, i) => {
-            card.classList.remove('stat-card-stagger');
+            card.classList.remove('stat-card-stagger', 'stat-card-animate-in');
             card.style.setProperty('--card-i', i);
         });
         rows.forEach((row, i) => {
-            row.classList.remove('row-stagger-enter');
+            row.classList.remove(
+                'row-stagger-enter',
+                'row-animate-in',
+                'row-filter-enter',
+                'row-import-refresh',
+                'row-exit',
+                'focus-closed-flash'
+            );
             row.style.setProperty('--row-i', Math.min(i, maxStaggerRows));
         });
 
-        void (cards[0] ?? rows[0])?.offsetWidth;
+        void cards[0]?.offsetWidth;
+        void rows[0]?.offsetWidth;
 
         cards.forEach(card => card.classList.add('stat-card-stagger'));
         rows.forEach(row => row.classList.add('row-stagger-enter'));

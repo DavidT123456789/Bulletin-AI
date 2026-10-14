@@ -962,6 +962,49 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
 
         vi.useRealTimers();
     });
+
+    it('devrait nettoyer table-fade-in et les classes résiduelles pour animer les 5 premières lignes lors du retour Plan -> Liste', async () => {
+        vi.useFakeTimers();
+        appState.currentClassId = classA.id;
+        SeatingChartManager._isActive = true;
+        const wrapper = document.querySelector('.main-content-wrapper');
+        wrapper.dataset.view = 'plan';
+
+        const outputSection = document.querySelector('.output-section');
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'stats-container';
+        statsContainer.innerHTML = '<div class="stat-card stat-card-animate-in"></div>';
+        outputSection.insertBefore(statsContainer, document.getElementById('seatingChartView'));
+
+        const outputList = document.createElement('div');
+        outputList.id = 'outputList';
+        const rowsHtml = Array.from({ length: 8 }, (_, idx) =>
+            `<tr class="student-row ${idx < 5 ? 'row-animate-in focus-closed-flash' : ''}"></tr>`
+        ).join('');
+        outputList.innerHTML = `<div class="student-list-view table-fade-in"><table class="student-list-table"><tbody>${rowsHtml}</tbody></table></div>`;
+        outputSection.insertBefore(outputList, document.getElementById('seatingChartView'));
+
+        SeatingChartManager.switchToView('list');
+        await vi.advanceTimersByTimeAsync(95);
+
+        const listView = outputList.querySelector('.student-list-view');
+        expect(listView.classList.contains('table-fade-in')).toBe(false);
+
+        const studentRows = Array.from(outputList.querySelectorAll('.student-row'));
+        expect(studentRows).toHaveLength(8);
+        studentRows.forEach((row, index) => {
+            expect(row.classList.contains('row-stagger-enter')).toBe(true);
+            expect(row.classList.contains('row-animate-in')).toBe(false);
+            expect(row.classList.contains('focus-closed-flash')).toBe(false);
+            expect(row.style.getPropertyValue('--row-i')).toBe(String(index));
+        });
+
+        const statCard = statsContainer.querySelector('.stat-card');
+        expect(statCard.classList.contains('stat-card-stagger')).toBe(true);
+        expect(statCard.classList.contains('stat-card-animate-in')).toBe(false);
+
+        vi.useRealTimers();
+    });
 });
 
 describe('SeatingChartManager - Classes reconstituées et empilement des élèves', () => {
@@ -2957,44 +3000,64 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
     describe('Onboarding en 2 étapes & Calibration adaptative de la salle', () => {
         beforeEach(() => {
-            SeatingChartManager._viewInjected = false;
-            SeatingChartManager._listenersAttached = false;
-            SeatingChartManager._onboardingStep = null;
-            document.body.innerHTML = '<div id="mainApp"><div class="container"></div></div>';
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="list">
+                    <div class="main-content">
+                        <section class="output-section"></section>
+                    </div>
+                </div>
+            `;
 
-            appState.classes = [];
+            userSettings.academic.classes = [];
+            appState.classes = userSettings.academic.classes;
             appState.generatedResults = [];
             appState.seatingGrid = null;
             appState.seatingActivityGrid = null;
+            userSettings.academic.seatingGrid = null;
+            userSettings.academic.seatingActivityGrid = null;
 
             const classSmall = ClassManager.createClass('6ème A');
             const classLarge = ClassManager.createClass('3ème B');
 
             for (let i = 1; i <= 24; i++) {
-                const s = { id: `s-small-${i}`, nom: `NOM${i}`, prenom: `Prenom${i}`, seatingPosition: null };
-                appState.generatedResults.push(s);
-                ClassManager.addStudentToClass(classSmall.id, s.id);
+                appState.generatedResults.push({
+                    id: `s-small-${i}`,
+                    classId: classSmall.id,
+                    nom: `NOM${i}`,
+                    prenom: `Prenom${i}`,
+                    seatingPosition: null
+                });
             }
             for (let i = 1; i <= 34; i++) {
-                const s = { id: `s-large-${i}`, nom: `GRANDE${i}`, prenom: `Eleve${i}`, seatingPosition: null };
-                appState.generatedResults.push(s);
-                ClassManager.addStudentToClass(classLarge.id, s.id);
+                appState.generatedResults.push({
+                    id: `s-large-${i}`,
+                    classId: classLarge.id,
+                    nom: `GRANDE${i}`,
+                    prenom: `Eleve${i}`,
+                    seatingPosition: null
+                });
             }
 
             appState.currentClassId = classSmall.id;
-            SeatingChartManager.switchToView();
+            userSettings.academic.currentClassId = classSmall.id;
+            SeatingChartManager._planMode = 'course';
+            SeatingChartManager._onboardingStep = null;
+            SeatingChartManager._injectView();
+            SeatingChartManager._setupEventListeners();
+            SeatingChartManager.switchToView('plan', { immediate: true });
         });
 
         it('devrait calibrer automatiquement le nombre de rangées par défaut selon la plus grande classe importée (34 élèves -> 6 rangées / 36 places)', () => {
             expect(SeatingChartManager._getMaxClassStudentCount()).toBe(34);
             expect(SeatingChartManager._getDefaultRows('course')).toBe(6);
             expect(SeatingChartManager._getRows()).toBe(6);
-            expect(SeatingChartManager._getCols()).toBe(8);
+            expect(SeatingChartManager._getCols()).toBe(6);
 
             const capInfo = SeatingChartManager._getRoomCapacityInfo();
-            expect(capInfo.availableDesks).toBe(36);
-            expect(capInfo.maxClassCount).toBe(34);
-            expect(capInfo.isInsufficient).toBe(false);
+            expect(capInfo.totalSeats).toBe(36);
+            expect(capInfo.maxClassStudents).toBe(34);
+            expect(capInfo.isShortForCurrent).toBe(false);
+            expect(capInfo.isShortForMax).toBe(false);
         });
 
         it('devrait afficher l\'Étape 1 (Configuration de la salle) à la toute première ouverture, puis passer à l\'Étape 2 (Placement) après validation et mémoriser la salle pour les autres classes', () => {
@@ -3009,14 +3072,15 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             expect(appState.seatingGrid).not.toBeNull();
             expect(appState.seatingGrid.rows).toBe(6);
-            expect(appState.seatingGrid.cols).toBe(8);
+            expect(appState.seatingGrid.cols).toBe(6);
             expect(hint.dataset.step).toBe('placement');
             expect(hint.querySelector('#scHintAutoBtn')).not.toBeNull();
 
             // Changement vers la seconde classe vide : passe directement à l'étape 2 sans redemander la salle
             const secondClass = appState.classes[1];
             appState.currentClassId = secondClass.id;
-            SeatingChartManager.onClassChange();
+            userSettings.academic.currentClassId = secondClass.id;
+            SeatingChartManager.onClassChange(true, { immediate: true });
 
             const hintSecondClass = document.querySelector('#scGridArea .sc-onboarding-hint');
             expect(hintSecondClass).not.toBeNull();
@@ -3024,44 +3088,56 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
         });
 
         it('devrait permettre de changer de modèle de salle (2 allées, 1 allée centrale, sans allée) et conserver les élèves déjà placés', () => {
-            // Valider la salle et placer quelques élèves
             SeatingChartManager._confirmRoomSetup();
             SeatingChartManager._autoPlace('alpha-asc');
+            expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+
+            // Passer au modèle "3 doubles (2 allées)" (8 colonnes, allées en col 2 et 5)
+            SeatingChartManager._applyRoomPreset('double-aisles');
+            expect(SeatingChartManager._getCols()).toBe(8);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('double-aisles');
+            expect(SeatingChartManager._getCellSpecial(0, 2)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(0, 5)).toEqual({ type: 'aisle', scope: 'global' });
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
             // Passer au modèle "1 allée centrale" (7 colonnes, allée en col 3)
             SeatingChartManager._applyRoomPreset('center-aisle');
             expect(SeatingChartManager._getCols()).toBe(7);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('center-aisle');
-            expect(SeatingChartManager._getCellSpecial(0, 3)).toBe('aisle');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aisle', scope: 'global' });
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
             // Passer au modèle "Sans allée" (6 colonnes continues)
             SeatingChartManager._applyRoomPreset('compact');
             expect(SeatingChartManager._getCols()).toBe(6);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
-            expect(Object.keys(SeatingChartManager._getSpecialSpots()).length).toBe(0);
+            expect(Object.keys(appState.seatingGrid.specialLayout || {}).length).toBe(0);
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
         });
 
         it('devrait prolonger automatiquement les allées verticales lors de l\'ajout d\'une rangée via les boutons +/-', () => {
+            SeatingChartManager._applyRoomPreset('double-aisles');
+            expect(SeatingChartManager._getRows()).toBe(6);
+
             SeatingChartManager._stepGridDimension('rows', 1);
             expect(SeatingChartManager._getRows()).toBe(7);
             // La nouvelle rangée 0 doit conserver les allées aux colonnes 2 et 5
-            expect(SeatingChartManager._getCellSpecial(0, 2)).toBe('aisle');
-            expect(SeatingChartManager._getCellSpecial(0, 5)).toBe('aisle');
+            expect(SeatingChartManager._getCellSpecial(0, 2)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(0, 5)).toEqual({ type: 'aisle', scope: 'global' });
         });
 
         it('devrait proposer un bouton d\'adaptation en 1 clic à l\'étape 2 si une salle déjà configurée est trop petite pour la classe active', () => {
-            // Configurer une petite salle de 4 rangées (24 places)
+            // Configurer une petite salle de 4 rangées x 6 colonnes (24 places)
             appState.seatingGrid = {
                 rows: 4,
-                cols: 8,
-                specialSpots: SeatingChartManager._buildDefaultCourseSpecialSpots(4)
+                cols: 6,
+                locked: false,
+                specialLayout: {}
             };
             // Ouvrir la grande classe de 34 élèves
             appState.currentClassId = appState.classes[1].id;
-            SeatingChartManager.onClassChange();
+            userSettings.academic.currentClassId = appState.classes[1].id;
+            SeatingChartManager.onClassChange(true, { immediate: true });
 
             const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
             expect(hint).not.toBeNull();
@@ -3077,5 +3153,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
         });
     });
 });
+
 
 

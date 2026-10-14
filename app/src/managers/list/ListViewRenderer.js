@@ -450,6 +450,7 @@ export const ListViewRenderer = {
         if (isPeriodSwitch && existingView && existingTable) {
             // PERIOD SWITCH: Preserve .student-list-view container to avoid ANY background destroy/recreate
             // ZERO black flash: solid surface color remains continuously visible on screen
+            existingView.classList.remove('table-fade-in');
             container.style.opacity = '1';
             container.style.transition = '';
             existingTable.className = tableClass;
@@ -504,6 +505,9 @@ export const ListViewRenderer = {
             if (viewElement) {
                 if (hadSkeleton && !shouldAnimateEntrance) {
                     viewElement.classList.add('table-fade-in');
+                    setTimeout(() => {
+                        viewElement.classList.remove('table-fade-in');
+                    }, 350);
                 }
 
                 if (shouldAnimateEntrance) {
