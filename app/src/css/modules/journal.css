@@ -864,7 +864,10 @@
     padding: 12px 16px;
     max-height: 180px;
     overflow-y: auto;
-    transition: max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition:
+        max-height 0.35s var(--ease-spring),
+        padding 0.35s var(--ease-spring),
+        opacity 0.25s ease;
 }
 
 .journal-section.collapsed .journal-content {

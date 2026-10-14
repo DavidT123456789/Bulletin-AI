@@ -1642,31 +1642,48 @@
 }
 
 /* ====================================================================
-   CUSTOM COLOR PICKER PANEL
+   CUSTOM COLOR PICKER PANEL (Fluid CSS Grid Accordion 0fr -> 1fr)
    ==================================================================== */
 .custom-picker-panel {
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.4s var(--ease-spring), opacity 0.3s ease, margin-top 0.35s var(--ease-spring), border-color 0.3s ease;
     margin-top: 0;
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
     border: 1px solid transparent;
+    pointer-events: none;
+    transition:
+        grid-template-rows 0.35s var(--ease-spring),
+        opacity 0.25s ease,
+        margin-top 0.35s var(--ease-spring),
+        border-color 0.25s ease;
 }
 
 .custom-picker-panel.open {
-    max-height: 250px;
+    grid-template-rows: 1fr;
     opacity: 1;
     margin-top: 14px;
-    padding: 16px 20px;
     border-color: var(--border-color);
+    pointer-events: auto;
 }
 
 .custom-picker-grid {
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding: 0 20px;
+    transform: translateY(-4px);
+    transition:
+        padding 0.35s var(--ease-spring),
+        transform 0.3s var(--ease-spring);
+}
+
+.custom-picker-panel.open .custom-picker-grid {
+    padding: 16px 20px;
+    transform: translateY(0);
 }
 
 .picker-control-group {

@@ -157,15 +157,16 @@ export const CrossClassSearchManager = {
 
         // Générer le HTML
         let html = `
-            <div class="cross-class-header">
-                <span class="cross-class-divider-line"></span>
-                <span class="cross-class-divider-text">
-                    <iconify-icon icon="ph:magnifying-glass-bold"></iconify-icon>
-                    Autres classes
-                </span>
-                <span class="cross-class-divider-line"></span>
-            </div>
-            <div class="cross-class-list">
+            <div class="cross-class-results-inner">
+                <div class="cross-class-header">
+                    <span class="cross-class-divider-line"></span>
+                    <span class="cross-class-divider-text">
+                        <iconify-icon icon="ph:magnifying-glass-bold"></iconify-icon>
+                        Autres classes
+                    </span>
+                    <span class="cross-class-divider-line"></span>
+                </div>
+                <div class="cross-class-list">
         `;
 
         groups.forEach(group => {
@@ -218,7 +219,7 @@ export const CrossClassSearchManager = {
             `;
         }
 
-        html += `</div>`;
+        html += `</div></div>`;
 
         container.innerHTML = html;
         container.classList.add('visible');

@@ -1139,15 +1139,14 @@
 
     /* iOS Spring transitions synced with row animation */
     transition:
-        max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1),
-        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        background 0.2s ease,
-        color 0.2s ease,
-        line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        opacity 0.2s ease;
+        padding 0.35s var(--ease-spring),
+        background var(--transition-fast),
+        color var(--transition-fast),
+        line-height 0.35s var(--ease-spring),
+        border-radius 0.35s var(--ease-spring),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
 
     opacity: 1;
 }

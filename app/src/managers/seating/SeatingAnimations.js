@@ -103,9 +103,9 @@ export const SeatingAnimations = {
         cards.forEach(card => card.classList.add('stat-card-stagger'));
         rows.forEach(row => row.classList.add('row-stagger-enter'));
 
-        const maxRowDelay = Math.min(rows.length, maxStaggerRows) * 18;
-        const maxCardDelay = cards.length * 40;
-        const duration = Math.max(maxRowDelay, maxCardDelay) + 430;
+        const maxRowDelay = Math.min(rows.length, maxStaggerRows) * 17;
+        const maxCardDelay = cards.length * 35;
+        const duration = Math.max(maxRowDelay, maxCardDelay) + 420;
 
         this._listStaggerCleanupTimer = setTimeout(() => {
             this._listStaggerCleanupTimer = null;

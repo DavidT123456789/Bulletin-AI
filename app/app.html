@@ -434,14 +434,14 @@
             <!-- PWA Update Banner -->
             <div id="pwaUpdateBanner" class="pwa-update-banner" aria-live="polite">
                 <div class="pwa-banner-main">
-                    <div class="pwa-banner-text" role="button" tabindex="0" aria-expanded="false" aria-label="Afficher les détails de la mise à jour">
+                    <div class="pwa-banner-text" role="button" tabindex="0" aria-expanded="false" aria-controls="pwaUpdateDetails" aria-label="Afficher les détails de la mise à jour">
                         <iconify-icon icon="solar:gift-linear" class="pwa-gift-icon"></iconify-icon>
                         <div class="pwa-text-col">
                             <span class="pwa-title">Mise à jour disponible</span>
                             <span class="pwa-subtitle" id="pwaUpdateMeta">Version plus récente détectée</span>
                         </div>
-                        <span id="pwaInfoBtn" class="pwa-info-btn">
-                            <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                        <span id="pwaInfoBtn" class="pwa-info-btn" aria-hidden="true">
+                            <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
                         </span>
                     </div>
                     <div class="pwa-banner-actions">
@@ -451,16 +451,18 @@
                         </button>
                     </div>
                 </div>
-                <div id="pwaUpdateDetails" class="pwa-banner-details">
-                    <div class="pwa-details-content">
-                        <div class="pwa-detail-row">
-                            <span class="pwa-detail-label">Message :</span>
-                            <span class="pwa-detail-value" id="pwaCommitMsg">Améliorations générales et corrections de
-                                bugs.</span>
-                        </div>
-                        <div class="pwa-detail-row">
-                            <span class="pwa-detail-label">Version :</span>
-                            <span class="pwa-detail-code" id="pwaCommitHash">v0.1.X</span>
+                <div id="pwaUpdateDetails" class="pwa-banner-details" aria-hidden="true">
+                    <div class="pwa-details-inner">
+                        <div class="pwa-details-content">
+                            <div class="pwa-detail-row">
+                                <span class="pwa-detail-label">Message :</span>
+                                <span class="pwa-detail-value" id="pwaCommitMsg">Améliorations générales et corrections de
+                                    bugs.</span>
+                            </div>
+                            <div class="pwa-detail-row">
+                                <span class="pwa-detail-label">Version :</span>
+                                <span class="pwa-detail-code" id="pwaCommitHash">v0.1.X</span>
+                            </div>
                         </div>
                     </div>
                 </div>

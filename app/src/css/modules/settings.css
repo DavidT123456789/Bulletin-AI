@@ -1504,25 +1504,21 @@
 /* === Personalization Toggle Animation === */
 .generic-info-card {
     transition:
-        max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        /* iOS Spring-like for height */
-        opacity 0.25s ease-out,
-        margin 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        padding 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+        max-height 0.32s var(--ease-spring),
+        opacity 0.22s ease-out,
+        margin 0.32s var(--ease-spring),
+        padding 0.32s var(--ease-spring),
+        border-width 0.32s var(--ease-spring);
     overflow: hidden;
-    max-height: 200px;
-    /* Sufficient height for text */
+    max-height: 120px;
     opacity: 1;
-    /* Maintain the layout presence */
     display: block;
     color: var(--primary-color);
     font-weight: 500;
 
     /* Standard Info Box Style */
     background: rgba(var(--primary-color-rgb), 0.08);
-    /* Fond doux */
     border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    /* Cadre subtil */
     border-radius: var(--radius-md);
     padding: 12px 16px;
     margin-bottom: 20px;
@@ -1541,6 +1537,8 @@
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
     pointer-events: none;
 }
 

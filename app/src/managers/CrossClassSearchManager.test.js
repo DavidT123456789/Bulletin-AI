@@ -78,4 +78,19 @@ describe('CrossClassSearchManager', () => {
         expect(results.totalMatches).toBe(0);
         expect(results.groups).toEqual([]);
     });
+
+    it('devrait envelopper le rendu DOM dans .cross-class-results-inner pour l\'accordéon CSS Grid', () => {
+        document.body.innerHTML = '<div><div id="outputList"></div></div>';
+        CrossClassSearchManager.reset();
+
+        CrossClassSearchManager.updateCrossClassResults('boukhari');
+        const container = document.getElementById('crossClassResults');
+        expect(container).not.toBeNull();
+        expect(container.classList.contains('visible')).toBe(true);
+        expect(container.querySelector('.cross-class-results-inner')).not.toBeNull();
+        expect(container.querySelector('.cross-class-result')).not.toBeNull();
+
+        CrossClassSearchManager.updateCrossClassResults('');
+        expect(container.classList.contains('visible')).toBe(false);
+    });
 });

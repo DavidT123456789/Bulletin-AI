@@ -269,6 +269,7 @@ function setupPWAUpdateHandler() {
                     const isExpanded = details.classList.toggle('expanded');
                     infoBtn.classList.toggle('active', isExpanded);
                     bannerText.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                    details.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
                 };
 
                 bannerText.onclick = toggleDetails;
