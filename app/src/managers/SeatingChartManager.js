@@ -1391,14 +1391,12 @@ export const SeatingChartManager = {
 
     _hasClassCoursePlan(cls = this._getCurrentClass()) {
         if (!cls) return false;
-        const students = ClassManager.getStudentsForClass(cls.id);
-        return students.some(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null);
+        return this._getValidPlacedIdsForClass(cls, 'course').size > 0;
     },
 
     _hasClassActivityPlan(cls = this._getCurrentClass()) {
         if (!cls) return false;
-        const students = ClassManager.getStudentsForClass(cls.id);
-        return students.some(r => r.seatingActivityPosition?.row != null && r.seatingActivityPosition?.col != null);
+        return this._getValidPlacedIdsForClass(cls, 'activity').size > 0;
     },
 
     _restoreUnmodifiedClassLock() {
@@ -1504,17 +1502,7 @@ export const SeatingChartManager = {
 
         const currentClass = this._getCurrentClass();
         const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
-        let locked = false;
-        if (isVirtual) {
-            locked = true;
-        } else {
-            const lockKey = this._getActiveClassLockKey(mode);
-            const gridKey = this._getActiveGridKey(mode);
-            const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
-            locked = this._getPlacedIds().size === 0
-                ? false
-                : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
-        }
+        const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
 
         this._applyLockState(locked, { skipSmartFit: true });
         this._syncPlacementPopover();
@@ -1655,12 +1643,8 @@ export const SeatingChartManager = {
                 this._loadGridConfig();
                 this._loadPositionsFromState();
                 const currentClass = this._getCurrentClass();
-                const lockKey = this._getActiveClassLockKey();
-                const gridKey = this._getActiveGridKey();
-                const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
-                const locked = this._getPlacedIds().size === 0
-                    ? false
-                    : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
+                const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+                const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
                 this._applyLockState(locked, { skipSmartFit: true });
                 this._updateSidebarLockState();
                 this._undoStack = [];
@@ -1732,19 +1716,8 @@ export const SeatingChartManager = {
         this._loadPositionsFromState();
 
         const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
-        const lockKey = this._getActiveClassLockKey();
-        const gridKey = this._getActiveGridKey();
-        
-        // Les classes reconstituées sont verrouillées en mode consultation par défaut
-        let locked = false;
-        if (isVirtual) {
-            locked = true;
-        } else {
-            const hasExplicitClassLock = currentClass && typeof currentClass[lockKey] === 'boolean';
-            locked = this._getPlacedIds().size === 0
-                ? false
-                : (hasExplicitClassLock ? currentClass[lockKey] : (appState[gridKey]?.locked ?? false));
-        }
+        // En mode consultation par défaut dès qu'au moins un élève est placé (ou classe reconstituée)
+        const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
         this._applyLockState(locked, { skipSmartFit: true });
         this._syncPlacementPopover();
 
@@ -2521,8 +2494,10 @@ export const SeatingChartManager = {
         const { skipSmartFit = false } = options;
         const board = document.getElementById('scClassroomBoard');
         if (board) board.style.transition = 'none';
+        const currentClass = this._getCurrentClass();
+        const lockKey = this._getActiveClassLockKey();
         this._isLocked = locked;
-        this._wasLockedBeforeEdit = locked;
+        this._wasLockedBeforeEdit = Boolean(currentClass?.[lockKey]);
         this._hasChangesSinceUnlock = false;
         this._dragSource = null;
         this._touchSourceInfo = null;
@@ -2574,7 +2549,9 @@ export const SeatingChartManager = {
         if (!view || !btn) return;
 
         const board = document.getElementById('scClassroomBoard');
-        const wasLocked = this._isLocked;
+        const currentClass = this._getCurrentClass();
+        const lockKey = this._getActiveClassLockKey();
+        const validatedKey = this._getActiveClassValidatedKey();
         this._isLocked = !this._isLocked;
         this._dragSource = null;
         this._touchSourceInfo = null;
@@ -2582,7 +2559,7 @@ export const SeatingChartManager = {
         this._redoStack = [];
         this._updateUndoRedoButtons();
         if (!this._isLocked) {
-            this._wasLockedBeforeEdit = wasLocked;
+            this._wasLockedBeforeEdit = Boolean(currentClass?.[lockKey]);
             this._hasChangesSinceUnlock = false;
         }
 
@@ -2598,22 +2575,27 @@ export const SeatingChartManager = {
             this._maybeShowOnboardingHint();
         }
 
-        const currentClass = this._getCurrentClass();
-        const lockKey = this._getActiveClassLockKey();
-        const validatedKey = this._getActiveClassValidatedKey();
+        let shouldPersistValidation = false;
         if (currentClass) {
             const placedCount = this._getPlacedIds().size;
             if (this._isLocked) {
                 if (placedCount > 0) {
+                    if (this._hasChangesSinceUnlock) {
+                        this._savePositionsToState(false);
+                    }
+                    const wasAlreadyValidated = Boolean(this._wasLockedBeforeEdit && currentClass[lockKey] && currentClass[validatedKey]);
                     currentClass[lockKey] = true;
-                    if (this._hasChangesSinceUnlock || !currentClass[validatedKey]) {
+                    shouldPersistValidation = Boolean(this._hasChangesSinceUnlock || !wasAlreadyValidated);
+                    if (shouldPersistValidation) {
                         currentClass[validatedKey] = Date.now();
                         const planLabel = this._isActivityMode() ? "Plan d'activité" : 'Plan de classe';
                         UI?.showNotification?.(`${planLabel} validé et figé`, 'success');
                     }
+                    this._wasLockedBeforeEdit = true;
                     this._hasChangesSinceUnlock = false;
                 } else {
                     currentClass[lockKey] = false;
+                    this._wasLockedBeforeEdit = false;
                 }
             } else if (!this._wasLockedBeforeEdit) {
                 currentClass[lockKey] = false;
@@ -2641,6 +2623,9 @@ export const SeatingChartManager = {
         this._updateSidebarLockState();
         this._updateFooter();
         this._saveGridConfig();
+        if (shouldPersistValidation) {
+            StorageManager.saveAppState();
+        }
 
         if (isNativeDesktopSlide) {
             this._syncLockControlsUI(this._isLocked);
@@ -4039,6 +4024,8 @@ export const SeatingChartManager = {
         const gridKey = this._getActiveGridKey();
         const lockKey = this._getActiveClassLockKey();
         const currentGrid = appState[gridKey];
+        const currentClass = this._getCurrentClass();
+        const classLocked = Boolean(currentClass?.[lockKey]);
 
         const isSame = currentGrid &&
             currentGrid.rows === rows &&
@@ -4047,7 +4034,7 @@ export const SeatingChartManager = {
 
         const isDefaultUnmodified = !currentGrid &&
             !this._hasChangesSinceUnlock &&
-            !locked &&
+            !classLocked &&
             rows === this._getDefaultRows() &&
             cols === this._getDefaultCols();
 
@@ -4059,13 +4046,10 @@ export const SeatingChartManager = {
             locked,
             specialLayout: currentGrid?.specialLayout || {}
         };
-        const currentClass = this._getCurrentClass();
-        if (currentClass) {
-            if (this._hasChangesSinceUnlock || !this._wasLockedBeforeEdit || locked) {
-                currentClass[lockKey] = locked;
-            }
+        if (currentClass && this._hasChangesSinceUnlock && !locked) {
+            currentClass[lockKey] = false;
         }
-        if (this._hasChangesSinceUnlock || locked || !this._wasLockedBeforeEdit) {
+        if (this._hasChangesSinceUnlock || (locked && classLocked)) {
             StorageManager.saveAppState();
         }
     },
@@ -4077,6 +4061,8 @@ export const SeatingChartManager = {
         const posKey = this._getActivePositionKey();
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
+        const lockKey = this._getActiveClassLockKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
         
         // Récupère toutes les positions connues des étudiants (y compris ceux temporairement hors de la grille visible)
         const placed = {};
@@ -4113,25 +4099,7 @@ export const SeatingChartManager = {
         // car le bureau (bottom) est l'origine visuelle.
         const rowOffset = newRows - oldRows;
 
-        // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
-        const cellBuckets = new Map();
-        for (const [resultId, pos] of Object.entries(placed)) {
-            const newR = pos.row + rowOffset;
-            pos.row = newR;
-            if (newR >= 0 && newR < newRows && pos.col < newCols) {
-                const key = `${newR},${pos.col}`;
-                if (!cellBuckets.has(key)) cellBuckets.set(key, []);
-                cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
-            }
-        }
-
-        for (const [key, items] of cellBuckets.entries()) {
-            const [r, c] = key.split(',').map(Number);
-            items.sort((a, b) => a.order - b.order);
-            this._setCellStudentIds(r, c, items.map(item => item.id));
-        }
-
-        // Repositionne également la cartographie des places spéciales (allées, AESH...)
+        // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
         if (rowOffset !== 0) {
             if (appState[gridKey]?.specialLayout) {
                 const newSpecialLayout = {};
@@ -4157,7 +4125,54 @@ export const SeatingChartManager = {
             });
         }
 
+        // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
+        const cellBuckets = new Map();
+        for (const [resultId, pos] of Object.entries(placed)) {
+            const newR = pos.row + rowOffset;
+            pos.row = newR;
+            if (newR >= 0 && newR < newRows && pos.col >= 0 && pos.col < newCols && !this._isSpecialSpot(newR, pos.col)) {
+                const key = `${newR},${pos.col}`;
+                if (!cellBuckets.has(key)) cellBuckets.set(key, []);
+                cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
+            }
+        }
+
+        const currentClass = this._getCurrentClass();
+        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const maxPerCell = (isVirtual || this._isActivityMode()) ? MAX_ACTIVITY_GROUP_SIZE : 1;
+
+        for (const [key, items] of cellBuckets.entries()) {
+            const [r, c] = key.split(',').map(Number);
+            items.sort((a, b) => a.order - b.order);
+            this._setCellStudentIds(r, c, items.slice(0, maxPerCell).map(item => item.id));
+        }
+
+        // Met à jour la coordonnée décalée des élèves temporairement hors-grille pour éviter toute collision avec la rangée 0
+        if (rowOffset !== 0) {
+            const activePlacedIds = this._getPlacedIds();
+            this._students.forEach(s => {
+                if (!activePlacedIds.has(s.id) && placed[s.id]) {
+                    const shiftedPos = {
+                        row: placed[s.id].row,
+                        col: placed[s.id].col,
+                        pinned: placed[s.id].pinned || false,
+                        ...(placed[s.id].order > 0 ? { order: placed[s.id].order } : {})
+                    };
+                    const result = appState.generatedResults?.find(r => r.id === s.id);
+                    if (result) {
+                        result[posKey] = shiftedPos;
+                        result._lastModified = Date.now();
+                    }
+                    s[posKey] = shiftedPos;
+                }
+            });
+        }
+
         this._hasChangesSinceUnlock = true;
+        if (currentClass) {
+            currentClass[lockKey] = false;
+            currentClass[updatedKey] = Date.now();
+        }
         this._savePositionsToState(true); // Conserve les coordonnées des élèves temporairement hors-grille
         this._render();
         this._applySmartFit(true);
@@ -4391,12 +4406,14 @@ export const SeatingChartManager = {
         if (this._undoStack.length === 0 || this._isLocked) return;
         this._redoStack.push(this._captureSnapshot());
         const snapshot = this._undoStack.pop();
+        const willRestoreCleanLock = this._undoStack.length === 0 && this._wasLockedBeforeEdit;
         this._restoreSnapshot(snapshot);
-        if (this._undoStack.length === 0 && this._wasLockedBeforeEdit) {
+        if (willRestoreCleanLock) {
             this._hasChangesSinceUnlock = false;
             const currentClass = this._getCurrentClass();
             const lockKey = this._getActiveClassLockKey();
             if (currentClass) currentClass[lockKey] = true;
+            StorageManager.saveAppState();
         }
     },
 
@@ -4488,10 +4505,14 @@ export const SeatingChartManager = {
             }
         });
 
+        const currentClass = this._getCurrentClass();
+        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const maxPerCell = (isVirtual || this._isActivityMode()) ? MAX_ACTIVITY_GROUP_SIZE : 1;
+
         for (const [key, items] of cellBuckets.entries()) {
             const [r, c] = key.split(',').map(Number);
             items.sort((a, b) => a.order - b.order);
-            this._setCellStudentIds(r, c, items.map(item => item.id));
+            this._setCellStudentIds(r, c, items.slice(0, maxPerCell).map(item => item.id));
         }
     },
 
@@ -5183,19 +5204,62 @@ export const SeatingChartManager = {
         return false;
     },
 
+    _getValidPlacedIdsForClass(cls, mode = 'course', classResults = null) {
+        if (!cls) return new Set();
+
+        const posKey = this._getActivePositionKey(mode);
+        const gridKey = this._getActiveGridKey(mode);
+        const classSpecialKey = this._getActiveClassSpecialKey(mode);
+        const gridConfig = appState[gridKey];
+        const isCurrentActive = this._isActive && cls.id === appState.currentClassId && mode === this._planMode;
+        const rows = isCurrentActive
+            ? this._getRows()
+            : (gridConfig?.rows || this._getDefaultRows(mode));
+        const cols = isCurrentActive
+            ? this._getCols()
+            : (gridConfig?.cols || this._getDefaultCols(mode));
+        const globalSpecial = gridConfig?.specialLayout || {};
+        const classSpecial = cls[classSpecialKey] || {};
+        const isVirtual = cls.isVirtual || ClassManager.isVirtualClass(cls.id);
+        const maxPerCell = (isVirtual || mode === 'activity') ? MAX_ACTIVITY_GROUP_SIZE : 1;
+
+        const results = classResults || ClassManager.getStudentsForClass(cls.id);
+        const cellBuckets = new Map();
+
+        results.forEach(r => {
+            const pos = r?.[posKey];
+            if (pos?.row != null && pos?.col != null &&
+                pos.row >= 0 && pos.row < rows &&
+                pos.col >= 0 && pos.col < cols) {
+                const key = `${pos.row},${pos.col}`;
+                if (!globalSpecial[key] && !classSpecial[key]) {
+                    if (!cellBuckets.has(key)) cellBuckets.set(key, []);
+                    cellBuckets.get(key).push({ id: r.id, order: pos.order ?? 0 });
+                }
+            }
+        });
+
+        const validIds = new Set();
+        for (const items of cellBuckets.values()) {
+            items.sort((a, b) => a.order - b.order);
+            items.slice(0, maxPerCell).forEach(item => validIds.add(item.id));
+        }
+        return validIds;
+    },
+
     getClassSeatingStatus(cls, mode = 'course') {
         if (!cls) return { status: 'empty', label: 'À faire', shortLabel: 'À faire', icon: 'solar:map-point-linear', unplaced: 0, placed: 0, total: 0 };
 
-        const posKey = this._getActivePositionKey(mode);
         const lockKey = this._getActiveClassLockKey(mode);
         const validatedKey = this._getActiveClassValidatedKey(mode);
         const updatedKey = this._getActiveClassUpdatedKey(mode);
 
         const classResults = ClassManager.getStudentsForClass(cls.id);
+        const validPlacedIds = this._getValidPlacedIdsForClass(cls, mode, classResults);
         const activeResults = classResults.filter(r => !this._isStudentDeparted(r));
         const total = activeResults.length;
-        const placedActive = activeResults.filter(r => r[posKey]?.row != null && r[posKey]?.col != null).length;
-        const totalPlaced = classResults.filter(r => r[posKey]?.row != null && r[posKey]?.col != null).length;
+        const placedActive = activeResults.filter(r => validPlacedIds.has(r.id)).length;
+        const totalPlaced = classResults.filter(r => validPlacedIds.has(r.id)).length;
         const unplaced = Math.max(0, total - placedActive);
 
         if (total === 0 || totalPlaced === 0) {
@@ -6274,6 +6338,11 @@ export const SeatingChartManager = {
             this._render();
             animatePlacedCells(placedCells);
 
+            const remaining = ordered.length - k;
+            if (remaining > 0) {
+                UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
+            }
+
             return;
         }
 
@@ -6497,8 +6566,8 @@ export const SeatingChartManager = {
 
             setTimeout(() => {
                 this._initGrid(this._getRows(), this._getCols());
-                this._applyLockState(false);
                 this._savePositionsToState();
+                this._updatePlanModeSwitchUI();
                 this._renderGrid();
                 this._renderSidebar(null, true);
                 this._updateFooter();

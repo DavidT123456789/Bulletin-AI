@@ -562,7 +562,7 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         `;
     });
 
-    it('devrait isoler le verrouillage : verrouiller la classe A n\'impacte pas la classe B', () => {
+    it('devrait isoler le verrouillage : verrouiller la classe A n\'impacte pas la classe B et referme le volet d\'édition en mode En test', () => {
         appState.currentClassId = classA.id;
         userSettings.academic.currentClassId = classA.id;
         SeatingChartManager._isActive = true;
@@ -579,12 +579,24 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         expect(classA.seatingValidatedAt).toBeTruthy();
         expect(classB.seatingLocked).toBe(false);
 
-        // Bascule vers classe B via onClassChange
+        // Bascule vers classe B via onClassChange (2 élèves placés, plan non validé)
         appState.currentClassId = classB.id;
         userSettings.academic.currentClassId = classB.id;
         SeatingChartManager.onClassChange(true);
 
-        // Classe B doit être en mode édition (non verrouillée)
+        // Le volet d'édition se referme (consultation) mais le plan de la classe B reste "En test"
+        expect(SeatingChartManager._isLocked).toBe(true);
+        expect(classB.seatingLocked).toBe(false);
+        const pill = document.getElementById('scStatusPill');
+        expect(pill.classList.contains('sc-status-testing')).toBe(true);
+        expect(pill.textContent).toContain('En test');
+
+        // Une classe avec 0 élève placé ouvre automatiquement le volet d'édition
+        const classC = ClassManager.createClass('4ème C');
+        appState.generatedResults.push({ id: 'c1', classId: classC.id, nom: 'Foxtrot', prenom: 'Fanny', seatingPosition: null });
+        appState.currentClassId = classC.id;
+        userSettings.academic.currentClassId = classC.id;
+        SeatingChartManager.onClassChange(true);
         expect(SeatingChartManager._isLocked).toBe(false);
 
         // Revenir vers classe A
@@ -592,8 +604,10 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         userSettings.academic.currentClassId = classA.id;
         SeatingChartManager.onClassChange(true);
 
-        // Classe A doit restaurer son état verrouillé
+        // Classe A doit restaurer son état verrouillé et validé
         expect(SeatingChartManager._isLocked).toBe(true);
+        expect(classA.seatingLocked).toBe(true);
+        expect(pill.classList.contains('sc-status-locked')).toBe(true);
     });
 
     it('devrait valider et figer un plan même si un élève (parti) reste non placé dans la liste', () => {
@@ -708,6 +722,61 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         SeatingChartManager._updateStatusPill();
         expect(pill.textContent).toContain('Validé');
         expect(pill.textContent).not.toContain('non placé');
+    });
+
+    it('devrait comptabiliser comme non placés dans scStatusPill les élèves éjectés hors-grille après réduction de la grille et éviter toute collision au ré-agrandissement', () => {
+        // Placer b1 au rang 0 et b2 au rang 1
+        const b1 = appState.generatedResults.find(r => r.id === 'b1');
+        const b2 = appState.generatedResults.find(r => r.id === 'b2');
+        b1.seatingPosition = { row: 0, col: 0 };
+        b2.seatingPosition = { row: 1, col: 0 };
+
+        appState.currentClassId = classB.id;
+        userSettings.academic.currentClassId = classB.id;
+        appState.seatingGrid = { rows: 2, cols: 2, locked: false, specialLayout: {} };
+        userSettings.academic.seatingGrid = appState.seatingGrid;
+
+        document.body.insertAdjacentHTML('beforeend', `
+            <input id="scRowsSlider" type="range" min="1" max="10" value="2" />
+            <span id="scRowsValue">2</span>
+            <input id="scColsSlider" type="range" min="1" max="10" value="2" />
+            <span id="scColsValue">2</span>
+        `);
+
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._initGrid(2, 2);
+        SeatingChartManager._loadPositionsFromState();
+        expect(SeatingChartManager._getPlacedIds().size).toBe(2);
+
+        // Réduire le nombre de rangées de 2 à 1 (le rang 0 du fond est supprimé, b1 est éjecté en hors-grille row: -1)
+        document.getElementById('scRowsSlider').value = '1';
+        SeatingChartManager._onGridConfigChange();
+
+        expect(SeatingChartManager._getPlacedIds().size).toBe(1);
+        expect(b1.seatingPosition.row).toBe(-1);
+        expect(b2.seatingPosition.row).toBe(0);
+
+        const statusShrunk = SeatingChartManager.getClassSeatingStatus(classB, 'course');
+        expect(statusShrunk.placed).toBe(1);
+        expect(statusShrunk.unplaced).toBe(1);
+        expect(statusShrunk.status).toBe('testing');
+
+        // En mode consultation, la pilule dynamique affiche bien "En test" ET "1 non placé"
+        SeatingChartManager._isLocked = true;
+        SeatingChartManager._updateStatusPill();
+        const pill = document.getElementById('scStatusPill');
+        expect(pill.textContent).toContain('En test');
+        expect(pill.textContent).toContain('1 non placé');
+
+        // Ré-augmenter le nombre de rangées de 1 à 2 : b1 retrouve sa place au rang 0 et b2 au rang 1 sans collision
+        SeatingChartManager._isLocked = false;
+        document.getElementById('scRowsSlider').value = '2';
+        SeatingChartManager._onGridConfigChange();
+        expect(SeatingChartManager._getPlacedIds().size).toBe(2);
+        expect(b1.seatingPosition.row).toBe(0);
+        expect(b2.seatingPosition.row).toBe(1);
     });
 
     it('devrait basculer en mode édition au clic et au clavier sur la capsule de statut (scStatusPill)', () => {

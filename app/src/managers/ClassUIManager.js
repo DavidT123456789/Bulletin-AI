@@ -954,25 +954,32 @@ export const ClassUIManager = {
                 const primaryInfo = courseInfo.status !== 'empty' ? courseInfo : activityInfo;
                 const isActivityOnly = courseInfo.status === 'empty' && activityInfo.status !== 'empty';
                 const planPrefix = isActivityOnly ? 'Plan d\'activité' : 'Plan de classe';
-                const activitySuffix = (!isActivityOnly && activityInfo.status !== 'empty')
-                    ? ` · Activité : ${activityInfo.shortLabel || (activityInfo.status === 'locked' ? 'Validé' : 'En test')}`
+                const activityUnplacedNote = (!isActivityOnly && activityInfo.status !== 'empty' && activityInfo.unplaced > 0)
+                    ? ` (${activityInfo.unplaced} non placé${activityInfo.unplaced > 1 ? 's' : ''})`
                     : '';
+                const activitySuffix = (!isActivityOnly && activityInfo.status !== 'empty')
+                    ? ` · Activité : ${activityInfo.shortLabel || (activityInfo.status === 'locked' ? 'Validé' : 'En test')}${activityUnplacedNote}`
+                    : '';
+                const effectiveStatus = (primaryInfo.status === 'testing' || activityInfo.status === 'testing')
+                    ? 'testing'
+                    : primaryInfo.status;
 
                 seatingBadge.removeAttribute('title');
-                if (primaryInfo.status === 'locked') {
+                if (effectiveStatus === 'locked') {
                     seatingBadge.className = 'class-seating-badge is-locked';
                     seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
                     const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
-                    const unplacedNote = (!isActivityOnly && primaryInfo.unplaced > 0) ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
                     const seatingTooltip = `${planPrefix} : Validé${dateNote}${unplacedNote}${activitySuffix}`;
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
-                } else if (primaryInfo.status === 'testing') {
+                } else if (effectiveStatus === 'testing') {
                     seatingBadge.className = 'class-seating-badge is-testing';
                     seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
                     const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
-                    const unplacedNote = (!isActivityOnly && primaryInfo.unplaced > 0) ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
-                    const seatingTooltip = `${planPrefix} : En test${dateNote}${unplacedNote}${activitySuffix}`;
+                    const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const primaryStatusLabel = primaryInfo.status === 'locked' ? 'Validé' : 'En test';
+                    const seatingTooltip = `${planPrefix} : ${primaryStatusLabel}${dateNote}${unplacedNote}${activitySuffix}`;
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else if (SeatingChartManager._isActive) {
