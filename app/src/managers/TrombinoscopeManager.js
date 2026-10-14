@@ -1552,12 +1552,14 @@ export const TrombinoscopeManager = {
                         <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" title="Afficher ou masquer les réglages avancés de grille et d'espacement">
                             <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon> <span id="toggleGridToolsText">${isAdvancedOpen ? 'Masquer grille' : 'Grille'}</span> <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
                         </button>
-                        <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled style="margin-left: auto;">
-                            <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
-                        </button>
-                        <button type="button" class="grid-reset-btn" id="gridResetBtn" style="margin-left: 4px;" title="${hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille'}">
-                            <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
-                        </button>
+                        <div class="grid-control-actions">
+                            <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled>
+                                <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
+                            </button>
+                            <button type="button" class="grid-reset-btn" id="gridResetBtn" title="${hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille'}">
+                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

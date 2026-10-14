@@ -537,24 +537,24 @@
 
 /* 🟢 Validé & Figé */
 .class-seating-badge.is-locked {
-    background: rgba(16, 185, 129, 0.14);
-    color: #10b981;
+    background: rgba(var(--success-rgb), 0.14);
+    color: var(--success-color);
 }
 
 [data-theme="dark"] .class-seating-badge.is-locked {
-    background: rgba(16, 185, 129, 0.22);
-    color: #34d399;
+    background: rgba(var(--success-rgb), 0.22);
+    color: var(--color-emerald-bright);
 }
 
 /* 🟠 En test / En cours d'ajustement */
 .class-seating-badge.is-testing {
-    background: rgba(245, 158, 11, 0.14);
-    color: #f59e0b;
+    background: rgba(var(--warning-rgb), 0.14);
+    color: var(--warning-color);
 }
 
 [data-theme="dark"] .class-seating-badge.is-testing {
-    background: rgba(245, 158, 11, 0.22);
-    color: #fbbf24;
+    background: rgba(var(--warning-rgb), 0.22);
+    color: var(--color-amber-bright);
 }
 
 /* ⚪ À faire / Non commencé */

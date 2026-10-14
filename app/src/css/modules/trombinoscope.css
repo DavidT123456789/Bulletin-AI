@@ -259,8 +259,8 @@
 }
 
 .drop-zone-remove-btn:hover {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
-    color: var(--error-color, #ef4444);
+    background: rgba(var(--error-rgb), 0.12);
+    color: var(--error-color);
     transform: scale(1.08);
 }
 
@@ -611,8 +611,14 @@
     min-height: 28px;
 }
 
-.grid-reset-btn {
+.grid-control-actions {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.grid-reset-btn {
     padding: 4px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm, 6px);
@@ -630,8 +636,7 @@
 
 .grid-reset-btn:hover {
     background: var(--item-hover-bg);
-    color: var(--icon-btn-hover);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--text-primary);
 }
 
 .grid-reset-btn:disabled {
@@ -1088,8 +1093,8 @@
 }
 
 .assignment-action-btn.danger:hover {
-    color: var(--error-color, #ef4444);
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+    color: var(--error-color);
+    background: rgba(var(--error-rgb), 0.12);
 }
 
 .assignment-action-btn:active {
@@ -1294,12 +1299,12 @@
 .trombi-header-count-pill.is-new {
     background: var(--success-light);
     color: var(--success-dark);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
 [data-theme="dark"] .trombi-header-count-pill.is-new {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--color-emerald-bright);
 }
 
 /* Stat badges in footers */
@@ -1324,7 +1329,7 @@
     gap: 16px;
     padding: 10px 16px;
     background: var(--surface-color);
-    border: 1px solid rgba(16, 185, 129, 0.28);
+    border: 1px solid rgba(var(--success-rgb), 0.28);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     animation: trombiBannerFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -1405,18 +1410,18 @@
 .trombi-reassurance-badge.is-new {
     background: var(--success-light);
     color: var(--success-dark);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
 [data-theme="dark"] .trombi-reassurance-banner {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.25);
+    background: rgba(var(--success-rgb), 0.08);
+    border-color: rgba(var(--success-rgb), 0.25);
 }
 
 [data-theme="dark"] .trombi-reassurance-badge.is-new {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--color-emerald-bright);
+    border-color: rgba(var(--success-rgb), 0.4);
 }
 
 /* Step 3: Preview Grid */
@@ -1433,7 +1438,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px;
-    background: rgba(0, 184, 148, 0.1);
+    background: rgba(var(--success-rgb), 0.1);
     border-radius: var(--radius-md);
     color: var(--success-color);
     font-size: 15px;
@@ -1476,8 +1481,12 @@
 }
 
 .preview-item.is-new-student {
-    border-color: rgba(16, 185, 129, 0.45);
-    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(var(--success-rgb), 0.45);
+    background: rgba(var(--success-rgb), 0.05);
+}
+
+.preview-item.is-new-student:hover {
+    border-color: rgba(var(--success-rgb), 0.7);
 }
 
 .preview-item.is-dimmed {
