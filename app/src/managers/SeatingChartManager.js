@@ -2579,8 +2579,12 @@ export const SeatingChartManager = {
         if (grid && typeof grid === 'object') {
             if (grid.roomConfigured) return true;
             if (grid.specialLayout && Object.keys(grid.specialLayout).length > 0) return true;
+            if ((typeof grid.rows === 'number' && grid.rows !== DEFAULT_ROWS) ||
+                (typeof grid.cols === 'number' && grid.cols !== DEFAULT_COLS)) {
+                return true;
+            }
         }
-        const results = appState.results || [];
+        const results = appState.generatedResults || appState.results || [];
         return results.some(r => r?.seatingPosition?.row != null && r?.seatingPosition?.col != null);
     },
 

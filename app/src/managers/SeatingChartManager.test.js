@@ -2855,6 +2855,53 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(0, 1).length).toBe(0);
         });
 
+        it('devrait réajuster automatiquement l\'échelle (_applySmartFit) lorsque Binômes aléatoires agrandit la grille d\'activité (ex: 25 élèves -> 4x4)', () => {
+            const classId = appState.currentClassId;
+            appState.generatedResults = Array.from({ length: 25 }, (_, idx) => ({
+                id: `u${idx + 1}`,
+                classId,
+                nom: `ELEVE${idx + 1}`,
+                prenom: `Prenom${idx + 1}`,
+                seatingPosition: null,
+                seatingActivityPosition: null
+            }));
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager.switchPlanMode('activity');
+            SeatingChartManager._isLocked = false;
+
+            // Grille initiale 3x4 (12 postes) insuffisante pour 13 binômes (25 élèves)
+            const rowSlider = document.getElementById('scRowsSlider');
+            const colSlider = document.getElementById('scColsSlider');
+            rowSlider.value = '3';
+            colSlider.value = '4';
+            SeatingChartManager._initGrid(3, 4);
+
+            const smartFitSpy = vi.spyOn(SeatingChartManager, '_applySmartFit');
+
+            // Cas 1 (nominal + redimensionnement même si dézoomé) : 3x4 -> 4x4 déclenche _applySmartFit(true)
+            SeatingChartManager._isFitted = false;
+            SeatingChartManager._autoPlace('pairs-random');
+
+            expect(SeatingChartManager._getRows()).toBe(4);
+            expect(SeatingChartManager._getCols()).toBe(4);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(25);
+            expect(smartFitSpy).toHaveBeenCalledWith(true);
+
+            // Cas 2 (limite : grille déjà 4x4 et zoom manuel actif _isFitted = false) -> préserve le zoom manuel
+            smartFitSpy.mockClear();
+            SeatingChartManager._isFitted = false;
+            SeatingChartManager._autoPlace('pairs-random');
+            expect(smartFitSpy).not.toHaveBeenCalled();
+
+            // Cas 3 (nominal : grille déjà 4x4 et mode ajusté _isFitted = true) -> maintient l'ajustement
+            smartFitSpy.mockClear();
+            SeatingChartManager._isFitted = true;
+            SeatingChartManager._autoPlace('pairs-random');
+            expect(smartFitSpy).toHaveBeenCalledWith(true);
+
+            smartFitSpy.mockRestore();
+        });
+
         it('devrait numéroter séquentiellement les postes actifs (#1, #2...) en ignorant les allées et places condamnées', () => {
             SeatingChartManager.switchPlanMode('activity');
             SeatingChartManager._isLocked = false;

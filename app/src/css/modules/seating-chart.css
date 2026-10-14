@@ -1201,7 +1201,8 @@
     gap: 8px;
     padding: 4px;
     transition: grid-template-columns 0.35s var(--ease-spring),
-                grid-template-rows 0.35s var(--ease-spring);
+                grid-template-rows 0.35s var(--ease-spring),
+                opacity 0.3s var(--ease-material);
     flex-shrink: 0;
 }
 
@@ -1965,6 +1966,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     justify-content: center;
     flex-shrink: 0;
     margin-top: 4px;
+    transition: opacity 0.3s var(--ease-material);
 }
 
 .sc-desk {
@@ -2043,7 +2045,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     gap: 16px;
     padding: 24px;
     border-radius: var(--radius-xl, 16px);
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(var(--surface-color-rgb), 0.88);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-surface-border, rgba(255, 255, 255, 0.4));
@@ -2058,9 +2060,9 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 [data-theme="dark"] .sc-onboarding-hint {
-    background: rgba(30, 30, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(var(--surface-color-rgb), 0.88);
+    border-color: var(--border-color-strong);
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 #seatingChartView[data-locked="true"] .sc-onboarding-hint {
@@ -2070,6 +2072,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-onboarding-hint.sc-hint-exiting {
     animation: scOnboardingFadeOut 0.35s var(--ease-material) forwards;
     pointer-events: none;
+}
+
+#seatingChartView:not([data-locked="true"]):not([data-has-selection="true"]) .sc-grid-area:has(.sc-onboarding-hint:not([data-step="room"]):not(.sc-hint-exiting)):not(:has(.sc-cell.drag-over)) .sc-classroom-board > .sc-grid-container,
+#seatingChartView:not([data-locked="true"]):not([data-has-selection="true"]) .sc-grid-area:has(.sc-onboarding-hint:not([data-step="room"]):not(.sc-hint-exiting)):not(:has(.sc-cell.drag-over)) .sc-classroom-board > .sc-desk-row {
+    opacity: 0.42;
 }
 
 .sc-onboarding-hint-text {
@@ -2116,6 +2123,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     white-space: nowrap;
 }
 
+.sc-onboarding-btn:focus-visible {
+    outline: 2px solid var(--text-secondary);
+    outline-offset: 2px;
+}
+
 .sc-onboarding-btn.primary {
     background: var(--primary-color);
     color: white;
@@ -2136,13 +2148,23 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     border: 1px solid var(--border-color);
 }
 
+[data-theme="dark"] .sc-onboarding-btn.secondary {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+}
+
 @media (hover: hover) {
     .sc-onboarding-btn.secondary:hover {
         background: var(--bg-tertiary);
         color: var(--text-primary);
-        border-color: var(--border-hover, var(--border-color));
+        border-color: var(--border-color-hover);
         transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
+    }
+
+    [data-theme="dark"] .sc-onboarding-btn.secondary:hover {
+        background: var(--item-hover-bg-elevated);
+        border-color: var(--border-color-hover);
     }
 }
 
@@ -2214,10 +2236,14 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     min-width: 0;
 }
 
+[data-theme="dark"] .sc-room-preset-card {
+    background: var(--item-idle-bg);
+}
+
 @media (hover: hover) {
     .sc-room-preset-card:hover {
         background: var(--bg-tertiary);
-        border-color: var(--border-hover, var(--text-tertiary));
+        border-color: var(--border-color-hover);
         color: var(--text-primary);
         transform: translateY(-1px);
     }
@@ -2306,13 +2332,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-onboarding-btn.secondary.sc-onboarding-confirm-btn {
-    background: var(--item-hover-bg);
     border-color: var(--text-tertiary);
 }
 
 @media (hover: hover) {
     .sc-onboarding-btn.secondary.sc-onboarding-confirm-btn:hover {
-        background: var(--bg-tertiary);
         border-color: var(--text-secondary);
     }
 }
@@ -2328,6 +2352,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     box-sizing: border-box;
+}
+
+[data-theme="dark"] .sc-onboarding-dims-bar {
+    background: var(--item-idle-bg);
 }
 
 .sc-onboarding-dims-controls {
@@ -2366,6 +2394,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     border-radius: var(--radius-sm, 6px);
     background: var(--surface-color);
     border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sc-onboarding-stepper {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
 }
 
 .sc-hint-step-btn {

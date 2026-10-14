@@ -128,7 +128,8 @@ export const SeatingAutoPlace = {
                 }
             }
 
-            if (targetRows !== rows || targetCols !== cols) {
+            const gridResized = targetRows !== rows || targetCols !== cols;
+            if (gridResized) {
                 const newGrid = Array.from({ length: targetRows }, (_, r) =>
                     Array.from({ length: targetCols }, (__, c) => (this._gridState[r]?.[c] ?? null))
                 );
@@ -206,6 +207,9 @@ export const SeatingAutoPlace = {
             this._dismissOnboardingHint();
             this._savePositionsToState();
             this._render();
+            if (gridResized || this._isFitted) {
+                this._applySmartFit(true);
+            }
             animatePlacedCells(placedCells);
 
             const remaining = ordered.length - cursor;
