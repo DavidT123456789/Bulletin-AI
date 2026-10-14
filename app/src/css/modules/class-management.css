@@ -895,30 +895,6 @@
     background: var(--bg-color);
 }
 
-.class-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    background: var(--card-item-bg);
-    border: var(--card-item-border);
-    border-radius: var(--card-item-radius);
-    box-shadow: var(--card-item-shadow);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.class-card:hover {
-    border-color: var(--card-item-hover-border-color);
-    box-shadow: var(--card-item-hover-shadow);
-}
-
-.class-card.active {
-    border-color: var(--primary-color);
-    background: var(--item-active-bg);
-}
-
-
-
 /* ====================================================================
    RESPONSIVE - DROPDOWN
    ==================================================================== */
@@ -1152,10 +1128,6 @@
     }
 }
 
-.delete-confirm-inline {
-    animation: slideInConfirm 0.2s ease-out;
-}
-
 /* ====================================================================
    ACTIONS D'EN-TÊTE - Modale Mes classes
    Standard Apple / Google 2026 : Soft Primary Tint CTA & Séparation sémantique
@@ -1175,11 +1147,22 @@
     flex-shrink: 0;
 }
 
+#classManagementModal #classManageMoreWrapper {
+    position: relative;
+}
+
 #classManagementModal #classManageMoreBtn {
     width: var(--close-btn-size);
     height: var(--close-btn-size);
     border-radius: 50%;
     font-size: var(--close-btn-icon-size);
+}
+
+#classManagementModal #classManageMoreMenu {
+    right: 0;
+    min-width: 250px;
+    width: max-content;
+    white-space: nowrap;
 }
 
 #classManagementModal .add-class-modal-btn {
@@ -1192,6 +1175,11 @@
     transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+[data-theme="dark"] #classManagementModal .add-class-modal-btn {
+    background: var(--item-hover-bg);
+    border-color: var(--border-color-strong);
+}
+
 #classManagementModal .add-class-modal-btn iconify-icon {
     color: var(--text-secondary);
     font-size: 1.15em;
@@ -1200,10 +1188,14 @@
 
 @media (hover: hover) and (pointer: fine) {
     #classManagementModal .add-class-modal-btn:hover {
-        background: var(--bg-hover);
-        border-color: var(--text-quaternary);
-        color: var(--text-primary);
+        background: var(--bg-tertiary);
+        border-color: var(--border-color-strong);
         box-shadow: var(--shadow-sm);
+    }
+
+    [data-theme="dark"] #classManagementModal .add-class-modal-btn:hover {
+        background: var(--item-hover-bg-elevated);
+        border-color: var(--border-color-hover);
     }
 
     #classManagementModal .add-class-modal-btn:hover iconify-icon {
@@ -1214,7 +1206,6 @@
 
 #classManagementModal .add-class-modal-btn:active {
     transform: scale(0.97);
-    background: var(--bg-tertiary);
 }
 
 /* ====================================================================
@@ -1234,12 +1225,17 @@
     overflow: visible; /* Prevent elevated shadow clipping during drag */
 }
 
+[data-theme="dark"] .class-management-list {
+    border-color: var(--border-color-strong);
+}
+
 .class-management-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 16px;
-    padding: 16px 20px;
+    padding: 15px 20px;
+    min-height: 74px;
     background: var(--surface-color);
     border: none;
     border-bottom: 1px solid var(--border-color);
@@ -1276,7 +1272,7 @@
     background-color: var(--bg-hover);
 }
 
-.class-management-item:not(.active-switch):not(.editing):focus-visible {
+.class-management-item:not(.editing):focus-visible {
     background-color: var(--item-hover-bg);
     outline: none;
     box-shadow: inset 0 0 0 2px var(--primary-color);
@@ -1297,12 +1293,12 @@
     font-size: 1.1rem;
 }
 
-.class-management-item:not(.active-switch):hover .class-drag-handle {
+.class-management-item:hover .class-drag-handle {
     opacity: 0.75;
     color: var(--text-secondary);
 }
 
-.class-management-item:not(.active-switch) .class-drag-handle:hover {
+.class-management-item .class-drag-handle:hover {
     opacity: 1;
     color: var(--text-primary);
     background: var(--item-hover-bg);
@@ -1312,7 +1308,7 @@
 .class-management-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     flex: 1;
     min-width: 0;
 }
@@ -1321,40 +1317,36 @@
 .class-info-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 2px;
 }
 
 .class-management-name {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.01em;
-    line-height: 1.2;
+    line-height: 1.25;
     margin: 0;
 }
 
-/* Grade Badge */
+/* Grade Badge - Clean Borderless Capsule */
 .class-stat-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     padding: 2px 8px;
     background: var(--bg-secondary);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     font-size: 0.78rem;
     font-weight: 600;
-    border: 1px solid transparent;
+    line-height: 1.3;
     transition: all var(--transition-fast);
 }
 
-.class-management-item:not(.active-switch):hover .class-stat-badge {
-    background: var(--bg-tertiary);
-}
-
-[data-theme="dark"] .class-management-item:not(.active-switch):hover .class-stat-badge {
-    background: var(--bg-secondary);
+[data-theme="dark"] .class-stat-badge {
+    background: var(--item-hover-bg);
 }
 
 /* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
@@ -1379,7 +1371,7 @@
 }
 
 .stat-suffix {
-    opacity: 0.6;
+    opacity: 0.7;
     font-size: 0.85em;
     font-weight: 500;
 }
@@ -1409,51 +1401,35 @@
     opacity: 0.5;
 }
 
-.class-no-data {
-    font-size: 0.75em;
-    color: var(--text-tertiary);
-    background: var(--bg-tertiary);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-style: italic;
-}
-
-.class-stat-badge.no-data {
-    opacity: 0.5;
-    background: var(--bg-secondary);
-}
-
-.class-stat-badge.no-data .stat-value {
-    font-weight: 500;
-    font-size: 0.8em;
-}
-
 /* Meta Info Row - Line Style */
 .class-management-meta {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 2px;
 }
 
 .meta-item-inline {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
+    gap: 5px;
+    font-size: 0.79rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
 
+.meta-item-inline.meta-empty-state {
+    color: var(--text-tertiary);
+}
+
 .meta-item-inline iconify-icon {
-    font-size: 1.15em;
-    opacity: 0.7;
+    font-size: 1.1em;
+    opacity: 0.75;
 }
 
 .meta-separator {
     color: var(--text-quaternary);
-    opacity: 0.5;
+    opacity: 0.45;
     font-size: 0.75rem;
     user-select: none;
 }
@@ -1476,11 +1452,11 @@
     align-items: center;
     gap: 4px;
     margin-left: 12px;
-    opacity: 0.7;
+    opacity: 0.75;
     transition: opacity var(--transition-fast) ease;
 }
 
-.class-management-item:not(.active-switch):hover .class-management-actions {
+.class-management-item:hover .class-management-actions {
     opacity: 1;
 }
 
@@ -1516,162 +1492,95 @@
 }
 
 /* ====================================================================
-   ACTIVE CLASS ITEM - SOLID ACCENT (Harmonisé avec le menu rapide)
+   ACTIVE CLASS ITEM - SOLID PRIMARY SURFACE
+   Scoped to :not(.editing) so in-situ renaming and delete confirmation
+   temporarily switch to a clean neutral/danger surface without clashing
    ==================================================================== */
 
-.class-management-item.active-switch {
+.class-management-item.active-switch:not(.editing) {
     background-color: var(--primary-color);
-    border-bottom-color: rgba(255, 255, 255, 0.12);
-    box-shadow: none;
+    border-bottom-color: rgba(255, 255, 255, 0.15);
     z-index: 1;
-    outline: none;
 }
 
-.class-management-item.active-switch:focus {
-    outline: none;
-}
-
-.class-management-item.active-switch:hover {
+.class-management-item.active-switch:not(.editing):hover {
     background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
-    box-shadow: none;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
 }
 
 .class-management-item.active-switch:not(.editing):focus-visible {
     background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
-    outline: none;
+    box-shadow: inset 0 0 0 2px #ffffff;
 }
 
-/* Titre de classe actif */
-.class-management-item.active-switch .class-management-name {
-    color: #ffffff;
-    font-weight: 700;
+.class-management-item.active-switch:not(.editing) .class-drag-handle {
+    color: rgba(255, 255, 255, 0.65);
+    opacity: 0.75;
 }
 
-/* Poignée de déplacement sur la ligne active */
-.class-management-item.active-switch .class-drag-handle {
-    color: #ffffff;
-    opacity: 0.65;
-    background: transparent;
-}
-
-.class-management-item.active-switch:hover .class-drag-handle {
-    color: #ffffff;
-    opacity: 0.85;
-}
-
-.class-management-item.active-switch .class-drag-handle:hover {
-    color: #ffffff;
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.18);
-}
-
-/* Pastille de note sur la ligne active */
-.class-management-item.active-switch .class-stat-badge {
-    background: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    opacity: 1;
-}
-
-.class-management-item.active-switch:hover .class-stat-badge {
-    background: #ffffff;
-}
-
-.class-management-item.active-switch .class-stat-badge .stat-suffix {
-    color: var(--text-tertiary);
-}
-
-.class-management-item.active-switch .class-stat-badge.no-data {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    opacity: 1;
-}
-
-.class-management-item.active-switch:hover .class-stat-badge.no-data {
-    background: rgba(255, 255, 255, 0.28);
-}
-
-.class-management-item.active-switch .class-stat-badge.no-data .stat-value {
-    color: #ffffff;
-    font-weight: 600;
-}
-
-.class-management-item.active-switch .trend-indicator.positive {
-    color: var(--success-color) !important;
-}
-
-.class-management-item.active-switch .trend-indicator.negative {
-    color: var(--error-color) !important;
-}
-
-.class-management-item.active-switch .trend-indicator.neutral {
-    color: var(--text-tertiary) !important;
-}
-
-/* Métadonnées sur la ligne active */
-.class-management-item.active-switch .meta-item-inline {
+.class-management-item.active-switch:not(.editing):hover .class-drag-handle {
     color: rgba(255, 255, 255, 0.9);
+    opacity: 1;
 }
 
-.class-management-item.active-switch .meta-item-inline iconify-icon {
-    color: rgba(255, 255, 255, 0.85);
+.class-management-item.active-switch:not(.editing) .class-drag-handle:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
 }
 
-.class-management-item.active-switch .meta-separator {
-    color: rgba(255, 255, 255, 0.4);
+.class-management-item.active-switch:not(.editing) .class-management-name {
+    color: #ffffff;
 }
 
-.class-management-item.active-switch .meta-item-inline.status-complete,
-.class-management-item.active-switch .class-management-meta .status-complete {
-    color: #34d399; /* Émeraude vif et lisible sur fond sombre */
+.class-management-item.active-switch:not(.editing) .class-stat-badge {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-.class-management-item.active-switch .meta-item-inline.status-complete iconify-icon,
-.class-management-item.active-switch .class-management-meta .status-complete iconify-icon {
-    color: #34d399;
+.class-management-item.active-switch:not(.editing) .meta-item-inline {
+    color: rgba(255, 255, 255, 0.92);
 }
 
-.class-management-item.active-switch .meta-item-inline.status-error,
-.class-management-item.active-switch .class-management-meta .status-error {
-    color: #fca5a5; /* Rouge clair et lisible sur fond sombre */
+.class-management-item.active-switch:not(.editing) .meta-item-inline.meta-empty-state {
+    color: rgba(255, 255, 255, 0.75);
 }
 
-.class-management-item.active-switch .meta-item-inline.status-error iconify-icon,
-.class-management-item.active-switch .class-management-meta .status-error iconify-icon {
+.class-management-item.active-switch:not(.editing) .meta-item-inline iconify-icon {
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 0.9;
+}
+
+.class-management-item.active-switch:not(.editing) .meta-separator {
+    color: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+}
+
+.class-management-item.active-switch:not(.editing) .class-management-meta .status-complete,
+.class-management-item.active-switch:not(.editing) .class-management-meta .status-complete iconify-icon {
+    color: var(--color-emerald-bright);
+}
+
+.class-management-item.active-switch:not(.editing) .class-management-meta .status-error,
+.class-management-item.active-switch:not(.editing) .class-management-meta .status-error iconify-icon {
     color: #fca5a5;
 }
 
-/* Boutons d'actions sur la ligne active */
-.class-management-item.active-switch .class-management-actions {
-    opacity: 0.85;
+.class-management-item.active-switch:not(.editing) .class-management-actions {
+    opacity: 0.95;
 }
 
-.class-management-item.active-switch:hover .class-management-actions {
-    opacity: 1;
-}
-
-.class-management-item.active-switch .manage-rename-btn,
-.class-management-item.active-switch .manage-duplicate-btn,
-.class-management-item.active-switch .manage-delete-btn {
+.class-management-item.active-switch:not(.editing) .manage-rename-btn,
+.class-management-item.active-switch:not(.editing) .manage-duplicate-btn,
+.class-management-item.active-switch:not(.editing) .manage-delete-btn {
     color: rgba(255, 255, 255, 0.85);
-    background: transparent;
 }
 
-.class-management-item.active-switch .manage-rename-btn:hover,
-.class-management-item.active-switch .manage-duplicate-btn:hover {
+.class-management-item.active-switch:not(.editing) .manage-rename-btn:hover,
+.class-management-item.active-switch:not(.editing) .manage-duplicate-btn:hover,
+.class-management-item.active-switch:not(.editing) .manage-delete-btn:hover {
     background: rgba(255, 255, 255, 0.18);
     color: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-.class-management-item.active-switch .manage-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.3);
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+    box-shadow: none;
 }
 
 /* ====================================================================
@@ -1679,7 +1588,7 @@
    ==================================================================== */
 
 .class-management-item.dragging {
-    opacity: 0.85;
+    opacity: 0.95;
     transform: scale(1.02);
     border-radius: var(--radius-md);
     background: var(--surface-color) !important;
@@ -1689,9 +1598,10 @@
     transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.class-management-item.active-switch.dragging {
-    background-color: var(--primary-color) !important;
-    border-color: transparent !important;
+.class-management-item.active-switch:not(.editing).dragging {
+    background: var(--primary-color) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 12px 28px -4px rgba(var(--primary-color-rgb), 0.45), var(--shadow-md);
 }
 
 .class-management-item.dragging,
@@ -1699,11 +1609,7 @@
     cursor: grabbing !important;
 }
 
-.class-management-item:not(.dragging) {
-    transition: all var(--transition-base);
-}
-
-.class-management-list:has(.dragging) .class-management-item:not(.dragging):hover {
+.class-management-list:has(.dragging) .class-management-item:not(.dragging):not(.active-switch):hover {
     background: var(--surface-color);
 }
 
@@ -1744,55 +1650,6 @@
         padding-top: 8px;
         padding-bottom: 8px;
         transform: translateY(0);
-    }
-}
-
-@keyframes slideDownExpandModal {
-    0% {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        margin-bottom: 0;
-        border-color: transparent;
-        transform: translateY(-8px);
-    }
-    40% {
-        border-color: var(--border-color);
-    }
-    100% {
-        opacity: 1;
-        max-height: 52px;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-        border-color: var(--border-color);
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideUpCollapseModal {
-    0% {
-        opacity: 1;
-        max-height: 52px;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-        border-color: var(--border-color);
-        transform: translateY(0);
-    }
-    50% {
-        opacity: 0;
-        border-color: transparent;
-    }
-    100% {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        margin-bottom: 0;
-        border-color: transparent;
-        transform: translateY(-8px);
     }
 }
 
@@ -1911,13 +1768,6 @@
     color: var(--text-tertiary);
 }
 
-.inline-create-form.class-dropdown-item .inline-create-btn:focus-visible,
-.inline-create-form.class-dropdown-item .inline-cancel-btn:focus-visible {
-    outline: none;
-    background: rgba(var(--primary-color-rgb), 0.12);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.35);
-}
-
 .inline-class-input::placeholder {
     color: var(--text-tertiary);
 }
@@ -1927,19 +1777,20 @@
 .class-management-item.editing:focus-visible,
 .class-management-item.editing:focus-within {
     cursor: default;
-    box-shadow: none !important;
     outline: none !important;
     outline-offset: 0 !important;
 }
 
-/* Delete confirmation (danger state with soft tint, preserving corners) */
+/* Delete confirmation (danger state with soft tint over opaque surface, preserving corners) */
 .class-management-item.editing:not(.renaming) {
-    background-color: rgba(var(--error-rgb), 0.04);
+    background-color: var(--surface-color);
+    background-image: linear-gradient(rgba(var(--error-rgb), 0.05), rgba(var(--error-rgb), 0.05));
     box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.35);
 }
 
 .class-management-item.editing:not(.renaming):hover {
-    background-color: rgba(var(--error-rgb), 0.06);
+    background-color: var(--surface-color);
+    background-image: linear-gradient(rgba(var(--error-rgb), 0.07), rgba(var(--error-rgb), 0.07));
     box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.45);
 }
 
@@ -2028,6 +1879,34 @@
 
 .inline-delete-btn.confirm:active {
     transform: translateY(0);
+}
+
+.confirm-details-lead {
+    margin-bottom: var(--space-2);
+}
+
+.confirm-details-list {
+    margin-left: var(--space-5);
+    margin-bottom: var(--space-3);
+    line-height: 1.6;
+}
+
+.confirm-details-note {
+    color: var(--text-tertiary);
+    font-size: 0.9em;
+}
+
+.confirm-details-safe {
+    color: var(--success-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.confirm-details-safe iconify-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 /* ====================================================================
@@ -2123,21 +2002,13 @@
     box-shadow: none !important;
 }
 
-.class-management-item:not(.active-switch).renaming,
-.class-management-item:not(.active-switch).renaming:hover,
-.class-management-item:not(.active-switch).renaming:focus,
-.class-management-item:not(.active-switch).renaming:focus-visible,
-.class-management-item:not(.active-switch).renaming:focus-within {
+.class-management-item.renaming,
+.class-management-item.renaming:hover {
     background: var(--surface-color) !important;
-    background-color: var(--surface-color) !important;
-    border: none;
     border-bottom: 1px solid var(--border-color);
-    outline: none !important;
-    outline-offset: 0 !important;
-    box-shadow: none !important;
 }
 
-.class-management-item:not(.active-switch).renaming:last-child {
+.class-management-item.renaming:last-child {
     border-bottom: none;
 }
 
@@ -2149,86 +2020,17 @@
 
 .class-management-item.renaming .class-info-header {
     width: 100%;
-    margin-bottom: 2px;
+    margin-bottom: 0;
 }
 
-/* Hide stat badge during in-situ rename so input has 100% width of the header */
-.class-management-item.renaming .class-stat-badge {
-    display: none !important;
-}
-
+/* Hide badge & meta during in-situ rename so input and action buttons align on a single axis without row height shift */
+.class-management-item.renaming .class-stat-badge,
 .class-management-item.renaming .class-management-meta {
-    opacity: 0.85;
-    transition: opacity var(--transition-fast);
+    display: none !important;
 }
 
 .class-management-item.renaming .class-management-actions {
     opacity: 1;
-}
-
-/* Active switch variation when renaming */
-.class-management-item.active-switch.renaming,
-.class-management-item.active-switch.renaming:focus,
-.class-management-item.active-switch.renaming:focus-visible,
-.class-management-item.active-switch.renaming:focus-within {
-    background: var(--primary-color) !important;
-    background-color: var(--primary-color) !important;
-    border-bottom-color: rgba(255, 255, 255, 0.12) !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-.class-management-item.active-switch.renaming:hover {
-    background: var(--primary-color) !important;
-    background-color: var(--primary-color) !important;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) !important;
-    box-shadow: none !important;
-}
-
-.class-management-item.active-switch.renaming .inline-field-input {
-    background: #ffffff;
-    color: #18181b;
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.class-management-item.active-switch.renaming .inline-field-input:hover {
-    border-color: #ffffff;
-}
-
-.class-management-item.active-switch.renaming .inline-field-input::placeholder {
-    color: #71717a;
-}
-
-.class-management-item.active-switch.renaming .inline-field-input:focus {
-    box-shadow: 0 0 0 2px #ffffff, 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn.confirm:not(:disabled) {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn.confirm:not(:disabled):hover {
-    background: rgba(255, 255, 255, 0.32);
-    color: #ffffff;
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn.confirm:disabled {
-    color: rgba(255, 255, 255, 0.45);
-    opacity: 0.5;
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn.cancel {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.class-management-item.active-switch.renaming .inline-action-btn.cancel:hover {
-    background: rgba(239, 68, 68, 0.35);
-    color: #ffffff;
 }
 
 /* Shared input field for creation and renaming */
@@ -2237,13 +2039,13 @@
     height: 36px;
     padding: 0 12px;
     background: var(--bg-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-sm);
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 0.96rem;
+    font-weight: 600;
     color: var(--text-primary);
     outline: none;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-sm);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 }
 
@@ -2252,20 +2054,21 @@
     font-weight: 400;
 }
 
-.inline-field-input:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+.inline-field-input:hover:not(:focus) {
+    border-color: var(--border-color-hover);
 }
 
 .inline-field-input:focus {
     outline: none;
-    border-color: var(--highlight-standard-border) !important;
+    border-color: var(--primary-color);
     background: var(--surface-color);
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.14);
 }
 
 [data-theme="dark"] .inline-field-input:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    border-color: var(--primary-bright);
+    background: var(--bg-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.22);
 }
 
 /* Shared action buttons (Confirm & Cancel) */
@@ -2291,15 +2094,17 @@
 
 /* Confirm button - active state (valid text entered) */
 .inline-action-btn.confirm:not(:disabled) {
-    color: var(--text-secondary);
+    color: var(--success-color);
+    background: rgba(var(--success-rgb), 0.12);
+    border-color: rgba(var(--success-rgb), 0.24);
 }
 
 .inline-action-btn.confirm:not(:disabled):hover {
-    background: var(--success-light);
-    color: var(--success-color);
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success-bright, var(--success-color));
 }
 
-/* Confirm button - disabled state (empty input) */
+/* Confirm button - disabled state (empty/unchanged input) */
 .inline-action-btn.confirm:disabled {
     color: var(--text-quaternary);
     opacity: 0.35;
@@ -2307,14 +2112,14 @@
     pointer-events: none;
 }
 
-/* Cancel button - strictly aligned with modal close-btn */
+/* Cancel button - neutral high-contrast hover (Dark Mode Rule) */
 .inline-action-btn.cancel {
     color: var(--text-tertiary);
 }
 
 .inline-action-btn.cancel:hover {
-    background: var(--error-light);
-    color: var(--error-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .inline-action-btn:active {
@@ -2330,10 +2135,10 @@
 .inline-class-input:-webkit-autofill:hover,
 .inline-class-input:-webkit-autofill:focus,
 .inline-class-input:-webkit-autofill:active,
-.inline-rename-input:-webkit-autofill,
-.inline-rename-input:-webkit-autofill:hover,
-.inline-rename-input:-webkit-autofill:focus,
-.inline-rename-input:-webkit-autofill:active {
+.in-situ-rename-input:-webkit-autofill,
+.in-situ-rename-input:-webkit-autofill:hover,
+.in-situ-rename-input:-webkit-autofill:focus,
+.in-situ-rename-input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px var(--surface-color) inset !important;
     -webkit-text-fill-color: var(--text-primary) !important;
     transition: background-color 5000s ease-in-out 0s !important;
@@ -2379,10 +2184,7 @@
 /* ====================================================================
    ACCESSIBILITY & KEYBOARD NAVIGATION (FOCUS-VISIBLE)
    ==================================================================== */
-.save-rename-btn:focus-visible,
-.cancel-rename-btn:focus-visible,
-.create-class-confirm:focus-visible,
-.create-class-cancel:focus-visible,
+.inline-action-btn:focus-visible,
 .manage-rename-btn:focus-visible,
 .manage-duplicate-btn:focus-visible,
 .manage-delete-btn:focus-visible,
@@ -2393,31 +2195,31 @@
     box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--primary-color) !important;
 }
 
+.class-management-item.active-switch:not(.editing) .manage-rename-btn:focus-visible,
+.class-management-item.active-switch:not(.editing) .manage-duplicate-btn:focus-visible,
+.class-management-item.active-switch:not(.editing) .manage-delete-btn:focus-visible {
+    box-shadow: 0 0 0 2px #ffffff !important;
+}
+
 /* ====================================================================
    MOBILE TOUCH TARGETS (44px Rule)
    ==================================================================== */
 @media (max-width: 768px) {
+    .inline-action-btn,
     .manage-rename-btn,
     .manage-duplicate-btn,
     .manage-delete-btn,
     .class-delete-btn,
-    .save-rename-btn,
-    .cancel-rename-btn,
-    .create-class-confirm,
-    .create-class-cancel,
     .inline-create-form.class-dropdown-item .inline-create-btn,
     .inline-create-form.class-dropdown-item .inline-cancel-btn {
         position: relative;
     }
 
+    .inline-action-btn::after,
     .manage-rename-btn::after,
     .manage-duplicate-btn::after,
     .manage-delete-btn::after,
     .class-delete-btn::after,
-    .save-rename-btn::after,
-    .cancel-rename-btn::after,
-    .create-class-confirm::after,
-    .create-class-cancel::after,
     .inline-create-form.class-dropdown-item .inline-create-btn::after,
     .inline-create-form.class-dropdown-item .inline-cancel-btn::after {
         content: '';

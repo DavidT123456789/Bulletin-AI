@@ -710,7 +710,7 @@ label {
 
 /* --- Inputs & Forms (Nebula Style) --- */
 /* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
-input:not([type="range"]):not(.custom-input):not(.context-grade-input),
+input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input),
 textarea:not(.focus-context-textarea),
 select {
     padding: 12.5px 14.5px;
@@ -792,7 +792,7 @@ select optgroup {
 
 
 /* --- Hover State: Subtle primary tint + gradient border (consistent with list hover) --- */
-input:not([type="range"]):not(.custom-input):not(.context-grade-input):hover:not(:disabled):not(:focus),
+input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input):hover:not(:disabled):not(:focus),
 textarea:not(.focus-context-textarea):hover:not(:disabled):not(:focus) {
     border: 1px solid transparent !important;
     /* Subtle primary tint like list row hover + gradient border */
@@ -810,7 +810,7 @@ select:hover:not(:disabled):not(:focus) {
 }
 
 /* --- Focus State: Dynamic rotating gradient (signature effect) --- */
-input:not([type="range"]):not(.custom-input):not(.context-grade-input):focus,
+input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input):focus,
 textarea:not(.focus-context-textarea):focus {
     outline: none;
     background-color: transparent;
@@ -835,14 +835,14 @@ textarea:not(.focus-context-textarea):focus {
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
-[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):hover:not(:disabled):not(:focus),
+[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input):hover:not(:disabled):not(:focus),
 [data-theme="dark"] textarea:not(.focus-context-textarea):hover:not(:disabled):not(:focus) {
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     background-color: var(--bg-color) !important;
     background-image: none !important;
 }
 
-[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):focus,
+[data-theme="dark"] input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input):focus,
 [data-theme="dark"] textarea:not(.focus-context-textarea):focus {
     border-color: rgba(255, 255, 255, 0.5) !important;
     background-color: var(--bg-color) !important;

@@ -31,6 +31,8 @@
 
     --border-color: rgba(161, 161, 170, 0.15);
     /* Zinc 400 with opacity */
+    --border-color-strong: rgba(0, 0, 0, 0.1);
+    --border-color-hover: rgba(0, 0, 0, 0.2);
 
     /* Texte : Zinc Neutral */
     --text-primary: #18181b;
@@ -397,6 +399,8 @@
     /* Zinc 800 */
     --border-color: rgba(255, 255, 255, 0.06);
     /* Harmonized to fix table border intensity mismatch */
+    --border-color-strong: rgba(255, 255, 255, 0.12);
+    --border-color-hover: rgba(255, 255, 255, 0.24);
 
     --text-primary: #fafafa;
     /* Zinc 50 */

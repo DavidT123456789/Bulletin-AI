@@ -339,4 +339,61 @@ describe('ClassUIManager - Animations verticales directionnelles de changement d
     });
 });
 
+describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        userSettings.academic.classes = [];
+        userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.currentClassId = null;
+        appState.currentClassId = null;
+        appState.generatedResults = [];
+    });
+
+    it('devrait marquer la ligne active (.active-switch), mutualiser l\'année dans le sous-titre et épurer les classes vides', async () => {
+        const class5A = ClassManager.createClass('5 1', '2026-2027');
+        const emptyClass = ClassManager.createClass('Nouvelle classe', '2026-2027');
+
+        await ClassManager.switchClass(class5A.id);
+        appState.generatedResults = [
+            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class5A.id, appreciation: 'Très bon trimestre.' }
+        ];
+
+        ClassUIManager.showManageClassesModal();
+
+        const modal = document.getElementById('classManagementModal');
+        expect(modal).not.toBeNull();
+
+        const subtitle = modal.querySelector('.modal-subtitle');
+        expect(subtitle.textContent).toBe('2 classes • 1 élève • 2026-2027');
+
+        const activeRow = modal.querySelector(`.class-management-item[data-class-id="${class5A.id}"]`);
+        expect(activeRow.classList.contains('active-switch')).toBe(true);
+        expect(activeRow.getAttribute('aria-selected')).toBe('true');
+        expect(activeRow.querySelector('.class-active-badge')).toBeNull();
+        expect(activeRow.querySelector('.class-management-meta').textContent).toContain('1/1 appréciation');
+
+        const emptyRow = modal.querySelector(`.class-management-item[data-class-id="${emptyClass.id}"]`);
+        expect(emptyRow.classList.contains('active-switch')).toBe(false);
+        expect(emptyRow.querySelector('.class-stat-badge')).toBeNull();
+        expect(emptyRow.querySelector('.meta-empty-state')?.textContent.trim()).toBe('Aucun élève');
+    });
+
+    it('devrait utiliser .inline-field-input sans .custom-input lors du renommage in-situ', async () => {
+        const class5A = ClassManager.createClass('5 1', '2026-2027');
+        await ClassManager.switchClass(class5A.id);
+
+        ClassUIManager.showManageClassesModal();
+
+        const modal = document.getElementById('classManagementModal');
+        const renameBtn = modal.querySelector(`.manage-rename-btn[data-class-id="${class5A.id}"]`);
+        renameBtn.click();
+
+        const renameInput = modal.querySelector('.in-situ-rename-input');
+        expect(renameInput).not.toBeNull();
+        expect(renameInput.classList.contains('inline-field-input')).toBe(true);
+        expect(renameInput.classList.contains('custom-input')).toBe(false);
+    });
+});
+
+
 

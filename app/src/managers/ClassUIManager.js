@@ -1152,11 +1152,11 @@ export const ClassUIManager = {
                             <iconify-icon icon="solar:add-linear"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
                         <div class="modal-header-actions-divider" aria-hidden="true"></div>
-                        <div class="action-dropdown" id="classManageMoreWrapper" style="position: relative;">
+                        <div class="action-dropdown" id="classManageMoreWrapper">
                             <button type="button" class="btn-icon-small tooltip" id="classManageMoreBtn" data-tooltip="Options" aria-label="Options des classes">
                                 <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
                             </button>
-                            <div class="action-dropdown-menu" id="classManageMoreMenu" style="right: 0; min-width: 250px; width: max-content; white-space: nowrap;"></div>
+                            <div class="action-dropdown-menu" id="classManageMoreMenu"></div>
                         </div>
                         <button class="close-button close-manage-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>
@@ -1204,6 +1204,10 @@ export const ClassUIManager = {
         // Add new class button in modal - inline row inside grouped list
         const addClassBtn = modalEl.querySelector('#addClassFromModalBtn');
         addClassBtn?.addEventListener('click', () => {
+            modalEl.querySelectorAll('.class-management-item.editing').forEach(editingRow => {
+                editingRow.querySelector('.cancel-rename-btn, .cancel-delete-btn')?.click();
+            });
+
             // Check if row already exists
             const existingRow = modalEl.querySelector('.creating-class-row');
             if (existingRow) {
@@ -1221,7 +1225,7 @@ export const ClassUIManager = {
                         <iconify-icon icon="ph:plus"></iconify-icon>
                     </div>
                     <div class="class-management-info">
-                        <input type="text" class="inline-field-input new-class-input custom-input" 
+                        <input type="text" class="inline-field-input new-class-input" 
                                id="newSchoolClassInput"
                                name="school_class_title"
                                placeholder="Classe (ex. 6ème A, 3ème B)..." 
@@ -1304,8 +1308,8 @@ export const ClassUIManager = {
                 try {
                     const newClass = await this._createAndSwitchClass(className);
                     if (newClass) {
+                        confirmBtn.disabled = false;
                         confirmBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
-                        confirmBtn.style.color = 'var(--success-color)';
                         row.style.animation = 'slideUpCollapseRow 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards';
                         setTimeout(() => {
                             row.remove();
@@ -1329,10 +1333,18 @@ export const ClassUIManager = {
             const list = modalEl.querySelector('.class-management-list');
             if (!list) return;
 
-            // Bind Row Click (Switch Class without closing modal)
+            const closeActiveEditingRows = (excludeRow = null) => {
+                list.querySelectorAll('.class-management-item.editing').forEach(editingRow => {
+                    if (editingRow !== excludeRow) {
+                        editingRow.querySelector('.cancel-rename-btn, .cancel-delete-btn')?.click();
+                    }
+                });
+            };
+
+            // Bind Row Click & Keyboard Activation (Switch Class without closing modal)
             list.addEventListener('click', async (e) => {
                 const item = e.target.closest('.class-management-item');
-                if (!item || item.classList.contains('editing')) return;
+                if (!item || item.classList.contains('editing') || item.classList.contains('creating-class-row')) return;
 
                 if (e.target.closest('.class-management-actions') || e.target.closest('.class-drag-handle')) {
                     return;
@@ -1340,17 +1352,30 @@ export const ClassUIManager = {
 
                 const classId = item.dataset.classId;
                 if (classId && classId !== appState.currentClassId) {
-                    modalEl.querySelectorAll('.class-management-item').forEach(i => i.classList.remove('active-switch'));
+                    modalEl.querySelectorAll('.class-management-item').forEach(i => {
+                        i.classList.remove('active-switch');
+                        i.setAttribute('aria-selected', 'false');
+                    });
                     item.classList.add('active-switch');
+                    item.setAttribute('aria-selected', 'true');
                     await this.handleClassSwitch(classId);
                 }
+            });
+
+            list.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const item = e.target.closest('.class-management-item');
+                if (!item || e.target !== item || item.classList.contains('editing')) return;
+                e.preventDefault();
+                item.click();
             });
 
             // ========== Drag & Drop Reorder (Rail-Style) ==========
             list.addEventListener('dragstart', (e) => {
                 const item = e.target.closest('.class-management-item');
-                if (!item) return;
+                if (!item || item.classList.contains('editing') || item.classList.contains('creating-class-row')) return;
                 draggedItem = item;
+                TooltipsUI?.hideAll?.();
 
                 e.dataTransfer.setDragImage(ghostImg, 0, 0);
                 e.dataTransfer.effectAllowed = 'move';
@@ -1367,8 +1392,9 @@ export const ClassUIManager = {
                 }
                 draggedItem = null;
 
-                const newOrder = [...list.querySelectorAll('.class-management-item')]
-                    .map(i => i.dataset.classId);
+                const newOrder = [...list.querySelectorAll('.class-management-item[data-class-id]')]
+                    .map(i => i.dataset.classId)
+                    .filter(Boolean);
                 ClassManager.reorderClasses(newOrder);
                 this.renderClassList();
             });
@@ -1376,9 +1402,10 @@ export const ClassUIManager = {
             list.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
+                if (!draggedItem) return;
 
-                const target = e.target.closest('.class-management-item');
-                if (!target || target === draggedItem) return;
+                const target = e.target.closest('.class-management-item[data-class-id]');
+                if (!target || target === draggedItem || target.classList.contains('editing')) return;
 
                 const targetRect = target.getBoundingClientRect();
                 const mouseY = e.clientY;
@@ -1392,7 +1419,7 @@ export const ClassUIManager = {
                     return;
                 }
 
-                const items = [...list.querySelectorAll('.class-management-item:not(.dragging)')];
+                const items = [...list.querySelectorAll('.class-management-item[data-class-id]:not(.dragging)')];
                 const firstRects = new Map();
                 items.forEach(item => {
                     firstRects.set(item, item.getBoundingClientRect());
@@ -1433,12 +1460,7 @@ export const ClassUIManager = {
                     const row = btn.closest('.class-management-item');
                     if (!row) return;
 
-                    // Fermer tout autre renommage en cours
-                    const activeRenaming = list.querySelector('.class-management-item.renaming');
-                    if (activeRenaming && activeRenaming !== row) {
-                        const activeCancelBtn = activeRenaming.querySelector('.cancel-rename-btn');
-                        if (activeCancelBtn) activeCancelBtn.click();
-                    }
+                    closeActiveEditingRows(row);
 
                     const originalContent = row.innerHTML;
                     const headerEl = row.querySelector('.class-info-header');
@@ -1454,7 +1476,7 @@ export const ClassUIManager = {
 
                     // Remplacement in-situ du libellé par l'input
                     nameEl.outerHTML = `
-                        <input type="text" class="inline-field-input in-situ-rename-input custom-input" 
+                        <input type="text" class="inline-field-input in-situ-rename-input" 
                                name="rename_school_class_title"
                                value="${this._escapeHtml(cls.name)}"
                                placeholder="Nom de la classe..."
@@ -1542,12 +1564,7 @@ export const ClassUIManager = {
                     const row = btn.closest('.class-management-item');
                     if (!row) return;
 
-                    // Fermer tout autre renommage en cours
-                    const activeRenaming = list.querySelector('.class-management-item.renaming');
-                    if (activeRenaming && activeRenaming !== row) {
-                        const activeCancelBtn = activeRenaming.querySelector('.cancel-rename-btn');
-                        if (activeCancelBtn) activeCancelBtn.click();
-                    }
+                    closeActiveEditingRows(row);
 
                     const originalContent = row.innerHTML;
                     const cls = ClassManager.getClassById(classId);
@@ -1652,10 +1669,15 @@ export const ClassUIManager = {
                 currentClasses.sort((a, b) => compareClassesPedagogically(a.name, b.name));
             }
 
+            const defaultYear = ClassManager._getCurrentSchoolYear?.() || '2026-2027';
+            const primaryYear = currentClasses[0]?.year || defaultYear;
+            const allSameYear = currentClasses.length > 0 && currentClasses.every(c => (c.year || primaryYear) === primaryYear);
+
             const subtitle = modalEl.querySelector('.modal-subtitle');
             if (subtitle) {
                 const studentCount = appState.generatedResults?.length || 0;
-                subtitle.textContent = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''} • ${studentCount} élève${studentCount > 1 ? 's' : ''}`;
+                const baseSubtitle = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''} • ${studentCount} élève${studentCount > 1 ? 's' : ''}`;
+                subtitle.textContent = allSameYear ? `${baseSubtitle} • ${primaryYear}` : baseSubtitle;
             }
 
             // Options supplémentaires dans le header
@@ -1723,11 +1745,11 @@ export const ClassUIManager = {
                             cancelText: 'Annuler',
                             isDanger: true,
                             detailsHtml: `
-                                <p style="margin-bottom:8px;">Classes sans élèves concernées :</p>
-                                <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                                <p class="confirm-details-lead">Classes sans élèves concernées :</p>
+                                <ul class="confirm-details-list">
                                     ${emptyClasses.map(c => `<li><strong>${this._escapeHtml(c.name)}</strong> (0 élève)</li>`).join('')}
                                 </ul>
-                                <p style="color:var(--text-tertiary); font-size:0.9em;">Aucun élève ni appréciation ne sera perdu.</p>
+                                <p class="confirm-details-note">Aucun élève ni appréciation ne sera perdu.</p>
                             `
                         }
                     );
@@ -1756,14 +1778,14 @@ export const ClassUIManager = {
                             cancelText: 'Annuler',
                             isDanger: true,
                             detailsHtml: `
-                                <p style="margin-bottom:8px;">Cette action supprimera :</p>
-                                <ul style="margin-left:20px; margin-bottom:12px; line-height:1.6;">
+                                <p class="confirm-details-lead">Cette action supprimera :</p>
+                                <ul class="confirm-details-list">
                                     <li>Les <strong>${currentClasses.length} classes</strong> existantes</li>
                                     <li>Les <strong>${totalStudents} élèves</strong> et leurs données de scolarité</li>
                                     <li>Toutes les appréciations générées associées</li>
                                 </ul>
-                                <p style="color:var(--success-color); display:flex; align-items:center; gap:6px; font-weight:500;">
-                                    <iconify-icon icon="solar:shield-check-linear" style="font-size:16px;"></iconify-icon>
+                                <p class="confirm-details-safe">
+                                    <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
                                     <span>Vos clés API, prompts et réglages resteront intacts.</span>
                                 </p>
                             `
@@ -1826,9 +1848,36 @@ export const ClassUIManager = {
                                     ${trendIcon}
                                 </div>
                             `;
-                        } else {
-                            averageBadge = `<div class="class-stat-badge no-data" data-tooltip="Pas de moyenne disponible"><span class="stat-value">--/20</span></div>`;
                         }
+
+                        const yearMetaHtml = !allSameYear ? `
+                            <span class="meta-item-inline" data-tooltip="Année scolaire">
+                                <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                                <span>${cls.year || primaryYear}</span>
+                            </span>
+                            <span class="meta-separator">•</span>
+                        ` : '';
+
+                        const metaContentHtml = stats.total === 0
+                            ? `
+                                ${yearMetaHtml}
+                                <span class="meta-item-inline meta-empty-state">
+                                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                    <span>Aucun élève</span>
+                                </span>
+                            `
+                            : `
+                                ${yearMetaHtml}
+                                <span class="meta-item-inline" data-tooltip="Nombre d'élèves">
+                                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                    <span>${stats.total} élève${stats.total > 1 ? 's' : ''}</span>
+                                </span>
+                                <span class="meta-separator">•</span>
+                                <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (Trimestre actif)">
+                                    <iconify-icon icon="${stats.icon}"></iconify-icon>
+                                    <span>${stats.completed}/${stats.total} appréciation${stats.total > 1 ? 's' : ''}</span>
+                                </span>
+                            `;
 
                         const isNew = highlightClassId && cls.id === highlightClassId;
 
@@ -1850,20 +1899,7 @@ export const ClassUIManager = {
                                     </div>
                                     
                                     <div class="class-management-meta">
-                                        <span class="meta-item-inline" data-tooltip="Année scolaire">
-                                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
-                                            <span>${cls.year || '2025-2026'}</span>
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline" data-tooltip="Nombre d'élèves">
-                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                                            <span>${stats.total} élève${stats.total > 1 ? 's' : ''}</span>
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (Trimestre actif)">
-                                            <iconify-icon icon="${stats.icon}"></iconify-icon>
-                                            <span>${stats.completed}/${stats.total}</span>
-                                        </span>
+                                        ${metaContentHtml}
                                     </div>
                                 </div>
 
