@@ -101,6 +101,10 @@ export const ThemeManager = {
     isDraggingSliders: false,
 
     init() {
+        // Hydrate theme and accent color from localStorage before initial applyTheme()
+        // so we don't reset pre-rendered dark mode back to default 'light' before StorageManager finishes loading
+        this.hydrateFromLocalStorage();
+
         // Initialize system media query listener
         this.systemMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         this.systemMediaQuery.addEventListener('change', () => {
@@ -117,6 +121,38 @@ export const ThemeManager = {
 
         // Initial application
         this.applyTheme();
+    },
+
+    /**
+     * Hydrate theme and accentColor from localStorage early at startup
+     */
+    hydrateFromLocalStorage() {
+        try {
+            let storedTheme = localStorage.getItem('bulletin_theme') || '';
+            let storedAccent = localStorage.getItem('bulletin_accent_color') || '';
+
+            if (!storedTheme || !storedAccent) {
+                const rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
+                                 localStorage.getItem('bulletin_app_state') ||
+                                 localStorage.getItem('appreciationGeneratorState');
+                if (rawState) {
+                    const state = JSON.parse(rawState);
+                    if (!storedTheme) {
+                        storedTheme = state?.settings?.theme || state?.theme || state?.ui?.theme || '';
+                    }
+                    if (!storedAccent) {
+                        storedAccent = state?.settings?.accentColor || state?.accentColor || '';
+                    }
+                }
+            }
+
+            if (['light', 'dark', 'system'].includes(storedTheme)) {
+                appState.theme = storedTheme;
+            }
+            if (storedAccent && (accentPresets[storedAccent] || storedAccent.startsWith('#'))) {
+                appState.accentColor = storedAccent;
+            }
+        } catch (e) {}
     },
 
     /**
@@ -419,17 +455,28 @@ export const ThemeManager = {
 
         if (appState.theme === 'system') {
             effectiveTheme = this.systemMediaQuery && this.systemMediaQuery.matches ? 'dark' : 'light';
-        } else {
-            effectiveTheme = appState.theme;
+        } else if (appState.theme === 'dark') {
+            effectiveTheme = 'dark';
         }
 
-        if (effectiveTheme === 'dark') {
-            document.documentElement.dataset.theme = 'dark';
-            document.documentElement.style.backgroundColor = '#09090b';
-        } else {
-            delete document.documentElement.dataset.theme;
-            document.documentElement.style.backgroundColor = '#f7f7f8';
+        const bgColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
+
+        document.documentElement.dataset.theme = effectiveTheme;
+        document.documentElement.style.backgroundColor = bgColor;
+        document.documentElement.style.colorScheme = effectiveTheme;
+        if (document.body) {
+            document.body.style.backgroundColor = bgColor;
         }
+
+        const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+        if (colorSchemeMeta) {
+            colorSchemeMeta.setAttribute('content', effectiveTheme);
+        }
+
+        const themeColorMetas = document.querySelectorAll('meta[name="theme-color"]');
+        themeColorMetas.forEach(meta => {
+            meta.setAttribute('content', bgColor);
+        });
 
         try {
             if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);

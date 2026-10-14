@@ -45,14 +45,19 @@
                 if (!accentColor) accentColor = 'blue';
 
                 var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var effectiveTheme = theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme;
+                var effectiveTheme = (theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme) === 'dark' ? 'dark' : 'light';
+                var bgColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
 
-                if (effectiveTheme === 'dark') {
-                    document.documentElement.dataset.theme = 'dark';
-                    document.documentElement.style.backgroundColor = '#09090b';
-                } else {
-                    document.documentElement.dataset.theme = 'light';
-                    document.documentElement.style.backgroundColor = '#f7f7f8';
+                document.documentElement.dataset.theme = effectiveTheme;
+                document.documentElement.style.backgroundColor = bgColor;
+                document.documentElement.style.colorScheme = effectiveTheme;
+
+                var colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+                if (colorSchemeMeta) colorSchemeMeta.setAttribute('content', effectiveTheme);
+
+                var themeMetas = document.querySelectorAll('meta[name="theme-color"]');
+                for (var i = 0; i < themeMetas.length; i++) {
+                    themeMetas[i].setAttribute('content', bgColor);
                 }
 
                 // Restore Transition Check (0ms pre-paint)
@@ -127,7 +132,7 @@
                     var baseRgb = hexToRgb(accentColor);
                     var baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
                     var adjustedL = baseHsl.l;
-                    if (theme === 'dark') {
+                    if (effectiveTheme === 'dark') {
                         if (baseHsl.l < 65) adjustedL = 65;
                     } else {
                         if (baseHsl.l > 50) adjustedL = 50;
@@ -155,7 +160,7 @@
                         }
                     };
                     var preset = presets[accentColor] || presets.blue;
-                    colors = preset[theme] || preset.light;
+                    colors = preset[effectiveTheme] || preset.light;
                 }
 
                 document.documentElement.style.setProperty('--primary-color', colors.color);
@@ -164,6 +169,7 @@
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
                 document.documentElement.style.backgroundColor = '#f7f7f8';
+                document.documentElement.style.colorScheme = 'light';
             }
         })();
     </script>
@@ -182,10 +188,12 @@
         html[data-theme="dark"] {
             background-color: #09090b !important;
             color: #fafafa;
+            color-scheme: dark;
         }
         html[data-theme="light"] {
             background-color: #f7f7f8 !important;
             color: #18181b;
+            color-scheme: light;
         }
         body {
             background-color: inherit;

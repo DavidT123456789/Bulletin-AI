@@ -175,12 +175,12 @@ export const StorageManager = {
                     // Data Settings
                     if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
 
-                    // Fallback thème si non défini - always default to light
+                    // Fallback thème si non défini - respecte bulletin_theme ou 'light' par défaut
                     if (!userSettings.ui.theme) {
-                        userSettings.ui.theme = 'light';
+                        userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
                     }
                     if (!userSettings.ui.accentColor) {
-                        userSettings.ui.accentColor = 'blue';
+                        userSettings.ui.accentColor = localStorage.getItem('bulletin_accent_color') || 'blue';
                     }
                 }
 
@@ -198,7 +198,8 @@ export const StorageManager = {
 
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
-                userSettings.ui.theme = 'light';
+                userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
+                userSettings.ui.accentColor = localStorage.getItem('bulletin_accent_color') || 'blue';
             }
 
             const dbResults = await DBService.getAll('generatedResults');

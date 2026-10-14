@@ -1620,6 +1620,10 @@
                         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                         if (savedTheme === 'dark' || (savedTheme === 'system' && prefersDark)) {
                             document.body.classList.add('target-dark');
+                            document.documentElement.style.colorScheme = 'dark';
+                            document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
+                                meta.setAttribute('content', '#09090b');
+                            });
                         }
                     } catch (_) {}
 
@@ -1636,6 +1640,9 @@
             // 3. Réinitialisation en cas de retour arrière navigateur (bfcache)
             window.addEventListener('pageshow', () => {
                 document.body.classList.remove('is-navigating-to-app', 'target-dark');
+                document.documentElement.style.colorScheme = '';
+                const lightMeta = document.querySelector('meta[name="theme-color"][media*="light"]');
+                if (lightMeta) lightMeta.setAttribute('content', '#fafafa');
                 appLinks.forEach(link => link.classList.remove('is-launching'));
             });
         })();
