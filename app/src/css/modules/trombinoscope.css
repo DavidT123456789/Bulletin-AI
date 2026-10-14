@@ -242,47 +242,57 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: transparent;
+    border: none;
+    box-shadow: none;
     border-radius: 50%;
-    color: var(--text-secondary);
-    font-size: 1rem;
+    color: var(--text-tertiary);
+    font-size: 1.15rem;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     z-index: 10;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .drop-zone-remove-btn {
-    background: rgba(30, 30, 30, 0.6);
-    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .drop-zone-remove-btn:hover {
-    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.12);
-    color: var(--danger-color, #ef4444);
-    border-color: rgba(var(--danger-color-rgb, 239, 68, 68), 0.3);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+    color: var(--error-color, #ef4444);
     transform: scale(1.08);
 }
 
-/* Dropzone with image loaded - clean neutral framing */
-.trombi-drop-zone.has-image {
+.drop-zone-remove-btn:active {
+    transform: scale(0.95);
+}
+
+/* Dropzone with image loaded - clean neutral framing with subtle hover feedback */
+.trombi-drop-zone.has-image,
+[data-theme="dark"] .trombi-drop-zone.has-image {
     border-style: solid;
     border-color: var(--border-color);
     background: var(--bg-secondary);
     padding: 0;
 }
 
-.trombi-drop-zone.has-image:hover {
+.trombi-drop-zone.has-image:hover,
+[data-theme="dark"] .trombi-drop-zone.has-image:hover {
     transform: none;
     box-shadow: none;
+    border-color: var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.trombi-drop-zone.has-image:hover:not(:has(.drop-zone-remove-btn:hover)) {
+    border-color: var(--text-tertiary);
+    background: var(--bg-hover);
+}
+
+[data-theme="dark"] .trombi-drop-zone.has-image:hover:not(:has(.drop-zone-remove-btn:hover)) {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .trombi-image-container {
@@ -849,17 +859,15 @@
     outline-offset: 2px;
 }
 
-/* Slider value - More visible box design */
+/* Slider value - Clean tabular readout */
 .slider-value {
-    min-width: 28px;
-    text-align: center;
+    min-width: 30px;
+    text-align: right;
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-primary);
-    background: var(--surface-color);
-    padding: 3px 5px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    padding: 2px 2px;
 }
 
 /* Sync Toggle - iOS style switch */
@@ -979,6 +987,18 @@
     color: var(--text-primary);
 }
 
+.trombi-exclude-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trombi-exclude-toggle-label {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
 /* Assignment Grid - flexible et scrollable (compact) */
 .trombi-assignment-grid {
     display: flex;
@@ -1005,7 +1025,7 @@
 .assignment-row {
     display: grid;
     /* Preview | Zone # | Student Select | Actions */
-    grid-template-columns: 36px 30px 1fr auto;
+    grid-template-columns: 36px 28px 1fr auto;
     gap: 6px;
     align-items: center;
     padding: 5px 8px;
@@ -1026,9 +1046,7 @@
 }
 
 .assignment-row.is-new-student .assignment-id {
-    border-color: rgba(var(--success-rgb), 0.4);
     color: var(--success-dark);
-    background: rgba(var(--success-rgb), 0.1);
 }
 
 .assignment-row.is-new-student:hover {
@@ -1046,7 +1064,7 @@
 
 .assignment-actions {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     align-items: center;
 }
 
@@ -1057,27 +1075,29 @@
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-secondary);
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .assignment-action-btn:hover {
     color: var(--text-primary);
-    border-color: var(--border-color);
-    background: var(--bg-hover);
+    background: var(--item-hover-bg);
 }
 
 .assignment-action-btn.danger:hover {
-    color: var(--error-color);
-    border-color: rgba(var(--error-color-rgb), 0.3);
-    background: var(--error-light);
+    color: var(--error-color, #ef4444);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+}
+
+.assignment-action-btn:active {
+    transform: scale(0.92);
 }
 
 .assignment-action-btn iconify-icon {
-    font-size: 16px;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1109,18 +1129,17 @@
     image-rendering: -webkit-optimize-contrast;
 }
 
-/* Zone ID Number */
+/* Zone ID Number - Clean borderless index */
 .assignment-id {
     font-size: 11px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-weight: 600;
+    color: var(--text-tertiary);
     text-align: center;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 6px);
-    padding: 2px 4px;
+    background: transparent;
+    border: none;
+    padding: 2px 0;
     font-variant-numeric: tabular-nums;
-    min-width: 26px;
+    min-width: 24px;
 }
 
 /* Avatar placeholder with gradient (when no photo) */
@@ -1145,9 +1164,30 @@
     width: 100%;
 }
 
+.assignment-select-box {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.assignment-select-chevron {
+    position: absolute;
+    right: 8px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    transition: color var(--transition-fast);
+}
+
+.assignment-select-box:hover .assignment-select-chevron {
+    color: var(--text-secondary);
+}
+
 .assignment-select {
     width: 100%;
-    padding: 5px 8px;
+    padding: 5px 24px 5px 8px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background-color: var(--surface-color);
@@ -1187,11 +1227,6 @@
     align-items: center;
     gap: 6px;
     width: 100%;
-    min-width: 0;
-}
-
-.assignment-select-wrapper .assignment-select {
-    flex: 1;
     min-width: 0;
 }
 
@@ -1794,7 +1829,7 @@
 .trombi-page-selector-bar .page-tab-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     padding: 6px 14px;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -1806,19 +1841,9 @@
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.trombi-page-selector-bar .page-tab-btn iconify-icon {
-    font-size: 15px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
 .trombi-page-selector-bar .page-tab-btn:hover {
     color: var(--text-primary);
     background: var(--bg-hover);
-}
-
-.trombi-page-selector-bar .page-tab-btn:hover iconify-icon {
-    opacity: 0.9;
 }
 
 .trombi-page-selector-bar .page-tab-btn:active {
@@ -1833,17 +1858,13 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.trombi-page-selector-bar .page-tab-btn.active iconify-icon {
-    opacity: 1;
-}
-
+.trombi-page-selector-bar .page-tab-sep,
 .trombi-page-selector-bar .page-tab-count {
-    font-size: 0.88em;
     font-weight: 400;
     opacity: 0.72;
-    margin-left: 2px;
 }
 
+.trombi-page-selector-bar .page-tab-btn.active .page-tab-sep,
 .trombi-page-selector-bar .page-tab-btn.active .page-tab-count {
     opacity: 0.75;
     font-weight: 400;
@@ -1926,53 +1947,52 @@
 /* Floating Zoom Controls */
 .trombi-zoom-controls {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 3px;
+    gap: 1px;
+    padding: 2px;
     background: var(--surface-color);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     z-index: 30;
-    opacity: 0.92;
-    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    opacity: 0.85;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .trombi-zoom-controls:hover {
     opacity: 1;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .trombi-zoom-controls .zoom-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 28px;
-    height: 28px;
-    padding: 0 6px;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 5px;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     border-radius: var(--radius-pill);
     cursor: pointer;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 500;
     transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
 .trombi-zoom-controls .zoom-btn iconify-icon {
-    font-size: 15px;
+    font-size: 13px;
 }
 
 .trombi-zoom-controls .zoom-btn:hover {
     color: var(--text-primary);
-    background: var(--bg-hover);
+    background: var(--item-hover-bg);
 }
 
 .trombi-zoom-controls .zoom-btn:active {
@@ -1981,15 +2001,16 @@
 
 .trombi-zoom-controls .zoom-btn:disabled,
 .trombi-zoom-controls .zoom-btn.disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: not-allowed;
     pointer-events: none;
 }
 
 .trombi-zoom-controls .zoom-value-btn {
-    min-width: 44px;
+    min-width: 38px;
     font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--text-secondary);
 }

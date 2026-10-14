@@ -364,7 +364,7 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         expect(TrombinoscopeManager._parsedPdfData).toBeDefined();
         expect(TrombinoscopeManager._parsedPdfData.className).toBe('5 1');
         expect(document.getElementById('trombiClassBadge').textContent).toBe('Classe 5 1');
-        expect(document.getElementById('trombiImageInfo').textContent).toContain('2 élèves détectés • Classe 5 1 (2 pages)');
+        expect(document.getElementById('trombiImageInfo').textContent).toContain('2 élèves détectés • Classe 5 1');
         
         const nextBtn = document.getElementById('trombiStep1NextBtn');
         expect(nextBtn.disabled).toBe(false);

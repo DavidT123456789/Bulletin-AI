@@ -23,7 +23,6 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
             <div id="classDropdownVirtualSubbar" class="class-dropdown-subbar" style="display: none;"></div>
             <div id="classDropdownList" class="class-dropdown-list"></div>
             <div id="headerClassName"></div>
-            <div id="headerClassTag" style="display: none;"></div>
             <div id="headerVirtualClassTag" style="display: none;"></div>
             <div id="headerStudentCount"></div>
         `;
@@ -33,7 +32,6 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         DOM.classDropdownVirtualSubbar = document.getElementById('classDropdownVirtualSubbar');
         DOM.classDropdownList = document.getElementById('classDropdownList');
         DOM.headerClassName = document.getElementById('headerClassName');
-        DOM.headerClassTag = document.getElementById('headerClassTag');
         DOM.headerVirtualClassTag = document.getElementById('headerVirtualClassTag');
         DOM.headerStudentCount = document.getElementById('headerStudentCount');
 

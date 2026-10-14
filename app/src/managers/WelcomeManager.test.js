@@ -51,6 +51,8 @@ vi.mock('./AppreciationsManager', () => ({
 vi.mock('./ClassManager', () => ({
     ClassManager: {
         createClass: vi.fn(() => ({ id: 'demo-class-id', name: 'Classe Exemple' })),
+        getAllClasses: vi.fn(() => []),
+        isDemoClass: vi.fn(() => false),
         switchClass: vi.fn(),
         _filterResultsByClass: vi.fn()
     }

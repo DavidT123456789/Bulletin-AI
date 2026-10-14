@@ -37,6 +37,13 @@ describe('ClassManager - isDemoClass and Demo Handling', () => {
         expect(ClassManager.isDemoClass('non-existent-id')).toBe(false);
         expect(ClassManager.isDemoClass(null)).toBe(false);
     });
+
+    it('should still identify a flagged demo class after rename', () => {
+        const demoClass = ClassManager.createClass('Classe Exemple');
+        demoClass.isDemo = true;
+        ClassManager.updateClass(demoClass.id, { name: 'Ma 3ème test' });
+        expect(ClassManager.isDemoClass(demoClass.id)).toBe(true);
+    });
 });
 
 describe('ClassManager - Virtual Classes (Classes complètes)', () => {

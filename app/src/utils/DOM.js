@@ -64,7 +64,6 @@ export function initDOM() {
     DOM.headerClassChip = document.getElementById('headerClassChip');
     DOM.headerClassIcon = document.getElementById('headerClassIcon');
     DOM.headerClassName = document.getElementById('headerClassName');
-    DOM.headerClassTag = document.getElementById('headerClassTag');
     DOM.headerVirtualClassTag = document.getElementById('headerVirtualClassTag');
     DOM.headerStudentCount = document.getElementById('headerStudentCount');
     DOM.classDropdown = document.getElementById('classDropdown');
@@ -298,8 +297,6 @@ export function initDOM() {
     DOM.actionsIrreversiblesContainer = document.getElementById('actions-irreversibles-container');
     DOM.backToTopBtn = document.getElementById('backToTopBtn');
     DOM.analyzeClassBtn = document.getElementById('analyzeClassBtn');
-    DOM.demoToolbarPill = document.getElementById('demoToolbarPill');
-    DOM.demoToolbarCreateBtn = document.getElementById('demoToolbarCreateBtn');
     DOM.importHubDemoAlert = document.getElementById('importHubDemoAlert');
     DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');
 

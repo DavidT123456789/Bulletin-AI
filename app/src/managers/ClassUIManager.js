@@ -60,12 +60,6 @@ export const ClassUIManager = {
             this.showNewClassPrompt();
         });
 
-        // Demo toolbar quick create button
-        DOM.demoToolbarCreateBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.showNewClassPrompt();
-        });
-
         // Manage classes button
         DOM.manageClassesBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -453,8 +447,6 @@ export const ClassUIManager = {
                 `;
             }
 
-            const isDemo = ClassManager.isDemoClass(item.id);
-            const demoBadgeHtml = isDemo ? '<span class="class-item-demo-badge">Démo</span>' : '';
             return `
             <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}" 
                  data-class-id="${item.id}"
@@ -464,7 +456,6 @@ export const ClassUIManager = {
                 <div class="class-info">
                     <span class="class-name">
                         ${this._escapeHtml(item.displayName)}
-                        ${demoBadgeHtml}
                     </span>
                     <span class="class-meta">
                         <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${item.year || 'Non définie'}</span>
@@ -815,7 +806,6 @@ export const ClassUIManager = {
             userSettings.academic.currentClassId = currentClass.id;
         }
 
-        const isDemo = currentClass ? ClassManager.isDemoClass(currentClass.id) : false;
         const isVirtual = currentClass ? ClassManager.isVirtualClass(currentClass.id) : false;
 
         if (DOM.headerClassName) {
@@ -833,19 +823,9 @@ export const ClassUIManager = {
                 : '<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>';
         }
 
-        // Afficher ou masquer le badge Démo dans le chip du header
-        if (DOM.headerClassTag) {
-            DOM.headerClassTag.style.display = isDemo ? 'inline-flex' : 'none';
-        }
-
         // Afficher ou masquer le badge Classe complète dans le chip du header
         if (DOM.headerVirtualClassTag) {
             DOM.headerVirtualClassTag.style.display = isVirtual ? 'inline-flex' : 'none';
-        }
-
-        // Afficher ou masquer la micro-pastille contextuelle dans la toolbar
-        if (DOM.demoToolbarPill) {
-            DOM.demoToolbarPill.style.display = isDemo ? 'inline-flex' : 'none';
         }
 
         // Update student count
@@ -1123,15 +1103,23 @@ export const ClassUIManager = {
                 }
             }
 
-            this.updateHeaderDisplay();
-
-            // Migration silencieuse des classes existantes n'ayant pas de niveau
+            // Migrations silencieuses : niveau manquant + drapeau et casse des classes d'exemple
             for (const cls of classes) {
                 if (!cls.level || cls.level === '3eme') {
                     const detectedLevel = detectLevelFromName(cls.name);
                     ClassManager.updateClass(cls.id, { level: detectedLevel });
                 }
+                if (ClassManager.isDemoClass(cls.id)) {
+                    const updates = {};
+                    if (!cls.isDemo) updates.isDemo = true;
+                    if (cls.name === 'Classe Exemple') updates.name = 'Classe exemple';
+                    if (Object.keys(updates).length > 0) {
+                        ClassManager.updateClass(cls.id, updates);
+                    }
+                }
             }
+
+            this.updateHeaderDisplay();
         }
     },
 

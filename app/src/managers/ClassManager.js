@@ -443,7 +443,7 @@ export const ClassManager = {
         if (classId && this.isVirtualClass(classId)) return false;
         const cls = classId ? this.getClassById(classId) : this.getCurrentClass();
         if (cls?.isVirtual) return false;
-        return cls?.name === 'Classe Exemple' || cls?.isDemo === true;
+        return cls?.name?.toLowerCase() === 'classe exemple' || cls?.isDemo === true;
     },
 
     /**

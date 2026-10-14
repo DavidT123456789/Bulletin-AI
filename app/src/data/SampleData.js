@@ -68,7 +68,7 @@ export function getDemoClassData(periodSystem = 'trimestres') {
     });
 
     return {
-        className: 'Classe Exemple',
+        className: 'Classe exemple',
         students
     };
 }

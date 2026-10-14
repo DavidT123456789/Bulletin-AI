@@ -808,25 +808,25 @@
 
 /* Remove Button - Elegant positioning */
 .file-remove-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-tertiary);
+    font-size: 1.15rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     z-index: 2;
 }
 
 .file-remove-btn:hover {
-    background: rgba(var(--error-color-rgb), 0.08);
-    color: var(--error-color);
-    border-color: rgba(var(--error-color-rgb), 0.2);
-    transform: scale(1.05);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+    color: var(--error-color, #ef4444);
+    transform: scale(1.08);
 }
 
 .file-remove-btn:active {

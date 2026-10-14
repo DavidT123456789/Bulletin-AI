@@ -46,10 +46,10 @@ export const StatsService = {
         // 2.5 - 4.5 : Homogène
         // 4.5 - 6.5 : Hétérogène
         // > 6.5 : Très hétérogène
-        if (stdDev < 2.5) return { label: 'Très Homogène', colorClass: 'positive', value: stdDev };
+        if (stdDev < 2.5) return { label: 'Très homogène', colorClass: 'positive', value: stdDev };
         if (stdDev < 4.5) return { label: 'Homogène', colorClass: 'positive', value: stdDev };
         if (stdDev < 6.5) return { label: 'Hétérogène', colorClass: 'warning', value: stdDev };
-        return { label: 'Très Hétérogène', colorClass: 'negative', value: stdDev };
+        return { label: 'Très hétérogène', colorClass: 'negative', value: stdDev };
     },
 
     /**

@@ -602,6 +602,7 @@ export const StatsUI = {
         let emptyMsg = evolutionCard.querySelector('.evolution-empty-state');
 
         const hasEvolutionData = previousPeriod !== null;
+        evolutionCard.classList.toggle('is-empty', !hasEvolutionData);
 
         if (!hasEvolutionData) {
             if (bar) bar.style.display = 'none';

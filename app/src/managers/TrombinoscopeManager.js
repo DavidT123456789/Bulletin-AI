@@ -306,13 +306,11 @@ export const TrombinoscopeManager = {
         const preview = document.getElementById('trombiDropPreview');
         const previewImg = document.getElementById('trombiPreviewImg');
         const dropZone = document.getElementById('trombiDropZone');
-        const sampleBtn = document.getElementById('trombiSampleBtn');
 
         if (placeholder) placeholder.style.display = '';
         if (preview) preview.style.display = 'none';
         if (previewImg) previewImg.src = '';
         dropZone?.classList.remove('has-image');
-        if (sampleBtn) sampleBtn.style.display = '';
 
         document.getElementById('trombiImageInfo')?.replaceChildren();
         document.getElementById('trombiZonesInfo')?.replaceChildren();
@@ -936,18 +934,17 @@ export const TrombinoscopeManager = {
             }
 
             if (footerInfo) {
-                const pagesCountHtml = parsed.numPages > 1 ? ` <span class="footer-info-dimmed">(${parsed.numPages} pages)</span>` : '';
                 const displayClassName = parsed.className ? (Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className) : 'Auto';
                 const targetInfo = this._getTargetClassInfo();
 
                 if (targetInfo.isUpdate) {
                     if (targetInfo.newStudents.length > 0) {
-                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • <span class="trombi-stat-badge is-new">+${targetInfo.newStudents.length} nouveau${targetInfo.newStudents.length > 1 ? 'x' : ''}</span>, ${targetInfo.existingStudents.length} déjà inscrit${targetInfo.existingStudents.length > 1 ? 's' : ''}${pagesCountHtml}`;
+                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • <span class="trombi-stat-badge is-new">+${targetInfo.newStudents.length} nouveau${targetInfo.newStudents.length > 1 ? 'x' : ''}</span>, ${targetInfo.existingStudents.length} déjà inscrit${targetInfo.existingStudents.length > 1 ? 's' : ''}`;
                     } else {
-                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • Tous déjà inscrits <span class="footer-info-dimmed">(mise à jour photos)</span>${pagesCountHtml}`;
+                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • Tous déjà inscrits <span class="footer-info-dimmed">(mise à jour photos)</span>`;
                     }
                 } else {
-                    footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountHtml}`;
+                    footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}`;
                 }
             }
 
@@ -957,8 +954,9 @@ export const TrombinoscopeManager = {
                     step1PageBar.style.display = 'flex';
                     step1PageBar.innerHTML = parsed.pages.map((p, idx) => `
                         <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}">
-                            <iconify-icon icon="solar:document-text-linear"></iconify-icon>
-                            <span>Page ${idx + 1}</span> <span class="page-tab-count">(${p.studentsCount} élèves)</span>
+                            <span>Page ${idx + 1}</span>
+                            <span class="page-tab-sep" aria-hidden="true">·</span>
+                            <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
                         </button>
                     `).join('');
 
@@ -1057,7 +1055,6 @@ export const TrombinoscopeManager = {
         const preview = document.getElementById('trombiDropPreview');
         const previewImg = document.getElementById('trombiPreviewImg');
         const dropZone = document.getElementById('trombiDropZone');
-        const sampleBtn = document.getElementById('trombiSampleBtn');
 
         if (!placeholder || !preview || !previewImg) return;
 
@@ -1068,9 +1065,6 @@ export const TrombinoscopeManager = {
 
         // Add loaded state to dropzone for styling
         dropZone?.classList.add('has-image');
-
-        // Hide sample button when image is loaded
-        if (sampleBtn) sampleBtn.style.display = 'none';
 
         // Display info message in footer
         const footerInfo = document.getElementById('trombiImageInfo');
@@ -1092,7 +1086,6 @@ export const TrombinoscopeManager = {
         const preview = document.getElementById('trombiDropPreview');
         const previewImg = document.getElementById('trombiPreviewImg');
         const dropZone = document.getElementById('trombiDropZone');
-        const sampleBtn = document.getElementById('trombiSampleBtn');
         const fileInput = document.getElementById('trombiFileInput');
         const footerInfo = document.getElementById('trombiImageInfo');
         const quickBtn = document.getElementById('trombiQuickImportBtn');
@@ -1102,7 +1095,6 @@ export const TrombinoscopeManager = {
         if (preview) preview.style.display = 'none';
         if (previewImg) previewImg.src = '';
         dropZone?.classList.remove('has-image');
-        if (sampleBtn) sampleBtn.style.display = '';
         if (fileInput) fileInput.value = '';
         if (footerInfo) footerInfo.textContent = '';
         if (quickBtn) quickBtn.style.display = 'none';
@@ -1244,8 +1236,9 @@ export const TrombinoscopeManager = {
                 pageBar.style.display = 'flex';
                 pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => `
                     <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}">
-                        <iconify-icon icon="solar:document-text-linear"></iconify-icon>
-                        <span>Page ${idx + 1}</span> <span class="page-tab-count">(${p.studentsCount} élèves)</span>
+                        <span>Page ${idx + 1}</span>
+                        <span class="page-tab-sep" aria-hidden="true">·</span>
+                        <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
                     </button>
                 `).join('');
 
@@ -1280,16 +1273,16 @@ export const TrombinoscopeManager = {
         imagePanel.innerHTML = `
             <div class="trombi-zoom-controls">
                 <button type="button" class="zoom-btn" id="trombiZoomOutBtn" title="Dézoomer (-25%)">
-                    <iconify-icon icon="solar:magnifer-zoom-out-linear"></iconify-icon>
+                    <iconify-icon icon="ph:minus"></iconify-icon>
                 </button>
                 <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" title="Réinitialiser le zoom (100%)">
                     <span id="trombiZoomLevel">${Math.round(this._zoomLevel * 100)}%</span>
                 </button>
                 <button type="button" class="zoom-btn" id="trombiZoomInBtn" title="Zoomer (+25%)">
-                    <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
+                    <iconify-icon icon="ph:plus"></iconify-icon>
                 </button>
                 <button type="button" class="zoom-btn" id="trombiZoomFitBtn" title="Pleine largeur / Vue complète">
-                    <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                    <iconify-icon icon="ph:arrows-out-simple"></iconify-icon>
                 </button>
             </div>
             <div class="trombi-viewport">
@@ -3095,37 +3088,40 @@ export const TrombinoscopeManager = {
                         </div>
                         <div class="assignment-student-select">
                             <div class="assignment-select-wrapper">
-                                <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
-                                    <option value="">Choisir un élève...</option>
-                                    ${dropdownStudents.map(s => {
-                                        // Check if this student is assigned to ANOTHER zone (including other PDF pages)
-                                        const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
-                                            ? this._parsedPdfData.pages.some((p, pIdx) => {
-                                                const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
-                                                return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
-                                            })
-                                            : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
-                                        const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
+                                <div class="assignment-select-box">
+                                    <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
+                                        <option value="">Choisir un élève...</option>
+                                        ${dropdownStudents.map(s => {
+                                            // Check if this student is assigned to ANOTHER zone (including other PDF pages)
+                                            const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
+                                                ? this._parsedPdfData.pages.some((p, pIdx) => {
+                                                    const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
+                                                    return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
+                                                })
+                                                : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
+                                            const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
 
-                                        const statusParts = [];
-                                        if (assignedToOther) {
-                                            statusParts.push('déjà sélectionné');
-                                        }
-                                        if (hasPhoto) {
-                                            statusParts.push('déjà assigné');
-                                        }
+                                            const statusParts = [];
+                                            if (assignedToOther) {
+                                                statusParts.push('déjà sélectionné');
+                                            }
+                                            if (hasPhoto) {
+                                                statusParts.push('déjà assigné');
+                                            }
 
-                                        const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
-                                        const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
-                                        const label = `${studentNameFormatted}${statusText}`;
+                                            const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
+                                            const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
+                                            const label = `${studentNameFormatted}${statusText}`;
 
-                                        return `
-                                            <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
-                                                ${label}
-                                            </option>
-                                        `;
-                                    }).join('')}
-                                </select>
+                                            return `
+                                                <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
+                                                    ${label}
+                                                </option>
+                                            `;
+                                        }).join('')}
+                                    </select>
+                                    <iconify-icon icon="solar:alt-arrow-down-linear" class="assignment-select-chevron" aria-hidden="true"></iconify-icon>
+                                </div>
                                 ${badgeHtml}
                             </div>
                         </div>
@@ -3133,7 +3129,7 @@ export const TrombinoscopeManager = {
                             <button type="button" class="assignment-action-btn shift-down-btn" 
                                     data-zone-id="${zone.id}" 
                                     data-tooltip="Insérer un vide (décaler vers le bas)">
-                                <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                <iconify-icon icon="ph:arrow-line-down"></iconify-icon>
                             </button>
                             <button type="button" class="assignment-action-btn shift-up-btn danger" 
                                     data-zone-id="${zone.id}" 
@@ -3157,7 +3153,7 @@ export const TrombinoscopeManager = {
             if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
                 const totalZones = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.length || 0), 0);
                 const totalAssigned = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.filter(z => z.studentId).length || 0), 0);
-                zonesInfo.innerHTML = `${totalAssigned} / ${totalZones} zones assignées${newBadgeHtml} <span class="footer-info-dimmed">(Page ${this._currentPageIndex + 1}/${this._parsedPdfData.numPages})</span>`;
+                zonesInfo.innerHTML = `${totalAssigned} / ${totalZones} zones assignées${newBadgeHtml}`;
             } else {
                 const assignedCount = this._zones.filter(z => z.studentId).length;
                 zonesInfo.innerHTML = `${assignedCount} / ${this._zones.length} zones assignées${newBadgeHtml}`;

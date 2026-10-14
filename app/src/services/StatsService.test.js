@@ -165,12 +165,12 @@ describe('StatsService', () => {
         });
 
         it('should calculate heterogeneity correctly', () => {
-            // Under 2.5 is Très Homogène/Homogène
-            expect(StatsService.calculateHeterogeneity([10, 11, 10]).label).toBe('Très Homogène');
+            // Under 2.5 is Très homogène/Homogène
+            expect(StatsService.calculateHeterogeneity([10, 11, 10]).label).toBe('Très homogène');
             // Over 4.5 is Hétérogène
             expect(StatsService.calculateHeterogeneity([5, 'Abs', 15]).label).toBe('Hétérogène'); // SD of [5, 15] is 5. SD is < 6.5 so Hétérogène
             expect(StatsService.calculateHeterogeneity([5, 15]).label).toBe('Hétérogène');
-            expect(StatsService.calculateHeterogeneity([20, 0, 10]).label).toBe('Très Hétérogène'); // SD = sqrt(200/3) = ~8.16 > 6.5
+            expect(StatsService.calculateHeterogeneity([20, 0, 10]).label).toBe('Très hétérogène'); // SD = sqrt(200/3) = ~8.16 > 6.5
             // Less than 2 numbers is Indéterminée
             expect(StatsService.calculateHeterogeneity([10]).label).toBe('Indéterminée');
             expect(StatsService.calculateHeterogeneity([])).toBeDefined();

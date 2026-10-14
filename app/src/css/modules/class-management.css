@@ -90,35 +90,6 @@
     opacity: 1;
 }
 
-.class-chip .class-demo-tag {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(245, 158, 11, 0.14);
-    color: #d97706;
-    height: 20px;
-    padding: 0 7px;
-    border-radius: var(--radius-pill);
-    font-size: 0.70rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    margin-left: 2px;
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    transition: all var(--transition-fast);
-}
-
-[data-theme="dark"] .class-chip .class-demo-tag {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
-    border-color: rgba(245, 158, 11, 0.35);
-}
-
-.class-chip:hover .class-demo-tag,
-.class-chip.active .class-demo-tag {
-    border-color: rgba(245, 158, 11, 0.45);
-}
-
 .class-chip .class-virtual-tag {
     display: inline-flex;
     align-items: center;
@@ -341,33 +312,6 @@
     color: var(--text-primary);
 }
 
-.class-item-demo-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px 6px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    border-radius: var(--radius-pill);
-    background: rgba(245, 158, 11, 0.12);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    margin-left: 6px;
-    vertical-align: middle;
-}
-
-[data-theme="dark"] .class-item-demo-badge {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
-}
-
-.class-dropdown-item.active .class-item-demo-badge {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
 /* Badge "Reconstituée" dans les items de classe du dropdown */
 .class-item-virtual-badge {
     display: inline-flex;
@@ -480,55 +424,6 @@
 
 .class-dropdown-item.active .class-meta-sources {
     color: rgba(255, 255, 255, 0.85);
-}
-
-/* Demo Toolbar Pill */
-.demo-toolbar-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 10px;
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.22);
-    border-radius: var(--radius-pill);
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    animation: fadeIn 0.25s ease-out;
-}
-
-.demo-toolbar-pill iconify-icon {
-    color: #d97706;
-    font-size: 1rem;
-}
-
-[data-theme="dark"] .demo-toolbar-pill {
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.3);
-}
-
-[data-theme="dark"] .demo-toolbar-pill iconify-icon {
-    color: #fbbf24;
-}
-
-.demo-toolbar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--primary-color);
-    color: #ffffff;
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 2px 9px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.demo-toolbar-btn:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
 }
 
 .class-dropdown-item {
@@ -672,6 +567,16 @@
 [data-theme="dark"] .class-seating-badge.is-empty {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-tertiary, #9ca3af);
+}
+
+.class-dropdown-item.active .class-seating-badge {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.class-dropdown-item.active .class-seating-badge.is-empty {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .class-dropdown-item .class-student-count {

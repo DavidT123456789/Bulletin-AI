@@ -556,7 +556,7 @@ export const WelcomeManager = {
      */
     async _injectDemoClass(periodSystem) {
         // Guard: skip if a demo class already exists
-        const existingDemo = ClassManager.getAllClasses().find(c => c.name === 'Classe Exemple');
+        const existingDemo = ClassManager.getAllClasses().find(c => ClassManager.isDemoClass(c.id));
         if (existingDemo) {
             await ClassManager.switchClass(existingDemo.id);
             return;
@@ -566,6 +566,7 @@ export const WelcomeManager = {
         const { className, students } = getDemoClassData(periodSystem);
 
         const newClass = ClassManager.createClass(className);
+        newClass.isDemo = true;
         await ClassManager.switchClass(newClass.id);
 
         const currentPeriod = periodSystem === 'semestres' ? 'S1' : 'T1';

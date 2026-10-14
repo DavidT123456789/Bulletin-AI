@@ -265,7 +265,6 @@
                             aria-label="Changer de classe">
                             <span class="icon" id="headerClassIcon" style="display: none;"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
                             <span id="headerClassName">Ma Classe</span>
-                            <span id="headerClassTag" class="class-demo-tag" style="display: none;">Démo</span>
                             <span id="headerVirtualClassTag" class="class-virtual-tag" style="display: none;">Reconstituée</span>
                             <span class="student-count-badge" aria-label="0 élève">
                                 <iconify-icon icon="solar:users-group-rounded-linear" class="student-count-icon"></iconify-icon>
@@ -596,14 +595,6 @@
                             </div>
                             <!-- Active filter badge - inline in toolbar -->
                             <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
-                            <!-- Demo context pill - inline in toolbar -->
-                            <div id="demoToolbarPill" class="demo-toolbar-pill" style="display: none;">
-                                <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                <span>Classe d'exemple</span>
-                                <button type="button" class="demo-toolbar-btn" id="demoToolbarCreateBtn" title="Créer ma propre classe">
-                                    <iconify-icon icon="ph:plus-bold"></iconify-icon> Créer ma classe
-                                </button>
-                            </div>
                             <!-- Actions à droite - ordre stable -->
                             <div class="toolbar-actions">
                                 <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
@@ -816,13 +807,13 @@
                             autocomplete="off">
                     </div>
                     <div class="focus-status-selection status-checkboxes">
-                        <label class="status-pill-check tag-info"><input type="checkbox" value="Nouveau">
+                        <label class="status-pill-check"><input type="checkbox" value="Nouveau">
                             Nouveau</label>
-                        <label class="status-pill-check tag-danger"><input type="checkbox" value="Départ">
+                        <label class="status-pill-check"><input type="checkbox" value="Départ">
                             Départ</label>
-                        <label class="status-pill-check tag-success"><input type="checkbox" value="PPRE"> PPRE</label>
-                        <label class="status-pill-check tag-purple"><input type="checkbox" value="PAP"> PAP</label>
-                        <label class="status-pill-check tag-warning"><input type="checkbox" value="ULIS"> ULIS</label>
+                        <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
+                        <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
+                        <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
                         <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
                     </div>
                 </div>
@@ -1662,8 +1653,8 @@
                         <div class="trombi-assignment-panel">
                             <div class="trombi-assignment-panel-header">
                                 <h4>Associer les élèves aux zones</h4>
-                                <div class="trombi-exclude-toggle-wrapper" id="trombiExcludeToggleWrapper" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary);">Sans photo</span>
+                                <div class="trombi-exclude-toggle-wrapper" id="trombiExcludeToggleWrapper">
+                                    <span class="trombi-exclude-toggle-label">Sans photo</span>
                                     <label class="toggle-switch small">
                                         <input type="checkbox" id="trombiExcludeWithPhotos" checked>
                                         <span class="slider"></span>
@@ -3455,7 +3446,7 @@
                                         </div>
                                         <div class="about-title-group">
                                             <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                            <div class="about-build-date" id="aboutBuildDate">Build b2c8b9b · 14 octobre 2026</div>
+                                            <div class="about-build-date" id="aboutBuildDate">Build e22d73d · 14 octobre 2026</div>
                                         </div>
                                     </div>
                                     <div class="about-actions">

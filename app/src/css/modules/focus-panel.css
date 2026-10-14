@@ -4427,42 +4427,6 @@ input.context-grade-input,
     box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.08);
 }
 
-/* Specific colors for statuses (Hover & Checked) */
-/* Warning (PPRE, PAP, PAI, ULIS, SEGPA) */
-.status-pill-check.tag-warning:hover,
-.status-pill-check.tag-warning:has(input:checked) {
-    background: color-mix(in srgb, var(--warning-color) 15%, var(--surface-color));
-    color: var(--warning-color);
-}
-
-/* Success (PPRE) */
-.status-pill-check.tag-success:hover,
-.status-pill-check.tag-success:has(input:checked) {
-    background: color-mix(in srgb, var(--success-color) 15%, var(--surface-color));
-    color: var(--success-color);
-}
-
-/* Purple (PAP) */
-.status-pill-check.tag-purple:hover,
-.status-pill-check.tag-purple:has(input:checked) {
-    background: color-mix(in srgb, var(--purple-color) 15%, var(--surface-color));
-    color: var(--purple-color);
-}
-
-/* Info (Nouveau) */
-.status-pill-check.tag-info:hover,
-.status-pill-check.tag-info:has(input:checked) {
-    background: color-mix(in srgb, var(--info-color) 15%, var(--surface-color));
-    color: var(--info-color);
-}
-
-/* Danger (Départ) */
-.status-pill-check.tag-danger:hover,
-.status-pill-check.tag-danger:has(input:checked) {
-    background: color-mix(in srgb, var(--error-color) 15%, var(--surface-color));
-    color: var(--error-color);
-}
-
 /* Dark Mode Adjustments */
 [data-theme="dark"] .focus-input-header {
     background: var(--input-fill-bg);
