@@ -2168,6 +2168,308 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     font-size: 1.1rem;
 }
 
+.sc-onboarding-hint[data-step="room"] {
+    width: min(410px, calc(100% - 32px));
+    gap: 14px;
+    padding: 22px 22px 20px;
+}
+
+.sc-hint-step-badge {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    padding: 3px 10px;
+    margin-bottom: 4px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.sc-room-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.sc-room-preset-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    outline: none;
+}
+
+@media (hover: hover) {
+    .sc-room-preset-card:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--border-hover, var(--text-tertiary));
+        transform: translateY(-1px);
+    }
+}
+
+.sc-room-preset-card:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.sc-room-preset-card.active {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.sc-preset-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    margin-bottom: 2px;
+}
+
+.sc-mini-diagram {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 5px;
+    border-radius: var(--radius-xs, 4px);
+    background: var(--bg-tertiary);
+}
+
+.sc-mini-diagram i {
+    display: inline-block;
+    width: 6px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+    opacity: 0.65;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.sc-room-preset-card.active .sc-mini-diagram i {
+    background: var(--primary-color);
+    opacity: 0.9;
+}
+
+.sc-mini-diagram b.aisle {
+    display: inline-block;
+    width: 5px;
+    height: 12px;
+    border-left: 1px dashed var(--border-color);
+    border-right: 1px dashed var(--border-color);
+    margin: 0 1px;
+}
+
+.sc-preset-card-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.sc-preset-card-sub {
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+    line-height: 1.15;
+}
+
+.sc-onboarding-dims-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+}
+
+.sc-onboarding-dims-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.sc-onboarding-dim-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sc-onboarding-dim-label {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sc-onboarding-dim-sep {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.sc-onboarding-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+
+.sc-hint-step-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-xs, 4px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+    .sc-hint-step-btn:hover:not(:disabled) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-hint-step-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.sc-hint-dim-val {
+    min-width: 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sc-hint-capacity-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+}
+
+.sc-hint-capacity-pill iconify-icon {
+    font-size: 0.9rem;
+}
+
+.sc-hint-capacity-pill.is-ok iconify-icon {
+    color: var(--success-color);
+}
+
+.sc-hint-capacity-pill.is-warning {
+    color: var(--warning-color);
+}
+
+.sc-onboarding-capacity-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--warning-color);
+    color: var(--text-primary);
+    font-size: 0.76rem;
+    font-weight: 500;
+    box-sizing: border-box;
+}
+
+.sc-onboarding-capacity-alert span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sc-onboarding-capacity-alert iconify-icon {
+    color: var(--warning-color);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.sc-onboarding-adapt-btn {
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+    .sc-onboarding-adapt-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-onboarding-footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.sc-onboarding-footer-links .sc-onboarding-btn.text-only {
+    width: auto;
+    padding: 6px 8px;
+    margin-top: 0;
+    font-size: 0.78rem;
+}
+
+.sc-onboarding-footer-links .sc-onboarding-btn.text-only iconify-icon {
+    font-size: 0.92rem;
+}
+
+.sc-onboarding-footer-dot {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    user-select: none;
+}
+
 /* ────────── PRINT ────────── */
 /* ── Print header (hidden on screen, injected by JS) ── */
 .sc-print-header { display: none; }
@@ -3373,13 +3675,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     padding: 12px 14px;
-    width: 235px;
+    width: 268px;
     box-sizing: border-box;
     transform-origin: top center;
     z-index: 100;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     opacity: 0;
     transform: translateX(-40%) translateY(-6px) scale(0.95);
     pointer-events: none;
@@ -3406,10 +3708,60 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     pointer-events: auto;
 }
 
+.sc-config-presets-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sc-config-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sc-config-preset-pills {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.sc-config-preset-pill {
+    padding: 5px 6px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    white-space: nowrap;
+}
+
+@media (hover: hover) {
+    .sc-config-preset-pill:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-config-preset-pill.active {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 .sc-config-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -3418,9 +3770,48 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-secondary);
-    width: 58px;
+    width: 56px;
     flex-shrink: 0;
     margin-top: 1px;
+}
+
+.sc-config-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sc-config-step-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-xs, 4px);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    padding: 0;
+}
+
+@media (hover: hover) {
+    .sc-config-step-btn:hover:not(:disabled) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-config-step-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 
 .sc-config-row input[type="range"] {
@@ -3513,6 +3904,30 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     min-width: 16px;
     flex-shrink: 0;
     text-align: right;
+}
+
+.sc-config-capacity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sc-config-capacity iconify-icon {
+    font-size: 0.88rem;
+}
+
+.sc-config-capacity.is-ok iconify-icon {
+    color: var(--success-color);
+}
+
+.sc-config-capacity.is-warning {
+    color: var(--warning-color);
 }
 
 /* ---------- FLOATING ACTIONS CAPSULE (TOP-RIGHT) ---------- */

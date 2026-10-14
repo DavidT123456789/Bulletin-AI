@@ -5047,17 +5047,71 @@ export const SeatingChartManager = {
         });
     },
 
+    _getEffectiveOnboardingStep() {
+        if (this._isActivityMode()) return 'activity';
+        if (this._onboardingStep === 'room' || this._onboardingStep === 'placement') {
+            return this._onboardingStep;
+        }
+        const isConfigured = this._isRoomConfigured('course');
+        this._onboardingStep = isConfigured ? 'placement' : 'room';
+        return this._onboardingStep;
+    },
+
+    _confirmRoomSetup() {
+        const gridKey = this._getActiveGridKey();
+        if (!appState[gridKey]) {
+            appState[gridKey] = {
+                rows: this._getRows(),
+                cols: this._getCols(),
+                specialSpots: { ...this._getSpecialSpots() }
+            };
+        }
+        document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
+        StorageManager.saveAppState();
+
+        this._onboardingStep = 'placement';
+        const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
+        if (hint) {
+            hint.dataset.step = 'placement';
+            this._renderOnboardingHintContent(hint, 'placement');
+        }
+    },
+
     _maybeShowOnboardingHint() {
         if (this._getPlacedIds().size > 0 || this._isLocked) return;
 
         const gridArea = document.getElementById('scGridArea');
-        if (!gridArea || gridArea.querySelector('.sc-onboarding-hint')) return;
+        if (!gridArea) return;
 
-        const isActivity = this._isActivityMode();
-        const hint = document.createElement('div');
+        const step = this._getEffectiveOnboardingStep();
+        let hint = gridArea.querySelector('.sc-onboarding-hint');
+
+        if (hint && !hint.classList.contains('sc-hint-exiting')) {
+            if (hint.dataset.step === step) {
+                this._syncOnboardingHintUI(hint);
+                return;
+            }
+            hint.dataset.step = step;
+            this._renderOnboardingHintContent(hint, step);
+            return;
+        }
+
+        if (hint) hint.remove();
+
+        hint = document.createElement('div');
         hint.className = 'sc-onboarding-hint';
+        hint.dataset.step = step;
+        this._renderOnboardingHintContent(hint, step);
+        gridArea.appendChild(hint);
 
-        if (isActivity) {
+        const gridKey = this._getActiveGridKey();
+        if (!appState[gridKey] && step !== 'room') {
+            document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
+        }
+    },
+
+    _renderOnboardingHintContent(hint, step) {
+        if (step === 'activity') {
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan d'activité vide</div>
@@ -5081,12 +5135,99 @@ export const SeatingChartManager = {
                     </button>
                 </div>
             `;
+        } else if (step === 'room') {
+            const rows = this._getRows();
+            const cols = this._getCols();
+            const activePreset = this._detectCurrentRoomPreset();
+            const capInfo = this._getRoomCapacityInfo();
+
+            hint.innerHTML = `
+                <div class="sc-onboarding-hint-text">
+                    <span class="sc-hint-step-badge">Étape 1 / 2 · Configuration unique</span>
+                    <div class="sc-hint-title">Configurez votre salle de cours</div>
+                    <div class="sc-hint-subtitle">Ce plan de salle s'appliquera à toutes vos classes (modifiable à tout moment).</div>
+                </div>
+
+                <div class="sc-room-preset-grid" role="radiogroup" aria-label="Disposition des tables">
+                    <button type="button" class="sc-room-preset-card ${activePreset === 'double-aisles' ? 'active' : ''}" data-room-preset="double-aisles" role="radio" aria-checked="${activePreset === 'double-aisles'}">
+                        <span class="sc-preset-diagram" aria-hidden="true">
+                            <span class="sc-mini-diagram is-double-aisles"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                        </span>
+                        <span class="sc-preset-card-title">3 doubles</span>
+                        <span class="sc-preset-card-sub">2 allées</span>
+                    </button>
+                    <button type="button" class="sc-room-preset-card ${activePreset === 'center-aisle' ? 'active' : ''}" data-room-preset="center-aisle" role="radio" aria-checked="${activePreset === 'center-aisle'}">
+                        <span class="sc-preset-diagram" aria-hidden="true">
+                            <span class="sc-mini-diagram is-center-aisle"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                        </span>
+                        <span class="sc-preset-card-title">2 îlots</span>
+                        <span class="sc-preset-card-sub">1 allée centrale</span>
+                    </button>
+                    <button type="button" class="sc-room-preset-card ${activePreset === 'compact' ? 'active' : ''}" data-room-preset="compact" role="radio" aria-checked="${activePreset === 'compact'}">
+                        <span class="sc-preset-diagram" aria-hidden="true">
+                            <span class="sc-mini-diagram is-compact"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                        </span>
+                        <span class="sc-preset-card-title">Sans allée</span>
+                        <span class="sc-preset-card-sub">6 colonnes continues</span>
+                    </button>
+                </div>
+
+                <div class="sc-onboarding-dims-bar">
+                    <div class="sc-onboarding-dims-controls">
+                        <div class="sc-onboarding-dim-group">
+                            <span class="sc-onboarding-dim-label">Colonnes</span>
+                            <div class="sc-onboarding-stepper">
+                                <button type="button" class="sc-hint-step-btn" data-dim="cols" data-delta="-1" aria-label="Moins de colonnes" ${cols <= MIN_COLS ? 'disabled' : ''}>−</button>
+                                <span class="sc-hint-dim-val" id="scHintColsVal">${cols}</span>
+                                <button type="button" class="sc-hint-step-btn" data-dim="cols" data-delta="1" aria-label="Plus de colonnes" ${cols >= MAX_COLS ? 'disabled' : ''}>+</button>
+                            </div>
+                        </div>
+                        <span class="sc-onboarding-dim-sep" aria-hidden="true">×</span>
+                        <div class="sc-onboarding-dim-group">
+                            <span class="sc-onboarding-dim-label">Rangées</span>
+                            <div class="sc-onboarding-stepper">
+                                <button type="button" class="sc-hint-step-btn" data-dim="rows" data-delta="-1" aria-label="Moins de rangées" ${rows <= MIN_ROWS ? 'disabled' : ''}>−</button>
+                                <span class="sc-hint-dim-val" id="scHintRowsVal">${rows}</span>
+                                <button type="button" class="sc-hint-step-btn" data-dim="rows" data-delta="1" aria-label="Plus de rangées" ${rows >= MAX_ROWS ? 'disabled' : ''}>+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sc-hint-capacity-pill ${capInfo.isInsufficient ? 'is-warning' : 'is-ok'}" id="scHintCapacityBadge" role="status">
+                        ${this._getCapacityBadgeInnerHTML(capInfo)}
+                    </div>
+                </div>
+
+                <div class="sc-onboarding-actions">
+                    <button type="button" class="sc-onboarding-btn primary" id="scHintConfirmRoomBtn">
+                        <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
+                        <span>Valider ma salle et placer les élèves</span>
+                    </button>
+                </div>
+            `;
         } else {
+            const capInfo = this._getRoomCapacityInfo();
+            const rows = this._getRows();
+            let capacityWarningHTML = '';
+            if (capInfo.isInsufficientForCurrent && rows < MAX_ROWS) {
+                const desksPerRow = Math.max(1, Math.round(capInfo.availableDesks / Math.max(1, rows)));
+                const missingSeats = capInfo.activeStudentsCount - capInfo.availableDesks;
+                const extraRowsNeeded = Math.min(MAX_ROWS - rows, Math.max(1, Math.ceil(missingSeats / desksPerRow)));
+                capacityWarningHTML = `
+                    <div class="sc-onboarding-capacity-alert">
+                        <span><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> ${capInfo.availableDesks} places pour ${capInfo.activeStudentsCount} élèves</span>
+                        <button type="button" class="sc-onboarding-adapt-btn" id="scHintAutoExpandRowsBtn" data-extra-rows="${extraRowsNeeded}">
+                            Adapter (+${extraRowsNeeded} rangée${extraRowsNeeded > 1 ? 's' : ''})
+                        </button>
+                    </div>
+                `;
+            }
+
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan de classe vide</div>
                     <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
                 </div>
+                ${capacityWarningHTML}
                 <div class="sc-onboarding-actions">
                     <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
                         <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
@@ -5100,14 +5241,63 @@ export const SeatingChartManager = {
                         <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
                         <span>Disperser (toute la salle)</span>
                     </button>
-                    <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
-                        <span>Placer manuellement</span>
-                    </button>
+                    <div class="sc-onboarding-footer-links">
+                        <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
+                            <span>Placer manuellement</span>
+                        </button>
+                        <span class="sc-onboarding-footer-dot" aria-hidden="true">·</span>
+                        <button type="button" class="sc-onboarding-btn text-only" id="scHintEditRoomBtn">
+                            <iconify-icon icon="solar:settings-minimalistic-linear"></iconify-icon>
+                            <span>Modifier la salle</span>
+                        </button>
+                    </div>
                 </div>
             `;
         }
 
-        gridArea.appendChild(hint);
+        this._bindOnboardingHintEvents(hint);
+    },
+
+    _bindOnboardingHintEvents(hint) {
+        hint.querySelectorAll('.sc-room-preset-card').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const preset = btn.dataset.roomPreset;
+                if (preset) {
+                    this._applyRoomPreset(preset);
+                }
+            });
+        });
+
+        hint.querySelectorAll('.sc-hint-step-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const dim = btn.dataset.dim;
+                const delta = parseInt(btn.dataset.delta, 10);
+                if (dim && !Number.isNaN(delta)) {
+                    this._stepGridDimension(dim, delta);
+                }
+            });
+        });
+
+        hint.querySelector('#scHintConfirmRoomBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._confirmRoomSetup();
+        });
+
+        hint.querySelector('#scHintEditRoomBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._onboardingStep = 'room';
+            hint.dataset.step = 'room';
+            this._renderOnboardingHintContent(hint, 'room');
+        });
+
+        hint.querySelector('#scHintAutoExpandRowsBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const extra = parseInt(e.currentTarget.dataset.extraRows, 10) || 1;
+            this._stepGridDimension('rows', extra);
+            this._renderOnboardingHintContent(hint, 'placement');
+        });
 
         hint.querySelector('#scHintAutoBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -5137,10 +5327,42 @@ export const SeatingChartManager = {
             e.stopPropagation();
             this._dismissOnboardingHint();
         });
+    },
 
-        const gridKey = this._getActiveGridKey();
-        if (!appState[gridKey]) {
-            document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
+    _syncOnboardingHintUI(hint) {
+        if (!hint || hint.dataset.step !== 'room') return;
+
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const activePreset = this._detectCurrentRoomPreset();
+        const capInfo = this._getRoomCapacityInfo();
+
+        const colsVal = hint.querySelector('#scHintColsVal');
+        const rowsVal = hint.querySelector('#scHintRowsVal');
+        if (colsVal) colsVal.textContent = cols;
+        if (rowsVal) rowsVal.textContent = rows;
+
+        hint.querySelectorAll('.sc-hint-step-btn').forEach(btn => {
+            const dim = btn.dataset.dim;
+            const delta = parseInt(btn.dataset.delta, 10);
+            if (dim === 'cols') {
+                btn.disabled = (delta < 0 && cols <= MIN_COLS) || (delta > 0 && cols >= MAX_COLS);
+            } else if (dim === 'rows') {
+                btn.disabled = (delta < 0 && rows <= MIN_ROWS) || (delta > 0 && rows >= MAX_ROWS);
+            }
+        });
+
+        hint.querySelectorAll('.sc-room-preset-card').forEach(card => {
+            const isMatch = card.dataset.roomPreset === activePreset;
+            card.classList.toggle('active', isMatch);
+            card.setAttribute('aria-checked', isMatch ? 'true' : 'false');
+        });
+
+        const capBadge = hint.querySelector('#scHintCapacityBadge');
+        if (capBadge) {
+            capBadge.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
+            capBadge.classList.toggle('is-warning', capInfo.isInsufficient);
+            capBadge.classList.toggle('is-ok', !capInfo.isInsufficient);
         }
     },
 

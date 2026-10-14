@@ -214,7 +214,7 @@ export const StorageManager = {
                 } else if (this._lastMigrationChanged) {
                     await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
                 }
-            } else {
+            } else if (!runtimeState.data.generatedResults || runtimeState.data.generatedResults.length === 0) {
                 runtimeState.data.generatedResults = [];
             }
 

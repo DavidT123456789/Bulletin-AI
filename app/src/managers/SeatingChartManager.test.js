@@ -2954,5 +2954,128 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             renderGridSpy.mockRestore();
         });
     });
+
+    describe('Onboarding en 2 étapes & Calibration adaptative de la salle', () => {
+        beforeEach(() => {
+            SeatingChartManager._viewInjected = false;
+            SeatingChartManager._listenersAttached = false;
+            SeatingChartManager._onboardingStep = null;
+            document.body.innerHTML = '<div id="mainApp"><div class="container"></div></div>';
+
+            appState.classes = [];
+            appState.generatedResults = [];
+            appState.seatingGrid = null;
+            appState.seatingActivityGrid = null;
+
+            const classSmall = ClassManager.createClass('6ème A');
+            const classLarge = ClassManager.createClass('3ème B');
+
+            for (let i = 1; i <= 24; i++) {
+                const s = { id: `s-small-${i}`, nom: `NOM${i}`, prenom: `Prenom${i}`, seatingPosition: null };
+                appState.generatedResults.push(s);
+                ClassManager.addStudentToClass(classSmall.id, s.id);
+            }
+            for (let i = 1; i <= 34; i++) {
+                const s = { id: `s-large-${i}`, nom: `GRANDE${i}`, prenom: `Eleve${i}`, seatingPosition: null };
+                appState.generatedResults.push(s);
+                ClassManager.addStudentToClass(classLarge.id, s.id);
+            }
+
+            appState.currentClassId = classSmall.id;
+            SeatingChartManager.switchToView();
+        });
+
+        it('devrait calibrer automatiquement le nombre de rangées par défaut selon la plus grande classe importée (34 élèves -> 6 rangées / 36 places)', () => {
+            expect(SeatingChartManager._getMaxClassStudentCount()).toBe(34);
+            expect(SeatingChartManager._getDefaultRows('course')).toBe(6);
+            expect(SeatingChartManager._getRows()).toBe(6);
+            expect(SeatingChartManager._getCols()).toBe(8);
+
+            const capInfo = SeatingChartManager._getRoomCapacityInfo();
+            expect(capInfo.availableDesks).toBe(36);
+            expect(capInfo.maxClassCount).toBe(34);
+            expect(capInfo.isInsufficient).toBe(false);
+        });
+
+        it('devrait afficher l\'Étape 1 (Configuration de la salle) à la toute première ouverture, puis passer à l\'Étape 2 (Placement) après validation et mémoriser la salle pour les autres classes', () => {
+            const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            expect(hint).not.toBeNull();
+            expect(hint.dataset.step).toBe('room');
+            expect(hint.querySelector('#scHintConfirmRoomBtn')).not.toBeNull();
+            expect(appState.seatingGrid).toBeNull();
+
+            // Valider la salle à l'étape 1
+            hint.querySelector('#scHintConfirmRoomBtn').click();
+
+            expect(appState.seatingGrid).not.toBeNull();
+            expect(appState.seatingGrid.rows).toBe(6);
+            expect(appState.seatingGrid.cols).toBe(8);
+            expect(hint.dataset.step).toBe('placement');
+            expect(hint.querySelector('#scHintAutoBtn')).not.toBeNull();
+
+            // Changement vers la seconde classe vide : passe directement à l'étape 2 sans redemander la salle
+            const secondClass = appState.classes[1];
+            appState.currentClassId = secondClass.id;
+            SeatingChartManager.onClassChange();
+
+            const hintSecondClass = document.querySelector('#scGridArea .sc-onboarding-hint');
+            expect(hintSecondClass).not.toBeNull();
+            expect(hintSecondClass.dataset.step).toBe('placement');
+        });
+
+        it('devrait permettre de changer de modèle de salle (2 allées, 1 allée centrale, sans allée) et conserver les élèves déjà placés', () => {
+            // Valider la salle et placer quelques élèves
+            SeatingChartManager._confirmRoomSetup();
+            SeatingChartManager._autoPlace('alpha-asc');
+            expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+
+            // Passer au modèle "1 allée centrale" (7 colonnes, allée en col 3)
+            SeatingChartManager._applyRoomPreset('center-aisle');
+            expect(SeatingChartManager._getCols()).toBe(7);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('center-aisle');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBe('aisle');
+            expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+
+            // Passer au modèle "Sans allée" (6 colonnes continues)
+            SeatingChartManager._applyRoomPreset('compact');
+            expect(SeatingChartManager._getCols()).toBe(6);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
+            expect(Object.keys(SeatingChartManager._getSpecialSpots()).length).toBe(0);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+        });
+
+        it('devrait prolonger automatiquement les allées verticales lors de l\'ajout d\'une rangée via les boutons +/-', () => {
+            SeatingChartManager._stepGridDimension('rows', 1);
+            expect(SeatingChartManager._getRows()).toBe(7);
+            // La nouvelle rangée 0 doit conserver les allées aux colonnes 2 et 5
+            expect(SeatingChartManager._getCellSpecial(0, 2)).toBe('aisle');
+            expect(SeatingChartManager._getCellSpecial(0, 5)).toBe('aisle');
+        });
+
+        it('devrait proposer un bouton d\'adaptation en 1 clic à l\'étape 2 si une salle déjà configurée est trop petite pour la classe active', () => {
+            // Configurer une petite salle de 4 rangées (24 places)
+            appState.seatingGrid = {
+                rows: 4,
+                cols: 8,
+                specialSpots: SeatingChartManager._buildDefaultCourseSpecialSpots(4)
+            };
+            // Ouvrir la grande classe de 34 élèves
+            appState.currentClassId = appState.classes[1].id;
+            SeatingChartManager.onClassChange();
+
+            const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            expect(hint).not.toBeNull();
+            expect(hint.dataset.step).toBe('placement');
+
+            const adaptBtn = hint.querySelector('#scHintAutoExpandRowsBtn');
+            expect(adaptBtn).not.toBeNull();
+            expect(adaptBtn.textContent).toContain('+2 rangées');
+
+            adaptBtn.click();
+            expect(SeatingChartManager._getRows()).toBe(6);
+            expect(hint.querySelector('#scHintAutoExpandRowsBtn')).toBeNull();
+        });
+    });
 });
+
 
