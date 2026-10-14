@@ -31,10 +31,10 @@ export const ListViewAnimations = {
          * @param {number} currentPeriodIndex - Index de la période courante
          * @private
          */
-    animateFilterTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
+    animateFilterTransition(container, existingRows, newResults, periods, currentPeriodIndex, importReveal = null) {
         const tbody = container.querySelector('tbody');
         if (!tbody) {
-            this.callbacks.renderFresh(container, newResults, periods, currentPeriodIndex);
+            this.callbacks.renderFresh(container, newResults, periods, currentPeriodIndex, { importReveal });
             return;
         }
 
@@ -44,7 +44,6 @@ export const ListViewAnimations = {
         // Identify rows to exit, keep
         const toExit = existingRows.filter(r => !newIds.has(r.dataset.studentId));
         const toKeep = existingRows.filter(r => newIds.has(r.dataset.studentId));
-        const existingIdsSet = new Set(existingRows.map(r => r.dataset.studentId));
 
         // *** FIRST: Capture positions of KEPT rows BEFORE any DOM changes ***
         // This is critical for the "flow up" animation when rows are filtered out
@@ -94,7 +93,14 @@ export const ListViewAnimations = {
             const currentClassName = userSettings.academic?.classes?.find(c => c.id === userSettings.academic?.currentClassId)?.name || '';
             const renderContext = { searchQuery, currentClassName };
 
-            orderedIds.forEach((id, index) => {
+            const newRowCount = orderedIds.filter(id => !keepMap.has(id)).length;
+            const staggerStep = newRowCount > 1 ? Math.min(28, Math.max(14, Math.floor(480 / newRowCount))) : 0;
+            let newRowIndex = 0;
+            let updatedKeepIndex = 0;
+            const baseDelay = importReveal?.startDelay ?? 50;
+            let maxAnimDelay = baseDelay;
+
+            orderedIds.forEach((id) => {
                 let row;
 
                 if (keepMap.has(id)) {
@@ -106,13 +112,47 @@ export const ListViewAnimations = {
                     if (result) {
                         ListViewRenderer.updateRowContent(row, result);
                     }
+
+                    if (importReveal) {
+                        const hasPhoto = importReveal.photoIds?.has(id);
+                        const isUpdated = importReveal.updatedIds?.has(id);
+                        if (hasPhoto || isUpdated) {
+                            const keepDelay = baseDelay + Math.min(updatedKeepIndex * 22, 480);
+                            updatedKeepIndex++;
+                            if (keepDelay > maxAnimDelay) maxAnimDelay = keepDelay;
+
+                            if (isUpdated) {
+                                row.classList.add('row-import-refresh');
+                                row.style.setProperty('--row-delay', `${keepDelay}ms`);
+                            }
+                            if (hasPhoto) {
+                                const avatar = row.querySelector('.student-avatar');
+                                if (avatar) {
+                                    avatar.classList.add('avatar-import-pop');
+                                    avatar.style.setProperty('--avatar-delay', `${keepDelay + 40}ms`);
+                                }
+                            }
+                        }
+                    }
                 } else {
                     // New row - create it
                     const result = newResultsMap.get(id);
                     if (result) {
+                        const enterDelay = baseDelay + Math.min(newRowIndex * staggerStep, 480);
+                        newRowIndex++;
+                        if (enterDelay > maxAnimDelay) maxAnimDelay = enterDelay;
+
                         row = ListViewRenderer.createRowElement(result, periods, currentPeriodIndex, renderContext);
                         row.classList.add('row-filter-enter');
-                        row.style.setProperty('--enter-delay', `${50 + index * 30}ms`);
+                        row.style.setProperty('--enter-delay', `${enterDelay}ms`);
+
+                        if (importReveal?.photoIds?.has(id)) {
+                            const avatar = row.querySelector('.student-avatar');
+                            if (avatar) {
+                                avatar.classList.add('avatar-import-pop');
+                                avatar.style.setProperty('--avatar-delay', `${enterDelay + 60}ms`);
+                            }
+                        }
                     }
                 }
 
@@ -213,14 +253,18 @@ export const ListViewAnimations = {
                 this.callbacks.updateHeaderSortIcons(viewElement);
             }
 
-            // Cleanup enter animations after delay
+            // Cleanup enter animations after full stagger duration
             setTimeout(() => {
-                const enterRows = tbody.querySelectorAll('.row-filter-enter');
-                enterRows.forEach(row => {
-                    row.classList.remove('row-filter-enter');
+                tbody.querySelectorAll('.row-filter-enter, .row-import-refresh').forEach(row => {
+                    row.classList.remove('row-filter-enter', 'row-import-refresh');
                     row.style.removeProperty('--enter-delay');
+                    row.style.removeProperty('--row-delay');
                 });
-            }, 500);
+                tbody.querySelectorAll('.avatar-import-pop').forEach(avatar => {
+                    avatar.classList.remove('avatar-import-pop');
+                    avatar.style.removeProperty('--avatar-delay');
+                });
+            }, maxAnimDelay + 450);
 
         }, exitDuration);
     },
@@ -232,9 +276,10 @@ export const ListViewAnimations = {
      * @param {Array} newResults - Nouveaux résultats triés
      * @param {Array} periods - Périodes
      * @param {number} currentPeriodIndex - Index de la période courante
+     * @param {Object|null} [importReveal=null] - Métadonnées d'animation post-import
      * @private
      */
-    animateSortTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
+    animateSortTransition(container, existingRows, newResults, periods, currentPeriodIndex, importReveal = null) {
         const tbody = container.querySelector('tbody');
         if (!tbody) return;
 
@@ -253,6 +298,13 @@ export const ListViewAnimations = {
         const orderedIds = newResults.map(r => r.id);
         let previousNode = null;
 
+        const affectedCount = importReveal
+            ? orderedIds.filter(id => importReveal.photoIds?.has(id) || importReveal.updatedIds?.has(id)).length
+            : 0;
+        const staggerStep = affectedCount > 1 ? Math.min(28, Math.max(14, Math.floor(480 / affectedCount))) : 0;
+        let staggerIdx = 0;
+        let maxImportDelay = 0;
+
         orderedIds.forEach(id => {
             const row = rowMap.get(id);
             if (row) {
@@ -260,6 +312,28 @@ export const ListViewAnimations = {
                 const result = newResultsMap.get(id);
                 if (result) {
                     ListViewRenderer.updateRowContent(row, result);
+                }
+
+                if (importReveal) {
+                    const hasPhoto = importReveal.photoIds?.has(id);
+                    const isUpdated = importReveal.updatedIds?.has(id);
+                    if (hasPhoto || isUpdated) {
+                        const delay = importReveal.startDelay + Math.min(staggerIdx * staggerStep, 480);
+                        staggerIdx++;
+                        if (delay > maxImportDelay) maxImportDelay = delay;
+
+                        if (isUpdated) {
+                            row.classList.add('row-import-refresh');
+                            row.style.setProperty('--row-delay', `${delay}ms`);
+                        }
+                        if (hasPhoto) {
+                            const avatar = row.querySelector('.student-avatar');
+                            if (avatar) {
+                                avatar.classList.add('avatar-import-pop');
+                                avatar.style.setProperty('--avatar-delay', `${delay}ms`);
+                            }
+                        }
+                    }
                 }
 
                 // Insert in correct position
@@ -275,6 +349,19 @@ export const ListViewAnimations = {
                 previousNode = row;
             }
         });
+
+        if (maxImportDelay > 0) {
+            setTimeout(() => {
+                tbody.querySelectorAll('.row-import-refresh').forEach(row => {
+                    row.classList.remove('row-import-refresh');
+                    row.style.removeProperty('--row-delay');
+                });
+                tbody.querySelectorAll('.avatar-import-pop').forEach(avatar => {
+                    avatar.classList.remove('avatar-import-pop');
+                    avatar.style.removeProperty('--avatar-delay');
+                });
+            }, maxImportDelay + 480);
+        }
 
         // Force layout recalculation
         void tbody.offsetHeight;

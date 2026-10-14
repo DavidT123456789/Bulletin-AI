@@ -385,6 +385,12 @@ export const ListViewRenderer = {
 
         const searchQuery = document.getElementById('searchInput')?.value || '';
         const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+        const importReveal = options.importReveal;
+        const shouldAnimateEntrance = !isPeriodSwitch && Boolean(importReveal);
+        const photoIds = importReveal?.photoIds;
+        const totalRows = results.length;
+        const baseDelay = importReveal?.startDelay ?? 0;
+        const staggerStep = totalRows > 1 ? Math.min(28, Math.max(14, Math.floor(480 / totalRows))) : 0;
 
         let tbodyContent = '';
         results.forEach((result, index) => {
@@ -403,9 +409,12 @@ export const ListViewRenderer = {
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
                 const originClass = Utils.getOriginClass(result, currentClassName);
+                const rowDelay = shouldAnimateEntrance ? (baseDelay + Math.min(index * staggerStep, 520)) : 0;
+                const rowClass = shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row';
+                const rowStyleAttr = shouldAnimateEntrance ? ` style="--row-delay: ${rowDelay}ms"` : '';
 
                 tbodyContent += `
-                    <tr data-student-id="${result.id}" class="student-row"${tabIndexAttr}>
+                    <tr data-student-id="${result.id}" class="${rowClass}"${tabIndexAttr}${rowStyleAttr}>
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}
@@ -493,8 +502,36 @@ export const ListViewRenderer = {
 
             const viewElement = container.querySelector('.student-list-view');
             if (viewElement) {
-                if (hadSkeleton) {
+                if (hadSkeleton && !shouldAnimateEntrance) {
                     viewElement.classList.add('table-fade-in');
+                }
+
+                if (shouldAnimateEntrance) {
+                    if (photoIds?.size > 0) {
+                        viewElement.querySelectorAll('.student-row').forEach((row, idx) => {
+                            const id = row.dataset.studentId;
+                            if (photoIds.has(id)) {
+                                const avatar = row.querySelector('.student-avatar');
+                                if (avatar) {
+                                    const rowDelay = baseDelay + Math.min(idx * staggerStep, 520);
+                                    avatar.classList.add('avatar-import-pop');
+                                    avatar.style.setProperty('--avatar-delay', `${rowDelay + 60}ms`);
+                                }
+                            }
+                        });
+                    }
+
+                    const maxDelay = baseDelay + Math.min(Math.max(0, totalRows - 1) * staggerStep, 520);
+                    setTimeout(() => {
+                        viewElement.querySelectorAll('.row-animate-in').forEach(row => {
+                            row.classList.remove('row-animate-in');
+                            row.style.removeProperty('--row-delay');
+                        });
+                        viewElement.querySelectorAll('.avatar-import-pop').forEach(avatar => {
+                            avatar.classList.remove('avatar-import-pop');
+                            avatar.style.removeProperty('--avatar-delay');
+                        });
+                    }, maxDelay + 500);
                 }
                 this.callbacks.attachEventListeners(viewElement);
                 this.updateHeaderSortIcons(viewElement);

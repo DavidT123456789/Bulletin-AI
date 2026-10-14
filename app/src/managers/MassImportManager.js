@@ -241,6 +241,8 @@ export const MassImportManager = {
 
         let newCount = 0;
         let updatedCount = 0;
+        const newIds = [];
+        const updatedIds = [];
 
         for (const studentData of studentsToProcess) {
             const normalizedKey = Utils.normalizeName(studentData.nom, studentData.prenom);
@@ -290,16 +292,20 @@ export const MassImportManager = {
                     } catch (_) { /* non-critical */ }
                 }
 
+                updatedIds.push(existingResult.id);
                 updatedCount++;
             } else {
                 const pendingResult = StudentDataManager.createPendingResult(studentData);
                 appState.generatedResults.push(pendingResult);
+                if (pendingResult?.id) newIds.push(pendingResult.id);
                 newCount++;
             }
         }
 
         await ClassManager._filterResultsByClass(appState.currentClassId);
         await StorageManager.saveAppState();
+
+        ListViewManager?.prepareImportReveal?.({ newIds, updatedIds });
 
         Am?.renderResults?.();
         UI?.updateStats?.();

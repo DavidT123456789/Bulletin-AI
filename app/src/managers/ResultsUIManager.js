@@ -363,10 +363,18 @@ export const ResultsUIManager = {
             if (statsPagination) statsPagination.style.display = 'none';
         }
         else {
+            const importReveal = ListViewManager.getPendingImportReveal();
+            const statsWereHidden = DOM.statsContainer?.style.display === 'none';
+
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
-            if (DOM.statsContainer) DOM.statsContainer.style.display = '';
+            if (DOM.statsContainer) {
+                DOM.statsContainer.style.display = '';
+                if (importReveal && statsWereHidden) {
+                    this._animateStatsEntrance(DOM.statsContainer, importReveal.startDelay);
+                }
+            }
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
             const statsPagination = document.getElementById('statsPagination');
             if (statsPagination) statsPagination.style.display = '';
@@ -392,6 +400,39 @@ export const ResultsUIManager = {
 
         // Mettre à jour le bouton d'action Générer/Régénérer
         this.updateGenerateButtonState(sourceResults);
+    },
+
+    /**
+     * Anime l'entrée progressive des cartes statistiques lors d'un import qui fait sortir de l'Empty State
+     * @param {HTMLElement} statsContainer
+     * @param {number} [startDelay=0] - Délai avant la première carte (ms)
+     * @private
+     */
+    _animateStatsEntrance(statsContainer, startDelay = 0) {
+        if (!statsContainer) return;
+        const cards = statsContainer.querySelectorAll('.stat-card');
+        if (!cards.length) return;
+
+        if (this._statsEntranceTimer) {
+            clearTimeout(this._statsEntranceTimer);
+        }
+
+        const baseDelay = Math.min(startDelay, 20);
+        const cardStagger = 55;
+        cards.forEach((card, index) => {
+            card.classList.remove('stat-card-animate-in');
+            card.style.setProperty('--stat-delay', `${baseDelay + index * cardStagger}ms`);
+            void card.offsetWidth;
+            card.classList.add('stat-card-animate-in');
+        });
+
+        this._statsEntranceTimer = setTimeout(() => {
+            this._statsEntranceTimer = null;
+            cards.forEach(card => {
+                card.classList.remove('stat-card-animate-in');
+                card.style.removeProperty('--stat-delay');
+            });
+        }, baseDelay + (cards.length - 1) * cardStagger + 480);
     },
 
     /**

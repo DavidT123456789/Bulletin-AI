@@ -24,6 +24,9 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 
+/** Délai court (ms) avant la première ligne d'un import : démarre dès le début du retrait de la modale sans trou noir */
+const IMPORT_REVEAL_START_DELAY_MS = 40;
+
 /**
  * Module de gestion de la vue Liste (tableau des élèves)
  * @namespace ListViewManager
@@ -60,6 +63,39 @@ export const ListViewManager = {
     _lastRenderedClassId: null, // Track class changes to force fresh render
     _lastRenderedPeriod: null,  // Track period changes to force fresh render (header column count changes)
     _activeFilterTimeout: null, // Track filter animation timeout to prevent race conditions
+    _pendingImportReveal: null, // Pending progressive import reveal metadata
+    _activeImportRenderGuard: false, // Prevents synchronous duplicate renderResults() calls from cancelling import animations
+
+    /**
+     * Prépare une animation d'entrée progressive pour le rendu post-import qui suit immédiatement.
+     * La demande expire à la fin du tick courant si aucun rendu de liste ne la consomme.
+     * @param {Object} [meta={}]
+     * @param {Iterable<string>} [meta.newIds] - IDs des nouveaux élèves créés
+     * @param {Iterable<string>} [meta.updatedIds] - IDs des élèves mis à jour
+     * @param {Iterable<string>} [meta.photoIds] - IDs des élèves ayant reçu une photo
+     * @param {number} [meta.startDelay] - Délai avant la première ligne (ms), aligné sur la fermeture de la modale
+     */
+    prepareImportReveal(meta = {}) {
+        const reveal = {
+            newIds: new Set(meta.newIds || []),
+            updatedIds: new Set(meta.updatedIds || []),
+            photoIds: new Set(meta.photoIds || []),
+            startDelay: meta.startDelay ?? IMPORT_REVEAL_START_DELAY_MS
+        };
+        this._pendingImportReveal = reveal;
+        this._activeImportRenderGuard = false;
+        queueMicrotask(() => {
+            if (this._pendingImportReveal === reveal) this._pendingImportReveal = null;
+        });
+    },
+
+    /**
+     * Retourne la demande d'animation post-import en attente, sans la consommer
+     * @returns {Object|null}
+     */
+    getPendingImportReveal() {
+        return this._pendingImportReveal;
+    },
 
     /**
      * Rend la liste des élèves en format tableau
@@ -67,19 +103,32 @@ export const ListViewManager = {
      * @param {HTMLElement} container - Conteneur DOM
      */
     render(results, container) {
+        if (!container) return;
+
+        const existingTable = container.querySelector('.student-list-view:not(.skeleton-table-view) .student-list-table');
+
+        // Prevent redundant synchronous re-renders (e.g. direct renderResults() + studentsUpdated/classChanged)
+        // from cancelling ongoing import entrance/FLIP animations in the same tick
+        if (this._activeImportRenderGuard && existingTable && results.length > 0) {
+            return;
+        }
+
         // Cancel any pending filter animation to prevent race conditions
         if (ListViewAnimations.state.activeFilterTimeout) {
             clearTimeout(ListViewAnimations.state.activeFilterTimeout);
             ListViewAnimations.state.activeFilterTimeout = null;
         }
 
-        // Cleanup previous document listener handled in _attachEventListeners
-        // [FIX] Listener is no longer removed here to prevent losing "click outside"
-        // functionality during soft updates (sort/reorder) that don't re-attach listeners.
+        const importReveal = this._pendingImportReveal;
+        this._pendingImportReveal = null;
 
-        if (!container) return;
+        if (importReveal && results.length > 0) {
+            this._activeImportRenderGuard = true;
+            queueMicrotask(() => {
+                this._activeImportRenderGuard = false;
+            });
+        }
 
-        const existingTable = container.querySelector('.student-list-view:not(.skeleton-table-view) .student-list-table');
         const tbody = existingTable ? existingTable.querySelector('tbody') : null;
 
         // Handle empty results
@@ -152,7 +201,8 @@ export const ListViewManager = {
                 currentPeriod,
                 isRetreating,
                 isAdvancing,
-                previousIndex
+                previousIndex,
+                importReveal
             });
             return;
         }
@@ -163,7 +213,7 @@ export const ListViewManager = {
 
         // Clean up any stuck animation classes from previous animations
         existingRows.forEach(row => {
-            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter');
+            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter', 'row-import-refresh');
             row.style.transform = '';
             row.style.transition = '';
         });
@@ -186,21 +236,21 @@ export const ListViewManager = {
                 if (emptyRow) emptyRow.remove();
 
                 // Filter change: use FLIP animation
-                ListViewAnimations.animateFilterTransition(container, existingRows, results, periods, currentPeriodIndex);
+                ListViewAnimations.animateFilterTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
                 return;
             } else if (hasOrderChange) {
                 // Sort change: use simple reorder
-                ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex);
+                ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
                 return;
             } else {
                 // Data updated but same IDs and order - Perform soft update to preserve DOM
-                ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex);
+                ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
                 return;
             }
         }
 
         // === INITIAL RENDER (no existing table) ===
-        this._renderFresh(container, results, periods, currentPeriodIndex);
+        this._renderFresh(container, results, periods, currentPeriodIndex, { importReveal });
     },
 
     // ListViewAnimations methods extracted

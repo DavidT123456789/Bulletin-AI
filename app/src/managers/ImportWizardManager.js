@@ -330,6 +330,11 @@ export const ImportWizardManager = {
 
         const modal = document.getElementById('importWizardModal');
         if (modal) {
+            if (this._closeResetTimer) {
+                clearTimeout(this._closeResetTimer);
+                this._closeResetTimer = null;
+                this._reset();
+            }
             this.currentStep = 1;
             this._updateUI();
             this._updateHeaderPeriodBadge(); // Show current period in guide
@@ -464,6 +469,11 @@ export const ImportWizardManager = {
 
         const modal = document.getElementById('importWizardModal');
         if (modal) {
+            if (this._closeResetTimer) {
+                clearTimeout(this._closeResetTimer);
+                this._closeResetTimer = null;
+                this._reset();
+            }
             this.currentStep = 1;
             this._updateUI();
             UI.openModal(modal);
@@ -484,7 +494,13 @@ export const ImportWizardManager = {
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             UI.closeModal(modal);
-            this._reset();
+            if (this._closeResetTimer) {
+                clearTimeout(this._closeResetTimer);
+            }
+            this._closeResetTimer = setTimeout(() => {
+                this._closeResetTimer = null;
+                this._reset();
+            }, 250);
         }
     },
 
@@ -1946,6 +1962,22 @@ export const ImportWizardManager = {
     async _importOnly() {
         if (this.state.studentsToProcess.length === 0) return;
 
+        const importBtn = document.getElementById('wizardImportOnlyBtn');
+        if (importBtn?.disabled) return;
+
+        UI.showInlineSpinner(importBtn, 'Importation...');
+        try {
+            await this._performImport();
+        } finally {
+            UI.hideInlineSpinner(importBtn);
+        }
+    },
+
+    /**
+     * Apply the column filters, run the import and close the wizard once the list is rendered
+     * @private
+     */
+    async _performImport() {
         this._saveFormat();
 
         const currentPeriod = appState.currentPeriod || 'T1';
@@ -2003,8 +2035,16 @@ export const ImportWizardManager = {
             }
         }
 
-        await MassImportManager.importStudentsOnly(filteredStudents, this.state.ignoredCount || 0);
-        this.close();
+        const ignoredCount = this.state.ignoredCount || 0;
+
+        try {
+            await MassImportManager.importStudentsOnly(filteredStudents, ignoredCount);
+        } catch (error) {
+            console.error('Student import failed:', error);
+            UI.showNotification('Erreur lors de l\'import des élèves', 'error');
+        } finally {
+            this.close();
+        }
     },
 
     /**

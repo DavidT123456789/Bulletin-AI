@@ -11,6 +11,17 @@ import { DOM } from '../utils/DOM.js';
 import { HistoryManager } from './HistoryManager.js';
 import { UI } from './UIManager.js';
 
+/** Modales de dialogue générées dynamiquement : empilées au-dessus de la modale active et retirées du DOM à la fermeture */
+const DYNAMIC_MODAL_IDS = new Set([
+    'customConfirmModal',
+    'customChoicesModal',
+    'hardConfirmModal',
+    'promptPreviewModal',
+    'conflictResolutionModal',
+    'restoreConfirmationModal',
+    'saveConfirmationModal'
+]);
+
 /**
  * Module de gestion des modales.
  * @namespace ModalUI
@@ -34,6 +45,11 @@ export const ModalUI = {
     /** @private Map pour stocker les timeouts d'animation par modale */
     _animTimeouts: new WeakMap(),
 
+    /** @private */
+    _isOverlayModal(modal, options = {}) {
+        return modal.id === 'helpModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
+    },
+
     /**
      * Ouvre une modale avec animation style Apple / iOS 2026.
      * @param {HTMLElement|string} modalOrId - L'élément modale ou son ID
@@ -44,7 +60,7 @@ export const ModalUI = {
         if (!modal) return;
 
         // Déclencher un événement lors de l'ouverture des modales de paramétrage pour créer un snapshot
-        if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
+        if (!options.isRestoringStacked && (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal')) {
             document.dispatchEvent(new CustomEvent('settings-modal-open', { detail: { modalId: modal.id } }));
         }
 
@@ -57,12 +73,14 @@ export const ModalUI = {
         modal.classList.remove('modal-closing');
 
         // [UX Mobile] History Push via Manager
-        HistoryManager.pushState(modal.id, (closeOptions) => this.closeModal(modal, closeOptions));
+        if (!options.isRestoringStacked) {
+            HistoryManager.pushState(modal.id, (closeOptions) => this.closeModal(modal, closeOptions));
+        }
 
-        // Si une modale est déjà ouverte et qu'on ouvre helpModal (ou modale empilée), on la "stack"
-        if (this.activeModal && (modal.id === 'helpModal' || options.isStacked)) {
+        // Une modale "overlay" (aide, confirmation dynamique) s'empile sur la modale active
+        if (this.activeModal && this.activeModal !== modal && this._isOverlayModal(modal, options)) {
             this.stackedModal = this.activeModal;
-        } else {
+        } else if (!options.isRestoringStacked) {
             this.lastFocusedElement = document.activeElement;
         }
 
@@ -185,21 +203,42 @@ export const ModalUI = {
             modal.classList.remove('modal-visible');
             modal.classList.remove('show');
 
-            // Gestion des modales empilées
-            if (this.stackedModal && (modal.id === 'helpModal' || options.isStacked)) {
+            if (modal.id !== 'helpModal') {
+                modal.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));
+            }
+
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.transformOrigin = '';
+            }
+
+            // Supprimer les modales de confirmation dynamiques
+            if (DYNAMIC_MODAL_IDS.has(modal.id)) {
+                modal.remove();
+            }
+
+            const canRestoreStacked = Boolean(
+                this.stackedModal &&
+                this.stackedModal !== modal &&
+                this.stackedModal.style.display !== 'none' &&
+                !this.stackedModal.classList.contains('modal-closing')
+            );
+
+            if (this._isOverlayModal(modal, options) && canRestoreStacked) {
+                // Restaure la modale sous-jacente (focus trap) sans dupliquer l'historique
                 this.activeModal = this.stackedModal;
                 this.stackedModal = null;
-                // Rediriger le focus trap vers la modale restaurée
-                this.openModal(this.activeModal.id); 
+                this.openModal(this.activeModal, { isRestoringStacked: true });
+            } else if (this.activeModal && this.activeModal !== modal) {
+                // Une autre modale a été ouverte pendant la fermeture (ex: bascule Trombi -> ImportWizard)
+                if (!canRestoreStacked) this.stackedModal = null;
             } else {
+                this.stackedModal = null;
                 if (this._focusTrapHandler) {
                     document.removeEventListener('keydown', this._focusTrapHandler);
                     this._focusTrapHandler = null;
                 }
                 document.body.classList.remove('modal-open');
-                if (modal.id !== 'helpModal') {
-                    modal.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));
-                }
 
                 // Restaurer le focus
                 if (this.lastFocusedElement) {
@@ -207,17 +246,6 @@ export const ModalUI = {
                     this.lastFocusedElement = null;
                 }
                 this.activeModal = null;
-
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.style.transformOrigin = '';
-                }
-
-                // Supprimer les modales de confirmation dynamiques
-                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal', 'promptPreviewModal', 'conflictResolutionModal'];
-                if (dynamicModals.includes(modal.id) && modal.parentNode) {
-                    modal.parentNode.removeChild(modal);
-                }
             }
         }, 250); // Durée de l'animation de fermeture
 

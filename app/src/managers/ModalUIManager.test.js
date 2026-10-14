@@ -220,6 +220,72 @@ describe('ModalUIManager', () => {
             expect(document.getElementById('customConfirmModal')).toBeNull();
         });
 
+        it('should stack customConfirmModal over an open modal, remove it from DOM, and restore the underlying modal', () => {
+            ModalUI.openModal(testModal);
+
+            const confirmModal = document.createElement('div');
+            confirmModal.id = 'customConfirmModal';
+            confirmModal.className = 'modal';
+            confirmModal.innerHTML = '<div class="modal-content"></div>';
+            document.body.appendChild(confirmModal);
+
+            ModalUI.openModal(confirmModal);
+            expect(ModalUI.stackedModal).toBe(testModal);
+            expect(ModalUI.activeModal).toBe(confirmModal);
+
+            ModalUI.closeModal(confirmModal);
+            vi.advanceTimersByTime(250);
+
+            expect(document.getElementById('customConfirmModal')).toBeNull();
+            expect(ModalUI.activeModal).toBe(testModal);
+            expect(ModalUI.stackedModal).toBeNull();
+            expect(document.body.classList.contains('modal-open')).toBe(true);
+        });
+
+        it('should restore focus to the original trigger after a stacked confirm and the underlying modal close', () => {
+            const trigger = document.createElement('button');
+            document.body.appendChild(trigger);
+            trigger.focus();
+
+            ModalUI.openModal(testModal);
+
+            const confirmModal = document.createElement('div');
+            confirmModal.id = 'customConfirmModal';
+            confirmModal.className = 'modal';
+            confirmModal.innerHTML = '<div class="modal-content"><button>OK</button></div>';
+            document.body.appendChild(confirmModal);
+
+            ModalUI.openModal(confirmModal);
+            ModalUI.closeModal(confirmModal);
+            vi.advanceTimersByTime(250);
+
+            ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
+
+            expect(document.activeElement).toBe(trigger);
+        });
+
+        it('should not clobber activeModal when a new modal opens while customConfirmModal is closing', () => {
+            const confirmModal = document.createElement('div');
+            confirmModal.id = 'customConfirmModal';
+            confirmModal.className = 'modal';
+            confirmModal.innerHTML = '<div class="modal-content"></div>';
+            document.body.appendChild(confirmModal);
+
+            ModalUI.openModal(confirmModal);
+            ModalUI.closeModal(confirmModal);
+
+            // Simulate switching to another modal (e.g. ImportWizard) before the 250ms close timeout finishes
+            ModalUI.openModal(testModal);
+            expect(ModalUI.activeModal).toBe(testModal);
+
+            vi.advanceTimersByTime(250);
+
+            expect(document.getElementById('customConfirmModal')).toBeNull();
+            expect(ModalUI.activeModal).toBe(testModal);
+            expect(document.body.classList.contains('modal-open')).toBe(true);
+        });
+
         it('should close open details elements', () => {
             const details = document.createElement('details');
             details.setAttribute('open', '');

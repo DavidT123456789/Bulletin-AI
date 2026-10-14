@@ -303,9 +303,10 @@
     --z-sticky: 500;
     --z-modal-backdrop: 900;
     --z-modal: 1000;
-    --z-tooltip: 1100;
-    --z-toast: 2000;
     --z-modal-content: 1001;
+    --z-tooltip: 1100;
+    --z-modal-confirm: 1500;
+    --z-toast: 2000;
     --z-skip-link: 10000;
 
     /* --- Global Component Variables --- */

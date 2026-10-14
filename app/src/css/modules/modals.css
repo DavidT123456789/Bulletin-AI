@@ -71,8 +71,13 @@
     transition: background 0.22s ease-out, backdrop-filter 0.22s ease-out !important;
 }
 
-#customConfirmModal {
-    z-index: 1050;
+#customConfirmModal,
+#customChoicesModal,
+#hardConfirmModal,
+#conflictResolutionModal,
+#restoreConfirmationModal,
+#saveConfirmationModal {
+    z-index: var(--z-modal-confirm, 1500);
 }
 
 .modal-content-confirm {

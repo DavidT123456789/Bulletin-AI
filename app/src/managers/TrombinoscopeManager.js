@@ -14,6 +14,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { ListViewManager } from './ListViewManager.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -125,9 +126,7 @@ export const TrombinoscopeManager = {
             dropZone.classList.remove('dragover');
             const file = e.dataTransfer?.files[0];
             if (file) {
-                if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-                    this._loadFile(file);
-                }
+                this._loadFile(file);
             }
         });
 
@@ -210,9 +209,16 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     open() {
+        if (this._closeTimer) {
+            clearTimeout(this._closeTimer);
+            this._closeTimer = null;
+        }
         this._reset();
         const modal = document.getElementById('trombiWizardModal');
-        if (modal) modal.classList.add('visible');
+        if (modal) {
+            modal.classList.remove('closing');
+            modal.classList.add('visible');
+        }
 
         // Update class badge in header
         const classBadge = document.getElementById('trombiClassBadge');
@@ -229,8 +235,13 @@ export const TrombinoscopeManager = {
         // Add closing animation
         modal.classList.add('closing');
 
+        if (this._closeTimer) {
+            clearTimeout(this._closeTimer);
+        }
+
         // Wait for animation to complete, then hide
-        setTimeout(() => {
+        this._closeTimer = setTimeout(() => {
+            this._closeTimer = null;
             modal.classList.remove('visible', 'closing');
             this._reset();
         }, 250); // Match CSS transition duration
@@ -810,15 +821,56 @@ export const TrombinoscopeManager = {
         };
     },
 
-    _loadFile(file) {
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    async _loadFile(file) {
+        const fileName = (file.name || '').toLowerCase();
+        if (file.type === 'application/pdf' || fileName.endsWith('.pdf')) {
             this._loadPdf(file);
+            return;
+        }
+
+        const isTextOrTable = file.type === 'text/csv' ||
+            file.type === 'text/plain' ||
+            file.type === 'text/tab-separated-values' ||
+            /\.(csv|txt|tsv)$/i.test(fileName);
+
+        if (isTextOrTable) {
+            this._removeImage();
+            const shouldSwitch = await UI.showCustomConfirm(
+                'Ce fichier contient des données texte ou tabulaires sans photos. Souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                null,
+                null,
+                {
+                    title: 'Fichier liste détecté',
+                    confirmText: 'Ouvrir dans Liste & Notes',
+                    cancelText: 'Annuler',
+                    isDanger: false
+                }
+            );
+            if (shouldSwitch) {
+                this.close();
+                const { ImportWizardManager } = await import('./ImportWizardManager.js');
+                ImportWizardManager.open();
+                ImportWizardManager._handleFile(file);
+            }
+            return;
+        }
+
+        const isImage = (file.type && file.type.startsWith('image/')) ||
+            /\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(fileName);
+
+        if (!isImage) {
+            this._removeImage();
+            UI.showNotification('Format de fichier non supporté (attendu : PDF ou image)', 'error');
             return;
         }
 
         const reader = new FileReader();
         reader.onload = e => {
             this._loadImageFromUrl(e.target.result);
+        };
+        reader.onerror = () => {
+            this._removeImage();
+            UI.showNotification('Erreur lors de la lecture du fichier', 'error');
         };
         reader.readAsDataURL(file);
     },
@@ -834,14 +886,35 @@ export const TrombinoscopeManager = {
             parsed.pages.forEach(page => {
                 page.originalZones = page.zones.map(z => ({ ...z }));
             });
-            this._parsedPdfData = parsed;
-            this._updateExistingPhotos = null;
-
             const firstPage = parsed.pages[0];
             if (!firstPage) {
                 throw new Error('Aucune page lisible dans le PDF');
             }
 
+            if (parsed.students.length === 0) {
+                this._removeImage();
+                const shouldSwitch = await UI.showCustomConfirm(
+                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                    null,
+                    null,
+                    {
+                        title: 'Aucune photo détectée',
+                        confirmText: 'Ouvrir dans Liste & Notes',
+                        cancelText: 'Annuler',
+                        isDanger: false
+                    }
+                );
+                if (shouldSwitch) {
+                    this.close();
+                    const { ImportWizardManager } = await import('./ImportWizardManager.js');
+                    ImportWizardManager.open();
+                    ImportWizardManager._handleFile(file);
+                }
+                return;
+            }
+
+            this._parsedPdfData = parsed;
+            this._updateExistingPhotos = null;
             this._imageSrc = firstPage.canvas.toDataURL('image/jpeg', 0.9);
             this._imageNaturalWidth = firstPage.width;
             this._imageNaturalHeight = firstPage.height;
@@ -902,28 +975,6 @@ export const TrombinoscopeManager = {
                     step1PageBar.style.display = 'none';
                     step1PageBar.innerHTML = '';
                 }
-            }
-
-            if (parsed.students.length === 0) {
-                this._removeImage();
-                const shouldSwitch = await UI.showCustomConfirm(
-                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
-                    null,
-                    null,
-                    {
-                        title: 'Aucune photo détectée',
-                        confirmText: 'Ouvrir dans Liste & Notes',
-                        cancelText: 'Annuler',
-                        isDanger: false
-                    }
-                );
-                if (shouldSwitch) {
-                    this.close();
-                    const { ImportWizardManager } = await import('./ImportWizardManager.js');
-                    ImportWizardManager.open();
-                    ImportWizardManager._handleFile(file);
-                }
-                return;
             }
 
             const nextBtn = document.getElementById('trombiStep1NextBtn');
@@ -995,6 +1046,7 @@ export const TrombinoscopeManager = {
             this._updateStepperUI();
         };
         img.onerror = () => {
+            this._removeImage();
             UI.showNotification('Erreur de chargement de l\'image', 'error');
         };
         img.src = url;
@@ -3577,7 +3629,8 @@ export const TrombinoscopeManager = {
             return;
         }
 
-        UI.showLoadingOverlay('Extraction des photos...');
+        const confirmBtn = typeof document !== 'undefined' ? document.getElementById('trombiConfirmBtn') : null;
+        UI?.showInlineSpinner?.(confirmBtn, 'Importation...');
 
         try {
             let targetClass = null;
@@ -3698,11 +3751,19 @@ export const TrombinoscopeManager = {
                 await StorageManager.saveAppState();
                 if (targetClass) {
                     await ClassManager._filterResultsByClass(targetClass.id);
-                    window.dispatchEvent(new CustomEvent('classChanged', { detail: { classId: targetClass.id } }));
                 }
             }
 
-            // Synchronisation réactive immédiate de l'UI
+            ListViewManager?.prepareImportReveal?.({
+                newIds: newlyAddedStudentIds,
+                photoIds: assignments.map(a => a.studentId)
+            });
+
+            if (this._parsedPdfData && targetClass) {
+                window.dispatchEvent(new CustomEvent('classChanged', { detail: { classId: targetClass.id } }));
+            }
+
+            // Synchronisation réactive immédiate de l'UI (montée dans le DOM avant le retrait de la modale)
             ClassUIManager?.updateHeaderDisplay?.();
             ClassUIManager?.renderClassList?.();
             ClassUIManager?.pulseHeaderChip?.();
@@ -3710,6 +3771,8 @@ export const TrombinoscopeManager = {
             UI?.updateStats?.();
             UI?.updateControlButtons?.();
             UI?.updateAIButtonsState?.();
+
+            this.close();
 
             const wasUpdate = initialTargetInfo?.isUpdate ?? false;
             if (wasUpdate && newStudentsAddedCount > 0) {
@@ -3728,13 +3791,11 @@ export const TrombinoscopeManager = {
             } else if (this._parsedPdfData) {
                 window.dispatchEvent(new CustomEvent('studentsUpdated'));
             }
-
-            this.close();
         } catch (error) {
             console.error('Photo extraction failed:', error);
             UI.showNotification('Erreur lors de l\'extraction', 'error');
         } finally {
-            UI.hideLoadingOverlay();
+            UI?.hideInlineSpinner?.(confirmBtn);
         }
     },
 
