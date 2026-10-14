@@ -3884,8 +3884,58 @@ export const SeatingChartManager = {
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
                     ? `<div class="sc-empty-text"><strong>Bravo&nbsp;!</strong><br>Tous les élèves sont placés&nbsp;!</div>
-                       <div class="sc-empty-success-badge">
-                           <iconify-icon icon="ph:check-bold" class="sc-empty-success-icon"></iconify-icon>
+                       <div class="sc-empty-success-badge sc-empty-engraved">
+                           <svg class="sc-empty-engraved-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                               <defs>
+                                   <filter id="scEngravedCheckLight" x="-20%" y="-20%" width="140%" height="140%">
+                                       <feOffset in="SourceAlpha" dx="1" dy="1.5" result="rimOff"/>
+                                       <feComposite in="rimOff" in2="SourceAlpha" operator="out" result="rimMask"/>
+                                       <feGaussianBlur in="rimMask" stdDeviation="0.4" result="rimBlur"/>
+                                       <feFlood flood-color="#ffffff" flood-opacity="1" result="rimCol"/>
+                                       <feComposite in="rimCol" in2="rimBlur" operator="in" result="rimLight"/>
+                                       <feOffset in="SourceAlpha" dx="-1.5" dy="-1.5" result="offLight"/>
+                                       <feGaussianBlur in="offLight" stdDeviation="1.5" result="blurLight"/>
+                                       <feComposite in="SourceAlpha" in2="blurLight" operator="out" result="innerLightMask"/>
+                                       <feFlood flood-color="#ffffff" flood-opacity="0.9" result="innerLightCol"/>
+                                       <feComposite in="innerLightCol" in2="innerLightMask" operator="in" result="innerLight"/>
+                                       <feOffset in="SourceAlpha" dx="1.5" dy="2" result="off"/>
+                                       <feGaussianBlur in="off" stdDeviation="1.5" result="blur"/>
+                                       <feComposite in="SourceAlpha" in2="blur" operator="out" result="innerMask"/>
+                                       <feFlood flood-color="#000000" flood-opacity="0.16" result="shadowCol"/>
+                                       <feComposite in="shadowCol" in2="innerMask" operator="in" result="innerShadow"/>
+                                       <feMerge>
+                                           <feMergeNode in="rimLight"/>
+                                           <feMergeNode in="SourceGraphic"/>
+                                           <feMergeNode in="innerLight"/>
+                                           <feMergeNode in="innerShadow"/>
+                                       </feMerge>
+                                   </filter>
+                                   <filter id="scEngravedCheckDark" x="-20%" y="-20%" width="140%" height="140%">
+                                       <feOffset in="SourceAlpha" dx="1" dy="1.5" result="rimOff"/>
+                                       <feComposite in="rimOff" in2="SourceAlpha" operator="out" result="rimMask"/>
+                                       <feGaussianBlur in="rimMask" stdDeviation="0.4" result="rimBlur"/>
+                                       <feFlood flood-color="#ffffff" flood-opacity="0.07" result="rimCol"/>
+                                       <feComposite in="rimCol" in2="rimBlur" operator="in" result="rimLight"/>
+                                       <feOffset in="SourceAlpha" dx="-1" dy="-1.5" result="offLight"/>
+                                       <feGaussianBlur in="offLight" stdDeviation="1.2" result="blurLight"/>
+                                       <feComposite in="SourceAlpha" in2="blurLight" operator="out" result="innerLightMask"/>
+                                       <feFlood flood-color="#ffffff" flood-opacity="0.035" result="innerLightCol"/>
+                                       <feComposite in="innerLightCol" in2="innerLightMask" operator="in" result="innerLight"/>
+                                       <feOffset in="SourceAlpha" dx="1.8" dy="2.2" result="off"/>
+                                       <feGaussianBlur in="off" stdDeviation="1.6" result="blur"/>
+                                       <feComposite in="SourceAlpha" in2="blur" operator="out" result="innerMask"/>
+                                       <feFlood flood-color="#000000" flood-opacity="0.85" result="shadowCol"/>
+                                       <feComposite in="shadowCol" in2="innerMask" operator="in" result="innerShadow"/>
+                                       <feMerge>
+                                           <feMergeNode in="rimLight"/>
+                                           <feMergeNode in="SourceGraphic"/>
+                                           <feMergeNode in="innerLight"/>
+                                           <feMergeNode in="innerShadow"/>
+                                       </feMerge>
+                                   </filter>
+                               </defs>
+                               <path class="sc-empty-engraved-path" d="M15 33.5L26.5 45L49 20.5" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+                           </svg>
                        </div>`
                     : 'Aucun résultat'}
                </div>`

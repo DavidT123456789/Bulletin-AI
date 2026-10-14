@@ -2984,17 +2984,19 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         height: 26px !important;
         margin-bottom: 0 !important;
         order: 1 !important;
-        box-shadow: none !important;
+        border-radius: 50%;
         background: var(--item-idle-bg) !important;
         border: 1px solid var(--border-color-strong) !important;
     }
 
-    .sc-empty-success-badge::before {
-        display: none !important;
+    .sc-empty-engraved-svg {
+        width: 15px !important;
+        height: 15px !important;
     }
 
-    .sc-empty-success-icon {
-        font-size: 0.85rem !important;
+    .sc-empty-engraved-path {
+        stroke: var(--text-secondary) !important;
+        stroke-width: 7 !important;
         filter: none !important;
     }
 
@@ -3392,65 +3394,37 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     color: var(--text-primary);
 }
 
-/* Tactile Neumorphic Medallion (recessed well + raised satin disc) */
-.sc-empty-success-badge {
+/* Directly Engraved Checkmark (debossed channel in sidebar surface) */
+.sc-empty-success-badge,
+[data-theme="dark"] .sc-empty-success-badge {
     position: relative;
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
+    width: 76px;
+    height: 76px;
     margin-bottom: auto;
-    background: var(--bg-color);
-    box-shadow:
-        inset 3px 3px 7px rgba(0, 0, 0, 0.07),
-        inset -3px -3px 7px rgba(255, 255, 255, 0.9),
-        0 1px 0 rgba(255, 255, 255, 0.8);
+    background: transparent;
+    box-shadow: none;
+    border: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.sc-empty-success-badge::before {
-    content: '';
-    position: absolute;
-    inset: 11px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #ffffff, #ededf0);
-    box-shadow:
-        4px 4px 10px rgba(0, 0, 0, 0.08),
-        -3px -3px 8px rgba(255, 255, 255, 0.95),
-        inset 0 1px 0 rgba(255, 255, 255, 1);
+.sc-empty-engraved-svg {
+    width: 72px;
+    height: 72px;
+    display: block;
+    overflow: visible;
 }
 
-[data-theme="dark"] .sc-empty-success-badge {
-    background: #131316;
-    box-shadow:
-        inset 4px 4px 9px rgba(0, 0, 0, 0.72),
-        inset -2px -2px 6px rgba(255, 255, 255, 0.03),
-        0 1px 0 rgba(255, 255, 255, 0.04);
+.sc-empty-engraved-path {
+    stroke: #ececef;
+    filter: url(#scEngravedCheckLight);
 }
 
-[data-theme="dark"] .sc-empty-success-badge::before {
-    background: linear-gradient(145deg, #202024, #151518);
-    box-shadow:
-        5px 5px 12px rgba(0, 0, 0, 0.65),
-        -2px -2px 8px rgba(255, 255, 255, 0.035),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.sc-empty-success-icon {
-    position: relative;
-    z-index: 1;
-    margin: 0 !important;
-    line-height: 1;
-    font-size: 1.75rem;
-    color: var(--text-tertiary);
-    filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8));
-}
-
-[data-theme="dark"] .sc-empty-success-icon {
-    color: var(--text-secondary);
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+[data-theme="dark"] .sc-empty-engraved-path {
+    stroke: #121215;
+    filter: url(#scEngravedCheckDark);
 }
 
 @keyframes scFadeUp {
