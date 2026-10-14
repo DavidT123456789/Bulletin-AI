@@ -73,10 +73,7 @@ export const OtherModalsListeners = {
             }, 300);
         });
 
-        const relaunchBtn = document.getElementById('relaunchWelcomeGuideBtn');
-        relaunchBtn?.addEventListener('click', (e) => {
-            WelcomeManager.handleRelaunchWelcomeGuide(e);
-        });
+        addClickListener(DOM.relaunchWelcomeGuideBtn, (e) => WelcomeManager.handleRelaunchWelcomeGuide(e));
 
         // Navigation clavier accessible (Flèches Haut/Bas/Gauche/Droite) sur les onglets du Guide
         const tablist = DOM.helpModal?.querySelector('.ui-tabs-sidebar[role="tablist"]');

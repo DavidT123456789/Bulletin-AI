@@ -242,22 +242,6 @@ export const AIService = {
      * @returns {Promise<AIResponse>} La réponse de l'IA
      */
     async callAI(prompt, options = {}) {
-        if (appState.isDemoMode) {
-            await new Promise(r => setTimeout(r, 600));
-            let fakeText = "Ceci est une appréciation générée en MODE DÉMO. Élève sérieux et appliqué. Les résultats sont en progression constante grâce à une participation active en classe. Continuez ainsi.";
-
-            if (prompt.includes("Points Forts")) {
-                fakeText = "### Points Forts\n* Participation active\n* Travail soigné\n### Points Faibles\n* Attention aux bavardages";
-            } else if (prompt.includes("pistes d'amélioration")) {
-                fakeText = "1. Participer davantage à l'oral.\n2. Relire les copies pour l'orthographe.";
-            }
-
-            return {
-                text: fakeText,
-                usage: { total_tokens: 123 }
-            };
-        }
-
         const { isValidation = false, signal: externalSignal, modelOverride } = options;
         const selectedModel = modelOverride || appState.currentAIModel;
         const timeoutMs = this._getModelTimeout(selectedModel);

@@ -15,7 +15,6 @@ vi.mock('../state/State.js', () => ({
         openrouterApiKey: '',
         mistralApiKey: '',
         currentAIModel: 'gemini-2.0-flash',
-        isDemoMode: false,
         sessionCost: 0
     }
 }));
@@ -54,7 +53,6 @@ describe('AIService', () => {
             googleApiKey: '',
             openrouterApiKey: '',
             currentAIModel: 'gemini-2.0-flash',
-            isDemoMode: false,
             sessionCost: 0
         };
     });
@@ -129,43 +127,10 @@ describe('AIService', () => {
         });
     });
 
-    describe('callAI - Demo Mode', () => {
-        it('should return fake response in demo mode', async () => {
-            const { appState } = await import('../state/State.js');
-            appState.isDemoMode = true;
-
-            const result = await AIService.callAI('Generate appreciation');
-
-            expect(result.text).toContain('MODE DÉMO');
-            expect(result.usage.total_tokens).toBe(123);
-        });
-
-        it('should return strength/weakness format for specific prompts', async () => {
-            const { appState } = await import('../state/State.js');
-            appState.isDemoMode = true;
-
-            const result = await AIService.callAI('Analyse: Points Forts et Points Faibles');
-
-            expect(result.text).toContain('Points Forts');
-            expect(result.text).toContain('Points Faibles');
-        });
-
-        it('should return improvement tips for specific prompts', async () => {
-            const { appState } = await import('../state/State.js');
-            appState.isDemoMode = true;
-
-            const result = await AIService.callAI('Propose des pistes d\'amélioration');
-
-            expect(result.text).toContain('1.');
-            expect(result.text).toContain('2.');
-        });
-    });
-
     describe('callAI - Error Handling', () => {
         it('should throw error when fetch fails with error response', async () => {
             const { appState } = await import('../state/State.js');
             appState.googleApiKey = 'test-key';
-            appState.isDemoMode = false;
 
             globalThis.fetch = vi.fn().mockResolvedValue({
                 ok: false,
@@ -180,7 +145,6 @@ describe('AIService', () => {
         it('should handle abort signal for cancellation', async () => {
             const { appState } = await import('../state/State.js');
             appState.googleApiKey = 'test-key';
-            appState.isDemoMode = false;
 
             const abortController = new AbortController();
             abortController.abort();
@@ -194,7 +158,6 @@ describe('AIService', () => {
         it('should parse Google API response correctly', async () => {
             const { appState } = await import('../state/State.js');
             appState.googleApiKey = 'test-key';
-            appState.isDemoMode = false;
 
             globalThis.fetch = vi.fn().mockResolvedValue({
                 ok: true,
@@ -223,7 +186,6 @@ describe('AIService', () => {
             const { appState } = await import('../state/State.js');
             appState.openaiApiKey = 'test-key';
             appState.currentAIModel = 'openai-gpt-3.5-turbo';
-            appState.isDemoMode = false;
 
             globalThis.fetch = vi.fn().mockResolvedValue({
                 ok: true,

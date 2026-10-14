@@ -42,7 +42,7 @@ vi.mock('../state/State.js', () => ({
         },
     },
     runtimeState: {
-        session: { sessionCost: 0, isDemoMode: false },
+        session: { sessionCost: 0 },
         navigation: {
             currentPeriod: 'T1',
             currentSubject: 'Français',
@@ -661,6 +661,44 @@ describe('StorageManager', () => {
             const updatedClass = userSettings.academic.classes.find(c => c.id === classId);
             expect(updatedClass.seatingUpdatedAt).toBe(2000);
             expect(updatedClass.seatingLocked).toBe(true);
+        });
+    });
+
+    describe('loadAppState - data purge protection', () => {
+        it('should not overwrite existing bulletin_last_sync_hash when IndexedDB student data is missing on load', async () => {
+            const { DBService } = await import('../services/DBService.js');
+            DBService.getAll.mockResolvedValueOnce([]);
+
+            localStorage.setItem('bulletin-assistant-state', JSON.stringify({
+                version: '4.3.0',
+                settings: {
+                    classes: [{ id: 'c1', name: '4°4' }],
+                    currentClassId: 'c1'
+                }
+            }));
+            localStorage.setItem('bulletin_sync_provider', 'google');
+            localStorage.setItem('bulletin_last_sync', '1726000000000');
+            localStorage.setItem('bulletin_last_modified', '1726000000000');
+            localStorage.setItem('bulletin_last_sync_hash', 'hash-with-307-students');
+            localStorage.setItem('bulletin_last_sync_students', '307');
+
+            await StorageManager.loadAppState({ checkPendingRestore: false });
+
+            expect(runtimeState._dataPurgeDetected).toBe(true);
+            expect(localStorage.getItem('bulletin_last_sync_hash')).toBe('hash-with-307-students');
+        });
+
+        it('should reset _dataPurgeDetected when students are restored via importBackup', async () => {
+            runtimeState._dataPurgeDetected = true;
+            const backupContent = JSON.stringify({
+                appVersion: '4.3.0',
+                classes: [{ id: 'c1', name: '4°4' }],
+                generatedResults: [{ id: 's1', nom: 'Dupont', prenom: 'Jean', classId: 'c1', studentData: { periods: {} } }]
+            });
+
+            await StorageManager.importBackup(backupContent, { mergeData: false, silent: true });
+
+            expect(runtimeState._dataPurgeDetected).toBe(false);
         });
     });
 });

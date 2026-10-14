@@ -378,6 +378,12 @@ export const SyncService = {
      * @private
      */
     _computeSyncState() {
+        const localStudentCount = runtimeState.data?.generatedResults?.length || 0;
+        const lastSyncStudents = this.getLastSyncStudentCount() || 0;
+        if (runtimeState._dataPurgeDetected || (localStudentCount === 0 && lastSyncStudents > 0)) {
+            return 'cloud-changes';
+        }
+
         const currentHash = StorageManager.computeCurrentDataHash();
         const syncHash = localStorage.getItem('bulletin_last_sync_hash');
 

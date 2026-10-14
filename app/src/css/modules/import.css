@@ -209,6 +209,7 @@
 #welcomeModal .modal-header {
     background: transparent;
     border-bottom: none;
+    padding-bottom: 0;
     position: absolute;
     top: 0;
     left: 0;
@@ -508,80 +509,6 @@
     color: white !important;
 }
 
-.welcome-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.8em;
-    margin: 20px 0;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.welcome-divider::before,
-.welcome-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.welcome-divider::before {
-    margin-right: 1em;
-}
-
-.welcome-divider::after {
-    margin-left: 1em;
-}
-
-.btn-demo-outline {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    box-shadow: none;
-    transition: all var(--transition-fast);
-}
-
-.btn-demo-outline:hover {
-    background: var(--surface-color);
-    border-color: var(--text-secondary);
-    color: var(--text-primary);
-    transform: translateY(-1px);
-}
-
-.get-key-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--brand-primary);
-    font-weight: 500;
-    font-size: 0.95em;
-    text-decoration: none;
-    margin-bottom: 24px;
-    padding: 8px 16px;
-    background: rgba(var(--brand-primary-rgb), 0.08);
-    border-radius: var(--radius-pill);
-    margin-top: 8px;
-    transition: all var(--transition-fast);
-}
-
-.get-key-link:hover {
-    background: rgba(var(--brand-primary-rgb), 0.15);
-    text-decoration: none;
-    transform: translateY(-1px);
-}
-
-#welcome-next-step-info {
-    display: none;
-    background: var(--success-light);
-    color: var(--success-color);
-    padding: 12px 20px;
-    border-radius: var(--radius-md);
-    margin-top: 20px;
-    font-weight: 500;
-}
-
 /* Welcome modal selector: styling for proper display */
 #welcomeModal .ui-segmented-control {
     justify-content: center;
@@ -620,12 +547,6 @@
     box-shadow: var(--shadow-xl);
 }
 
-#welcomeModal .modal-header {
-    background: transparent;
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
 /* Ensure step content is centered and bounded */
 .welcome-step {
     max-width: 800px;
@@ -635,14 +556,6 @@
     min-height: 380px;
     position: relative;
     box-sizing: border-box;
-}
-
-.welcome-subtitle {
-    font-size: 0.95em;
-    color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto 30px auto;
-    line-height: 1.5;
 }
 
 /* Harmonized h3 size across all welcome steps */
@@ -736,79 +649,11 @@
     line-height: 1;
 }
 
-
-
-.security-note {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    opacity: 0.8;
-    margin-top: 5px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.security-note i {
-    color: var(--success-color);
-    /* Le cadenas en vert pour dire "Sûr" */
-}
-
-/* === NEW WELCOME ELEMENTS === */
-
-
-
-
-
 /* Provider tag (e.g., French flag for Mistral) */
 .provider-tag {
     font-size: 0.75em;
     opacity: 0.7;
     margin-left: 2px;
-}
-
-.get-key-link-subtle {
-    font-size: 0.9em;
-    color: var(--primary-color);
-    text-decoration: none;
-    opacity: 0.9;
-    transition: opacity 0.2s;
-}
-
-.get-key-link-subtle:hover {
-    text-decoration: underline;
-    opacity: 1;
-}
-
-.welcome-step-footer {
-    margin-top: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.btn-text-link {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 0.9em;
-    cursor: pointer;
-    padding: 8px;
-    transition: color 0.2s;
-}
-
-.btn-text-link:hover {
-    color: var(--text-primary);
-}
-
-.security-note-mini {
-    font-size: 0.8em;
-    color: var(--text-tertiary);
-    /* Très discret */
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    opacity: 0.6;
 }
 
 /* === WELCOME API SETUP (STEP 2 CENTERING) === */
@@ -1030,23 +875,6 @@
     }
 }
 
-/* === PERIOD SELECTOR (STEP 3) === */
-
-.welcome-period-selector {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-    margin-bottom: 30px;
-}
-
-/* Hint text at the bottom */
-.welcome-hint {
-    margin-top: 24px;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    opacity: 0.8;
-}
-
 /* Step 4 has taller content (SVG + title + subtitle + CTA) — center standardly */
 #welcome-step-4 {
     margin-top: 0;
@@ -1087,7 +915,7 @@
     }
 }
 
-/* New visual cards choice layout for onboarding step 4 */
+/* Visual cards choice layout for onboarding step 3 (Trimestres / Semestres) */
 .welcome-start-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1128,19 +956,9 @@
     box-shadow: none;
 }
 
-.welcome-start-card.active[data-value="demo"] {
-    border-color: var(--color-violet);
-    background: rgba(139, 92, 246, 0.04);
-}
-
 .welcome-start-card.active[data-value="semestres"] {
     border-color: var(--color-violet);
     background: rgba(139, 92, 246, 0.04);
-}
-
-.welcome-start-card.active[data-value="empty"] {
-    border-color: var(--brand-primary);
-    background: rgba(var(--brand-primary-rgb), 0.04);
 }
 
 .welcome-start-card.active[data-value="trimestres"] {
@@ -1148,32 +966,26 @@
     background: rgba(var(--brand-primary-rgb), 0.04);
 }
 
-.welcome-start-card.active[data-value="demo"]:hover,
 .welcome-start-card.active[data-value="semestres"]:hover {
     background: rgba(139, 92, 246, 0.06);
 }
 
-.welcome-start-card.active[data-value="empty"]:hover,
 .welcome-start-card.active[data-value="trimestres"]:hover {
     background: rgba(var(--brand-primary-rgb), 0.06);
 }
 
-[data-theme="dark"] .welcome-start-card.active[data-value="demo"],
 [data-theme="dark"] .welcome-start-card.active[data-value="semestres"] {
     background: rgba(139, 92, 246, 0.08);
 }
 
-[data-theme="dark"] .welcome-start-card.active[data-value="empty"],
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
     background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
-[data-theme="dark"] .welcome-start-card.active[data-value="demo"]:hover,
 [data-theme="dark"] .welcome-start-card.active[data-value="semestres"]:hover {
     background: rgba(139, 92, 246, 0.12);
 }
 
-[data-theme="dark"] .welcome-start-card.active[data-value="empty"]:hover,
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"]:hover {
     background: rgba(var(--brand-primary-rgb), 0.12);
 }
@@ -1198,18 +1010,6 @@
 
 [data-theme="dark"] .welcome-start-card__icon {
     background: rgba(255, 255, 255, 0.06);
-}
-
-/* Star/AI Icon Color when active */
-.welcome-start-card.active[data-value="demo"] .welcome-start-card__icon {
-    background: rgba(139, 92, 246, 0.15);
-    color: var(--color-violet);
-}
-
-/* Blank Slate/Document Icon Color when active */
-.welcome-start-card.active[data-value="empty"] .welcome-start-card__icon {
-    background: rgba(var(--brand-primary-rgb), 0.15);
-    color: var(--brand-primary);
 }
 
 /* Trimestres Icon Color when active */
@@ -1309,11 +1109,6 @@
     box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
-.welcome-start-card.active[data-value="demo"]:focus-visible {
-    border-color: var(--color-violet);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.20);
-}
-
 .welcome-start-card.active[data-value="trimestres"]:focus-visible {
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
@@ -1365,14 +1160,6 @@
     background: transparent;
 }
 
-.welcome-start-card.active[data-value="demo"] .welcome-start-card__radio {
-    border-color: var(--color-violet);
-}
-
-.welcome-start-card.active[data-value="empty"] .welcome-start-card__radio {
-    border-color: var(--brand-primary);
-}
-
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio {
     border-color: var(--brand-primary);
 }
@@ -1388,14 +1175,6 @@
     border-radius: 50%;
     transform: scale(1);
     transition: transform 0.3s var(--ease-spring);
-}
-
-.welcome-start-card.active[data-value="demo"] .welcome-start-card__radio::after {
-    background: var(--color-violet);
-}
-
-.welcome-start-card.active[data-value="empty"] .welcome-start-card__radio::after {
-    background: var(--brand-primary);
 }
 
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio::after {

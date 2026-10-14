@@ -81,7 +81,6 @@ export const userSettings = {
 export const runtimeState = {
     /** Statistiques de session */
     session: {
-        isDemoMode: false,
         isUpdateAvailable: false,
     },
 
@@ -193,7 +192,6 @@ const propertyMap = {
     privacy: () => userSettings,
 
     // runtimeState.session
-    isDemoMode: () => runtimeState.session,
     isUpdateAvailable: () => runtimeState.session,
 
     // runtimeState.navigation

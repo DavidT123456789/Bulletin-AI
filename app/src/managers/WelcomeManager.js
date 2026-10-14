@@ -4,7 +4,7 @@
  * 
  * Responsabilités :
  * - Affichage et navigation du guide de bienvenue
- * - Activation du mode démo
+ * - Injection de la classe Exemple à la première visite
  * - Configuration initiale (clé API, système de périodes)
  */
 
@@ -80,6 +80,8 @@ export const WelcomeManager = {
         const totalWelcomeSteps = 4;
         let isAnimating = false;
         let currentProvider = 'google';
+        let hasSkippedApiKey = false;
+        let isWelcomeCompleted = false;
 
         // Helpers Defined First
         const addClickListener = (element, handler) => {
@@ -90,44 +92,50 @@ export const WelcomeManager = {
             el.classList.remove('slide-in-right', 'slide-in-left', 'slide-out-left', 'slide-out-right');
         };
 
+        const hasAnyConfiguredKey = () => Boolean(
+            appState.googleApiKey ||
+            appState.groqApiKey ||
+            appState.openrouterApiKey ||
+            appState.mistralApiKey ||
+            appState.openaiApiKey ||
+            appState.anthropicApiKey ||
+            appState.ollamaEnabled ||
+            hasSkippedApiKey
+        );
+
         // Helper to update input and button state for current provider
         const updateProviderKeyState = (provider) => {
             const input = DOM.welcomeApiKeyInput;
             const validateBtn = DOM.welcomeValidateApiKeyBtn;
 
-            // Get the correct existing key based on provider
-            let existingKey = '';
-            if (provider === 'google') {
-                existingKey = appState.googleApiKey;
-            } else if (provider === 'groq') {
-                existingKey = appState.groqApiKey;
-            } else if (provider === 'openrouter') {
-                existingKey = appState.openrouterApiKey;
-            } else if (provider === 'mistral') {
-                existingKey = appState.mistralApiKey;
-            }
+            const keyByProvider = {
+                google: appState.googleApiKey,
+                groq: appState.groqApiKey,
+                openrouter: appState.openrouterApiKey,
+                mistral: appState.mistralApiKey
+            };
+            const existingKey = keyByProvider[provider] || '';
 
             if (input) {
-                input.value = existingKey || '';
-                input.disabled = !!existingKey;
+                input.value = existingKey;
+                input.disabled = Boolean(existingKey);
             }
 
             if (validateBtn) {
-                // Reset all button state classes
                 validateBtn.classList.remove('ready', 'validated');
 
                 if (existingKey) {
                     validateBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
                     validateBtn.classList.add('validated');
                     validateBtn.disabled = true;
-                    DOM.welcomeNextBtn.disabled = false;
                 } else {
                     validateBtn.innerHTML = 'Valider';
-                    // Default state (grey) - no class needed
                     validateBtn.disabled = false;
-                    // Only disable next if no key for any provider and not in demo mode
-                    DOM.welcomeNextBtn.disabled = !appState.isDemoMode;
                 }
+            }
+
+            if (DOM.welcomeNextBtn && currentWelcomeStep === 2) {
+                DOM.welcomeNextBtn.disabled = !hasAnyConfiguredKey();
             }
         };
 
@@ -168,28 +176,25 @@ export const WelcomeManager = {
                 if (e.target.type !== 'radio') return;
 
                 const provider = e.target.value;
+                const config = providerConfig[provider];
+                if (!config) return;
+
                 currentProvider = provider;
 
-                const config = providerConfig[provider];
-
-                // Update input placeholder
                 if (DOM.welcomeApiKeyInput) {
                     DOM.welcomeApiKeyInput.placeholder = config.placeholder;
                 }
 
-                // Update "Get key" link
                 if (getKeyLink) {
                     getKeyLink.href = config.linkUrl;
                     getKeyLink.innerHTML = `${config.linkIcon} ${config.linkText || 'Obtenir ma clé'}`;
                 }
 
-                // Update input value and validation state for this provider
                 updateProviderKeyState(currentProvider);
             }, { signal });
         }
 
         const showWelcomeStep = (step, direction = 'next') => {
-            // ... (keep existing implementation)
             if (isAnimating) return;
 
             const oldStepEl = document.getElementById(`welcome-step-${currentWelcomeStep}`);
@@ -229,48 +234,35 @@ export const WelcomeManager = {
             DOM.welcomePrevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
             DOM.welcomeNextBtn.style.display = step === totalWelcomeSteps ? 'none' : 'inline-flex';
             DOM.welcomeFinishOptions.style.display = step === totalWelcomeSteps ? 'flex' : 'none';
-            if (DOM.welcomeNextStepInfo) {
-                DOM.welcomeNextStepInfo.style.display = 'none';
+            if (step === totalWelcomeSteps) {
+                DOM.welcomeFinishAndHideBtn?.focus?.();
             }
 
-            // Si la clé existe, bouton next actif
             if (step === 2) {
-                // Check current provider key if available (simplified check)
-                const hasApiKey = appState.googleApiKey || appState.groqApiKey || appState.openrouterApiKey || appState.mistralApiKey || appState.isDemoMode;
-                // Note: We don't block next button anymore based on key presence because of "Continue without key" button
-                // But for the main "Next" button in nav bar, let's keep it enabled generally to allow skipping via nav if user really wants?
-                // Actually, step 2 usually requires action. "Next" button logic:
-                // If user clicks "Next" without key, it might be weird. 
-                // Let's rely on the specific buttons in the step content.
-                DOM.welcomeNextBtn.disabled = !hasApiKey;
+                DOM.welcomeNextBtn.disabled = !hasAnyConfiguredKey();
 
                 // Reset error message
                 if (DOM.welcomeApiKeyError) DOM.welcomeApiKeyError.style.display = 'none';
 
                 // Initialize glider for provider selector IMMEDIATELY (before slide-in animation completes)
-                // This prevents the "popping" effect where the glider appears with a delay
                 const providerSelectorEl = document.getElementById('welcomeProviderSelector');
                 if (providerSelectorEl) {
-                    // First, ensure the glider element exists
                     let glider = providerSelectorEl.querySelector('.ui-glider');
                     if (!glider) {
                         glider = document.createElement('div');
                         glider.className = 'ui-glider';
-                        glider.style.transition = 'none'; // No animation on first appearance
+                        glider.style.transition = 'none';
                         providerSelectorEl.prepend(glider);
                         providerSelectorEl.classList.add('has-glider');
                     }
 
-                    // Position it immediately on the checked radio
                     const checked = providerSelectorEl.querySelector('input:checked');
                     if (checked) {
                         const label = providerSelectorEl.querySelector(`label[for="${checked.id}"]`);
                         if (label) {
-                            // Use requestAnimationFrame to ensure DOM is ready
                             requestAnimationFrame(() => {
                                 glider.style.width = `${label.offsetWidth}px`;
                                 glider.style.left = `${label.offsetLeft}px`;
-                                // Re-enable transitions after initial positioning
                                 requestAnimationFrame(() => {
                                     glider.style.transition = 'left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
                                 });
@@ -285,27 +277,59 @@ export const WelcomeManager = {
             currentWelcomeStep = step;
         };
 
+        /**
+         * Finalise le guide de bienvenue de façon idempotente (bouton Commencer, croix ×, touche Échap ou Retour mobile).
+         * @param {Object} [options]
+         * @param {boolean} [options.showLoading=false] - Affiche l'état de chargement sur le bouton Commencer
+         * @param {boolean} [options.skipCloseModal=false] - Ne rappelle pas UI.closeModal si la fermeture est déjà en cours
+         */
+        const completeWelcome = async ({ showLoading = false, skipCloseModal = false } = {}) => {
+            if (isWelcomeCompleted) return;
+            isWelcomeCompleted = true;
 
-        const finishWelcome = () => {
             localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
+
             const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
             if (appState.periodSystem !== selectedSystem) {
                 appState.periodSystem = selectedSystem;
                 UI.updatePeriodSystemUI();
             }
+
+            if (!skipCloseModal && !showLoading) {
+                UI.closeModal(DOM.welcomeModal);
+            }
+
+            const classes = ClassManager.getAllClasses?.() || [];
+            if (classes.length === 0) {
+                try {
+                    if (showLoading && DOM.welcomeFinishAndHideBtn) {
+                        DOM.welcomeFinishAndHideBtn.disabled = true;
+                        DOM.welcomeFinishAndHideBtn.innerHTML = '<iconify-icon icon="line-md:loading-twotone-loop" style="margin-right: 6px;"></iconify-icon> Initialisation...';
+                    }
+                    await this._injectDemoClass(selectedSystem);
+                } catch (_) {
+                    if (showLoading) {
+                        UI.showNotification('Erreur lors de l\'injection des données de démo.', 'error');
+                    }
+                }
+            }
+
             StorageManager.saveAppState();
             AppreciationsManager.renderResults();
             UI.updateStats?.();
             ClassUIManager.updateHeaderDisplay();
             ClassUIManager.updateStudentCount();
-            UI.closeModal(DOM.welcomeModal);
+
+            if (!skipCloseModal && showLoading) {
+                UI.closeModal(DOM.welcomeModal);
+            }
             UI.updateGenerateButtonState();
         };
 
         const validateWelcomeApiKey = async () => {
             if (validateApiKeyCallback) {
                 await validateApiKeyCallback(
-                    currentProvider, // Use dynamic provider
+                    currentProvider,
                     DOM.welcomeApiKeyInput,
                     DOM.welcomeApiKeyError,
                     DOM.welcomeValidateApiKeyBtn,
@@ -313,16 +337,11 @@ export const WelcomeManager = {
                         if (DOM.welcomeApiKeyInput) {
                             DOM.welcomeApiKeyInput.disabled = true;
                         }
-                        // ✅ Auto-sélection du modèle compatible avec la clé validée
-                        // Évite l'erreur "clé OpenRouter requise" quand l'utilisateur a configuré Mistral
                         const recommendedModel = PROVIDER_DEFAULT_MODELS[currentProvider];
                         if (recommendedModel && appState.currentAIModel !== recommendedModel) {
-                            // Le modèle actuel n'est pas compatible avec la clé validée
-                            // → Basculer automatiquement vers un modèle qui fonctionne
                             appState.currentAIModel = recommendedModel;
                             StorageManager.saveAppState();
 
-                            // Mettre à jour le select du modèle dans les paramètres si présent
                             if (DOM.aiModelSelect) {
                                 DOM.aiModelSelect.value = recommendedModel;
                             }
@@ -335,12 +354,6 @@ export const WelcomeManager = {
             }
         };
 
-        // Pré-remplir le champ API key et montrer l'état validé si une clé existe
-        const existingGoogleKey = appState.googleApiKey;
-        const existingGroqKey = appState.groqApiKey;
-        const existingMistralKey = appState.mistralApiKey;
-        const existingOpenRouterKey = appState.openrouterApiKey;
-
         // Helper to select a provider and update UI
         const selectProvider = (providerId) => {
             const radio = document.getElementById(providerId);
@@ -350,97 +363,52 @@ export const WelcomeManager = {
             }
         };
 
-        if (DOM.welcomeApiKeyInput) {
-            if (existingGoogleKey) {
-                // Google key exists - keep default Google provider
-                selectProvider('providerGoogle');
-                currentProvider = 'google';
-                DOM.welcomeApiKeyInput.value = existingGoogleKey;
-                // Mark as validated
-                if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
-                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
-                    DOM.welcomeValidateApiKeyBtn.disabled = true;
-                }
-                DOM.welcomeNextBtn.disabled = false;
-            } else if (existingGroqKey) {
-                // Switch to Groq provider
-                selectProvider('providerGroq');
-                currentProvider = 'groq';
-                DOM.welcomeApiKeyInput.value = existingGroqKey;
-                // Mark as validated
-                if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
-                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
-                    DOM.welcomeValidateApiKeyBtn.disabled = true;
-                }
-                DOM.welcomeNextBtn.disabled = false;
-            } else if (existingMistralKey) {
-                // Switch to Mistral provider
-                selectProvider('providerMistral');
-                currentProvider = 'mistral';
-                DOM.welcomeApiKeyInput.value = existingMistralKey;
-                // Mark as validated
-                if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
-                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
-                    DOM.welcomeValidateApiKeyBtn.disabled = true;
-                }
-                DOM.welcomeNextBtn.disabled = false;
-            } else if (existingOpenRouterKey) {
-                // Switch to OpenRouter provider
-                selectProvider('providerOpenRouter');
-                currentProvider = 'openrouter';
-                DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
-                // Mark as validated
-                if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
-                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
-                    DOM.welcomeValidateApiKeyBtn.disabled = true;
-                }
-                DOM.welcomeNextBtn.disabled = false;
-            }
-        }
+        // Pré-remplir le champ API key et montrer l'état validé si une clé existe (ou réinitialiser sur Google)
+        const initialProviderMap = [
+            { key: appState.googleApiKey, provider: 'google', radioId: 'providerGoogle' },
+            { key: appState.groqApiKey, provider: 'groq', radioId: 'providerGroq' },
+            { key: appState.mistralApiKey, provider: 'mistral', radioId: 'providerMistral' },
+            { key: appState.openrouterApiKey, provider: 'openrouter', radioId: 'providerOpenRouter' }
+        ];
+        const activeEntry = initialProviderMap.find(entry => Boolean(entry.key)) || initialProviderMap[0];
+        currentProvider = activeEntry.provider;
+        selectProvider(activeEntry.radioId);
+        updateProviderKeyState(currentProvider);
 
         // Initialize first step without animation
         const initFirstStep = () => {
+            document.querySelectorAll('.welcome-step').forEach(s => {
+                s.classList.remove('active');
+                cleanAnimationClasses(s);
+            });
             const firstStepEl = document.getElementById('welcome-step-1');
             if (firstStepEl) {
-                document.querySelectorAll('.welcome-step').forEach(s => s.classList.remove('active'));
                 firstStepEl.classList.add('active');
             }
             DOM.welcomeDots.querySelectorAll('.dot').forEach((dot, index) => dot.classList.toggle('active', index === 0));
             DOM.welcomePrevBtn.style.visibility = 'hidden';
             DOM.welcomeNextBtn.style.display = 'inline-flex';
             DOM.welcomeFinishOptions.style.display = 'none';
-            if (DOM.welcomeNextStepInfo) {
-                DOM.welcomeNextStepInfo.style.display = 'none';
-            }
             DOM.welcomeNextBtn.disabled = false;
             currentWelcomeStep = 1;
         };
 
         initFirstStep();
 
-        // Toggle button style based on input content (grey when empty, orange when key is present)
+        // Toggle button style based on input content (grey when empty, orange when key is present) + Enter key support
         if (DOM.welcomeApiKeyInput) {
             DOM.welcomeApiKeyInput.addEventListener('input', (e) => {
                 const validateBtn = DOM.welcomeValidateApiKeyBtn;
-                if (!validateBtn) return;
+                if (!validateBtn || validateBtn.classList.contains('validated')) return;
 
                 const hasValue = e.target.value.trim().length > 0;
+                validateBtn.classList.toggle('ready', hasValue);
+            }, { signal });
 
-                // Don't change if already validated
-                if (validateBtn.classList.contains('validated')) return;
-
-                if (hasValue) {
-                    validateBtn.classList.add('ready');
-                } else {
-                    validateBtn.classList.remove('ready');
+            DOM.welcomeApiKeyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim().length > 0 && !DOM.welcomeValidateApiKeyBtn?.disabled) {
+                    e.preventDefault();
+                    validateWelcomeApiKey();
                 }
             }, { signal });
         }
@@ -457,41 +425,28 @@ export const WelcomeManager = {
             }
         });
 
+        addClickListener(DOM.welcomeFinishAndHideBtn, () => completeWelcome({ showLoading: true }));
+        addClickListener(DOM.closeWelcomeModalBtn, () => completeWelcome({ showLoading: false }));
 
-        addClickListener(DOM.welcomeFinishAndHideBtn, async () => {
-            const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
-            if (appState.periodSystem !== selectedSystem) {
-                appState.periodSystem = selectedSystem;
-                UI.updatePeriodSystemUI();
+        // Prise en charge de la touche Échap et de la fermeture externe (ex: bouton Retour mobile via HistoryManager)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !isWelcomeCompleted && UI.activeModal === DOM.welcomeModal) {
+                e.preventDefault();
+                e.stopPropagation();
+                completeWelcome({ showLoading: false });
             }
+        }, { signal });
 
-            const classes = ClassManager.getAllClasses?.() || [];
-            if (classes.length === 0) {
-                try {
-                    DOM.welcomeFinishAndHideBtn.disabled = true;
-                    DOM.welcomeFinishAndHideBtn.innerHTML = '<iconify-icon icon="line-md:loading-twotone-loop" style="margin-right: 6px;"></iconify-icon> Initialisation...';
-                    await this._injectDemoClass(selectedSystem);
-                } catch (error) {
-                    UI.showNotification('Erreur lors de l\'injection des données de démo.', 'error');
-                }
+        document.addEventListener('welcome-modal-close', () => {
+            if (!isWelcomeCompleted) {
+                completeWelcome({ showLoading: false, skipCloseModal: true });
             }
-            finishWelcome();
-        });
-
-        addClickListener(DOM.closeWelcomeModalBtn, async () => {
-            const classes = ClassManager.getAllClasses?.() || [];
-            if (classes.length === 0) {
-                const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
-                try {
-                    await this._injectDemoClass(selectedSystem);
-                } catch (_) { /* silent */ }
-            }
-            finishWelcome();
-        });
+        }, { signal });
 
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 
         addClickListener(DOM.welcomeSkipApiKeyBtn, () => {
+            hasSkippedApiKey = true;
             UI.showNotification("Configuration de la clé API ignorée. Vous pourrez l'ajouter plus tard dans les paramètres.", 'info');
             DOM.welcomeNextBtn.disabled = false;
             DOM.welcomeNextBtn.click();
@@ -522,31 +477,6 @@ export const WelcomeManager = {
                 }
             }, { signal });
         });
-
-        // Gestion du bouton Mode Démo
-        addClickListener(document.getElementById('activateDemoModeBtn'), () => this.activateDemoMode());
-    },
-
-    /**
-     * Active le mode démo
-     * Permet d'utiliser l'application sans clé API avec des données simulées
-     */
-    async activateDemoMode() {
-        appState.isDemoMode = true;
-        localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
-
-        try {
-            await this._injectDemoClass(appState.periodSystem);
-            AppreciationsManager.renderResults();
-            UI.updateStats?.();
-            ClassUIManager.updateHeaderDisplay();
-            ClassUIManager.updateStudentCount();
-        } catch (_) { /* silent fallback */ }
-
-        UI.showNotification("Mode Démo activé ! Génération simulée.", "success");
-        UI.closeModal(DOM.welcomeModal);
-        UI.updateGenerateButtonState();
-        UI.updateHeaderPremiumLook();
     },
 
     /**
@@ -634,12 +564,12 @@ export const WelcomeManager = {
      * @param {Event} e - L'événement click
      */
     handleRelaunchWelcomeGuide(e) {
-        e.preventDefault();
+        e?.preventDefault?.();
         UI.closeAllModals();
         // Délai pour permettre l'animation de fermeture avant d'ouvrir le welcomeModal
         setTimeout(() => {
-            UI.openModal(DOM.welcomeModal);
             this.setupWelcomeModal();
+            UI.openModal(DOM.welcomeModal);
         }, 300);
     }
 };

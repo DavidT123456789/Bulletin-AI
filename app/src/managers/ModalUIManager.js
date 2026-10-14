@@ -187,6 +187,9 @@ export const ModalUI = {
             HistoryManager.handleManualClose(modal.id);
         }
 
+        if (modal.id === 'welcomeModal') {
+            document.dispatchEvent(new CustomEvent('welcome-modal-close', { detail: { modalId: modal.id, options } }));
+        }
 
         this._isIgnoringTooltips = true;
 
@@ -878,11 +881,13 @@ export const ModalUI = {
             const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
 
             const isVolumeIdentical = (rStudentCount === lStudentCount) && (rClassCount === lClassCount);
+            const isMissingLocalStudents = rStudentCount > 0 && lStudentCount === 0;
 
             const resolvedSyncState = syncState ||
                 window.SyncService?._lastSyncState ||
                 (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
-            const hasLocalChanges = resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict';
+            const hasLocalChanges = !isMissingLocalStudents && (resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict');
+            const isInSync = !hasLocalChanges && isVolumeIdentical && resolvedSyncState !== 'cloud-changes';
 
             const cloudDateParts = this._formatDateParts(remoteDate);
             const localTimestamp = localDate || parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null;
@@ -897,6 +902,22 @@ export const ModalUI = {
             const localSubStatHtml = isVolumeIdentical
                 ? `<div class="restore-card-sub-stat">${hasLocalChanges ? 'Modifications récentes' : 'À jour'}</div>`
                 : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
+
+            const localMainStatText = hasLocalChanges
+                ? (localDateParts ? localDateParts.relative : 'À l\'instant')
+                : isMissingLocalStudents
+                    ? 'Données manquantes'
+                    : isInSync
+                        ? 'Session à jour'
+                        : (localDateParts ? localDateParts.relative : 'Session locale');
+
+            const localExactDateText = hasLocalChanges
+                ? (localDateParts ? localDateParts.absolute : 'Modifié récemment')
+                : isMissingLocalStudents
+                    ? 'Aucun élève sur cet appareil'
+                    : isInSync
+                        ? 'Parfaitement synchronisée'
+                        : (localDateParts ? localDateParts.absolute : 'Écart avec le Cloud');
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -938,10 +959,10 @@ export const ModalUI = {
                                 <span>Session locale</span>
                             </div>
                             <div class="restore-card-main-stat">
-                                ${hasLocalChanges ? (localDateParts ? localDateParts.relative : 'À l\'instant') : 'Session à jour'}
+                                ${localMainStatText}
                             </div>
                             <div class="restore-card-exact-date">
-                                ${hasLocalChanges ? (localDateParts ? localDateParts.absolute : 'Modifié récemment') : 'Parfaitement synchronisée'}
+                                ${localExactDateText}
                             </div>
                             ${localSubStatHtml}
                         </div>
@@ -966,11 +987,20 @@ export const ModalUI = {
                             <span>Une copie de secours de votre session sera créée automatiquement.</span>
                         </div>
                     </div>
-                    ` : `
+                    ` : isInSync ? `
                     <div class="restore-safety-notice in-sync">
                         <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                         <div>
                             <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées avec le Cloud.
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="restore-safety-notice warning">
+                        <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                        <div>
+                            ${isMissingLocalStudents
+                                ? `<strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.`
+                                : `<strong>Différence détectée :</strong> Votre sauvegarde Cloud (${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}) diffère de votre session locale.`}
                         </div>
                     </div>
                     `}

@@ -24,7 +24,6 @@ vi.mock('../state/State.js', () => ({
         generatedResults: [],
         filteredResults: [],
         instructionHistory: [],
-        isDemoMode: false,
         sessionCost: 0,
         currentInputMode: 'single'
     }
@@ -327,18 +326,8 @@ describe('UIManager', () => {
     });
 
     describe('checkAPIKeyPresence', () => {
-        it('should return true when in demo mode', async () => {
-            const { appState } = await import('../state/State.js');
-            appState.isDemoMode = true;
-
-            const result = UI.checkAPIKeyPresence(true);
-
-            expect(result).toBe(true);
-        });
-
         it('should return true when Google API key is present for Gemini model', async () => {
             const { appState } = await import('../state/State.js');
-            appState.isDemoMode = false;
             appState.currentAIModel = 'gemini-2.0-flash';
             appState.googleApiKey = 'test-key';
 
@@ -349,7 +338,6 @@ describe('UIManager', () => {
 
         it('should return false when Google API key is missing', async () => {
             const { appState } = await import('../state/State.js');
-            appState.isDemoMode = false;
             appState.currentAIModel = 'gemini-2.0-flash';
             appState.googleApiKey = '';
 
@@ -360,7 +348,6 @@ describe('UIManager', () => {
 
         it('should return false when OpenAI key is missing for OpenAI model', async () => {
             const { appState } = await import('../state/State.js');
-            appState.isDemoMode = false;
             appState.currentAIModel = 'openai-gpt-4';
             appState.openaiApiKey = '';
 

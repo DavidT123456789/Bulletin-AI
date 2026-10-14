@@ -1246,8 +1246,6 @@ export const UI = {
     // ====================================================================
 
     checkAPIKeyPresence(silent = false) {
-        if (appState.isDemoMode) return true;
-
         const model = appState.currentAIModel;
         let key = '', name = '', provider = '';
 

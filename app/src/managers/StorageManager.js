@@ -218,13 +218,14 @@ export const StorageManager = {
                 runtimeState.data.generatedResults = [];
             }
 
-            // Purge detection: classes exist but IndexedDB was evicted
+            // Purge detection: classes or previous sync student count exist, but IndexedDB was evicted
             const classes = userSettings.academic.classes || [];
             const hasClasses = classes.length > 0;
             const hasNoStudents = runtimeState.data.generatedResults.length === 0;
             const hadSyncBefore = !!localStorage.getItem('bulletin_sync_provider');
+            const lastSyncStudents = parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10);
 
-            if (hasClasses && hasNoStudents && hadSyncBefore) {
+            if (hasNoStudents && ((hasClasses && hadSyncBefore) || lastSyncStudents > 0)) {
                 runtimeState._dataPurgeDetected = true;
                 setTimeout(() => {
                     UI?.showNotification(
@@ -233,6 +234,8 @@ export const StorageManager = {
                         8000
                     );
                 }, 1500);
+            } else {
+                runtimeState._dataPurgeDetected = false;
             }
 
             const currentClassId = userSettings.academic.currentClassId;
@@ -827,10 +830,10 @@ export const StorageManager = {
             this._lastDataHash = currentDataHash;
         } else {
             this._lastDataHash = currentDataHash;
-            // On first load, if we have a sync time and state was clean, align sync hash
+            // On first load, initialize sync hash ONLY if missing and no data purge was detected
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
             const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-            if (lastSync > 0 && lastMod <= lastSync) {
+            if (!lastSyncHash && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
                 localStorage.setItem('bulletin_last_sync_hash', currentDataHash);
             }
         }
@@ -1272,6 +1275,9 @@ export const StorageManager = {
                 }
             }
 
+            if (runtimeState.data.generatedResults?.length > 0) {
+                runtimeState._dataPurgeDetected = false;
+            }
             this._ensureDefaultState();
             this._ensureConfigUpgrades();
             await this.saveAppState();
@@ -1549,6 +1555,9 @@ export const StorageManager = {
         }
 
         // 5. Sauvegarde de l'état
+        if (runtimeState.data.generatedResults?.length > 0) {
+            runtimeState._dataPurgeDetected = false;
+        }
         await this.saveAppState();
         if (App?.updateUIOnLoad) App.updateUIOnLoad();
 

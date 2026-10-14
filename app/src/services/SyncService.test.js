@@ -278,5 +278,19 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
         });
+
+        it('should return cloud-changes instead of in-sync when local students are 0 but bulletin_last_sync_students > 0', async () => {
+            const { runtimeState } = await import('../state/State.js');
+            runtimeState.data.generatedResults = [];
+            runtimeState._dataPurgeDetected = false;
+
+            SyncService.lastSyncTime = 2000;
+            localStorage.setItem('bulletin_last_sync', '2000');
+            localStorage.setItem('bulletin_last_modified', '2000');
+            localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
+            localStorage.setItem('bulletin_last_sync_students', '307');
+
+            expect(SyncService._computeSyncState()).toBe('cloud-changes');
+        });
     });
 });

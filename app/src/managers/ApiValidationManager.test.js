@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
     appState: {
-        isDemoMode: false,
         currentAIModel: 'gemini-2.5-flash',
         apiKeyStatus: {},
         validatedApiKeys: {},
@@ -78,7 +77,6 @@ describe('ApiValidationManager', () => {
         vi.clearAllMocks();
 
         // Reset appState
-        appState.isDemoMode = false;
         appState.currentAIModel = 'gemini-2.5-flash';
         appState.apiKeyStatus = {};
         appState.validatedApiKeys = {};
@@ -227,26 +225,6 @@ describe('ApiValidationManager', () => {
             );
             expect(appState.apiKeyStatus.groq).toBe('valid');
             expect(appState.validatedApiKeys.groq).toBe(true);
-        });
-
-        it('should work in demo mode', async () => {
-            vi.useFakeTimers();
-            appState.isDemoMode = true;
-
-            const promise = ApiValidationManager.validateApiKeyUI(
-                'google', mockInputEl, mockErrorEl, mockBtnEl
-            );
-
-            vi.advanceTimersByTime(1100);
-            await promise;
-
-            expect(appState.apiKeyStatus.google).toBe('valid');
-            expect(UI.showNotification).toHaveBeenCalledWith(
-                expect.stringContaining('Mode Démo'),
-                'success'
-            );
-
-            vi.useRealTimers();
         });
 
         it('should call onSuccess callback on successful validation', async () => {

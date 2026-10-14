@@ -4,7 +4,6 @@ import { App } from './managers/AppManager.js';
 import { UI } from './managers/UIManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
-import { WelcomeManager } from './managers/WelcomeManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
 import { SeatingChartManager } from './managers/SeatingChartManager.js';
 import { ImportWizardManager } from './managers/ImportWizardManager.js';
@@ -69,10 +68,6 @@ const init = () => {
             // Search inside the container first for scoped IDs, fallback to global
             const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
             if (content) content.classList.add('active');
-        };
-
-        window.relaunchSetupWizard = () => {
-            WelcomeManager.handleRelaunchWelcomeGuide({ preventDefault: () => { } });
         };
 
         window.ImportWizardManager = ImportWizardManager;

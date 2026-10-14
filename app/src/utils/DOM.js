@@ -283,10 +283,8 @@ export function initDOM() {
     DOM.cloudSyncIndicator = document.getElementById('cloudSyncIndicator');
     DOM.welcomeModal = document.getElementById('welcomeModal');
     DOM.closeWelcomeModalBtn = document.getElementById('closeWelcomeModalBtn');
-    DOM.welcomeNextStepInfo = document.getElementById('welcome-next-step-info');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');
     DOM.welcomeNextBtn = document.getElementById('welcomeNextBtn');
-    DOM.welcomeLoadSampleBtn = document.getElementById('welcomeLoadSampleBtn');
     DOM.welcomeFinishAndHideBtn = document.getElementById('welcomeFinishAndHideBtn');
     DOM.welcomeFinishOptions = document.getElementById('welcome-finish-options');
     DOM.welcomeDots = document.getElementById('welcome-dots');

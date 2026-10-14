@@ -38,20 +38,6 @@ export const ApiValidationManager = {
         UI.showInlineSpinner(btnEl);
         errorEl.style.display = 'none';
 
-        // Mode démo : validation simulée
-        if (appState.isDemoMode) {
-            setTimeout(() => {
-                UI.hideInlineSpinner(btnEl);
-                btnEl.innerHTML = originalBtnContent;
-                appState.apiKeyStatus[provider] = 'valid';
-                appState.validatedApiKeys[provider] = true;
-                SettingsUIManager.updateApiStatusDisplay();
-                UI.showNotification("Clé validée (Mode Démo).", "success");
-                if (onSuccess) onSuccess();
-            }, 1000);
-            return;
-        }
-
         try {
             appState[`${provider}ApiKey`] = key;
 

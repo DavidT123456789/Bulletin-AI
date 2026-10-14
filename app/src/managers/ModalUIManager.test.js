@@ -194,6 +194,27 @@ describe('ModalUIManager', () => {
             expect(ModalUI.activeModal).toBeNull();
         });
 
+        it('should dispatch welcome-modal-close when closing welcomeModal', () => {
+            const welcomeEl = document.createElement('div');
+            welcomeEl.id = 'welcomeModal';
+            welcomeEl.className = 'modal';
+            document.body.appendChild(welcomeEl);
+
+            const listener = vi.fn();
+            document.addEventListener('welcome-modal-close', listener);
+
+            ModalUI.openModal(welcomeEl);
+            ModalUI.closeModal(welcomeEl, { causedByHistory: true });
+
+            expect(listener).toHaveBeenCalledTimes(1);
+            expect(listener.mock.calls[0][0].detail).toEqual({
+                modalId: 'welcomeModal',
+                options: { causedByHistory: true }
+            });
+
+            document.removeEventListener('welcome-modal-close', listener);
+        });
+
         it('should restore stacked modal when closing helpModal', () => {
             ModalUI.openModal(testModal);
             ModalUI.openModal(helpModal);
@@ -534,6 +555,30 @@ describe('ModalUIManager', () => {
 
             delete window.appState;
             delete window.runtimeState;
+        });
+
+        it('should warn about missing local students instead of showing Session alignée when localStudentCount is 0 and remoteStudentCount > 0', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: 1726000000000,
+                remoteStudentCount: 307,
+                remoteClassCount: 13,
+                localStudentCount: 0,
+                localClassCount: 13,
+                syncState: 'in-sync'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal).not.toBeNull();
+            expect(modal.textContent).not.toContain('Session alignée');
+            expect(modal.textContent).not.toContain('Session à jour');
+            expect(modal.textContent).toContain('Données manquantes');
+            expect(modal.textContent).toContain('Aucun élève sur cet appareil');
+            expect(modal.textContent).toContain('Restauration recommandée');
+            expect(modal.textContent).toContain('307 élèves');
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            cancelBtn.click();
+            await promise;
         });
     });
 
