@@ -6,6 +6,7 @@ import { HistoryManager } from './HistoryManager';
 import { FocusPanelManager } from './FocusPanelManager';
 import { ClassUIManager } from './ClassUIManager';
 import { TooltipsUI } from './TooltipsManager';
+import { UI } from './UIManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -2899,6 +2900,27 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._autoPlace('pairs-random');
             expect(smartFitSpy).toHaveBeenCalledWith(true);
 
+            // Cas 4 (passage de 13 binômes 4x4 à Individuel 1/poste pour 25 élèves) -> agrandit en 5x5 équilibré et ajuste l'échelle
+            smartFitSpy.mockClear();
+            SeatingChartManager._autoPlace('alpha-asc');
+            expect(SeatingChartManager._getRows()).toBe(5);
+            expect(SeatingChartManager._getCols()).toBe(5);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(25);
+            expect(SeatingChartManager._getCellStudentIds(0, 0).length).toBe(1);
+            expect(smartFitSpy).toHaveBeenCalledWith(true);
+
+            // Cas 5 (remise à zéro _clearAll après un zoom manuel) -> réajuste automatiquement l'échelle
+            vi.useFakeTimers();
+            const confirmSpy = vi.spyOn(UI, 'showCustomConfirm').mockImplementation((_desc, onConfirm) => onConfirm());
+            smartFitSpy.mockClear();
+            SeatingChartManager._isFitted = false;
+            SeatingChartManager._clearAll();
+            vi.runAllTimers();
+            expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+            expect(smartFitSpy).toHaveBeenCalledWith(true);
+
+            confirmSpy.mockRestore();
+            vi.useRealTimers();
             smartFitSpy.mockRestore();
         });
 

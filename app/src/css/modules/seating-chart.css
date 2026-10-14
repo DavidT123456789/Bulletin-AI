@@ -4461,12 +4461,12 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-station-badge {
     position: absolute;
-    bottom: 4px;
-    left: 5px;
-    font-size: 0.56rem;
+    top: 4px;
+    left: 4px;
+    font-size: 0.53rem;
     font-weight: 700;
     line-height: 1;
-    padding: 2px 4.5px;
+    padding: 1.5px 4px;
     border-radius: 5px;
     color: var(--text-tertiary);
     background: rgba(var(--text-secondary-rgb, 113, 113, 122), 0.1);
@@ -4548,17 +4548,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     transform: scale(0.97);
 }
 
-/* Occupied station badge in Activity mode (stacked OR solo student): position badge at top-left inside card, clear of avatars & pin */
-.sc-cell.sc-cell-stacked .sc-station-badge,
-.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied .sc-station-badge,
-#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied .sc-station-badge {
-    top: 4px;
-    bottom: auto;
-    left: 4px;
-    font-size: 0.53rem;
-    padding: 1.5px 4px;
-}
-
+/* Shift station badge below pin icon when station is pinned */
 .sc-cell.sc-cell-stacked.pinned .sc-station-badge,
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
@@ -4572,6 +4562,12 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
     #seatingChartView[data-plan-mode="activity"][data-locked="false"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
         opacity: 0;
+    }
+
+    /* Attenuate global station remove button while hovering an individual member pill to prevent visual competition */
+    #seatingChartView[data-locked="false"] .sc-cell.sc-cell-stacked:has(.sc-stacked-member:hover) .sc-cell-remove:not(:hover) {
+        opacity: 0.28;
+        transform: scale(0.88);
     }
 }
 

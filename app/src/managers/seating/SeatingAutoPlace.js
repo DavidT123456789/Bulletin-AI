@@ -49,7 +49,7 @@ export const SeatingAutoPlace = {
             });
         };
 
-        // Cas Groupes / Binômes (Activité : pairs-random, pairs-neighbors, pairs-alpha, groups-3, groups-4)
+        // Cas Groupes / Binômes / Postes d'Activité (pairs-random, pairs-neighbors, pairs-alpha, groups-3, groups-4, ou 1/poste en mode Activité)
         const groupModeSizes = {
             'pairs-random': 2,
             'pairs-neighbors': 2,
@@ -57,9 +57,11 @@ export const SeatingAutoPlace = {
             'groups-3': 3,
             'groups-4': 4
         };
+        const activityGroupSize = groupModeSizes[mode]
+            || (this._isActivityMode() && (mode === 'random' || mode === 'alpha-asc' || mode === 'alpha-desc') ? 1 : 0);
 
-        if (groupModeSizes[mode]) {
-            const groupSize = groupModeSizes[mode];
+        if (activityGroupSize > 0) {
+            const groupSize = activityGroupSize;
             let studentsToGroup = [];
 
             if (unplaced.length > 0) {
@@ -79,6 +81,10 @@ export const SeatingAutoPlace = {
                     UI.showNotification('Tous les postes occupés sont épinglés.', 'info');
                     return;
                 }
+                if (studentsToGroup.length < 2 && mode === 'random') {
+                    UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
+                    return;
+                }
             } else {
                 return;
             }
@@ -96,7 +102,7 @@ export const SeatingAutoPlace = {
                 }
             }
 
-            // Auto-dimensionnement intelligent de la grille Activité pour accueillir 100% des groupes sans effort
+            // Auto-dimensionnement intelligent de la grille Activité pour accueillir 100% des groupes/postes sans effort
             const neededFreeStations = Math.ceil(studentsToGroup.length / groupSize);
             let specialOrPinnedOrOccupiedCount = 0;
             let currentFreeSpots = 0;
@@ -115,14 +121,19 @@ export const SeatingAutoPlace = {
             if (specialOrPinnedOrOccupiedCount === 0) {
                 targetCols = neededFreeStations <= 4
                     ? Math.max(2, neededFreeStations)
-                    : (neededFreeStations <= 9 ? 3 : 4);
+                    : (neededFreeStations <= 9
+                        ? 3
+                        : (neededFreeStations <= 16 ? 4 : (neededFreeStations <= 25 ? 5 : 6)));
                 targetRows = Math.min(10, Math.max(2, Math.ceil(neededFreeStations / targetCols)));
                 if (targetRows * targetCols < neededFreeStations) {
                     targetCols = Math.min(10, Math.ceil(neededFreeStations / targetRows));
                 }
             } else if (currentFreeSpots < neededFreeStations) {
                 const totalNeededCells = specialOrPinnedOrOccupiedCount + neededFreeStations;
-                targetRows = Math.min(10, Math.max(rows, Math.ceil(totalNeededCells / cols)));
+                if (totalNeededCells > 16 && targetCols < 5) {
+                    targetCols = totalNeededCells <= 25 ? 5 : 6;
+                }
+                targetRows = Math.min(10, Math.max(rows, Math.ceil(totalNeededCells / targetCols)));
                 if (targetRows * targetCols < totalNeededCells) {
                     targetCols = Math.min(10, Math.max(cols, Math.ceil(totalNeededCells / targetRows)));
                 }
@@ -168,8 +179,10 @@ export const SeatingAutoPlace = {
             }
 
             const ordered = [...studentsToGroup];
-            if (mode === 'pairs-alpha') {
+            if (mode === 'pairs-alpha' || mode === 'alpha-asc') {
                 ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
+            } else if (mode === 'alpha-desc') {
+                ordered.sort((a, b) => `${b.nom} ${b.prenom}`.localeCompare(`${a.nom} ${a.prenom}`, 'fr', { sensitivity: 'base' }));
             } else if (mode === 'pairs-neighbors') {
                 ordered.sort((a, b) => {
                     const posA = resultsMap.get(a.id)?.seatingPosition || a.seatingPosition;
@@ -604,6 +617,7 @@ export const SeatingAutoPlace = {
                 this._updateSidebarLockState();
                 this._updateUndoRedoButtons();
                 this._saveGridConfig();
+                this._applySmartFit(true);
                 this._staggerCellEntrance();
                 this._maybeShowOnboardingHint();
             }, animDuration);
