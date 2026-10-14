@@ -147,6 +147,10 @@ describe('StorageManager', () => {
         const { App } = await import('./AppManager.js');
         StorageManager.init(UI, App);
 
+        runtimeState.data.generatedResults = [];
+        runtimeState.data.filteredResults = [];
+        runtimeState._dataPurgeDetected = false;
+        userSettings.academic.classes = [];
         vi.clearAllMocks();
     });
 

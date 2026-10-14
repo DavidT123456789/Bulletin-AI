@@ -54,6 +54,7 @@ export const SeatingChartManager = {
     _activeMobileSheet: null,
     _activeSearchTerm: '',
     _searchMatchIndex: 0,
+    _onboardingStep: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -141,16 +142,46 @@ export const SeatingChartManager = {
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
+                                        <div class="sc-config-presets-section" id="scConfigPresetsSection">
+                                            <div class="sc-config-section-label">Disposition de la salle</div>
+                                            <div class="sc-config-preset-pills" role="group" aria-label="Modèles de salle">
+                                                <button type="button" class="sc-config-preset-pill" data-preset="double-aisles" data-tooltip="3 colonnes doubles (2 allées)">
+                                                    <span class="sc-mini-diagram is-double" aria-hidden="true"><i></i><i></i><em class="aisle"></em><i></i><i></i><em class="aisle"></em><i></i><i></i></span>
+                                                    <span>2 allées</span>
+                                                </button>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="center-aisle" data-tooltip="2 blocs de 3 tables (1 allée centrale)">
+                                                    <span class="sc-mini-diagram is-center" aria-hidden="true"><i></i><i></i><i></i><em class="aisle"></em><i></i><i></i><i></i></span>
+                                                    <span>1 allée</span>
+                                                </button>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="compact" data-tooltip="Grille continue sans allée">
+                                                    <span class="sc-mini-diagram is-compact" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                                    <span>Sans allée</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <div class="sc-config-row">
                                             <label class="sc-config-label" for="scColsSlider">Colonnes</label>
+                                            <button type="button" class="sc-config-step-btn" data-dim="cols" data-delta="-1" aria-label="Moins de colonnes">
+                                                <iconify-icon icon="ph:minus-bold"></iconify-icon>
+                                            </button>
                                             <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
+                                            <button type="button" class="sc-config-step-btn" data-dim="cols" data-delta="1" aria-label="Plus de colonnes">
+                                                <iconify-icon icon="ph:plus-bold"></iconify-icon>
+                                            </button>
                                             <span class="sc-config-value" id="scColsValue">${DEFAULT_COLS}</span>
                                         </div>
                                         <div class="sc-config-row">
                                             <label class="sc-config-label" for="scRowsSlider">Rangées</label>
+                                            <button type="button" class="sc-config-step-btn" data-dim="rows" data-delta="-1" aria-label="Moins de rangées">
+                                                <iconify-icon icon="ph:minus-bold"></iconify-icon>
+                                            </button>
                                             <input type="range" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
+                                            <button type="button" class="sc-config-step-btn" data-dim="rows" data-delta="1" aria-label="Plus de rangées">
+                                                <iconify-icon icon="ph:plus-bold"></iconify-icon>
+                                            </button>
                                             <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
                                         </div>
+                                        <div class="sc-config-capacity" id="scConfigCapacity"></div>
                                     </div>
                                 </div>
                                 <button class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
@@ -452,6 +483,20 @@ export const SeatingChartManager = {
             this._toggleConfigPopover();
         });
 
+        document.getElementById('scConfigPopover')?.addEventListener('click', (e) => {
+            const presetBtn = e.target.closest('.sc-config-preset-pill');
+            if (presetBtn && presetBtn.dataset.preset) {
+                e.stopPropagation();
+                this._applyRoomPreset(presetBtn.dataset.preset);
+                return;
+            }
+            const stepBtn = e.target.closest('.sc-config-step-btn');
+            if (stepBtn && stepBtn.dataset.dim && stepBtn.dataset.delta) {
+                e.stopPropagation();
+                this._stepGridDimension(stepBtn.dataset.dim, parseInt(stepBtn.dataset.delta, 10));
+            }
+        });
+
         let isSliding = false;
         const startSlide = () => {
             if (!isSliding) {
@@ -470,6 +515,7 @@ export const SeatingChartManager = {
         colsSlider?.addEventListener('input', (e) => {
             const valEl = document.getElementById('scColsValue');
             if (valEl) valEl.textContent = e.target.value;
+            this._syncConfigPopoverUI();
         });
         colsSlider?.addEventListener('change', () => {
             isSliding = false;
@@ -486,6 +532,7 @@ export const SeatingChartManager = {
         rowsSlider?.addEventListener('input', (e) => {
             const valEl = document.getElementById('scRowsValue');
             if (valEl) valEl.textContent = e.target.value;
+            this._syncConfigPopoverUI();
         });
         rowsSlider?.addEventListener('change', () => {
             isSliding = false;
@@ -752,6 +799,7 @@ export const SeatingChartManager = {
         this._closePlacementPopover();
         const popover = document.getElementById('scConfigPopover');
         if (!popover) return;
+        this._syncConfigPopoverUI();
         popover.classList.add('open');
         document.getElementById('scConfigBtn')?.classList.add('active');
         this._configPopoverOpen = true;
@@ -1492,6 +1540,7 @@ export const SeatingChartManager = {
 
         // Remove any existing onboarding hint so the new mode can render its own contextual hint
         document.querySelector('.sc-onboarding-hint')?.remove();
+        this._onboardingStep = null;
 
         this._planMode = mode;
         this._prevPlacedCount = 0;
@@ -1604,6 +1653,7 @@ export const SeatingChartManager = {
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
                 this._isActive = false;
+                this._onboardingStep = null;
                 this._clearSelection();
                 this._closeSearch();
                 if (wasActive) {
@@ -1637,6 +1687,8 @@ export const SeatingChartManager = {
                 viewEl.style.display = '';
                 if (fab) fab.style.display = 'none';
                 this._isActive = true;
+                this._onboardingStep = null;
+                document.querySelector('.sc-onboarding-hint')?.remove();
                 if (this._planMode === 'activity' && !this._hasClassActivityPlan()) {
                     this._planMode = 'course';
                 } else if (this._planMode === 'course' && !this._hasClassCoursePlan() && this._hasClassActivityPlan()) {
@@ -1712,6 +1764,8 @@ export const SeatingChartManager = {
             this._planMode = 'activity';
         }
 
+        this._onboardingStep = null;
+        document.querySelector('.sc-onboarding-hint')?.remove();
         this._prevPlacedCount = 0;
         this._students = this._getCurrentClassStudents();
         this._loadGridConfig();
@@ -2482,12 +2536,299 @@ export const SeatingChartManager = {
     // GRID CONFIGURATION
     // ========================================================================
 
+    _getMaxClassStudentCount() {
+        let maxCount = (this._students || []).filter(s => !this._isStudentDeparted(s)).length;
+        const classes = appState.classes || [];
+        for (const cls of classes) {
+            if (!cls || cls.isVirtual || ClassManager.isVirtualClass(cls.id)) continue;
+            const results = ClassManager.getStudentsForClass(cls.id);
+            const activeCount = results.filter(r => !this._isStudentDeparted(r)).length;
+            if (activeCount > maxCount) {
+                maxCount = activeCount;
+            }
+        }
+        return maxCount;
+    },
+
     _getDefaultRows(mode = this._planMode) {
-        return mode === 'activity' ? DEFAULT_ACTIVITY_ROWS : DEFAULT_ROWS;
+        if (mode === 'activity') return DEFAULT_ACTIVITY_ROWS;
+        const maxStudents = this._getMaxClassStudentCount();
+        if (maxStudents > DEFAULT_ROWS * DEFAULT_COLS) {
+            return Math.min(10, Math.ceil(maxStudents / DEFAULT_COLS));
+        }
+        return DEFAULT_ROWS;
     },
 
     _getDefaultCols(mode = this._planMode) {
         return mode === 'activity' ? DEFAULT_ACTIVITY_COLS : DEFAULT_COLS;
+    },
+
+    _isRoomConfigured(mode = this._planMode) {
+        if (mode === 'activity') return true;
+        const grid = appState.seatingGrid;
+        if (grid && typeof grid === 'object') return true;
+        const classes = appState.classes || [];
+        return classes.some(c => this._hasClassCoursePlan(c));
+    },
+
+    _getRoomCapacityInfo() {
+        const rows = this._getRows();
+        const cols = this._getCols();
+        let specialCount = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (this._isSpecialSpot(r, c)) specialCount++;
+            }
+        }
+        const totalSeats = Math.max(0, (rows * cols) - specialCount);
+        const activeClassStudents = (this._students || []).filter(s => !this._isStudentDeparted(s)).length;
+        const maxClassStudents = this._getMaxClassStudentCount();
+        return {
+            rows,
+            cols,
+            totalSeats,
+            activeClassStudents,
+            maxClassStudents,
+            isShortForCurrent: activeClassStudents > 0 && totalSeats < activeClassStudents,
+            isShortForMax: maxClassStudents > 0 && totalSeats < maxClassStudents
+        };
+    },
+
+    _getCapacityBadgeInnerHTML(capInfo = this._getRoomCapacityInfo()) {
+        const { totalSeats, activeClassStudents, maxClassStudents, isShortForCurrent, isShortForMax } = capInfo;
+        const unitLabel = this._isActivityMode() ? 'poste' : 'place';
+        const seatsLabel = `${totalSeats} ${unitLabel}${totalSeats > 1 ? 's' : ''}`;
+
+        if (isShortForCurrent) {
+            return `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Insuffisant (${activeClassStudents} élèves)</span>`;
+        }
+        if (isShortForMax) {
+            return `<iconify-icon icon="solar:info-circle-linear"></iconify-icon><span><strong>${seatsLabel}</strong> · Classe max à ${maxClassStudents} élèves</span>`;
+        }
+        if (maxClassStudents > activeClassStudents && maxClassStudents > 0) {
+            return `<iconify-icon icon="solar:check-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Calibré (max ${maxClassStudents} élèves)</span>`;
+        }
+        if (activeClassStudents > 0) {
+            return `<iconify-icon icon="solar:check-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> pour ${activeClassStudents} élève${activeClassStudents > 1 ? 's' : ''}</span>`;
+        }
+        return `<iconify-icon icon="solar:chair-linear"></iconify-icon><span><strong>${seatsLabel}</strong> disponibles</span>`;
+    },
+
+    _detectCurrentRoomPreset() {
+        const gridKey = this._getActiveGridKey();
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const specialLayout = appState[gridKey]?.specialLayout || {};
+
+        const aisleCols = [];
+        for (let c = 0; c < cols; c++) {
+            let aisleCountInCol = 0;
+            for (let r = 0; r < rows; r++) {
+                if (specialLayout[`${r},${c}`] === 'aisle') aisleCountInCol++;
+            }
+            if (rows > 0 && aisleCountInCol === rows) {
+                aisleCols.push(c);
+            } else if (aisleCountInCol > 0) {
+                return 'custom';
+            }
+        }
+
+        if (aisleCols.length === 0) {
+            return 'compact';
+        }
+        if (cols === 7 && aisleCols.length === 1 && aisleCols[0] === 3) {
+            return 'center-aisle';
+        }
+        if (cols === 8 && aisleCols.length === 2 && aisleCols[0] === 2 && aisleCols[1] === 5) {
+            return 'double-aisles';
+        }
+        return 'custom';
+    },
+
+    _syncConfigPopoverUI() {
+        const popover = document.getElementById('scConfigPopover');
+        if (!popover) return;
+
+        const isActivity = this._isActivityMode();
+        const presetsSection = document.getElementById('scConfigPresetsSection');
+        if (presetsSection) {
+            presetsSection.style.display = isActivity ? 'none' : '';
+        }
+
+        const activePreset = isActivity ? 'custom' : this._detectCurrentRoomPreset();
+        popover.querySelectorAll('.sc-config-preset-pill').forEach(pill => {
+            const isActive = pill.dataset.preset === activePreset;
+            pill.classList.toggle('active', isActive);
+            pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        const cols = this._getCols();
+        const rows = this._getRows();
+        popover.querySelectorAll('.sc-config-step-btn').forEach(btn => {
+            const dim = btn.dataset.dim;
+            const delta = parseInt(btn.dataset.delta, 10);
+            const val = dim === 'cols' ? cols : rows;
+            btn.disabled = (delta < 0 && val <= 2) || (delta > 0 && val >= 10);
+        });
+
+        const capEl = document.getElementById('scConfigCapacity');
+        if (capEl) {
+            const capInfo = this._getRoomCapacityInfo();
+            capEl.className = `sc-config-capacity ${capInfo.isShortForCurrent || capInfo.isShortForMax ? 'is-warning' : 'is-ok'}`;
+            capEl.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
+        }
+    },
+
+    _stepGridDimension(dim, delta) {
+        if (this._isLocked) return;
+        const isCols = dim === 'cols';
+        const slider = document.getElementById(isCols ? 'scColsSlider' : 'scRowsSlider');
+        const valEl = document.getElementById(isCols ? 'scColsValue' : 'scRowsValue');
+        const current = isCols ? this._getCols() : this._getRows();
+        const next = Math.max(2, Math.min(10, current + delta));
+        if (next === current) return;
+
+        this._snapshotGrid();
+        if (slider) {
+            slider.value = String(next);
+        } else {
+            const gridKey = this._getActiveGridKey();
+            if (!appState[gridKey]) {
+                appState[gridKey] = {
+                    rows: this._getRows(),
+                    cols: this._getCols(),
+                    locked: this._isLocked,
+                    specialLayout: {}
+                };
+            }
+            if (isCols) appState[gridKey].cols = next;
+            else appState[gridKey].rows = next;
+        }
+        if (valEl) valEl.textContent = String(next);
+        this._onGridConfigChange();
+        this._haptic(10);
+    },
+
+    _applyRoomPreset(presetId) {
+        if (this._isLocked) return;
+        const presetConfigs = {
+            'compact': { cols: 6, aisles: [] },
+            'center-aisle': { cols: 7, aisles: [3] },
+            'double-aisles': { cols: 8, aisles: [2, 5] }
+        };
+        const preset = presetConfigs[presetId];
+        if (!preset) return;
+
+        this._snapshotGrid();
+
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const lockKey = this._getActiveClassLockKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
+
+        const oldRows = this._gridState?.length || this._getRows();
+        const oldCols = this._gridState?.[0]?.length || this._getCols();
+        const minRowsForMaxClass = Math.min(10, Math.max(DEFAULT_ROWS, Math.ceil(this._getMaxClassStudentCount() / 6)));
+        const targetRows = Math.max(oldRows, !appState[gridKey] ? minRowsForMaxClass : oldRows);
+        const targetCols = preset.cols;
+        const aisleCols = preset.aisles;
+
+        const oldSpecial = appState[gridKey]?.specialLayout || {};
+        const oldAisleCols = [];
+        for (let c = 0; c < oldCols; c++) {
+            let aisleRows = 0;
+            for (let r = 0; r < oldRows; r++) {
+                if (oldSpecial[`${r},${c}`] === 'aisle') aisleRows++;
+            }
+            if (oldRows > 0 && aisleRows >= Math.ceil(oldRows / 2)) {
+                oldAisleCols.push(c);
+            }
+        }
+
+        const oldDeskCols = [];
+        for (let c = 0; c < oldCols; c++) {
+            if (!oldAisleCols.includes(c)) oldDeskCols.push(c);
+        }
+        const newDeskCols = [];
+        for (let c = 0; c < targetCols; c++) {
+            if (!aisleCols.includes(c)) newDeskCols.push(c);
+        }
+
+        const colMap = new Map();
+        const mapLen = Math.min(oldDeskCols.length, newDeskCols.length);
+        for (let i = 0; i < mapLen; i++) {
+            colMap.set(oldDeskCols[i], newDeskCols[i]);
+        }
+
+        const newSpecialLayout = {};
+        for (const [key, type] of Object.entries(oldSpecial)) {
+            if (type === 'aisle') continue;
+            const [r, c] = key.split(',').map(Number);
+            const mappedC = colMap.has(c) ? colMap.get(c) : c;
+            if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !aisleCols.includes(mappedC)) {
+                newSpecialLayout[`${r},${mappedC}`] = type;
+            }
+        }
+        for (let r = 0; r < targetRows; r++) {
+            for (const c of aisleCols) {
+                newSpecialLayout[`${r},${c}`] = 'aisle';
+            }
+        }
+
+        const currentClass = this._getCurrentClass();
+        if (currentClass?.[classSpecialKey]) {
+            const nextClassSpecial = {};
+            for (const [key, type] of Object.entries(currentClass[classSpecialKey])) {
+                const [r, c] = key.split(',').map(Number);
+                const mappedC = colMap.has(c) ? colMap.get(c) : c;
+                if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !aisleCols.includes(mappedC)) {
+                    nextClassSpecial[`${r},${mappedC}`] = type;
+                }
+            }
+            currentClass[classSpecialKey] = nextClassSpecial;
+        }
+
+        const newGrid = Array.from({ length: targetRows }, () => Array(targetCols).fill(null));
+        for (let r = 0; r < Math.min(oldRows, targetRows); r++) {
+            for (let c = 0; c < oldCols; c++) {
+                const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.length === 0) continue;
+                const mappedC = colMap.has(c) ? colMap.get(c) : (!aisleCols.includes(c) && c < targetCols ? c : -1);
+                if (mappedC >= 0 && mappedC < targetCols && !newSpecialLayout[`${r},${mappedC}`] && !currentClass?.[classSpecialKey]?.[`${r},${mappedC}`]) {
+                    newGrid[r][mappedC] = cellIds.length === 1 ? cellIds[0] : [...cellIds];
+                }
+            }
+        }
+        this._gridState = newGrid;
+
+        const rowSlider = document.getElementById('scRowsSlider');
+        const colSlider = document.getElementById('scColsSlider');
+        const rowValEl = document.getElementById('scRowsValue');
+        const colValEl = document.getElementById('scColsValue');
+        if (rowSlider) rowSlider.value = String(targetRows);
+        if (rowValEl) rowValEl.textContent = String(targetRows);
+        if (colSlider) colSlider.value = String(targetCols);
+        if (colValEl) colValEl.textContent = String(targetCols);
+
+        appState[gridKey] = {
+            rows: targetRows,
+            cols: targetCols,
+            locked: this._isLocked,
+            specialLayout: newSpecialLayout
+        };
+
+        this._hasChangesSinceUnlock = true;
+        if (currentClass) {
+            currentClass[lockKey] = false;
+            currentClass[updatedKey] = Date.now();
+        }
+
+        this._savePositionsToState(true);
+        this._saveGridConfig();
+        this._render();
+        this._applySmartFit(true);
+        this._staggerCellEntrance();
+        this._haptic(12);
     },
 
     _getRows() {
@@ -2602,11 +2943,23 @@ export const SeatingChartManager = {
         // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
         if (rowOffset !== 0) {
             if (appState[gridKey]?.specialLayout) {
+                const oldSpecial = appState[gridKey].specialLayout;
                 const newSpecialLayout = {};
-                for (const [key, type] of Object.entries(appState[gridKey].specialLayout)) {
+                for (const [key, type] of Object.entries(oldSpecial)) {
                     const [r, c] = key.split(',').map(Number);
                     const newR = r + rowOffset;
                     newSpecialLayout[`${newR},${c}`] = type;
+                }
+                if (rowOffset > 0) {
+                    for (let c = 0; c < newCols; c++) {
+                        if (oldSpecial[`0,${c}`] === 'aisle') {
+                            for (let r = 0; r < rowOffset; r++) {
+                                if (!newSpecialLayout[`${r},${c}`]) {
+                                    newSpecialLayout[`${r},${c}`] = 'aisle';
+                                }
+                            }
+                        }
+                    }
                 }
                 appState[gridKey].specialLayout = newSpecialLayout;
             }
@@ -3082,6 +3435,7 @@ export const SeatingChartManager = {
         this._updateSidebarLockState();
         this._updateUndoRedoButtons();
         this._updateQuickGroupButton();
+        this._syncConfigPopoverUI();
         TooltipsUI.initTooltips(document.getElementById('seatingChartView'));
 
         if (this._activeSearchTerm) {
