@@ -147,19 +147,25 @@ export const SeatingChartManager = {
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
                                         <div class="sc-config-presets-section" id="scConfigPresetsSection">
-                                            <div class="sc-config-section-label">Disposition de la salle</div>
+                                            <div class="sc-config-section-title">Disposition de la salle</div>
                                             <div class="sc-config-preset-pills" role="group" aria-label="Modèles de salle">
-                                                <button type="button" class="sc-config-preset-pill" data-preset="double-aisles" data-tooltip="3 colonnes doubles (2 allées)">
-                                                    <span class="sc-mini-diagram is-double" aria-hidden="true"><i></i><i></i><em class="aisle"></em><i></i><i></i><em class="aisle"></em><i></i><i></i></span>
-                                                    <span>2 allées</span>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="compact" data-tooltip="Grille continue sans allée">
+                                                    <span class="sc-mini-diagram is-compact" aria-hidden="true">
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                                    </span>
+                                                    <span>Sans allée</span>
                                                 </button>
-                                                <button type="button" class="sc-config-preset-pill" data-preset="center-aisle" data-tooltip="2 blocs de 3 tables (1 allée centrale)">
-                                                    <span class="sc-mini-diagram is-center" aria-hidden="true"><i></i><i></i><i></i><em class="aisle"></em><i></i><i></i><i></i></span>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="center-aisle" data-tooltip="2 îlots de 3 tables (1 allée centrale)">
+                                                    <span class="sc-mini-diagram is-center-aisle" aria-hidden="true">
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                                                    </span>
                                                     <span>1 allée</span>
                                                 </button>
-                                                <button type="button" class="sc-config-preset-pill" data-preset="compact" data-tooltip="Grille continue sans allée">
-                                                    <span class="sc-mini-diagram is-compact" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                                                    <span>Sans allée</span>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="double-aisles" data-tooltip="3 rangées doubles (2 allées)">
+                                                    <span class="sc-mini-diagram is-double-aisles" aria-hidden="true">
+                                                        <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                                                    </span>
+                                                    <span>2 allées</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -2569,13 +2575,13 @@ export const SeatingChartManager = {
 
     _isRoomConfigured(mode = this._planMode) {
         if (mode === 'activity') return true;
-        const classes = appState.classes || [];
-        if (classes.some(c => this._hasClassCoursePlan(c))) return true;
         const grid = appState.seatingGrid;
-        if (!grid || typeof grid !== 'object') return false;
-        if (grid.roomConfigured) return true;
-        if (grid.specialLayout && Object.keys(grid.specialLayout).length > 0) return true;
-        return false;
+        if (grid && typeof grid === 'object') {
+            if (grid.roomConfigured) return true;
+            if (grid.specialLayout && Object.keys(grid.specialLayout).length > 0) return true;
+        }
+        const results = appState.results || [];
+        return results.some(r => r?.seatingPosition?.row != null && r?.seatingPosition?.col != null);
     },
 
     _getRoomCapacityInfo() {
@@ -2610,7 +2616,7 @@ export const SeatingChartManager = {
             return `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Insuffisant (${activeClassStudents} élèves)</span>`;
         }
         if (isShortForMax) {
-            return `<iconify-icon icon="solar:info-circle-linear"></iconify-icon><span><strong>${seatsLabel}</strong> · Classe max à ${maxClassStudents} élèves</span>`;
+            return `<iconify-icon icon="solar:info-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Classe max à ${maxClassStudents} élèves</span>`;
         }
         if (maxClassStudents > activeClassStudents && maxClassStudents > 0) {
             return `<iconify-icon icon="solar:check-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Calibré (max ${maxClassStudents} élèves)</span>`;
@@ -3878,7 +3884,9 @@ export const SeatingChartManager = {
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
                     ? `<div class="sc-empty-text"><strong>Bravo&nbsp;!</strong><br>Tous les élèves sont placés&nbsp;!</div>
-                       <iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>`
+                       <div class="sc-empty-success-badge">
+                           <iconify-icon icon="ph:check-bold" class="sc-empty-success-icon"></iconify-icon>
+                       </div>`
                     : 'Aucun résultat'}
                </div>`
             : filtered.map((s, index) => `
@@ -5073,24 +5081,95 @@ export const SeatingChartManager = {
         return this._onboardingStep;
     },
 
+    _transitionOnboardingStep(hint, nextStep) {
+        if (!hint) return;
+        const startW = hint.offsetWidth;
+        const startH = hint.offsetHeight;
+
+        hint.dataset.step = nextStep;
+        this._renderOnboardingHintContent(hint, nextStep);
+
+        const endW = hint.offsetWidth;
+        const endH = hint.offsetHeight;
+
+        if (typeof hint.animate === 'function' && startW > 0 && startH > 0 && (startW !== endW || startH !== endH)) {
+            hint.style.overflow = 'hidden';
+            const anim = hint.animate([
+                { width: `${startW}px`, height: `${startH}px` },
+                { width: `${endW}px`, height: `${endH}px` }
+            ], {
+                duration: 240,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
+            });
+            const cleanup = () => {
+                hint.style.overflow = '';
+            };
+            anim.onfinish = cleanup;
+            anim.oncancel = cleanup;
+        }
+    },
+
     _confirmRoomSetup() {
         const gridKey = this._getActiveGridKey();
-        if (!appState[gridKey]) {
-            appState[gridKey] = {
-                rows: this._getRows(),
-                cols: this._getCols(),
-                locked: this._isLocked,
-                specialLayout: {}
-            };
-        }
+        appState[gridKey] = {
+            rows: this._getRows(),
+            cols: this._getCols(),
+            locked: this._isLocked,
+            roomConfigured: true,
+            specialLayout: appState[gridKey]?.specialLayout || {}
+        };
         document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
         StorageManager.saveAppState();
 
+        this._roomSetupFromPlacement = false;
+        this._roomSetupSnapshot = null;
         this._onboardingStep = 'placement';
         const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
         if (hint) {
-            hint.dataset.step = 'placement';
-            this._renderOnboardingHintContent(hint, 'placement');
+            this._transitionOnboardingStep(hint, 'placement');
+        }
+    },
+
+    _cancelRoomSetup() {
+        const snap = this._roomSetupSnapshot;
+        const gridKey = this._getActiveGridKey();
+        let hasGridChanged = false;
+
+        if (snap) {
+            const currentSpecialJson = JSON.stringify(appState[gridKey]?.specialLayout || {});
+            const snapSpecialJson = JSON.stringify(snap.gridClone?.specialLayout || {});
+            hasGridChanged = this._getRows() !== snap.rows
+                || this._getCols() !== snap.cols
+                || currentSpecialJson !== snapSpecialJson;
+
+            appState[gridKey] = snap.gridClone ? JSON.parse(JSON.stringify(snap.gridClone)) : null;
+            if (hasGridChanged) {
+                const rowSlider = document.getElementById('scRowsSlider');
+                const colSlider = document.getElementById('scColsSlider');
+                const rowValEl = document.getElementById('scRowsValue');
+                const colValEl = document.getElementById('scColsValue');
+                if (rowSlider) rowSlider.value = String(snap.rows);
+                if (rowValEl) rowValEl.textContent = String(snap.rows);
+                if (colSlider) colSlider.value = String(snap.cols);
+                if (colValEl) colValEl.textContent = String(snap.cols);
+                this._initGrid(snap.rows, snap.cols);
+                this._loadPositionsFromState();
+                StorageManager.saveAppState();
+            }
+        }
+
+        this._roomSetupFromPlacement = false;
+        this._roomSetupSnapshot = null;
+        this._onboardingStep = 'placement';
+
+        if (hasGridChanged) {
+            this._render();
+            this._applySmartFit(true);
+        } else {
+            const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            if (hint) {
+                this._transitionOnboardingStep(hint, 'placement');
+            }
         }
     },
 
@@ -5108,8 +5187,7 @@ export const SeatingChartManager = {
                 this._syncOnboardingHintUI(hint);
                 return;
             }
-            hint.dataset.step = step;
-            this._renderOnboardingHintContent(hint, step);
+            this._transitionOnboardingStep(hint, step);
             return;
         }
 
@@ -5158,35 +5236,45 @@ export const SeatingChartManager = {
             const activePreset = this._detectCurrentRoomPreset();
             const capInfo = this._getRoomCapacityInfo();
             const isWarning = capInfo.isShortForCurrent || capInfo.isShortForMax;
+            const isEditMode = Boolean(this._roomSetupFromPlacement);
 
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
-                    <span class="sc-hint-step-badge">Étape 1 / 2 · Configuration unique</span>
-                    <div class="sc-hint-title">Configurez votre salle de cours</div>
+                    ${isEditMode ? '' : '<span class="sc-hint-step-badge">Étape 1 / 2 · Configuration unique</span>'}
+                    <div class="sc-hint-title">${isEditMode ? 'Régler la salle de cours' : 'Configurez votre salle de cours'}</div>
                     <div class="sc-hint-subtitle">Ce plan de salle s'appliquera à toutes vos classes (modifiable à tout moment).</div>
                 </div>
 
                 <div class="sc-room-preset-grid" role="radiogroup" aria-label="Disposition des tables">
                     <button type="button" class="sc-room-preset-card ${activePreset === 'compact' ? 'active' : ''}" data-room-preset="compact" role="radio" aria-checked="${activePreset === 'compact'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-compact"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            <span class="sc-mini-diagram is-compact">
+                                <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                            </span>
                         </span>
                         <span class="sc-preset-card-title">Sans allée</span>
-                        <span class="sc-preset-card-sub">6 colonnes continues</span>
+                        <span class="sc-preset-card-sub">6 col. continues</span>
                     </button>
                     <button type="button" class="sc-room-preset-card ${activePreset === 'center-aisle' ? 'active' : ''}" data-room-preset="center-aisle" role="radio" aria-checked="${activePreset === 'center-aisle'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-center-aisle"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                            <span class="sc-mini-diagram is-center-aisle">
+                                <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                                <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                            </span>
                         </span>
-                        <span class="sc-preset-card-title">2 îlots</span>
-                        <span class="sc-preset-card-sub">1 allée centrale</span>
+                        <span class="sc-preset-card-title">1 allée centrale</span>
+                        <span class="sc-preset-card-sub">2 îlots de 3</span>
                     </button>
                     <button type="button" class="sc-room-preset-card ${activePreset === 'double-aisles' ? 'active' : ''}" data-room-preset="double-aisles" role="radio" aria-checked="${activePreset === 'double-aisles'}">
                         <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-double-aisles"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                            <span class="sc-mini-diagram is-double-aisles">
+                                <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                                <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                            </span>
                         </span>
-                        <span class="sc-preset-card-title">3 doubles</span>
-                        <span class="sc-preset-card-sub">2 allées</span>
+                        <span class="sc-preset-card-title">2 allées</span>
+                        <span class="sc-preset-card-sub">3 rangées doubles</span>
                     </button>
                 </div>
 
@@ -5216,10 +5304,22 @@ export const SeatingChartManager = {
                 </div>
 
                 <div class="sc-onboarding-actions">
-                    <button type="button" class="sc-onboarding-btn primary" id="scHintConfirmRoomBtn">
-                        <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
-                        <span>Valider ma salle et placer les élèves</span>
+                    <button type="button" class="sc-onboarding-btn secondary sc-onboarding-confirm-btn" id="scHintConfirmRoomBtn">
+                        <iconify-icon icon="${isEditMode ? 'solar:check-read-linear' : 'solar:arrow-right-linear'}"></iconify-icon>
+                        <span>${isEditMode ? 'Valider la salle' : 'Continuer vers le placement'}</span>
                     </button>
+                    <div class="sc-onboarding-footer-links">
+                        ${isEditMode ? `
+                            <button type="button" class="sc-onboarding-btn text-only" id="scHintCancelRoomBtn">
+                                <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+                                <span>Retour sans modifier</span>
+                            </button>
+                        ` : `
+                            <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
+                                <span>Passer et placer manuellement</span>
+                            </button>
+                        `}
+                    </div>
                 </div>
             `;
         } else {
@@ -5232,7 +5332,7 @@ export const SeatingChartManager = {
                 const extraRowsNeeded = Math.min(MAX_ROWS - rows, Math.max(1, Math.ceil(missingSeats / desksPerRow)));
                 capacityWarningHTML = `
                     <div class="sc-onboarding-capacity-alert">
-                        <span><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> ${capInfo.totalSeats} places pour ${capInfo.activeClassStudents} élèves</span>
+                        <span><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> ${capInfo.totalSeats} places pour ${capInfo.activeClassStudents} élèves</span>
                         <button type="button" class="sc-onboarding-adapt-btn" id="scHintAutoExpandRowsBtn" data-extra-rows="${extraRowsNeeded}">
                             Adapter (+${extraRowsNeeded} rangée${extraRowsNeeded > 1 ? 's' : ''})
                         </button>
@@ -5266,7 +5366,7 @@ export const SeatingChartManager = {
                         <span class="sc-onboarding-footer-dot" aria-hidden="true">·</span>
                         <button type="button" class="sc-onboarding-btn text-only" id="scHintEditRoomBtn">
                             <iconify-icon icon="solar:settings-minimalistic-linear"></iconify-icon>
-                            <span>Modifier la salle</span>
+                            <span>Régler la salle</span>
                         </button>
                     </div>
                 </div>
@@ -5303,11 +5403,22 @@ export const SeatingChartManager = {
             this._confirmRoomSetup();
         });
 
+        hint.querySelector('#scHintCancelRoomBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._cancelRoomSetup();
+        });
+
         hint.querySelector('#scHintEditRoomBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
+            const gridKey = this._getActiveGridKey();
+            this._roomSetupFromPlacement = true;
+            this._roomSetupSnapshot = {
+                rows: this._getRows(),
+                cols: this._getCols(),
+                gridClone: appState[gridKey] ? JSON.parse(JSON.stringify(appState[gridKey])) : null
+            };
             this._onboardingStep = 'room';
-            hint.dataset.step = 'room';
-            this._renderOnboardingHintContent(hint, 'room');
+            this._transitionOnboardingStep(hint, 'room');
         });
 
         hint.querySelector('#scHintAutoExpandRowsBtn')?.addEventListener('click', (e) => {

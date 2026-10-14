@@ -3132,6 +3132,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 rows: 4,
                 cols: 6,
                 locked: false,
+                roomConfigured: true,
                 specialLayout: {}
             };
             // Ouvrir la grande classe de 34 élèves
@@ -3151,8 +3152,30 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getRows()).toBe(6);
             expect(hint.querySelector('#scHintAutoExpandRowsBtn')).toBeNull();
         });
+
+        it('devrait permettre d\'annuler les modifications de salle (Retour sans modifier) lorsqu\'on ouvre le réglage depuis l\'étape 2', () => {
+            SeatingChartManager._confirmRoomSetup();
+            const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            expect(hint.dataset.step).toBe('placement');
+            expect(SeatingChartManager._getCols()).toBe(6);
+
+            // Cliquer sur "Régler la salle"
+            hint.querySelector('#scHintEditRoomBtn').click();
+            expect(hint.dataset.step).toBe('room');
+            expect(hint.querySelector('#scHintCancelRoomBtn')).not.toBeNull();
+
+            // Tester le modèle "2 allées" (8 colonnes) puis annuler
+            SeatingChartManager._applyRoomPreset('double-aisles');
+            expect(SeatingChartManager._getCols()).toBe(8);
+
+            hint.querySelector('#scHintCancelRoomBtn').click();
+            expect(hint.dataset.step).toBe('placement');
+            expect(SeatingChartManager._getCols()).toBe(6);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
+        });
     });
 });
+
 
 
 
