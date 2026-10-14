@@ -93,10 +93,36 @@ export const TooltipsUI = {
     },
 
     /**
-     * Initialise ou réinitialise tous les tooltips de la page.
-     * Détruit les instances existantes avant de créer les nouvelles.
+     * Initialise ou réinitialise les tooltips de la page ou d'un conteneur spécifique.
+     * - Sans argument : détruit et recrée toutes les instances de la page.
+     * - Avec `container` : nettoie uniquement les tooltips du conteneur (et les instances détachées)
+     *   puis initialise uniquement les éléments `[data-tooltip]` de ce conteneur.
+     * @param {HTMLElement|null} [container=null] - Conteneur optionnel pour limiter la portée DOM
      */
-    initTooltips() {
+    initTooltips(container = null) {
+        if (container && typeof container.querySelectorAll === 'function') {
+            this.cleanupTooltipsIn(container);
+
+            if (window.tippy) {
+                const commonConfig = getCommonTippyConfig();
+                const targets = Array.from(container.querySelectorAll('[data-tooltip]'));
+                if (typeof container.hasAttribute === 'function' && container.hasAttribute('data-tooltip')) {
+                    targets.unshift(container);
+                }
+                if (targets.length > 0) {
+                    const created = window.tippy(targets, {
+                        ...commonConfig,
+                        content(reference) {
+                            return reference.getAttribute('data-tooltip');
+                        }
+                    });
+                    const createdArr = Array.isArray(created) ? created : (created ? [created] : []);
+                    _tippyInstances.push(...createdArr);
+                }
+            }
+            return;
+        }
+
         // Détruire les instances existantes
         this.destroyTooltips();
 
@@ -158,10 +184,13 @@ export const TooltipsUI = {
      * @param {string} content - Le nouveau contenu du tooltip
      */
     updateTooltip(element, content) {
-        if (!element || !window.tippy) return;
+        if (!element) return;
 
         // Mettre à jour l'attribut data-tooltip
         element.dataset.tooltip = content;
+        element.setAttribute?.('data-tooltip', content);
+
+        if (!window.tippy) return;
 
         // Mettre à jour l'instance Tippy si elle existe
         if (element._tippy) {
@@ -179,25 +208,36 @@ export const TooltipsUI = {
     },
 
     /**
-     * Nettoie (détruit) les tooltips attachés aux éléments à l'intérieur d'un conteneur spécifique.
-     * Utile avant de remplacer le innerHTML d'un conteneur.
+     * Nettoie (détruit) les tooltips attachés aux éléments à l'intérieur d'un conteneur spécifique,
+     * ainsi que les instances orphelines détachées du DOM.
      * @param {HTMLElement} container - Le conteneur à nettoyer
      */
     cleanupTooltipsIn(container) {
-        if (!container) return;
+        if (!container || typeof container.querySelectorAll !== 'function') return;
 
-        // 1. Trouver les éléments avec propriété _tippy (instances directes)
-        const elementsWithTippy = container.querySelectorAll('*');
-        elementsWithTippy.forEach(el => {
-            if (el._tippy) {
-                // Retirer de la liste globale si présent
+        const destroyElementTippy = (el) => {
+            if (el && el._tippy) {
                 const idx = _tippyInstances.indexOf(el._tippy);
                 if (idx > -1) {
                     _tippyInstances.splice(idx, 1);
                 }
-                // Détruire l'instance
-                el._tippy.destroy();
+                el._tippy.destroy?.();
             }
-        });
+        };
+
+        destroyElementTippy(container);
+        container.querySelectorAll('[data-tooltip]').forEach(destroyElementTippy);
+
+        if (_tippyInstances && _tippyInstances.length > 0) {
+            _tippyInstances = _tippyInstances.filter(inst => {
+                if (!inst) return false;
+                const ref = inst.reference;
+                if (ref && (ref === container || container.contains?.(ref) || ref.isConnected === false)) {
+                    inst.destroy?.();
+                    return false;
+                }
+                return true;
+            });
+        }
     }
 };

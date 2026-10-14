@@ -1530,9 +1530,9 @@ export const UI = {
     // ====================================================================
 
     // _tippyInstances removed as it caused duplicates with TooltipsManager
-    initTooltips() {
+    initTooltips(container = null) {
         // Delegate to the specialized manager to avoid duplicates
-        TooltipsUI.initTooltips();
+        TooltipsUI.initTooltips(container);
     },
 
     /**

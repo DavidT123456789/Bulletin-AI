@@ -177,6 +177,33 @@ describe('StorageManager', () => {
             // Check IndexedDB (Big Data)
             expect(DBService.putAll).toHaveBeenCalledWith('generatedResults', [{ id: '1' }]);
         });
+
+        it('should skip IndexedDB putAll when only UI/navigation settings change without student data mutation', async () => {
+            const { runtimeState, userSettings } = await import('../state/State.js');
+            userSettings.ui.theme = 'dark';
+            runtimeState.data.generatedResults = [{ id: 'student_1', nom: 'Dupont' }];
+
+            await StorageManager.saveAppState();
+            expect(DBService.putAll).toHaveBeenCalledTimes(1);
+
+            DBService.putAll.mockClear();
+            localStorage.setItem.mockClear();
+
+            // Change only UI setting (theme / activeView)
+            userSettings.ui.theme = 'light';
+            userSettings.ui.activeView = 'plan';
+
+            await StorageManager.saveAppState();
+
+            // Settings must be persisted to localStorage, but IndexedDB must NOT be rewritten
+            expect(localStorage.setItem).toHaveBeenCalledWith('bulletin-assistant-state', expect.any(String));
+            expect(DBService.putAll).not.toHaveBeenCalled();
+
+            // Now mutate a student -> IndexedDB MUST be updated
+            runtimeState.data.generatedResults[0].nom = 'Durand';
+            await StorageManager.saveAppState();
+            expect(DBService.putAll).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('loadAppState', () => {
@@ -306,6 +333,31 @@ describe('StorageManager', () => {
             runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation = 'Travail exceptionnel';
             const changedHash = StorageManager.computeCurrentDataHash();
             expect(changedHash).not.toBe(initialHash);
+        });
+
+        it('should compute lightweight photo fingerprints and detect photo changes in computeCurrentDataHash', () => {
+            expect(StorageManager._getPhotoFingerprint(null)).toBeNull();
+            expect(StorageManager._getPhotoFingerprint(undefined)).toBeNull();
+            expect(StorageManager._getPhotoFingerprint({ source: 'manual' })).toEqual({
+                source: 'manual',
+                uploadedAt: null,
+                dataRef: null
+            });
+
+            const base64A = 'data:image/jpeg;base64,' + 'A'.repeat(5000) + 'END_A';
+            const base64B = 'data:image/jpeg;base64,' + 'B'.repeat(5000) + 'END_B';
+
+            runtimeState.data.generatedResults = [{
+                id: 'student_photo_1',
+                studentPhoto: { data: base64A, source: 'trombinoscope', uploadedAt: '2026-10-01T10:00:00Z' },
+                studentData: { nom: 'Dupont', periods: {} }
+            }];
+
+            const hashA = StorageManager.computeCurrentDataHash();
+            runtimeState.data.generatedResults[0].studentPhoto.data = base64B;
+            const hashB = StorageManager.computeCurrentDataHash();
+
+            expect(hashA).not.toBe(hashB);
         });
     });
 

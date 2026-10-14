@@ -116,6 +116,42 @@ describe('TooltipsManager', () => {
                 touch: ['hold', 500]
             }));
         });
+
+        it('should scope tooltip cleanup and initialization to a container when provided without destroying outside tooltips', () => {
+            const outsideEl = document.createElement('button');
+            outsideEl.setAttribute('data-tooltip', 'Header btn');
+            document.body.appendChild(outsideEl);
+
+            const scopedContainer = document.createElement('div');
+            const insideEl = document.createElement('button');
+            insideEl.setAttribute('data-tooltip', 'Cell pin');
+            scopedContainer.appendChild(insideEl);
+            document.body.appendChild(scopedContainer);
+
+            const outsideDestroy = vi.fn();
+            const insideDestroy = vi.fn();
+            const outsideInstance = { reference: outsideEl, destroy: outsideDestroy };
+            const insideInstance = { reference: insideEl, destroy: insideDestroy };
+            outsideEl._tippy = outsideInstance;
+            insideEl._tippy = insideInstance;
+
+            const mockTippy = vi.fn((target) => {
+                if (target === '[data-tooltip]') return [outsideInstance, insideInstance];
+                return [{ reference: insideEl, destroy: vi.fn() }];
+            });
+            window.tippy = mockTippy;
+
+            // Global init first
+            TooltipsUI.initTooltips();
+            expect(TooltipsUI.getInstanceCount()).toBe(2);
+
+            // Scoped re-init on scopedContainer
+            TooltipsUI.initTooltips(scopedContainer);
+
+            expect(insideDestroy).toHaveBeenCalled();
+            expect(outsideDestroy).not.toHaveBeenCalled();
+            expect(TooltipsUI.getInstanceCount()).toBe(2);
+        });
     });
 
     describe('destroyTooltips', () => {

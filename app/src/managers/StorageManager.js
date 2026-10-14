@@ -68,11 +68,15 @@ const UI_AND_NAV_KEYS = [
 export const StorageManager = {
     _savePromise: null,
     _lastSaveHash: null,
+    _lastResultsSaveHash: null,
     _lastDataHash: null,
     _isFirstLoadSave: false,
     init(ui, app) {
         UI = ui;
         App = app;
+        this._lastSaveHash = null;
+        this._lastResultsSaveHash = null;
+        this._lastDataHash = null;
         try {
             Promise.resolve(DBService.open?.()).catch(() => {});
         } catch (_) {}
@@ -655,6 +659,42 @@ export const StorageManager = {
         };
     },
 
+    /**
+     * Génère une empreinte légère d'une photo élève afin d'éviter de sérialiser
+     * plusieurs mégaoctets de chaînes base64 lors des calculs de hash.
+     * @private
+     * @param {Object|null|undefined} photo
+     * @returns {Object|null}
+     */
+    _getPhotoFingerprint(photo) {
+        if (!photo || typeof photo !== 'object') return photo ?? null;
+        const data = typeof photo.data === 'string' ? photo.data : '';
+        const mid = data.length >> 1;
+        return {
+            source: photo.source || null,
+            uploadedAt: photo.uploadedAt || null,
+            dataRef: data ? `${data.length}:${data.slice(0, 32)}:${data.slice(mid, mid + 32)}:${data.slice(-32)}` : null
+        };
+    },
+
+    /**
+     * Calcule un hash rapide de generatedResults pour détecter si une écriture IndexedDB est nécessaire.
+     * @private
+     * @param {Array<Object>} results
+     * @returns {string}
+     */
+    _computeResultsSaveHash(results) {
+        if (!Array.isArray(results) || results.length === 0) return 'empty';
+        const lightResults = results.map(r => {
+            if (!r?.studentPhoto?.data) return r;
+            return {
+                ...r,
+                studentPhoto: this._getPhotoFingerprint(r.studentPhoto)
+            };
+        });
+        return this._hashString(JSON.stringify(lightResults));
+    },
+
     computeCurrentDataHash() {
         const settings = this._buildSettingsSnapshot();
         const dataSettings = { ...settings };
@@ -678,7 +718,7 @@ export const StorageManager = {
             dataSettings.seatingActivityGrid = actGridRest;
         }
 
-        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified) et états UI éphémères
+        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified), états UI éphémères et base64 lourds
         const cleanResults = (runtimeState.data.generatedResults || []).map(r => {
             const clean = { ...r };
             delete clean._lastModified;
@@ -688,6 +728,9 @@ export const StorageManager = {
             delete clean.errorPeriod;
             delete clean.historyPerPeriod;
             delete clean.historyState;
+            if (clean.studentPhoto?.data) {
+                clean.studentPhoto = this._getPhotoFingerprint(clean.studentPhoto);
+            }
             if (clean.studentData?.periods) {
                 const cleanPeriods = {};
                 for (const [p, pData] of Object.entries(clean.studentData.periods)) {
@@ -745,20 +788,25 @@ export const StorageManager = {
     },
 
     async _doSaveAppState() {
-        const settings = this._buildSettingsSnapshot();
+        if (this._lastSaveHash === null) {
+            this._lastResultsSaveHash = null;
+        }
 
+        const settings = this._buildSettingsSnapshot();
         const lsData = { version: APP_VERSION, settings: settings };
         const stringifiedSettings = JSON.stringify(lsData);
-        // We also stringify generatedResults to detect real data changes safely
-        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
-        const currentHash = stringifiedSettings + stringifiedResults;
+        const resultsSaveHash = this._computeResultsSaveHash(runtimeState.data.generatedResults);
+        const currentHash = `${this._hashString(stringifiedSettings)}:${resultsSaveHash}`;
 
         // Optimization: prevent writing to disk if state hasn't changed at all
         if (this._lastSaveHash === currentHash) {
             this._isFirstLoadSave = false;
-            return; 
+            return;
         }
+
+        const resultsChanged = this._lastResultsSaveHash !== resultsSaveHash;
         this._lastSaveHash = currentHash;
+        this._lastResultsSaveHash = resultsSaveHash;
 
         // Use computeCurrentDataHash to check only structural/data settings changes
         const currentDataHash = this.computeCurrentDataHash();
@@ -790,7 +838,7 @@ export const StorageManager = {
 
         localStorage.setItem(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
 
-        if (!isFirstLoad && runtimeState.data.generatedResults) {
+        if (!isFirstLoad && resultsChanged && runtimeState.data.generatedResults) {
             await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
         }
 

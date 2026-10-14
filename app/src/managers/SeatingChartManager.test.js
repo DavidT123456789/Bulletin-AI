@@ -2925,10 +2925,34 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(pill.hasAttribute('data-tooltip')).toBe(false);
             });
         });
+
+        it('devrait mettre à jour la cellule épinglée sur place (_updateCellPinDOM) sans reconstruire la grille (_renderGrid)', () => {
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('alpha-asc');
+
+            const cell = document.querySelector('#scGridContainer .sc-cell.occupied');
+            expect(cell).not.toBeNull();
+            const resultId = cell.dataset.resultId;
+            const renderGridSpy = vi.spyOn(SeatingChartManager, '_renderGrid');
+
+            SeatingChartManager._togglePin(resultId);
+
+            expect(renderGridSpy).not.toHaveBeenCalled();
+            expect(cell.classList.contains('pinned')).toBe(true);
+            expect(cell.draggable).toBe(false);
+            expect(cell.querySelector('.sc-cell-pin')?.getAttribute('data-tooltip')).toBe('Détacher');
+            expect(cell.querySelector('.sc-cell-pin iconify-icon')?.getAttribute('icon')).toBe('solar:pin-bold');
+
+            SeatingChartManager._togglePin(resultId);
+
+            expect(renderGridSpy).not.toHaveBeenCalled();
+            expect(cell.classList.contains('pinned')).toBe(false);
+            expect(cell.draggable).toBe(true);
+            expect(cell.querySelector('.sc-cell-pin')?.getAttribute('data-tooltip')).toBe('Fixer');
+            expect(cell.querySelector('.sc-cell-pin iconify-icon')?.getAttribute('icon')).toBe('solar:pin-linear');
+            renderGridSpy.mockRestore();
+        });
     });
 });
-
-
-
-
 
