@@ -3062,6 +3062,71 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell.querySelector('.sc-cell-pin iconify-icon')?.getAttribute('icon')).toBe('solar:pin-linear');
             renderGridSpy.mockRestore();
         });
+
+        it('devrait permettre de glisser-déposer un élève depuis sa pilule de prénom (.sc-stacked-member) et synchroniser l\'écho visuel Photo ↔ Prénom au survol', () => {
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('pairs-alpha');
+
+            const cell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="0"]');
+            expect(cell).not.toBeNull();
+            const avatars = cell.querySelectorAll('.sc-stacked-avatar');
+            const members = cell.querySelectorAll('.sc-stacked-member');
+            expect(avatars.length).toBe(2);
+            expect(members.length).toBe(2);
+
+            // 1. Écho visuel au survol : survoler le prénom illumine l'avatar correspondant (et inversement)
+            members[1].dispatchEvent(new MouseEvent('mouseenter'));
+            expect(avatars[1].classList.contains('is-member-hovered')).toBe(true);
+            expect(members[1].classList.contains('is-member-hovered')).toBe(true);
+            expect(avatars[0].classList.contains('is-member-hovered')).toBe(false);
+
+            members[1].dispatchEvent(new MouseEvent('mouseleave'));
+            expect(avatars[1].classList.contains('is-member-hovered')).toBe(false);
+            expect(members[1].classList.contains('is-member-hovered')).toBe(false);
+
+            // 2. Glisser-déposer depuis la pilule de prénom extrait uniquement cet élève vers un poste vide
+            expect(members[1].draggable).toBe(true);
+            const dragStartEvent = new Event('dragstart', { bubbles: true, cancelable: true });
+            dragStartEvent.dataTransfer = { setData: vi.fn(), setDragImage: vi.fn(), effectAllowed: '' };
+            members[1].dispatchEvent(dragStartEvent);
+
+            expect(SeatingChartManager._dragSource).toEqual({
+                type: 'group-member',
+                resultId: 'u2',
+                row: 0,
+                col: 0
+            });
+
+            // Déposer sur le poste libre (1, 0)
+            SeatingChartManager._handleDrop(1, 0);
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1']);
+            expect(SeatingChartManager._getCellStudentIds(1, 0)).toEqual(['u2']);
+        });
+
+        it('devrait afficher data-tooltip sur .sc-cell-name d\'une table individuelle en mode Édition et sur la cellule entière en mode Consultation', () => {
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('alpha-asc');
+
+            const cell = document.querySelector('#scGridContainer .sc-cell.occupied');
+            expect(cell).not.toBeNull();
+            const nameEl = cell.querySelector('.sc-cell-name');
+
+            // Mode Édition : tooltip sur .sc-cell-name sans doublon sur la cellule
+            expect(cell.getAttribute('data-tooltip')).toBeNull();
+            expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+
+            // Passage en mode Consultation : tooltip transféré sur la cellule entière
+            SeatingChartManager._applyLockState(true);
+            expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(nameEl.getAttribute('data-tooltip')).toBeNull();
+
+            // Retour en mode Édition : tooltip rétabli sur .sc-cell-name
+            SeatingChartManager._applyLockState(false);
+            expect(cell.getAttribute('data-tooltip')).toBeNull();
+            expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+        });
     });
 
     describe('Onboarding en 2 étapes & Calibration adaptative de la salle', () => {

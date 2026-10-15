@@ -4753,7 +4753,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    .sc-stacked-avatar:hover {
+    .sc-stacked-avatar:hover,
+    .sc-stacked-avatar.is-member-hovered {
         transform: scale(1.16) translateY(-2px);
         z-index: 10 !important;
     }
@@ -4824,12 +4825,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     transition: background var(--transition-fast);
 }
 
-#seatingChartView[data-locked="false"] .sc-stacked-member::before {
-    right: -13px;
-}
-
 @media (hover: hover) {
-    .sc-stacked-member:hover::before {
+    #seatingChartView[data-locked="false"] .sc-stacked-member:hover::before {
+        right: -13px;
+    }
+
+    .sc-stacked-member:hover::before,
+    .sc-stacked-member.is-member-hovered::before {
         background: var(--item-hover-bg);
     }
 }
@@ -4960,7 +4962,9 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 @media (hover: hover) {
     .sc-stacked-member:hover .sc-stacked-name,
-    .sc-stacked-name:hover {
+    .sc-stacked-member.is-member-hovered .sc-stacked-name,
+    .sc-stacked-name:hover,
+    .sc-stacked-name.is-member-hovered {
         color: var(--text-primary);
     }
 }

@@ -2293,21 +2293,22 @@ export const SeatingChartManager = {
 
     _attachMemberAvatarDragListeners(cell, students, row, col) {
         if (!cell || !Array.isArray(students) || students.length <= 1) return;
-        cell.querySelectorAll('.sc-stacked-avatar').forEach(avatarEl => {
-            if (avatarEl._hasMemberDragListeners) return;
-            avatarEl._hasMemberDragListeners = true;
+        cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
+            if (memberEl._hasMemberDragListeners) return;
+            memberEl._hasMemberDragListeners = true;
 
-            avatarEl.addEventListener('dragstart', (e) => {
-                if (this._isLocked || cell.classList.contains('pinned')) {
+            memberEl.addEventListener('dragstart', (e) => {
+                if (this._isLocked || cell.classList.contains('pinned') || e.target.closest?.('.sc-stacked-member-remove')) {
                     e.preventDefault();
                     return;
                 }
                 e.stopPropagation();
                 TooltipsUI?.hideAll?.();
+                cell.querySelectorAll('.is-member-hovered').forEach(el => el.classList.remove('is-member-hovered'));
                 this._dismissOnboardingHint();
                 this._clearSelection();
 
-                const memberId = avatarEl.dataset.resultId;
+                const memberId = memberEl.dataset.resultId;
                 const memberStudent = students.find(st => st.id === memberId) || this._studentMap?.get(memberId);
                 const currentRow = parseInt(cell.dataset.row, 10);
                 const currentCol = parseInt(cell.dataset.col, 10);
@@ -2322,16 +2323,16 @@ export const SeatingChartManager = {
                 };
                 e.dataTransfer?.setData?.('text/plain', memberId);
                 if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-                this._setCleanMemberDragImage(e, memberStudent, avatarEl);
+                this._setCleanMemberDragImage(e, memberStudent, memberEl);
                 requestAnimationFrame(() => {
-                    avatarEl.classList.add('dragging-member');
-                    cell.querySelector(`.sc-stacked-member[data-result-id="${memberId}"]`)?.classList.add('dragging-member');
+                    cell.querySelectorAll(`.sc-stacked-avatar[data-result-id="${memberId}"], .sc-stacked-member[data-result-id="${memberId}"]`).forEach(el => {
+                        el.classList.add('dragging-member');
+                    });
                 });
             });
 
-            avatarEl.addEventListener('dragend', (e) => {
+            memberEl.addEventListener('dragend', (e) => {
                 e.stopPropagation();
-                avatarEl.classList.remove('dragging-member');
                 cell.querySelectorAll('.dragging-member').forEach(el => el.classList.remove('dragging-member'));
                 this._dragSource = null;
                 document.getElementById('scSidebar')?.classList.remove('drag-over');
@@ -2340,12 +2341,31 @@ export const SeatingChartManager = {
         });
     },
 
+    _attachMemberHoverEcho(cell) {
+        if (!cell || cell._hasMemberHoverEcho) return;
+        cell._hasMemberHoverEcho = true;
+
+        const setHighlight = (memberId, active) => {
+            if (!memberId) return;
+            cell.querySelectorAll(`.sc-stacked-avatar[data-result-id="${memberId}"], .sc-stacked-member[data-result-id="${memberId}"]`).forEach(el => {
+                el.classList.toggle('is-member-hovered', active);
+            });
+        };
+
+        cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+            const memberId = el.dataset.resultId;
+            el.addEventListener('mouseenter', () => setHighlight(memberId, true));
+            el.addEventListener('mouseleave', () => setHighlight(memberId, false));
+        });
+    },
+
     _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
-            cell.draggable = !this._isLocked && !isPinned;
-            cell.querySelectorAll('.sc-stacked-avatar').forEach(av => {
-                av.draggable = !this._isLocked && !isPinned;
+            const canDrag = !this._isLocked && !isPinned;
+            cell.draggable = canDrag;
+            cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+                el.draggable = canDrag;
             });
             const row = parseInt(cell.dataset.row, 10);
             const col = parseInt(cell.dataset.col, 10);
@@ -2360,6 +2380,11 @@ export const SeatingChartManager = {
                     if (student.isDeparted) tooltipText += ' • Départ';
                     cell.setAttribute('data-tooltip', tooltipText);
                     TooltipsUI?.updateTooltip?.(cell, tooltipText);
+                    const nameEl = cell.querySelector('.sc-cell-name');
+                    if (nameEl) {
+                        nameEl.removeAttribute('data-tooltip');
+                        if (nameEl._tippy) nameEl._tippy.destroy();
+                    }
                 } else {
                     cell.removeAttribute('data-tooltip');
                     if (cell._tippy) cell._tippy.destroy();
@@ -2368,6 +2393,16 @@ export const SeatingChartManager = {
                 cell.removeAttribute('data-tooltip');
                 if (cell._tippy) cell._tippy.destroy();
                 const primary = students[0];
+                if (students.length === 1 && primary) {
+                    let tooltipText = Utils.formatStudentFirstLastName(primary.nom, primary.prenom);
+                    if (primary.isNew) tooltipText += ' • Nouveau';
+                    if (primary.isDeparted) tooltipText += ' • Départ';
+                    const nameEl = cell.querySelector('.sc-cell-name');
+                    if (nameEl) {
+                        nameEl.setAttribute('data-tooltip', tooltipText);
+                        TooltipsUI?.updateTooltip?.(nameEl, tooltipText);
+                    }
+                }
                 if (primary && !isNaN(row) && !isNaN(col)) {
                     this._attachCellDragListeners(cell, primary, row, col);
                     if (students.length > 1) {
@@ -2377,6 +2412,7 @@ export const SeatingChartManager = {
             }
 
             if (students.length > 1) {
+                this._attachMemberHoverEcho(cell);
                 cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
                     const s = this._studentMap?.get(memberEl.dataset.resultId);
                     if (!s) return;
@@ -3554,9 +3590,11 @@ export const SeatingChartManager = {
                 ? `<span class="sc-cell-status-badge sc-badge-depart">Départ</span>`
                 : (isNew ? `<span class="sc-cell-status-badge sc-badge-new">Nouveau</span>` : '');
 
+            const soloNameTooltipAttr = !this._isLocked ? ` data-tooltip="${Utils.escapeHtml(tooltipText)}"` : '';
+
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
+                <span class="sc-cell-name"${soloNameTooltipAttr}>${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
                 ${statusBadgeHTML}
                 ${stationBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
@@ -3637,7 +3675,7 @@ export const SeatingChartManager = {
             const namesHtml = students.map(s => {
                 const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}"`;
                 return `
-                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}"${memberTooltipAttr}>
+                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
                     <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
@@ -3718,6 +3756,7 @@ export const SeatingChartManager = {
 
             this._attachCellDragListeners(cell, students[0], row, col);
             this._attachMemberAvatarDragListeners(cell, students, row, col);
+            this._attachMemberHoverEcho(cell);
         } else {
             cell.classList.add('empty');
             
@@ -4533,8 +4572,8 @@ export const SeatingChartManager = {
         cell.classList.toggle('pinned', Boolean(isPinned));
         const canDrag = !this._isLocked && !isPinned;
         cell.draggable = canDrag;
-        cell.querySelectorAll('.sc-stacked-avatar').forEach(av => {
-            av.draggable = canDrag;
+        cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+            el.draggable = canDrag;
         });
         const pinBtn = cell.querySelector('.sc-cell-pin');
         if (pinBtn) {
