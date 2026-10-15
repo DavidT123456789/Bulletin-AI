@@ -50,7 +50,7 @@ export const GliderManager = {
             }
 
             const isRadioSelector = container.querySelector('input[type="radio"]') !== null;
-            if (isRadioSelector && !container.dataset.gliderListenersAttached) {
+            if (isRadioSelector && (isNewGlider || !container.dataset.gliderListenersAttached)) {
                 container.querySelectorAll('input[type="radio"]').forEach(input => {
                     input.addEventListener('change', () => this.update(container));
                 });

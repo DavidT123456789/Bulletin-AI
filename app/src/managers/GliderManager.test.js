@@ -134,4 +134,43 @@ describe('GliderManager', () => {
         const emptyContainer = document.createElement('div');
         expect(() => GliderManager.update(emptyContainer)).not.toThrow();
     });
+
+    it('devrait ré-attacher les écouteurs radio si le HTML du conteneur est reconstruit', () => {
+        global.ResizeObserver = class {
+            observe() {}
+            disconnect() {}
+        };
+
+        const container = document.createElement('div');
+        container.className = 'ui-segmented-control';
+        container.innerHTML = `
+            <input type="radio" id="r1" name="p" value="T1" checked>
+            <label for="r1">Trimestre 1</label>
+        `;
+        document.body.appendChild(container);
+
+        GliderManager.init();
+        expect(container.dataset.gliderListenersAttached).toBe('true');
+
+        // Simuler une reconstruction du DOM (ex: passage Trimestres -> Semestres)
+        container.innerHTML = `
+            <input type="radio" id="s1" name="p" value="S1" checked>
+            <label for="s1">Semestre 1</label>
+            <input type="radio" id="s2" name="p" value="S2">
+            <label for="s2">S2</label>
+        `;
+        const s2Label = container.querySelector('label[for="s2"]');
+        Object.defineProperty(s2Label, 'offsetWidth', { value: 95, configurable: true });
+        Object.defineProperty(s2Label, 'offsetLeft', { value: 45, configurable: true });
+
+        GliderManager.init();
+
+        const s2Radio = container.querySelector('#s2');
+        s2Radio.checked = true;
+        s2Radio.dispatchEvent(new Event('change'));
+
+        const glider = container.querySelector('.ui-glider');
+        expect(glider.style.width).toBe('95px');
+        expect(glider.style.left).toBe('45px');
+    });
 });

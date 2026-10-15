@@ -173,13 +173,19 @@ describe('WelcomeManager', () => {
             injectSpy.mockRestore();
         });
 
-        it('should update periodSystem, inject demo class, and close modal when clicking Commencer', async () => {
+        it('should update periodSystem, synchronize currentPeriod before updating UI, inject demo class, and close modal when clicking Commencer', async () => {
             const { UI } = await import('./UIManager');
             const { DOM } = await import('../utils/DOM');
             const { ClassManager } = await import('./ClassManager');
 
+            let periodAtUIRefresh = null;
+            UI.updatePeriodSystemUI.mockImplementation(() => {
+                periodAtUIRefresh = appState.currentPeriod;
+            });
+
             const injectSpy = vi.spyOn(WelcomeManager, '_injectDemoClass').mockResolvedValue();
             ClassManager.getAllClasses.mockReturnValue([]);
+            appState.currentPeriod = 'T1';
 
             WelcomeManager.setupWelcomeModal();
 
@@ -191,6 +197,8 @@ describe('WelcomeManager', () => {
 
             expect(localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)).toBe('true');
             expect(appState.periodSystem).toBe('semestres');
+            expect(appState.currentPeriod).toBe('S1');
+            expect(periodAtUIRefresh).toBe('S1');
             expect(UI.updatePeriodSystemUI).toHaveBeenCalled();
             expect(injectSpy).toHaveBeenCalledWith('semestres');
             expect(UI.closeModal).toHaveBeenCalledWith(DOM.welcomeModal);

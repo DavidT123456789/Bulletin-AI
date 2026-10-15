@@ -512,8 +512,13 @@ export const UI = {
     // ====================================================================
 
     setPeriod(period) {
-        // Skip if already on this period
-        if (appState.currentPeriod === period) return;
+        const periods = Utils.getPeriods();
+        const validPeriod = periods.includes(period) ? period : periods[0];
+
+        // Skip if already on this period and the DOM radio is already in sync
+        const existingRadios = DOM.mainPeriodSelector?.querySelectorAll?.('input[name="periodModeRadio"]');
+        const isDomSynced = !existingRadios || existingRadios.length === 0 || Array.from(existingRadios).some(r => r.checked && r.value === validPeriod);
+        if (appState.currentPeriod === validPeriod && isDomSynced) return;
 
         // Save context for the OLD period BEFORE changing appState.currentPeriod
         if (FocusPanelManager?.isOpen() && FocusPanelManager.currentStudentId) {
@@ -521,11 +526,11 @@ export const UI = {
         }
 
         // Update active period in state
-        appState.currentPeriod = period;
+        appState.currentPeriod = validPeriod;
 
         // Synchronize radio button selection
         document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => {
-            r.checked = (r.value === period);
+            r.checked = (r.value === validPeriod);
         });
 
         // Trigger progressive label expansion & synchronized glider transition
@@ -536,13 +541,13 @@ export const UI = {
 
         // Update sidebar period indicators
         if (DOM.sidebarPeriodContext) {
-            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
+            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(validPeriod, true);
         }
         if (DOM.currentPeriodLabel) {
-            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(period, true);
+            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(validPeriod, true);
         }
         if (DOM.contextPeriodLabel) {
-            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(period, false)})`;
+            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(validPeriod, false)})`;
         }
 
         // Refresh list results and stats in-place (ZERO black flash, solid background preserved)
@@ -614,6 +619,9 @@ export const UI = {
     },
     updatePeriodSystemUI() {
         const periods = Utils.getPeriods();
+        if (!periods.includes(appState.currentPeriod)) {
+            appState.currentPeriod = periods[0];
+        }
 
         // Early return if mainPeriodSelector doesn't exist
         if (!DOM.mainPeriodSelector) return;
@@ -621,7 +629,7 @@ export const UI = {
         // Vérifier si le sélecteur est déjà peuplé pour éviter de détruire le DOM (et le glider)
         const existingInputs = DOM.mainPeriodSelector.querySelectorAll('input[name="periodModeRadio"]');
 
-        if (existingInputs.length > 0 && existingInputs.length === periods.length) {
+        if (existingInputs.length > 0 && existingInputs.length === periods.length && existingInputs[0]?.value === periods[0]) {
             // Mise à jour douce : on change juste l'état checked
             existingInputs.forEach(input => {
                 input.checked = (input.value === appState.currentPeriod);

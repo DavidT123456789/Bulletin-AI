@@ -689,6 +689,43 @@ describe('UIManager', () => {
                 detail: { period: 'T3' }
             }));
         });
+
+        it('should fallback to first valid period when given a period from another system', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            Utils.getPeriods.mockReturnValueOnce(['S1', 'S2']);
+            appState.currentPeriod = 'T1';
+
+            UI.setPeriod('T1');
+
+            expect(appState.currentPeriod).toBe('S1');
+        });
+
+        it('should normalize currentPeriod and check first radio in updatePeriodSystemUI when currentPeriod is out of sync', async () => {
+            const { appState } = await import('../state/State.js');
+            const { DOM } = await import('../utils/DOM.js');
+            const { Utils } = await import('../utils/Utils.js');
+
+            const selectorEl = document.createElement('div');
+            selectorEl.id = 'mainPeriodSelector';
+            document.body.appendChild(selectorEl);
+            const prevSelector = DOM.mainPeriodSelector;
+            DOM.mainPeriodSelector = selectorEl;
+
+            Utils.getPeriods.mockReturnValueOnce(['S1', 'S2']);
+            Utils.getPeriodLabel.mockImplementation((p, long) => long ? `Semestre ${p.slice(1)}` : p);
+            appState.currentPeriod = 'T1';
+
+            UI.updatePeriodSystemUI();
+
+            expect(appState.currentPeriod).toBe('S1');
+            const checkedRadio = selectorEl.querySelector('input[name="periodModeRadio"]:checked');
+            expect(checkedRadio).not.toBeNull();
+            expect(checkedRadio.value).toBe('S1');
+
+            DOM.mainPeriodSelector = prevSelector;
+            Utils.getPeriodLabel.mockImplementation((p, long) => long ? `Trimestre ${p.slice(1)}` : p);
+        });
     });
 
     describe('showConflictResolutionModal', () => {

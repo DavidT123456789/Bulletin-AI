@@ -266,6 +266,12 @@ export const appState = new Proxy({}, {
         if (categoryGetter) {
             const category = categoryGetter();
             category[prop] = value;
+            if (prop === 'periodSystem') {
+                const validPeriods = value === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
+                if (!validPeriods.includes(runtimeState.navigation.currentPeriod)) {
+                    runtimeState.navigation.currentPeriod = validPeriods[0];
+                }
+            }
             return true;
         }
 

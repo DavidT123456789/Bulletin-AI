@@ -437,6 +437,11 @@ export const StorageManager = {
             runtimeState.navigation.currentSubject = 'MonStyle';
         }
 
+        const validPeriods = userSettings.academic.periodSystem === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
+        if (!validPeriods.includes(runtimeState.navigation.currentPeriod)) {
+            runtimeState.navigation.currentPeriod = validPeriods[0];
+        }
+
         // Migration de modèles obsolètes vers la version stable actuelle
         const deprecatedGeminiFlash = [
             'gemini-1.5-flash', 'gemini-1.5-flash-001', 
@@ -1161,6 +1166,7 @@ export const StorageManager = {
                     accentColor: settings.accentColor || appState.accentColor || 'blue',
                     useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
                     periodSystem: settings.periodSystem || appState.periodSystem,
+                    currentPeriod: settings.currentPeriod || appState.currentPeriod,
                     subjects: settings.subjects,
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
@@ -1580,7 +1586,9 @@ export const StorageManager = {
                     theme: settings.theme || appState.theme,
                     accentColor: settings.accentColor || appState.accentColor || 'blue',
                     useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
-                    periodSystem: settings.periodSystem || appState.periodSystem, subjects: settings.subjects,
+                    periodSystem: settings.periodSystem || appState.periodSystem,
+                    currentPeriod: settings.currentPeriod || appState.currentPeriod,
+                    subjects: settings.subjects,
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
@@ -1592,6 +1600,7 @@ export const StorageManager = {
                 if (appState.wordCountLimit) {
                     delete appState.wordCountLimit;
                 }
+                this._ensureConfigUpgrades();
                 this.saveAppState();
                 App.updateUIOnLoad();
                 UI.showNotification('Paramètres importés avec succès !', 'success');
