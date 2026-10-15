@@ -772,7 +772,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     width: 100%;
-    max-width: 540px;
+    max-width: 560px;
     margin: 24px auto 0 auto;
     padding: 0 var(--space-4);
 }
@@ -781,60 +781,82 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding: 18px 20px;
+    padding: 16px 18px;
     border-radius: 20px;
-    background: var(--surface-color);
+    background-color: var(--surface-color);
     border: 1.5px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: border-color var(--transition-fast),
-                background-color var(--transition-fast),
-                box-shadow var(--transition-fast),
-                transform 0.15s var(--ease-spring);
+    transition: border-color 0.35s var(--ease-spring),
+                background-color 0.35s var(--ease-spring),
+                box-shadow 0.35s var(--ease-spring),
+                transform 0.2s var(--ease-spring);
     position: relative;
     user-select: none;
     text-align: left;
 }
 
 [data-theme="dark"] .welcome-start-card {
-    background: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.03);
     border-color: var(--border-color);
     box-shadow: none;
 }
 
 .welcome-start-card:hover:not(.active) {
-    border-color: var(--border-color-hover);
-}
-
-[data-theme="dark"] .welcome-start-card:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.welcome-start-card.active {
-    border-color: var(--text-primary);
+    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
-[data-theme="dark"] .welcome-start-card.active {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+.welcome-start-card[data-value="trimestres"]:hover:not(.active) {
+    border-color: rgba(var(--brand-primary-rgb), 0.3);
+}
+
+.welcome-start-card[data-value="semestres"]:hover:not(.active) {
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="dark"] .welcome-start-card:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.35);
+}
+
+.welcome-start-card.active[data-value="trimestres"] {
+    border-color: rgba(var(--brand-primary-rgb), 0.55);
+    background-color: color-mix(in srgb, var(--brand-primary) 3.5%, var(--surface-color));
+    box-shadow: 0 8px 22px -6px rgba(var(--brand-primary-rgb), 0.14), 0 2px 6px -1px rgba(var(--brand-primary-rgb), 0.06);
+}
+
+.welcome-start-card.active[data-value="semestres"] {
+    border-color: rgba(139, 92, 246, 0.55);
+    background-color: color-mix(in srgb, var(--color-violet) 3.5%, var(--surface-color));
+    box-shadow: 0 8px 22px -6px rgba(139, 92, 246, 0.14), 0 2px 6px -1px rgba(139, 92, 246, 0.06);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
+    border-color: rgba(var(--brand-primary-rgb), 0.6);
+    background-color: rgba(var(--brand-primary-rgb), 0.09);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] {
+    border-color: rgba(139, 92, 246, 0.6);
+    background-color: rgba(139, 92, 246, 0.09);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
 }
 
 .welcome-start-card:active {
-    transform: scale(0.985);
+    transform: scale(0.98);
 }
 
 .welcome-start-card:focus-visible {
     outline: none;
-    border-color: var(--text-primary);
-    box-shadow: 0 0 0 3px var(--highlight-standard-glow);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
-[data-theme="dark"] .welcome-start-card:focus-visible {
-    border-color: var(--text-primary);
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+.welcome-start-card.active[data-value="semestres"]:focus-visible {
+    border-color: var(--color-violet);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 .welcome-start-card__header {
@@ -843,6 +865,7 @@
     justify-content: space-between;
     gap: 8px;
     width: 100%;
+    padding: 0 2px;
 }
 
 .welcome-start-card__title {
@@ -850,7 +873,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     letter-spacing: -0.01em;
-    transition: color var(--transition-fast);
+    transition: color 0.3s var(--ease-spring);
 }
 
 .welcome-start-card.active .welcome-start-card__title,
@@ -859,12 +882,12 @@
 }
 
 .welcome-start-card__desc {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 500;
     color: var(--text-tertiary);
     line-height: 1.35;
     white-space: nowrap;
-    transition: color var(--transition-fast);
+    transition: color 0.3s var(--ease-spring);
 }
 
 .welcome-start-card.active .welcome-start-card__desc {
@@ -878,13 +901,28 @@
     width: 100%;
     padding: 4px;
     border-radius: 12px;
-    background: var(--bg-secondary);
-    transition: background-color var(--transition-fast);
+    background-color: var(--bg-secondary);
+    transition: background-color 0.35s var(--ease-spring);
 }
 
 [data-theme="dark"] .welcome-start-card__segments {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
+    background-color: rgba(var(--brand-primary-rgb), 0.08);
+}
+
+.welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
+    background-color: rgba(139, 92, 246, 0.08);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
+    background-color: rgba(var(--brand-primary-rgb), 0.14);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
+    background-color: rgba(139, 92, 246, 0.14);
 }
 
 .welcome-period-pill {
@@ -898,40 +936,68 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     color: var(--text-tertiary);
-    background: rgba(var(--surface-color-rgb), 0.55);
+    background-color: rgba(var(--surface-color-rgb), 0.6);
     border: 1px solid transparent;
-    transition: background-color 0.25s var(--ease-spring),
-                color 0.25s var(--ease-spring),
-                border-color 0.25s var(--ease-spring),
-                box-shadow 0.25s var(--ease-spring);
+    transform: scale(0.98);
+    transition: background-color 0.35s var(--ease-spring),
+                color 0.35s var(--ease-spring),
+                border-color 0.35s var(--ease-spring),
+                box-shadow 0.35s var(--ease-spring),
+                transform 0.35s var(--ease-spring);
 }
 
 [data-theme="dark"] .welcome-period-pill {
-    background: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.03);
     color: var(--text-tertiary);
 }
 
 .welcome-start-card:hover:not(.active) .welcome-period-pill {
     color: var(--text-secondary);
-    background: rgba(var(--surface-color-rgb), 0.85);
+    background-color: rgba(var(--surface-color-rgb), 0.9);
+    transform: scale(0.99);
 }
 
 [data-theme="dark"] .welcome-start-card:hover:not(.active) .welcome-period-pill {
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.06);
+    background-color: rgba(255, 255, 255, 0.06);
 }
 
 .welcome-start-card.active .welcome-period-pill {
-    background: var(--surface-color);
-    color: var(--text-primary);
-    border-color: rgba(0, 0, 0, 0.06);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+    background-color: var(--surface-color);
+    transform: scale(1);
 }
 
-[data-theme="dark"] .welcome-start-card.active .welcome-period-pill {
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.1);
+.welcome-start-card.active .welcome-period-pill:nth-child(2) {
+    transition-delay: 35ms;
+}
+
+.welcome-start-card.active .welcome-period-pill:nth-child(3) {
+    transition-delay: 70ms;
+}
+
+.welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
+    color: var(--brand-primary);
+    border-color: rgba(var(--brand-primary-rgb), 0.16);
+    box-shadow: 0 2px 5px rgba(var(--brand-primary-rgb), 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
+}
+
+.welcome-start-card.active[data-value="semestres"] .welcome-period-pill {
+    color: var(--color-violet);
+    border-color: rgba(139, 92, 246, 0.16);
+    box-shadow: 0 2px 5px rgba(139, 92, 246, 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
+    background-color: rgba(var(--brand-primary-rgb), 0.22);
+    color: var(--color-blue-bright);
+    border-color: rgba(var(--brand-primary-rgb), 0.28);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] .welcome-period-pill {
+    background-color: rgba(139, 92, 246, 0.22);
+    color: var(--color-violet-bright);
+    border-color: rgba(139, 92, 246, 0.28);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 

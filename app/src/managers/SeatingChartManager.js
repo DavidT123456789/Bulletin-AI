@@ -2363,21 +2363,10 @@ export const SeatingChartManager = {
                 } else {
                     cell.removeAttribute('data-tooltip');
                     if (cell._tippy) cell._tippy.destroy();
-                    cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
-                        const s = this._studentMap?.get(memberEl.dataset.resultId);
-                        if (!s) return;
-                        const tooltipText = Utils.formatStudentFirstLastName(s.nom, s.prenom);
-                        memberEl.setAttribute('data-tooltip', tooltipText);
-                        TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
-                    });
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
                 if (cell._tippy) cell._tippy.destroy();
-                cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
-                    memberEl.removeAttribute('data-tooltip');
-                    if (memberEl._tippy) memberEl._tippy.destroy();
-                });
                 const primary = students[0];
                 if (primary && !isNaN(row) && !isNaN(col)) {
                     this._attachCellDragListeners(cell, primary, row, col);
@@ -2385,6 +2374,16 @@ export const SeatingChartManager = {
                         this._attachMemberAvatarDragListeners(cell, students, row, col);
                     }
                 }
+            }
+
+            if (students.length > 1) {
+                cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
+                    const s = this._studentMap?.get(memberEl.dataset.resultId);
+                    if (!s) return;
+                    const tooltipText = Utils.formatStudentFirstLastName(s.nom, s.prenom);
+                    memberEl.setAttribute('data-tooltip', tooltipText);
+                    TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
+                });
             }
         });
     },
@@ -3636,9 +3635,7 @@ export const SeatingChartManager = {
             `).join('');
 
             const namesHtml = students.map(s => {
-                const memberTooltipAttr = this._isLocked
-                    ? ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}"`
-                    : '';
+                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}"`;
                 return `
                 <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>

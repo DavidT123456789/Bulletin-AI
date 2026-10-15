@@ -3010,7 +3010,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
         });
 
-        it('devrait activer data-tooltip sur la pilule .sc-stacked-member uniquement en mode Lecture et le retirer en mode Édition', () => {
+        it('devrait conserver data-tooltip sur la pilule .sc-stacked-member en mode Édition comme en mode Lecture', () => {
             SeatingChartManager.switchPlanMode('activity', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('pairs-alpha');
@@ -3020,22 +3020,19 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const memberPills = cell.querySelectorAll('.sc-stacked-member');
             expect(memberPills.length).toBe(2);
 
-            // En mode Édition : aucun tooltip sur les pilules de prénoms pour ne pas masquer les avatars
-            memberPills.forEach(pill => {
-                expect(pill.hasAttribute('data-tooltip')).toBe(false);
-                expect(pill.querySelector('.sc-stacked-name-text').hasAttribute('data-tooltip')).toBe(false);
-            });
+            // En mode Édition : tooltip présent sur les pilules de prénoms (utile pour les prénoms tronqués)
+            expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
 
-            // Passage en mode Lecture : data-tooltip attaché directement sur .sc-stacked-member
+            // Passage en mode Lecture : data-tooltip conservé sur .sc-stacked-member
             SeatingChartManager._applyLockState(true);
             expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
             expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
 
-            // Retour en mode Édition : data-tooltip retiré de .sc-stacked-member
+            // Retour en mode Édition : data-tooltip toujours présent sur .sc-stacked-member
             SeatingChartManager._applyLockState(false);
-            memberPills.forEach(pill => {
-                expect(pill.hasAttribute('data-tooltip')).toBe(false);
-            });
+            expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
         });
 
         it('devrait mettre à jour la cellule épinglée sur place (_updateCellPinDOM) sans reconstruire la grille (_renderGrid)', () => {
