@@ -1479,6 +1479,7 @@ export const SeatingChartManager = {
         if (view) {
             view.dataset.planMode = this._planMode;
             view.dataset.hasActivity = hasActivity ? 'true' : 'false';
+            view.dataset.orientation = this._isActivityMode() ? 'teacher' : this._orientation;
         }
         if (board) {
             board.dataset.planMode = this._planMode;
@@ -2446,7 +2447,12 @@ export const SeatingChartManager = {
     // VIEW ORIENTATION (Teacher ⇄ Student Projection)
     // ========================================================================
 
+    _isStudentOrientation() {
+        return !this._isActivityMode() && this._orientation === 'student';
+    },
+
     _toggleOrientation() {
+        if (this._isActivityMode()) return;
         const next = this._orientation === 'student' ? 'teacher' : 'student';
         this._applyOrientation(next, true);
         localStorage.setItem('bulletin_seating_orientation', next);
@@ -2454,12 +2460,13 @@ export const SeatingChartManager = {
 
     _applyOrientation(orientation, animate = false) {
         this._orientation = orientation;
+        const effectiveOrientation = this._isActivityMode() ? 'teacher' : orientation;
         const view = document.getElementById('seatingChartView');
         if (view) {
-            view.dataset.orientation = orientation;
+            view.dataset.orientation = effectiveOrientation;
         }
 
-        const isStudent = orientation === 'student';
+        const isStudent = effectiveOrientation === 'student';
 
         const tooltip = isStudent
             ? 'Vue Élèves active • Inverser'
@@ -2539,7 +2546,7 @@ export const SeatingChartManager = {
             : '';
 
         const isActivity = this._isActivityMode();
-        const isStudent = this._orientation === 'student';
+        const isStudent = this._isStudentOrientation();
         const modeLabel = isActivity ? ' — Mode Activité' : '';
         const orientationLabel = isActivity ? '' : (isStudent ? ' — Vue Élèves (Projection)' : ' — Vue Enseignant');
         let occupiedStations = 0;
@@ -2915,7 +2922,7 @@ export const SeatingChartManager = {
         if (rowSlider) { rowSlider.value = rows; document.getElementById('scRowsValue').textContent = rows; }
         if (colSlider) { colSlider.value = cols; document.getElementById('scColsValue').textContent = cols; }
 
-        this._orientation = localStorage.getItem('bulletin_seating_orientation') || config?.orientation || 'teacher';
+        this._orientation = localStorage.getItem('bulletin_seating_orientation') || appState.seatingGrid?.orientation || config?.orientation || 'teacher';
         this._applyOrientation(this._orientation);
     },
 
@@ -3543,7 +3550,7 @@ export const SeatingChartManager = {
         container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;
         container.innerHTML = '';
 
-        const isStudent = this._orientation === 'student';
+        const isStudent = this._isStudentOrientation();
         for (let displayR = 0; displayR < effectiveRows; displayR++) {
             for (let displayC = 0; displayC < cols; displayC++) {
                 const r = isStudent ? (effectiveRows - 1 - displayR) : displayR;
@@ -3794,7 +3801,7 @@ export const SeatingChartManager = {
 
             const totalRows = this._getRows();
             const depthRatio = totalRows > 1
-                ? (this._orientation === 'student' ? (totalRows - 1 - row) / (totalRows - 1) : row / (totalRows - 1))
+                ? (this._isStudentOrientation() ? (totalRows - 1 - row) / (totalRows - 1) : row / (totalRows - 1))
                 : 0.5;
             cell.style.setProperty('--row-depth', depthRatio);
 
@@ -5153,7 +5160,7 @@ export const SeatingChartManager = {
             setTimeout(() => {
                 const gridArea = document.getElementById('scGridArea');
                 if (gridArea) {
-                    const topTarget = this._orientation === 'student' ? 0 : (gridArea.scrollHeight || 0) + 500;
+                    const topTarget = (this._isActivityMode() || this._isStudentOrientation()) ? 0 : (gridArea.scrollHeight || 0) + 500;
                     if (typeof gridArea.scrollTo === 'function') {
                         gridArea.scrollTo({
                             top: topTarget,

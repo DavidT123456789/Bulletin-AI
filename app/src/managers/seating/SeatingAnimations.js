@@ -250,6 +250,7 @@ export const SeatingAnimations = {
         const cellH = computedBoard.getPropertyValue('--sc-cell-h');
         if (cellW) ghost.style.setProperty('--sc-cell-w', cellW);
         if (cellH) ghost.style.setProperty('--sc-cell-h', cellH);
+        if (computedBoard.flexDirection) ghost.style.flexDirection = computedBoard.flexDirection;
 
         const liveGrid = board.querySelector('.sc-grid-container');
         const ghostGrid = ghost.querySelector('.sc-grid-container');
@@ -283,7 +284,7 @@ export const SeatingAnimations = {
 
         const cols = Math.max(1, this._getCols());
         const rows = Math.max(1, this._getRows());
-        const isStudent = this._orientation === 'student';
+        const isStudent = this._isStudentOrientation ? this._isStudentOrientation() : (!this._isActivityMode?.() && this._orientation === 'student');
 
         board.querySelectorAll('.sc-cell').forEach(cell => {
             const r = Number(cell.dataset.row) || 0;

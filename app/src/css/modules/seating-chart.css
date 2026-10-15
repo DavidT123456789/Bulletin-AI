@@ -4504,7 +4504,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-desk-row,
-#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row {
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row,
+#seatingChartView[data-plan-mode="activity"] .sc-orientation-btn {
     display: none !important;
 }
 

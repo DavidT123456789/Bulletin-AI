@@ -2746,6 +2746,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._setupEventListeners();
             SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
             SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+            localStorage.setItem('bulletin_seating_orientation', 'teacher');
+            SeatingChartManager._orientation = 'teacher';
             SeatingChartManager._loadGridConfig();
             SeatingChartManager._initGrid(SeatingChartManager._getRows(), SeatingChartManager._getCols());
             SeatingChartManager._loadPositionsFromState();
@@ -2935,6 +2937,41 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
             expect(SeatingChartManager._getStationNumber(0, 0)).toBeNull();
             expect(SeatingChartManager._getStationNumber(0, 1)).toBe(1);
+        });
+
+        it('devrait toujours afficher le mode Activité dans le sens naturel (#1 en haut à gauche) même si le mode Cours est en Vue Élèves, et restaurer la Vue Élèves au retour en mode Cours', () => {
+            const view = document.getElementById('seatingChartView');
+
+            // 1. Activer la Vue Élèves en mode Cours
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._toggleOrientation();
+            expect(SeatingChartManager._orientation).toBe('student');
+            expect(view.dataset.orientation).toBe('student');
+            let cells = document.querySelectorAll('#scGridContainer .sc-cell');
+            expect(cells[0].dataset.row).toBe('3');
+            expect(cells[0].dataset.col).toBe('4');
+
+            // 2. Basculer en mode Activité : la grille des groupes reste en lecture naturelle (0,0 = #1 en haut à gauche)
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            expect(view.dataset.orientation).toBe('teacher');
+            expect(SeatingChartManager._isStudentOrientation()).toBe(false);
+            cells = document.querySelectorAll('#scGridContainer .sc-cell');
+            expect(cells[0].dataset.row).toBe('0');
+            expect(cells[0].dataset.col).toBe('0');
+            expect(cells[0].querySelector('.sc-station-badge')?.textContent).toBe('#1');
+
+            // _toggleOrientation est sans effet en mode Activité
+            SeatingChartManager._toggleOrientation();
+            expect(SeatingChartManager._orientation).toBe('student');
+            expect(view.dataset.orientation).toBe('teacher');
+
+            // 3. Revenir en mode Cours : la Vue Élèves mémorisée est fidèlement restaurée
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            expect(SeatingChartManager._orientation).toBe('student');
+            expect(view.dataset.orientation).toBe('student');
+            cells = document.querySelectorAll('#scGridContainer .sc-cell');
+            expect(cells[0].dataset.row).toBe('3');
+            expect(cells[0].dataset.col).toBe('4');
         });
 
         it('devrait animer le passage Cours <-> Activité avec un effet carrousel directionnel sans ré-animer les cartes une à une', () => {
