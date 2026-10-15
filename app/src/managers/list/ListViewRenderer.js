@@ -58,7 +58,7 @@ export const ListViewRenderer = {
             <td class="appreciation-cell">${appreciationCell}</td>
             <td class="action-cell">
                 <div class="action-dropdown">
-                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
+                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this.generateActionMenuHTML(result.id)}
@@ -343,7 +343,7 @@ export const ListViewRenderer = {
                 </th>
                 <th class="action-header">
                     <div class="header-content-wrapper global-actions-dropdown">
-                        <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" data-tooltip="Actions">
+                        <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
                             <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                         </button>
                         <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
@@ -426,7 +426,7 @@ export const ListViewRenderer = {
                         <td class="appreciation-cell">${appreciationCell}</td>
                         <td class="action-cell">
                             <div class="action-dropdown">
-                                <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
+                                <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
                                     <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                 </button>
                                 ${this.generateActionMenuHTML(result.id)}

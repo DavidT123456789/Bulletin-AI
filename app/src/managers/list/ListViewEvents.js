@@ -100,18 +100,46 @@ export const ListViewEvents = {
             }, { signal });
         }
 
+        // Dynamic scroll listener: active ONLY when a menu is open
+        let isScrollDismissAttached = false;
+        const handleScrollDismiss = (e) => {
+            // Do not close if scrolling inside the dropdown menu itself
+            if (e.target?.closest?.('.action-dropdown-menu, .global-actions-dropdown-menu')) {
+                return;
+            }
+            closeAllMenus();
+        };
+
+        const attachScrollDismiss = () => {
+            if (isScrollDismissAttached) return;
+            isScrollDismissAttached = true;
+            window.addEventListener('scroll', handleScrollDismiss, { capture: true, passive: true, signal });
+            listContainer.addEventListener('scroll', handleScrollDismiss, { passive: true, signal });
+        };
+
+        const detachScrollDismiss = () => {
+            if (!isScrollDismissAttached) return;
+            isScrollDismissAttached = false;
+            window.removeEventListener('scroll', handleScrollDismiss, true);
+            listContainer.removeEventListener('scroll', handleScrollDismiss);
+        };
+
         // Close any open menus when clicking outside
         const closeAllMenus = () => {
+            detachScrollDismiss();
+
             // Fermer les menus d'actions individuelles
             listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
                 // Trigger exit animation
                 menu.classList.remove('open');
 
-                // Remove open class from parent dropdown
+                // Remove open and dropup classes from parent dropdown
                 const dropdown = menu.closest('.action-dropdown');
                 if (dropdown) {
-                    dropdown.classList.remove('open');
-                    dropdown.querySelector('.btn-action-menu')?.blur?.();
+                    dropdown.classList.remove('open', 'dropup');
+                    const btn = dropdown.querySelector('.btn-action-menu');
+                    btn?.blur?.();
+                    btn?.setAttribute('aria-expanded', 'false');
                 }
 
                 // Clear any existing timeout to avoid conflict
@@ -142,7 +170,9 @@ export const ListViewEvents = {
                 const dropdown = menu.closest('.global-actions-dropdown');
                 if (dropdown) {
                     dropdown.classList.remove('open');
-                    dropdown.querySelector('.btn-action-menu-header')?.blur?.();
+                    const btn = dropdown.querySelector('.btn-action-menu-header');
+                    btn?.blur?.();
+                    btn?.setAttribute('aria-expanded', 'false');
                 }
             });
         };
@@ -180,6 +210,8 @@ export const ListViewEvents = {
                 if (!wasOpen) {
                     menu?.classList.add('open');
                     dropdown?.classList.add('open');
+                    globalMenuBtn.setAttribute('aria-expanded', 'true');
+                    attachScrollDismiss();
                 }
                 return;
             }
@@ -217,8 +249,15 @@ export const ListViewEvents = {
                     menu.style.width = '';
                     menu.style.zIndex = '';
 
+                    // Inversion automatique vers le haut si trop proche du bas de l'écran
+                    const rect = menuBtn.getBoundingClientRect();
+                    const openUp = (window.innerHeight - rect.bottom) < 260 && rect.top > 260;
+                    dropdown?.classList.toggle('dropup', openUp);
+
                     menu?.classList.add('open');
                     dropdown?.classList.add('open');
+                    menuBtn.setAttribute('aria-expanded', 'true');
+                    attachScrollDismiss();
                 }
                 return;
             }
@@ -377,6 +416,8 @@ export const ListViewEvents = {
 
                 menu?.classList.add('open');
                 dropdown?.classList.add('open');
+                menuBtn.setAttribute('aria-expanded', 'true');
+                attachScrollDismiss();
             }
         }, { signal });
 
