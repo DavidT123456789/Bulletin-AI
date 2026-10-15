@@ -327,6 +327,10 @@ export const MassImportManager = {
      * Appelé par le bouton "Générer les appréciations" dans la toolbar
      */
     async generateAllPending() {
+        if (!navigator.onLine && !(appState.currentAIModel || '').startsWith('ollama')) {
+            UI?.showNotification("Mode hors-ligne : connexion Internet requise pour générer avec l'IA.", "warning");
+            return;
+        }
         // Récupérer les élèves en attente de la classe courante
         // CORRECTIF: Utiliser TOUS les élèves de la classe courante, pas seulement ceux filtrés/visibles
         // Le bouton affiche le nombre total (sourceResults), l'action doit correspondre.

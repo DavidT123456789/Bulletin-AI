@@ -752,15 +752,19 @@ export const UI = {
         StorageManager.saveAppState();
     },
     updateGenerateButtonState() {
-        const isAIAvailable = this.checkAPIKeyPresence(true);
+        const model = appState.currentAIModel || '';
+        const isOllama = model.startsWith('ollama');
+        const isOfflineCloud = !navigator.onLine && !isOllama;
+        const hasKey = this.checkAPIKeyPresence(true);
+        const isAIAvailable = hasKey && !isOfflineCloud;
         const buttons = [DOM.importGenerateBtn, DOM.generateAppreciationBtn, DOM.generateAndNextBtn];
 
-        // Déterminer le message approprié selon le provider
-        const model = appState.currentAIModel;
-        const isOllama = model.startsWith('ollama');
-        const warningTooltip = isOllama
-            ? "Activez Ollama dans les paramètres pour générer."
-            : "Veuillez configurer une clé API dans les paramètres pour générer.";
+        // Déterminer le message approprié selon le provider et l'état réseau
+        const warningTooltip = isOfflineCloud
+            ? "Connexion Internet requise pour générer avec l'IA."
+            : isOllama
+                ? "Activez Ollama dans les paramètres pour générer."
+                : "Veuillez configurer une clé API dans les paramètres pour générer.";
 
         buttons.forEach(btn => {
             if (btn) {
@@ -784,7 +788,7 @@ export const UI = {
             ? `⚠️ Ollama non activé. <a href="#" class="link-to-settings" data-target-tab="advanced" data-target-element="ollamaToggle">Activez-le dans les paramètres</a> pour générer.`
             : `⚠️ Clé API manquante. <a href="#" class="link-to-settings" data-target-tab="advanced" data-target-element="googleApiKey">Configurez-la dans les paramètres</a> pour activer la génération.`;
 
-        if (!isAIAvailable) {
+        if (!hasKey) {
             if (DOM.massImportApiKeyWarning) {
                 DOM.massImportApiKeyWarning.innerHTML = warningHtml;
                 DOM.massImportApiKeyWarning.style.display = 'flex';

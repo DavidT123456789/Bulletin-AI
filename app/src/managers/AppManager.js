@@ -32,6 +32,7 @@ import { SeatingChartManager } from './SeatingChartManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { ModelSelectionManager } from './ModelSelectionManager.js';
+import { ResultsUIManager } from './ResultsUIManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -274,21 +275,14 @@ export const App = {
         // Initialize PWA Install Manager (handles banner + menu button)
         PwaInstallManager.init();
 
-        // Offline Detection - Silent state update (visual feedback via .is-offline class and disabled buttons is sufficient)
+        // Offline Detection - Contextual state update (Cloud menu & AI button tooltips)
         const updateOnlineStatus = () => {
-            const isOffline = !navigator.onLine;
-            document.body.classList.toggle('is-offline', isOffline);
-            // Update generate button state (buttons show tooltip explaining why they're disabled)
             UI.updateGenerateButtonState();
+            ResultsUIManager.updateGenerateButtonState();
         };
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-
-        // Set initial state
-        if (!navigator.onLine) {
-            document.body.classList.add('is-offline');
-        }
     },
 
     setupInteractiveSliders() {

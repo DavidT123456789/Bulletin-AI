@@ -221,8 +221,8 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
         beforeEach(() => {
             document.body.innerHTML = `
                 <button id="headerMenuBtn"></button>
-                <button id="cloudSaveMenuBtn"><iconify-icon></iconify-icon><span class="cloud-save-label"></span></button>
-                <button id="cloudLoadMenuBtn"></button>
+                <button id="cloudSaveMenuBtn"><iconify-icon></iconify-icon><span class="cloud-save-label"></span><span id="cloudSaveHint"></span></button>
+                <button id="cloudLoadMenuBtn"><span id="cloudLoadHint"></span></button>
                 <button id="cloudReconnectBtn"><span></span></button>
                 <button id="cloudConnectBtn"></button>
                 <div id="cloudSeparator"></div>
@@ -241,6 +241,45 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
             expect(reconnectBtn.style.display).toBe('flex');
+        });
+
+        it('should not apply has-cloud-warning or show reconnect button when offline (local state with configured provider)', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+
+            SyncService._updateCloudIndicator('local');
+
+            const saveHint = document.getElementById('cloudSaveHint');
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+            expect(reconnectBtn.style.display).toBe('none');
+            expect(saveBtn.classList.contains('disabled')).toBe(true);
+            expect(saveHint.style.display).toBe('block');
+            expect(saveHint.textContent).toBe('Mode hors-ligne');
+        });
+
+        it('should return local immediately in refreshStatus when offline', async () => {
+            SyncService._isOnline = false;
+            SyncService._wasConfigured = true;
+            localStorage.setItem('bulletin_sync_provider', 'google');
+            const connectSpy = vi.spyOn(SyncService, 'connect');
+
+            const res = await SyncService.refreshStatus({ showChecking: true });
+
+            expect(res).toBe('local');
+            expect(connectSpy).not.toHaveBeenCalled();
+            expect(document.getElementById('cloudSaveHint').textContent).toBe('Mode hors-ligne');
+        });
+
+        it('should trigger refreshStatus when coming back online if provider was not initialized while offline', () => {
+            SyncService._isOnline = false;
+            SyncService._wasConfigured = true;
+            SyncService._provider = null;
+            const refreshSpy = vi.spyOn(SyncService, 'refreshStatus').mockResolvedValue('in-sync');
+
+            SyncService._handleNetworkChange(true);
+
+            expect(SyncService._isOnline).toBe(true);
+            expect(refreshSpy).toHaveBeenCalled();
         });
 
         it('should remove has-cloud-warning and apply has-cloud-reminder when connected with local changes', () => {

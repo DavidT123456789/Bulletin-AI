@@ -481,6 +481,8 @@ export const ResultsUIManager = {
         const needsUpdateCount = errorUpdateCount + dirtyUpdateCount;
 
         const isGenerating = MassImportManager.massImportAbortController !== null;
+        const isOllama = (appState.currentAIModel || '').startsWith('ollama');
+        const isOfflineCloud = !navigator.onLine && !isOllama;
 
         // === GENERATE BUTTON ===
         const generateBtn = document.getElementById('generateBtnInline');
@@ -493,7 +495,9 @@ export const ResultsUIManager = {
             if (pendingCount > 0) {
                 if (badge) badge.textContent = pendingCount;
                 const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                generateBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente (${periodLabel})`;
+                generateBtn.dataset.tooltip = isOfflineCloud
+                    ? "Connexion Internet requise pour générer avec l'IA"
+                    : `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente (${periodLabel})`;
 
                 if (wasHidden) {
                     generateBtn.classList.add('animate-in');
@@ -526,7 +530,9 @@ export const ResultsUIManager = {
 
                 const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
                 let tooltipText = '';
-                if (errorUpdateCount > 0 && dirtyUpdateCount > 0) {
+                if (isOfflineCloud) {
+                    tooltipText = "Connexion Internet requise pour actualiser avec l'IA";
+                } else if (errorUpdateCount > 0 && dirtyUpdateCount > 0) {
                     tooltipText = `Actualiser ${dirtyUpdateCount} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur (${periodLabel})`;
                 } else if (errorUpdateCount > 0) {
                     tooltipText = `Régénérer ${errorUpdateCount} appréciation${errorUpdateCount > 1 ? 's' : ''} en erreur (${periodLabel})`;
@@ -837,6 +843,10 @@ export const ResultsUIManager = {
      * Used by the "Actualiser" button
      */
     async regenerateDirty() {
+        if (!navigator.onLine && !(appState.currentAIModel || '').startsWith('ollama')) {
+            UI?.showNotification("Mode hors-ligne : connexion Internet requise pour actualiser avec l'IA.", "warning");
+            return;
+        }
         const currentPeriod = appState.currentPeriod;
         const currentClassId = appState.currentClassId;
 

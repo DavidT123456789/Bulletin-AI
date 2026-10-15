@@ -355,6 +355,31 @@ describe('UIManager', () => {
 
             expect(result).toBe(false);
         });
+
+        it('should disable cloud AI generation when offline without triggering missing API key warning, while keeping local Ollama enabled', async () => {
+            const { appState } = await import('../state/State.js');
+            const { DOM } = await import('../utils/DOM.js');
+            const btn = document.createElement('button');
+            const warningEl = document.createElement('div');
+            warningEl.style.display = 'none';
+            DOM.generateAppreciationBtn = btn;
+            DOM.massImportApiKeyWarning = warningEl;
+
+            const onLineSpy = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+            appState.currentAIModel = 'gemini-2.0-flash';
+            appState.googleApiKey = 'valid-key';
+            UI.updateGenerateButtonState();
+            expect(btn.disabled).toBe(true);
+            expect(warningEl.style.display).toBe('none');
+
+            appState.currentAIModel = 'ollama-mistral';
+            appState.ollamaEnabled = true;
+            UI.updateGenerateButtonState();
+            expect(btn.disabled).toBe(false);
+
+            onLineSpy.mockRestore();
+        });
     });
 
     describe('showLoadingOverlay / hideLoadingOverlay', () => {

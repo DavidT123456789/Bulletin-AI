@@ -130,18 +130,11 @@ export const SyncService = {
                 this._updateCloudIndicator('local');
             }
         } else if (!wasOnline && isOnline) {
-            // Came back online - update status
-            if (this.currentProviderName && this._provider) {
-                // Do not auto-refresh. State remains as is until user action.
-                // We could check expiry locally to update UI, but no network calls.
-                if (!this._provider.isConnected()) {
-                    this._updateCloudIndicator('expired');
-                } else {
-                    this._updateCloudIndicator('connected');
-                }
-            } else if (this._wasConfigured) {
-                // Do not auto-connect
-                this._updateCloudIndicator('expired');
+            // Came back online - restore status silently
+            if (this.currentProviderName && this._provider && this._provider.isConnected()) {
+                this._updateCloudIndicator('connected');
+            } else if (this._wasConfigured || this.currentProviderName) {
+                this.refreshStatus();
             }
         }
     },
@@ -158,7 +151,7 @@ export const SyncService = {
     async refreshStatus(options = {}) {
         const { showChecking = false } = options;
         const savedProvider = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-        if (!savedProvider) {
+        if (!savedProvider || !this._isOnline) {
             this._updateCloudIndicator('local');
             return 'local';
         }
@@ -317,9 +310,9 @@ export const SyncService = {
             if (loadBtn) loadBtn.classList.add('disabled');
         }
 
-        // Reconnect button (not connected states)
+        // Reconnect button (only when session is expired, not when merely offline)
         if (reconnectBtn) {
-            if (state === 'expired' || (state === 'local' && this._wasConfigured)) {
+            if (state === 'expired') {
                 reconnectBtn.style.display = 'flex';
                 const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
                 const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
@@ -335,24 +328,20 @@ export const SyncService = {
             const syncState = this._computeSyncState();
             this._lastSyncState = syncState;
             this._applySyncStateUI(syncState, saveBtn, loadBtn);
-        } else if (state === 'syncing') {
-            const saveHint = document.getElementById('cloudSaveHint');
-            if (saveHint) {
-                saveHint.style.display = 'block';
-                saveHint.textContent = 'Envoi en cours...';
-                saveHint.className = 'cloud-btn-hint hint-syncing';
-            }
-        } else {
-            const saveHint = document.getElementById('cloudSaveHint');
-            const loadHint = document.getElementById('cloudLoadHint');
-            if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
-            if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
+        } else if (state === 'syncing' && saveHint) {
+            saveHint.style.display = 'block';
+            saveHint.textContent = 'Envoi en cours...';
+            saveHint.className = 'cloud-btn-hint hint-syncing';
+        } else if (state === 'local' && saveHint) {
+            saveHint.style.display = 'block';
+            saveHint.textContent = 'Mode hors-ligne';
+            saveHint.className = 'cloud-btn-hint';
         }
 
         // Update menu reminder dot based on syncState
         const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
         if (menuBtn) {
-            const isWarning = state === 'expired' || (state === 'local' && this._wasConfigured);
+            const isWarning = state === 'expired';
             const needsReminder = state === 'connected' &&
                 (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
             const isConflict = state === 'connected' && this._lastSyncState === 'conflict';

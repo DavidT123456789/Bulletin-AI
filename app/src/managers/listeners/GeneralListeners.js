@@ -290,6 +290,10 @@ export const GeneralListeners = {
         const connectBtn = document.getElementById('cloudConnectBtn');
         if (connectBtn) {
             connectBtn.addEventListener('click', async () => {
+                if (!navigator.onLine) {
+                    UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
+                    return;
+                }
                 const iconEl = connectBtn.querySelector('iconify-icon');
                 let wrapper = null;
 
@@ -324,6 +328,10 @@ export const GeneralListeners = {
 
         // --- Save button: guard empty data + confirmation + auto-reconnect ---
         cloudSaveBtn.addEventListener('click', async () => {
+            if (!navigator.onLine) {
+                UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
+                return;
+            }
             const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
             const iconEl = cloudSaveBtn.querySelector('iconify-icon');
             const originalLabel = labelEl?.textContent;
@@ -505,6 +513,10 @@ export const GeneralListeners = {
         const cloudLoadBtn = document.getElementById('cloudLoadMenuBtn');
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
+                if (!navigator.onLine) {
+                    UI.showNotification('Mode hors-ligne : la restauration Cloud nécessite une connexion Internet.', 'info');
+                    return;
+                }
                 const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
                 const iconEl = cloudLoadBtn.querySelector('iconify-icon');
                 const originalLabel = labelEl?.textContent;
@@ -625,6 +637,10 @@ export const GeneralListeners = {
         const reconnectBtn = document.getElementById('cloudReconnectBtn');
         if (reconnectBtn) {
             reconnectBtn.addEventListener('click', async () => {
+                if (!navigator.onLine) {
+                    UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
+                    return;
+                }
                 const iconEl = reconnectBtn.querySelector('iconify-icon');
                 let wrapper = null;
 
@@ -666,7 +682,7 @@ export const GeneralListeners = {
      * @private
      */
     async _updateCloudReminder(syncService) {
-        if (!localStorage.getItem('bulletin_sync_provider')) {
+        if (!localStorage.getItem('bulletin_sync_provider') || !navigator.onLine) {
             DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
             return;
         }
@@ -677,6 +693,11 @@ export const GeneralListeners = {
                 const mod = await import('../../services/SyncService.js');
                 service = mod.SyncService;
             } catch { /* Ignore */ }
+        }
+
+        if (service && !service._isOnline) {
+            DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
+            return;
         }
 
         const isWarning = service ? (!service.isConnected() || service._lastSyncState === 'expired' || service._provider?.needsReconnect?.()) : false;
