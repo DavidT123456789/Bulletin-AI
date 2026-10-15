@@ -155,36 +155,72 @@ export const ListViewEvents = {
 
         // Global click and pointer listener to close menus when clicking outside
         // and absorb the event to prevent accidental interaction with underlying cards/buttons
-        let justDismissedMenu = false;
-        const handleOutsideDismiss = (e) => {
+        let dismissedOnPointer = false;
+        let dismissSafetyTimer = null;
+
+        const clearDismissGuard = () => {
+            dismissedOnPointer = false;
+            if (dismissSafetyTimer) {
+                clearTimeout(dismissSafetyTimer);
+                dismissSafetyTimer = null;
+            }
+        };
+
+        const handlePointerDown = (e) => {
             if (e.target?.closest?.('.action-dropdown') || e.target?.closest?.('.global-actions-dropdown')) {
                 return;
             }
 
             const hasOpenMenu = listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
             if (hasOpenMenu) {
-                justDismissedMenu = true;
+                dismissedOnPointer = true;
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 closeAllMenus();
-                setTimeout(() => { justDismissedMenu = false; }, 150);
-            } else if (justDismissedMenu) {
-                // Absorb click immediately following a pointerdown that dismissed the menu
-                e.preventDefault();
-                e.stopPropagation();
+
+                if (dismissSafetyTimer) clearTimeout(dismissSafetyTimer);
+                dismissSafetyTimer = setTimeout(clearDismissGuard, 1200);
             }
         };
+
+        const handleClick = (e) => {
+            if (e.target?.closest?.('.action-dropdown') || e.target?.closest?.('.global-actions-dropdown')) {
+                return;
+            }
+
+            // If a pointerdown dismissed the menu earlier in this tap/click cycle, absorb the trailing click
+            if (dismissedOnPointer) {
+                clearDismissGuard();
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return;
+            }
+
+            // If a click occurred without a preceding pointerdown dismissal but a menu is still open, dismiss and absorb
+            const hasOpenMenu = listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
+            if (hasOpenMenu) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                closeAllMenus();
+            }
+        };
+
+        window.addEventListener('pointercancel', clearDismissGuard, { signal });
+        window.addEventListener('scroll', clearDismissGuard, { capture: true, passive: true, signal });
 
         if (this.state.activeDocPointerListener) {
             document.removeEventListener('pointerdown', this.state.activeDocPointerListener, true);
         }
-        this.state.activeDocPointerListener = handleOutsideDismiss;
+        this.state.activeDocPointerListener = handlePointerDown;
         document.addEventListener('pointerdown', this.state.activeDocPointerListener, { capture: true, signal });
 
         if (this.state.activeDocClickListener) {
             document.removeEventListener('click', this.state.activeDocClickListener, true);
         }
-        this.state.activeDocClickListener = handleOutsideDismiss;
+        this.state.activeDocClickListener = handleClick;
         document.addEventListener('click', this.state.activeDocClickListener, { capture: true, signal });
 
         // Click handler

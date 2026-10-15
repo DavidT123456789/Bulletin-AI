@@ -140,7 +140,7 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
     });
 
-    it('should absorb outside click to dismiss menu without triggering click handlers on table rows', () => {
+    it('should absorb outside click to dismiss menu without triggering click handlers on table rows, even with human click delay', async () => {
         const rowMenu = listContainer.querySelector('.action-dropdown-menu');
         const toggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
         const studentRow = listContainer.querySelector('.student-row');
@@ -152,8 +152,9 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         const rowClickSpy = vi.fn();
         studentRow.addEventListener('click', rowClickSpy);
 
-        // Click outside on the student row
+        // Click outside on the student row with human delay between pointerdown and click (>200ms)
         studentRow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        await new Promise(r => setTimeout(r, 250));
         studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
         // Menu should be closed
@@ -161,6 +162,11 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
 
         // Underlying row should NOT receive the click
         expect(rowClickSpy).not.toHaveBeenCalled();
+
+        // Subsequent click on the row now that menu is closed SHOULD trigger the row click handler
+        studentRow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(rowClickSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should activate dropup class when near bottom of viewport and reset on close', () => {
