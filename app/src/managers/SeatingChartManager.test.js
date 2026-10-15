@@ -3010,7 +3010,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
         });
 
-        it('devrait conserver data-tooltip sur la pilule .sc-stacked-member en mode Édition comme en mode Lecture', () => {
+        it('devrait conserver data-tooltip (ancré sur la photo .sc-stacked-avatar correspondante) sur la pilule .sc-stacked-member en mode Édition comme en mode Lecture', () => {
             SeatingChartManager.switchPlanMode('activity', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('pairs-alpha');
@@ -3020,18 +3020,22 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const memberPills = cell.querySelectorAll('.sc-stacked-member');
             expect(memberPills.length).toBe(2);
 
-            // En mode Édition : tooltip présent sur les pilules de prénoms (utile pour les prénoms tronqués)
+            // En mode Édition : tooltip présent sur les pilules de prénoms et ancré sur la photo de l'élève correspondant
             expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[0].getAttribute('data-tooltip-anchor')).toBe(".sc-stacked-avatar[data-result-id='u1']");
             expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
+            expect(memberPills[1].getAttribute('data-tooltip-anchor')).toBe(".sc-stacked-avatar[data-result-id='u2']");
 
-            // Passage en mode Lecture : data-tooltip conservé sur .sc-stacked-member
+            // Passage en mode Lecture : data-tooltip et ancrage sur la photo conservés sur .sc-stacked-member
             SeatingChartManager._applyLockState(true);
             expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[0].getAttribute('data-tooltip-anchor')).toBe(".sc-stacked-avatar[data-result-id='u1']");
             expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
 
-            // Retour en mode Édition : data-tooltip toujours présent sur .sc-stacked-member
+            // Retour en mode Édition : data-tooltip et ancrage sur la photo toujours présents sur .sc-stacked-member
             SeatingChartManager._applyLockState(false);
             expect(memberPills[0].getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(memberPills[0].getAttribute('data-tooltip-anchor')).toBe(".sc-stacked-avatar[data-result-id='u1']");
             expect(memberPills[1].getAttribute('data-tooltip')).toBe('Bob BRAVO');
         });
 
@@ -3104,7 +3108,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(1, 0)).toEqual(['u2']);
         });
 
-        it('devrait afficher data-tooltip sur .sc-cell-name d\'une table individuelle en mode Édition et sur la cellule entière en mode Consultation', () => {
+        it('devrait afficher data-tooltip (ancré sur .student-avatar) sur .sc-cell-name d\'une table individuelle en mode Édition et sur la cellule entière en mode Consultation', () => {
             SeatingChartManager.switchPlanMode('course', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('alpha-asc');
@@ -3113,19 +3117,22 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell).not.toBeNull();
             const nameEl = cell.querySelector('.sc-cell-name');
 
-            // Mode Édition : tooltip sur .sc-cell-name sans doublon sur la cellule
+            // Mode Édition : tooltip sur .sc-cell-name ancré au-dessus de la photo .student-avatar sans doublon sur la cellule
             expect(cell.getAttribute('data-tooltip')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(nameEl.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
 
             // Passage en mode Consultation : tooltip transféré sur la cellule entière
             SeatingChartManager._applyLockState(true);
             expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
             expect(nameEl.getAttribute('data-tooltip')).toBeNull();
+            expect(nameEl.getAttribute('data-tooltip-anchor')).toBeNull();
 
             // Retour en mode Édition : tooltip rétabli sur .sc-cell-name
             SeatingChartManager._applyLockState(false);
             expect(cell.getAttribute('data-tooltip')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(nameEl.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
         });
     });
 

@@ -62,8 +62,13 @@ const getCommonTippyConfig = () => {
                 });
             }
             if (typeof instance.setProps === 'function' && typeof instance.reference?.getBoundingClientRect === 'function') {
+                const ref = instance.reference;
+                const anchorSelector = ref.getAttribute?.('data-tooltip-anchor');
+                const anchorEl = anchorSelector && typeof ref.closest === 'function'
+                    ? (ref.closest(anchorSelector) || ref.closest('.sc-cell')?.querySelector?.(anchorSelector))
+                    : null;
                 instance.setProps({
-                    getReferenceClientRect: () => instance.reference.getBoundingClientRect()
+                    getReferenceClientRect: () => (anchorEl || ref).getBoundingClientRect()
                 });
             }
             return true;

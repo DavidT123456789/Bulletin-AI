@@ -2383,6 +2383,7 @@ export const SeatingChartManager = {
                     const nameEl = cell.querySelector('.sc-cell-name');
                     if (nameEl) {
                         nameEl.removeAttribute('data-tooltip');
+                        nameEl.removeAttribute('data-tooltip-anchor');
                         if (nameEl._tippy) nameEl._tippy.destroy();
                     }
                 } else {
@@ -2400,6 +2401,7 @@ export const SeatingChartManager = {
                     const nameEl = cell.querySelector('.sc-cell-name');
                     if (nameEl) {
                         nameEl.setAttribute('data-tooltip', tooltipText);
+                        nameEl.setAttribute('data-tooltip-anchor', '.student-avatar');
                         TooltipsUI?.updateTooltip?.(nameEl, tooltipText);
                     }
                 }
@@ -2414,10 +2416,12 @@ export const SeatingChartManager = {
             if (students.length > 1) {
                 this._attachMemberHoverEcho(cell);
                 cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
-                    const s = this._studentMap?.get(memberEl.dataset.resultId);
+                    const memberId = memberEl.dataset.resultId;
+                    const s = this._studentMap?.get(memberId);
                     if (!s) return;
                     const tooltipText = Utils.formatStudentFirstLastName(s.nom, s.prenom);
                     memberEl.setAttribute('data-tooltip', tooltipText);
+                    memberEl.setAttribute('data-tooltip-anchor', `.sc-stacked-avatar[data-result-id='${memberId}']`);
                     TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
                 });
             }
@@ -3590,7 +3594,9 @@ export const SeatingChartManager = {
                 ? `<span class="sc-cell-status-badge sc-badge-depart">Départ</span>`
                 : (isNew ? `<span class="sc-cell-status-badge sc-badge-new">Nouveau</span>` : '');
 
-            const soloNameTooltipAttr = !this._isLocked ? ` data-tooltip="${Utils.escapeHtml(tooltipText)}"` : '';
+            const soloNameTooltipAttr = !this._isLocked
+                ? ` data-tooltip="${Utils.escapeHtml(tooltipText)}" data-tooltip-anchor=".student-avatar"`
+                : '';
 
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
@@ -3673,7 +3679,7 @@ export const SeatingChartManager = {
             `).join('');
 
             const namesHtml = students.map(s => {
-                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}"`;
+                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
                 return `
                 <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>

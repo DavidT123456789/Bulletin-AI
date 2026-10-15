@@ -257,6 +257,48 @@ describe('TooltipsManager', () => {
             const rectFn = setPropsSpy.mock.calls[0][0].getReferenceClientRect;
             expect(rectFn()).toBe(expectedRect);
         });
+
+        it('should resolve data-tooltip-anchor against the target avatar inside .sc-cell in onShow', () => {
+            let capturedOptions;
+            window.tippy = vi.fn((selector, options) => {
+                capturedOptions = options;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            const cardEl = document.createElement('div');
+            cardEl.className = 'sc-cell';
+
+            const avatarEl = document.createElement('div');
+            avatarEl.className = 'sc-stacked-avatar';
+            avatarEl.setAttribute('data-result-id', 'u2');
+            const avatarRect = { left: 130, top: 108, width: 42, height: 42 };
+            avatarEl.getBoundingClientRect = () => avatarRect;
+            cardEl.appendChild(avatarEl);
+
+            const pillEl = document.createElement('span');
+            pillEl.setAttribute('data-tooltip', 'Clémence BOUVIER');
+            pillEl.setAttribute('data-tooltip-anchor', ".sc-stacked-avatar[data-result-id='u2']");
+            pillEl.getBoundingClientRect = () => ({ left: 110, top: 180, width: 120, height: 22 });
+            cardEl.appendChild(pillEl);
+            document.body.appendChild(cardEl);
+
+            const setPropsSpy = vi.fn();
+            const mockInstance = {
+                state: { isFocused: false },
+                reference: pillEl,
+                setProps: setPropsSpy
+            };
+
+            const result = capturedOptions.onShow(mockInstance);
+            expect(result).toBe(true);
+            expect(setPropsSpy).toHaveBeenCalledWith({
+                getReferenceClientRect: expect.any(Function)
+            });
+            const rectFn = setPropsSpy.mock.calls[0][0].getReferenceClientRect;
+            expect(rectFn()).toBe(avatarRect);
+        });
     });
 
     describe('hideAll', () => {
