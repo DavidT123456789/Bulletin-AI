@@ -80,7 +80,6 @@ export const WelcomeManager = {
         const totalWelcomeSteps = 4;
         let isAnimating = false;
         let currentProvider = 'google';
-        let hasSkippedApiKey = false;
         let isWelcomeCompleted = false;
 
         // Helpers Defined First
@@ -99,8 +98,7 @@ export const WelcomeManager = {
             appState.mistralApiKey ||
             appState.openaiApiKey ||
             appState.anthropicApiKey ||
-            appState.ollamaEnabled ||
-            hasSkippedApiKey
+            appState.ollamaEnabled
         );
 
         // Helper to update input and button state for current provider
@@ -134,8 +132,17 @@ export const WelcomeManager = {
                 }
             }
 
-            if (DOM.welcomeNextBtn && currentWelcomeStep === 2) {
-                DOM.welcomeNextBtn.disabled = !hasAnyConfiguredKey();
+            if (DOM.welcomeNextBtn) {
+                DOM.welcomeNextBtn.disabled = false;
+            }
+
+            const showSkip = !hasAnyConfiguredKey() && !existingKey;
+            const skipSep = document.getElementById('welcomeSkipApiKeySep');
+            if (skipSep) {
+                skipSep.style.display = showSkip ? '' : 'none';
+            }
+            if (DOM.welcomeSkipApiKeyBtn) {
+                DOM.welcomeSkipApiKeyBtn.style.display = showSkip ? '' : 'none';
             }
         };
 
@@ -146,28 +153,24 @@ export const WelcomeManager = {
         // Provider configuration
         const providerConfig = {
             google: {
-                placeholder: "Clé API Google (AIzaSy...)",
+                placeholder: "Clé API Gemini (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
-                linkIcon: '<iconify-icon icon="logos:google-icon"></iconify-icon>',
-                linkText: "Obtenir ma clé (100% gratuite sans CB)"
+                linkText: "Obtenir une clé Gemini ↗"
             },
             groq: {
                 placeholder: "Clé API Groq (gsk_...)",
                 linkUrl: "https://console.groq.com/keys",
-                linkIcon: '<iconify-icon icon="solar:bolt-circle-bold" style="color: #f55036;"></iconify-icon>',
-                linkText: "Obtenir ma clé (100% gratuite sans CB)"
+                linkText: "Obtenir une clé Groq ↗"
             },
             mistral: {
                 placeholder: "Clé API Mistral...",
                 linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<iconify-icon icon="solar:cat-linear" style="color: #fd6f00;"></iconify-icon>',
-                linkText: "Obtenir ma clé (La Plateforme)"
+                linkText: "Obtenir une clé Mistral ↗"
             },
             openrouter: {
                 placeholder: "Clé API OpenRouter (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
-                linkIcon: '<iconify-icon icon="solar:bolt-linear" style="color: var(--secondary-color);"></iconify-icon>',
-                linkText: "Obtenir ma clé"
+                linkText: "Obtenir une clé OpenRouter ↗"
             }
         };
 
@@ -187,7 +190,7 @@ export const WelcomeManager = {
 
                 if (getKeyLink) {
                     getKeyLink.href = config.linkUrl;
-                    getKeyLink.innerHTML = `${config.linkIcon} ${config.linkText || 'Obtenir ma clé'}`;
+                    getKeyLink.textContent = config.linkText;
                 }
 
                 updateProviderKeyState(currentProvider);
@@ -235,12 +238,18 @@ export const WelcomeManager = {
             DOM.welcomeNextBtn.style.display = step === totalWelcomeSteps ? 'none' : 'inline-flex';
             DOM.welcomeFinishOptions.style.display = step === totalWelcomeSteps ? 'flex' : 'none';
             if (step === totalWelcomeSteps) {
+                const finalSubtitleEl = document.getElementById('welcomeFinalSubtitle');
+                if (finalSubtitleEl) {
+                    finalSubtitleEl.textContent = hasAnyConfiguredKey()
+                        ? "Tout est configuré. Lancez l'application pour commencer."
+                        : "Tout est prêt. Vous pourrez activer l'IA à tout moment dans les réglages.";
+                }
                 DOM.welcomeFinishAndHideBtn?.focus?.();
             }
 
-            if (step === 2) {
-                DOM.welcomeNextBtn.disabled = !hasAnyConfiguredKey();
+            DOM.welcomeNextBtn.disabled = false;
 
+            if (step === 2) {
                 // Reset error message
                 if (DOM.welcomeApiKeyError) DOM.welcomeApiKeyError.style.display = 'none';
 
@@ -270,8 +279,6 @@ export const WelcomeManager = {
                         }
                     }
                 }
-            } else {
-                DOM.welcomeNextBtn.disabled = false;
             }
 
             currentWelcomeStep = step;
@@ -337,6 +344,10 @@ export const WelcomeManager = {
                         if (DOM.welcomeApiKeyInput) {
                             DOM.welcomeApiKeyInput.disabled = true;
                         }
+                        const skipSep = document.getElementById('welcomeSkipApiKeySep');
+                        if (skipSep) skipSep.style.display = 'none';
+                        if (DOM.welcomeSkipApiKeyBtn) DOM.welcomeSkipApiKeyBtn.style.display = 'none';
+
                         const recommendedModel = PROVIDER_DEFAULT_MODELS[currentProvider];
                         if (recommendedModel && appState.currentAIModel !== recommendedModel) {
                             appState.currentAIModel = recommendedModel;
@@ -348,7 +359,7 @@ export const WelcomeManager = {
                         }
 
                         DOM.welcomeNextBtn.disabled = false;
-                        setTimeout(() => DOM.welcomeNextBtn.click(), 500);
+                        setTimeout(() => showWelcomeStep(3, 'next'), 500);
                     }
                 );
             }
@@ -395,7 +406,7 @@ export const WelcomeManager = {
 
         initFirstStep();
 
-        // Toggle button style based on input content (grey when empty, orange when key is present) + Enter key support
+        // Toggle button style based on input content (grey when empty, brand primary when key is present) + Enter key support
         if (DOM.welcomeApiKeyInput) {
             DOM.welcomeApiKeyInput.addEventListener('input', (e) => {
                 const validateBtn = DOM.welcomeValidateApiKeyBtn;
@@ -414,6 +425,14 @@ export const WelcomeManager = {
         }
 
         addClickListener(DOM.welcomeNextBtn, () => {
+            if (currentWelcomeStep === 2) {
+                const pendingKey = DOM.welcomeApiKeyInput?.value?.trim() || '';
+                const isAlreadyValidated = DOM.welcomeValidateApiKeyBtn?.classList?.contains('validated');
+                if (pendingKey && !isAlreadyValidated && !DOM.welcomeApiKeyInput?.disabled && validateApiKeyCallback) {
+                    validateWelcomeApiKey();
+                    return;
+                }
+            }
             if (currentWelcomeStep < totalWelcomeSteps) {
                 showWelcomeStep(currentWelcomeStep + 1, 'next');
             }
@@ -446,10 +465,14 @@ export const WelcomeManager = {
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 
         addClickListener(DOM.welcomeSkipApiKeyBtn, () => {
-            hasSkippedApiKey = true;
-            UI.showNotification("Configuration de la clé API ignorée. Vous pourrez l'ajouter plus tard dans les paramètres.", 'info');
-            DOM.welcomeNextBtn.disabled = false;
-            DOM.welcomeNextBtn.click();
+            if (DOM.welcomeApiKeyInput && !DOM.welcomeApiKeyInput.disabled) {
+                DOM.welcomeApiKeyInput.value = '';
+                DOM.welcomeValidateApiKeyBtn?.classList?.remove('ready');
+            }
+            if (DOM.welcomeApiKeyError) {
+                DOM.welcomeApiKeyError.style.display = 'none';
+            }
+            showWelcomeStep(3, 'next');
         });
 
         // Interactivité des cartes de rythme scolaire (Trimestres / Semestres)

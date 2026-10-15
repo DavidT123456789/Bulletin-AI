@@ -748,14 +748,11 @@
 
 .journal-note-input:focus {
     outline: none;
-    border-color: var(--highlight-standard-border) !important;
     background: var(--surface-color);
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
 }
 
 [data-theme="dark"] .journal-note-input:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+    background: var(--bg-secondary);
 }
 
 .journal-note-input::placeholder {

@@ -1329,15 +1329,30 @@
 .api-key-header .btn-link {
     font-size: 0.85em;
     font-weight: 500;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
     text-decoration: none;
-    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
 .api-key-header .btn-link:hover {
     color: var(--text-primary);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    background: var(--item-active-bg);
+    text-decoration: none;
+}
+
+[data-theme="dark"] .api-key-header .btn-link:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-primary);
+}
+
+.api-key-header .btn-link:active {
+    transform: scale(0.97);
 }
 
 .api-key-section .api-key-actions {

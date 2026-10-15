@@ -111,7 +111,9 @@ describe('WelcomeManager', () => {
                 <input type="radio" id="welcomePeriodSystemTrimestres" name="welcomePeriodSystemRadio" value="trimestres" checked>
                 <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio" value="semestres">
             </div>
-            <div id="welcome-step-4" class="welcome-step"></div>
+            <div id="welcome-step-4" class="welcome-step">
+                <p id="welcomeFinalSubtitle"></p>
+            </div>
         `;
     });
 
@@ -263,36 +265,53 @@ describe('WelcomeManager', () => {
             vi.useRealTimers();
         });
 
-        it('should disable Next on Step 2 when no key is configured, and keep Next enabled after clicking Configurer plus tard', async () => {
+        it('should keep Next enabled on Step 2 when no key is configured, allow advancing directly via Next, and tailor Step 4 subtitle', async () => {
             vi.useFakeTimers();
             const { DOM } = await import('../utils/DOM');
+
+            WelcomeManager.setupWelcomeModal();
+
+            // Move to Step 2 -> Next stays enabled (soft-onboarding)
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            expect(DOM.welcomeNextBtn.disabled).toBe(false);
+
+            // Click Next on Step 2 with empty input -> advances directly to Step 3
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            expect(document.getElementById('welcome-step-3').classList.contains('active')).toBe(true);
+
+            // Advance from Step 3 to Step 4 -> focus moves to welcomeFinishAndHideBtn and subtitle reflects keyless mode
+            const focusSpy = vi.spyOn(DOM.welcomeFinishAndHideBtn, 'focus');
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            expect(focusSpy).toHaveBeenCalledTimes(1);
+            expect(document.getElementById('welcomeFinalSubtitle').textContent).toContain('Tout est prêt');
+
+            focusSpy.mockRestore();
+            vi.useRealTimers();
+        });
+
+        it('should auto-validate typed API key when clicking Next on Step 2 instead of Valider', async () => {
+            vi.useFakeTimers();
+            const { DOM } = await import('../utils/DOM');
+            const mockValidate = vi.fn();
+            WelcomeManager.setValidateApiKeyCallback(mockValidate);
 
             WelcomeManager.setupWelcomeModal();
 
             // Move to Step 2
             DOM.welcomeNextBtn.click();
             vi.advanceTimersByTime(500);
-            expect(DOM.welcomeNextBtn.disabled).toBe(true);
 
-            // Click "Configurer plus tard" -> advances to Step 3
-            DOM.welcomeSkipApiKeyBtn.click();
-            vi.advanceTimersByTime(500);
-            expect(DOM.welcomeNextBtn.disabled).toBe(false);
+            // Type an unvalidated key and click Next
+            DOM.welcomeApiKeyInput.value = 'AIzaSyTypedButNotValidated';
+            DOM.welcomeApiKeyInput.disabled = false;
+            DOM.welcomeValidateApiKeyBtn.classList.remove('validated');
 
-            // Go back to Step 2 -> Next should remain enabled because user already chose to skip
-            DOM.welcomePrevBtn.click();
-            vi.advanceTimersByTime(500);
-            expect(DOM.welcomeNextBtn.disabled).toBe(false);
-
-            // Advance to Step 3 then Step 4 -> focus should move to welcomeFinishAndHideBtn
-            const focusSpy = vi.spyOn(DOM.welcomeFinishAndHideBtn, 'focus');
             DOM.welcomeNextBtn.click();
-            vi.advanceTimersByTime(500);
-            DOM.welcomeNextBtn.click();
-            vi.advanceTimersByTime(500);
-            expect(focusSpy).toHaveBeenCalledTimes(1);
 
-            focusSpy.mockRestore();
+            expect(mockValidate).toHaveBeenCalledTimes(1);
             vi.useRealTimers();
         });
 

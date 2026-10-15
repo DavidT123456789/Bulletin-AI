@@ -115,11 +115,6 @@
     border-color: rgba(0, 0, 0, 0.12);
 }
 
-.inline-search-container:focus-within {
-    border-color: var(--highlight-standard-border) !important;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow), var(--shadow-sm) !important;
-}
-
 /* Search close button (exact clone of the trigger button on the 34px avatar axis) */
 .inline-search-close-btn {
     position: relative;
@@ -301,11 +296,6 @@
 
 [data-theme="dark"] .inline-search-container:hover:not(:focus-within) {
     border-color: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme="dark"] .inline-search-container:focus-within {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), var(--shadow-sm) !important;
 }
 
 /* ====================================================================

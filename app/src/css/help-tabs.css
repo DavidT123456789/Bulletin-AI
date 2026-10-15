@@ -1841,16 +1841,6 @@
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
-.hex-input-container:focus-within {
-    border-color: var(--highlight-standard-border) !important;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
-}
-
-[data-theme="dark"] .hex-input-container:focus-within {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-}
-
 .hex-symbol {
     font-size: 0.9rem;
     font-weight: 600;

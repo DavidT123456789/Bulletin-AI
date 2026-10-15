@@ -352,7 +352,7 @@
     height: var(--modal-btn-height);
     padding: 0 20px;
     font-size: 13px;
-    transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
 }
 
 #welcomeNextBtn:hover:not(:disabled),
@@ -379,7 +379,7 @@
     width: 8px;
     height: 8px;
     border-radius: var(--radius-pill);
-    background: var(--border-color);
+    background: var(--border-color-strong);
     /* iOS Spring Transition */
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -402,43 +402,31 @@
     gap: 0;
     margin: 20px auto;
     max-width: 480px;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     transition: all var(--transition-fast);
-    /* No background - let the modal background show through */
-    background: transparent;
+    background: var(--surface-color);
     box-shadow: var(--shadow-sm);
     position: relative;
 }
-
-.welcome-api-key-group:focus-within {
-    border-color: var(--highlight-standard-border) !important;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
-}
-
-[data-theme="dark"] .welcome-api-key-group:focus-within {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-}
-
-
 
 /* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input {
     -webkit-text-security: disc;
     text-security: disc;
     /* Arrondi à gauche seulement pour se connecter au bouton */
-    border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important;
+    border-radius: 16px 0 0 16px !important;
     padding: 10px 18px;
     flex: 1;
     font-size: 0.95em;
     height: auto;
     color: var(--text-primary);
+    background: transparent;
 }
 
 #welcomeModal .welcome-api-key-group input:disabled {
-    background: var(--bg-secondary) !important;
+    background: transparent !important;
     color: var(--text-secondary) !important;
     opacity: 0.85 !important;
     cursor: default;
@@ -452,7 +440,7 @@
 
 /* Bouton de validation API - Style unique avec états de couleur */
 .welcome-api-key-group .btn-validate-key {
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0 !important;
+    border-radius: 0 16px 16px 0 !important;
     margin: 0;
     padding: 0 16px;
     border: none;
@@ -473,10 +461,6 @@
     transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     transform: none !important;
     box-shadow: none !important;
-}
-
-.welcome-api-key-group:focus-within .btn-validate-key {
-    border-left-color: rgba(var(--brand-primary-rgb), 0.3);
 }
 
 .welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
@@ -551,9 +535,9 @@
 .welcome-step {
     max-width: 800px;
     margin: 0 auto;
-    padding: 0 10px 48px 10px;
+    padding: 0 10px;
     width: 100%;
-    min-height: 380px;
+    min-height: 360px;
     position: relative;
     box-sizing: border-box;
 }
@@ -600,19 +584,18 @@
         0 20px 48px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Specific styling for the premium welcome title (Landing Page Style) */
+/* Specific styling for the premium welcome title */
 .welcome-title-premium {
-    font-size: 2.8em !important;
+    font-size: 2.2em !important;
     font-weight: 800 !important;
-    line-height: 1.15;
-    margin-bottom: 16px !important;
+    line-height: 1.2;
+    margin-bottom: 14px !important;
     letter-spacing: -0.03em !important;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
     gap: 8px;
-    filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.08));
 }
 
 .welcome-title-gradient {
@@ -624,10 +607,10 @@
 }
 
 .welcome-subtitle-premium {
-    font-size: 1.15em;
+    font-size: 1.12em;
     color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto 32px auto;
+    max-width: 680px;
+    margin: 0 auto 28px auto;
     line-height: 1.6;
     font-weight: 400;
     letter-spacing: -0.01em;
@@ -638,22 +621,6 @@
 .welcome-step-header {
     text-align: center;
     width: 100%;
-}
-
-.welcome-title-icon {
-    -webkit-text-fill-color: initial;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85em;
-    line-height: 1;
-}
-
-/* Provider tag (e.g., French flag for Mistral) */
-.provider-tag {
-    font-size: 0.75em;
-    opacity: 0.7;
-    margin-left: 2px;
 }
 
 /* === WELCOME API SETUP (STEP 2 CENTERING) === */
@@ -684,82 +651,8 @@
 }
 
 .welcome-api-setup .welcome-action-links {
-    margin-top: 10px;
+    margin-top: 8px;
 }
-
-/* Animation "Coucou" pour la clé */
-.wave-animation {
-    display: inline-block;
-    animation: wave-effect 2.5s infinite;
-    transform-origin: 70% 70%;
-}
-
-@keyframes wave-effect {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    10% {
-        transform: rotate(14deg);
-    }
-
-    20% {
-        transform: rotate(-8deg);
-    }
-
-    30% {
-        transform: rotate(14deg);
-    }
-
-    40% {
-        transform: rotate(-4deg);
-    }
-
-    50% {
-        transform: rotate(10deg);
-    }
-
-    60% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(0deg);
-    }
-}
-
-.welcome-info-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82em;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    padding: 6px 14px;
-    border-radius: var(--radius-pill);
-    margin-top: 12px;
-}
-
-.welcome-step .welcome-info-pill {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
-    display: inline-flex;
-    width: max-content;
-    justify-content: center;
-    white-space: nowrap;
-}
-
-.welcome-info-pill--success {
-    color: var(--success-color);
-    background: rgba(var(--success-color-rgb), 0.05);
-    border-color: rgba(var(--success-color-rgb), 0.15);
-}
-
 
 /* Provider Selector Row - Centrer le sélecteur */
 .provider-selector-row {
@@ -773,26 +666,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    margin-top: 8px;
-    font-size: 0.9em;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 0.88em;
 }
 
 .welcome-action-links .action-separator {
     color: var(--text-tertiary);
     opacity: 0.4;
-    font-size: 0.8em;
+    font-size: 0.85em;
+    user-select: none;
 }
 
-/* Unified style for both links in welcome-action-links */
-.welcome-action-links a,
-.welcome-action-links button {
-    background: none;
+.get-key-link-mini,
+.btn-text-link-compact {
+    background: transparent;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 4px 0;
-    transition: color 0.2s ease;
+    padding: 5px 11px;
+    border-radius: var(--radius-pill);
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     font-size: inherit;
     font-weight: 500;
     font-family: inherit;
@@ -802,58 +696,21 @@
     gap: 5px;
 }
 
-.welcome-action-links a:hover,
-.welcome-action-links button:hover {
-    color: var(--primary-color);
-}
-
-/* Icon styling in welcome-action-links */
-.welcome-action-links a i,
-.welcome-action-links button i {
-    font-size: 0.9em;
-    opacity: 0.8;
-}
-
-.btn-text-link-compact {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 4px 0;
-    transition: color 0.2s ease;
-    font-size: inherit;
-    font-weight: 500;
-}
-
+.get-key-link-mini:hover,
 .btn-text-link-compact:hover {
-    color: var(--primary-color);
+    color: var(--text-primary);
+    background: var(--item-active-bg);
 }
 
-.get-key-link-mini {
-    font-size: 0.85em;
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: opacity 0.2s, transform 0.2s var(--ease-spring);
+[data-theme="dark"] .get-key-link-mini:hover,
+[data-theme="dark"] .btn-text-link-compact:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-primary);
 }
 
-.get-key-link-mini iconify-icon {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.get-key-link-mini:hover {
-    opacity: 0.95;
-}
-
-.get-key-link-mini:hover iconify-icon {
-    transform: scale(1.2) rotate(8deg);
-}
-
-.get-key-link-mini:active iconify-icon {
-    transform: scale(0.95);
+.get-key-link-mini:active,
+.btn-text-link-compact:active {
+    transform: scale(0.97);
 }
 
 /* Responsive: Typography and layout on small screens */
@@ -866,12 +723,6 @@
     #welcomeModal .welcome-step {
         min-height: auto;
         padding-bottom: 16px;
-    }
-
-    .welcome-step .welcome-info-pill {
-        position: static;
-        transform: none;
-        margin: 20px auto 0 auto;
     }
 }
 
@@ -921,107 +772,185 @@
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     width: 100%;
-    max-width: 620px;
+    max-width: 540px;
     margin: 24px auto 0 auto;
     padding: 0 var(--space-4);
 }
 
 .welcome-start-card {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 18px 14px;
-    border-radius: 20px; /* Squircle organic shape */
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 20px;
+    border-radius: 20px;
     background: var(--surface-color);
     border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: border-color var(--transition-fast), 
-                background-color var(--transition-fast);
+    transition: border-color var(--transition-fast),
+                background-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                transform 0.15s var(--ease-spring);
     position: relative;
     user-select: none;
     text-align: left;
 }
 
-.welcome-start-card:hover {
-    background: var(--surface-color);
-    border-color: rgba(var(--text-secondary-rgb), 0.35);
+[data-theme="dark"] .welcome-start-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--border-color);
+    box-shadow: none;
 }
 
-[data-theme="dark"] .welcome-start-card:hover {
-    background: var(--surface-color);
+.welcome-start-card:hover:not(.active) {
+    border-color: var(--border-color-hover);
+}
+
+[data-theme="dark"] .welcome-start-card:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.2);
 }
 
 .welcome-start-card.active {
-    box-shadow: none;
+    border-color: var(--text-primary);
+    box-shadow: var(--shadow-md);
 }
 
-.welcome-start-card.active[data-value="semestres"] {
-    border-color: var(--color-violet);
-    background: rgba(139, 92, 246, 0.04);
-}
-
-.welcome-start-card.active[data-value="trimestres"] {
-    border-color: var(--brand-primary);
-    background: rgba(var(--brand-primary-rgb), 0.04);
-}
-
-.welcome-start-card.active[data-value="semestres"]:hover {
-    background: rgba(139, 92, 246, 0.06);
-}
-
-.welcome-start-card.active[data-value="trimestres"]:hover {
-    background: rgba(var(--brand-primary-rgb), 0.06);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] {
-    background: rgba(139, 92, 246, 0.08);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
-    background: rgba(var(--brand-primary-rgb), 0.08);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="semestres"]:hover {
-    background: rgba(139, 92, 246, 0.12);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"]:hover {
-    background: rgba(var(--brand-primary-rgb), 0.12);
+[data-theme="dark"] .welcome-start-card.active {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
 }
 
 .welcome-start-card:active {
-    transform: scale(0.98);
+    transform: scale(0.985);
 }
 
-.welcome-start-card__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    background: rgba(var(--text-secondary-rgb), 0.08);
+.welcome-start-card:focus-visible {
+    outline: none;
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow);
+}
+
+[data-theme="dark"] .welcome-start-card:focus-visible {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+.welcome-start-card__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+}
+
+.welcome-start-card__title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
+    transition: color var(--transition-fast);
+}
+
+.welcome-start-card.active .welcome-start-card__title,
+.welcome-start-card:hover .welcome-start-card__title {
+    color: var(--text-primary);
+}
+
+.welcome-start-card__desc {
+    font-size: 0.78rem;
+    font-weight: 500;
     color: var(--text-tertiary);
+    line-height: 1.35;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+}
+
+.welcome-start-card.active .welcome-start-card__desc {
+    color: var(--text-secondary);
+}
+
+.welcome-start-card__segments {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.45rem;
-    flex-shrink: 0;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
+    gap: 6px;
+    width: 100%;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    transition: background-color var(--transition-fast);
 }
 
-[data-theme="dark"] .welcome-start-card__icon {
+[data-theme="dark"] .welcome-start-card__segments {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.welcome-period-pill {
+    flex: 1;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-tertiary);
+    background: rgba(var(--surface-color-rgb), 0.55);
+    border: 1px solid transparent;
+    transition: background-color 0.25s var(--ease-spring),
+                color 0.25s var(--ease-spring),
+                border-color 0.25s var(--ease-spring),
+                box-shadow 0.25s var(--ease-spring);
+}
+
+[data-theme="dark"] .welcome-period-pill {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-tertiary);
+}
+
+.welcome-start-card:hover:not(.active) .welcome-period-pill {
+    color: var(--text-secondary);
+    background: rgba(var(--surface-color-rgb), 0.85);
+}
+
+[data-theme="dark"] .welcome-start-card:hover:not(.active) .welcome-period-pill {
+    color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.06);
 }
 
-/* Trimestres Icon Color when active */
-.welcome-start-card.active[data-value="trimestres"] .welcome-start-card__icon {
-    background: rgba(var(--brand-primary-rgb), 0.15);
-    color: var(--brand-primary);
+.welcome-start-card.active .welcome-period-pill {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
-/* Semestres Icon Color when active */
-.welcome-start-card.active[data-value="semestres"] .welcome-start-card__icon {
-    background: rgba(139, 92, 246, 0.15);
-    color: var(--color-violet);
+[data-theme="dark"] .welcome-start-card.active .welcome-period-pill {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Mobile responsive styling */
+@media (max-width: 640px) {
+    .welcome-start-options {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .welcome-start-card {
+        padding: 14px 16px;
+        gap: 10px;
+    }
+
+    .welcome-period-pill {
+        height: 30px;
+    }
 }
 
 /* Dynamic CTA button color based on onboarding selection */
@@ -1099,108 +1028,6 @@
         transform: translate(-6px, 6px) scale(1.3);
         opacity: 0;
         box-shadow: -4px 4px 4px rgba(255, 255, 255, 0);
-    }
-}
-
-/* Accessibility Focus States for onboarding cards */
-.welcome-start-card:focus-visible {
-    outline: none;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
-}
-
-.welcome-start-card.active[data-value="trimestres"]:focus-visible {
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
-}
-
-.welcome-start-card.active[data-value="semestres"]:focus-visible {
-    border-color: var(--color-violet);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.20);
-}
-
-.welcome-start-card__content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.welcome-start-card__title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.welcome-start-card__desc {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.35;
-}
-
-#welcomePeriodCards .welcome-start-card__desc {
-    white-space: nowrap;
-}
-
-.welcome-start-card__radio {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s var(--ease-spring);
-    flex-shrink: 0;
-}
-
-.welcome-start-card.active .welcome-start-card__radio {
-    border-width: 1.5px;
-    background: transparent;
-}
-
-.welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio {
-    border-color: var(--brand-primary);
-}
-
-.welcome-start-card.active[data-value="semestres"] .welcome-start-card__radio {
-    border-color: var(--color-violet);
-}
-
-.welcome-start-card.active .welcome-start-card__radio::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    transform: scale(1);
-    transition: transform 0.3s var(--ease-spring);
-}
-
-.welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio::after {
-    background: var(--brand-primary);
-}
-
-.welcome-start-card.active[data-value="semestres"] .welcome-start-card__radio::after {
-    background: var(--color-violet);
-}
-
-/* Mobile responsive styling */
-@media (max-width: 640px) {
-    .welcome-start-options {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    
-    .welcome-start-card {
-        padding: 10px 12px;
-    }
-    
-    .welcome-start-card__icon {
-        width: 32px;
-        height: 32px;
-        font-size: 1.2rem;
     }
 }
 
@@ -1664,13 +1491,6 @@
 
 .mass-import-textarea-premium:focus {
     outline: none;
-    border-color: var(--highlight-standard-border) !important;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
-}
-
-[data-theme="dark"] .mass-import-textarea-premium:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 .mass-import-textarea-premium::placeholder {

@@ -406,11 +406,6 @@
         font-size: 14px !important;
     }
 
-    #helpProviderSelector .provider-tag,
-    #welcomeProviderSelector .provider-tag {
-        display: none;
-    }
-
     /* About tab mobile refinements */
     .about-header {
         flex-direction: column;

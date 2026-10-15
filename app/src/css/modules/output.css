@@ -168,19 +168,12 @@
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Search input focus - Unified clean luminous ring */
+/* Search input focus - Calm, borderless focus */
 .search-input:focus {
-    border-color: var(--highlight-standard-border) !important;
     background-image: none !important;
     animation: none !important;
     color: var(--text-primary);
     outline: none;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow) !important;
-}
-
-[data-theme="dark"] .search-input:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Dropdown & button focus states */

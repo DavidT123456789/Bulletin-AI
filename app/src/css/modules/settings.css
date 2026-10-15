@@ -1258,7 +1258,7 @@
 /* API key header links container */
 .api-key-links {
     display: flex;
-    gap: 10px;
+    gap: 4px;
     align-items: center;
 }
 

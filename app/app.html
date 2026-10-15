@@ -3564,13 +3564,12 @@
                         <h3 class="welcome-title-premium">
                             <span class="welcome-title-gradient">Bienvenue sur Bulletin AI</span>
                         </h3>
-                        <p class="welcome-subtitle-premium">Prenez quelques instants pour paramétrer votre assistant.</p>
+                        <p class="welcome-subtitle-premium">Prenez quelques instants pour configurer votre espace.</p>
                     </div>
                 </div>
                 <div id="welcome-step-2" class="welcome-step">
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">
-                            <span class="welcome-title-icon wave-animation">🔑</span>
                             <span class="welcome-title-gradient">Activez votre Assistant</span>
                         </h3>
                         <p class="welcome-subtitle-premium">
@@ -3584,13 +3583,13 @@
                                 <input type="radio" id="providerGoogle" name="welcomeProvider" value="google" checked>
                                 <label for="providerGoogle" class="ui-segment">
                                     <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                    <span>Google <small class="provider-tag">Gratuit</small></span>
+                                    <span>Gemini</span>
                                 </label>
                                 <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
                                 <label for="providerGroq" class="ui-segment">
                                     <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold"
                                         style="color: #f55036;"></iconify-icon>
-                                    <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
+                                    <span>Groq</span>
                                 </label>
                                 <input type="radio" id="providerOpenRouter" name="welcomeProvider"
                                     value="openrouter">
@@ -3603,14 +3602,14 @@
                                 <label for="providerMistral" class="ui-segment">
                                     <iconify-icon class="iconify-inline" icon="solar:cat-bold"
                                         style="color: #fd6f00;"></iconify-icon>
-                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                    <span>Mistral</span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="welcome-api-key-group">
                             <input type="text" id="welcomeApiKeyInput" class="custom-input"
-                                placeholder="Clé API Google (AIzaSy...)"
+                                placeholder="Clé API Gemini (AIzaSy...)"
                                 autocomplete="off"
                                 autocorrect="off"
                                 autocapitalize="off"
@@ -3627,19 +3626,12 @@
 
                         <div class="welcome-action-links">
                             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
-                                class="get-key-link-mini" id="welcomeGetKeyLink"><iconify-icon
-                                    icon="logos:google-icon"></iconify-icon> Obtenir
-                                ma clé (100% gratuite sans CB)</a>
-                            <span class="action-separator">•</span>
-                            <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
+                                class="get-key-link-mini" id="welcomeGetKeyLink">Obtenir une clé Gemini ↗</a>
+                            <span class="action-separator" id="welcomeSkipApiKeySep">•</span>
+                            <button type="button" class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
                                 Configurer plus tard
                             </button>
                         </div>
-                    </div>
-
-                    <div class="welcome-info-pill welcome-info-pill--success">
-                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                        <span>Noms anonymisés • Stockage local</span>
                     </div>
                 </div>
 
@@ -3647,44 +3639,39 @@
                 <div id="welcome-step-3" class="welcome-step">
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">
-                            <span class="welcome-title-icon">🗓️</span>
                             <span class="welcome-title-gradient">Votre rythme scolaire</span>
                         </h3>
-                        <p class="welcome-subtitle-premium">Ce paramètre calibre l'IA pour qu'elle s'adapte à votre organisation.</p>
+                        <p class="welcome-subtitle-premium">Choisissez le découpage de votre année scolaire.</p>
                     </div>
 
                     <div class="welcome-start-options" id="welcomePeriodCards">
                         <div class="welcome-start-card active" data-value="trimestres" tabindex="0" role="button" aria-pressed="true">
-                            <div class="welcome-start-card__icon">
-                                <iconify-icon icon="solar:chart-2-bold-duotone"></iconify-icon>
-                            </div>
-                            <div class="welcome-start-card__content">
+                            <div class="welcome-start-card__header">
                                 <strong class="welcome-start-card__title">Trimestres</strong>
-                                <span class="welcome-start-card__desc">3 périodes : T1 • T2 • T3</span>
+                                <span class="welcome-start-card__desc">3 périodes</span>
                             </div>
-                            <div class="welcome-start-card__radio"></div>
+                            <div class="welcome-start-card__segments" aria-hidden="true">
+                                <span class="welcome-period-pill">T1</span>
+                                <span class="welcome-period-pill">T2</span>
+                                <span class="welcome-period-pill">T3</span>
+                            </div>
                         </div>
 
                         <div class="welcome-start-card" data-value="semestres" tabindex="0" role="button" aria-pressed="false">
-                            <div class="welcome-start-card__icon">
-                                <iconify-icon icon="solar:pie-chart-2-bold-duotone"></iconify-icon>
-                            </div>
-                            <div class="welcome-start-card__content">
+                            <div class="welcome-start-card__header">
                                 <strong class="welcome-start-card__title">Semestres</strong>
-                                <span class="welcome-start-card__desc">2 périodes : S1 • S2</span>
+                                <span class="welcome-start-card__desc">2 périodes</span>
                             </div>
-                            <div class="welcome-start-card__radio"></div>
+                            <div class="welcome-start-card__segments" aria-hidden="true">
+                                <span class="welcome-period-pill">S1</span>
+                                <span class="welcome-period-pill">S2</span>
+                            </div>
                         </div>
                     </div>
 
                     <div style="display: none;">
                         <input type="radio" id="welcomePeriodSystemTrimestres" name="welcomePeriodSystemRadio" value="trimestres" checked>
                         <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio" value="semestres">
-                    </div>
-
-                    <div class="welcome-info-pill">
-                        <iconify-icon icon="solar:settings-bold"></iconify-icon>
-                        <span>Modifiable à tout moment dans les réglages</span>
                     </div>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
@@ -3968,7 +3955,7 @@
 
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium"><span class="welcome-title-gradient">Prêt à commencer !</span></h3>
-                        <p class="welcome-subtitle-premium">Tout est configuré. Lancez l'assistant pour commencer.</p>
+                        <p class="welcome-subtitle-premium" id="welcomeFinalSubtitle">Tout est prêt. Lancez l'application pour commencer.</p>
                     </div>
                 </div>
             </div>
