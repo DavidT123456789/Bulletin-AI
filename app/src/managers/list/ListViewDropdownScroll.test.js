@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for List View dropdown menus auto-dismiss on scroll, dropup auto-flip & ARIA states
+ * @fileoverview Unit tests for List View dropdown menus tap-outside dismiss with click absorption, dropup auto-flip & ARIA states
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -33,7 +33,7 @@ vi.mock('../StorageManager.js', () => ({
     }
 }));
 
-describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip', () => {
+describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync and dropup auto-flip', () => {
     let container;
     let listContainer;
 
@@ -76,7 +76,7 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         }
     });
 
-    it('should close row action dropdown menu and sync aria-expanded when scrolling outside', () => {
+    it('should close row action dropdown menu and sync aria-expanded when tapping outside with absorption', () => {
         const rowDropdown = listContainer.querySelector('.action-dropdown');
         const rowMenu = listContainer.querySelector('.action-dropdown-menu');
         const toggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
@@ -89,8 +89,9 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         expect(rowDropdown.classList.contains('open')).toBe(true);
         expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
 
-        // Dispatch scroll event on window (simulating mobile viewport scroll)
-        window.dispatchEvent(new Event('scroll'));
+        // Tap outside on document body
+        document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
         // Menu should be closed and aria-expanded reset
         expect(rowMenu.classList.contains('open')).toBe(false);
@@ -98,7 +99,7 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('should close global header action dropdown menu and sync aria-expanded when scrolling list container', () => {
+    it('should close global header action dropdown menu and sync aria-expanded when tapping outside', () => {
         const globalDropdown = listContainer.querySelector('.global-actions-dropdown');
         const globalMenu = listContainer.querySelector('.global-actions-dropdown-menu');
         const globalToggleBtn = listContainer.querySelector('.btn-action-menu-header');
@@ -111,8 +112,9 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         expect(globalDropdown.classList.contains('open')).toBe(true);
         expect(globalToggleBtn.getAttribute('aria-expanded')).toBe('true');
 
-        // Dispatch scroll event on listContainer
-        listContainer.dispatchEvent(new Event('scroll'));
+        // Tap outside
+        document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
         // Menu should be closed and aria-expanded reset
         expect(globalMenu.classList.contains('open')).toBe(false);
@@ -120,24 +122,45 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         expect(globalToggleBtn.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('should NOT close menu if scroll event originates from inside the menu itself', () => {
+    it('should NOT close menu when clicking inside the menu itself', () => {
         const rowDropdown = listContainer.querySelector('.action-dropdown');
         const rowMenu = listContainer.querySelector('.action-dropdown-menu');
         const toggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
+        const actionItem = listContainer.querySelector('.action-dropdown-item');
 
         toggleBtn.click();
         expect(rowMenu.classList.contains('open')).toBe(true);
 
-        // Dispatch scroll event targeting the menu itself
-        const scrollInsideEvent = new Event('scroll', { bubbles: false });
-        Object.defineProperty(scrollInsideEvent, 'target', { value: rowMenu, writable: false });
+        // Click inside the menu
+        actionItem.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
 
-        window.dispatchEvent(scrollInsideEvent);
-
-        // Menu should remain open
+        // Menu should remain open on pointerdown (click on action item will execute action)
         expect(rowMenu.classList.contains('open')).toBe(true);
         expect(rowDropdown.classList.contains('open')).toBe(true);
         expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('should absorb outside click to dismiss menu without triggering click handlers on table rows', () => {
+        const rowMenu = listContainer.querySelector('.action-dropdown-menu');
+        const toggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
+        const studentRow = listContainer.querySelector('.student-row');
+
+        // Open menu
+        toggleBtn.click();
+        expect(rowMenu.classList.contains('open')).toBe(true);
+
+        const rowClickSpy = vi.fn();
+        studentRow.addEventListener('click', rowClickSpy);
+
+        // Click outside on the student row
+        studentRow.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        // Menu should be closed
+        expect(rowMenu.classList.contains('open')).toBe(false);
+
+        // Underlying row should NOT receive the click
+        expect(rowClickSpy).not.toHaveBeenCalled();
     });
 
     it('should activate dropup class when near bottom of viewport and reset on close', () => {
@@ -160,27 +183,12 @@ describe('ListView - Dropdown menus auto-dismiss, ARIA sync and dropup auto-flip
         expect(rowDropdown.classList.contains('dropup')).toBe(true);
         expect(rowDropdown.classList.contains('open')).toBe(true);
 
-        // Close menu
-        window.dispatchEvent(new Event('scroll'));
+        // Close menu via outside tap
+        document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
         expect(rowDropdown.classList.contains('dropup')).toBe(false);
         expect(rowDropdown.classList.contains('open')).toBe(false);
-    });
-
-    it('should handle scroll safely when no menus are open and listener is detached', () => {
-        const rowMenu = listContainer.querySelector('.action-dropdown-menu');
-        const globalMenu = listContainer.querySelector('.global-actions-dropdown-menu');
-
-        expect(rowMenu.classList.contains('open')).toBe(false);
-        expect(globalMenu.classList.contains('open')).toBe(false);
-
-        // Triggering scroll when closed should not throw errors
-        expect(() => {
-            window.dispatchEvent(new Event('scroll'));
-            listContainer.dispatchEvent(new Event('scroll'));
-        }).not.toThrow();
-
-        expect(rowMenu.classList.contains('open')).toBe(false);
-        expect(globalMenu.classList.contains('open')).toBe(false);
     });
 
     it('should clean up listeners when container is re-attached or aborted', () => {
