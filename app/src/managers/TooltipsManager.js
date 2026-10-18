@@ -72,6 +72,20 @@ const getCommonTippyConfig = () => {
                 });
             }
             return true;
+        },
+        onHide(instance) {
+            if (ModalUI._isIgnoringTooltips) return;
+            const ref = instance.reference;
+            const parentCell = ref?.parentElement?.closest?.('.sc-cell[data-tooltip]');
+            if (parentCell && parentCell !== ref && parentCell._tippy && typeof parentCell.matches === 'function' && parentCell.matches(':hover')) {
+                if (!parentCell.querySelector('[data-tooltip]:hover')) {
+                    setTimeout(() => {
+                        if (!ModalUI._isIgnoringTooltips && parentCell.matches(':hover') && !parentCell.querySelector('[data-tooltip]:hover')) {
+                            parentCell._tippy?.show?.();
+                        }
+                    }, 50);
+                }
+            }
         }
     };
 };

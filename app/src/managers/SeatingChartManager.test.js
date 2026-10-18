@@ -1801,6 +1801,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             ];
             SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
             SeatingChartManager._isLocked = false;
+            SeatingChartManager._orientation = 'teacher';
             SeatingChartManager._selectedChipIds = [];
             SeatingChartManager._closeMobileSheet();
         });
@@ -1896,7 +1897,16 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._activeMobileSheet).toBeNull();
         });
 
-        it('devrait ouvrir le Mobile Sheet pour une table vide avec sélecteur d’élèves', () => {
+        it('devrait ouvrir le Mobile Sheet pour une table vide avec sélecteur d’élèves trié A→Z par NOM Prénom et formaté avec .student-nom / .student-prenom', () => {
+            SeatingChartManager._gridState = [
+                ['s1', null, null],
+                [null, null, null]
+            ];
+            // Non placés : s2 (Bernard Emma), s3 (Dubois Noah), s4 (Thomas Chloe)
+            // Ajoutons un élève Azoulay Yanis à la fin pour vérifier le tri alphabétique par NOM
+            SeatingChartManager._students.push({ id: 's5', prenom: 'Yanis', nom: 'Azoulay' });
+            SeatingChartManager._studentMap.set('s5', SeatingChartManager._students[4]);
+
             SeatingChartManager._openEmptyCellSheet(0, 2, null);
 
             const sheet = document.getElementById('scMobileSheet');
@@ -1905,8 +1915,54 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(sheet.textContent).toContain('Attribuer à un élève non placé');
             expect(sheet.querySelector('[data-special-type="aisle"]')).not.toBeNull();
 
+            const pickerNames = Array.from(sheet.querySelectorAll('#scSheetPickerList .sc-sheet-picker-name'));
+            expect(pickerNames.map(el => el.textContent.trim())).toEqual([
+                'AZOULAY Yanis',
+                'BERNARD Emma',
+                'DUBOIS Noah',
+                'THOMAS Chloe'
+            ]);
+            expect(pickerNames[0].querySelector('.student-nom')?.textContent).toBe('AZOULAY');
+            expect(pickerNames[0].querySelector('.student-prenom')?.textContent).toBe('Yanis');
+
             SeatingChartManager._closeMobileSheet();
             expect(SeatingChartManager._activeMobileSheet).toBeNull();
+        });
+
+        it('devrait convertir le libellé du clone de drag (.sc-drag-clone / .sc-touch-ghost) en Prénom N. (.sc-cell-name) depuis une puce de la réserve', () => {
+            const chip = document.createElement('div');
+            chip.className = 'sc-student-chip sc-chip-new';
+            chip.dataset.resultId = 's1';
+            chip.innerHTML = `
+                <div class="student-avatar">LM</div>
+                <span class="sc-student-chip-name"><span class="student-nom">MARTIN</span> <span class="student-prenom">Lucas</span></span>
+                <span class="sc-chip-badge sc-chip-badge-new">Nouveau</span>
+            `;
+
+            const mockDragEvent = {
+                clientX: 120,
+                clientY: 160,
+                dataTransfer: { setDragImage: vi.fn() }
+            };
+
+            SeatingChartManager._setCleanDragImage(mockDragEvent, chip, 1);
+            const dragClone = document.querySelector('.sc-drag-clone');
+            expect(dragClone).not.toBeNull();
+            expect(dragClone.querySelector('.sc-student-chip-name')).toBeNull();
+            expect(dragClone.querySelector('.sc-chip-badge')).toBeNull();
+            const cellName = dragClone.querySelector('.sc-cell-name');
+            expect(cellName).not.toBeNull();
+            expect(cellName.textContent).toBe('Lucas M.');
+            expect(cellName.querySelector('.sc-cell-initial')?.textContent).toBe('M.');
+            SeatingChartManager._removeDragClones();
+
+            SeatingChartManager._createTouchGhost(chip, { clientX: 120, clientY: 160 });
+            const touchGhost = document.querySelector('.sc-touch-ghost');
+            expect(touchGhost).not.toBeNull();
+            expect(touchGhost.querySelector('.sc-student-chip-name')).toBeNull();
+            expect(touchGhost.querySelector('.sc-chip-badge')).toBeNull();
+            expect(touchGhost.querySelector('.sc-cell-name')?.textContent).toBe('Lucas M.');
+            SeatingChartManager._removeTouchGhost();
         });
 
         it('devrait sélectionner l’élève lors du clic sur Déplacer et fermer la feuille', () => {
@@ -3191,7 +3247,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(1, 0)).toEqual(['u2']);
         });
 
-        it('devrait afficher data-tooltip (ancré sur .student-avatar) sur .sc-cell-name d\'une table individuelle en mode Édition et sur la cellule entière en mode Consultation', () => {
+        it('devrait afficher data-tooltip sur la cellule entière (.sc-cell.occupied) en mode Édition (ancré sur .student-avatar) comme en mode Consultation', () => {
             SeatingChartManager.switchPlanMode('course', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('alpha-asc');
@@ -3200,22 +3256,22 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell).not.toBeNull();
             const nameEl = cell.querySelector('.sc-cell-name');
 
-            // Mode Édition : tooltip sur .sc-cell-name ancré au-dessus de la photo .student-avatar sans doublon sur la cellule
-            expect(cell.getAttribute('data-tooltip')).toBeNull();
-            expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
-            expect(nameEl.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            // Mode Édition : tooltip directement sur la cellule (car .sc-cell-name a pointer-events: none) ancré au-dessus de .student-avatar
+            expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(cell.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            expect(nameEl.getAttribute('data-tooltip')).toBeNull();
 
-            // Passage en mode Consultation : tooltip transféré sur la cellule entière
+            // Passage en mode Consultation : tooltip conservé sur la cellule entière
             SeatingChartManager._applyLockState(true);
             expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(cell.getAttribute('data-tooltip-anchor')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBeNull();
-            expect(nameEl.getAttribute('data-tooltip-anchor')).toBeNull();
 
-            // Retour en mode Édition : tooltip rétabli sur .sc-cell-name
+            // Retour en mode Édition : tooltip maintenu sur la cellule avec ancrage sur .student-avatar
             SeatingChartManager._applyLockState(false);
-            expect(cell.getAttribute('data-tooltip')).toBeNull();
-            expect(nameEl.getAttribute('data-tooltip')).toBe('Alice ALPHA');
-            expect(nameEl.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
+            expect(cell.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            expect(nameEl.getAttribute('data-tooltip')).toBeNull();
         });
     });
 

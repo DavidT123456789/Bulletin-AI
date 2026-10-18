@@ -560,7 +560,7 @@
         transform: translateY(-1px);
     }
 
-    .sc-student-chip:hover .sc-student-chip-name {
+    .sc-student-chip:hover .sc-student-chip-name .student-prenom {
         color: var(--text-primary);
     }
 }
@@ -578,18 +578,28 @@
 
 .sc-student-chip-name {
     font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 500;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: font-weight var(--transition-fast), color var(--transition-fast);
 }
 
-.sc-student-chip-name .student-prenom {
-    font-weight: 400;
+.sc-student-chip-name .student-nom {
+    font-size: 0.74rem;
+    font-weight: 500;
     color: var(--text-secondary);
-    margin-left: 2px;
+    letter-spacing: 0.01em;
+    transition: color var(--transition-fast);
+}
+
+.sc-student-chip-name .student-prenom {
+    font-size: 0.81rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-left: 3px;
+    transition: font-weight var(--transition-fast), color var(--transition-fast);
 }
 
 /* Status badge on sidebar chips */
@@ -1752,9 +1762,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
 }
 
-.sc-student-chip.sc-chip-selected .sc-student-chip-name {
+.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-prenom {
     color: var(--text-primary) !important;
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-nom {
+    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary)) !important;
 }
 
 .sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img {
@@ -3012,7 +3026,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 120px;
-        color: var(--text-primary);
+        color: var(--text-secondary);
+    }
+
+    .sc-student-chip-name .student-nom {
+        font-size: 0.67rem;
+    }
+
+    .sc-student-chip-name .student-prenom {
+        font-size: 0.73rem;
     }
 
     .sc-student-chip.sc-chip-selected {
@@ -5410,11 +5432,25 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-sheet-picker-name {
-    font-size: 0.86rem;
+    font-size: 0.85rem;
     font-weight: 500;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.sc-sheet-picker-name .student-nom {
+    font-weight: 500;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+}
+
+.sc-sheet-picker-name .student-prenom {
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: var(--text-primary);
 }
 
 .sc-sheet-picker-badge {

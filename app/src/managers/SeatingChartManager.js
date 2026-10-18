@@ -1005,7 +1005,11 @@ export const SeatingChartManager = {
         const isPinned = students.some(s => !!s?.[posKey]?.pinned);
         const isActivity = this._isActivityMode();
         const stationNum = isActivity ? this._getStationNumber(row, col) : null;
-        const unplaced = (isActivity && students.length < MAX_ACTIVITY_GROUP_SIZE) ? this._getUnplacedStudents() : [];
+        const unplaced = (isActivity && students.length < MAX_ACTIVITY_GROUP_SIZE)
+            ? [...this._getUnplacedStudents()].sort((a, b) =>
+                `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+            )
+            : [];
 
         const backdrop = document.createElement('div');
         backdrop.className = 'sc-mobile-sheet-backdrop';
@@ -1036,7 +1040,7 @@ export const SeatingChartManager = {
                     <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${s.id}">
                         <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${s.id}" type="button">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                         </button>
                         <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${s.prenom || s.nom}">
                             <iconify-icon icon="ph:x"></iconify-icon> Retirer
@@ -1053,7 +1057,7 @@ export const SeatingChartManager = {
                     <button class="sc-sheet-picker-item" data-join-student-id="${s.id}" type="button">
                         <div class="sc-sheet-picker-user">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                         </div>
                         <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:user-plus-linear"></iconify-icon> Associer</span>
                     </button>
@@ -1194,7 +1198,9 @@ export const SeatingChartManager = {
         if (!HistoryManager.isOpen('scMobileSheet')) {
             HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
         }
-        const unplaced = this._getUnplacedStudents();
+        const unplaced = [...this._getUnplacedStudents()].sort((a, b) =>
+            `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+        );
         const isClassScope = special?.scope === 'class';
         const backdrop = document.createElement('div');
         backdrop.className = 'sc-mobile-sheet-backdrop';
@@ -1252,7 +1258,7 @@ export const SeatingChartManager = {
                             <button class="sc-sheet-picker-item" data-student-id="${s.id}" type="button">
                                 <div class="sc-sheet-picker-user">
                                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                                    <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                                    <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                                 </div>
                                 <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Placer</span>
                             </button>
@@ -2373,39 +2379,32 @@ export const SeatingChartManager = {
             const cellIds = (!isNaN(row) && !isNaN(col)) ? this._getCellStudentIds(row, col) : [cell.dataset.resultId].filter(Boolean);
             const students = cellIds.map(id => this._studentMap?.get(id)).filter(Boolean);
 
-            if (this._isLocked) {
-                if (students.length === 1) {
-                    const student = students[0];
-                    let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
-                    if (student.isNew) tooltipText += ' • Nouveau';
-                    if (student.isDeparted) tooltipText += ' • Départ';
-                    cell.setAttribute('data-tooltip', tooltipText);
-                    TooltipsUI?.updateTooltip?.(cell, tooltipText);
-                    const nameEl = cell.querySelector('.sc-cell-name');
-                    if (nameEl) {
-                        nameEl.removeAttribute('data-tooltip');
-                        nameEl.removeAttribute('data-tooltip-anchor');
-                        if (nameEl._tippy) nameEl._tippy.destroy();
-                    }
+            if (students.length === 1) {
+                const student = students[0];
+                let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
+                if (student.isNew) tooltipText += ' • Nouveau';
+                if (student.isDeparted) tooltipText += ' • Départ';
+                cell.setAttribute('data-tooltip', tooltipText);
+                if (this._isLocked) {
+                    cell.removeAttribute('data-tooltip-anchor');
                 } else {
-                    cell.removeAttribute('data-tooltip');
-                    if (cell._tippy) cell._tippy.destroy();
+                    cell.setAttribute('data-tooltip-anchor', '.student-avatar');
+                }
+                TooltipsUI?.updateTooltip?.(cell, tooltipText);
+                const nameEl = cell.querySelector('.sc-cell-name');
+                if (nameEl) {
+                    nameEl.removeAttribute('data-tooltip');
+                    nameEl.removeAttribute('data-tooltip-anchor');
+                    if (nameEl._tippy) nameEl._tippy.destroy();
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
+                cell.removeAttribute('data-tooltip-anchor');
                 if (cell._tippy) cell._tippy.destroy();
+            }
+
+            if (!this._isLocked) {
                 const primary = students[0];
-                if (students.length === 1 && primary) {
-                    let tooltipText = Utils.formatStudentFirstLastName(primary.nom, primary.prenom);
-                    if (primary.isNew) tooltipText += ' • Nouveau';
-                    if (primary.isDeparted) tooltipText += ' • Départ';
-                    const nameEl = cell.querySelector('.sc-cell-name');
-                    if (nameEl) {
-                        nameEl.setAttribute('data-tooltip', tooltipText);
-                        nameEl.setAttribute('data-tooltip-anchor', '.student-avatar');
-                        TooltipsUI?.updateTooltip?.(nameEl, tooltipText);
-                    }
-                }
                 if (primary && !isNaN(row) && !isNaN(col)) {
                     this._attachCellDragListeners(cell, primary, row, col);
                     if (students.length > 1) {
@@ -3593,21 +3592,18 @@ export const SeatingChartManager = {
             if (isNew) tooltipText += ' • Nouveau';
             if (isDeparted) tooltipText += ' • Départ';
 
-            if (this._isLocked) {
-                cell.setAttribute('data-tooltip', tooltipText);
+            cell.setAttribute('data-tooltip', tooltipText);
+            if (!this._isLocked) {
+                cell.setAttribute('data-tooltip-anchor', '.student-avatar');
             }
 
             const statusBadgeHTML = isDeparted
                 ? `<span class="sc-cell-status-badge sc-badge-depart">Départ</span>`
                 : (isNew ? `<span class="sc-cell-status-badge sc-badge-new">Nouveau</span>` : '');
 
-            const soloNameTooltipAttr = !this._isLocked
-                ? ` data-tooltip="${Utils.escapeHtml(tooltipText)}" data-tooltip-anchor=".student-avatar"`
-                : '';
-
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-cell-name"${soloNameTooltipAttr}>${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
+                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
                 ${statusBadgeHTML}
                 ${stationBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
@@ -3906,7 +3902,9 @@ export const SeatingChartManager = {
         if (!list) return;
 
         const unplaced = this._getUnplacedStudents(false);
-        const departedUnplaced = this._getUnplacedStudents(true).filter(s => this._isStudentDeparted(s));
+        const departedUnplaced = this._getUnplacedStudents(true)
+            .filter(s => this._isStudentDeparted(s))
+            .sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
 
         const sorted = [...unplaced].sort((a, b) =>
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
@@ -4842,7 +4840,19 @@ export const SeatingChartManager = {
             ghost.style.setProperty('--sc-cell-h', `${element.offsetHeight}px`);
         }
         ghost.classList.remove('sc-chip-selected');
-        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill').forEach(el => el.remove());
+        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge').forEach(el => el.remove());
+
+        if (element.classList.contains('sc-student-chip')) {
+            const chipNameEl = ghost.querySelector('.sc-student-chip-name');
+            if (chipNameEl) {
+                chipNameEl.className = 'sc-cell-name';
+                const studentId = element.dataset?.resultId;
+                const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
+                if (student) {
+                    chipNameEl.innerHTML = Utils.formatStudentInitialLabel(student.nom, student.prenom, true);
+                }
+            }
+        }
 
         if (this._touchSourceInfo?.type === 'multi-cell' && this._touchSourceInfo.ids.length > 1) {
             const badge = document.createElement('div');

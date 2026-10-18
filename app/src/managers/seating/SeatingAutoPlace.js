@@ -508,7 +508,19 @@ export const SeatingAutoPlace = {
             clone.style.setProperty('--sc-cell-h', '114px');
         }
         clone.classList.remove('sc-chip-selected');
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill').forEach(el => el.remove());
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge').forEach(el => el.remove());
+
+        if (sourceEl.classList.contains('sc-student-chip')) {
+            const chipNameEl = clone.querySelector('.sc-student-chip-name');
+            if (chipNameEl) {
+                chipNameEl.className = 'sc-cell-name';
+                const studentId = sourceEl.dataset?.resultId;
+                const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
+                if (student) {
+                    chipNameEl.innerHTML = Utils.formatStudentInitialLabel(student.nom, student.prenom, true);
+                }
+            }
+        }
 
         const board = sourceEl.closest?.('#scClassroomBoard');
         if (board) {
@@ -556,11 +568,11 @@ export const SeatingAutoPlace = {
         e.dataTransfer?.setDragImage?.(blank, 0, 0);
 
         const clone = document.createElement('div');
-        clone.className = 'sc-drag-clone sc-student-chip';
+        clone.className = 'sc-drag-clone';
         if (student) {
             clone.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-student-chip-name">${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
+                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
             `;
         } else {
             clone.innerHTML = sourceEl.innerHTML;
