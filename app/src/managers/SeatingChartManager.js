@@ -205,6 +205,7 @@ export const SeatingChartManager = {
                         <button type="button" class="sc-quick-group-btn" id="scQuickGroupBtn" style="display: none;"></button>
                         <span id="scFooterInfo" style="display: none;" aria-hidden="true"></span>
                         <div class="sc-search-box">
+                            <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
                             <input type="text" id="scSearchInput" class="custom-input" placeholder="Rechercher..." autocomplete="off">
                             <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>
