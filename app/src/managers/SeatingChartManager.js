@@ -627,7 +627,7 @@ export const SeatingChartManager = {
             });
 
             document.addEventListener('keydown', (e) => {
-                if (!this._isActive) return;
+                if (!this._isActive || FocusPanelManager.isOpen?.()) return;
 
                 const activeEl = document.activeElement;
                 const isTyping = activeEl && (
@@ -691,7 +691,16 @@ export const SeatingChartManager = {
         if (!this._isActive) return;
         this._students = this._getCurrentClassStudents();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
+        if (this._selectedChipIds.length > 0) {
+            this._selectedChipIds = this._selectedChipIds.filter(id => {
+                const st = this._studentMap.get(id);
+                return st && !this._isStudentDeparted(st);
+            });
+        }
         this._render();
+        window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
+            detail: { classId: appState.currentClassId, locked: this._isLocked, planMode: this._planMode }
+        }));
     },
 
     // ========================================================================
@@ -3996,6 +4005,9 @@ export const SeatingChartManager = {
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                     ${s.isNew ? '<span class="sc-chip-badge sc-chip-badge-new">Nouveau</span>' : ''}
+                    <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
+                        <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                    </button>
                 </div>
             `).join('');
 
@@ -4011,6 +4023,9 @@ export const SeatingChartManager = {
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
+                            <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
+                                <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                            </button>
                         </div>
                     `).join('')}
                 </div>
@@ -4025,11 +4040,21 @@ export const SeatingChartManager = {
         list.querySelectorAll('.sc-student-chip').forEach((chip, index) => {
             const id = chip.dataset.resultId;
 
+            const profileBtn = chip.querySelector('.sc-chip-profile-btn');
+            profileBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this._isLocked) return;
+                TooltipsUI?.hideAll?.();
+                this._clearSelection();
+                FocusPanelManager.open(id);
+            });
+
             chip.addEventListener('dragstart', (e) => {
-                if (this._isLocked) {
+                if (this._isLocked || e.target.closest?.('.sc-chip-profile-btn')) {
                     e.preventDefault();
                     return;
                 }
+                TooltipsUI?.hideAll?.();
                 this._dismissOnboardingHint();
                 const isSelected = this._selectedChipIds.includes(id);
                 if (!isSelected) {
@@ -4052,7 +4077,7 @@ export const SeatingChartManager = {
             });
 
             chip.addEventListener('click', (e) => {
-                if (e.defaultPrevented || this._isLocked) return;
+                if (e.defaultPrevented || this._isLocked || e.target.closest?.('.sc-chip-profile-btn')) return;
                 if (e.shiftKey && this._lastSelectedSidebarIndex !== null) {
                     this._selectSidebarRange(this._lastSelectedSidebarIndex, index, allVisible);
                 } else {
@@ -4065,6 +4090,7 @@ export const SeatingChartManager = {
         });
 
         this._applyChipSelectionUI();
+        TooltipsUI?.initTooltips?.(list);
 
         if (returningId) this._animateSidebarChipReturn(returningId);
     },
@@ -4677,7 +4703,7 @@ export const SeatingChartManager = {
         let pendingSourceInfo = null;
 
         element.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned')) {
+            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn')) {
                 clearTimeout(longPressTimer);
                 if (this._longPressTimer) {
                     clearTimeout(this._longPressTimer);
@@ -4841,7 +4867,7 @@ export const SeatingChartManager = {
             ghost.style.setProperty('--sc-cell-h', `${element.offsetHeight}px`);
         }
         ghost.classList.remove('sc-chip-selected');
-        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge').forEach(el => el.remove());
+        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
 
         if (element.classList.contains('sc-student-chip')) {
             const chipNameEl = ghost.querySelector('.sc-student-chip-name');

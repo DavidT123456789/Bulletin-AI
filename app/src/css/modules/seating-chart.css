@@ -571,6 +571,7 @@
 }
 
 .sc-student-chip {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 11px;
@@ -596,7 +597,7 @@
     }
 }
 
-.sc-student-chip:active {
+.sc-student-chip:active:not(:has(.sc-chip-profile-btn:active)) {
     cursor: grabbing;
     transform: scale(1.03) translateY(0);
     box-shadow: var(--shadow-md);
@@ -661,6 +662,99 @@
     margin-left: auto;
     flex-shrink: 0;
     letter-spacing: 0.02em;
+    transition: opacity 0.15s ease;
+}
+
+/* Quick profile button on sidebar chips (opens FocusPanel) */
+.sc-chip-profile-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.92);
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.15s ease, color 0.15s ease;
+    z-index: 2;
+}
+
+.sc-chip-profile-btn iconify-icon {
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+@media (min-width: 769px) {
+    .sc-student-chip:focus-within .sc-chip-profile-btn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-50%) scale(1);
+    }
+
+    .sc-student-chip:focus-within .sc-chip-badge {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .sc-student-chip:focus-within .sc-student-chip-name {
+        padding-right: 26px;
+    }
+}
+
+@media (hover: hover) and (min-width: 769px) {
+    .sc-student-chip:hover .sc-chip-profile-btn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-50%) scale(1);
+    }
+
+    .sc-student-chip:hover .sc-chip-badge {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .sc-student-chip:hover .sc-student-chip-name {
+        padding-right: 26px;
+    }
+}
+
+@media (hover: none) and (min-width: 769px) {
+    .sc-student-chip.sc-chip-selected .sc-chip-profile-btn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-50%) scale(1);
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-badge {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-student-chip-name {
+        padding-right: 26px;
+    }
+}
+
+.sc-chip-profile-btn:hover,
+.sc-chip-profile-btn:focus-visible {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.sc-chip-profile-btn:active {
+    transform: translateY(-50%) scale(0.94);
 }
 
 .sc-chip-badge-new {
@@ -3088,6 +3182,32 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         background: var(--highlight-standard-bg);
         box-shadow: 0 0 0 2px var(--highlight-standard-border);
         transform: translateY(-2px);
+    }
+
+    .sc-student-chip .sc-chip-profile-btn {
+        display: none;
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-badge {
+        display: none;
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-profile-btn {
+        display: inline-flex;
+        position: static;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        width: 26px;
+        height: 26px;
+        margin: -2px -4px -2px 2px;
+        border-radius: 50%;
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-profile-btn:active {
+        transform: scale(0.92);
     }
 
     /* Empty sidebar message adapts to horizontal layout */

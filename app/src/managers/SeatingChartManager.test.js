@@ -3451,6 +3451,112 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
         });
     });
+
+    describe('Accès à la fiche élève depuis le panneau latéral et statut Départ', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="list">
+                    <div class="main-content">
+                        <section class="output-section"></section>
+                    </div>
+                </div>
+            `;
+
+            userSettings.academic.classes = [];
+            appState.classes = userSettings.academic.classes;
+            appState.generatedResults = [];
+            appState.seatingGrid = { rows: 5, cols: 6, locked: false, roomConfigured: true, specialLayout: {} };
+            userSettings.academic.seatingGrid = appState.seatingGrid;
+
+            const cls = ClassManager.createClass('4ème A');
+            appState.generatedResults.push(
+                {
+                    id: 'st-placed',
+                    classId: cls.id,
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    studentData: { statuses: [] },
+                    seatingPosition: { row: 0, col: 0 }
+                },
+                {
+                    id: 'st-unplaced',
+                    classId: cls.id,
+                    nom: 'BERNARD',
+                    prenom: 'Emma',
+                    studentData: { statuses: [] },
+                    seatingPosition: null
+                }
+            );
+
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            SeatingChartManager._planMode = 'course';
+            SeatingChartManager._injectView();
+            SeatingChartManager._setupEventListeners();
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            // Unlock to enter Edit Mode where sidebar is active
+            if (SeatingChartManager._isLocked) {
+                SeatingChartManager._toggleLock();
+            }
+        });
+
+        it('devrait ouvrir le FocusPanel au clic sur le bouton fiche (.sc-chip-profile-btn) sans sélectionner l\'étiquette pour le placement', () => {
+            const openSpy = vi.spyOn(FocusPanelManager, 'open').mockImplementation(() => {});
+            const chip = document.querySelector('#scStudentList .sc-student-chip[data-result-id="st-unplaced"]');
+            expect(chip).not.toBeNull();
+
+            // 1. Le clic sur le corps de l'étiquette sélectionne l'élève sans ouvrir le FocusPanel
+            chip.click();
+            expect(SeatingChartManager._selectedChipIds).toEqual(['st-unplaced']);
+            expect(openSpy).not.toHaveBeenCalled();
+
+            // 2. Le clic sur le bouton fiche ouvre le FocusPanel et nettoie la sélection de placement
+            const profileBtn = chip.querySelector('.sc-chip-profile-btn');
+            expect(profileBtn).not.toBeNull();
+            profileBtn.click();
+
+            expect(openSpy).toHaveBeenCalledWith('st-unplaced');
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+            openSpy.mockRestore();
+        });
+
+        it('devrait basculer l\'étiquette dans "Élèves partis" et débloquer l\'état "Tous les élèves sont placés" dès que le statut Départ est enregistré dans le FocusPanel', () => {
+            // Initialement : 1 élève non placé
+            expect(document.getElementById('scSidebarTitle')?.textContent).toContain('1');
+            expect(document.querySelector('.sc-sidebar-departed-section')).toBeNull();
+
+            // Sélectionner l'étiquette puis simuler l'ajout du statut "Départ" via FocusPanel
+            SeatingChartManager._toggleChipSelection('st-unplaced');
+            expect(SeatingChartManager._selectedChipIds).toEqual(['st-unplaced']);
+
+            const unplacedResult = appState.generatedResults.find(r => r.id === 'st-unplaced');
+            unplacedResult.studentData.statuses = ['Départ'];
+            window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: 'st-unplaced' } }));
+
+            // L'étiquette est passée dans la sous-section "Élève parti (1)", la sélection est purgée, et tous les élèves actifs sont placés
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+            expect(document.getElementById('scSidebarTitle')?.textContent).toContain('Tous les élèves sont placés');
+
+            const departedChip = document.querySelector('.sc-sidebar-departed-section .sc-student-chip.sc-chip-departed[data-result-id="st-unplaced"]');
+            expect(departedChip).not.toBeNull();
+            expect(departedChip.querySelector('.sc-chip-profile-btn')).not.toBeNull();
+        });
+
+        it('devrait ignorer les raccourcis clavier du Plan de classe (/, Échap, Ctrl+Z) lorsque le FocusPanel est ouvert par-dessus', () => {
+            const isOpenSpy = vi.spyOn(FocusPanelManager, 'isOpen').mockReturnValue(true);
+            SeatingChartManager._toggleChipSelection('st-unplaced');
+            expect(SeatingChartManager._selectedChipIds).toEqual(['st-unplaced']);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true }));
+            expect(SeatingChartManager._isSearchOpen()).toBe(false);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            // La sélection du plan ne doit pas être consommée par l'Échap destiné au FocusPanel
+            expect(SeatingChartManager._selectedChipIds).toEqual(['st-unplaced']);
+
+            isOpenSpy.mockRestore();
+        });
+    });
 });
 
 
