@@ -46,11 +46,15 @@ export const GeneralListeners = {
         if (DOM.headerMenuBtn && DOM.headerMenuDropdown) {
             // Store original parent for clean restoration
             const originalParent = DOM.headerMenuDropdown.parentElement;
+            DOM.headerMenuBtn.setAttribute('aria-haspopup', 'menu');
+            DOM.headerMenuBtn.setAttribute('aria-expanded', 'false');
 
             const closeMenu = () => {
                 DOM.headerMenuDropdown.classList.remove('open');
                 DOM.headerMenuBtn.classList.remove('active');
+                DOM.headerMenuBtn.setAttribute('aria-expanded', 'false');
                 DOM.headerMenuBtn.blur();
+                document.body.classList.remove('header-menu-open');
 
                 // RESTORE to header if it was teleported
                 if (DOM.headerMenuDropdown.parentElement === document.body && originalParent) {
@@ -63,6 +67,7 @@ export const GeneralListeners = {
                     DOM.headerMenuDropdown.style.width = '';
                 }
             };
+            this.closeHeaderMenu = closeMenu;
 
             addClickListener(DOM.headerMenuBtn, (e) => {
                 e.stopPropagation();
@@ -70,8 +75,11 @@ export const GeneralListeners = {
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
+                    ModelSelectionManager.closeDropdown?.();
                     DOM.headerMenuDropdown.classList.add('open');
                     DOM.headerMenuBtn.classList.add('active');
+                    DOM.headerMenuBtn.setAttribute('aria-expanded', 'true');
+                    document.body.classList.add('header-menu-open');
 
                     // TELEPORTATION FIX FOR MOBILE
                     // When header has glassmorphism (backdrop-filter), it creates a stacking context 
@@ -95,21 +103,44 @@ export const GeneralListeners = {
                 }
             });
 
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
+            // Close menu when clicking outside (capture phase to absorb click and prevent triggering underlying cards/buttons)
+            if (this._headerMenuDocClick) {
+                document.removeEventListener('click', this._headerMenuDocClick, true);
+            }
+            this._headerMenuDocClick = (e) => {
                 if (DOM.headerMenuDropdown.classList.contains('open') &&
                     !DOM.headerMenuDropdown.contains(e.target) &&
                     !DOM.headerMenuBtn.contains(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
                     closeMenu();
                 }
-            });
+            };
+            document.addEventListener('click', this._headerMenuDocClick, true);
+
+            // Close menu when scrolling main content
+            if (this._headerMenuScroll) {
+                window.removeEventListener('scroll', this._headerMenuScroll, true);
+            }
+            this._headerMenuScroll = (e) => {
+                if (DOM.headerMenuDropdown.classList.contains('open') &&
+                    !(e.target instanceof Node && DOM.headerMenuDropdown.contains(e.target))) {
+                    closeMenu();
+                }
+            };
+            window.addEventListener('scroll', this._headerMenuScroll, { capture: true, passive: true });
 
             // Close on Escape key
-            document.addEventListener('keydown', (e) => {
+            if (this._headerMenuKeydown) {
+                document.removeEventListener('keydown', this._headerMenuKeydown);
+            }
+            this._headerMenuKeydown = (e) => {
                 if (e.key === 'Escape' && DOM.headerMenuDropdown.classList.contains('open')) {
                     closeMenu();
                 }
-            });
+            };
+            document.addEventListener('keydown', this._headerMenuKeydown);
 
 
             // Update Menu Item Logic
@@ -126,11 +157,18 @@ export const GeneralListeners = {
             const updateMenuItem = document.getElementById('updateMenuItem');
             if (updateMenuItem) {
                 addClickListener(updateMenuItem, () => {
+                    closeMenu();
                     if (window.triggerAppUpdate) {
                         window.triggerAppUpdate(updateMenuItem);
                     } else {
                         window.location.reload();
                     }
+                });
+            }
+
+            if (DOM.installPwaBtn) {
+                addClickListener(DOM.installPwaBtn, () => {
+                    closeMenu();
                 });
             }
 
@@ -658,6 +696,7 @@ export const GeneralListeners = {
 
                     if (success) {
                         this._updateCloudReminder(SyncService);
+                        closeMenu();
                     } else {
                         UI.showNotification('Reconnexion annulée', 'info');
                     }

@@ -1593,6 +1593,23 @@
     transform: translateX(-20px) translateY(0) scale(1);
 }
 
+/* Légère atténuation et micro-flou sur les lignes/cartes élèves (hors en-tête) lorsque le menu 3 points général du tableau est ouvert */
+.student-list-table thead {
+    position: relative;
+    z-index: 20;
+}
+
+.student-list-table tbody {
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+                filter 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.student-list-table:has(.global-actions-dropdown.open) tbody {
+    opacity: 0.48;
+    filter: blur(2px);
+    pointer-events: none;
+}
+
 [data-theme="dark"] .action-dropdown-menu,
 [data-theme="dark"] .global-actions-dropdown-menu {
     background-color: rgba(24, 24, 27, 0.95);

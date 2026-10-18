@@ -18,12 +18,16 @@ export const ModelSelectionManager = {
     isOpen: false,
     _boundKeyHandler: null,
     _boundClickHandler: null,
+    _boundScrollHandler: null,
 
     /**
      * Initialise les écouteurs d'événements pour le menu déroulant de modèles.
      */
     init() {
-        // Clic extérieur pour fermer
+        // Clic extérieur pour fermer (phase de capture avec absorption pour éviter d'ouvrir une carte élève)
+        if (this._boundClickHandler) {
+            document.removeEventListener('click', this._boundClickHandler, true);
+        }
         this._boundClickHandler = (e) => {
             if (!this.isOpen) return;
             const wrapper = DOM.headerGenWrapper || document.getElementById('headerGenWrapper');
@@ -34,12 +38,31 @@ export const ModelSelectionManager = {
                 dropdown &&
                 !dropdown.contains(e.target)
             ) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 this.closeDropdown();
             }
         };
-        document.addEventListener('click', this._boundClickHandler);
+        document.addEventListener('click', this._boundClickHandler, true);
+
+        // Fermeture au scroll extérieur
+        if (this._boundScrollHandler) {
+            window.removeEventListener('scroll', this._boundScrollHandler, true);
+        }
+        this._boundScrollHandler = (e) => {
+            if (!this.isOpen) return;
+            const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
+            if (dropdown && !(e.target instanceof Node && dropdown.contains(e.target))) {
+                this.closeDropdown();
+            }
+        };
+        window.addEventListener('scroll', this._boundScrollHandler, { capture: true, passive: true });
 
         // Navigation clavier (Flèches, Entrée, Échap)
+        if (this._boundKeyHandler) {
+            document.removeEventListener('keydown', this._boundKeyHandler);
+        }
         this._boundKeyHandler = (e) => {
             if (!this.isOpen) return;
 
@@ -151,11 +174,15 @@ export const ModelSelectionManager = {
 
         // Fermer les autres dropdowns ouverts pour éviter les superpositions
         if (DOM.classDropdown && DOM.classDropdown.style.display !== 'none') {
+            DOM.classDropdown.classList.remove('visible');
             DOM.classDropdown.style.display = 'none';
             DOM.headerClassChip?.classList.remove('active');
         }
         if (DOM.headerMenuDropdown?.classList.contains('open')) {
             DOM.headerMenuDropdown.classList.remove('open');
+            DOM.headerMenuBtn?.classList.remove('active');
+            DOM.headerMenuBtn?.setAttribute('aria-expanded', 'false');
+            document.body.classList.remove('header-menu-open');
         }
 
         this.renderDropdown();

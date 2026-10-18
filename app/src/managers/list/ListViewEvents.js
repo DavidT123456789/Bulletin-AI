@@ -19,7 +19,6 @@ export const ListViewEvents = {
 
     state: {
         activeDocClickListener: null,
-        activeDocPointerListener: null,
         activeKeydownListener: null
     },
 
@@ -153,52 +152,25 @@ export const ListViewEvents = {
             });
         };
 
-        // Global click and pointer listener to close menus when clicking outside
-        // and absorb the event to prevent accidental interaction with underlying cards/buttons
-        let dismissedOnPointer = false;
-        let dismissSafetyTimer = null;
-
-        const clearDismissGuard = () => {
-            dismissedOnPointer = false;
-            if (dismissSafetyTimer) {
-                clearTimeout(dismissSafetyTimer);
-                dismissSafetyTimer = null;
-            }
-        };
-
-        const handlePointerDown = (e) => {
-            if (e.target?.closest?.('.action-dropdown') || e.target?.closest?.('.global-actions-dropdown')) {
+        // Close open menus on scroll (outside the menu itself)
+        const handleScrollDismiss = (e) => {
+            if (e.target?.closest?.('.action-dropdown-menu, .global-actions-dropdown-menu')) {
                 return;
             }
-
-            const hasOpenMenu = listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
-            if (hasOpenMenu) {
-                dismissedOnPointer = true;
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
+            if (listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open')) {
                 closeAllMenus();
-
-                if (dismissSafetyTimer) clearTimeout(dismissSafetyTimer);
-                dismissSafetyTimer = setTimeout(clearDismissGuard, 1200);
             }
         };
+        window.addEventListener('scroll', handleScrollDismiss, { capture: true, passive: true, signal });
+        listContainer.addEventListener('scroll', handleScrollDismiss, { passive: true, signal });
 
-        const handleClick = (e) => {
+        // Global capture click listener to close menus when clicking outside
+        // and absorb the click to prevent accidental interaction with underlying student cards/buttons
+        const handleOutsideClick = (e) => {
             if (e.target?.closest?.('.action-dropdown') || e.target?.closest?.('.global-actions-dropdown')) {
                 return;
             }
 
-            // If a pointerdown dismissed the menu earlier in this tap/click cycle, absorb the trailing click
-            if (dismissedOnPointer) {
-                clearDismissGuard();
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                return;
-            }
-
-            // If a click occurred without a preceding pointerdown dismissal but a menu is still open, dismiss and absorb
             const hasOpenMenu = listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
             if (hasOpenMenu) {
                 e.preventDefault();
@@ -207,20 +179,11 @@ export const ListViewEvents = {
                 closeAllMenus();
             }
         };
-
-        window.addEventListener('pointercancel', clearDismissGuard, { signal });
-        window.addEventListener('scroll', clearDismissGuard, { capture: true, passive: true, signal });
-
-        if (this.state.activeDocPointerListener) {
-            document.removeEventListener('pointerdown', this.state.activeDocPointerListener, true);
-        }
-        this.state.activeDocPointerListener = handlePointerDown;
-        document.addEventListener('pointerdown', this.state.activeDocPointerListener, { capture: true, signal });
 
         if (this.state.activeDocClickListener) {
             document.removeEventListener('click', this.state.activeDocClickListener, true);
         }
-        this.state.activeDocClickListener = handleClick;
+        this.state.activeDocClickListener = handleOutsideClick;
         document.addEventListener('click', this.state.activeDocClickListener, { capture: true, signal });
 
         // Click handler
@@ -671,6 +634,7 @@ export const ListViewEvents = {
             };
 
             searchTrigger.addEventListener('mousedown', (e) => {
+                if (listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open')) return;
                 if (!searchContainer.classList.contains('active')) {
                     handleActivation(e);
                 }

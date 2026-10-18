@@ -67,14 +67,32 @@ export const ClassUIManager = {
             this.showManageClassesModal();
         });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
+        // Close dropdown when clicking outside (capture phase to absorb click and prevent triggering underlying cards)
+        if (this._boundOutsideClick) {
+            document.removeEventListener('click', this._boundOutsideClick, true);
+        }
+        this._boundOutsideClick = (e) => {
             if (this._isDropdownOpen && 
-                !e.target.closest('.class-selector-wrapper') && 
+                !e.target.closest?.('.class-selector-wrapper') && 
                 !DOM.classDropdown?.contains(e.target)) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 this.closeDropdown();
             }
-        });
+        };
+        document.addEventListener('click', this._boundOutsideClick, true);
+
+        // Close dropdown when scrolling outside
+        if (this._boundOutsideScroll) {
+            window.removeEventListener('scroll', this._boundOutsideScroll, true);
+        }
+        this._boundOutsideScroll = (e) => {
+            if (this._isDropdownOpen && !(e.target instanceof Node && DOM.classDropdown?.contains(e.target))) {
+                this.closeDropdown();
+            }
+        };
+        window.addEventListener('scroll', this._boundOutsideScroll, { capture: true, passive: true });
 
         // Navigation clavier et fermeture via Échap lorsque le dropdown est ouvert
         document.addEventListener('keydown', (e) => {

@@ -197,6 +197,22 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(rowDropdown.classList.contains('open')).toBe(false);
     });
 
+    it('should close open menus when scrolling outside the menu, but not when scrolling inside the menu', () => {
+        const rowMenu = listContainer.querySelector('.action-dropdown-menu');
+        const toggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
+
+        toggleBtn.click();
+        expect(rowMenu.classList.contains('open')).toBe(true);
+
+        // Scroll inside menu -> stays open
+        rowMenu.dispatchEvent(new Event('scroll'));
+        expect(rowMenu.classList.contains('open')).toBe(true);
+
+        // Scroll on window / main content -> closes menu
+        window.dispatchEvent(new Event('scroll'));
+        expect(rowMenu.classList.contains('open')).toBe(false);
+    });
+
     it('should clean up listeners when container is re-attached or aborted', () => {
         const firstController = listContainer._eventsAbortController;
         expect(firstController).toBeDefined();
@@ -206,5 +222,54 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
 
         expect(firstController.signal.aborted).toBe(true);
         expect(listContainer._eventsAbortController.signal.aborted).toBe(false);
+    });
+
+    it('should close main header 3-dots menu (#headerMenuDropdown), sync body.header-menu-open, and absorb click on student row', async () => {
+        const { DOM } = await import('../../utils/DOM.js');
+        const { GeneralListeners } = await import('../listeners/GeneralListeners.js');
+
+        const headerWrapper = document.createElement('div');
+        headerWrapper.innerHTML = `
+            <button id="headerMenuBtn"></button>
+            <div id="headerMenuDropdown" class="header-dropdown-menu">
+                <button class="menu-item">Item</button>
+            </div>
+        `;
+        container.appendChild(headerWrapper);
+
+        DOM.headerMenuBtn = headerWrapper.querySelector('#headerMenuBtn');
+        DOM.headerMenuDropdown = headerWrapper.querySelector('#headerMenuDropdown');
+
+        GeneralListeners.init({ handleGenerateClick: vi.fn(), handleClearClick: vi.fn() });
+        vi.spyOn(GeneralListeners, '_onMenuOpen').mockImplementation(() => {});
+        vi.spyOn(GeneralListeners, 'setupCloudListeners').mockImplementation(() => {});
+
+        GeneralListeners.setup((el, fn) => {
+            if (el) el.addEventListener('click', fn);
+        });
+
+        const studentRow = listContainer.querySelector('.student-row');
+        const rowClickSpy = vi.fn();
+        studentRow.addEventListener('click', rowClickSpy);
+
+        // Open main header 3-dots menu
+        DOM.headerMenuBtn.click();
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(true);
+        expect(DOM.headerMenuBtn.getAttribute('aria-expanded')).toBe('true');
+        expect(document.body.classList.contains('header-menu-open')).toBe(true);
+
+        // Click on a student card while header menu is open -> must close menu AND absorb click
+        studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(false);
+        expect(DOM.headerMenuBtn.getAttribute('aria-expanded')).toBe('false');
+        expect(document.body.classList.contains('header-menu-open')).toBe(false);
+        expect(rowClickSpy).not.toHaveBeenCalled();
+
+        // Re-open and test scroll dismissal
+        DOM.headerMenuBtn.click();
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(true);
+        window.dispatchEvent(new Event('scroll'));
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(false);
+        expect(document.body.classList.contains('header-menu-open')).toBe(false);
     });
 });

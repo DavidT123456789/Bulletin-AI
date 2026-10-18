@@ -129,14 +129,26 @@ describe('ModelSelectionManager', () => {
         expect(ModelSelectionManager.isOpen).toBe(false);
     });
 
-    it('devrait se fermer au clic en dehors du menu déroulant', () => {
+    it('devrait se fermer au clic en dehors du menu déroulant en absorbant le clic et se fermer au scroll extérieur', () => {
         ModelSelectionManager.init();
         ModelSelectionManager.openDropdown();
         expect(ModelSelectionManager.isOpen).toBe(true);
 
-        // Clic sur le body en dehors du wrapper
-        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        const outsideCard = document.createElement('div');
+        const cardClickSpy = vi.fn();
+        outsideCard.addEventListener('click', cardClickSpy);
+        document.body.appendChild(outsideCard);
 
+        // Clic sur un élément sous-jacent en dehors du wrapper
+        outsideCard.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        expect(ModelSelectionManager.isOpen).toBe(false);
+        expect(cardClickSpy).not.toHaveBeenCalled();
+
+        // Réouverture et fermeture par scroll extérieur
+        ModelSelectionManager.openDropdown();
+        expect(ModelSelectionManager.isOpen).toBe(true);
+        window.dispatchEvent(new Event('scroll'));
         expect(ModelSelectionManager.isOpen).toBe(false);
     });
 
