@@ -4407,6 +4407,7 @@ export const SeatingChartManager = {
 
     _handleDrop(targetRow, targetCol) {
         if (!this._dragSource || !this._isValidDropTarget(targetRow, targetCol)) return;
+        this._removeDragClones?.();
 
         const { type, resultId, row: srcRow, col: srcCol, ids } = this._dragSource;
 
@@ -4468,7 +4469,7 @@ export const SeatingChartManager = {
         if (type === 'sidebar' || type === 'group-member') {
             this._animateCellPlaced(targetRow, targetCol);
         } else if (isSwap) {
-            this._animateCellSwap(srcRow, srcCol, targetRow, targetCol);
+            this._animateCellSwap(srcRow, srcCol, targetRow, targetCol, { fromDrag: true });
         } else {
             this._animateCellPlaced(targetRow, targetCol);
         }
@@ -5036,6 +5037,7 @@ export const SeatingChartManager = {
 
     _handleRemoveFromSidebarDrop() {
         if (!this._dragSource || this._isLocked) return;
+        this._removeDragClones?.();
 
         const { type, resultId, row, col, ids } = this._dragSource;
 

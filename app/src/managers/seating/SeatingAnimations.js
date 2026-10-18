@@ -236,8 +236,10 @@ export const SeatingAnimations = {
             el.removeAttribute('data-tooltip');
             el.removeAttribute('draggable');
         });
-        ghost.querySelectorAll('.sc-cell-stagger, .sc-cell-placed, .sc-cell-swapped, .sc-auto-placed, .sc-desk-entering').forEach(el => {
-            el.classList.remove('sc-cell-stagger', 'sc-cell-placed', 'sc-cell-swapped', 'sc-auto-placed', 'sc-desk-entering');
+        ghost.querySelectorAll('.sc-cell-stagger, .sc-cell-placed, .sc-cell-swapped, .sc-cell-swap-dropped, .sc-cell-swap-secondary, .sc-auto-placed, .sc-desk-entering').forEach(el => {
+            el.classList.remove('sc-cell-stagger', 'sc-cell-placed', 'sc-cell-swapped', 'sc-cell-swap-dropped', 'sc-cell-swap-secondary', 'sc-auto-placed', 'sc-desk-entering');
+            el.style.removeProperty('--swap-dx');
+            el.style.removeProperty('--swap-dy');
         });
 
         ghost.className = 'sc-classroom-board sc-board-carousel-ghost';
@@ -384,16 +386,82 @@ export const SeatingAnimations = {
         cell.addEventListener('animationend', () => cell.classList.remove('sc-cell-placed'), { once: true });
     },
 
-    /** Animate swap glow on both cells */
-    _animateCellSwap(row1, col1, row2, col2) {
-        [
-            document.querySelector(`.sc-cell[data-row="${row1}"][data-col="${col1}"]`),
-            document.querySelector(`.sc-cell[data-row="${row2}"][data-col="${col2}"]`)
-        ].forEach(cell => {
-            if (!cell) return;
-            cell.classList.add('sc-cell-swapped');
-            cell.addEventListener('animationend', () => cell.classList.remove('sc-cell-swapped'), { once: true });
-        });
+    /** Compute unscaled local pixel vector from cell1 to cell2 (cell2 - cell1) */
+    _computeCellSwapDelta(cell1, cell2, row1, col1, row2, col2) {
+        if (cell1 && cell2) {
+            const dxOffset = (cell2.offsetLeft || 0) - (cell1.offsetLeft || 0);
+            const dyOffset = (cell2.offsetTop || 0) - (cell1.offsetTop || 0);
+            if (dxOffset !== 0 || dyOffset !== 0) {
+                return { dx: Math.round(dxOffset), dy: Math.round(dyOffset) };
+            }
+
+            const rect1 = cell1.getBoundingClientRect?.();
+            const rect2 = cell2.getBoundingClientRect?.();
+            if (rect1 && rect2 && (rect1.left !== rect2.left || rect1.top !== rect2.top)) {
+                const board = document.getElementById('scClassroomBoard');
+                const scale = parseFloat(board?.style?.getPropertyValue('--sc-scale')) || this._zoomScale || 1;
+                const safeScale = scale > 0 ? scale : 1;
+                return {
+                    dx: Math.round((rect2.left - rect1.left) / safeScale),
+                    dy: Math.round((rect2.top - rect1.top) / safeScale)
+                };
+            }
+        }
+
+        const isStudent = this._isStudentOrientation
+            ? this._isStudentOrientation()
+            : (!this._isActivityMode?.() && this._orientation === 'student');
+        const sign = isStudent ? -1 : 1;
+        const isActivity = Boolean(this._isActivityMode?.());
+        const stepX = (isActivity ? 118 : 88) + 8;
+        const stepY = (isActivity ? 114 : 96) + 8;
+        return {
+            dx: (Number(col2) - Number(col1)) * stepX * sign,
+            dy: (Number(row2) - Number(row1)) * stepY * sign
+        };
+    },
+
+    /**
+     * Animate swap between two cells with FLIP trajectory + elastic landing bounce.
+     * - Click-to-swap (default): both cells glide from each other's position and bounce into place.
+     * - Drag-and-drop (`fromDrag: true`): the dropped cell (`row2, col2`) bounces in place,
+     *   while the displaced cell (`row1, col1`) glides from `(row2, col2)` to `(row1, col1)` with a landing bounce.
+     */
+    _animateCellSwap(row1, col1, row2, col2, { fromDrag = false } = {}) {
+        const cell1 = document.querySelector(`.sc-cell[data-row="${row1}"][data-col="${col1}"]`);
+        const cell2 = document.querySelector(`.sc-cell[data-row="${row2}"][data-col="${col2}"]`);
+        if (!cell1 && !cell2) return;
+
+        const { dx, dy } = this._computeCellSwapDelta(cell1, cell2, row1, col1, row2, col2);
+
+        if (cell1) {
+            cell1.style.setProperty('--swap-dx', `${dx}px`);
+            cell1.style.setProperty('--swap-dy', `${dy}px`);
+            cell1.classList.add('sc-cell-swapped');
+            cell1.addEventListener('animationend', () => {
+                cell1.classList.remove('sc-cell-swapped');
+                cell1.style.removeProperty('--swap-dx');
+                cell1.style.removeProperty('--swap-dy');
+            }, { once: true });
+        }
+
+        if (cell2) {
+            if (fromDrag) {
+                cell2.classList.add('sc-cell-swapped', 'sc-cell-swap-dropped');
+                cell2.addEventListener('animationend', () => {
+                    cell2.classList.remove('sc-cell-swapped', 'sc-cell-swap-dropped');
+                }, { once: true });
+            } else {
+                cell2.style.setProperty('--swap-dx', `${-dx}px`);
+                cell2.style.setProperty('--swap-dy', `${-dy}px`);
+                cell2.classList.add('sc-cell-swapped', 'sc-cell-swap-secondary');
+                cell2.addEventListener('animationend', () => {
+                    cell2.classList.remove('sc-cell-swapped', 'sc-cell-swap-secondary');
+                    cell2.style.removeProperty('--swap-dx');
+                    cell2.style.removeProperty('--swap-dy');
+                }, { once: true });
+            }
+        }
     },
 
     /** Animate cell removal → shrink out, then callback to render */

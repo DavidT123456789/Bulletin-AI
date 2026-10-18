@@ -120,11 +120,30 @@
     100% { opacity: 0; transform: scale(0.6) translateX(-50px); }
 }
 
-/* Cell swap — quick pulse glow */
+/* Cell swap — FLIP trajectory from origin desk + juicy landing bounce */
 @keyframes scCellSwap {
-    0%   { box-shadow: var(--shadow-sm); }
-    40%  { box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.3), var(--shadow-md); transform: scale(1.06); }
-    100% { box-shadow: var(--shadow-sm); transform: scale(1); }
+    0% {
+        opacity: 0.92;
+        transform: translate3d(var(--swap-dx, 0px), var(--swap-dy, 0px), 0) scale(0.86);
+        box-shadow: var(--shadow-lg), 0 0 0 2px var(--highlight-standard-border);
+        animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    52% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.12);
+        box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    76% {
+        transform: translate3d(0, 0, 0) scale(0.95);
+        box-shadow: var(--shadow-sm);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        box-shadow: var(--shadow-sm);
+    }
 }
 
 /* Sidebar chip re-entrance (after removal from grid) — fluid spring entrance */
@@ -201,9 +220,10 @@
     animation-delay: calc(var(--cell-i, 0) * 25ms);
 }
 
-/* Cell placed (from sidebar drop) */
+/* Cell placed (from sidebar drop or empty-cell move) */
 .sc-cell.sc-cell-placed {
     animation: scCellPlace 0.4s var(--ease-bounce) both;
+    z-index: 35;
 }
 
 /* Cell remove animation */
@@ -213,9 +233,21 @@
     pointer-events: none;
 }
 
-/* Cell swap glow */
+/* Cell swap (FLIP glide + elastic landing bounce) */
 .sc-cell.sc-cell-swapped {
-    animation: scCellSwap 0.35s var(--ease-spring) both;
+    animation: scCellSwap 0.44s var(--ease-spring) both;
+    z-index: 41;
+    will-change: transform, box-shadow;
+}
+
+.sc-cell.sc-cell-swapped.sc-cell-swap-secondary {
+    z-index: 40;
+}
+
+/* Dropped cell in a drag-and-drop swap: bounces in place with the same physics as scCellPlace */
+.sc-cell.sc-cell-swapped.sc-cell-swap-dropped {
+    animation: scCellPlace 0.4s var(--ease-bounce) both;
+    z-index: 42;
 }
 
 /* Sidebar chip return (single chip drag back) */

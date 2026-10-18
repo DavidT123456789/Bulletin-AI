@@ -1822,10 +1822,56 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._findStudentGridPos('s4')).toBeNull();
         });
 
-        it('devrait permuter (swap) deux élèves placés avec notification et sauvegarde', () => {
+        it('devrait permuter (swap) deux élèves placés au clic avec trajectoire FLIP croisée et nettoyage en fin d’animation', () => {
             SeatingChartManager._swapGridPositions(0, 0, 0, 1);
             expect(SeatingChartManager._gridState[0][0]).toBe('s2');
             expect(SeatingChartManager._gridState[0][1]).toBe('s1');
+
+            const cell1 = document.querySelector('.sc-cell[data-row="0"][data-col="0"]');
+            const cell2 = document.querySelector('.sc-cell[data-row="0"][data-col="1"]');
+            expect(cell1.classList.contains('sc-cell-swapped')).toBe(true);
+            expect(cell2.classList.contains('sc-cell-swapped')).toBe(true);
+            expect(cell2.classList.contains('sc-cell-swap-secondary')).toBe(true);
+            expect(cell1.style.getPropertyValue('--swap-dx')).toBe('96px');
+            expect(cell2.style.getPropertyValue('--swap-dx')).toBe('-96px');
+
+            cell1.dispatchEvent(new Event('animationend'));
+            cell2.dispatchEvent(new Event('animationend'));
+            expect(cell1.classList.contains('sc-cell-swapped')).toBe(false);
+            expect(cell2.classList.contains('sc-cell-swapped')).toBe(false);
+            expect(cell2.classList.contains('sc-cell-swap-secondary')).toBe(false);
+            expect(cell1.style.getPropertyValue('--swap-dx')).toBe('');
+            expect(cell2.style.getPropertyValue('--swap-dx')).toBe('');
+        });
+
+        it('devrait en drag & drop faire rebondir sur place la cellule déposée et faire glisser (FLIP) la cellule permutée tout en nettoyant le clone de drag', () => {
+            const ghostClone = document.createElement('div');
+            ghostClone.className = 'sc-drag-clone';
+            document.body.appendChild(ghostClone);
+
+            SeatingChartManager._dragSource = { type: 'cell', resultId: 's1', row: 0, col: 0 };
+            SeatingChartManager._handleDrop(1, 1);
+
+            expect(document.querySelector('.sc-drag-clone')).toBeNull();
+            expect(SeatingChartManager._gridState[0][0]).toBe('s3');
+            expect(SeatingChartManager._gridState[1][1]).toBe('s1');
+
+            const displacedCell = document.querySelector('.sc-cell[data-row="0"][data-col="0"]');
+            const droppedCell = document.querySelector('.sc-cell[data-row="1"][data-col="1"]');
+            expect(displacedCell.classList.contains('sc-cell-swapped')).toBe(true);
+            expect(displacedCell.classList.contains('sc-cell-swap-dropped')).toBe(false);
+            expect(displacedCell.style.getPropertyValue('--swap-dx')).toBe('96px');
+            expect(displacedCell.style.getPropertyValue('--swap-dy')).toBe('104px');
+
+            expect(droppedCell.classList.contains('sc-cell-swapped')).toBe(true);
+            expect(droppedCell.classList.contains('sc-cell-swap-dropped')).toBe(true);
+            expect(droppedCell.style.getPropertyValue('--swap-dx')).toBe('');
+
+            displacedCell.dispatchEvent(new Event('animationend'));
+            droppedCell.dispatchEvent(new Event('animationend'));
+            expect(displacedCell.classList.contains('sc-cell-swapped')).toBe(false);
+            expect(droppedCell.classList.contains('sc-cell-swapped')).toBe(false);
+            expect(droppedCell.classList.contains('sc-cell-swap-dropped')).toBe(false);
         });
 
         it('devrait remplacer un élève par un élève non placé', () => {

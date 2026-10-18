@@ -480,8 +480,14 @@ export const SeatingAutoPlace = {
         }
     },
 
+    _removeDragClones() {
+        document.querySelectorAll('.sc-drag-clone').forEach(el => el.remove());
+        document.body.classList.remove('sc-drag-over-sidebar');
+    },
+
     /** Hides native ghost and creates a floating clone that follows the cursor */
     _setCleanDragImage(e, sourceEl, count = 1) {
+        this._removeDragClones();
         const blank = new Image();
         blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         e.dataTransfer.setDragImage(blank, 0, 0);
@@ -533,13 +539,18 @@ export const SeatingAutoPlace = {
             document.body.classList.remove('sc-drag-over-sidebar');
             sourceEl.removeEventListener('drag', onDrag);
             sourceEl.removeEventListener('dragend', onDragEnd);
+            window.removeEventListener('dragend', onDragEnd);
+            window.removeEventListener('drop', onDragEnd);
         };
 
         sourceEl.addEventListener('drag', onDrag);
         sourceEl.addEventListener('dragend', onDragEnd);
+        window.addEventListener('dragend', onDragEnd, { once: true });
+        window.addEventListener('drop', onDragEnd, { once: true });
     },
 
     _setCleanMemberDragImage(e, student, sourceEl) {
+        this._removeDragClones();
         const blank = new Image();
         blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         e.dataTransfer?.setDragImage?.(blank, 0, 0);
@@ -576,10 +587,14 @@ export const SeatingAutoPlace = {
             document.body.classList.remove('sc-drag-over-sidebar');
             sourceEl.removeEventListener('drag', onDrag);
             sourceEl.removeEventListener('dragend', onDragEnd);
+            window.removeEventListener('dragend', onDragEnd);
+            window.removeEventListener('drop', onDragEnd);
         };
 
         sourceEl.addEventListener('drag', onDrag);
         sourceEl.addEventListener('dragend', onDragEnd);
+        window.addEventListener('dragend', onDragEnd, { once: true });
+        window.addEventListener('drop', onDragEnd, { once: true });
     },
 
     _clearAll() {
