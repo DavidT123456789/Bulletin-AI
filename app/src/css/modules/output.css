@@ -551,20 +551,20 @@
 }
 
 /* ====================================================================
-   Search Match Highlight
+   Search Match Highlight — Inline Spotlight (iOS 2026 / Raycast / Linear)
+   Atténue les caractères non-matchés et garde l'occurrence à 100% de contraste,
+   sans boîte de fond ni soulignement qui cassent le crénage.
    ==================================================================== */
-.search-highlight {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-hover);
-    font-weight: 700;
-    border-radius: var(--radius-xs, 3px);
-    padding: 0 3px;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-nom,
+.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-prenom,
+.cross-class-name:has(.search-highlight) .cross-class-nom,
+.cross-class-name:has(.search-highlight) .cross-class-prenom {
+    color: color-mix(in srgb, var(--text-primary) 42%, transparent);
 }
 
-[data-theme="dark"] .search-highlight {
-    background: rgba(var(--primary-color-rgb), 0.22);
-    color: var(--primary-bright);
-    text-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.4);
+.search-highlight {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 700;
+    padding: 0;
 }

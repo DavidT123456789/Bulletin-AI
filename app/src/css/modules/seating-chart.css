@@ -31,6 +31,7 @@
 .main-content-wrapper[data-view="plan"] .stats-container,
 .main-content-wrapper[data-view="plan"] .output-header,
 .main-content-wrapper[data-view="plan"] #outputList,
+.main-content-wrapper[data-view="plan"] #crossClassResults,
 .main-content-wrapper[data-view="plan"] #skeletonContainer,
 .main-content-wrapper[data-view="plan"] #empty-state-card,
 .main-content-wrapper[data-view="plan"] #noResultsMessage,
@@ -5892,15 +5893,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    min-width: 240px;
-    max-width: 320px;
+    min-width: 260px;
+    max-width: 340px;
     background: var(--surface-color);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    padding: 10px;
+    padding: 8px;
     z-index: 300;
     animation: scSuggestionsIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -5913,15 +5914,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-cross-suggestion-pill {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .sc-cross-hint {
-    font-size: 0.72rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    font-weight: 600;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
+    padding: 2px 6px 4px;
 }
 
 .sc-cross-action {
@@ -5929,44 +5931,66 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 8px 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    padding: 7px 10px;
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     color: var(--text-primary);
     font-size: 0.8rem;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), transform 0.15s ease;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .sc-cross-action iconify-icon:first-child {
-    font-size: 1.1rem;
-    color: var(--text-primary);
+    font-size: 1rem;
+    color: var(--text-tertiary);
     flex-shrink: 0;
 }
 
+.sc-cross-action-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sc-cross-action-class {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+}
+
 .sc-cross-action .sc-cross-arrow {
-    margin-left: auto;
-    font-size: 0.9rem;
+    margin-left: 2px;
+    font-size: 0.85rem;
     color: var(--text-tertiary);
-    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
-.sc-cross-action:hover {
-    background: var(--item-hover-bg, rgba(0, 0, 0, 0.05));
-    border-color: var(--highlight-standard-border);
-    transform: translateY(-1px);
+.sc-cross-action:hover,
+.sc-cross-action:focus-visible {
+    outline: none;
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
 }
 
-.sc-cross-action:hover .sc-cross-arrow {
+.sc-cross-action:hover .sc-cross-arrow,
+.sc-cross-action:focus-visible .sc-cross-arrow {
     transform: translateX(3px);
     color: var(--text-primary);
 }
 
 .sc-cross-action:active {
-    transform: scale(0.98);
+    background: var(--item-active-bg);
 }
 
 /* ────────── SPOTLIGHT HIGHLIGHTING (VUE PLAN) ────────── */

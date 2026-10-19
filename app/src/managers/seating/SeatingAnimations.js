@@ -14,7 +14,7 @@ export const SeatingAnimations = {
             clearTimeout(this._listStaggerCleanupTimer);
             this._listStaggerCleanupTimer = null;
         }
-        document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination').forEach(el => {
+        document.querySelectorAll('.stats-container, .output-header, #outputList, #crossClassResults, #empty-state-card, #statsPagination').forEach(el => {
             el.classList.remove('view-slide-out-left', 'view-slide-in-left');
         });
         document.querySelectorAll('#outputList .student-list-view.table-fade-in').forEach(view => {
@@ -33,7 +33,7 @@ export const SeatingAnimations = {
     /** List view exit — horizontal micro-slide to left before Plan enters from right */
     _animateListViewExit(onComplete) {
         const containers = Array.from(
-            document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination')
+            document.querySelectorAll('.stats-container, .output-header, #outputList, #crossClassResults.visible, #empty-state-card, #statsPagination')
         ).filter(el => {
             const style = window.getComputedStyle(el);
             return style.display !== 'none' && style.visibility !== 'hidden';

@@ -1,7 +1,7 @@
 /**
  * Cross-Class Search Results
  * Affiche les résultats de recherche des autres classes sous le tableau principal
- * Design premium iOS 2026
+ * Design minimaliste Google / iOS 2026 — aligné sur .student-list-view
  */
 
 /* ========================================
@@ -10,17 +10,18 @@
 .cross-class-results {
     display: grid;
     grid-template-rows: 0fr;
-    margin: 0 var(--space-4);
+    width: 100%;
+    margin: 0;
     padding: 0;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-10px);
+    transform: translateY(-6px);
+    box-sizing: border-box;
     transition:
-        grid-template-rows 0.35s var(--ease-spring),
-        opacity 0.25s ease-out,
-        transform 0.3s var(--ease-spring),
-        margin 0.3s var(--ease-spring),
-        padding 0.3s var(--ease-spring);
+        grid-template-rows 0.32s var(--ease-spring),
+        opacity 0.22s ease-out,
+        transform 0.28s var(--ease-spring),
+        margin 0.28s var(--ease-spring);
 }
 
 .cross-class-results.visible {
@@ -28,11 +29,8 @@
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
-    margin-top: var(--space-8);
-    margin-left: var(--space-4);
-    margin-right: var(--space-4);
-    margin-bottom: var(--space-8);
-    padding: var(--space-4) 0;
+    margin: var(--space-5) 0 var(--space-8) 0;
+    padding: 0;
 }
 
 .cross-class-results-inner {
@@ -41,358 +39,268 @@
 }
 
 /* ========================================
-   Header / Divider - Style Premium
+   Header / Divider — Minimalist Hairline + Capsule
    ======================================== */
 .cross-class-header {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-    padding: 0 var(--space-2);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding: 0;
 }
 
 .cross-class-divider-line {
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            var(--border-color) 20%,
-            var(--border-color) 80%,
-            transparent 100%);
+    background: var(--border-color);
 }
 
 .cross-class-divider-text {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    font-size: var(--font-xs);
-    font-weight: 700;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.7px;
     white-space: nowrap;
-    padding: var(--space-2) var(--space-3);
-    background: var(--item-hover-bg);
+    padding: 4px 10px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+}
+
+.cross-class-divider-text iconify-icon {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.cross-class-total-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--text-secondary);
+    background: var(--item-active-bg);
     border-radius: var(--radius-pill);
 }
 
-.cross-class-divider-text iconify-icon,
-.cross-class-divider-text i {
-    font-size: 0.75rem;
-    color: var(--primary-color);
-    opacity: 0.9;
-}
-
 /* ========================================
-   Liste des résultats
+   Liste des groupes par classe
    ======================================== */
 .cross-class-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-4);
 }
 
-/* Groupe par classe - Card container style */
+/* Groupe par classe — Unified Card (miroir de .student-list-view) */
 .cross-class-group {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4);
-    background: var(--card-glass-bg);
-    border: 1px solid var(--card-glass-border);
+    padding: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--glass-surface-border, var(--border-color));
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
 }
 
-/* Badge de classe - Style Pill Premium */
+[data-theme="dark"] .cross-class-group {
+    border-color: var(--border-color);
+}
+
+/* En-tête de groupe (miroir de .student-list-table thead + #headerClassChip) */
+.cross-class-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--item-idle-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
 .cross-class-group-badge {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    font-size: var(--font-xs);
-    font-weight: 700;
-    color: var(--primary-color);
-    padding: var(--space-1) var(--space-3);
-    margin-bottom: var(--space-2);
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
-    border-radius: var(--radius-pill);
-    width: fit-content;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
-.cross-class-group-badge iconify-icon,
-.cross-class-group-badge i {
-    font-size: 0.85rem;
-    opacity: 0.95;
+/* Pastille d'effectif (clone de .class-chip .student-count-badge via tokens) */
+.cross-class-group-count {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 20px;
+    min-width: 24px;
+    padding: 0 7px;
+    border-radius: var(--radius-pill);
+    background: var(--item-active-bg);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.cross-class-group-count iconify-icon {
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.75;
 }
 
 /* ========================================
-   Ligne de résultat - Card interactive
+   Ligne de résultat — Full-bleed Table Row
    ======================================== */
 .cross-class-result {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    background: var(--surface-color);
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    gap: 12px;
+    padding: 10px 16px;
+    min-height: 52px;
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     position: relative;
-    overflow: hidden;
-    will-change: transform, opacity;
-    transition:
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-        box-shadow var(--transition-fast);
+    box-sizing: border-box;
+    transition: background-color var(--transition-fast);
+}
+
+.cross-class-result:last-child {
+    border-bottom: none;
 }
 
 @media (hover: hover) {
     .cross-class-result:hover {
-        background: rgba(var(--primary-color-rgb), 0.05);
-        border-color: rgba(var(--primary-color-rgb), 0.2);
-        transform: translateX(4px);
+        background: var(--item-hover-bg);
     }
 }
 
 .cross-class-result:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
+    outline: none;
+    background: var(--item-hover-bg);
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border);
 }
 
 .cross-class-result:active {
-    transform: translateX(2px) scale(0.98);
+    background: var(--item-active-bg);
 }
 
-/* Réutiliser le style d'avatar existant */
+/* Avatar aligné sur l'axe vertical de la colonne Nom du tableau */
 .cross-class-result .student-avatar {
     flex-shrink: 0;
-    z-index: 1;
 }
 
-/* Nom de l'élève */
+/* Identité de l'élève */
 .cross-class-name {
     flex: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
     font-size: var(--font-base);
     font-weight: 600;
     color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    z-index: 1;
-    transition: opacity var(--transition-fast);
+    min-width: 0;
+}
+
+.cross-class-nom {
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color var(--transition-fast);
 }
 
 .cross-class-prenom {
     font-weight: 400;
     color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
 /* ========================================
-   Overlay "Voir dans [classe]"
+   Action "Voir dans [classe] →" (Neutre & Haute Lisibilité)
    ======================================== */
 .cross-class-overlay {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    display: flex;
+    margin-left: auto;
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: 0 var(--space-4) 0 var(--space-6);
-    font-size: var(--font-sm);
-    font-weight: 600;
-    color: var(--primary-color);
-    opacity: 0;
-    transform: translateX(8px);
+    gap: 6px;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    opacity: 0.65;
     transition:
-        opacity 0.2s ease-out,
-        transform 0.2s ease-out;
+        opacity var(--transition-fast),
+        color var(--transition-fast);
     pointer-events: none;
 }
 
-.cross-class-overlay i {
-    font-size: 0.75rem;
-    transition: transform 0.2s ease;
+.cross-class-overlay iconify-icon {
+    font-size: 0.9rem;
+    transition: transform 0.2s var(--ease-spring);
 }
 
 @media (hover: hover) {
     .cross-class-result:hover .cross-class-overlay {
         opacity: 1;
-        transform: translateX(0);
+        color: var(--text-primary);
     }
 
-    .cross-class-result:hover .cross-class-overlay i {
+    .cross-class-result:hover .cross-class-overlay iconify-icon {
         transform: translateX(3px);
     }
+}
+
+.cross-class-result:focus-visible .cross-class-overlay {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.cross-class-result:focus-visible .cross-class-overlay iconify-icon {
+    transform: translateX(3px);
 }
 
 /* ========================================
    Animation d'entrée des résultats
    ======================================== */
 .cross-class-results.visible .cross-class-group {
-    animation: crossClassGroupIn 0.4s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    animation: crossClassGroupIn 0.32s var(--ease-spring) backwards;
 }
 
 .cross-class-results.visible .cross-class-group:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.cross-class-results.visible .cross-class-group:nth-child(3) {
-    animation-delay: 0.2s;
-}
-
-.cross-class-results.visible .cross-class-group:nth-child(4) {
-    animation-delay: 0.25s;
-}
-
-.cross-class-results.visible .cross-class-group:nth-child(5) {
-    animation-delay: 0.3s;
-}
-
-.cross-class-results.visible .cross-class-result {
-    animation: crossClassSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1) backwards;
-}
-
-.cross-class-results.visible .cross-class-group:nth-child(1) .cross-class-result:nth-child(2) {
     animation-delay: 0.05s;
 }
 
-.cross-class-results.visible .cross-class-group:nth-child(1) .cross-class-result:nth-child(3) {
+.cross-class-results.visible .cross-class-group:nth-child(3) {
     animation-delay: 0.1s;
 }
 
-.cross-class-results.visible .cross-class-group:nth-child(2) .cross-class-result:nth-child(2) {
-    animation-delay: 0.15s;
+.cross-class-results.visible .cross-class-group:nth-child(4) {
+    animation-delay: 0.14s;
 }
 
 @keyframes crossClassGroupIn {
     from {
         opacity: 0;
-        transform: translateY(-5px);
+        transform: translateY(6px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-@keyframes crossClassSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px) translateX(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) translateX(0);
-    }
-}
-
-/* ========================================
-   Dark Mode
-   ======================================== */
-[data-theme="dark"] .cross-class-group {
-    background: var(--surface-color);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .cross-class-result {
-    background: var(--bg-secondary);
-}
-
-@media (hover: hover) {
-    [data-theme="dark"] .cross-class-result:hover {
-        background: rgba(var(--primary-color-rgb), 0.1);
-        border-color: rgba(var(--primary-color-rgb), 0.3);
-    }
-}
-
-[data-theme="dark"] .cross-class-group-badge {
-    color: var(--primary-bright);
-    background: rgba(var(--primary-color-rgb), 0.16);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-}
-
-[data-theme="dark"] .cross-class-group-badge iconify-icon,
-[data-theme="dark"] .cross-class-group-badge i {
-    color: var(--primary-bright);
-    opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.35));
-}
-
-[data-theme="dark"] .cross-class-divider-text {
-    background: var(--bg-tertiary);
-}
-
-[data-theme="dark"] .cross-class-divider-text iconify-icon,
-[data-theme="dark"] .cross-class-divider-text i {
-    color: var(--primary-bright);
-}
-
-[data-theme="dark"] .cross-class-overlay {
-    color: var(--primary-bright);
-}
-
-[data-theme="dark"] .cross-class-more iconify-icon {
-    color: var(--primary-bright);
-}
-
-/* ========================================
-   Responsive
-   ======================================== */
-@media (max-width: 768px) {
-    .cross-class-results {
-        margin: 0 var(--space-2);
-    }
-
-    .cross-class-results.visible {
-        margin: var(--space-5) var(--space-2) var(--space-8);
-        padding-bottom: var(--space-4);
-    }
-
-    .cross-class-result {
-        padding: var(--space-2) var(--space-3);
-    }
-
-    .cross-class-name {
-        font-size: var(--font-sm);
-    }
-
-    /* Sur mobile, overlay toujours visible mais on le réintègre dans le flux flex */
-    .cross-class-overlay {
-        position: relative;
-        top: auto;
-        bottom: auto;
-        right: auto;
-        padding: 0;
-        opacity: 1; /* Pleine opacité puisqu'il ne superpose plus */
-        transform: translateX(0);
-        margin-left: auto;
-        flex-shrink: 0;
-        color: var(--primary-color);
-        background: transparent;
-    }
-
-    /* Le contexte de classe (ex: "3°G5") est déjà clair grâce au badge du groupe au-dessus.
-       Masquer le texte redondant permet de gagner un espace précieux pour les noms longs. */
-    .cross-class-overlay span {
-        display: none;
-    }
-
-    /* On agrandit légèrement la flèche pour compenser l'absence de texte et améliorer la zone de touch */
-    .cross-class-overlay i {
-        font-size: 1.1rem;
-        transform: none; /* Reset le transform du hover desktop */
-    }
-
-    .cross-class-result:active .cross-class-overlay i {
-        transform: translateX(2px); /* Micro-interaction au tap/active mobile (remplace hover) */
     }
 }
 
@@ -405,12 +313,13 @@
     justify-content: center;
     gap: var(--space-2);
     font-size: var(--font-xs);
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-tertiary);
-    padding: var(--space-2) var(--space-3);
-    margin-top: var(--space-2);
+    padding: 6px 12px;
+    margin-top: var(--space-1);
     text-align: center;
-    background: var(--item-hover-bg);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
     width: fit-content;
     margin-left: auto;
@@ -418,7 +327,47 @@
 }
 
 .cross-class-more iconify-icon {
-    font-size: 0.95rem;
-    color: var(--primary-color);
-    opacity: 0.85;
+    font-size: 0.9rem;
+    color: var(--text-tertiary);
+}
+
+/* ========================================
+   Responsive Mobile
+   ======================================== */
+@media (max-width: 768px) {
+    .cross-class-results.visible {
+        margin: var(--space-4) 0 var(--space-8) 0;
+    }
+
+    .cross-class-group-header {
+        padding: 8px 12px;
+    }
+
+    .cross-class-result {
+        padding: 10px 12px;
+        min-height: 46px;
+        gap: 10px;
+    }
+
+    .cross-class-name {
+        font-size: var(--font-sm);
+    }
+
+    /* Sur mobile, le nom de la classe est déjà affiché dans .cross-class-group-header :
+       on conserve uniquement le chevron à droite pour maximiser l'espace du nom */
+    .cross-class-overlay {
+        opacity: 0.75;
+    }
+
+    .cross-class-overlay span {
+        display: none;
+    }
+
+    .cross-class-overlay iconify-icon {
+        font-size: 1rem;
+    }
+
+    .cross-class-result:active .cross-class-overlay iconify-icon {
+        transform: translateX(2px);
+    }
 }

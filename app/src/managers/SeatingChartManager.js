@@ -13,6 +13,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 import { ClassManager } from './ClassManager.js';
+import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { SeatingAnimations } from './seating/SeatingAnimations.js';
 import { SeatingZoom } from './seating/SeatingZoom.js';
@@ -1705,6 +1706,7 @@ export const SeatingChartManager = {
             const finishPlan = (animateEnter = false) => {
                 this._clearListViewTransitionClasses();
                 wrapper.dataset.view = 'plan';
+                CrossClassSearchManager?.clearListSearch?.({ renderList: true, immediate: true });
                 // [UX Mobile] History integration for plan view (Back returns to list)
                 if (!HistoryManager.isOpen('viewPlan')) {
                     HistoryManager.pushState('viewPlan', () => {
@@ -1776,6 +1778,7 @@ export const SeatingChartManager = {
         this.updateToggleVisibility(hasResults);
         if (!this._isActive) return;
 
+        this._closeSearch();
         this._closeConfigPopover();
         this._closePlacementPopover();
 

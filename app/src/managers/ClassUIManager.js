@@ -13,6 +13,7 @@ import { AppreciationsManager } from './AppreciationsManager.js';
 import { detectLevelFromName, compareClassesPedagogically } from '../utils/LevelDetector.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
+import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { Utils } from '../utils/Utils.js';
 import { TooltipsUI } from './TooltipsManager.js';
@@ -735,7 +736,7 @@ export const ClassUIManager = {
         const inClass = direction === 'down' ? 'class-switch-in-down' : 'class-switch-in-up';
         const headerOutClass = direction === 'down' ? 'header-class-out-down' : 'header-class-out-up';
         const headerInClass = direction === 'down' ? 'header-class-in-down' : 'header-class-in-up';
-        const selector = '.stats-container, #outputList, .output-header, #seatingChartView, #empty-state-card, #statsPagination';
+        const selector = '.stats-container, #outputList, #crossClassResults.visible, .output-header, #seatingChartView, #empty-state-card, #statsPagination';
         const allAnimClasses = [
             'class-switch-out-down', 'class-switch-out-up',
             'class-switch-in-down', 'class-switch-in-up',
@@ -745,6 +746,7 @@ export const ClassUIManager = {
         // Fermer le menu immédiatement au clic pour une réactivité instantanée
         this.closeDropdown();
 
+        document.getElementById('crossClassResults')?.classList.remove(...allAnimClasses);
         const outgoingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
             el.classList.remove(...allAnimClasses);
             const style = window.getComputedStyle(el);
@@ -768,6 +770,8 @@ export const ClassUIManager = {
         // Phase 1 : Sortie rapide (110ms) avant remplacement des données
         await new Promise(resolve => setTimeout(resolve, 110));
 
+        // Réinitialiser proprement la recherche Liste avant de charger la nouvelle classe
+        CrossClassSearchManager?.clearListSearch?.({ renderList: false, immediate: true });
         SeatingChartManager?._restoreUnmodifiedClassLock?.();
 
         await ClassManager.switchClass(classId);

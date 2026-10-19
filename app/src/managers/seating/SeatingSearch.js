@@ -207,23 +207,36 @@ export const SeatingSearch = {
         if (matchCount === 0 && cleaned.length >= 2 && suggestionsEl) {
             const crossData = CrossClassSearchManager.searchAcrossClasses(cleaned);
             if (crossData.groups && crossData.groups.length > 0) {
-                const firstGroup = crossData.groups[0];
-                const firstStudent = firstGroup.students?.[0];
-                const studentNames = firstGroup.students.map(s => `${s.prenom} ${s.nom}`).slice(0, 2).join(', ');
-                suggestionsEl.innerHTML = `
-                    <div class="sc-cross-suggestion-pill">
-                        <span class="sc-cross-hint">Non trouvé dans cette classe</span>
-                        <button class="sc-cross-action" type="button" data-class-id="${firstGroup.classId}" data-student-id="${firstStudent?.id || ''}">
-                            <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
-                            <span>Trouvé en <strong>${Utils.escapeHtml(firstGroup.className)}</strong> (${Utils.escapeHtml(studentNames)})</span>
+                const items = [];
+                for (const group of crossData.groups) {
+                    for (const student of (group.students || [])) {
+                        if (items.length >= 5) break;
+                        items.push({ group, student });
+                    }
+                    if (items.length >= 5) break;
+                }
+
+                const buttonsHtml = items.map(({ group, student }) => {
+                    const fullName = `${(student.prenom || '').trim()} ${(student.nom || '').trim()}`.trim();
+                    return `
+                        <button class="sc-cross-action" type="button" data-class-id="${group.classId}" data-student-id="${student.id || ''}">
+                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                            <span class="sc-cross-action-label">${Utils.escapeHtml(fullName)}</span>
+                            <span class="sc-cross-action-class">${Utils.escapeHtml(group.className)}</span>
                             <iconify-icon icon="solar:alt-arrow-right-linear" class="sc-cross-arrow"></iconify-icon>
                         </button>
+                    `;
+                }).join('');
+
+                suggestionsEl.innerHTML = `
+                    <div class="sc-cross-suggestion-pill">
+                        <span class="sc-cross-hint">Autres classes</span>
+                        ${buttonsHtml}
                     </div>
                 `;
                 suggestionsEl.style.display = 'block';
 
-                const actionBtn = suggestionsEl.querySelector('.sc-cross-action');
-                if (actionBtn) {
+                suggestionsEl.querySelectorAll('.sc-cross-action').forEach(actionBtn => {
                     actionBtn.addEventListener('mousedown', (e) => {
                         e.preventDefault();
                     });
@@ -233,15 +246,12 @@ export const SeatingSearch = {
                         const targetClassId = actionBtn.dataset.classId;
                         const targetStudentId = actionBtn.dataset.studentId;
                         if (targetClassId) {
-                            const sug = document.getElementById('scFloatingSearchSuggestions');
-                            if (sug) {
-                                sug.style.display = 'none';
-                                sug.innerHTML = '';
-                            }
+                            suggestionsEl.style.display = 'none';
+                            suggestionsEl.innerHTML = '';
                             await this._switchClassFromSearch(targetClassId, targetStudentId, this._activeSearchTerm || cleaned);
                         }
                     });
-                }
+                });
             } else {
                 suggestionsEl.style.display = 'none';
                 suggestionsEl.innerHTML = '';

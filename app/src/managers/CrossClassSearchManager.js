@@ -1,14 +1,17 @@
 /**
  * @fileoverview Cross-Class Search Manager
- * Permet de rechercher des élèves dans toutes les classes
- * et d'afficher les résultats des autres classes sous le tableau principal.
- * 
+ * Permet de rechercher des élèves dans toutes les classes,
+ * d'afficher les résultats des autres classes sous le tableau principal
+ * et d'orchestrer le cycle de vie de la recherche en vue Liste.
+ *
  * @module managers/CrossClassSearchManager
  */
 
 import { appState } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { EventHandlersManager } from './EventHandlersManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
@@ -18,9 +21,40 @@ import { Utils } from '../utils/Utils.js';
  * @namespace CrossClassSearchManager
  */
 export const CrossClassSearchManager = {
-    _container: null,
     _lastTerm: '',
     _debounceTimer: null,
+    _hideTimer: null,
+
+    /**
+     * Planifie le filtrage du tableau et la recherche inter-classes de façon synchronisée (debounce unique)
+     * @param {string} term - Terme de recherche
+     * @param {Function} [onFilterTable] - Callback de filtrage du tableau principal
+     * @param {number} [delay=180] - Délai de debounce en ms
+     */
+    scheduleSearch(term, onFilterTable, delay = 180) {
+        if (this._debounceTimer) {
+            clearTimeout(this._debounceTimer);
+        }
+        this._debounceTimer = setTimeout(() => {
+            this._debounceTimer = null;
+            onFilterTable?.();
+            this.updateCrossClassResults(term);
+        }, delay);
+    },
+
+    /**
+     * Annule tout timer de recherche en attente
+     */
+    cancelPendingSearch() {
+        if (this._debounceTimer) {
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = null;
+        }
+        if (this._hideTimer) {
+            clearTimeout(this._hideTimer);
+            this._hideTimer = null;
+        }
+    },
 
     /**
      * Recherche des élèves dans toutes les classes sauf la courante
@@ -136,7 +170,12 @@ export const CrossClassSearchManager = {
      * @private
      */
     _renderResults(resultsData) {
-        const { groups, remainingMatches } = resultsData;
+        const { groups, totalMatches, remainingMatches } = resultsData;
+
+        if (this._hideTimer) {
+            clearTimeout(this._hideTimer);
+            this._hideTimer = null;
+        }
 
         // Créer ou récupérer le container
         let container = document.getElementById('crossClassResults');
@@ -155,14 +194,17 @@ export const CrossClassSearchManager = {
             }
         }
 
+        const displayTotal = totalMatches || groups.reduce((acc, g) => acc + g.students.length, 0);
+
         // Générer le HTML
         let html = `
             <div class="cross-class-results-inner">
                 <div class="cross-class-header">
                     <span class="cross-class-divider-line"></span>
                     <span class="cross-class-divider-text">
-                        <iconify-icon icon="ph:magnifying-glass-bold"></iconify-icon>
-                        Autres classes
+                        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        <span>Autres classes</span>
+                        <span class="cross-class-total-count">${displayTotal}</span>
                     </span>
                     <span class="cross-class-divider-line"></span>
                 </div>
@@ -170,22 +212,28 @@ export const CrossClassSearchManager = {
         `;
 
         groups.forEach(group => {
+            const countLabel = `${group.students.length} élève${group.students.length > 1 ? 's' : ''}`;
+            const escapedClassName = Utils.escapeHtml(group.className);
             html += `
                 <div class="cross-class-group">
-                    <span class="cross-class-group-badge">
-                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                        ${this._escapeHtml(group.className)}
-                    </span>
+                    <div class="cross-class-group-header">
+                        <span class="cross-class-group-badge">${escapedClassName}</span>
+                        <span class="cross-class-group-count" aria-label="${countLabel}">
+                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                            <span>${group.students.length}</span>
+                        </span>
+                    </div>
             `;
 
             group.students.forEach(student => {
-                // Utiliser le système d'avatar existant
                 const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm');
-                const nomHighlighted = Utils.highlightMatch(student.nom, this._lastTerm);
-                const prenomHighlighted = Utils.highlightMatch(student.prenom, this._lastTerm);
+                const nomUpper = (student.nom || '').trim().toUpperCase();
+                const nomHighlighted = Utils.highlightMatch(nomUpper, this._lastTerm);
+                const prenomHighlighted = Utils.highlightMatch((student.prenom || '').trim(), this._lastTerm);
                 const displayClass = student.originClass ? Utils.formatClassDisplayName(student.originClass) : '';
+                const escapedOriginClass = displayClass ? Utils.escapeHtml(displayClass) : '';
                 const originClassTag = (displayClass && Utils.normalizeClassName(student.originClass) !== Utils.normalizeClassName(group.className))
-                    ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${this._escapeHtml(displayClass)}">${this._escapeHtml(displayClass)}</span>`
+                    ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${escapedOriginClass}">${escapedOriginClass}</span>`
                     : '';
 
                 html += `
@@ -196,12 +244,12 @@ export const CrossClassSearchManager = {
                          tabindex="0">
                         ${avatarHtml}
                         <span class="cross-class-name">
-                            ${nomHighlighted} 
+                            <span class="cross-class-nom">${nomHighlighted}</span>
                             <span class="cross-class-prenom">${prenomHighlighted}</span>${originClassTag}
                         </span>
                         <div class="cross-class-overlay">
-                            <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
-                            <span>Voir dans ${this._escapeHtml(group.className)}</span>
+                            <span>Voir dans ${escapedClassName}</span>
+                            <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                         </div>
                     </div>
                 `;
@@ -224,51 +272,96 @@ export const CrossClassSearchManager = {
         container.innerHTML = html;
         container.classList.add('visible');
 
-        // Attacher les événements
-        this._attachEventListeners(container);
+        this._ensureListenersBound(container);
     },
 
     /**
      * Masque la section des résultats
+     * @param {boolean} [immediate=false] - Si true, vide immédiatement le DOM sans attendre la transition
      * @private
      */
-    _hideResults() {
+    _hideResults(immediate = false) {
+        if (this._hideTimer) {
+            clearTimeout(this._hideTimer);
+            this._hideTimer = null;
+        }
         const container = document.getElementById('crossClassResults');
         if (container) {
             container.classList.remove('visible');
-            // Nettoyer après l'animation
-            setTimeout(() => {
-                if (!container.classList.contains('visible')) {
-                    container.innerHTML = '';
-                }
-            }, 300);
+            if (immediate) {
+                container.innerHTML = '';
+            } else {
+                this._hideTimer = setTimeout(() => {
+                    this._hideTimer = null;
+                    if (!container.classList.contains('visible')) {
+                        container.innerHTML = '';
+                    }
+                }, 300);
+            }
         }
         this._lastTerm = '';
     },
 
     /**
-     * Attache les gestionnaires d'événements
-     * @param {HTMLElement} container 
+     * Attache une seule fois les écouteurs délégués (clic, Entrée/Espace, flèches Haut/Bas) sur le conteneur
+     * @param {HTMLElement} container
      * @private
      */
-    _attachEventListeners(container) {
-        const results = container.querySelectorAll('.cross-class-result');
+    _ensureListenersBound(container) {
+        if (container.dataset.bound === 'true') return;
+        container.dataset.bound = 'true';
 
-        results.forEach(resultEl => {
-            const handleClick = () => {
-                const classId = resultEl.dataset.classId;
-                const studentId = resultEl.dataset.studentId;
-                this._handleResultClick(classId, studentId);
-            };
-
-            resultEl.addEventListener('click', handleClick);
-            resultEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleClick();
-                }
-            });
+        container.addEventListener('click', (e) => {
+            const resultEl = e.target.closest('.cross-class-result');
+            if (!resultEl || !container.contains(resultEl)) return;
+            this._handleResultClick(resultEl.dataset.classId, resultEl.dataset.studentId);
         });
+
+        container.addEventListener('keydown', (e) => {
+            const resultEl = e.target.closest('.cross-class-result');
+            if (!resultEl || !container.contains(resultEl)) return;
+
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this._handleResultClick(resultEl.dataset.classId, resultEl.dataset.studentId);
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const results = Array.from(container.querySelectorAll('.cross-class-result'));
+                const idx = results.indexOf(resultEl);
+                if (idx === -1) return;
+
+                if (e.key === 'ArrowDown') {
+                    results[idx + 1]?.focus();
+                } else if (idx > 0) {
+                    results[idx - 1]?.focus();
+                } else {
+                    const inlineInput = document.getElementById('inlineSearchInput');
+                    if (inlineInput && inlineInput.offsetParent !== null) {
+                        inlineInput.focus();
+                    } else {
+                        document.getElementById('searchInput')?.focus();
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Déclenche la bascule vers le premier résultat cross-classe visible (ex: touche Entrée depuis l'input)
+     * @returns {Promise<boolean>} true si un résultat a été déclenché
+     */
+    async triggerFirstResult() {
+        const container = document.getElementById('crossClassResults');
+        if (!container || !container.classList.contains('visible')) return false;
+
+        const firstResult = container.querySelector('.cross-class-result');
+        if (!firstResult) return false;
+
+        const { classId, studentId } = firstResult.dataset;
+        if (!classId) return false;
+
+        await this._handleResultClick(classId, studentId);
+        return true;
     },
 
     /**
@@ -278,46 +371,76 @@ export const CrossClassSearchManager = {
      * @private
      */
     async _handleResultClick(classId, studentId) {
-        // Récupérer le nom de la classe pour le feedback
         const classInfo = ClassManager.getClassById(classId);
         const className = classInfo?.name || 'Classe';
 
-        // Masquer la section cross-class avant le switch
-        this._hideResults();
+        // Annuler tout timer de recherche en attente pour éviter un re-rendu parasite après la bascule
+        this.cancelPendingSearch();
 
-        // Vider la recherche
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.value = '';
-            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        // Utiliser handleClassSwitch de ClassUIManager et lui passer l'ID de l'élève
-        // pour déclencher le re-rendu avec scroll automatique et mise en surbrillance
+        // Utiliser handleClassSwitch de ClassUIManager (qui anime la sortie unifiée,
+        // réinitialise la recherche et met en surbrillance l'élève cible)
         await ClassUIManager.handleClassSwitch(classId, studentId);
+
+        // Filet de sécurité idempotent (ex: si handleClassSwitch est mocké en test)
+        this.clearListSearch({ renderList: false, immediate: true });
 
         // Notification de feedback
         UI?.showNotification(`Basculé vers ${className}`, 'info');
     },
 
     /**
-     * Échappe les caractères HTML
-     * @param {string} text 
-     * @returns {string}
-     * @private
+     * Réinitialise proprement toute la recherche de la vue Liste (input toolbar, input inline,
+     * historique mobile et résultats inter-classes)
+     * @param {Object} [options={}]
+     * @param {boolean} [options.renderList=false] - Si true et qu'une recherche filtrait la liste, relance le rendu de la classe
+     * @param {boolean} [options.immediate=false] - Si true, vide immédiatement le DOM des résultats inter-classes
      */
-    _escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    clearListSearch({ renderList = false, immediate = false } = {}) {
+        this.cancelPendingSearch();
+
+        const searchInput = document.getElementById('searchInput');
+        const inlineInput = document.getElementById('inlineSearchInput');
+        const inlineContainer = document.getElementById('inlineSearchContainer');
+        const inlineTrigger = document.getElementById('inlineSearchTrigger');
+
+        const hadSearchValue = Boolean(
+            this._lastTerm ||
+            searchInput?.value ||
+            inlineInput?.value
+        );
+
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.parentElement?.classList.remove('has-value');
+        }
+
+        if (inlineInput) {
+            inlineInput.value = '';
+        }
+
+        if (inlineContainer) {
+            inlineContainer.classList.remove('active', 'has-value');
+        }
+
+        inlineTrigger?._tippy?.enable?.();
+
+        if (HistoryManager?.isOpen?.('inlineSearch')) {
+            HistoryManager.handleManualClose('inlineSearch');
+        }
+
+        this._hideResults(immediate);
+
+        if (renderList && hadSearchValue) {
+            EventHandlersManager?.handleSearchInput?.();
+        }
     },
 
     /**
-     * Réinitialise l'état (appelé lors du changement de classe)
+     * Réinitialise l'état des résultats inter-classes
+     * @param {boolean} [immediate=false]
      */
-    reset() {
-        this._hideResults();
-        this._lastTerm = '';
+    reset(immediate = false) {
+        this.cancelPendingSearch();
+        this._hideResults(immediate);
     }
 };

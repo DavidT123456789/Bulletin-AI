@@ -14,6 +14,7 @@ import { MassImportManager } from '../MassImportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
+import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 
 export const ListViewEvents = {
 
@@ -578,16 +579,19 @@ export const ListViewEvents = {
             }
         };
 
-        // Helper to clear search input value and notify listeners
+        // Helper to clear search input value and notify listeners immediately (0ms latency)
         const _clearSearchInput = () => {
-            if (searchInput.value) {
+            const existingInput = document.getElementById('searchInput');
+            if (searchInput.value || existingInput?.value || CrossClassSearchManager._lastTerm || CrossClassSearchManager._debounceTimer) {
+                CrossClassSearchManager.cancelPendingSearch();
                 searchInput.value = '';
                 searchContainer.classList.remove('has-value');
-                const existingInput = document.getElementById('searchInput');
                 if (existingInput) {
                     existingInput.value = '';
-                    existingInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    existingInput.parentElement?.classList.remove('has-value');
                 }
+                EventHandlersManager.handleSearchInput();
+                CrossClassSearchManager.updateCrossClassResults('');
             }
         };
 
@@ -700,22 +704,42 @@ export const ListViewEvents = {
             }, { signal });
         }
 
-        // Escape to close search
+        // Keyboard shortcuts: Escape (clear/close), Enter (open match or jump to cross-class), ArrowDown (navigate results)
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 e.stopPropagation();
-                // Clear search when pressing Escape twice, or deactivate if empty
                 if (!searchInput.value) {
                     deactivateSearch();
                 } else {
-                    searchInput.value = '';
-                    searchContainer.classList.remove('has-value');
-                    // Sync clear
-                    const existingInput = document.getElementById('searchInput');
-                    if (existingInput) {
-                        existingInput.value = '';
-                        existingInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
+                    _clearSearchInput();
+                }
+            } else if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (!query) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Flush any pending search debounce so DOM is up to date
+                if (CrossClassSearchManager._debounceTimer) {
+                    CrossClassSearchManager.cancelPendingSearch();
+                    EventHandlersManager.handleSearchInput();
+                    CrossClassSearchManager.updateCrossClassResults(query);
+                }
+
+                const firstRow = listContainer.querySelector('.student-row');
+                if (firstRow?.dataset?.studentId) {
+                    FocusPanelManager.open(firstRow.dataset.studentId);
+                } else {
+                    CrossClassSearchManager.triggerFirstResult();
+                }
+            } else if (e.key === 'ArrowDown') {
+                const firstRow = listContainer.querySelector('.student-row');
+                const firstCrossResult = document.querySelector('#crossClassResults.visible .cross-class-result');
+                const target = firstRow || firstCrossResult;
+                if (target) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    target.focus();
                 }
             }
         }, { signal });

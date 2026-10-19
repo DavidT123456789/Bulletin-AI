@@ -5,6 +5,7 @@ import { ClassManager } from './ClassManager';
 import { HistoryManager } from './HistoryManager';
 import { FocusPanelManager } from './FocusPanelManager';
 import { ClassUIManager } from './ClassUIManager';
+import { CrossClassSearchManager } from './CrossClassSearchManager';
 import { TooltipsUI } from './TooltipsManager';
 import { UI } from './UIManager';
 
@@ -2355,6 +2356,18 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             classSwitchSpy.mockRestore();
             focusSpy.mockRestore();
             highlightSpy.mockRestore();
+        });
+
+        it('devrait réinitialiser la recherche de la vue Liste et masquer Autres classes lors du passage en vue Plan', () => {
+            const clearListSpy = vi.spyOn(CrossClassSearchManager, 'clearListSearch');
+            const wrapper = document.querySelector('.main-content-wrapper');
+            if (wrapper) wrapper.dataset.view = 'list';
+            SeatingChartManager._isActive = false;
+
+            SeatingChartManager.switchToView('plan', { immediate: true });
+
+            expect(clearListSpy).toHaveBeenCalledWith({ renderList: true, immediate: true });
+            clearListSpy.mockRestore();
         });
     });
 

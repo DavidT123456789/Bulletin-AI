@@ -349,27 +349,43 @@
 
 .student-list-table tbody tr.empty-state-row td {
     text-align: center;
-    padding: 48px 20px;
+    padding: 40px 20px;
     cursor: default;
     border-bottom: none;
+    transition: padding 0.25s var(--ease-spring);
+}
+
+#outputList:has(+ #crossClassResults.visible) .student-list-table tbody tr.empty-state-row td {
+    padding: 20px;
 }
 
 .student-list-table tbody tr.empty-state-row .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     color: var(--text-tertiary);
     padding: 0;
 }
 
+#outputList:has(+ #crossClassResults.visible) .student-list-table tbody tr.empty-state-row .empty-state {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+}
+
 .student-list-table tbody tr.empty-state-row .empty-state iconify-icon {
-    font-size: 32px;
+    font-size: 28px;
+    opacity: 0.7;
+}
+
+#outputList:has(+ #crossClassResults.visible) .student-list-table tbody tr.empty-state-row .empty-state iconify-icon {
+    font-size: 16px;
 }
 
 .student-list-table tbody tr.empty-state-row .empty-state span {
     font-weight: 500;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* Fallback row when student rendering encounters an error */

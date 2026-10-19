@@ -1,6 +1,5 @@
 import { CONFIG } from '../../config/Config.js';
 import { DOM } from '../../utils/DOM.js';
-import { Utils } from '../../utils/Utils.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
@@ -17,26 +16,25 @@ export const OutputListeners = {
         const searchClearBtn = document.getElementById('searchClearBtn');
 
         DOM.searchInput?.addEventListener('input', (e) => {
+            const value = e.target.value;
             // Toggle has-value class pour afficher/cacher le bouton clear
-            searchContainer?.classList.toggle('has-value', e.target.value.length > 0);
-            // Appeler le handler avec debounce
-            Utils.debounce(EventHandlersManager.handleSearchInput, CONFIG.DEBOUNCE_TIME_MS)();
+            searchContainer?.classList.toggle('has-value', value.length > 0);
 
-            // Cross-class search (affichage des résultats d'autres classes)
-            Utils.debounce(() => {
-                CrossClassSearchManager.updateCrossClassResults(e.target.value);
-            }, CONFIG.DEBOUNCE_TIME_MS + 100)();
+            // Filtrage tableau + recherche inter-classes synchronisés via un debounce unique annulable
+            CrossClassSearchManager.scheduleSearch(
+                value,
+                () => EventHandlersManager.handleSearchInput(),
+                CONFIG.DEBOUNCE_TIME_MS
+            );
         });
 
         // Bouton clear de recherche
         if (searchClearBtn) {
             addClickListener(searchClearBtn, () => {
                 if (DOM.searchInput) {
-                    DOM.searchInput.value = '';
-                    searchContainer?.classList.remove('has-value');
+                    CrossClassSearchManager.clearListSearch({ renderList: false, immediate: false });
                     DOM.searchInput.focus();
                     EventHandlersManager.handleSearchInput();
-                    CrossClassSearchManager.reset();
                 }
             });
         }
