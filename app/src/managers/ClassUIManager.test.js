@@ -403,5 +403,140 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
     });
 });
 
+describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation des tooltips', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="headerWrapper" class="class-selector-wrapper">
+                <button id="headerClassChip"><span id="headerClassName"></span></button>
+                <div id="classDropdown" class="class-dropdown">
+                    <div id="classDropdownList" class="class-dropdown-list"></div>
+                </div>
+            </div>
+        `;
+        DOM.headerClassChip = document.getElementById('headerClassChip');
+        DOM.headerClassName = document.getElementById('headerClassName');
+        DOM.classDropdown = document.getElementById('classDropdown');
+        DOM.classDropdownList = document.getElementById('classDropdownList');
+
+        ClassUIManager._isDropdownOpen = false;
+        ClassUIManager._originalDropdownParent = null;
+        if (ClassUIManager._closeDropdownTimer) {
+            clearTimeout(ClassUIManager._closeDropdownTimer);
+            ClassUIManager._closeDropdownTimer = null;
+        }
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        appState.currentClassId = null;
+        appState.generatedResults = [];
+    });
+
+    it('devrait préserver _originalDropdownParent lors d\'une réouverture rapide avant la fin du délai de fermeture (200ms)', () => {
+        vi.useFakeTimers();
+        const headerWrapper = document.getElementById('headerWrapper');
+        ClassManager.createClass('3 1');
+
+        // 1. Première ouverture -> téléporté dans body
+        ClassUIManager.openDropdown();
+        expect(DOM.classDropdown.parentElement).toBe(document.body);
+        expect(ClassUIManager._originalDropdownParent).toBe(headerWrapper);
+
+        // 2. Fermeture suivie d'une réouverture rapide à 50ms (< 200ms)
+        ClassUIManager.closeDropdown();
+        vi.advanceTimersByTime(50);
+        ClassUIManager.openDropdown();
+
+        // Après 250ms, le timer de la première fermeture a dû être annulé et _originalDropdownParent préservé
+        vi.advanceTimersByTime(250);
+        expect(ClassUIManager._isDropdownOpen).toBe(true);
+        expect(DOM.classDropdown.style.display).toBe('block');
+        expect(ClassUIManager._originalDropdownParent).toBe(headerWrapper);
+
+        // 3. Fermeture complète -> retour dans son parent d'origine (#headerWrapper)
+        ClassUIManager.closeDropdown();
+        vi.advanceTimersByTime(250);
+        expect(DOM.classDropdown.parentElement).toBe(headerWrapper);
+        expect(DOM.classDropdown.style.display).toBe('none');
+
+        vi.useRealTimers();
+    });
+
+    it('devrait restreindre TooltipsUI.initTooltips au conteneur DOM.classDropdown lors de renderClassList', async () => {
+        const { TooltipsUI } = await import('./TooltipsManager.js');
+        const initSpy = vi.spyOn(TooltipsUI, 'initTooltips').mockImplementation(() => {});
+
+        ClassManager.createClass('4 2');
+        ClassUIManager.renderClassList();
+
+        expect(initSpy).toHaveBeenCalledWith(DOM.classDropdown);
+        initSpy.mockRestore();
+    });
+
+    it('devrait mettre à jour les items et icônes en place sans détruire le DOM lors des appels successifs à renderClassList / openDropdown', async () => {
+        const class1 = ClassManager.createClass('5 1');
+        const class2 = ClassManager.createClass('5 2');
+        appState.generatedResults = [
+            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class1.id }
+        ];
+
+        ClassUIManager.renderClassList();
+
+        const firstItemBefore = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${class1.id}"]`);
+        const calendarIconBefore = firstItemBefore.querySelector('.class-meta-year iconify-icon');
+        const seatingIconBefore = firstItemBefore.querySelector('.class-seating-badge iconify-icon');
+        const progressIconBefore = firstItemBefore.querySelector('.class-progress-badge iconify-icon');
+
+        // Changement de classe active et d'effectif, puis réouverture du menu
+        await ClassManager.switchClass(class2.id);
+        appState.generatedResults.push({ id: 's2', nom: 'MARTIN', prenom: 'Bob', classId: class1.id });
+        ClassUIManager.openDropdown();
+
+        const firstItemAfter = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${class1.id}"]`);
+        const secondItemAfter = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${class2.id}"]`);
+
+        // Les nœuds DOM et les Web Components <iconify-icon> sont strictement préservés (pas de réinitialisation innerHTML)
+        expect(firstItemAfter).toBe(firstItemBefore);
+        expect(firstItemAfter.querySelector('.class-meta-year iconify-icon')).toBe(calendarIconBefore);
+        expect(firstItemAfter.querySelector('.class-seating-badge iconify-icon')).toBe(seatingIconBefore);
+        expect(firstItemAfter.querySelector('.class-progress-badge iconify-icon')).toBe(progressIconBefore);
+
+        // Les états et compteurs sont bien mis à jour en place
+        expect(firstItemAfter.classList.contains('active')).toBe(false);
+        expect(secondItemAfter.classList.contains('active')).toBe(true);
+        expect(firstItemAfter.querySelector('.progress-count-value').textContent).toBe('2');
+    });
+
+    it('devrait préserver le Web Component <iconify-icon> du header et rafraîchir les compteurs du dropdown en place lors de updateHeaderDisplay / updateStudentCount', async () => {
+        DOM.headerClassIcon = document.createElement('span');
+        document.body.appendChild(DOM.headerClassIcon);
+
+        const class1 = ClassManager.createClass('4 1');
+        const class2 = ClassManager.createClass('4 2');
+        await ClassManager.switchClass(class1.id);
+
+        ClassUIManager.renderClassList();
+        ClassUIManager.updateHeaderDisplay();
+
+        const headerIconBefore = DOM.headerClassIcon.querySelector('iconify-icon');
+        expect(headerIconBefore).not.toBeNull();
+        expect(headerIconBefore.getAttribute('icon')).toBe('solar:users-group-rounded-linear');
+
+        // Ajout d'élèves et bascule sur une autre classe régulière
+        appState.generatedResults = [
+            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class1.id },
+            { id: 's2', nom: 'MARTIN', prenom: 'Bob', classId: class1.id },
+            { id: 's3', nom: 'DURAND', prenom: 'Chloé', classId: class1.id }
+        ];
+        await ClassManager.switchClass(class2.id);
+        ClassUIManager.updateHeaderDisplay();
+
+        const headerIconAfter = DOM.headerClassIcon.querySelector('iconify-icon');
+        expect(headerIconAfter).toBe(headerIconBefore);
+
+        const countVal = DOM.classDropdownList.querySelector(
+            `.class-progress-badge[data-class-id="${class1.id}"] .progress-count-value`
+        );
+        expect(countVal.textContent).toBe('3');
+    });
+});
 
 

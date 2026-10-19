@@ -26,6 +26,7 @@ export const ClassUIManager = {
     _showVirtualClasses: localStorage.getItem('bulletin_show_virtual_classes') !== 'false',
     _originalDropdownParent: null, // Store original parent for teleportation
     _virtualAnimationTimer: null,
+    _closeDropdownTimer: null,
 
     /**
      * Initialise le ClassUIManager avec les dépendances
@@ -95,6 +96,17 @@ export const ClassUIManager = {
         };
         window.addEventListener('scroll', this._boundOutsideScroll, { capture: true, passive: true });
 
+        // Reposition dropdown when resizing the window while open
+        if (this._boundResize) {
+            window.removeEventListener('resize', this._boundResize);
+        }
+        this._boundResize = () => {
+            if (this._isDropdownOpen) {
+                this._positionDropdown();
+            }
+        };
+        window.addEventListener('resize', this._boundResize, { passive: true });
+
         // Navigation clavier et fermeture via Échap lorsque le dropdown est ouvert
         document.addEventListener('keydown', (e) => {
             if (!this._isDropdownOpen) return;
@@ -149,24 +161,15 @@ export const ClassUIManager = {
     },
 
     /**
-     * Ouvre le dropdown
+     * Positionne le dropdown par rapport au chip du header sur une grille de pixels entiers
+     * @private
      */
-    openDropdown() {
+    _positionDropdown() {
         if (!DOM.classDropdown) return;
 
-        // [UX Mobile] Push History State
-        HistoryManager.pushState('classDropdown', (options) => this.closeDropdown(options));
-
-        this._isDropdownOpen = true;
-        DOM.headerClassChip?.classList.add('active');
-        DOM.classDropdown.style.display = 'block';
-
-        // Teleport to body on all screens to escape header clipping & nested backdrop-filter rendering bug in Chromium
-        this._originalDropdownParent = DOM.classDropdown.parentElement;
         const chipRect = DOM.headerClassChip?.getBoundingClientRect();
-        document.body.appendChild(DOM.classDropdown);
         DOM.classDropdown.style.position = 'fixed';
-        DOM.classDropdown.style.top = `${(chipRect?.bottom || 56) + 8}px`;
+        DOM.classDropdown.style.top = `${Math.round((chipRect?.bottom || 56) + 8)}px`;
         DOM.classDropdown.style.zIndex = '9999';
 
         if (window.innerWidth < 768) {
@@ -176,24 +179,52 @@ export const ClassUIManager = {
             DOM.classDropdown.style.maxWidth = 'none';
             DOM.classDropdown.style.width = 'auto';
         } else {
-            DOM.classDropdown.style.left = `${chipRect?.left || 16}px`;
+            DOM.classDropdown.style.left = `${Math.round(chipRect?.left || 16)}px`;
             DOM.classDropdown.style.right = 'unset';
             DOM.classDropdown.style.minWidth = 'unset';
             DOM.classDropdown.style.maxWidth = 'unset';
             DOM.classDropdown.style.width = '300px';
         }
+    },
 
-        // Trigger animation
-        requestAnimationFrame(() => {
-            DOM.classDropdown.classList.add('visible');
-        });
+    /**
+     * Ouvre le dropdown
+     */
+    openDropdown() {
+        if (!DOM.classDropdown) return;
 
-        // Render class list
+        if (this._closeDropdownTimer) {
+            clearTimeout(this._closeDropdownTimer);
+            this._closeDropdownTimer = null;
+        }
+
+        // [UX Mobile] Push History State
+        HistoryManager.pushState('classDropdown', (options) => this.closeDropdown(options));
+
+        this._isDropdownOpen = true;
+        DOM.headerClassChip?.classList.add('active');
+
+        // Teleport to body on all screens to escape header clipping & nested backdrop-filter rendering bug in Chromium
+        if (DOM.classDropdown.parentElement !== document.body) {
+            this._originalDropdownParent = DOM.classDropdown.parentElement;
+            document.body.appendChild(DOM.classDropdown);
+        }
+
+        this._positionDropdown();
+        DOM.classDropdown.style.display = 'block';
+
+        // Render class list & position scroll synchronously before fading in
         this.renderClassList();
 
-        // Focus de la classe active pour une accessibilité clavier optimale
+        // Focus de la classe active sans saut de scroll différé
+        DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.focus({ preventScroll: true });
+
+        // Force layout calculation at opacity: 0 before triggering entry transition
+        void DOM.classDropdown.offsetWidth;
         requestAnimationFrame(() => {
-            DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.focus();
+            if (this._isDropdownOpen) {
+                DOM.classDropdown.classList.add('visible');
+            }
         });
     },
 
@@ -214,8 +245,13 @@ export const ClassUIManager = {
         DOM.classDropdown.classList.remove('visible');
         TooltipsUI?.cleanupTooltipsIn?.(DOM.classDropdown);
 
+        if (this._closeDropdownTimer) {
+            clearTimeout(this._closeDropdownTimer);
+        }
+
         // Hide after animation
-        setTimeout(() => {
+        this._closeDropdownTimer = setTimeout(() => {
+            this._closeDropdownTimer = null;
             if (!this._isDropdownOpen) {
                 DOM.classDropdown.style.display = 'none';
 
@@ -435,96 +471,149 @@ export const ClassUIManager = {
         ` : '';
 
         const allItems = this._getOrderedClassItems(classes, virtualClasses);
+        const existingItems = Array.from(DOM.classDropdownList.querySelectorAll('.class-dropdown-item'));
+        const existingHasCta = Boolean(DOM.classDropdownList.querySelector('#dropdownCreateClassCta'));
+        const canUpdateInPlace = existingItems.length > 0 &&
+            existingItems.length === allItems.length &&
+            existingHasCta === hasOnlyDemoOrNoRealClass &&
+            existingItems.every((el, idx) =>
+                el.dataset.classId === allItems[idx].id &&
+                el.classList.contains('class-dropdown-item--virtual') === Boolean(allItems[idx].isVirtual)
+            );
 
-        const classItemsHtml = allItems.map(item => {
-            if (item.isVirtual) {
-                const isCollapsed = !this._showVirtualClasses;
-                const sourceNames = item.sourceGroupNames?.join(' & ') || '';
+        if (canUpdateInPlace) {
+            allItems.forEach((item, idx) => {
+                const el = existingItems[idx];
+                const isActive = item.id === currentClassId;
+                el.classList.toggle('active', isActive);
+                el.setAttribute('aria-selected', isActive ? 'true' : 'false');
+
+                const nameTextEl = el.querySelector('.class-name-text');
+                if (nameTextEl && nameTextEl.textContent !== item.displayName) {
+                    nameTextEl.textContent = item.displayName;
+                }
+
+                if (item.isVirtual) {
+                    const isCollapsed = !this._showVirtualClasses;
+                    el.classList.toggle('is-collapsed', isCollapsed);
+                    el.setAttribute('tabindex', isCollapsed ? '-1' : '0');
+                    if (isCollapsed) {
+                        el.setAttribute('aria-hidden', 'true');
+                    } else {
+                        el.removeAttribute('aria-hidden');
+                    }
+
+                    const sourceNames = item.sourceGroupNames?.join(' & ') || '';
+                    const sourcesEl = el.querySelector('.class-meta-sources');
+                    if (sourcesEl) {
+                        sourcesEl.setAttribute('title', `Groupes sources : ${sourceNames}`);
+                    }
+                    const sourcesTextEl = el.querySelector('.class-meta-sources-text');
+                    if (sourcesTextEl && sourcesTextEl.textContent !== sourceNames) {
+                        sourcesTextEl.textContent = sourceNames;
+                    }
+                    const countValEl = el.querySelector('.progress-count-value');
+                    const nextCount = String(item.studentCount ?? 0);
+                    if (countValEl && countValEl.textContent !== nextCount) {
+                        countValEl.textContent = nextCount;
+                    }
+                } else {
+                    const yearStr = item.year || 'Non définie';
+                    const yearTextEl = el.querySelector('.class-meta-year-text');
+                    if (yearTextEl && yearTextEl.textContent !== yearStr) {
+                        yearTextEl.textContent = yearStr;
+                    }
+                }
+            });
+        } else {
+            const classItemsHtml = allItems.map(item => {
+                if (item.isVirtual) {
+                    const isCollapsed = !this._showVirtualClasses;
+                    const sourceNames = item.sourceGroupNames?.join(' & ') || '';
+                    return `
+                    <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}" 
+                         data-class-id="${item.id}"
+                         tabindex="${isCollapsed ? '-1' : '0'}"
+                         role="option"
+                         aria-selected="${item.id === currentClassId ? 'true' : 'false'}"
+                         ${isCollapsed ? 'aria-hidden="true"' : ''}>
+                        <div class="class-info">
+                            <span class="class-name">
+                                <span class="class-name-text">${this._escapeHtml(item.displayName)}</span>
+                                <span class="class-item-virtual-badge">Reconstituée</span>
+                            </span>
+                            <span class="class-meta">
+                                <span class="class-meta-sources" title="Groupes sources : ${this._escapeHtml(sourceNames)}">
+                                    <iconify-icon icon="solar:link-round-linear"></iconify-icon>
+                                    <span class="class-meta-sources-text">${this._escapeHtml(sourceNames)}</span>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="class-progress-badge" data-class-id="${item.id}">
+                            <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <span class="progress-count-value">${item.studentCount}</span></span>
+                        </div>
+                    </div>
+                    `;
+                }
+
                 return `
-                <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}" 
+                <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}" 
                      data-class-id="${item.id}"
-                     tabindex="${isCollapsed ? '-1' : '0'}"
+                     tabindex="0"
                      role="option"
-                     aria-selected="${item.id === currentClassId ? 'true' : 'false'}"
-                     ${isCollapsed ? 'aria-hidden="true"' : ''}>
+                     aria-selected="${item.id === currentClassId ? 'true' : 'false'}">
                     <div class="class-info">
                         <span class="class-name">
-                            ${this._escapeHtml(item.displayName)}
-                            <span class="class-item-virtual-badge">Reconstituée</span>
+                            <span class="class-name-text">${this._escapeHtml(item.displayName)}</span>
                         </span>
                         <span class="class-meta">
-                            <span class="class-meta-sources" title="Groupes sources : ${this._escapeHtml(sourceNames)}">
-                                <iconify-icon icon="solar:link-round-linear"></iconify-icon>
-                                <span>${this._escapeHtml(sourceNames)}</span>
-                            </span>
+                            <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> <span class="class-meta-year-text">${this._escapeHtml(item.year || 'Non définie')}</span></span>
+                            <span class="class-seating-badge is-hidden" data-class-id="${item.id}"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></span>
                         </span>
                     </div>
                     <div class="class-progress-badge" data-class-id="${item.id}">
-                        <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> ${item.studentCount}</span>
+                        <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <span class="progress-count-value">0</span></span>
                     </div>
                 </div>
                 `;
-            }
+            }).join('');
 
-            return `
-            <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}" 
-                 data-class-id="${item.id}"
-                 tabindex="0"
-                 role="option"
-                 aria-selected="${item.id === currentClassId ? 'true' : 'false'}">
-                <div class="class-info">
-                    <span class="class-name">
-                        ${this._escapeHtml(item.displayName)}
-                    </span>
-                    <span class="class-meta">
-                        <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${item.year || 'Non définie'}</span>
-                        <span class="class-seating-badge is-hidden" data-class-id="${item.id}"></span>
-                    </span>
-                </div>
-                <div class="class-progress-badge" data-class-id="${item.id}">
-                    <span class="progress-loader"></span>
-                </div>
-            </div>
-            `;
-        }).join('');
+            DOM.classDropdownList.innerHTML = ctaBtnHtml + classItemsHtml;
 
-        DOM.classDropdownList.innerHTML = ctaBtnHtml + classItemsHtml;
-
-        // Bind dropdown create class CTA
-        document.getElementById('dropdownCreateClassCta')?.addEventListener('click', () => {
-            this.showNewClassPrompt();
-        });
-
-        // Bind click and keyboard events on class items
-        DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
-            const selectClass = async () => {
-                if (item.classList.contains('is-collapsed')) return;
-                const classId = item.dataset.classId;
-                if (classId === appState.currentClassId) {
-                    this.closeDropdown();
-                    return;
-                }
-                await this.handleClassSwitch(classId);
-            };
-
-            item.addEventListener('click', selectClass);
-            item.addEventListener('keydown', async (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    await selectClass();
-                }
+            // Bind dropdown create class CTA
+            document.getElementById('dropdownCreateClassCta')?.addEventListener('click', () => {
+                this.showNewClassPrompt();
             });
-        });
 
-        // Update progress indicators asynchronously
+            // Bind click and keyboard events on class items
+            DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
+                const selectClass = async () => {
+                    if (item.classList.contains('is-collapsed')) return;
+                    const classId = item.dataset.classId;
+                    if (classId === appState.currentClassId) {
+                        this.closeDropdown();
+                        return;
+                    }
+                    await this.handleClassSwitch(classId);
+                };
+
+                item.addEventListener('click', selectClass);
+                item.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        await selectClass();
+                    }
+                });
+            });
+        }
+
+        // Update progress indicators
         this._updateClassProgressIndicators(classes);
-        TooltipsUI?.initTooltips?.();
+        TooltipsUI?.initTooltips?.(DOM.classDropdown);
 
-        // Défilement automatique vers la classe active si le dropdown est ouvert
+        // Défilement automatique synchrone vers la classe active si le dropdown est ouvert
         if (this._isDropdownOpen) {
-            requestAnimationFrame(() => {
-                DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView({ block: 'nearest' });
-            });
+            DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView?.({ block: 'nearest' });
         }
     },
 
@@ -842,11 +931,18 @@ export const ClassUIManager = {
             }
         }
 
-        // Mettre à jour l'icône du header chip selon le type de classe
+        // Mettre à jour l'icône du header chip selon le type de classe (en place sans recréer le Web Component)
         if (DOM.headerClassIcon) {
-            DOM.headerClassIcon.innerHTML = isVirtual
-                ? '<iconify-icon icon="solar:diploma-bold"></iconify-icon>'
-                : '<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>';
+            const targetIcon = isVirtual ? 'solar:diploma-bold' : 'solar:users-group-rounded-linear';
+            let iconEl = DOM.headerClassIcon.querySelector('iconify-icon');
+            if (!iconEl) {
+                iconEl = document.createElement('iconify-icon');
+                DOM.headerClassIcon.textContent = '';
+                DOM.headerClassIcon.appendChild(iconEl);
+            }
+            if (iconEl.getAttribute('icon') !== targetIcon) {
+                iconEl.setAttribute('icon', targetIcon);
+            }
         }
 
         // Afficher ou masquer le badge Classe complète dans le chip du header
@@ -871,28 +967,39 @@ export const ClassUIManager = {
             DOM.headerStudentCount.textContent = count;
         }
 
-        // Also update dropdown counters if visible (using in-memory data, not IndexedDB)
+        // Also update dropdown counters in place (using in-memory data, not IndexedDB)
         const allClasses = ClassManager.getAllClasses();
-        for (const cls of allClasses) {
-            const countBadge = DOM.classDropdownList?.querySelector(
-                `.class-student-count[data-class-id="${cls.id}"]`
-            );
-            if (countBadge) {
-                // Count from in-memory generatedResults (faster, always up-to-date)
-                const classStudentCount = appState.generatedResults.filter(
-                    r => r.classId === cls.id
-                ).length;
-                countBadge.textContent = classStudentCount;
+        if (DOM.classDropdownList) {
+            this._updateClassProgressIndicators(allClasses);
+            const virtualClasses = ClassManager.getVirtualClasses();
+            for (const vClass of virtualClasses) {
+                const vCountEl = DOM.classDropdownList.querySelector(
+                    `.class-progress-badge[data-class-id="${vClass.id}"] .progress-count-value`
+                );
+                if (vCountEl) {
+                    const nextCount = String(vClass.studentCount ?? 0);
+                    if (vCountEl.textContent !== nextCount) {
+                        vCountEl.textContent = nextCount;
+                    }
+                }
             }
         }
 
         // UPDATE "Mes classes" title with class count & total students tooltip
         const totalStudents = appState.generatedResults?.length || 0;
-        const classesCount = ClassManager.getAllClasses().length;
+        const classesCount = allClasses.length;
 
         const titleEl = DOM.classDropdownTitle || document.getElementById('classDropdownTitle');
         if (titleEl) {
-            titleEl.innerHTML = `Mes classes <span class="class-dropdown-count">(${classesCount})</span>`;
+            const countSpan = titleEl.querySelector('.class-dropdown-count');
+            const nextCountText = `(${classesCount})`;
+            if (countSpan) {
+                if (countSpan.textContent !== nextCountText) {
+                    countSpan.textContent = nextCountText;
+                }
+            } else {
+                titleEl.innerHTML = `Mes classes <span class="class-dropdown-count">${nextCountText}</span>`;
+            }
             titleEl.classList.add('tooltip');
             titleEl.removeAttribute('title');
             const totalTooltip = `Total : ${totalStudents} élève${totalStudents > 1 ? 's' : ''}`;
@@ -920,8 +1027,18 @@ export const ClassUIManager = {
             const classResults = allResults.filter(r => r.classId === cls.id);
             const totalStudents = classResults.length;
 
+            // Render/update badge in place without destroying <iconify-icon>
+            const countValEl = badge.querySelector('.progress-count-value');
+            if (countValEl) {
+                const nextCount = String(totalStudents);
+                if (countValEl.textContent !== nextCount) {
+                    countValEl.textContent = nextCount;
+                }
+            } else {
+                badge.innerHTML = `<span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <span class="progress-count-value">${totalStudents}</span></span>`;
+            }
+
             if (totalStudents === 0) {
-                badge.innerHTML = `<span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> 0</span>`;
                 badge.removeAttribute('title');
                 badge.setAttribute('data-tooltip', 'Aucun élève');
                 badge.dataset.status = 'empty';
@@ -947,10 +1064,6 @@ export const ClassUIManager = {
                 }
             });
 
-            // Render badge - NEUTRAL: juste le nombre d'élèves, pas d'icône d'état
-            // (Decision: afficher SEULEMENT les erreurs sans les autres états est incohérent)
-            badge.innerHTML = `<span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> ${totalStudents}</span>`;
-
             // Set tooltip and status for potential CSS styling
             let tooltipText = '';
             if (errorCount > 0) {
@@ -970,7 +1083,7 @@ export const ClassUIManager = {
             badge.setAttribute('data-tooltip', tooltipText);
             TooltipsUI?.updateTooltip?.(badge, tooltipText);
 
-            // Update seating chart indicator
+            // Update seating chart indicator in place
             const seatingBadge = DOM.classDropdownList?.querySelector(
                 `.class-seating-badge[data-class-id="${cls.id}"]`
             );
@@ -990,10 +1103,22 @@ export const ClassUIManager = {
                     ? 'testing'
                     : primaryInfo.status;
 
+                const ensureSeatingIcon = (iconName) => {
+                    let iconEl = seatingBadge.querySelector('iconify-icon');
+                    if (!iconEl) {
+                        iconEl = document.createElement('iconify-icon');
+                        seatingBadge.textContent = '';
+                        seatingBadge.appendChild(iconEl);
+                    }
+                    if (iconEl.getAttribute('icon') !== iconName) {
+                        iconEl.setAttribute('icon', iconName);
+                    }
+                };
+
                 seatingBadge.removeAttribute('title');
                 if (effectiveStatus === 'locked') {
                     seatingBadge.className = 'class-seating-badge is-locked';
-                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
+                    ensureSeatingIcon('solar:streets-map-point-bold');
                     const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
                     const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
                     const seatingTooltip = `${planPrefix} : Validé${dateNote}${unplacedNote}${activitySuffix}`;
@@ -1001,7 +1126,7 @@ export const ClassUIManager = {
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else if (effectiveStatus === 'testing') {
                     seatingBadge.className = 'class-seating-badge is-testing';
-                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
+                    ensureSeatingIcon('solar:streets-map-point-bold');
                     const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
                     const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
                     const primaryStatusLabel = primaryInfo.status === 'locked' ? 'Validé' : 'En test';
@@ -1010,13 +1135,12 @@ export const ClassUIManager = {
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else if (SeatingChartManager._isActive) {
                     seatingBadge.className = 'class-seating-badge is-empty';
-                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>`;
+                    ensureSeatingIcon('solar:streets-map-point-linear');
                     const seatingTooltip = 'Plan de classe : À faire';
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else {
                     seatingBadge.className = 'class-seating-badge is-hidden';
-                    seatingBadge.innerHTML = '';
                     seatingBadge.removeAttribute('data-tooltip');
                     if (seatingBadge._tippy) seatingBadge._tippy.destroy();
                 }
