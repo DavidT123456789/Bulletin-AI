@@ -1400,7 +1400,8 @@
 }
 
 /* In consultation/locked mode, empty desks are subtle ghost silhouettes without dashed borders */
-#seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+.sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     border: 1.5px solid transparent;
     background: rgba(255, 255, 255, 0.45);
     opacity: 1;
@@ -1408,7 +1409,8 @@
 }
 
 /* In edit mode, standard empty cells are clearly visible (inviting placement) */
-#seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+.sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 1;
     border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.35);
     background: rgba(var(--surface-color-rgb), 0.25);
@@ -1936,9 +1938,12 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* Hide remove/pin and scope badge in locked — clean read-only view */
-#seatingChartView[data-locked="true"] .sc-cell-remove,
-#seatingChartView[data-locked="true"] .sc-cell-pin,
-#seatingChartView[data-locked="true"] .sc-cell-scope-badge {
+.sc-classroom-board[data-locked="true"] .sc-cell-remove,
+.sc-classroom-board[data-locked="true"] .sc-cell-pin,
+.sc-classroom-board[data-locked="true"] .sc-cell-scope-badge,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-remove,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-pin,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-scope-badge {
     display: none !important;
 }
 
@@ -1963,7 +1968,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
 }
 
-#seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle {
+.sc-classroom-board[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle,
+#seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty.sc-cell-special-aisle {
     border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.18);
     opacity: 0.35;
 }
@@ -2029,14 +2035,17 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* In consultation/locked mode, "Condamné" blends into a quiet empty desk silhouette without visual noise */
-#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
     border: 1.5px solid transparent;
     background: rgba(255, 255, 255, 0.45);
     opacity: 1;
 }
 
-#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
-#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
     opacity: 0;
     pointer-events: none;
 }
@@ -2908,6 +2917,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 
     #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty.sc-cell-special-blocked,
     .sc-cell.empty.sc-cell-special-aisle {
         border: none !important;
         background: transparent !important;
@@ -3582,13 +3592,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* Dark theme empty desks: subtle visible silhouette in consultation, clear in edit */
-[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
-[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
+[data-theme="dark"] .sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] .sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
     border: 1.5px solid transparent;
     background: rgba(255, 255, 255, 0.025);
 }
 
-[data-theme="dark"] #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+[data-theme="dark"] .sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] #seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     border: 1.5px dashed rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.04);
 }
@@ -4708,16 +4721,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     background: rgba(255, 255, 255, 0.08);
 }
 
-#seatingChartView[data-locked="true"] .sc-cell.empty .sc-station-badge,
-.sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge {
+.sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty .sc-station-badge {
     opacity: 0.45;
 }
 
 /* In Activity Consultation mode: hide empty non-special stations, condemned stations, and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
 .sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
 .sc-classroom-board[data-plan-mode="activity"][data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
-#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.empty.sc-cell-special-blocked {
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]):not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-plan-mode="activity"][data-locked="true"] .sc-classroom-board:not([data-plan-mode="course"]):not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
     opacity: 0 !important;
     pointer-events: none !important;
     border-color: transparent !important;
@@ -4981,31 +4994,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         transform: scale(1.16) translateY(-2px);
         z-index: 10 !important;
     }
-}
-
-.sc-stacked-count-pill {
-    position: absolute;
-    top: -3px;
-    right: -5px;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    border-radius: var(--radius-pill);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    font-size: 0.6rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-xs);
-    z-index: 15;
-    pointer-events: none;
-}
-
-#seatingChartView[data-plan-mode="activity"] .sc-cell-stacked .sc-stacked-count-pill {
-    display: none;
 }
 
 .sc-stacked-names-list {

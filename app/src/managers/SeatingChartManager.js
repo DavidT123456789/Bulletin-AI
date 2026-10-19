@@ -2069,6 +2069,8 @@ export const SeatingChartManager = {
     _syncLockControlsUI(locked) {
         const view = document.getElementById('seatingChartView');
         if (view) view.dataset.locked = locked;
+        const board = document.getElementById('scClassroomBoard');
+        if (board) board.dataset.locked = locked ? 'true' : 'false';
 
         const sidebar = document.getElementById('scSidebar');
         if (sidebar) sidebar.inert = Boolean(locked);
@@ -3709,7 +3711,6 @@ export const SeatingChartManager = {
             cell.innerHTML = `
                 <div class="sc-stacked-avatar-cluster">
                     ${avatarsHtml}
-                    <span class="sc-stacked-count-pill">${students.length}</span>
                 </div>
                 <div class="sc-stacked-names-list">
                     ${namesHtml}
@@ -4870,7 +4871,7 @@ export const SeatingChartManager = {
             ghost.style.setProperty('--sc-cell-h', `${element.offsetHeight}px`);
         }
         ghost.classList.remove('sc-chip-selected');
-        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
+        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
 
         if (element.classList.contains('sc-student-chip')) {
             const chipNameEl = ghost.querySelector('.sc-student-chip-name');

@@ -508,7 +508,7 @@ export const SeatingAutoPlace = {
             clone.style.setProperty('--sc-cell-h', '114px');
         }
         clone.classList.remove('sc-chip-selected');
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-stacked-count-pill, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
 
         if (sourceEl.classList.contains('sc-student-chip')) {
             const chipNameEl = clone.querySelector('.sc-student-chip-name');

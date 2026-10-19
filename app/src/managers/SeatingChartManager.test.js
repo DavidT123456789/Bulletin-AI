@@ -1052,7 +1052,9 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
         const cell = SeatingChartManager._createCell(0, 0);
 
         expect(cell.classList.contains('sc-cell-stacked')).toBe(true);
-        expect(cell.querySelector('.sc-stacked-count-pill').textContent).toBe('2');
+        expect(cell.dataset.groupSize).toBe('2');
+        expect(cell.querySelectorAll('.sc-stacked-avatar').length).toBe(2);
+        expect(cell.querySelector('.sc-stacked-count-pill')).toBeNull();
         expect(cell.textContent).toContain('Alice');
         expect(cell.textContent).toContain('Bob');
     });
