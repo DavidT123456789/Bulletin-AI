@@ -36,7 +36,8 @@ vi.mock('../config/Config.js', () => ({
         'gpt-4': 'Modèle GPT-4 puissant',
         'gemini-pro': 'Modèle Google Gemini'
     },
-    APP_VERSION: '4.3.0'
+    APP_VERSION: '4.3.0',
+    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
 
 vi.mock('../utils/DOM.js', () => ({

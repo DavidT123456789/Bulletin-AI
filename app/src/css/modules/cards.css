@@ -880,14 +880,90 @@
 }
 
 .tag-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 11px;
-    padding: 4px 8px;
+    line-height: 1.15;
+    padding: 3.5px 8.5px;
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
     color: var(--text-secondary);
+    border: 1px solid transparent;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .tag-badge {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-secondary);
+    border-color: transparent;
+}
+
+/* Semantic movement badges: Nouveau (Sky) & Départ (Amber/Copper) */
+.tag-badge.tag-badge--new {
+    background: rgba(14, 165, 233, 0.13);
+    color: var(--color-sky-deep, #0369a1);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tag-badge.tag-badge--new {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--color-sky, #38bdf8);
+    border-color: transparent;
+}
+
+.tag-badge.tag-badge--depart {
+    background: rgba(245, 158, 11, 0.13);
+    color: var(--color-amber-deep, #b45309);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tag-badge.tag-badge--depart {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--color-amber, #fbbf24);
+    border-color: transparent;
+}
+
+/* Semantic ULIS badge (Violet) */
+.tag-badge.tag-badge--ulis {
+    background: rgba(147, 51, 234, 0.12);
+    color: #7e22ce;
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tag-badge.tag-badge--ulis {
+    background: rgba(167, 139, 250, 0.15);
+    color: var(--purple-color, #a78bfa);
+    border-color: transparent;
+}
+
+/* Semantic accompaniment badges: PAP, PPRE, PAI, AESH (Rose) */
+.tag-badge.tag-badge--device {
+    background: rgba(244, 63, 94, 0.12);
+    color: var(--color-rose-deep, #be123c);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tag-badge.tag-badge--device {
+    background: rgba(251, 113, 133, 0.15);
+    color: var(--color-rose, #fb7185);
+    border-color: transparent;
+}
+
+/* Semantic delegate badge: Délégué (Emerald) */
+.tag-badge.tag-badge--delegate {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-emerald-deep, #047857);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .tag-badge.tag-badge--delegate {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--color-emerald, #34d399);
+    border-color: transparent;
 }
 
 /* Compact variant for dense table contexts (import wizard) */

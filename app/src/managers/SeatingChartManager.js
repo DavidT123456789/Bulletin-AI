@@ -685,6 +685,7 @@ export const SeatingChartManager = {
 
             window.addEventListener('student-updated', () => this.refreshStudents());
             window.addEventListener('studentsUpdated', () => this.refreshStudents());
+            document.addEventListener('app-settings-changed', () => this.refreshStudents());
         }
     },
 
@@ -1040,6 +1041,11 @@ export const SeatingChartManager = {
             ? (students.length === 2 ? `Binôme (${students.length} élèves)` : `Groupe (${students.length} élèves)`)
             : `${primary.prenom || ''} ${primary.nom || ''}`;
 
+        const primaryStatuses = !isMulti ? this._getStudentStatusLabels(primary) : [];
+        const primaryStatusSuffix = primaryStatuses.length > 0
+            ? ` • ${primaryStatuses.join(' • ')}`
+            : '';
+
         const headerAvatarHTML = isMulti
             ? `<div class="sc-sheet-desk-icon"><iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon></div>`
             : StudentPhotoManager.getAvatarHTML(primary, 'md');
@@ -1047,17 +1053,30 @@ export const SeatingChartManager = {
         const membersSectionHTML = isMulti ? `
             <div class="sc-sheet-section-title">Membres du poste (${students.length}/${MAX_ACTIVITY_GROUP_SIZE})</div>
             <div class="sc-sheet-picker-list sc-sheet-members-list">
-                ${students.map(s => `
+                ${students.map(s => {
+                    const memberStatusBadge = this._getStudentStatusLabels(s).map(label => {
+                        const badgeClass = label === 'Départ'
+                            ? 'sc-chip-badge-depart'
+                            : (label === 'Nouveau'
+                                ? 'sc-chip-badge-new'
+                                : (label === 'ULIS'
+                                    ? 'sc-chip-badge-ulis'
+                                    : (label === 'Délégué' ? 'sc-chip-badge-delegate' : 'sc-chip-badge-device')));
+                        return `<span class="sc-chip-badge ${badgeClass}">${Utils.escapeHtml(label)}</span>`;
+                    }).join('');
+                    return `
                     <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${s.id}">
                         <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${s.id}" type="button">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                            ${memberStatusBadge}
                         </button>
                         <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${s.prenom || s.nom}">
                             <iconify-icon icon="ph:x"></iconify-icon> Retirer
                         </button>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
         ` : '';
 
@@ -1083,7 +1102,7 @@ export const SeatingChartManager = {
                     ${headerAvatarHTML}
                     <div class="sc-sheet-entity-text">
                         <h3 class="sc-sheet-entity-name">${headerTitle}</h3>
-                        <p class="sc-sheet-entity-meta">${locationLabel}${isPinned ? ' • 📌 Place fixée' : ''}</p>
+                        <p class="sc-sheet-entity-meta">${locationLabel}${primaryStatusSuffix}${isPinned ? ' • 📌 Place fixée' : ''}</p>
                     </div>
                 </div>
                 <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
@@ -2396,9 +2415,7 @@ export const SeatingChartManager = {
 
             if (students.length === 1) {
                 const student = students[0];
-                let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
-                if (student.isNew) tooltipText += ' • Nouveau';
-                if (student.isDeparted) tooltipText += ' • Départ';
+                const tooltipText = this._getStudentTooltipText(student);
                 cell.setAttribute('data-tooltip', tooltipText);
                 if (this._isLocked) {
                     cell.removeAttribute('data-tooltip-anchor');
@@ -2430,13 +2447,15 @@ export const SeatingChartManager = {
 
             if (students.length > 1) {
                 this._attachMemberHoverEcho(cell);
-                cell.querySelectorAll('.sc-stacked-member').forEach(memberEl => {
+                cell.querySelectorAll('.sc-stacked-member, .sc-stacked-avatar').forEach(memberEl => {
                     const memberId = memberEl.dataset.resultId;
                     const s = this._studentMap?.get(memberId);
                     if (!s) return;
-                    const tooltipText = Utils.formatStudentFirstLastName(s.nom, s.prenom);
+                    const tooltipText = this._getStudentTooltipText(s);
                     memberEl.setAttribute('data-tooltip', tooltipText);
-                    memberEl.setAttribute('data-tooltip-anchor', `.sc-stacked-avatar[data-result-id='${memberId}']`);
+                    if (memberEl.classList.contains('sc-stacked-member')) {
+                        memberEl.setAttribute('data-tooltip-anchor', `.sc-stacked-avatar[data-result-id='${memberId}']`);
+                    }
                     TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
                 });
             }
@@ -3594,32 +3613,34 @@ export const SeatingChartManager = {
             cell.dataset.resultId = student.id;
             const isPinned = student[posKey]?.pinned || false;
             const isDeparted = this._isStudentDeparted(student);
-            const isNew = this._isStudentNew(student);
+            const badgeInfo = this._getStudentStatusBadgeInfo(student);
 
             cell.classList.add('occupied');
             if (isDeparted) cell.classList.add('sc-cell-departed');
-            if (isNew) cell.classList.add('sc-cell-new');
-            if (isDeparted || isNew) cell.classList.add('has-status-badge');
+            if (badgeInfo?.cellClass && badgeInfo.cellClass !== 'sc-cell-departed') {
+                cell.classList.add(badgeInfo.cellClass);
+            }
+            if (badgeInfo) cell.classList.add('has-status-badge');
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
 
-            let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
-            if (isNew) tooltipText += ' • Nouveau';
-            if (isDeparted) tooltipText += ' • Départ';
+            const tooltipText = this._getStudentTooltipText(student);
 
             cell.setAttribute('data-tooltip', tooltipText);
             if (!this._isLocked) {
                 cell.setAttribute('data-tooltip-anchor', '.student-avatar');
             }
 
-            const statusBadgeHTML = isDeparted
-                ? `<span class="sc-cell-status-badge sc-badge-depart">Départ</span>`
-                : (isNew ? `<span class="sc-cell-status-badge sc-badge-new">Nouveau</span>` : '');
+            const statusBadgeHTML = badgeInfo
+                ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
+                : '';
 
             cell.innerHTML = `
-                ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
+                <div class="sc-cell-avatar-wrap">
+                    ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
+                    ${statusBadgeHTML}
+                </div>
                 <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
-                ${statusBadgeHTML}
                 ${stationBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
@@ -3683,23 +3704,35 @@ export const SeatingChartManager = {
         } else if (students.length > 1) {
             // Binôme / Groupe / Classe reconstituée (2 à 4 élèves sur un même poste)
             const isPinned = students.some(s => s[posKey]?.pinned);
+            const allDeparted = students.every(s => this._isStudentDeparted(s));
             cell.classList.add('occupied', 'sc-cell-stacked');
+            if (allDeparted) cell.classList.add('sc-cell-departed');
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
             cell.dataset.resultId = students[0].id;
             cell.dataset.groupSize = String(students.length);
 
             const canExtractMember = !this._isLocked && !isPinned;
-            const avatarsHtml = students.map((s, idx) => `
-                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">
+            const getMemberTooltip = (s) => this._getStudentTooltipText(s);
+            const avatarsHtml = students.map((s, idx) => {
+                const isMemberDeparted = this._isStudentDeparted(s);
+                const memberBadge = this._getStudentStatusBadgeInfo(s);
+                const memberDotHtml = memberBadge
+                    ? `<span class="sc-cell-status-badge ${memberBadge.className}" aria-label="${Utils.escapeHtml(memberBadge.label)}">${Utils.escapeHtml(memberBadge.label)}</span>`
+                    : '';
+                return `
+                <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                    ${memberDotHtml}
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             const namesHtml = students.map(s => {
-                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(Utils.formatStudentFirstLastName(s.nom, s.prenom))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
+                const isMemberDeparted = this._isStudentDeparted(s);
+                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
                 return `
-                <span class="sc-stacked-member sc-stacked-name" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
+                <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
                     <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
@@ -4004,16 +4037,25 @@ export const SeatingChartManager = {
                        </div>`
                     : 'Aucun résultat'}
                </div>`
-            : filtered.map((s, index) => `
+            : filtered.map((s, index) => {
+                const badgeInfo = this._getStudentStatusBadgeInfo(s);
+                const chipBadgeLabel = badgeInfo
+                    ? (badgeInfo.type === 'ulis' ? 'ULIS' : badgeInfo.label.split(' • ')[0])
+                    : '';
+                const chipBadgeHtml = badgeInfo
+                    ? `<span class="sc-chip-badge sc-chip-badge-${badgeInfo.type}">${Utils.escapeHtml(chipBadgeLabel)}</span>`
+                    : '';
+                return `
                 <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
-                    ${s.isNew ? '<span class="sc-chip-badge sc-chip-badge-new">Nouveau</span>' : ''}
+                    ${chipBadgeHtml}
                     <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                         <iconify-icon icon="solar:user-id-linear"></iconify-icon>
                     </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
         const departedHtml = filteredDeparted.length > 0
             ? `<div class="sc-sidebar-departed-section">
@@ -4214,6 +4256,96 @@ export const SeatingChartManager = {
         }
         if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
         return false;
+    },
+
+    _getStudentDeviceStatuses(studentResult) {
+        if (!studentResult) return [];
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (!Array.isArray(statuses) || statuses.length === 0) return [];
+        const deviceMap = {
+            ulis: 'ULIS',
+            pap: 'PAP',
+            ppre: 'PPRE',
+            pai: 'PAI',
+            aesh: 'AESH'
+        };
+        const found = [];
+        for (const raw of statuses) {
+            const key = String(raw || '').trim().toLowerCase();
+            const canonical = deviceMap[key];
+            if (canonical && !found.includes(canonical)) {
+                found.push(canonical);
+            }
+        }
+        return found;
+    },
+
+    _isStudentDevice(studentResult) {
+        return this._getStudentDeviceStatuses(studentResult).length > 0;
+    },
+
+    _isStudentDelegate(studentResult) {
+        if (!studentResult) return false;
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+        return statuses.some(s => {
+            const lower = String(s || '').trim().toLowerCase();
+            return lower.includes('délégué') || lower.includes('delegue');
+        });
+    },
+
+    _getStudentStatusLabels(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return [];
+        const labels = [];
+        if (this._isStudentDeparted(studentResult, activePeriod)) {
+            labels.push('Départ');
+        } else if (this._isStudentNew(studentResult, activePeriod)) {
+            labels.push('Nouveau');
+        }
+        for (const dev of this._getStudentDeviceStatuses(studentResult)) {
+            labels.push(dev);
+        }
+        if (this._isStudentDelegate(studentResult)) {
+            labels.push('Délégué');
+        }
+        return labels;
+    },
+
+    _getStudentTooltipText(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return '';
+        const baseName = Utils.formatStudentFirstLastName(studentResult.nom, studentResult.prenom);
+        const labels = this._getStudentStatusLabels(studentResult, activePeriod);
+        return labels.length > 0 ? `${baseName} • ${labels.join(' • ')}` : baseName;
+    },
+
+    _getStudentStatusBadgeInfo(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return null;
+        const dotsConfig = appState.seatingStatusDots || { movements: true, devices: false, delegates: false };
+
+        if (dotsConfig.movements !== false) {
+            if (this._isStudentDeparted(studentResult, activePeriod)) {
+                return { type: 'depart', className: 'sc-badge-depart', cellClass: 'sc-cell-departed', label: 'Départ' };
+            }
+            if (this._isStudentNew(studentResult, activePeriod)) {
+                return { type: 'new', className: 'sc-badge-new', cellClass: 'sc-cell-new', label: 'Nouveau' };
+            }
+        }
+
+        if (dotsConfig.devices) {
+            const devices = this._getStudentDeviceStatuses(studentResult);
+            if (devices.length > 0) {
+                if (devices.includes('ULIS')) {
+                    return { type: 'ulis', className: 'sc-badge-ulis', cellClass: 'sc-cell-ulis', label: devices.join(' • ') };
+                }
+                return { type: 'device', className: 'sc-badge-device', cellClass: 'sc-cell-device', label: devices.join(' • ') };
+            }
+        }
+
+        if (dotsConfig.delegates && this._isStudentDelegate(studentResult)) {
+            return { type: 'delegate', className: 'sc-badge-delegate', cellClass: 'sc-cell-delegate', label: 'Délégué' };
+        }
+
+        return null;
     },
 
     _getValidPlacedIdsForClass(cls, mode = 'course', classResults = null) {

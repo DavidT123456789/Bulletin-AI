@@ -8,7 +8,7 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
+import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
@@ -150,12 +150,26 @@ export const SettingsUIManager = {
             appState.anonymizeData = DOM.settingsPrivacyAnonymizeToggle.checked;
         }
 
+        // Pastilles de statut du plan de classe
+        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
+        if (seatingDotsSelector) {
+            const nextDots = {
+                ...DEFAULT_SEATING_STATUS_DOTS,
+                ...(appState.seatingStatusDots || {})
+            };
+            seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
+                const cat = cb.getAttribute('data-dot-category');
+                if (cat) nextDots[cat] = cb.checked;
+            });
+            appState.seatingStatusDots = nextDots;
+        }
+
         const journalThresholdInput = document.getElementById('journalThresholdInput');
         if (journalThresholdInput) {
             appState.journalThreshold = parseInt(journalThresholdInput.value, 10) || 2;
         }
 
-        // Dispatch event for responsive updates (e.g., FocusPanel badge)
+        // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
         document.dispatchEvent(new CustomEvent('app-settings-changed', {
             detail: { settings: appState }
         }));
@@ -190,6 +204,10 @@ export const SettingsUIManager = {
             subjects: JSON.parse(JSON.stringify(appState.subjects)),
             theme: appState.theme,
             accentColor: appState.accentColor,
+            seatingStatusDots: {
+                ...DEFAULT_SEATING_STATUS_DOTS,
+                ...(appState.seatingStatusDots || {})
+            },
             periodSystem: appState.periodSystem,
             currentPeriod: appState.currentPeriod,
             currentAIModel: appState.currentAIModel,
@@ -213,6 +231,9 @@ export const SettingsUIManager = {
             }
             if (UIState.settingsBeforeEdit.accentColor !== undefined) {
                 appState.accentColor = UIState.settingsBeforeEdit.accentColor;
+            }
+            if (UIState.settingsBeforeEdit.seatingStatusDots !== undefined) {
+                appState.seatingStatusDots = { ...UIState.settingsBeforeEdit.seatingStatusDots };
             }
             if (UIState.settingsBeforeEdit.periodSystem !== undefined) {
                 appState.periodSystem = UIState.settingsBeforeEdit.periodSystem;
@@ -249,6 +270,9 @@ export const SettingsUIManager = {
             if (typeof this.updateApiStatusDisplay === 'function') {
                 this.updateApiStatusDisplay();
             }
+            document.dispatchEvent(new CustomEvent('app-settings-changed', {
+                detail: { settings: appState }
+            }));
 
             // Nettoyer le snapshot après restauration
             UIState.settingsBeforeEdit = {};

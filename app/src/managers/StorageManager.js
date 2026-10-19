@@ -31,7 +31,7 @@
  */
 
 import { appState, userSettings, runtimeState } from '../state/State.js';
-import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS } from '../config/Config.js';
+import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 
@@ -44,6 +44,7 @@ const UI_AND_NAV_KEYS = [
     'accentColor',
     'isAppreciationFullView',
     'activeView',
+    'seatingStatusDots',
     'currentClassId',
     'currentPeriod',
     'currentSubject',
@@ -121,6 +122,12 @@ export const StorageManager = {
                     if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
                     if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
                     if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
+                    if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
+                        userSettings.ui.seatingStatusDots = {
+                            ...DEFAULT_SEATING_STATUS_DOTS,
+                            ...settings.seatingStatusDots
+                        };
+                    }
 
                     // Academic Settings
                     if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
@@ -627,6 +634,7 @@ export const StorageManager = {
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             accentColor: userSettings.ui.accentColor || 'blue',
             activeView: userSettings.ui.activeView || 'list',
+            seatingStatusDots: userSettings.ui.seatingStatusDots || { ...DEFAULT_SEATING_STATUS_DOTS },
 
             useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
             periodSystem: userSettings.academic.periodSystem,
@@ -960,6 +968,7 @@ export const StorageManager = {
             if (resetPreferences) {
                 appState.periodSystem = 'trimestres';
                 appState.currentAIModel = 'gemini-3.5-flash';
+                appState.seatingStatusDots = { ...DEFAULT_SEATING_STATUS_DOTS };
                 parts.push('préférences');
             }
 

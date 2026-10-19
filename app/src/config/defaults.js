@@ -55,6 +55,12 @@ export const DEFAULT_PRIVACY_SETTINGS = {
     anonymizeData: false
 };
 
+export const DEFAULT_SEATING_STATUS_DOTS = {
+    movements: true,
+    devices: false,
+    delegates: false
+};
+
 export const DEFAULT_MASS_IMPORT_FORMATS = {
     trimestres: {
         'T1': '{{NOM_PRENOM}} | {{STATUT}} | {{MOY_T1}} | {{INSTRUCTIONS}}',

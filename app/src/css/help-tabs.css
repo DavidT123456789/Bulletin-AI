@@ -1528,20 +1528,51 @@
 
 
 /* ====================================================================
-   SELECTION DE LA COULEUR D'ACCENTUATION
+   SELECTION DE LA COULEUR D'ACCENTUATION (Ligne compacte + Accordéon)
    ==================================================================== */
+.help-step-layout--inline {
+    align-items: flex-start;
+}
+
+.help-step-layout--inline > .help-step-number {
+    margin-top: 4px;
+}
+
+.accent-color-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.accent-color-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+}
+
+.accent-color-info p {
+    margin: 0 !important;
+    font-size: 0.88em;
+    color: var(--text-secondary);
+}
+
 .accent-color-selector {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 8px;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
 }
 
 .accent-color-btn {
     position: relative;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     border: none;
     background: var(--accent-swatch-color);
     padding: 0;
@@ -1551,16 +1582,21 @@
     justify-content: center;
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
     outline: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 [data-theme="dark"] .accent-color-btn {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
 }
 
 .accent-color-btn:hover {
     transform: scale(1.06);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
+}
+
+.accent-color-btn:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 3px;
 }
 
 /* Inner circle hidden — color fills the entire button directly */
@@ -1572,7 +1608,7 @@
 .accent-swatch-check {
     position: absolute;
     color: var(--accent-swatch-contrast-color, #ffffff);
-    font-size: 15px;
+    font-size: 13px;
     opacity: 0;
     transform: scale(0.5);
     transition: opacity 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1584,15 +1620,9 @@
     color: #ffffff;
 }
 
-/* High contrast shadow for checkmark on rainbow picker */
-.accent-color-btn.custom-picker .accent-swatch-check {
-    color: #ffffff;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
-}
-
-/* Active State - no size enlargement to keep perfect alignment, just outer border */
+/* Active State - crisp outer ring without layout shift or blur */
 .accent-color-btn.active {
-    box-shadow: 0 0 0 2.5px var(--surface-color), 0 0 0 4.5px var(--accent-swatch-color);
+    box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--accent-swatch-color);
 }
 
 .accent-color-btn.active .accent-swatch-check {
@@ -1600,7 +1630,7 @@
     transform: scale(1);
 }
 
-/* Custom Picker — rainbow when no custom color is set */
+/* Custom Picker Button — rainbow conic gradient or selected custom color */
 .accent-color-btn.custom-picker {
     background: conic-gradient(
         from 180deg at 50% 50%,
@@ -1610,35 +1640,24 @@
     );
 }
 
-.accent-color-btn.custom-picker:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+.accent-color-btn.custom-picker.active {
+    background: var(--accent-swatch-color, var(--primary-color));
+    box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--accent-swatch-color, var(--primary-color));
 }
 
-/* Eyedropper icon on custom button */
 .accent-swatch-picker-icon {
-    font-size: 16px;
+    font-size: 14px;
     color: #ffffff;
     position: absolute;
     pointer-events: none;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
     z-index: 2;
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
-/* When custom color is active, keep the rainbow background and show the active ring */
 .accent-color-btn.custom-picker.active .accent-swatch-picker-icon {
     opacity: 0;
     transform: scale(0.5);
-}
-
-/* Active ring for custom picker */
-.accent-color-btn.custom-picker.active {
-    box-shadow: 0 0 0 2.5px var(--surface-color), 0 0 0 4.5px var(--accent-swatch-color);
-}
-
-/* Pipette badge in the corner is hidden for a cleaner minimalist design since the rainbow background is preserved */
-.custom-picker-badge {
-    display: none;
 }
 
 /* ====================================================================
@@ -1663,7 +1682,7 @@
 .custom-picker-panel.open {
     grid-template-rows: 1fr;
     opacity: 1;
-    margin-top: 14px;
+    margin-top: 10px;
     border-color: var(--border-color);
     pointer-events: auto;
 }
@@ -1673,8 +1692,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 0 20px;
+    gap: 12px;
+    padding: 0 16px;
     transform: translateY(-4px);
     transition:
         padding 0.35s var(--ease-spring),
@@ -1682,7 +1701,7 @@
 }
 
 .custom-picker-panel.open .custom-picker-grid {
-    padding: 16px 20px;
+    padding: 14px 16px;
     transform: translateY(0);
 }
 
@@ -1699,29 +1718,27 @@
 }
 
 .slider-label {
-    width: 14px;
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    flex-shrink: 0;
+    color: var(--text-tertiary);
+    width: 14px;
     text-align: center;
+    user-select: none;
 }
 
 .slider-wrapper {
     flex: 1;
     display: flex;
     align-items: center;
-    min-width: 0;
+    position: relative;
     padding: 0 4px;
 }
 
-/* Range slider styling */
 .picker-range-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: var(--slider-track-height-picker);
+    height: var(--slider-track-height-picker, 8px);
     border-radius: var(--radius-full);
     outline: none;
     background: transparent;
@@ -1731,60 +1748,36 @@
 .picker-range-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: var(--slider-thumb-size-picker);
-    height: var(--slider-thumb-size-picker);
+    width: var(--slider-thumb-size-picker, 18px);
+    height: var(--slider-thumb-size-picker, 18px);
     border-radius: var(--radius-full);
-    background: var(--slider-thumb-bg-picker);
+    background: var(--slider-thumb-bg-picker, #ffffff);
     border: 2px solid var(--slider-thumb-color, var(--primary-color));
-    box-shadow: var(--slider-thumb-shadow-picker);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: grab;
-    margin-top: calc((var(--slider-track-height-picker) - var(--slider-thumb-size-picker)) / 2);
-    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .picker-range-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: var(--shadow-md);
+    transform: scale(1.12);
 }
 
 .picker-range-slider:active::-webkit-slider-thumb {
     cursor: grabbing;
-    transform: scale(1.15);
+    transform: scale(1.12);
 }
 
 .picker-range-slider::-moz-range-thumb {
-    width: var(--slider-thumb-size-picker);
-    height: var(--slider-thumb-size-picker);
+    width: var(--slider-thumb-size-picker, 18px);
+    height: var(--slider-thumb-size-picker, 18px);
     border-radius: var(--radius-full);
-    background: var(--slider-thumb-bg-picker);
+    background: var(--slider-thumb-bg-picker, #ffffff);
     border: 2px solid var(--slider-thumb-color, var(--primary-color));
-    box-shadow: var(--slider-thumb-shadow-picker);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: grab;
-    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
-.picker-range-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: var(--shadow-md);
-}
-
-.picker-range-slider:active::-moz-range-thumb {
-    cursor: grabbing;
-    transform: scale(1.15);
-}
-
-/* Accessibilité : Focus au clavier */
-.picker-range-slider:focus-visible::-webkit-slider-thumb {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-.picker-range-slider:focus-visible::-moz-range-thumb {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-/* Track Gradients */
 .hue-slider-track {
     background: linear-gradient(to right,
         #ff0000 0%, #ffff00 17%, #00ff00 33%,
@@ -1799,32 +1792,28 @@
     background: linear-gradient(to right, var(--lig-start, #000000), var(--lig-end, #ffffff));
 }
 
-/* ====================================================================
-   ACTION ROW: Live preview, Hex input, and Eyedropper
-   ==================================================================== */
 .picker-action-group {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
-/* Live preview swatch */
 .picker-live-preview {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: var(--radius-md);
     background: var(--primary-color);
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-    transition: background 0.1s ease;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    cursor: pointer;
+    transition: background 0.1s ease, transform 0.15s ease;
 }
 
-[data-theme="dark"] .picker-live-preview {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+.picker-live-preview:hover {
+    transform: scale(1.05);
 }
 
-/* Hex code input container styled like standard input but size-harmonized */
 .hex-input-container {
     display: flex;
     align-items: center;
@@ -1832,17 +1821,13 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 0 12px;
-    height: 36px;
+    height: 34px;
     flex: 1;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.hex-input-container:hover:not(:focus-within) {
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .hex-symbol {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--text-tertiary);
     margin-right: 5px;
@@ -1857,17 +1842,20 @@
     height: 100% !important;
     transition: none !important;
     font-family: var(--font-mono) !important;
-    font-size: 0.9rem !important;
+    font-size: 0.88rem !important;
     font-weight: 600 !important;
     color: var(--text-primary) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
-/* Eyedropper button style-harmonized to match other inputs */
-.picker-eyedropper-btn {
-    width: 36px;
-    height: 36px;
+.picker-eyedropper-btn,
+.picker-confirm-btn {
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1875,27 +1863,146 @@
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     padding: 0;
     flex-shrink: 0;
 }
 
-.picker-eyedropper-btn:hover {
-    background: var(--bg-hover);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-}
-
-[data-theme="dark"] .picker-eyedropper-btn:hover {
-    color: var(--icon-btn-hover);
+.picker-eyedropper-btn:hover,
+.picker-confirm-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
     border-color: var(--text-tertiary);
 }
 
-.picker-eyedropper-btn:active {
-    transform: translateY(0) scale(0.95);
+/* ====================================================================
+   PASTILLES DE STATUT SUR LE PLAN DE CLASSE
+   ==================================================================== */
+.seating-dots-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
+
+.seating-dot-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+    opacity: 0.78;
+    box-shadow: none;
+    outline: none;
+}
+
+.seating-dot-option input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.seating-dot-option:hover {
+    opacity: 1;
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+/* Only show focus outline on keyboard navigation, never on mouse click */
+.seating-dot-option:has(input:focus-visible) {
+    outline: 2px solid var(--text-tertiary);
+    outline-offset: 2px;
+}
+
+.seating-dot-option.active,
+.seating-dot-option:has(input:checked) {
+    opacity: 1;
+    background: var(--surface-color);
+    border-color: var(--text-tertiary);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .seating-dot-option.active,
+[data-theme="dark"] .seating-dot-option:has(input:checked) {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: none;
+}
+
+.seating-dot-preview {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+.seating-dot-preview--movements {
+    background: linear-gradient(135deg, var(--color-sky, #0ea5e9) 50%, var(--color-amber, #f59e0b) 50%);
+}
+
+.seating-dot-preview--devices {
+    background: linear-gradient(135deg, var(--purple-color, #9333ea) 50%, var(--color-rose, #f43f5e) 50%);
+}
+
+.seating-dot-preview--delegates {
+    background: var(--color-emerald, #10b981);
+}
+
+.seating-dot-label {
+    line-height: 1.2;
+}
+
+.seating-dot-label small {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    margin-left: 2px;
+}
+
+.seating-dot-check {
+    font-size: 12px;
+    color: var(--text-primary);
+    opacity: 0;
+    width: 0;
+    margin-left: -4px;
+    transform: scale(0.6);
+    transition: opacity 0.18s ease, width 0.18s ease, margin-left 0.18s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.seating-dot-option.active .seating-dot-check,
+.seating-dot-option:has(input:checked) .seating-dot-check {
+    opacity: 1;
+    width: 12px;
+    margin-left: 0;
+    transform: scale(1);
+}
+
+@media (max-width: 600px) {
+    .accent-color-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .seating-dot-option {
+        min-height: 38px;
+    }
+}
+
 

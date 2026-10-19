@@ -37,8 +37,40 @@ export const FocusPanelHeader = {
         'Départ': 'Élève qui quitte la classe prochainement',
         'PPRE': 'Programme Personnalisé de Réussite Éducative',
         'PAP': 'Plan d\'Accompagnement Personnalisé',
+        'PAI': 'Projet d\'Accueil Individualisé',
+        'AESH': 'Accompagnant d\'Élève en Situation de Handicap',
         'ULIS': 'Unité Localisée pour l\'Inclusion Scolaire',
         'Délégué': 'Délégué de classe'
+    },
+
+    _statusMatchesCheckbox(status, checkboxValue) {
+        const sLower = String(status || '').trim().toLowerCase();
+        const cbLower = String(checkboxValue || '').trim().toLowerCase();
+        if (!sLower || !cbLower) return false;
+        if (sLower === cbLower) return true;
+        if (cbLower === 'nouveau' && sLower.startsWith('nouveau')) return true;
+        if ((cbLower === 'départ' || cbLower === 'depart') && (sLower.startsWith('départ') || sLower.startsWith('depart'))) return true;
+        if ((cbLower === 'délégué' || cbLower === 'delegue') && (sLower.startsWith('délégué') || sLower.startsWith('delegue'))) return true;
+        return false;
+    },
+
+    mergeEditedStatuses(baseStatuses = [], checkedValues = [], allCheckboxValues = []) {
+        const base = Array.isArray(baseStatuses) ? baseStatuses : [];
+        const merged = [];
+
+        for (const val of checkedValues) {
+            const existingMatch = base.find(s => this._statusMatchesCheckbox(s, val));
+            merged.push(existingMatch || val);
+        }
+
+        for (const s of base) {
+            const isManagedByCheckbox = allCheckboxValues.some(cbVal => this._statusMatchesCheckbox(s, cbVal));
+            if (!isManagedByCheckbox && !merged.includes(s)) {
+                merged.push(s);
+            }
+        }
+
+        return merged;
     },
 
     /**
@@ -172,7 +204,7 @@ export const FocusPanelHeader = {
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 const currentStatuses = result.studentData.statuses || [];
                 checkboxes.forEach(cb => {
-                    cb.checked = currentStatuses.includes(cb.value);
+                    cb.checked = currentStatuses.some(s => this._statusMatchesCheckbox(s, cb.value));
 
                     // Add tooltip to parent label
                     const label = cb.closest('label');
@@ -225,7 +257,7 @@ export const FocusPanelHeader = {
                 // Restore checkboxes
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = this._originalHeaderValues.statuses.includes(cb.value);
+                    cb.checked = this._originalHeaderValues.statuses.some(s => this._statusMatchesCheckbox(s, cb.value));
                 });
 
                 // CRITICAL FIX: Revert mutated state that was modified live by handleDataChange
@@ -409,8 +441,11 @@ export const FocusPanelHeader = {
         // 2. Save Statuses (Common)
         const editMode = document.querySelector('.focus-header-edit');
         if (editMode) {
-            const checkedBoxes = editMode.querySelectorAll('input[type="checkbox"]:checked');
-            result.studentData.statuses = Array.from(checkedBoxes).map(cb => cb.value);
+            const allBoxes = Array.from(editMode.querySelectorAll('input[type="checkbox"]'));
+            const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
+            const allCheckboxValues = allBoxes.map(cb => cb.value);
+            const baseStatuses = this._originalHeaderValues?.statuses || result.studentData.statuses || [];
+            result.studentData.statuses = this.mergeEditedStatuses(baseStatuses, checkedValues, allCheckboxValues);
         }
 
         // 3. Persist
@@ -429,6 +464,7 @@ export const FocusPanelHeader = {
         StudentDataManager.syncFilteredStudent(result.id, result);
 
         this.callbacks.onUpdateListRow(result);
+        ClassUIManager.updateStudentCount();
         window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
 
         if (!isCreationMode) {
@@ -502,7 +538,9 @@ export const FocusPanelHeader = {
 
         statuses.forEach(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
-            const tooltip = this._statusDescriptions[s] || s;
+            const lower = String(s || '').toLowerCase();
+            const baseKey = Object.keys(this._statusDescriptions).find(k => lower.startsWith(k.toLowerCase()));
+            const tooltip = this._statusDescriptions[s] || (baseKey ? this._statusDescriptions[baseKey] : s);
             const html = `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
                           data-tooltip="${tooltip}" 
                           role="button" 
@@ -510,7 +548,7 @@ export const FocusPanelHeader = {
 
             // "Nouveau" and "Départ" are general/administrative, they stay in main header
             // Everything else moves to the Contexte card where it belongs logically
-            if (s === 'Nouveau' || s === 'Départ') {
+            if (lower.includes('nouveau') || lower.includes('départ') || lower.includes('depart')) {
                 headerHtml += html;
             } else {
                 contextHtml += html;

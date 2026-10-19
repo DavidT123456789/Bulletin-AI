@@ -103,7 +103,8 @@ vi.mock('../config/Config.js', () => ({
     },
     DEFAULT_IA_CONFIG: { length: 50, tone: 2, voice: 'il', styleInstructions: '' },
     DEFAULT_EVOLUTION_THRESHOLDS: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
-    DEFAULT_PRIVACY_SETTINGS: { anonymizeData: false }
+    DEFAULT_PRIVACY_SETTINGS: { anonymizeData: false },
+    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
 
 // Mock UIManager

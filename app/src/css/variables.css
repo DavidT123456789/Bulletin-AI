@@ -90,12 +90,6 @@
     --slider-thumb-border-premium: 2px solid var(--primary-color);
     --slider-thumb-shadow-premium: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
 
-    /* Sliders de Couleur */
-    --slider-track-height-picker: 8px;
-    --slider-thumb-size-picker: 18px;
-    --slider-thumb-bg-picker: #ffffff;
-    --slider-thumb-shadow-picker: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
-
     /* --- Toggle Switches Tokens --- */
     /* Standard Toggle (Large) */
     --toggle-width-default: 44px;

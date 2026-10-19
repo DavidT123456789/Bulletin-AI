@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { CONFIG, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
+import { CONFIG, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG, API_KEY_PROVIDER_IDS, hasValidApiKey, isValidKeyFormat } from '../config/providers.js';
 import { DOM } from '../utils/DOM.js';
@@ -130,42 +130,59 @@ export const FormUI = {
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
 
-        // Synchroniser le sélecteur de couleur d'accentuation
+        // Synchroniser le sélecteur de couleur d'accentuation (accordéon replié par défaut)
         const accentSelector = document.getElementById('accentColorSelector');
+        const customPickerPanel = document.getElementById('customPickerPanel');
+        if (customPickerPanel) {
+            customPickerPanel.classList.remove('open');
+        }
         if (accentSelector) {
             const currentAccent = appState.accentColor || 'blue';
-            const buttons = accentSelector.querySelectorAll('.accent-color-btn');
-            const picker = document.getElementById('customColorPicker');
-            
-            buttons.forEach(btn => {
+            const isCustom = currentAccent.startsWith('#');
+            accentSelector.querySelectorAll('.accent-color-btn').forEach(btn => {
                 const val = btn.getAttribute('data-value');
                 if (val === 'custom') {
-                    const isCustomHex = currentAccent && currentAccent.startsWith('#');
-                    if (isCustomHex) {
-                        btn.classList.add('active');
+                    btn.classList.toggle('active', isCustom);
+                    if (isCustom) {
                         btn.style.setProperty('--accent-swatch-color', currentAccent);
-                        if (picker) picker.value = currentAccent;
-                        
-                        // Calculate contrast color for checkmark
-                        const r = parseInt(currentAccent.slice(1, 3), 16);
-                        const g = parseInt(currentAccent.slice(3, 5), 16);
-                        const b = parseInt(currentAccent.slice(5, 7), 16);
-                        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-                        const contrast = yiq >= 128 ? '#18181b' : '#ffffff';
-                        btn.style.setProperty('--accent-swatch-contrast-color', contrast);
-                    } else {
-                        btn.classList.remove('active');
-                        btn.style.setProperty('--accent-swatch-color', 'transparent');
-                        btn.style.setProperty('--accent-swatch-contrast-color', '#ffffff');
                     }
                 } else {
-                    if (val === currentAccent) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
+                    btn.classList.toggle('active', val === currentAccent);
                 }
             });
+        }
+
+        // Synchroniser les pastilles de statut du plan de classe
+        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
+        if (seatingDotsSelector) {
+            const currentDots = {
+                ...DEFAULT_SEATING_STATUS_DOTS,
+                ...(appState.seatingStatusDots || {})
+            };
+            seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
+                const cat = cb.getAttribute('data-dot-category');
+                const isChecked = Boolean(currentDots[cat]);
+                cb.checked = isChecked;
+                cb.closest('.seating-dot-option')?.classList.toggle('active', isChecked);
+            });
+
+            if (!seatingDotsSelector._listenerAttached) {
+                seatingDotsSelector._listenerAttached = true;
+                seatingDotsSelector.addEventListener('change', (e) => {
+                    const cb = e.target.closest('input[type="checkbox"][data-dot-category]');
+                    if (!cb) return;
+                    const cat = cb.getAttribute('data-dot-category');
+                    cb.closest('.seating-dot-option')?.classList.toggle('active', cb.checked);
+                    appState.seatingStatusDots = {
+                        ...DEFAULT_SEATING_STATUS_DOTS,
+                        ...(appState.seatingStatusDots || {}),
+                        [cat]: cb.checked
+                    };
+                    document.dispatchEvent(new CustomEvent('app-settings-changed', {
+                        detail: { settings: appState }
+                    }));
+                });
+            }
         }
 
         // Confidentialité

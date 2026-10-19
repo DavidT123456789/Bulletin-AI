@@ -32,7 +32,55 @@ export const Utils = {
      * @returns {{className: string, label: string}} Informations pour le rendu
      */
     getStatusBadgeInfo(status) {
+        const lower = String(status || '').trim().toLowerCase();
+        if (lower.includes('nouveau')) {
+            return { className: 'tag-badge tag-badge--new', label: status };
+        }
+        if (lower.includes('départ') || lower.includes('depart')) {
+            return { className: 'tag-badge tag-badge--depart', label: status };
+        }
+        if (lower === 'ulis') {
+            return { className: 'tag-badge tag-badge--ulis', label: status };
+        }
+        if (['pap', 'ppre', 'pai', 'aesh'].includes(lower)) {
+            return { className: 'tag-badge tag-badge--device', label: status };
+        }
+        if (lower.includes('délégué') || lower.includes('delegue')) {
+            return { className: 'tag-badge tag-badge--delegate', label: status };
+        }
         return { className: 'tag-badge', label: status };
+    },
+
+    /**
+     * Détermine si un élève est en statut Départ sur la période active
+     * @param {Object} studentResult - Données de l'élève
+     * @param {string} [activePeriod] - Période active (ex: 'T1', 'S1')
+     * @returns {boolean}
+     */
+    isStudentDeparted(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return false;
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (Array.isArray(statuses) && statuses.length > 0) {
+            const departStatus = statuses.find(s => {
+                const lower = String(s || '').toLowerCase();
+                return lower.includes('départ') || lower.includes('depart');
+            });
+            if (departStatus) {
+                const parts = departStatus.trim().split(/\s+/);
+                if (parts.length === 1) return true;
+
+                const departPeriodKey = parts[1];
+                const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
+                const departPeriodIndex = periods.indexOf(departPeriodKey);
+                const activePeriodIndex = periods.indexOf(activePeriod);
+
+                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
+                return activePeriodIndex >= departPeriodIndex;
+            }
+            return false;
+        }
+        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
+        return false;
     },
 
     /**

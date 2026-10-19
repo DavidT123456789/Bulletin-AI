@@ -3571,9 +3571,69 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             isOpenSpy.mockRestore();
         });
+
+        it('devrait filtrer les pastilles de statut selon appState.seatingStatusDots tout en conservant tous les statuts dans le tooltip', () => {
+            const ulisStudent = {
+                id: 'st-ulis',
+                nom: 'BERNARD',
+                prenom: 'Léo',
+                studentData: { statuses: ['ULIS', 'PAP'] }
+            };
+            const delegateStudent = {
+                id: 'st-del',
+                nom: 'MOREAU',
+                prenom: 'Emma',
+                studentData: { statuses: ['Délégué'] }
+            };
+            const multiStudent = {
+                id: 'st-multi',
+                nom: 'PETIT',
+                prenom: 'Hugo',
+                studentData: { statuses: ['Nouveau', 'PPRE', 'Délégué'] }
+            };
+
+            // 1. Par défaut (movements: true, devices: false, delegates: false)
+            appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(ulisStudent)).toBeNull();
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(delegateStudent)).toBeNull();
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(multiStudent)).toEqual({
+                type: 'new',
+                className: 'sc-badge-new',
+                cellClass: 'sc-cell-new',
+                label: 'Nouveau'
+            });
+
+            // Le tooltip contient toujours l'intégralité des statuts actifs
+            expect(SeatingChartManager._getStudentTooltipText(ulisStudent)).toBe('Léo BERNARD • ULIS • PAP');
+            expect(SeatingChartManager._getStudentTooltipText(delegateStudent)).toBe('Emma MOREAU • Délégué');
+            expect(SeatingChartManager._getStudentTooltipText(multiStudent)).toBe('Hugo PETIT • Nouveau • PPRE • Délégué');
+
+            // 2. Activation de Dispositifs et Délégués
+            appState.seatingStatusDots = { movements: true, devices: true, delegates: true };
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(ulisStudent)).toEqual({
+                type: 'ulis',
+                className: 'sc-badge-ulis',
+                cellClass: 'sc-cell-ulis',
+                label: 'ULIS • PAP'
+            });
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(delegateStudent)).toEqual({
+                type: 'delegate',
+                className: 'sc-badge-delegate',
+                cellClass: 'sc-cell-delegate',
+                label: 'Délégué'
+            });
+
+            // 3. Si Mouvements est désactivé mais Dispositifs activé, multiStudent affiche la pastille Dispositif
+            appState.seatingStatusDots = { movements: false, devices: true, delegates: true };
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(multiStudent)).toEqual({
+                type: 'device',
+                className: 'sc-badge-device',
+                cellClass: 'sc-cell-device',
+                label: 'PPRE'
+            });
+
+            // Remise par défaut
+            appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
+        });
     });
 });
-
-
-
-

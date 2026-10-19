@@ -9,7 +9,7 @@
  * @module state/State
  */
 
-import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS } from '../config/Config.js';
+import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 
 // ============================================================================
 // PARAMÈTRES UTILISATEUR (persistés en localStorage)
@@ -26,6 +26,7 @@ export const userSettings = {
         isAppreciationFullView: false,
         accentColor: 'blue',
         activeView: 'list', // 'list' | 'plan'
+        seatingStatusDots: { ...DEFAULT_SEATING_STATUS_DOTS },
     },
 
     /** Configuration académique */
@@ -159,6 +160,7 @@ const propertyMap = {
     isAppreciationFullView: () => userSettings.ui,
     accentColor: () => userSettings.ui,
     activeView: () => userSettings.ui,
+    seatingStatusDots: () => userSettings.ui,
 
     // userSettings.academic
     periodSystem: () => userSettings.academic,

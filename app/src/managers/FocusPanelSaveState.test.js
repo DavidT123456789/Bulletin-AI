@@ -258,6 +258,27 @@ describe('FocusPanelManager and Save State integrity', () => {
 
             FocusPanelManager._activeGenerations.clear();
         });
+
+        it('preserves period-qualified statuses (e.g. Nouveau T2) and extra imported statuses (PAI, AESH) when merging header status checkboxes', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            const allCheckboxValues = ['Nouveau', 'Départ', 'PPRE', 'PAP', 'ULIS', 'Délégué'];
+
+            // 1. Conserve "Nouveau T2" et "PAI" quand "Nouveau" reste coché et qu'on ajoute "ULIS"
+            const mergedKeep = FocusPanelHeader.mergeEditedStatuses(
+                ['Nouveau T2', 'PAI'],
+                ['Nouveau', 'ULIS'],
+                allCheckboxValues
+            );
+            expect(mergedKeep).toEqual(['Nouveau T2', 'ULIS', 'PAI']);
+
+            // 2. Retire "Nouveau T2" quand "Nouveau" est décoché, mais conserve "PAI" et "AESH"
+            const mergedRemoveNew = FocusPanelHeader.mergeEditedStatuses(
+                ['Nouveau T2', 'PAI', 'AESH'],
+                ['PAP'],
+                allCheckboxValues
+            );
+            expect(mergedRemoveNew).toEqual(['PAP', 'PAI', 'AESH']);
+        });
     });
 });
 

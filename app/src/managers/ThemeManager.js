@@ -97,9 +97,6 @@ export const ThemeManager = {
     // Media query match for system preference
     systemMediaQuery: null,
 
-    // Flag to prevent feedback loops and lossy conversions during user drags
-    isDraggingSliders: false,
-
     init() {
         // Hydrate theme and accent color from localStorage before initial applyTheme()
         // so we don't reset pre-rendered dark mode back to default 'light' before StorageManager finishes loading
@@ -173,8 +170,11 @@ export const ThemeManager = {
         });
     },
 
+    // Flag to prevent feedback loops and lossy conversions during user drags
+    isDraggingSliders: false,
+
     /**
-     * Set up event listeners for the accent color swatches
+     * Set up event listeners for the accent color swatches and custom color accordion
      */
     initAccentControl() {
         const selector = document.getElementById('accentColorSelector');
@@ -190,21 +190,22 @@ export const ThemeManager = {
 
         const picker = document.getElementById('customColorPicker');
         const customBtn = document.getElementById('customAccentBtn');
-
-        // Custom inline picker elements
         const customPickerPanel = document.getElementById('customPickerPanel');
         const hueSlider = document.getElementById('pickerHueSlider');
         const satSlider = document.getElementById('pickerSatSlider');
         const ligSlider = document.getElementById('pickerLigSlider');
         const hexInput = document.getElementById('pickerHexInput');
         const eyedropperBtn = document.getElementById('pickerEyedropperBtn');
+        const confirmBtn = document.getElementById('pickerConfirmBtn');
         const livePreview = document.getElementById('pickerLivePreview');
+        const closeCustomPanel = () => {
+            if (customPickerPanel) customPickerPanel.classList.remove('open');
+        };
 
-        // Handle slider inputs
         const handleSliderChange = () => {
-            const h = hueSlider ? parseInt(hueSlider.value) : 220;
-            const s = satSlider ? parseInt(satSlider.value) : 80;
-            const l = ligSlider ? parseInt(ligSlider.value) : 60;
+            const h = hueSlider ? parseInt(hueSlider.value, 10) : 220;
+            const s = satSlider ? parseInt(satSlider.value, 10) : 80;
+            const l = ligSlider ? parseInt(ligSlider.value, 10) : 60;
 
             const rgb = ColorUtils.hslToRgb(h, s, l);
             const hex = ColorUtils.rgbToHex(rgb.r, rgb.g, rgb.b);
@@ -216,37 +217,32 @@ export const ThemeManager = {
                 customBtn.style.setProperty('--accent-swatch-contrast-color', contrast);
             }
 
-            ThemeManager.isDraggingSliders = true;
-            ThemeManager.updateCustomPanelUI(hex, h, s, l);
-
+            this.isDraggingSliders = true;
+            this.updateCustomPanelUI(hex, h, s, l);
             this.setAccentColor(hex);
-            ThemeManager.isDraggingSliders = false;
+            this.isDraggingSliders = false;
         };
 
         if (hueSlider) hueSlider.addEventListener('input', handleSliderChange);
         if (satSlider) satSlider.addEventListener('input', handleSliderChange);
         if (ligSlider) ligSlider.addEventListener('input', handleSliderChange);
 
-        // Handle Hex text entry
         if (hexInput) {
             hexInput.addEventListener('input', (e) => {
                 let val = e.target.value.trim();
-                if (val.startsWith('#')) {
-                    val = val.slice(1);
-                }
-
-                // Check if valid hex (3 or 6 characters)
-                const reg = /^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-                if (reg.test(val)) {
-                    let hex = val;
-                    if (hex.length === 3) {
-                        hex = hex.split('').map(char => char + char).join('');
-                    }
-                    hex = '#' + hex;
-
-                    // Sync and apply color
-                    ThemeManager.updateCustomPanelUI(hex);
+                if (val.startsWith('#')) val = val.slice(1);
+                if (/^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
+                    const hex = '#' + (val.length === 3 ? val.split('').map(c => c + c).join('') : val);
+                    this.updateCustomPanelUI(hex);
                     this.setAccentColor(hex);
+                }
+            });
+
+            hexInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                    e.preventDefault();
+                    hexInput.blur();
+                    closeCustomPanel();
                 }
             });
 
@@ -257,7 +253,20 @@ export const ThemeManager = {
             });
         }
 
-        // Handle Eyedropper API
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', closeCustomPanel);
+        }
+
+        if (livePreview) {
+            livePreview.addEventListener('click', closeCustomPanel);
+            livePreview.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    closeCustomPanel();
+                }
+            });
+        }
+
         if (eyedropperBtn) {
             if (window.EyeDropper) {
                 eyedropperBtn.addEventListener('click', async () => {
@@ -266,22 +275,28 @@ export const ThemeManager = {
                         const result = await eyeDropper.open();
                         if (result && result.sRGBHex) {
                             this.setAccentColor(result.sRGBHex);
+                            closeCustomPanel();
                         }
-                    } catch (err) {
-                        // Silent catch on user cancellation
-                    }
+                    } catch (err) {}
                 });
             } else {
-                // Fallback to trigger native hidden picker click
                 eyedropperBtn.addEventListener('click', () => {
                     if (picker) picker.click();
                 });
                 eyedropperBtn.setAttribute('data-tooltip', 'Palette de couleurs');
                 const eyedropperIcon = eyedropperBtn.querySelector('iconify-icon');
-                if (eyedropperIcon) {
-                    eyedropperIcon.setAttribute('icon', 'ph:palette-bold');
-                }
+                if (eyedropperIcon) eyedropperIcon.setAttribute('icon', 'ph:palette-bold');
             }
+        }
+
+        if (picker) {
+            picker.addEventListener('input', (e) => {
+                const selectedColor = e.target.value;
+                if (selectedColor) {
+                    this.setAccentColor(selectedColor);
+                }
+            });
+            picker.addEventListener('change', closeCustomPanel);
         }
 
         // Click handler for swatch selectors using event delegation
@@ -292,82 +307,58 @@ export const ThemeManager = {
             const val = btn.getAttribute('data-value');
             if (val === 'custom') {
                 const isAlreadyCustom = appState.accentColor && appState.accentColor.startsWith('#');
-                if (isAlreadyCustom && customPickerPanel) {
-                    customPickerPanel.classList.toggle('open');
-                } else if (picker) {
-                    // Set the accent color to current picker value to activate custom mode
-                    this.setAccentColor(picker.value);
+                if (isAlreadyCustom) {
+                    if (customPickerPanel) customPickerPanel.classList.toggle('open');
+                } else {
+                    if (customPickerPanel) customPickerPanel.classList.add('open');
+                    if (picker) this.setAccentColor(picker.value || '#3b82f6');
                 }
-            } else if (val) {
+            } else if (val && accentPresets[val]) {
+                closeCustomPanel();
                 this.setAccentColor(val);
             }
         });
 
-        // Event listener for hidden color picker input (backup/fallback)
-        if (picker) {
-            picker.addEventListener('input', (e) => {
-                const selectedColor = e.target.value;
-                if (selectedColor) {
-                    if (customBtn) {
-                        customBtn.style.setProperty('--accent-swatch-color', selectedColor);
-                        const r = parseInt(selectedColor.slice(1, 3), 16);
-                        const g = parseInt(selectedColor.slice(3, 5), 16);
-                        const b = parseInt(selectedColor.slice(5, 7), 16);
-                        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-                        const contrast = yiq >= 128 ? '#18181b' : '#ffffff';
-                        customBtn.style.setProperty('--accent-swatch-contrast-color', contrast);
-                    }
-                    this.setAccentColor(selectedColor);
-                }
-            });
-        }
+        // Auto-collapse custom picker panel when clicking outside the accent card
+        document.addEventListener('pointerdown', (e) => {
+            if (!customPickerPanel || !customPickerPanel.classList.contains('open')) return;
+            const accentCard = customPickerPanel.closest('.help-step-card') || customPickerPanel.parentElement;
+            if (accentCard && !accentCard.contains(e.target)) {
+                closeCustomPanel();
+            }
+        });
 
-        // Listen for accent color changes to update button active classes and panel visibility
+        // Listen for accent color changes to update button active classes (without forcing accordion open)
         document.addEventListener('accent-color-changed', (e) => {
             const currentAccent = e.detail.accentColor;
-            const buttons = selector.querySelectorAll('.accent-color-btn');
+            const isCustom = Boolean(currentAccent && currentAccent.startsWith('#'));
 
-            const isCustom = currentAccent && currentAccent.startsWith('#');
-
-            // Handle panel toggle
-            if (customPickerPanel) {
-                if (isCustom) {
-                    customPickerPanel.classList.add('open');
-                } else {
-                    customPickerPanel.classList.remove('open');
-                }
+            if (!isCustom && customPickerPanel) {
+                customPickerPanel.classList.remove('open');
             }
 
-            buttons.forEach(btn => {
+            selector.querySelectorAll('.accent-color-btn').forEach(btn => {
                 const btnVal = btn.getAttribute('data-value');
                 if (btnVal === 'custom') {
                     if (isCustom) {
                         btn.classList.add('active');
-
                         const rgb = ColorUtils.hexToRgb(currentAccent);
                         btn.style.setProperty('--accent-swatch-color', currentAccent);
                         if (picker) picker.value = currentAccent;
-
                         const yiq = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
                         const contrast = yiq >= 128 ? '#18181b' : '#ffffff';
                         btn.style.setProperty('--accent-swatch-contrast-color', contrast);
-
-                        if (!ThemeManager.isDraggingSliders) {
-                            ThemeManager.updateCustomPanelUI(currentAccent);
+                        if (!this.isDraggingSliders) {
+                            this.updateCustomPanelUI(currentAccent);
                         }
                     } else {
                         btn.classList.remove('active');
                         btn.style.setProperty('--accent-swatch-color', 'transparent');
-
                         const preset = accentPresets[currentAccent] || accentPresets.blue;
-                        ThemeManager.updateCustomPanelUI(preset.color);
+                        this.updateCustomPanelUI(preset.color);
                     }
                 } else {
-                    if (btnVal === currentAccent) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
+                    btn.classList.toggle('active', btnVal === currentAccent);
                 }
             });
         });
@@ -485,14 +476,6 @@ export const ThemeManager = {
 
         this.currentResolvedTheme = effectiveTheme;
 
-        const isCustom = appState.accentColor && appState.accentColor.startsWith('#');
-        if (isCustom) {
-            this.updateCustomPanelUI(appState.accentColor);
-        } else {
-            const preset = accentPresets[appState.accentColor] || accentPresets.blue;
-            this.updateCustomPanelUI(preset.color);
-        }
-
         this.applyAccentColor(appState.accentColor);
         this.updateUI();
 
@@ -527,8 +510,6 @@ export const ThemeManager = {
             }
         });
     },
-
-
 
     /**
      * Update the sliders, tracks, and inputs UI to match a given hex color.

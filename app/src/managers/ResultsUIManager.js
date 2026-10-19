@@ -127,8 +127,8 @@ export const ResultsUIManager = {
                 }
 
                 const statuses = r.studentData.statuses || [];
-                if (filter === 'newCount') return statuses.some(s => s.startsWith('Nouveau') && s.endsWith(activePeriod));
-                if (filter === 'departedCount') return statuses.some(s => s.startsWith('Départ') && s.endsWith(activePeriod));
+                if (filter === 'newCount') return statuses.some(s => s === 'Nouveau' || (s.startsWith('Nouveau') && s.endsWith(activePeriod)));
+                if (filter === 'departedCount') return statuses.some(s => s === 'Départ' || (s.startsWith('Départ') && s.endsWith(activePeriod)));
 
                 // CORRECTIF CRITIQUE : Calculer l'évolution dynamique basée directement sur les notes de scolarité
                 // pour s'assurer que le filtrage correspond toujours à 100% aux compteurs de statistiques.

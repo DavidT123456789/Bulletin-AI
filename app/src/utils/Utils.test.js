@@ -503,4 +503,74 @@ describe('Utils', () => {
             expect(Utils.getPeriodLabel('T2', true)).toBe('Trimestre 2');
         });
     });
+
+    describe('getStatusBadgeInfo', () => {
+        it('devrait attribuer tag-badge--new pour Nouveau et ses variantes de période', () => {
+            expect(Utils.getStatusBadgeInfo('Nouveau')).toEqual({
+                className: 'tag-badge tag-badge--new',
+                label: 'Nouveau'
+            });
+            expect(Utils.getStatusBadgeInfo('Nouveau T2')).toEqual({
+                className: 'tag-badge tag-badge--new',
+                label: 'Nouveau T2'
+            });
+        });
+
+        it('devrait attribuer tag-badge--depart pour Départ (avec ou sans accent / période)', () => {
+            expect(Utils.getStatusBadgeInfo('Départ')).toEqual({
+                className: 'tag-badge tag-badge--depart',
+                label: 'Départ'
+            });
+            expect(Utils.getStatusBadgeInfo('Départ S1')).toEqual({
+                className: 'tag-badge tag-badge--depart',
+                label: 'Départ S1'
+            });
+            expect(Utils.getStatusBadgeInfo('depart')).toEqual({
+                className: 'tag-badge tag-badge--depart',
+                label: 'depart'
+            });
+        });
+
+        it('devrait attribuer tag-badge--ulis pour ULIS et tag-badge--device pour les autres dispositifs (PPRE, PAP, PAI, AESH)', () => {
+            expect(Utils.getStatusBadgeInfo('ULIS')).toEqual({ className: 'tag-badge tag-badge--ulis', label: 'ULIS' });
+            expect(Utils.getStatusBadgeInfo('PPRE')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PPRE' });
+            expect(Utils.getStatusBadgeInfo('PAP')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PAP' });
+            expect(Utils.getStatusBadgeInfo('PAI')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PAI' });
+            expect(Utils.getStatusBadgeInfo('AESH')).toEqual({ className: 'tag-badge tag-badge--device', label: 'AESH' });
+        });
+
+        it('devrait attribuer tag-badge--delegate pour Délégué (avec ou sans accent)', () => {
+            expect(Utils.getStatusBadgeInfo('Délégué')).toEqual({ className: 'tag-badge tag-badge--delegate', label: 'Délégué' });
+            expect(Utils.getStatusBadgeInfo('delegue')).toEqual({ className: 'tag-badge tag-badge--delegate', label: 'delegue' });
+        });
+
+        it('devrait conserver la classe neutre tag-badge pour les autres statuts et valeurs limites', () => {
+            expect(Utils.getStatusBadgeInfo('Autre')).toEqual({ className: 'tag-badge', label: 'Autre' });
+            expect(Utils.getStatusBadgeInfo('')).toEqual({ className: 'tag-badge', label: '' });
+            expect(Utils.getStatusBadgeInfo(null)).toEqual({ className: 'tag-badge', label: null });
+        });
+    });
+
+    describe('isStudentDeparted', () => {
+        it('devrait détecter un élève parti via le statut Départ (sans période ou cumulatif sur la période active)', () => {
+            expect(Utils.isStudentDeparted({ statuses: ['Départ'] }, 'T2')).toBe(true);
+            expect(Utils.isStudentDeparted({ statuses: ['Départ T2'] }, 'T2')).toBe(true);
+            expect(Utils.isStudentDeparted({ statuses: ['Départ T1'] }, 'T2')).toBe(true);
+            expect(Utils.isStudentDeparted({ statuses: ['Départ T2'] }, 'T1')).toBe(false);
+            expect(Utils.isStudentDeparted({ studentData: { statuses: ['depart'] } }, 'T2')).toBe(true);
+        });
+
+        it('devrait supporter le fallback booléen isDeparted quand statuses est vide', () => {
+            expect(Utils.isStudentDeparted({ isDeparted: true }, 'T2')).toBe(true);
+            expect(Utils.isStudentDeparted({ isDeparted: false }, 'T2')).toBe(false);
+        });
+
+        it('devrait retourner false pour un élève actif ou des valeurs nulles/vides', () => {
+            expect(Utils.isStudentDeparted({ statuses: ['Nouveau', 'PPRE'] }, 'T2')).toBe(false);
+            expect(Utils.isStudentDeparted({}, 'T2')).toBe(false);
+            expect(Utils.isStudentDeparted(null, 'T2')).toBe(false);
+            expect(Utils.isStudentDeparted(undefined)).toBe(false);
+        });
+    });
 });
+

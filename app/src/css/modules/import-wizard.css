@@ -2718,7 +2718,12 @@
 
 /* Departed row styling — soft dim, NO strikethrough (they are preserved, not deleted) */
 .import-preview-table tbody tr.row-departed {
-    opacity: 0.45;
+    opacity: 0.62;
+    transition: opacity 0.15s ease;
+}
+
+.import-preview-table tbody tr.row-departed:hover {
+    opacity: 0.9;
 }
 
 .import-preview-table tbody tr.row-departed .preview-student-name {

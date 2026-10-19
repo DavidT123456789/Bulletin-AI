@@ -32,7 +32,8 @@ export const ListViewRenderer = {
     createRowElement(result, periods, currentPeriodIndex, context = {}) {
         const tr = document.createElement('tr');
         tr.dataset.studentId = result.id;
-        tr.className = 'student-row';
+        const isDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
+        tr.className = isDeparted ? 'student-row student-row-departed' : 'student-row';
         // Only make focusable on desktop to prevent mobile/touch focus highlight artifacts
         if (!window.matchMedia?.('(pointer: coarse)')?.matches) {
             tr.tabIndex = 0;
@@ -120,6 +121,7 @@ export const ListViewRenderer = {
         if (statusCell) {
             statusCell.innerHTML = this.getStudentStatusCellContent(result);
         }
+        row.classList.toggle('student-row-departed', Utils.isStudentDeparted(result, appState.currentPeriod));
 
         // Update Identity (Name + Avatar)
         const identityWrapper = row.querySelector('.student-identity-wrapper');
@@ -410,7 +412,8 @@ export const ListViewRenderer = {
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
                 const originClass = Utils.getOriginClass(result, currentClassName);
                 const rowDelay = shouldAnimateEntrance ? (baseDelay + Math.min(index * staggerStep, 520)) : 0;
-                const rowClass = shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row';
+                const isDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
+                const rowClass = `${shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row'}${isDeparted ? ' student-row-departed' : ''}`;
                 const rowStyleAttr = shouldAnimateEntrance ? ` style="--row-delay: ${rowDelay}ms"` : '';
 
                 tbodyContent += `
@@ -832,7 +835,14 @@ export const ListViewRenderer = {
     getStudentStatusCellContent(result) {
         // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.)
         const studentStatuses = result.studentData?.statuses || [];
-        const uniqueStatuses = [...new Set(studentStatuses.filter(Boolean))];
+        const getStatusPriority = (s) => {
+            const lower = String(s || '').toLowerCase();
+            if (lower.includes('départ') || lower.includes('depart')) return 0;
+            if (lower.includes('nouveau')) return 1;
+            return 2;
+        };
+        const uniqueStatuses = [...new Set(studentStatuses.filter(Boolean))]
+            .sort((a, b) => getStatusPriority(a) - getStatusPriority(b));
 
         if (uniqueStatuses.length === 0) {
             return '<span class="status-empty-dash">&mdash;</span>';

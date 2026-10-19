@@ -404,8 +404,11 @@ export const FocusPanelManager = {
 
             // 3. Status Checkboxes (Delegated from header edit container)
             else if (target.type === 'checkbox' && target.closest('.focus-header-edit')) {
-                const checked = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]:checked')).map(cb => cb.value);
-                result.studentData.statuses = checked;
+                const allBoxes = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]'));
+                const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
+                const allCheckboxValues = allBoxes.map(cb => cb.value);
+                const baseStatuses = FocusPanelHeader._originalHeaderValues?.statuses || result.studentData.statuses || [];
+                result.studentData.statuses = FocusPanelHeader.mergeEditedStatuses(baseStatuses, checkedValues, allCheckboxValues);
                 changed = true;
             }
 

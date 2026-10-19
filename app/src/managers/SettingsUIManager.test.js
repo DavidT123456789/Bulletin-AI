@@ -46,7 +46,8 @@ vi.mock('../config/Config.js', () => ({
             iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
         }
     },
-    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
+    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' },
+    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
 
 vi.mock('../utils/DOM.js', () => ({

@@ -1449,7 +1449,7 @@
     border-radius: var(--radius-pill);
     background: var(--bg-tertiary);
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     cursor: pointer;
     flex-shrink: 0;
     white-space: nowrap;
@@ -1463,19 +1463,17 @@
 
 @media (hover: hover) and (pointer: fine) {
     .status-badges-container .tag-more-count:hover {
-        background: var(--surface-color);
+        background: var(--item-hover-bg);
         color: var(--text-primary);
-        border-color: rgba(161, 161, 170, 0.3);
-        box-shadow: var(--shadow-sm);
-        transform: scale(1.08);
+        border-color: transparent;
+        transform: scale(1.06);
     }
 
     [data-theme="dark"] .status-badges-container .tag-more-count:hover {
-        background: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.14);
         color: #ffffff;
-        border-color: rgba(255, 255, 255, 0.25);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-        transform: scale(1.08);
+        border-color: transparent;
+        transform: scale(1.06);
     }
 }
 
@@ -1485,9 +1483,9 @@
 }
 
 [data-theme="dark"] .status-badges-container .tag-more-count {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-secondary);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: transparent;
 }
 
 .status-badges-container .tag-badge:nth-of-type(n+2) {
@@ -1517,6 +1515,19 @@
 .status-cell .status-badge {
     margin: 0 auto;
     width: fit-content;
+}
+
+/* Subtle visual recession for departed students in List View */
+.student-list-table tbody tr.student-row-departed .student-identity-wrapper {
+    opacity: 0.65;
+    filter: saturate(0.75);
+    transition: opacity var(--transition-fast), filter var(--transition-fast);
+}
+
+.student-list-table tbody tr.student-row-departed:hover .student-identity-wrapper,
+.student-list-table tbody tr.student-row-departed:focus-within .student-identity-wrapper {
+    opacity: 0.95;
+    filter: saturate(1);
 }
 
 /* Action column */

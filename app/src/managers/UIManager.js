@@ -1718,24 +1718,24 @@ export const UI = {
 
         const activeStudents = classResults.filter(result => {
             const statuses = result.studentData?.statuses || [];
-            const departStatus = statuses.find(s => s.startsWith('Départ'));
+            const departStatus = statuses.find(s => String(s || '').toLowerCase().startsWith('départ') || String(s || '').toLowerCase().startsWith('depart'));
             if (!departStatus) return true;
 
-            const departPeriodKey = departStatus.split(' ')[1];
+            const departPeriodKey = departStatus.trim().split(/\s+/)[1];
             const departPeriodIndex = Utils.getPeriods().indexOf(departPeriodKey);
 
-            return departPeriodIndex >= activePeriodIndex;
+            return departPeriodIndex === -1 || departPeriodIndex >= activePeriodIndex;
         });
         const totalCount = activeStudents.length;
 
         let newCount = 0;
         let departedCount = 0;
         activeStudents.forEach(result => {
-            const statuses = result.studentData.statuses || [];
-            if (statuses.some(s => s === `Nouveau ${activePeriod}`)) {
+            const statuses = result.studentData?.statuses || [];
+            if (statuses.some(s => s === 'Nouveau' || s === `Nouveau ${activePeriod}`)) {
                 newCount++;
             }
-            if (statuses.some(s => s === `Départ ${activePeriod}`)) {
+            if (statuses.some(s => s === 'Départ' || s === `Départ ${activePeriod}`)) {
                 departedCount++;
             }
         });
