@@ -205,46 +205,44 @@ export const ListViewAnimations = {
                 }, 550);
             }
 
-            // *** LAST + INVERT + PLAY: Animate kept rows to their new positions ***
+            // *** LAST (batch reads) + INVERT (batch writes) + PLAY: Animate kept rows to their new positions ***
             requestAnimationFrame(() => {
+                const movedRows = [];
                 toKeep.forEach(row => {
-                    const id = row.dataset.studentId;
-                    const first = firstPositions.get(id);
+                    const first = firstPositions.get(row.dataset.studentId);
                     if (!first) return;
 
-                    // LAST: Get current (final) position
-                    const last = row.getBoundingClientRect();
-
-                    // Calculate how much the row moved (negative = moved up)
-                    const deltaY = first.top - last.top;
-
+                    const deltaY = first.top - row.getBoundingClientRect().top;
                     if (Math.abs(deltaY) > 2) {
-                        // Add card effect class for visual feedback
-                        row.classList.add('row-moving');
-
-                        // INVERT: Move row back to where it was (its old position)
-                        row.style.transform = `translateY(${deltaY}px)`;
-                        row.style.transition = 'none';
-
-                        // Force browser to render the inverted state
-                        void row.offsetHeight;
-
-                        // PLAY: Animate smoothly to final position (transform: none)
-                        requestAnimationFrame(() => {
-                            row.classList.add('row-move');
-                            row.style.transform = '';
-
-                            // Cleanup after animation
-                            const cleanup = (e) => {
-                                if (e.propertyName === 'transform') {
-                                    row.classList.remove('row-move', 'row-moving');
-                                    row.style.transition = '';
-                                    row.removeEventListener('transitionend', cleanup);
-                                }
-                            };
-                            row.addEventListener('transitionend', cleanup);
-                        });
+                        movedRows.push({ row, deltaY });
                     }
+                });
+
+                if (movedRows.length === 0) return;
+
+                movedRows.forEach(({ row, deltaY }) => {
+                    row.classList.add('row-moving');
+                    row.style.transform = `translateY(${deltaY}px)`;
+                    row.style.transition = 'none';
+                });
+
+                // Force browser to render the inverted state once for all moved rows
+                void tbody.offsetHeight;
+
+                requestAnimationFrame(() => {
+                    movedRows.forEach(({ row }) => {
+                        row.classList.add('row-move');
+                        row.style.transform = '';
+
+                        const cleanup = (e) => {
+                            if (e.propertyName === 'transform') {
+                                row.classList.remove('row-move', 'row-moving');
+                                row.style.transition = '';
+                                row.removeEventListener('transitionend', cleanup);
+                            }
+                        };
+                        row.addEventListener('transitionend', cleanup);
+                    });
                 });
             });
 
@@ -363,24 +361,21 @@ export const ListViewAnimations = {
             }, maxImportDelay + 480);
         }
 
-        // Force layout recalculation
-        void tbody.offsetHeight;
-
-        // *** LAST + INVERT + PLAY ***
+        // *** LAST (batch reads) + INVERT (batch writes) + PLAY ***
+        const invertedRows = [];
         existingRows.forEach(row => {
-            const id = row.dataset.studentId;
-            const first = firstPositions.get(id);
+            const first = firstPositions.get(row.dataset.studentId);
             if (!first) return;
 
-            // LAST: Get new position
-            const last = row.getBoundingClientRect();
-            const deltaY = first.top - last.top;
-
+            const deltaY = first.top - row.getBoundingClientRect().top;
             if (Math.abs(deltaY) > 2) {
-                // INVERT: Move back to old position
-                row.style.transform = `translateY(${deltaY}px)`;
-                row.style.transition = 'none';
+                invertedRows.push({ row, deltaY });
             }
+        });
+
+        invertedRows.forEach(({ row, deltaY }) => {
+            row.style.transform = `translateY(${deltaY}px)`;
+            row.style.transition = 'none';
         });
 
         // Force browser to render inverted state
@@ -388,18 +383,9 @@ export const ListViewAnimations = {
 
         // PLAY: Animate to final position
         requestAnimationFrame(() => {
-            existingRows.forEach(row => {
-                const id = row.dataset.studentId;
-                const first = firstPositions.get(id);
-                if (!first) return;
-
-                const last = row.getBoundingClientRect();
-                // Recalculate because we applied transforms
-                const currentTransform = row.style.transform;
-                if (currentTransform && currentTransform !== 'none') {
-                    row.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
-                    row.style.transform = '';
-                }
+            invertedRows.forEach(({ row }) => {
+                row.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
+                row.style.transform = '';
             });
 
             // Cleanup with timeout (more reliable than transitionend)

@@ -613,14 +613,20 @@ export const ListViewRenderer = {
 
             th.classList.toggle('active-sort', isSorted);
 
-            // Remove old icon
             const placeholder = th.querySelector('.sort-icon-placeholder');
             if (placeholder) {
-                placeholder.innerHTML = '';
                 if (isSorted) {
-                    placeholder.innerHTML = direction === 'asc'
-                        ? '<iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>'
-                        : '<iconify-icon icon="solar:sort-from-top-to-bottom-linear"></iconify-icon>';
+                    const iconName = direction === 'asc'
+                        ? 'solar:sort-from-bottom-to-top-linear'
+                        : 'solar:sort-from-top-to-bottom-linear';
+                    const existingIcon = placeholder.querySelector('iconify-icon');
+                    if (existingIcon) {
+                        existingIcon.setAttribute('icon', iconName);
+                    } else {
+                        placeholder.innerHTML = `<iconify-icon icon="${iconName}"></iconify-icon>`;
+                    }
+                } else if (placeholder.firstChild) {
+                    placeholder.innerHTML = '';
                 }
             }
         });

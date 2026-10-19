@@ -392,11 +392,24 @@ export const MassImportManager = {
             }
             if (field === 'evolution') {
                 const p = param || activePeriod;
-                const getRank = r => {
-                    const e = Utils.getRelevantEvolution(r.evolutions, p);
-                    return e ? { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[e.type] || 0 : 0;
+                const periodsList = Utils.getPeriods();
+                const pIndex = periodsList.indexOf(p);
+                const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
+
+                const getDiff = r => {
+                    if (!prevP) return null;
+                    const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
+                    const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
+                    const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw ?? '').replace(',', '.'));
+                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw ?? '').replace(',', '.'));
+                    return (!isNaN(currentGrade) && !isNaN(prevGrade)) ? (currentGrade - prevGrade) : null;
                 };
-                return (getRank(a) - getRank(b)) * dir;
+                const dA = getDiff(a);
+                const dB = getDiff(b);
+                if (dA === null && dB !== null) return 1;
+                if (dA !== null && dB === null) return -1;
+                if (dA === null && dB === null) return 0;
+                return (dA - dB) * dir;
             }
             if (field === 'status') {
                 const getStatusStr = r => {

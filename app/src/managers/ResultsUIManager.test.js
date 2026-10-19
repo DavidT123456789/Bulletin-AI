@@ -211,6 +211,27 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             vi.useRealTimers();
         }
     });
+
+    it('devrait trier par évolution selon l\'écart exact de points et garder les élèves sans note en fin de liste (asc et desc)', () => {
+        const cls = ClassManager.createClass('3ème B');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+        appState.currentPeriod = 'T2';
+        appState.generatedResults = [
+            { id: 'small-plus', nom: 'ALPHA', prenom: 'A', classId: cls.id, studentData: { periods: { T1: { grade: 10 }, T2: { grade: 10.6 } } } },
+            { id: 'no-grade', nom: 'BETA', prenom: 'B', classId: cls.id, studentData: { periods: { T1: { grade: 12 }, T2: { grade: null } } } },
+            { id: 'big-plus', nom: 'GAMMA', prenom: 'C', classId: cls.id, studentData: { periods: { T1: { grade: 10 }, T2: { grade: 12.4 } } } },
+            { id: 'minus', nom: 'DELTA', prenom: 'D', classId: cls.id, studentData: { periods: { T1: { grade: 14 }, T2: { grade: 12.5 } } } }
+        ];
+
+        appState.sortState = { field: 'evolution', direction: 'desc', param: 'T2' };
+        ResultsUIManager.renderResults();
+        expect(appState.filteredResults.map(r => r.id)).toEqual(['big-plus', 'small-plus', 'minus', 'no-grade']);
+
+        appState.sortState = { field: 'evolution', direction: 'asc', param: 'T2' };
+        ResultsUIManager.renderResults();
+        expect(appState.filteredResults.map(r => r.id)).toEqual(['minus', 'small-plus', 'big-plus', 'no-grade']);
+    });
 });
 
 

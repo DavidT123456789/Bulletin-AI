@@ -229,20 +229,20 @@ export const ResultsUIManager = {
                     const pIndex = periodsList.indexOf(p);
                     const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
 
-                    const getRank = r => {
-                        if (!prevP) return 0;
+                    const getDiff = r => {
+                        if (!prevP) return null;
                         const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
                         const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
-                        const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
-                        const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
-                        if (!isNaN(currentGrade) && !isNaN(prevGrade)) {
-                            const dist = currentGrade - prevGrade;
-                            const type = Utils.getEvolutionType(dist);
-                            return { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[type] || 0;
-                        }
-                        return 0;
+                        const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw ?? '').replace(',', '.'));
+                        const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw ?? '').replace(',', '.'));
+                        return (!isNaN(currentGrade) && !isNaN(prevGrade)) ? (currentGrade - prevGrade) : null;
                     };
-                    return (getRank(a) - getRank(b)) * dir;
+                    const dA = getDiff(a);
+                    const dB = getDiff(b);
+                    if (dA === null && dB !== null) return 1;
+                    if (dA !== null && dB === null) return -1;
+                    if (dA === null && dB === null) return 0;
+                    return (dA - dB) * dir;
                 }
 
                 if (field === 'status') {
@@ -415,9 +415,8 @@ export const ResultsUIManager = {
         UI.populateLoadStudentSelect();
         UI.updateActiveFilterInfo();
         UI.updateHeaderContext();
-        UI.initTooltips();
 
-        // Mettre à jour le bouton d'action Générer/Régénérer
+        // Mettre à jour le bouton d'action Générer/Régénérer (inclut UI.initTooltips)
         this.updateGenerateButtonState(sourceResults);
     },
 
