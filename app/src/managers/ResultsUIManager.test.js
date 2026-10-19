@@ -178,5 +178,39 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
 
         expect(DOM.headerClassName.textContent).toBe('3ᵉ1');
     });
+
+    it('devrait appliquer highlight-new sur la ligne cible (même après recréation DOM) et nettoyer les classes concurrentes', () => {
+        vi.useFakeTimers();
+        try {
+            const cls = ClassManager.createClass('3ème B');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.generatedResults = [
+                { id: 'stu-1', nom: 'CABAUP', prenom: 'Jean', classId: cls.id, studentData: { periods: { T1: {} } } }
+            ];
+
+            ResultsUIManager.renderResults('stu-1', 'new');
+
+            // Simuler un remplacement DOM de la ligne pendant le délai de 100ms (ligne initiale détachée)
+            const tbody = DOM.resultsDiv.querySelector('tbody');
+            tbody.innerHTML = '<tr class="student-row row-animate-in focus-closed-flash" data-student-id="stu-1" style="--row-delay: 120ms;"><td>CABAUP</td></tr>';
+            const liveRow = tbody.querySelector('.student-row');
+            liveRow.scrollIntoView = vi.fn();
+
+            vi.advanceTimersByTime(100);
+
+            expect(liveRow.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+            expect(liveRow.classList.contains('highlight-new')).toBe(true);
+            expect(liveRow.classList.contains('row-animate-in')).toBe(false);
+            expect(liveRow.classList.contains('focus-closed-flash')).toBe(false);
+            expect(liveRow.style.getPropertyValue('--row-delay')).toBe('');
+
+            vi.advanceTimersByTime(2200);
+            expect(liveRow.classList.contains('highlight-new')).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });
+
 

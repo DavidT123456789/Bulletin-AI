@@ -170,5 +170,54 @@ describe('CrossClassSearchManager', () => {
         results[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
         expect(document.activeElement).toBe(document.getElementById('searchInput'));
     });
+
+    it('devrait permettre une nouvelle recherche inter-classes après avoir cliqué sur un élève d\'une autre classe', async () => {
+        document.body.innerHTML = `
+            <div>
+                <div class="search-container">
+                    <input id="searchInput" value="boukhari" />
+                </div>
+                <div id="outputList"></div>
+            </div>
+        `;
+        vi.spyOn(ClassManager, 'getClassById').mockImplementation(id => {
+            if (id === 'class-other-group') return { id: 'class-other-group', name: 'Groupe Techno G2' };
+            if (id === 'class-group-1') return { id: 'class-group-1', name: 'Groupe Techno G1' };
+            return null;
+        });
+
+        CrossClassSearchManager.reset(true);
+        CrossClassSearchManager.updateCrossClassResults('boukhari');
+
+        const container = document.getElementById('crossClassResults');
+        expect(container.classList.contains('visible')).toBe(true);
+
+        // Simuler l'ajout d'une classe d'animation de sortie lors de la bascule de classe
+        container.classList.add('class-switch-out-down');
+
+        const { ClassUIManager } = await import('./ClassUIManager.js');
+        const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockImplementation(async (targetClassId) => {
+            appState.currentClassId = targetClassId;
+            CrossClassSearchManager.clearListSearch({ renderList: false, immediate: true });
+        });
+
+        const firstResult = container.querySelector('.cross-class-result');
+        firstResult.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(switchSpy).toHaveBeenCalledWith('class-other-group', 's1');
+        expect(appState.currentClassId).toBe('class-other-group');
+        expect(container.classList.contains('visible')).toBe(false);
+        expect(container.classList.contains('class-switch-out-down')).toBe(false);
+
+        // Nouvelle recherche depuis la nouvelle classe vers un élève de l'ancienne classe (Martin dans class-group-1)
+        CrossClassSearchManager.updateCrossClassResults('martin');
+
+        expect(container.classList.contains('visible')).toBe(true);
+        expect(container.classList.contains('class-switch-out-down')).toBe(false);
+        expect(container.querySelector('.cross-class-result')?.dataset.studentId).toBe('s3');
+
+        switchSpy.mockRestore();
+    });
 });
 

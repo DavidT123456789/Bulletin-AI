@@ -382,13 +382,32 @@ export const ResultsUIManager = {
             ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
         }
         if (highlightId && highlightType === 'new') {
+            if (this._highlightRowTimer) {
+                clearTimeout(this._highlightRowTimer);
+                this._highlightRowTimer = null;
+            }
+            if (this._highlightCleanupTimer) {
+                clearTimeout(this._highlightCleanupTimer);
+                this._highlightCleanupTimer = null;
+            }
             // Liste + Focus: Cibler la ligne du tableau
             const row = document.querySelector(`.student-row[data-student-id="${highlightId}"]`);
             if (row) {
-                setTimeout(() => {
-                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    row.classList.add('highlight-new');
-                    setTimeout(() => row.classList.remove('highlight-new'), 2000);
+                this._highlightRowTimer = setTimeout(() => {
+                    this._highlightRowTimer = null;
+                    const targetRow = row.isConnected
+                        ? row
+                        : document.querySelector(`.student-row[data-student-id="${highlightId}"]`);
+                    if (!targetRow) return;
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetRow.classList.remove('row-animate-in', 'focus-closed-flash', 'highlight-new');
+                    targetRow.style.removeProperty('--row-delay');
+                    void targetRow.offsetWidth;
+                    targetRow.classList.add('highlight-new');
+                    this._highlightCleanupTimer = setTimeout(() => {
+                        this._highlightCleanupTimer = null;
+                        targetRow.classList.remove('highlight-new');
+                    }, 2200);
                 }, 100);
             }
         }

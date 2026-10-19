@@ -1335,10 +1335,17 @@ export const FocusPanelManager = {
         if (this.currentStudentId) {
             const lastActiveRow = document.querySelector(`.student-row[data-student-id="${this.currentStudentId}"]`);
             if (lastActiveRow) {
+                if (this._closedFlashTimer) {
+                    clearTimeout(this._closedFlashTimer);
+                    this._closedFlashTimer = null;
+                }
+                lastActiveRow.classList.remove('focus-closed-flash', 'highlight-new');
+                void lastActiveRow.offsetWidth;
                 lastActiveRow.classList.add('focus-closed-flash');
-                setTimeout(() => {
+                this._closedFlashTimer = setTimeout(() => {
+                    this._closedFlashTimer = null;
                     lastActiveRow.classList.remove('focus-closed-flash');
-                }, 1200); // matches CSS animation duration
+                }, 1300); // matches CSS animation duration
             }
         }
 
@@ -1500,6 +1507,7 @@ export const FocusPanelManager = {
         if (studentId) {
             const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
             if (row) {
+                row.classList.remove('focus-closed-flash', 'highlight-new');
                 row.classList.add('focus-active');
                 row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }

@@ -287,6 +287,12 @@
     --highlight-standard-bg: rgba(0, 0, 0, 0.04);
     --highlight-standard-glow: rgba(0, 0, 0, 0.07);
 
+    /* Student Row Spotlight (Cross-class jump, new student, Focus Panel return) */
+    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 9%);
+    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 4.5%);
+    --row-spotlight-border: color-mix(in srgb, var(--border-color), var(--text-primary) 18%);
+    --row-spotlight-accent: var(--primary-color);
+
     /* --- Gradients (Fixed Brand Colors) --- */
     --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
     --gradient-ai: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
@@ -447,6 +453,12 @@
     --highlight-standard-border: rgba(255, 255, 255, 0.65);
     --highlight-standard-bg: rgba(255, 255, 255, 0.09);
     --highlight-standard-glow: rgba(255, 255, 255, 0.14);
+
+    /* Student Row Spotlight (High Contrast in Dark Mode regardless of custom accent color) */
+    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 16%);
+    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 9%);
+    --row-spotlight-border: rgba(255, 255, 255, 0.22);
+    --row-spotlight-accent: var(--primary-bright);
 
     /* --- Semantic Colors (Dark Mode) --- */
     --success-dark: #4ade80;

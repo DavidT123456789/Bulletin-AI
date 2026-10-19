@@ -770,6 +770,10 @@ export const ClassUIManager = {
         // Phase 1 : Sortie rapide (110ms) avant remplacement des données
         await new Promise(resolve => setTimeout(resolve, 110));
 
+        outgoingContainers.forEach(el => {
+            el.classList.remove('class-switch-out-down', 'class-switch-out-up');
+        });
+
         // Réinitialiser proprement la recherche Liste avant de charger la nouvelle classe
         CrossClassSearchManager?.clearListSearch?.({ renderList: false, immediate: true });
         SeatingChartManager?._restoreUnmodifiedClassLock?.();
@@ -808,7 +812,7 @@ export const ClassUIManager = {
 
         this._classSwitchCleanupTimer = setTimeout(() => {
             this._classSwitchCleanupTimer = null;
-            document.querySelectorAll(selector).forEach(el => {
+            incomingContainers.forEach(el => {
                 el.classList.remove('class-switch-in-down', 'class-switch-in-up');
             });
             DOM.headerClassName?.classList.remove('header-class-in-down', 'header-class-in-up');

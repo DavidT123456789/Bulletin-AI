@@ -19,6 +19,7 @@ import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 export const ListViewEvents = {
 
     state: {
+        abortController: null,
         activeDocClickListener: null,
         activeKeydownListener: null
     },
@@ -48,11 +49,15 @@ export const ListViewEvents = {
     attachEventListeners(listContainer) {
         if (!listContainer) return;
 
-        // Abort previous controller to prevent listener accumulation on container reuse
+        // Abort previous controller to prevent listener accumulation across fresh renders or container reuse
+        if (this.state.abortController) {
+            this.state.abortController.abort();
+        }
         if (listContainer._eventsAbortController) {
             listContainer._eventsAbortController.abort();
         }
         const abortController = new AbortController();
+        this.state.abortController = abortController;
         listContainer._eventsAbortController = abortController;
         const { signal } = abortController;
 

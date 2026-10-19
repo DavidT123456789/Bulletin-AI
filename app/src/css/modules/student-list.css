@@ -304,28 +304,193 @@
     }
 }
 
+/* ====================================================================
+   UNIFIED ROW SPOTLIGHT SYSTEM (iOS 2026 / Linear)
+   Zero geometric row distortion, high-contrast surface illumination,
+   left anchor bar, and organic avatar spring bounce.
+   Covers: .focus-active, .highlight-new (cross-class/new), .focus-closed-flash
+   ==================================================================== */
 .student-list-table tbody tr.focus-active {
-    background: color-mix(in srgb, var(--surface-color), var(--text-primary) 10%);
-    border-color: color-mix(in srgb, var(--border-color), var(--text-primary) 15%);
+    position: relative;
+    z-index: 4;
 }
 
-[data-theme="dark"] .student-list-table tbody tr.focus-active {
-    background: color-mix(in srgb, var(--surface-color), var(--text-primary) 14%);
-    border-color: color-mix(in srgb, var(--border-color), var(--text-primary) 20%);
+.student-list-table tbody tr.focus-active td {
+    background-color: var(--row-spotlight-bg-peak);
+    box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
+                inset 0 -1px 0 0 var(--row-spotlight-border);
 }
 
-/* Flash animation when exiting the Focus Panel to keep the spatial reference */
-.student-list-table tbody tr.focus-closed-flash,
+.student-list-table tbody tr.focus-active td:first-child {
+    box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent),
+                inset 0 1px 0 0 var(--row-spotlight-border),
+                inset 0 -1px 0 0 var(--row-spotlight-border);
+}
+
+.student-list-table tbody tr.highlight-new,
+.student-list-table tbody tr.focus-closed-flash {
+    position: relative;
+    z-index: 5;
+}
+
+/* 1. Target Acquisition Spotlight (.highlight-new: cross-class jump / new student) */
+.student-list-table tbody tr.highlight-new td {
+    animation: row-spotlight-cell-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.student-list-table tbody tr.highlight-new td:first-child {
+    animation: row-spotlight-first-cell-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.student-list-table tbody tr.highlight-new .student-avatar {
+    animation: row-spotlight-avatar-new 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    z-index: 10;
+}
+
+/* 2. Spatial Return Echo (.focus-closed-flash: exiting Focus Panel) */
 .student-list-table tbody tr.focus-closed-flash td {
-    animation: focus-row-flash 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: row-spotlight-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes focus-row-flash {
+.student-list-table tbody tr.focus-closed-flash td:first-child {
+    animation: row-spotlight-first-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.student-list-table tbody tr.focus-closed-flash .student-avatar {
+    animation: row-spotlight-avatar-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    z-index: 10;
+}
+
+/* Crisp first-name legibility during active spotlight */
+.student-list-table tbody tr.focus-active .student-name-cell .student-prenom,
+.student-list-table tbody tr.highlight-new .student-name-cell .student-prenom,
+.student-list-table tbody tr.focus-closed-flash .student-name-cell .student-prenom {
+    color: var(--text-primary);
+}
+
+@keyframes row-spotlight-cell-new {
     0% {
-        background-color: color-mix(in srgb, var(--surface-color), var(--text-primary) 14%);
+        background-color: var(--surface-color);
+        box-shadow: inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+    14% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+    36% {
+        background-color: var(--row-spotlight-bg-mid);
+        box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent),
+                    inset 0 -1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent);
+    }
+    56% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
     }
     100% {
         background-color: var(--surface-color);
+        box-shadow: inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+}
+
+@keyframes row-spotlight-first-cell-new {
+    0% {
+        background-color: var(--surface-color);
+        box-shadow: inset 0 0 0 0 transparent,
+                    inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+    14% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent),
+                    inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+    36% {
+        background-color: var(--row-spotlight-bg-mid);
+        box-shadow: inset 3.5px 0 0 0 color-mix(in srgb, var(--row-spotlight-accent) 70%, transparent),
+                    inset 0 1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent),
+                    inset 0 -1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent);
+    }
+    56% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent),
+                    inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+    100% {
+        background-color: var(--surface-color);
+        box-shadow: inset 0 0 0 0 transparent,
+                    inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+}
+
+@keyframes row-spotlight-avatar-new {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 transparent;
+    }
+    16% {
+        transform: scale(1.16);
+        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
+    }
+    36% {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--row-spotlight-accent) 60%, transparent);
+    }
+    56% {
+        transform: scale(1.14);
+        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+@keyframes row-spotlight-cell-return {
+    0%,
+    18% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+    100% {
+        background-color: var(--surface-color);
+        box-shadow: inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+}
+
+@keyframes row-spotlight-first-cell-return {
+    0%,
+    18% {
+        background-color: var(--row-spotlight-bg-peak);
+        box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent),
+                    inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+    100% {
+        background-color: var(--surface-color);
+        box-shadow: inset 0 0 0 0 transparent,
+                    inset 0 1px 0 0 transparent,
+                    inset 0 -1px 0 0 transparent;
+    }
+}
+
+@keyframes row-spotlight-avatar-return {
+    0%,
+    15% {
+        transform: scale(1.15);
+        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 transparent;
     }
 }
 
@@ -445,7 +610,9 @@
 @media (prefers-reduced-motion: reduce) {
     .student-list-table tbody tr.row-animate-in,
     .student-list-table tbody tr.row-filter-enter,
-    .student-list-table tbody tr.row-import-refresh {
+    .student-list-table tbody tr.row-import-refresh,
+    .student-list-table tbody tr.highlight-new .student-avatar,
+    .student-list-table tbody tr.focus-closed-flash .student-avatar {
         animation: none !important;
     }
 }
@@ -1983,6 +2150,67 @@
         border-bottom: none !important;
         padding: 0 !important;
         background: transparent !important;
+    }
+
+    /* Mobile Card Spotlight (.focus-active, .highlight-new, .focus-closed-flash) */
+    .student-list-table tbody tr.focus-active td,
+    .student-list-table tbody tr.highlight-new td,
+    .student-list-table tbody tr.focus-closed-flash td {
+        animation: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .student-list-table tbody tr.focus-active {
+        background: var(--row-spotlight-bg-peak) !important;
+        border-color: var(--row-spotlight-border) !important;
+        box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent), 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .student-list-table tbody tr.highlight-new {
+        animation: row-spotlight-card-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .student-list-table tbody tr.focus-closed-flash {
+        animation: row-spotlight-card-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes row-spotlight-card-new {
+        0% {
+            background-color: var(--surface-color);
+            border-color: var(--border-color);
+            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        14%,
+        56% {
+            background-color: var(--row-spotlight-bg-peak);
+            border-color: var(--row-spotlight-border);
+            box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent), 0 6px 18px rgba(0, 0, 0, 0.14);
+        }
+        36% {
+            background-color: var(--row-spotlight-bg-mid);
+            border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--border-color));
+            box-shadow: inset 3.5px 0 0 0 color-mix(in srgb, var(--row-spotlight-accent) 70%, transparent), 0 4px 12px rgba(0, 0, 0, 0.09);
+        }
+        100% {
+            background-color: var(--surface-color);
+            border-color: var(--border-color);
+            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+    }
+
+    @keyframes row-spotlight-card-return {
+        0%,
+        18% {
+            background-color: var(--row-spotlight-bg-peak);
+            border-color: var(--row-spotlight-border);
+            box-shadow: inset 3.5px 0 0 0 var(--row-spotlight-accent), 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+        100% {
+            background-color: var(--surface-color);
+            border-color: var(--border-color);
+            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
     }
 
     /* 1. Identity (Top) */

@@ -16,6 +16,12 @@ import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 
+const TRANSITION_ANIM_CLASSES = [
+    'class-switch-out-down', 'class-switch-out-up',
+    'class-switch-in-down', 'class-switch-in-up',
+    'view-slide-out-left', 'view-slide-in-left'
+];
+
 /**
  * Gestionnaire de la recherche cross-classes
  * @namespace CrossClassSearchManager
@@ -270,6 +276,7 @@ export const CrossClassSearchManager = {
         html += `</div></div>`;
 
         container.innerHTML = html;
+        container.classList.remove(...TRANSITION_ANIM_CLASSES);
         container.classList.add('visible');
 
         this._ensureListenersBound(container);
@@ -287,7 +294,7 @@ export const CrossClassSearchManager = {
         }
         const container = document.getElementById('crossClassResults');
         if (container) {
-            container.classList.remove('visible');
+            container.classList.remove('visible', ...TRANSITION_ANIM_CLASSES);
             if (immediate) {
                 container.innerHTML = '';
             } else {

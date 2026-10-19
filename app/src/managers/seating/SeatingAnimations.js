@@ -107,7 +107,8 @@ export const SeatingAnimations = {
                 'row-filter-enter',
                 'row-import-refresh',
                 'row-exit',
-                'focus-closed-flash'
+                'focus-closed-flash',
+                'highlight-new'
             );
             row.style.setProperty('--row-i', Math.min(i, maxStaggerRows));
         });
