@@ -502,16 +502,23 @@ export const Utils = {
 
     /**
      * Formate l'étiquette courte d'un élève (Prénom + Initiale du nom) pour la vue Plan
-     * Permet une micro-hiérarchie visuelle raffinée (initiale stylisée via .sc-cell-initial)
+     * Permet une micro-hiérarchie visuelle raffinée (initiale stylisée via .sc-cell-initial).
+     * Si options.showInitial vaut false, retourne uniquement le prénom (sauf si le prénom est vide).
+     * Pour les prénoms longs (≥ 11 caractères, ex. "Justin Nolan"), omet l'initiale du nom
+     * afin d'éviter la troncature du prénom lui-même, sauf si forceInitial est activé (homonymes).
      * @param {string} nom - Nom de famille
      * @param {string} prenom - Prénom
      * @param {boolean} [html=false] - Si true, encapsule l'initiale dans un span .sc-cell-initial
+     * @param {Object} [options={}] - Options ({ showInitial?: boolean, forceInitial?: boolean, omitLongInitial?: boolean })
      * @returns {string} L'étiquette formatée (ex: "Paul V." ou "Paul <span class=\"sc-cell-initial\">V.</span>")
      */
-    formatStudentInitialLabel(nom, prenom, html = false) {
+    formatStudentInitialLabel(nom, prenom, html = false, options = {}) {
         const prenomClean = (prenom || '').trim();
         const initialLetter = (nom || '').trim().charAt(0).toUpperCase();
         if (!initialLetter) return prenomClean;
+        if (options?.showInitial === false && prenomClean) return prenomClean;
+        const omitLongInitial = options?.omitLongInitial !== false && !options?.forceInitial && prenomClean.length >= 11;
+        if (omitLongInitial) return prenomClean;
         if (html) {
             return `${prenomClean} <span class="sc-cell-initial">${initialLetter}.</span>`.trim();
         }

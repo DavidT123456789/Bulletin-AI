@@ -293,6 +293,15 @@ describe('Utils', () => {
             expect(Utils.formatStudentInitialLabel('Vervy', '', true)).toBe('<span class="sc-cell-initial">V.</span>');
             expect(Utils.formatStudentInitialLabel('', '')).toBe('');
         });
+
+        it('devrait omettre l’initiale du nom pour un prénom long (≥ 11 caractères) sauf si forceInitial est actif', () => {
+            expect(Utils.formatStudentInitialLabel('Dupont', 'Justin Nolan')).toBe('Justin Nolan');
+            expect(Utils.formatStudentInitialLabel('Dupont', 'Justin Nolan', true)).toBe('Justin Nolan');
+            expect(Utils.formatStudentInitialLabel('Dupont', 'Justin Nolan', false, { forceInitial: true })).toBe('Justin Nolan D.');
+            expect(Utils.formatStudentInitialLabel('Dupont', 'Justin Nolan', true, { forceInitial: true })).toBe('Justin Nolan <span class="sc-cell-initial">D.</span>');
+            expect(Utils.formatStudentInitialLabel('Vervy', 'Paul', true, { showInitial: false })).toBe('Paul');
+            expect(Utils.formatStudentInitialLabel('Vervy', '', true, { showInitial: false })).toBe('<span class="sc-cell-initial">V.</span>');
+        });
     });
 
     describe('getOriginClass', () => {

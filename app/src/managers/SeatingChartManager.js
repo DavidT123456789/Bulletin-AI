@@ -3635,13 +3635,14 @@ export const SeatingChartManager = {
             const statusBadgeHTML = badgeInfo
                 ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
                 : '';
+            const nameInfo = this._getStudentCellNameInfo(student);
 
             cell.innerHTML = `
                 <div class="sc-cell-avatar-wrap">
                     ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
                     ${statusBadgeHTML}
                 </div>
-                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
+                <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
                 ${stationBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
@@ -3731,10 +3732,11 @@ export const SeatingChartManager = {
 
             const namesHtml = students.map(s => {
                 const isMemberDeparted = this._isStudentDeparted(s);
+                const memberNameInfo = this._getStudentCellNameInfo(s);
                 const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
                 return `
-                <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
-                    <span class="sc-stacked-name-text">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
+                <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}${memberNameInfo.modifierClass}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
+                    <span class="sc-stacked-name-text${memberNameInfo.modifierClass}">${memberNameInfo.html}</span>
                     <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
@@ -3931,6 +3933,32 @@ export const SeatingChartManager = {
         });
 
         return cell;
+    },
+
+    _normalizeFirstNameKey(prenom) {
+        return (prenom || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    },
+
+    _hasFirstNameHomonym(student) {
+        if (!student || !Array.isArray(this._students)) return false;
+        const targetFirst = this._normalizeFirstNameKey(student.prenom);
+        if (!targetFirst) return false;
+        return this._students.some(s => s && s.id !== student.id && this._normalizeFirstNameKey(s.prenom) === targetFirst);
+    },
+
+    _getStudentCellNameInfo(student) {
+        const hasHomonym = this._hasFirstNameHomonym(student);
+        const labelOpts = { showInitial: hasHomonym, forceInitial: hasHomonym };
+        const html = Utils.formatStudentInitialLabel(student?.nom, student?.prenom, true, labelOpts);
+        const plain = Utils.formatStudentInitialLabel(student?.nom, student?.prenom, false, labelOpts);
+        const isLong = plain.length >= 11;
+        const isExtraLong = plain.length >= 14;
+        const modifierClass = `${isLong ? ' is-long-name' : ''}${isExtraLong ? ' is-extra-long-name' : ''}`;
+        return { html, plain, isLong, isExtraLong, modifierClass };
     },
 
     _getEvolutionDotHTML(student) {
@@ -4970,11 +4998,14 @@ export const SeatingChartManager = {
         if (element.classList.contains('sc-student-chip')) {
             const chipNameEl = ghost.querySelector('.sc-student-chip-name');
             if (chipNameEl) {
-                chipNameEl.className = 'sc-cell-name';
                 const studentId = element.dataset?.resultId;
                 const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
                 if (student) {
-                    chipNameEl.innerHTML = Utils.formatStudentInitialLabel(student.nom, student.prenom, true);
+                    const nameInfo = this._getStudentCellNameInfo(student);
+                    chipNameEl.className = `sc-cell-name${nameInfo.modifierClass}`;
+                    chipNameEl.innerHTML = nameInfo.html;
+                } else {
+                    chipNameEl.className = 'sc-cell-name';
                 }
             }
         }

@@ -1678,8 +1678,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-cell:not(.sc-cell-stacked) .student-avatar,
 .sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
 .sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
-    width: 54px;
-    height: 54px;
+    width: 56px;
+    height: 56px;
     font-size: 1rem;
     flex-shrink: 0;
 }
@@ -1696,10 +1696,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-drag-clone .sc-student-chip-name,
 .sc-touch-ghost .sc-cell-name,
 .sc-touch-ghost .sc-student-chip-name {
-    font-size: 0.72rem;
-    font-weight: 550;
-    color: color-mix(in srgb, var(--text-primary) 65%, var(--text-secondary));
-    max-width: 80px;
+    font-size: 0.74rem;
+    font-weight: 560;
+    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
+    max-width: 78px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1709,10 +1709,29 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     letter-spacing: -0.01em;
 }
 
+.sc-cell-name.is-long-name,
+.sc-drag-clone .sc-cell-name.is-long-name,
+.sc-touch-ghost .sc-cell-name.is-long-name {
+    font-size: 0.70rem;
+    margin-top: 5.5px;
+    max-width: 81px;
+    letter-spacing: -0.02em;
+    text-overflow: clip;
+}
+
+.sc-cell-name.is-extra-long-name,
+.sc-drag-clone .sc-cell-name.is-extra-long-name,
+.sc-touch-ghost .sc-cell-name.is-extra-long-name,
+.sc-stacked-name-text.is-extra-long-name {
+    text-overflow: clip;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
+}
+
 .sc-cell-initial {
     font-weight: 450;
     color: var(--text-tertiary);
-    margin-left: 1px;
+    margin-left: 0;
 }
 
 /* ────────── CELL ACTIONS (Remove / Pin) ────────── */
@@ -3459,17 +3478,69 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 
     :root {
-        --sc-cell-w: 60px;
-        --sc-cell-h: 68px;
+        --sc-cell-w: 62px;
+        --sc-cell-h: 70px;
     }
 
     .sc-grid-container {
         gap: 6px;
     }
 
-    .sc-cell .student-avatar { width: 36px; height: 36px; font-size: 0.72rem; }
+    .sc-cell,
+    .sc-cell-special-tools {
+        border-radius: 11.5px;
+    }
 
-    .sc-cell-name { font-size: 0.55rem; max-width: 56px; margin-top: 3px; line-height: 1.3; }
+    .sc-cell:not(.sc-cell-stacked) .student-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 0.75rem;
+    }
+
+    .sc-cell-name {
+        font-size: 0.565rem;
+        max-width: 52px;
+        margin-top: 4px;
+        line-height: 1.15;
+    }
+
+    .sc-cell-name.is-long-name {
+        font-size: 0.535rem;
+        margin-top: 4.5px;
+        max-width: 55px;
+        letter-spacing: -0.02em;
+        text-overflow: clip;
+    }
+
+    .sc-special-icon {
+        font-size: 1.2rem;
+        margin-bottom: 1px;
+    }
+
+    .sc-cell-scope-badge {
+        font-size: 0.48rem;
+        padding: 1.5px 4px;
+        margin-top: 2px;
+        max-width: 54px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sc-cell-pin {
+        width: 15px;
+        height: 15px;
+        top: -4px;
+        left: -4px;
+        font-size: 0.48rem;
+    }
+
+    .sc-evolution-dot {
+        bottom: 3.5px;
+        right: 3.5px;
+        width: 6px;
+        height: 6px;
+    }
 
     .sc-toolbar {
         flex-wrap: wrap;
@@ -3576,10 +3647,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
     /* ── Mobile Touch Ghost (harmonized with cell proportions & offset above finger) ── */
     .sc-touch-ghost {
-        width: 60px !important;
-        height: 68px !important;
+        width: var(--sc-cell-w, 62px) !important;
+        height: var(--sc-cell-h, 70px) !important;
         padding: 4px 2px !important;
-        border-radius: var(--radius-md) !important;
+        border-radius: 11.5px !important;
         transform: translate(-50%, -85%) scale(1.05) !important;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
         border: 1.5px solid var(--highlight-standard-border) !important;
@@ -3595,24 +3666,32 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
     }
 
-    .sc-touch-ghost .student-avatar {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 0.72rem !important;
+    .sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 0.75rem !important;
         flex-shrink: 0 !important;
     }
 
     .sc-touch-ghost .sc-cell-name,
     .sc-touch-ghost .sc-student-chip-name {
-        font-size: 0.55rem !important;
-        max-width: 56px !important;
-        margin-top: 3px !important;
+        font-size: 0.565rem !important;
+        max-width: 52px !important;
+        margin-top: 4px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         text-align: center !important;
-        line-height: 1.3 !important;
+        line-height: 1.15 !important;
         color: var(--text-secondary) !important;
+    }
+
+    .sc-touch-ghost .sc-cell-name.is-long-name {
+        font-size: 0.535rem !important;
+        margin-top: 4.5px !important;
+        max-width: 55px !important;
+        letter-spacing: -0.02em !important;
+        text-overflow: clip !important;
     }
 
     /* ── Mobile Drag-Over Desk Pop: Magnify target cell under touch so user clearly sees destination ── */
@@ -4677,13 +4756,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 @media (max-width: 768px) {
     .sc-classroom-board[data-plan-mode="course"] {
-        --sc-cell-w: 60px;
-        --sc-cell-h: 68px;
+        --sc-cell-w: 62px;
+        --sc-cell-h: 70px;
     }
 
     #seatingChartView[data-plan-mode="activity"],
     .sc-classroom-board[data-plan-mode="activity"] {
-        --sc-cell-w: 82px;
+        --sc-cell-w: 84px;
         --sc-cell-h: 86px;
     }
 }
@@ -4840,17 +4919,17 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-station-badge {
     position: absolute;
-    top: 4px;
+    top: 6px;
     bottom: auto;
-    left: 4px;
+    left: 6px;
     right: auto;
     width: auto;
     height: auto;
     font-size: 0.53rem;
     font-weight: 700;
     line-height: 1;
-    padding: 1.5px 4px;
-    border-radius: 5px;
+    padding: 1.5px 4.5px;
+    border-radius: 6px;
     color: var(--text-tertiary);
     background: rgba(var(--text-secondary-rgb, 113, 113, 122), 0.1);
     pointer-events: none;
@@ -4936,8 +5015,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 .sc-cell.sc-cell-stacked.pinned .sc-station-badge,
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
-    top: 14px;
-    left: 4px;
+    top: 15px;
+    left: 6px;
     right: auto;
 }
 
@@ -4960,7 +5039,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
     border: 1px solid transparent;
     box-shadow: var(--shadow-sm);
-    padding-bottom: 12px;
+    padding-bottom: 4px;
 }
 
 [data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
@@ -4971,9 +5050,9 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar {
-    width: 46px;
-    height: 46px;
-    font-size: 0.86rem;
+    width: 54px;
+    height: 54px;
+    font-size: 0.96rem;
     border: 2px solid var(--surface-color, #ffffff);
     box-shadow: var(--shadow-xs);
     border-radius: 50%;
@@ -4986,8 +5065,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
-    font-size: 0.7rem;
-    line-height: 1.26;
+    font-size: 0.74rem;
+    line-height: 1.22;
     margin-top: 6px;
     max-width: 104px;
 }
@@ -5217,11 +5296,11 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* ── Adaptive Internal Density by Group Size (Binôme / Trinôme / Quatuor) ── */
 .sc-cell.sc-cell-stacked[data-group-size="2"] {
-    gap: 6px;
+    gap: 5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar-cluster {
-    height: 44px;
+    height: 46px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar:not(:first-child) {
@@ -5230,71 +5309,67 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar,
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar-wrap {
-    width: 42px !important;
-    height: 42px !important;
-    font-size: 0.78rem !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 0.8rem !important;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-member {
-    padding: 1.5px 4px;
+    padding: 0.5px 4px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
-    font-size: 0.7rem;
-    line-height: 1.26;
-}
-
-.sc-cell.sc-cell-stacked[data-group-size="3"]:not(.pinned) .sc-station-badge,
-.sc-cell.sc-cell-stacked[data-group-size="4"]:not(.pinned) .sc-station-badge {
-    top: 3px;
-    left: 3px;
-    font-size: 0.49rem;
-    padding: 1px 3.5px;
+    font-size: 0.71rem;
+    line-height: 1.18;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] {
-    padding: 10px 5px 4px;
+    padding: 6px 5px 5px;
     gap: 3.5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar-cluster {
-    height: 36px;
+    height: 38px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar:not(:first-child) {
-    margin-left: -8px;
+    margin-left: -7.5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar,
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar-wrap {
-    width: 34px !important;
-    height: 34px !important;
-    font-size: 0.68rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 0.7rem !important;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-member {
+    padding: 0.5px 4px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-name {
-    font-size: 0.65rem;
-    line-height: 1.2;
+    font-size: 0.665rem;
+    line-height: 1.17;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] {
-    padding: 10px 5px 3px;
-    gap: 2px;
+    padding: 8px 5px 4px;
+    gap: 3px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar-cluster {
-    height: 30px;
+    height: 32px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar:not(:first-child) {
-    margin-left: -7px;
+    margin-left: -7.5px;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar,
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar-wrap {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 0.6rem !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.62rem !important;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-names-list {
@@ -5306,8 +5381,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-name {
-    font-size: 0.61rem;
-    line-height: 1.15;
+    font-size: 0.625rem;
+    line-height: 1.16;
 }
 
 .sc-stacked-name-text {
@@ -5381,16 +5456,39 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         display: none !important;
     }
 
+    .sc-station-badge {
+        top: 4.5px;
+        left: 4.5px;
+        font-size: 0.47rem;
+        padding: 1px 3.5px;
+        border-radius: 4.5px;
+    }
+
+    .sc-cell.sc-cell-stacked.pinned .sc-station-badge,
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
+        top: 12px;
+        left: 4.5px;
+    }
+
     .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
     #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
-        padding-bottom: 6px;
+        padding-bottom: 3px;
+    }
+
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name,
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name {
+        font-size: 0.58rem;
+        line-height: 1.15;
+        margin-top: 4px;
+        max-width: 74px;
     }
 
     .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar,
     #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar {
-        width: 34px;
-        height: 34px;
-        font-size: 0.7rem;
+        width: 40px;
+        height: 40px;
+        font-size: 0.75rem;
     }
 
     .sc-cell.sc-cell-stacked .sc-stacked-avatar .student-avatar,
@@ -5406,7 +5504,94 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
     .sc-cell.sc-cell-stacked .sc-stacked-name {
         font-size: 0.54rem;
-        line-height: 1.1;
+        line-height: 1.12;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] {
+        padding: 6px 4px 4px;
+        gap: 4px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar-cluster {
+        height: 32px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar:not(:first-child) {
+        margin-left: -6px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar,
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-avatar .student-avatar-wrap {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.62rem !important;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-member {
+        padding: 1px 3px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
+        font-size: 0.57rem;
+        line-height: 1.16;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] {
+        padding: 5px 4px 3px;
+        gap: 2.5px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar-cluster {
+        height: 27px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar:not(:first-child) {
+        margin-left: -6px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar,
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .student-avatar-wrap {
+        width: 25px !important;
+        height: 25px !important;
+        font-size: 0.55rem !important;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-member {
+        padding: 0.5px 3px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-name {
+        font-size: 0.535rem;
+        line-height: 1.13;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] {
+        padding: 5px 4px 2.5px;
+        gap: 2px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar-cluster {
+        height: 23px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar:not(:first-child) {
+        margin-left: -5.5px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar,
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .student-avatar-wrap {
+        width: 21px !important;
+        height: 21px !important;
+        font-size: 0.5rem !important;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-member {
+        padding: 0 3px;
+    }
+
+    .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-name {
+        font-size: 0.5rem;
+        line-height: 1.09;
     }
 }
 

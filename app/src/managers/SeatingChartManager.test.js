@@ -1932,7 +1932,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._activeMobileSheet).toBeNull();
         });
 
-        it('devrait convertir le libellé du clone de drag (.sc-drag-clone / .sc-touch-ghost) en Prénom N. (.sc-cell-name) depuis une puce de la réserve', () => {
+        it('devrait convertir le libellé du clone de drag (.sc-drag-clone / .sc-touch-ghost) en Prénom seul sans homonyme et en Prénom N. avec homonyme', () => {
             const chip = document.createElement('div');
             chip.className = 'sc-student-chip sc-chip-new';
             chip.dataset.resultId = 's1';
@@ -1948,6 +1948,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 dataTransfer: { setDragImage: vi.fn() }
             };
 
+            // 1. Sans homonyme dans la classe -> Prénom seul ("Lucas")
             SeatingChartManager._setCleanDragImage(mockDragEvent, chip, 1);
             const dragClone = document.querySelector('.sc-drag-clone');
             expect(dragClone).not.toBeNull();
@@ -1955,8 +1956,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(dragClone.querySelector('.sc-chip-badge')).toBeNull();
             const cellName = dragClone.querySelector('.sc-cell-name');
             expect(cellName).not.toBeNull();
-            expect(cellName.textContent).toBe('Lucas M.');
-            expect(cellName.querySelector('.sc-cell-initial')?.textContent).toBe('M.');
+            expect(cellName.textContent).toBe('Lucas');
+            expect(cellName.querySelector('.sc-cell-initial')).toBeNull();
             SeatingChartManager._removeDragClones();
 
             SeatingChartManager._createTouchGhost(chip, { clientX: 120, clientY: 160 });
@@ -1964,8 +1965,42 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(touchGhost).not.toBeNull();
             expect(touchGhost.querySelector('.sc-student-chip-name')).toBeNull();
             expect(touchGhost.querySelector('.sc-chip-badge')).toBeNull();
-            expect(touchGhost.querySelector('.sc-cell-name')?.textContent).toBe('Lucas M.');
+            expect(touchGhost.querySelector('.sc-cell-name')?.textContent).toBe('Lucas');
             SeatingChartManager._removeTouchGhost();
+
+            // 2. Avec un homonyme de prénom dans la classe -> "Lucas M."
+            SeatingChartManager._students.push({ id: 's-homonym', nom: 'BERNARD', prenom: 'Lucas', seatingPos: null });
+            SeatingChartManager._setCleanDragImage(mockDragEvent, chip, 1);
+            const dragCloneHomonym = document.querySelector('.sc-drag-clone');
+            const cellNameHomonym = dragCloneHomonym.querySelector('.sc-cell-name');
+            expect(cellNameHomonym.textContent).toBe('Lucas M.');
+            expect(cellNameHomonym.querySelector('.sc-cell-initial')?.textContent).toBe('M.');
+            SeatingChartManager._removeDragClones();
+        });
+
+        it('devrait afficher uniquement le prénom sans homonyme et ajouter l’initiale uniquement en cas d’homonyme (y compris avec accents)', () => {
+            const sShort = { id: 's-short-1', nom: 'DUPONT', prenom: 'Chloé' };
+            const sLong = { id: 's-long-1', nom: 'DUPONT', prenom: 'Justin Nolan' };
+            SeatingChartManager._students = [sShort, sLong];
+
+            expect(SeatingChartManager._getStudentCellNameInfo(sShort).plain).toBe('Chloé');
+            const infoSolo = SeatingChartManager._getStudentCellNameInfo(sLong);
+            expect(infoSolo.plain).toBe('Justin Nolan');
+            expect(infoSolo.isLong).toBe(true);
+            expect(infoSolo.modifierClass).toContain('is-long-name');
+
+            const sShortHomonym = { id: 's-short-2', nom: 'MARTIN', prenom: 'Chloe' };
+            const sLongHomonym = { id: 's-long-2', nom: 'MARTIN', prenom: 'Justin Nolan' };
+            SeatingChartManager._students = [sShort, sShortHomonym, sLong, sLongHomonym];
+
+            expect(SeatingChartManager._getStudentCellNameInfo(sShort).plain).toBe('Chloé D.');
+            expect(SeatingChartManager._getStudentCellNameInfo(sShortHomonym).plain).toBe('Chloe M.');
+
+            const infoHomonym = SeatingChartManager._getStudentCellNameInfo(sLong);
+            expect(infoHomonym.plain).toBe('Justin Nolan D.');
+            expect(infoHomonym.isLong).toBe(true);
+            expect(infoHomonym.isExtraLong).toBe(true);
+            expect(infoHomonym.modifierClass).toContain('is-extra-long-name');
         });
 
         it('devrait sélectionner l’élève lors du clic sur Déplacer et fermer la feuille', () => {

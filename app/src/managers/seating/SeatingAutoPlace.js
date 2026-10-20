@@ -513,11 +513,14 @@ export const SeatingAutoPlace = {
         if (sourceEl.classList.contains('sc-student-chip')) {
             const chipNameEl = clone.querySelector('.sc-student-chip-name');
             if (chipNameEl) {
-                chipNameEl.className = 'sc-cell-name';
                 const studentId = sourceEl.dataset?.resultId;
                 const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
                 if (student) {
-                    chipNameEl.innerHTML = Utils.formatStudentInitialLabel(student.nom, student.prenom, true);
+                    const nameInfo = this._getStudentCellNameInfo(student);
+                    chipNameEl.className = `sc-cell-name${nameInfo.modifierClass}`;
+                    chipNameEl.innerHTML = nameInfo.html;
+                } else {
+                    chipNameEl.className = 'sc-cell-name';
                 }
             }
         }
@@ -570,9 +573,10 @@ export const SeatingAutoPlace = {
         const clone = document.createElement('div');
         clone.className = 'sc-drag-clone';
         if (student) {
+            const nameInfo = this._getStudentCellNameInfo(student);
             clone.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
+                <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
             `;
         } else {
             clone.innerHTML = sourceEl.innerHTML;
