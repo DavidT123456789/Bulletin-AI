@@ -74,7 +74,7 @@
 @keyframes scViewEnter {
     from {
         opacity: 0;
-        transform: translate3d(24px, 0, 0);
+        transform: translate3d(32px, 0, 0);
     }
     to {
         opacity: 1;
@@ -90,7 +90,7 @@
     }
     to {
         opacity: 0;
-        transform: translate3d(18px, 0, 0);
+        transform: translate3d(28px, 0, 0);
     }
 }
 
@@ -219,6 +219,11 @@
 .sc-cell.sc-cell-stagger {
     animation: scCellReveal 0.35s var(--ease-bounce) both;
     animation-delay: calc(var(--cell-i, 0) * 25ms);
+}
+
+#seatingChartView.sc-entering .sc-cell.sc-cell-stagger,
+#seatingChartView.sc-entering .sc-student-chip.sc-chip-stagger {
+    animation: none;
 }
 
 /* Cell placed (from sidebar drop or empty-cell move) */
@@ -2014,10 +2019,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 .sc-grid-area[data-fitted="true"] {
     overflow: hidden;
+    touch-action: none;
     justify-content: center;
     align-items: center;
     padding-top: calc(56px + var(--content-padding-x, 24px));
     padding-bottom: var(--content-padding-x, 24px);
+}
+
+.sc-grid-area[data-fitted="true"] .sc-cell.occupied {
+    touch-action: none;
 }
 
 .sc-grid-area[data-fitted="false"] {
@@ -4838,62 +4848,56 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 @keyframes scCellCarouselWaveRight {
     0% {
-        opacity: 0;
-        transform: translate3d(18px, 0, 0) scale(0.96);
+        transform: translate3d(10px, 0, 0);
     }
-    68% {
-        opacity: 1;
-        transform: translate3d(-1px, 0, 0) scale(1.006);
+    70% {
+        transform: translate3d(-0.6px, 0, 0);
     }
     100% {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
     }
 }
 
 @keyframes scCellCarouselWaveLeft {
     0% {
-        opacity: 0;
-        transform: translate3d(-18px, 0, 0) scale(0.96);
+        transform: translate3d(-10px, 0, 0);
     }
-    68% {
-        opacity: 1;
-        transform: translate3d(1px, 0, 0) scale(1.006);
+    70% {
+        transform: translate3d(0.6px, 0, 0);
     }
     100% {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
     }
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right {
-    animation: scBoardCarouselInRight 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: scBoardCarouselInRight 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
     will-change: translate, transform, scale, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left {
-    animation: scBoardCarouselInLeft 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: scBoardCarouselInLeft 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
     will-change: translate, transform, scale, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right .sc-cell:not([class*="sc-cell-special-"]) {
-    animation: scCellCarouselWaveRight 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--carousel-col-i, 0) * 24ms);
-    will-change: transform, opacity;
+    animation: scCellCarouselWaveRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--carousel-col-i, 0) * 6ms);
+    will-change: transform;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left .sc-cell:not([class*="sc-cell-special-"]) {
-    animation: scCellCarouselWaveLeft 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--carousel-col-i, 0) * 24ms);
-    will-change: transform, opacity;
+    animation: scCellCarouselWaveLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--carousel-col-i, 0) * 6ms);
+    will-change: transform;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right .sc-desk {
-    animation: scCellCarouselWaveRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 35ms both;
+    animation: scCellCarouselWaveRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left .sc-desk {
-    animation: scCellCarouselWaveLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) 35ms both;
+    animation: scCellCarouselWaveLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .sc-board-carousel-ghost {

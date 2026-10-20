@@ -16,6 +16,9 @@ export const SeatingAnimations = {
         }
         document.querySelectorAll('.stats-container, .output-header, #outputList, #crossClassResults, #empty-state-card, #statsPagination').forEach(el => {
             el.classList.remove('view-slide-out-left', 'view-slide-in-left');
+            el.style.removeProperty('--swipe-offset-x');
+            el.style.removeProperty('transform');
+            el.style.removeProperty('transition');
         });
         document.querySelectorAll('#outputList .student-list-view.table-fade-in').forEach(view => {
             view.classList.remove('table-fade-in');
@@ -44,7 +47,11 @@ export const SeatingAnimations = {
             return;
         }
 
-        containers.forEach(el => el.classList.remove('view-slide-in-left'));
+        containers.forEach(el => {
+            el.classList.remove('view-slide-in-left');
+            el.style.removeProperty('transform');
+            el.style.removeProperty('transition');
+        });
         void containers[0]?.offsetWidth;
         containers.forEach(el => el.classList.add('view-slide-out-left'));
 
@@ -53,7 +60,10 @@ export const SeatingAnimations = {
             if (called) return;
             called = true;
             this._viewExitTimeout = null;
-            containers.forEach(el => el.classList.remove('view-slide-out-left'));
+            containers.forEach(el => {
+                el.classList.remove('view-slide-out-left');
+                el.style.removeProperty('--swipe-offset-x');
+            });
             onComplete();
         };
         this._viewExitTimeout = setTimeout(done, 95);
@@ -154,6 +164,24 @@ export const SeatingAnimations = {
             if (this._viewEnterTimeout) {
                 clearTimeout(this._viewEnterTimeout);
                 this._viewEnterTimeout = null;
+            }
+            if (this._staggerCellTimer) {
+                clearTimeout(this._staggerCellTimer);
+                this._staggerCellTimer = null;
+                document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').forEach(c => {
+                    c.classList.remove('sc-cell-stagger');
+                    c.style.removeProperty('--cell-i');
+                    c.style.removeProperty('animation-delay');
+                });
+            }
+            if (this._staggerSidebarTimer) {
+                clearTimeout(this._staggerSidebarTimer);
+                this._staggerSidebarTimer = null;
+                document.querySelectorAll('#scStudentList .sc-student-chip.sc-chip-stagger').forEach(c => {
+                    c.classList.remove('sc-chip-stagger');
+                    c.style.removeProperty('--chip-i');
+                    c.style.removeProperty('animation-delay');
+                });
             }
             viewEl.removeEventListener('animationend', cleanup);
             viewEl.classList.remove('sc-entering');

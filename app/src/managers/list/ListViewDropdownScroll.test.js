@@ -272,4 +272,114 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(false);
         expect(document.body.classList.contains('header-menu-open')).toBe(false);
     });
+
+    it('should trigger header sort and close global menu when clicking mobile sort option', async () => {
+        const { EventHandlersManager } = await import('../EventHandlersManager.js');
+        const { ListViewRenderer } = await import('./ListViewRenderer.js');
+        const { appState } = await import('../../state/State.js');
+
+        const sortSpy = vi.spyOn(EventHandlersManager, 'handleHeaderSortClick').mockImplementation(() => {});
+
+        listContainer.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable-header" data-sort-field="name">Nom <span class="sort-icon-placeholder"></span></th>
+                        <th class="sortable-header" data-sort-field="grade" data-sort-param="S1">S1 <span class="sort-icon-placeholder"></span></th>
+                        <th class="action-header">
+                            <div class="header-content-wrapper global-actions-dropdown">
+                                <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-expanded="false">Actions</button>
+                                <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                                    <div class="mobile-sort-section">
+                                        <button type="button" class="action-dropdown-item mobile-sort-btn" data-mobile-sort="grade" data-sort-param="S1">
+                                            <span>Moyenne (S1)</span>
+                                            <span class="mobile-sort-indicator"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+        `;
+
+        ListViewEvents.attachEventListeners(listContainer);
+
+        const globalToggle = listContainer.querySelector('#tableActionsBtnToggle');
+        const globalMenu = listContainer.querySelector('#tableActionsDropdown');
+        const mobileSortGradeBtn = listContainer.querySelector('[data-mobile-sort="grade"]');
+        const gradeHeader = listContainer.querySelector('.sortable-header[data-sort-field="grade"]');
+
+        globalToggle.click();
+        expect(globalMenu.classList.contains('open')).toBe(true);
+
+        mobileSortGradeBtn.click();
+        expect(globalMenu.classList.contains('open')).toBe(false);
+        expect(sortSpy).toHaveBeenCalledWith(gradeHeader);
+
+        appState.sortState = { field: 'grade', direction: 'desc', param: 'S1' };
+        ListViewRenderer.updateHeaderSortIcons(listContainer);
+        expect(mobileSortGradeBtn.classList.contains('active-sort')).toBe(true);
+        expect(mobileSortGradeBtn.querySelector('.mobile-sort-indicator iconify-icon')).not.toBeNull();
+
+        sortSpy.mockRestore();
+    });
+
+    it('should auto-hide #addStudentFab when scrolling down on #main-content and reveal it when scrolling up', async () => {
+        const { GlobalListeners } = await import('../listeners/GlobalListeners.js');
+
+        const mainContent = document.createElement('main');
+        mainContent.id = 'main-content';
+        mainContent.className = 'main-content';
+        const fab = document.createElement('button');
+        fab.id = 'addStudentFab';
+        fab.className = 'fab-add-student';
+
+        container.appendChild(mainContent);
+        container.appendChild(fab);
+
+        GlobalListeners._setupScrollListeners();
+
+        // Scroll down past threshold (> 60px, delta > 8)
+        mainContent.scrollTop = 120;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+
+        // Scroll up (delta < -6)
+        mainContent.scrollTop = 90;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
+    });
+
+    it('should trigger toggleAppreciationColumn when clicking #mobileCompactToggleBtn inside .appreciation-header-actions', () => {
+        const toggleSpy = vi.fn();
+        ListViewEvents.init({ toggleAppreciationColumn: toggleSpy });
+
+        listContainer.innerHTML = `
+            <table class="student-list-table">
+                <thead>
+                    <tr>
+                        <th class="appreciation-header appreciation-toggle-header">
+                            <div class="header-content-wrapper">
+                                <div class="appreciation-header-actions" id="appreciationHeaderActions">
+                                    <button type="button" id="mobileCompactToggleBtn">
+                                        <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
+                                    </button>
+                                    <button type="button" id="generateBtnInline">19</button>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+        `;
+
+        ListViewEvents.attachEventListeners(listContainer);
+
+        const mobileToggleBtn = listContainer.querySelector('#mobileCompactToggleBtn iconify-icon');
+        mobileToggleBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(toggleSpy).toHaveBeenCalledTimes(1);
+        expect(toggleSpy).toHaveBeenCalledWith(listContainer);
+    });
 });

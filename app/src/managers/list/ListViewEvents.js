@@ -329,10 +329,10 @@ export const ListViewEvents = {
             // Close menus if clicking elsewhere
             closeAllMenus();
 
-            // Toggle appreciation column visibility (click on header)
+            // Toggle appreciation column visibility (click on header or mobile compact toggle button)
             const toggleHeader = target.closest('.appreciation-toggle-header');
             if (toggleHeader) {
-                if (target.closest('.appreciation-header-actions') || target.closest('#avgWordsChip')) {
+                if (!target.closest('#mobileCompactToggleBtn') && (target.closest('.appreciation-header-actions') || target.closest('#avgWordsChip'))) {
                     return;
                 }
                 e.stopPropagation();

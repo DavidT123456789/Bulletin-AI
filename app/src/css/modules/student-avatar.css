@@ -265,15 +265,27 @@
     border-color: var(--border-hover-color, var(--border-color));
 }
 
-/* === EXPANDED VIEW: Photo plus grande & Typographie proportionnelle === */
-.appreciation-full-view .student-identity-wrapper {
-    gap: 12px;
-}
+/* === EXPANDED VIEW: Photo plus grande & Typographie proportionnelle (Desktop & Tablette) === */
+@media (min-width: 769px) {
+    .appreciation-full-view .student-identity-wrapper {
+        gap: 12px;
+    }
 
-.appreciation-full-view .student-identity-wrapper .student-avatar {
-    width: 56px;
-    height: 56px;
-    font-size: 20px;
+    .appreciation-full-view .student-identity-wrapper .student-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: 20px;
+    }
+
+    .appreciation-full-view .student-identity-wrapper .student-nom {
+        font-size: 15px;
+        line-height: 1.25;
+    }
+
+    .appreciation-full-view .student-identity-wrapper .student-prenom {
+        font-size: 13.5px;
+        margin-top: 2px;
+    }
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
@@ -282,16 +294,6 @@
         height: 50px;
         font-size: 18px;
     }
-}
-
-.appreciation-full-view .student-identity-wrapper .student-nom {
-    font-size: 15px;
-    line-height: 1.25;
-}
-
-.appreciation-full-view .student-identity-wrapper .student-prenom {
-    font-size: 13.5px;
-    margin-top: 2px;
 }
 
 /* Maintain zoom when student is focused (panel open) OR selected via checkbox */

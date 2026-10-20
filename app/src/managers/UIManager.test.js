@@ -807,5 +807,53 @@ describe('UIManager', () => {
             second.dismiss();
         });
     });
+
+    describe('updatePeriodLabels - mobile compact labels (<= 600px)', () => {
+        it('should use short period labels (S1/T1) even for active period on compact mobile viewports', async () => {
+            const { DOM } = await import('../utils/DOM.js');
+            const selector = document.createElement('div');
+            selector.id = 'mainPeriodSelector';
+            selector.innerHTML = `
+                <input type="radio" id="periodT1" name="periodModeRadio" value="T1" checked>
+                <label for="periodT1" class="ui-segment" data-short="T1" data-full="Trimestre 1">
+                    <span class="period-label-text is-expanded">Trimestre 1</span>
+                </label>
+                <input type="radio" id="periodT2" name="periodModeRadio" value="T2">
+                <label for="periodT2" class="ui-segment" data-short="T2" data-full="Trimestre 2">
+                    <span class="period-label-text is-collapsed">T2</span>
+                </label>
+            `;
+            document.body.appendChild(selector);
+            const prevSelector = DOM.mainPeriodSelector;
+            DOM.mainPeriodSelector = selector;
+
+            const origMatchMedia = window.matchMedia;
+            try {
+                // Simulate mobile viewport <= 600px
+                window.matchMedia = vi.fn().mockImplementation((query) => ({
+                    matches: query === '(max-width: 600px)',
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
+                }));
+
+                UI.updatePeriodLabels();
+                const activeSpan = selector.querySelector('label[for="periodT1"] .period-label-text');
+                expect(activeSpan.textContent).toBe('T1');
+
+                // Simulate desktop viewport > 600px
+                window.matchMedia = vi.fn().mockImplementation(() => ({
+                    matches: false,
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
+                }));
+
+                UI.updatePeriodLabels();
+                expect(activeSpan.textContent).toBe('Trimestre 1');
+            } finally {
+                window.matchMedia = origMatchMedia;
+                DOM.mainPeriodSelector = prevSelector;
+            }
+        });
+    });
 });
 

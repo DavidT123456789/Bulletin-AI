@@ -418,8 +418,32 @@ export const SeatingChartManager = {
         let lastTapTime = 0;
         let lastTapX = 0;
         let lastTapY = 0;
+        let tapStartX = 0;
+        let tapStartY = 0;
+        let tapMoved = false;
+        gridArea?.addEventListener('touchstart', (e) => {
+            if (e.touches?.length === 1) {
+                tapStartX = e.touches[0].clientX;
+                tapStartY = e.touches[0].clientY;
+                tapMoved = false;
+            } else {
+                tapMoved = true;
+            }
+        }, { passive: true });
+        gridArea?.addEventListener('touchmove', (e) => {
+            if (!tapMoved && e.touches?.length === 1) {
+                if (Math.hypot(e.touches[0].clientX - tapStartX, e.touches[0].clientY - tapStartY) > 12) {
+                    tapMoved = true;
+                }
+            }
+        }, { passive: true });
         gridArea?.addEventListener('touchend', (e) => {
             if (!e.changedTouches || e.changedTouches.length !== 1 || (e.touches && e.touches.length > 0)) return;
+            if (tapMoved) {
+                tapMoved = false;
+                lastTapTime = 0;
+                return;
+            }
             if (this._isPinching || this._dragSource || this._touchSourceInfo) return;
             if (e.target.closest('.sc-cell') || e.target.closest('.sc-desk') || e.target.closest('button')) return;
 
@@ -599,16 +623,74 @@ export const SeatingChartManager = {
         const outputSection = document.querySelector('.main-content .output-section');
         if (outputSection && !outputSection._hasListSwipeListener) {
             outputSection._hasListSwipeListener = true;
+            const mainContent = outputSection.closest('.main-content') || document.querySelector('.main-content');
             let listTouchStartX = 0;
             let listTouchStartY = 0;
             let listTouchValid = false;
+            let listSwipeAxis = null;
+            let listCurrentOx = 0;
+            let listCurrentOy = 0;
+            let listStartedAtTop = false;
+            let listStartedAtBottom = false;
+            let activeListContainers = [];
+            let listReleaseTimer = null;
+
+            const resolveListSwipeContainers = () => Array.from(
+                document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination')
+            ).filter(el => {
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden';
+            });
+
+            const getMainScrollBounds = () => {
+                if (!mainContent) return { scrollTop: 0, maxScrollY: 0 };
+                return {
+                    scrollTop: mainContent.scrollTop || 0,
+                    maxScrollY: Math.max(0, (mainContent.scrollHeight || 0) - (mainContent.clientHeight || 0))
+                };
+            };
+
+            const dampListSwipe = (delta, isNavigable) => {
+                const abs = Math.abs(delta);
+                const maxOvershoot = isNavigable ? 76 : 22;
+                const resistance = isNavigable ? 0.54 : 0.22;
+                const damped = (abs * resistance) / (1 + (abs * resistance) / maxOvershoot);
+                return Math.round(Math.sign(delta) * damped * 10) / 10;
+            };
+
+            const releaseListSwipe = () => {
+                if (listCurrentOx === 0 && listCurrentOy === 0) return;
+                listCurrentOx = 0;
+                listCurrentOy = 0;
+                const containers = activeListContainers.length > 0 ? activeListContainers : resolveListSwipeContainers();
+                activeListContainers = [];
+                containers.forEach(el => {
+                    el.style.removeProperty('--swipe-offset-x');
+                    el.style.removeProperty('--swipe-offset-y');
+                    el.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transform = 'translate3d(0, 0, 0)';
+                });
+                if (listReleaseTimer) clearTimeout(listReleaseTimer);
+                listReleaseTimer = setTimeout(() => {
+                    listReleaseTimer = null;
+                    containers.forEach(el => {
+                        el.style.removeProperty('transform');
+                        el.style.removeProperty('transition');
+                    });
+                }, 290);
+            };
 
             outputSection.addEventListener('touchstart', (e) => {
                 if (this._isActive || e.touches.length !== 1 || FocusPanelManager.isOpen?.() || UI.activeModal) {
                     listTouchValid = false;
                     return;
                 }
-                if (e.target?.closest?.('#statsContainer, #statsPagination, input, textarea, select, button, a, .custom-dropdown')) {
+                if (e.target?.closest?.('#statsPagination, input, textarea, select, button, a, .custom-dropdown')) {
+                    listTouchValid = false;
+                    return;
+                }
+                const statsEl = e.target?.closest?.('#statsContainer, .stats-container');
+                if (statsEl && (statsEl.scrollWidth || 0) > (statsEl.clientWidth || 0) + 4) {
                     listTouchValid = false;
                     return;
                 }
@@ -618,30 +700,118 @@ export const SeatingChartManager = {
                     listTouchValid = false;
                     return;
                 }
+                if (listReleaseTimer) {
+                    clearTimeout(listReleaseTimer);
+                    listReleaseTimer = null;
+                }
+                const { scrollTop, maxScrollY } = getMainScrollBounds();
+                listStartedAtTop = scrollTop <= 2;
+                listStartedAtBottom = scrollTop >= maxScrollY - 2;
                 listTouchStartX = x;
                 listTouchStartY = e.touches[0].clientY;
                 listTouchValid = true;
+                listSwipeAxis = null;
+                listCurrentOx = 0;
+                listCurrentOy = 0;
+                activeListContainers = [];
+            }, { passive: true });
+
+            outputSection.addEventListener('touchmove', (e) => {
+                if (!listTouchValid || this._isActive || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - listTouchStartX;
+                const dy = e.touches[0].clientY - listTouchStartY;
+
+                if (!listSwipeAxis) {
+                    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+                    if (Math.abs(dx) > Math.abs(dy) * 1.3) {
+                        listSwipeAxis = 'x';
+                        activeListContainers = resolveListSwipeContainers();
+                    } else if (Math.abs(dy) > Math.abs(dx) * 1.3) {
+                        const { scrollTop, maxScrollY } = getMainScrollBounds();
+                        const pullingDownAtTop = dy > 0 && listStartedAtTop && scrollTop <= 2;
+                        const pullingUpAtBottom = dy < 0 && listStartedAtBottom && scrollTop >= maxScrollY - 2;
+                        if (pullingDownAtTop || pullingUpAtBottom) {
+                            listSwipeAxis = 'y';
+                            activeListContainers = resolveListSwipeContainers();
+                        } else {
+                            listSwipeAxis = 'scroll';
+                            listTouchValid = false;
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+
+                if (listSwipeAxis === 'x') {
+                    const ox = dampListSwipe(dx, dx < 0 && this._getCurrentClassStudents().length > 0);
+                    listCurrentOx = ox;
+                    listCurrentOy = 0;
+                    activeListContainers.forEach(el => {
+                        el.style.transition = 'none';
+                        el.style.setProperty('--swipe-offset-x', `${ox}px`);
+                        el.style.transform = `translate3d(${ox}px, 0, 0)`;
+                    });
+                } else if (listSwipeAxis === 'y') {
+                    const { scrollTop, maxScrollY } = getMainScrollBounds();
+                    const stillAtBoundary = (dy > 0 && listStartedAtTop && scrollTop <= 2) ||
+                                            (dy < 0 && listStartedAtBottom && scrollTop >= maxScrollY - 2);
+                    if (!stillAtBoundary) {
+                        releaseListSwipe();
+                        listTouchValid = false;
+                        return;
+                    }
+                    const oy = dampListSwipe(dy, Boolean(this._canSwitchAdjacentClass?.(dy < 0 ? 1 : -1)));
+                    listCurrentOy = oy;
+                    listCurrentOx = 0;
+                    activeListContainers.forEach(el => {
+                        el.style.transition = 'none';
+                        el.style.setProperty('--swipe-offset-y', `${oy}px`);
+                        el.style.transform = `translate3d(0, ${oy}px, 0)`;
+                    });
+                }
             }, { passive: true });
 
             outputSection.addEventListener('touchend', (e) => {
-                if (!listTouchValid || this._isActive) return;
+                if (!listTouchValid || this._isActive) {
+                    releaseListSwipe();
+                    return;
+                }
                 listTouchValid = false;
                 const endTouch = e.changedTouches?.[0];
-                if (!endTouch) return;
+                if (!endTouch) {
+                    releaseListSwipe();
+                    return;
+                }
                 const dx = endTouch.clientX - listTouchStartX;
                 const dy = endTouch.clientY - listTouchStartY;
-                if (dx <= -72 && Math.abs(dy) < 36 && Math.abs(dx) > Math.abs(dy) * 2.2) {
-                    if (this._getCurrentClassStudents().length > 0) {
-                        if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
-                            this._planMode = 'course';
-                        }
-                        this.switchToView('plan');
+                if (listSwipeAxis !== 'y' && dx <= -48 && Math.abs(dx) > Math.abs(dy) * 1.35 && this._getCurrentClassStudents().length > 0) {
+                    listCurrentOx = 0;
+                    listCurrentOy = 0;
+                    activeListContainers = [];
+                    if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
+                        this._planMode = 'course';
+                    }
+                    this.switchToView('plan');
+                    return;
+                }
+                if (listSwipeAxis === 'y' && Math.abs(dy) >= 48 && Math.abs(dy) > Math.abs(dx) * 1.35) {
+                    const delta = dy < 0 ? 1 : -1;
+                    if (this._canSwitchAdjacentClass?.(delta)) {
+                        listCurrentOx = 0;
+                        listCurrentOy = 0;
+                        activeListContainers = [];
+                        this._switchAdjacentClass(delta);
+                        return;
                     }
                 }
+                releaseListSwipe();
             }, { passive: true });
 
             outputSection.addEventListener('touchcancel', () => {
                 listTouchValid = false;
+                listSwipeAxis = null;
+                releaseListSwipe();
             }, { passive: true });
         }
 
@@ -1887,6 +2057,9 @@ export const SeatingChartManager = {
                     this._staggerSidebarTimer = null;
                 }
                 viewEl.classList.remove('sc-exiting', 'sc-entering');
+                const board = document.getElementById('scClassroomBoard');
+                board?.style.removeProperty('transform');
+                board?.style.removeProperty('transition');
                 wrapper.dataset.view = 'list';
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
@@ -2027,11 +2200,6 @@ export const SeatingChartManager = {
 
         this._render();
         this._applySmartFit(true);
-        if (!immediate) {
-            this._staggerCellEntrance(40);
-            this._staggerSidebarEntrance(40);
-        }
-
         this._scrollToDesk();
         this._maybeShowOnboardingHint();
     },
