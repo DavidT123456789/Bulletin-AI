@@ -247,6 +247,8 @@ export const SeatingAnimations = {
         ghost.setAttribute('aria-hidden', 'true');
         ghost.dataset.planMode = prevMode;
         ghost.dataset.locked = this._isLocked ? 'true' : 'false';
+        ghost.style.removeProperty('transform');
+        ghost.style.removeProperty('transition');
 
         const computedBoard = window.getComputedStyle(board);
         const cellW = computedBoard.getPropertyValue('--sc-cell-w');

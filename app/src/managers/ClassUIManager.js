@@ -783,6 +783,61 @@ export const ClassUIManager = {
     },
 
     /**
+     * Retourne la liste ordonnée des identifiants de classes visibles dans le menu déroulant
+     * (en excluant les groupes repliés sous une classe reconstituée).
+     * @private
+     */
+    _getVisibleOrderedClassIds() {
+        const domIds = Array.from(
+            DOM.classDropdownList?.querySelectorAll('.class-dropdown-item:not(.is-collapsed)') || []
+        ).map(el => el.dataset.classId).filter(Boolean);
+
+        if (domIds.length > 0 && (!appState.currentClassId || domIds.includes(appState.currentClassId))) {
+            return domIds;
+        }
+        return this._getOrderedClassItems().map(item => item.id).filter(Boolean);
+    },
+
+    /**
+     * Retourne l'identifiant de la classe adjacente (précédente: delta = -1, suivante: delta = +1)
+     * selon l'ordre visible du menu des classes.
+     * @param {number} delta - Direction (-1 pour classe au-dessus, +1 pour classe en dessous)
+     * @returns {string|null} L'ID de la classe cible ou null si en butée
+     */
+    getAdjacentClassId(delta) {
+        const currentId = appState.currentClassId;
+        if (!currentId || (delta !== -1 && delta !== 1)) return null;
+
+        const visibleIds = this._getVisibleOrderedClassIds();
+        const currentIndex = visibleIds.indexOf(currentId);
+        if (currentIndex === -1) return null;
+
+        const targetIndex = currentIndex + delta;
+        if (targetIndex < 0 || targetIndex >= visibleIds.length) return null;
+
+        return visibleIds[targetIndex] || null;
+    },
+
+    /**
+     * Bascule vers la classe adjacente (-1: précédente, +1: suivante) si elle existe.
+     * @param {number} delta - Direction (-1 ou +1)
+     * @returns {Promise<boolean>} true si un changement de classe a été déclenché
+     */
+    async switchAdjacentClass(delta) {
+        if (this._isSwitchingClass) return false;
+        const targetId = this.getAdjacentClassId(delta);
+        if (!targetId) return false;
+
+        this._isSwitchingClass = true;
+        try {
+            await this.handleClassSwitch(targetId);
+            return true;
+        } finally {
+            this._isSwitchingClass = false;
+        }
+    },
+
+    /**
      * Détermine le sens du glissement vertical selon la position de la classe cible dans la liste :
      * - 'down' (du haut vers le bas) si on va vers une classe située AU-DESSUS dans la liste
      * - 'up' (du bas vers le haut) si on va vers une classe située EN DESSOUS dans la liste
@@ -791,18 +846,9 @@ export const ClassUIManager = {
     _getClassSwitchDirection(fromClassId, toClassId) {
         if (!fromClassId || !toClassId || fromClassId === toClassId) return 'up';
 
-        const domIds = Array.from(
-            DOM.classDropdownList?.querySelectorAll('.class-dropdown-item:not(.is-collapsed)') || []
-        ).map(el => el.dataset.classId).filter(Boolean);
-
-        let fromIndex = domIds.indexOf(fromClassId);
-        let toIndex = domIds.indexOf(toClassId);
-
-        if (fromIndex === -1 || toIndex === -1) {
-            const orderedIds = this._getOrderedClassItems().map(item => item.id);
-            fromIndex = orderedIds.indexOf(fromClassId);
-            toIndex = orderedIds.indexOf(toClassId);
-        }
+        const visibleIds = this._getVisibleOrderedClassIds();
+        const fromIndex = visibleIds.indexOf(fromClassId);
+        const toIndex = visibleIds.indexOf(toClassId);
 
         if (fromIndex !== -1 && toIndex !== -1 && toIndex < fromIndex) {
             return 'down';
@@ -886,6 +932,9 @@ export const ClassUIManager = {
             ? (appState.filteredResults || []).length > 0
             : (appState.generatedResults || []).some(r => r.classId === classId);
         SeatingChartManager.onClassChange(hasResults);
+        if (!SeatingChartManager?._isActive) {
+            SeatingChartManager?._focusListScrollContainer?.();
+        }
 
         // Phase 2 : Entrée directionnelle fluide (240ms) des conteneurs visibles
         const incomingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {

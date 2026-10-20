@@ -5398,10 +5398,10 @@ input.context-grade-input,
         min-height: 44px;
     }
 
-    /* FAB: Larger on touch devices */
+    /* FAB: Compact 48px touch target on mobile */
     .fab-add-student {
-        width: 56px;
-        height: 56px;
+        width: 48px;
+        height: 48px;
         font-size: 20px;
     }
 }

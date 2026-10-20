@@ -1538,23 +1538,74 @@
     }
 }
 
-/* Mobile compact typography (applies to carousel cards) */
-@media (max-width: 550px) {
-    .stat-card {
-        padding: 10px 12px;
+/* Mobile compact typography & layout (applies to carousel cards) */
+@media (max-width: 600px) {
+    .stats-container {
+        padding: var(--space-4) var(--content-padding-x) 22px;
+        margin: calc(-1 * var(--space-4)) calc(-1 * var(--content-padding-x)) -8px calc(-1 * var(--content-padding-x));
+    }
+
+    .stats-container .stat-card {
+        padding: 12px 14px;
+    }
+
+    .stat-card-header {
+        min-height: 20px;
+        margin-bottom: 6px;
+    }
+
+    .performance-card .performance-overview {
+        margin-bottom: 6px;
     }
 
     .performance-card .main-average-value {
-        font-size: 1.8rem;
+        font-size: 1.65rem;
     }
 
-    .histogram-container {
-        height: 60px;
-        min-height: 50px;
+    .performance-card .average-denominator {
+        font-size: 0.95rem;
+    }
+
+    .performance-card .performance-details {
+        gap: 8px;
     }
 
     .performance-card .detail-item {
         padding: 6px;
+    }
+
+    .performance-card .detail-item .detail-value {
+        font-size: 1.15rem;
+    }
+
+    .histogram-container,
+    .dispersion-card .histogram-container {
+        height: 64px;
+        min-height: 60px;
+    }
+
+    .evolution-card .evolution-distribution-bar {
+        margin: 8px 0;
+        height: 10px;
+    }
+
+    .evolution-card .evolution-legend {
+        margin-top: 6px;
+        gap: 6px;
+    }
+
+    .evolution-card .legend-item {
+        padding: 6px 4px;
+        gap: 2px;
+    }
+
+    .evolution-card .legend-count {
+        font-size: 1.15rem;
+    }
+
+    .stats-pagination {
+        margin-top: -12px;
+        margin-bottom: 8px;
     }
 }
 

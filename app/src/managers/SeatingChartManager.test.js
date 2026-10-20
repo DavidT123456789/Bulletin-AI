@@ -3670,5 +3670,205 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Remise par défaut
             appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
         });
+
+        it('devrait basculer entre Cours et Activité par glissement horizontal (swipe) en mode Consultation ajusté uniquement si un plan Activité existe', () => {
+            SeatingChartManager.switchToView('plan');
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 300, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 300, configurable: true });
+
+            SeatingChartManager._isFitted = true;
+            SeatingChartManager._isLocked = true;
+
+            const performSwipe = (startX, endX, startY = 200, endY = 200, cancel = false) => {
+                const ts = new Event('touchstart');
+                ts.touches = [{ clientX: startX, clientY: startY }];
+                gridArea.dispatchEvent(ts);
+
+                const tm = new Event('touchmove');
+                tm.touches = [{ clientX: endX, clientY: endY }];
+                gridArea.dispatchEvent(tm);
+
+                const te = new Event(cancel ? 'touchcancel' : 'touchend');
+                te.touches = [];
+                te.changedTouches = [{ clientX: endX, clientY: endY }];
+                gridArea.dispatchEvent(te);
+            };
+
+            // 1. Sans plan Activité configuré en mode Consultation : le swipe gauche rebondit sans changer de mode
+            performSwipe(240, 120);
+            expect(SeatingChartManager._planMode).toBe('course');
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+
+            // 2. Avec un plan Activité configuré : swipe gauche -> Activité
+            appState.generatedResults[0].seatingActivityPosition = { row: 0, col: 0, slot: 0 };
+            performSwipe(240, 120);
+            expect(SeatingChartManager._planMode).toBe('activity');
+
+            // 3. Butée franche à droite : un nouveau swipe gauche depuis Activité ne change pas de mode
+            performSwipe(240, 120);
+            expect(SeatingChartManager._planMode).toBe('activity');
+
+            // 4. Swipe droite depuis Activité -> retour en mode Cours
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._isFitted = true;
+            performSwipe(120, 240);
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            // 5. En mode Édition (_isLocked = false) ou zoomé (_isFitted = false) ou edge-swipe (< 24px) ou touchcancel : pas de bascule
+            SeatingChartManager._isLocked = false;
+            performSwipe(240, 120);
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._isFitted = false;
+            performSwipe(240, 120);
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            SeatingChartManager._isFitted = true;
+            performSwipe(12, 140); // Edge swipe système
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            performSwipe(240, 120, 200, 200, true); // touchcancel
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            // 6. Swipe droite depuis Cours -> retour vers la vue Liste (et swipe gauche depuis Liste -> retour Plan Cours)
+            const switchToViewSpy = vi.spyOn(SeatingChartManager, 'switchToView');
+            performSwipe(120, 240);
+            expect(switchToViewSpy).toHaveBeenCalledWith('list');
+
+            SeatingChartManager.switchToView('list', { immediate: true });
+            const outputSection = document.querySelector('.main-content .output-section');
+            const tsList = new Event('touchstart');
+            tsList.touches = [{ clientX: 260, clientY: 200 }];
+            outputSection.dispatchEvent(tsList);
+            const teList = new Event('touchend');
+            teList.changedTouches = [{ clientX: 140, clientY: 205 }];
+            outputSection.dispatchEvent(teList);
+            expect(switchToViewSpy).toHaveBeenCalledWith('plan');
+            switchToViewSpy.mockRestore();
+        });
+
+        it('devrait chaîner Liste ↔ Plan (Cours) ↔ Plan (Activité) avec les flèches Gauche/Droite (avec ou sans Ctrl) sans contour focus parasite', () => {
+            SeatingChartManager.switchToView('list', { immediate: true });
+
+            // 1. En vue Liste : ArrowRight (avec ou sans Ctrl) ouvre directement le Plan en mode Cours
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            expect(SeatingChartManager._isActive).toBe(true);
+            expect(SeatingChartManager._planMode).toBe('course');
+            expect(document.activeElement?.closest?.('#viewToggle') ?? null).toBeNull();
+
+            SeatingChartManager._isFitted = true;
+
+            // 2. En mode Consultation sans plan Activité : ArrowRight est bloqué (butée droite)
+            SeatingChartManager._isLocked = true;
+            appState.generatedResults.forEach(s => { delete s.seatingActivityPosition; });
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            // 3. En mode Édition (ou si un plan Activité existe) : ArrowRight -> Activité
+            SeatingChartManager._isLocked = false;
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('activity');
+
+            // Butée franche à droite : un second ArrowRight reste sur Activité
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('activity');
+
+            // 4. ArrowLeft depuis Activité -> retour sur Cours
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            // 5. Second ArrowLeft depuis Cours -> retour vers la vue Liste !
+            const switchToViewSpy = vi.spyOn(SeatingChartManager, 'switchToView');
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+            expect(switchToViewSpy).toHaveBeenCalledWith('list');
+            switchToViewSpy.mockRestore();
+
+            // 6. Garde zoom (_isFitted = false) : les flèches nues sont laissées au scroll du plan zoomé, mais Ctrl + ArrowRight ou le focus sur #scPlanModeSwitch bascule
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._isFitted = false;
+            SeatingChartManager._isLocked = false;
+            document.body.focus();
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('course');
+
+            const courseTab = document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="course"]');
+            const activityTab = document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="activity"]');
+            courseTab?.focus();
+            courseTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            expect(SeatingChartManager._planMode).toBe('activity');
+            expect(document.activeElement).toBe(activityTab);
+        });
+
+        it('devrait permettre de changer de classe avec Ctrl + Flèches Haut/Bas au clavier (sans bloquer le scroll natif Haut/Bas) et par glissement vertical en vue Plan', () => {
+            const c1 = appState.classes[0];
+            const c2 = ClassManager.createClass('4ème B');
+            appState.currentClassId = c1.id;
+            userSettings.academic.currentClassId = c1.id;
+            userSettings.academic.classesCustomOrder = true;
+
+            const switchClassSpy = vi.spyOn(ClassUIManager, 'switchAdjacentClass').mockResolvedValue(true);
+
+            // 1. En vue Liste : ArrowDown nu cible et fait défiler directement .main-content sans clic préalable, Ctrl + ArrowUp en butée haute est bloqué, Ctrl + ArrowDown passe à la classe suivante
+            SeatingChartManager.switchToView('list', { immediate: true });
+            const mainContent = document.querySelector('.main-content');
+            const scrollBySpy = vi.fn();
+            if (mainContent) mainContent.scrollBy = scrollBySpy;
+            mainContent.blur();
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+            expect(switchClassSpy).not.toHaveBeenCalled();
+            expect(document.activeElement).toBe(mainContent);
+            expect(scrollBySpy).toHaveBeenCalledWith({ top: 56, behavior: 'smooth' });
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', ctrlKey: true, bubbles: true }));
+            expect(switchClassSpy).not.toHaveBeenCalled();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, bubbles: true }));
+            expect(switchClassSpy).toHaveBeenCalledWith(1);
+            switchClassSpy.mockClear();
+
+            // 2. En vue Plan : Ctrl + ArrowUp depuis la 2e classe remonte vers la 1re, Ctrl + ArrowDown en butée basse est bloqué
+            appState.currentClassId = c2.id;
+            userSettings.academic.currentClassId = c2.id;
+            appState.generatedResults.push({ id: 'u-c2', nom: 'MARTIN', prenom: 'Luc', classId: c2.id, seatingPosition: { row: 0, col: 0 } });
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager._isFitted = true;
+            SeatingChartManager._isLocked = true;
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, bubbles: true }));
+            expect(switchClassSpy).not.toHaveBeenCalled();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', ctrlKey: true, bubbles: true }));
+            expect(switchClassSpy).toHaveBeenCalledWith(-1);
+            switchClassSpy.mockClear();
+
+            // 3. Sur mobile en vue Plan Consultation ajustée : swipe vers le bas (depuis c2) -> classe précédente (-1)
+            const gridArea = document.getElementById('scGridArea');
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 300, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 300, configurable: true });
+
+            const tsDown = new Event('touchstart');
+            tsDown.touches = [{ clientX: 200, clientY: 120 }];
+            gridArea.dispatchEvent(tsDown);
+            const tmDown = new Event('touchmove');
+            tmDown.touches = [{ clientX: 200, clientY: 240 }];
+            gridArea.dispatchEvent(tmDown);
+            const teDown = new Event('touchend');
+            teDown.changedTouches = [{ clientX: 200, clientY: 240 }];
+            gridArea.dispatchEvent(teDown);
+
+            expect(switchClassSpy).toHaveBeenCalledWith(-1);
+            switchClassSpy.mockRestore();
+        });
     });
 });

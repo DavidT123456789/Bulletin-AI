@@ -132,6 +132,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    outline: none;
 
     /* --content-padding-x: single source of truth for padding.
        Ensures left, right AND top margins are perfectly symmetrical . */
@@ -1720,44 +1721,27 @@ button > .icon-spin-wrapper {
 
     .header {
         padding: 0 var(--space-3);
-        /* 12px - compact for mobile */
         gap: 6px;
-        /* Horizontal scroll for narrow screens - dropdowns use position:fixed to escape clipping */
-        overflow-x: auto;
-        overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: var(--border-color) transparent;
+        overflow: visible;
         flex-wrap: nowrap;
     }
 
-    .header::-webkit-scrollbar {
-        height: 4px;
-    }
-
-    .header::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .header::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 4px;
-    }
-
-    /* All header elements keep fixed size - header is scrollable */
     .header-left,
     .header-center,
-    .class-selector-wrapper,
-    .header-context-chip,
     .header-actions,
     .header-gen-dashboard,
     .header-actions-pill {
         flex-shrink: 0;
-        min-width: max-content;
     }
 
     .header-left {
         gap: 6px;
+        min-width: 0;
+    }
+
+    .class-selector-wrapper,
+    .header-context-chip {
+        min-width: 0;
     }
 
     .header-center {
@@ -1795,6 +1779,47 @@ button > .icon-spin-wrapper {
     }
 }
 
+@media (max-width: 600px) {
+    #headerClassName {
+        max-width: 84px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .class-chip .class-virtual-tag {
+        display: none !important;
+    }
+
+    .class-chip .student-count-badge {
+        padding: 0 6px;
+        min-width: 20px;
+        height: 18px;
+        font-size: 0.7rem;
+        gap: 3px;
+    }
+
+    .header-actions {
+        gap: 4px;
+    }
+
+    .header-actions-pill {
+        gap: 2px;
+    }
+
+    .header-actions-pill::before {
+        margin-left: 2px;
+        margin-right: 2px;
+        height: 20px;
+    }
+
+    .ui-segmented-control.header-style .ui-segment {
+        padding: 0 8px !important;
+        font-size: 12px !important;
+        gap: 4px !important;
+    }
+}
+
 /* Mobile (max-width: 480px) */
 @media (max-width: 480px) {
     .main-content {
@@ -1806,22 +1831,11 @@ button > .icon-spin-wrapper {
     .header {
         gap: 4px;
         padding: 0 var(--space-2);
-        /* Tighter padding on very small screens */
-    }
-
-    /* All header elements keep fixed size - header scrolls */
-    .header-left,
-    .class-selector-wrapper,
-    .header-context-chip,
-    .header-actions,
-    .header-center,
-    .header-actions-pill {
-        flex-shrink: 0;
-        min-width: max-content;
     }
 
     .header-left {
         gap: 4px;
+        min-width: 0;
     }
 
     .header-context-chip {
@@ -1829,8 +1843,12 @@ button > .icon-spin-wrapper {
         gap: 4px;
     }
 
+    #headerClassName {
+        max-width: 72px;
+    }
+
     .header-actions {
-        gap: 4px;
+        gap: 2px;
     }
 
     .header-center {
@@ -1839,12 +1857,22 @@ button > .icon-spin-wrapper {
         gap: 2px;
     }
 
-    /* Pilule plus compacte sur mobile */
-    .header-actions-pill {
-        padding: 3px;
+    #viewToggle .view-toggle-btn span {
+        display: none;
     }
 
-    .pill-segment {
+    .ui-segmented-control.header-style .ui-segment {
+        padding: 0 7px !important;
+        font-size: 11.5px !important;
+    }
+
+    /* Pilule plus compacte sur mobile */
+    .header-actions-pill {
+        padding: 0;
+    }
+
+    .header-actions-pill .pill-segment,
+    .menu-btn {
         width: 36px;
         height: 36px;
     }

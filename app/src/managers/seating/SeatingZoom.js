@@ -666,6 +666,9 @@ export const SeatingZoom = {
         if (!gridArea) return;
 
         const MAX_RAW_EXCESS = 75;
+        const SWIPE_MODE_MIN_DX = 56;
+        const SWIPE_MODE_MIN_EXCESS = 36;
+        const SWIPE_EDGE_GUARD = 24;
         let touchStartX = 0;
         let touchStartY = 0;
         let prevTouchX = 0;
@@ -678,6 +681,8 @@ export const SeatingZoom = {
         let rawExcessY = 0;
         let isTouching = false;
         let isOverscrolling = false;
+        let isEdgeSwipe = false;
+        let startedOnOverlayControl = false;
         let currentOverscrollX = 0;
         let currentOverscrollY = 0;
         let lastTouchEndTime = 0;
@@ -732,6 +737,11 @@ export const SeatingZoom = {
             touchStartY = e.touches[0].clientY;
             prevTouchX = touchStartX;
             prevTouchY = touchStartY;
+            const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
+            isEdgeSwipe = touchStartX < SWIPE_EDGE_GUARD || (viewportW > 0 && touchStartX > viewportW - SWIPE_EDGE_GUARD);
+            startedOnOverlayControl = Boolean(
+                e.target?.closest?.('.sc-top-left-bar, .sc-floating-actions, .sc-status-pill, .sc-desk, .sc-mobile-sheet')
+            );
             prevScrollLeft = gridArea.scrollLeft;
             prevScrollTop = gridArea.scrollTop;
             baseMaxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
@@ -843,12 +853,86 @@ export const SeatingZoom = {
             }
         };
 
-        const onTouchEnd = () => {
+        const onTouchEnd = (e) => {
             if (!isTouching) return;
             isTouching = false;
             lastTouchEndTime = performance.now();
             releaseScrollLeft = gridArea.scrollLeft;
             releaseScrollTop = gridArea.scrollTop;
+
+            const endTouch = e?.changedTouches?.[0];
+            const endX = typeof endTouch?.clientX === 'number' ? endTouch.clientX : prevTouchX;
+            const endY = typeof endTouch?.clientY === 'number' ? endTouch.clientY : prevTouchY;
+            const totalDx = endX - touchStartX;
+            const totalDy = endY - touchStartY;
+
+            const canSwipeBase = Boolean(
+                e?.type !== 'touchcancel' &&
+                this._isActive &&
+                this._isLocked &&
+                this._isFitted &&
+                baseMaxScrollX === 0 &&
+                baseMaxScrollY === 0 &&
+                !isEdgeSwipe &&
+                !startedOnOverlayControl &&
+                !this._activeMobileSheet &&
+                !this._isSearchOpen?.()
+            );
+
+            const resetOverscrollState = () => {
+                isOverscrolling = false;
+                currentOverscrollX = 0;
+                currentOverscrollY = 0;
+                rawExcessX = 0;
+                rawExcessY = 0;
+                const board = document.getElementById('scClassroomBoard');
+                board?.style.removeProperty('transform');
+                board?.style.removeProperty('transition');
+            };
+
+            const isHorizontalSwipe = Boolean(
+                canSwipeBase &&
+                Math.abs(totalDx) >= SWIPE_MODE_MIN_DX &&
+                Math.abs(rawExcessX) >= SWIPE_MODE_MIN_EXCESS &&
+                Math.abs(totalDx) > Math.abs(totalDy) * 1.8
+            );
+
+            if (isHorizontalSwipe) {
+                if (totalDx < 0 && rawExcessX < 0) {
+                    if (this._planMode === 'course' && this._canSwitchPlanMode?.('activity')) {
+                        resetOverscrollState();
+                        this.switchPlanMode('activity');
+                        return;
+                    }
+                } else if (totalDx > 0 && rawExcessX > 0) {
+                    resetOverscrollState();
+                    if (this._planMode === 'activity' && this._canSwitchPlanMode?.('course') && (!this._isLocked || this._hasClassCoursePlan?.())) {
+                        this.switchPlanMode('course');
+                    } else {
+                        this.switchToView?.('list');
+                    }
+                    return;
+                }
+            }
+
+            const isVerticalSwipe = Boolean(
+                canSwipeBase &&
+                Math.abs(totalDy) >= SWIPE_MODE_MIN_DX &&
+                Math.abs(rawExcessY) >= SWIPE_MODE_MIN_EXCESS &&
+                Math.abs(totalDy) > Math.abs(totalDx) * 1.8
+            );
+
+            if (isVerticalSwipe) {
+                const delta = (totalDy < 0 && rawExcessY < 0)
+                    ? 1
+                    : (totalDy > 0 && rawExcessY > 0 ? -1 : 0);
+
+                if (delta !== 0 && this._canSwitchAdjacentClass?.(delta)) {
+                    resetOverscrollState();
+                    this._switchAdjacentClass(delta);
+                    return;
+                }
+            }
 
             if (isOverscrolling && (currentOverscrollX !== 0 || currentOverscrollY !== 0)) {
                 this._releaseOverscrollBounce();

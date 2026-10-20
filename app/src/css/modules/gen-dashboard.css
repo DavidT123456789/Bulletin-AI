@@ -447,6 +447,27 @@
     /* Removed legacy width constraint for progress bar */
 }
 
+@media (max-width: 600px) {
+    #dashModelName {
+        display: none !important;
+    }
+
+    .dash-model-label {
+        padding: 0 7px;
+        gap: 3px;
+    }
+
+    .header-gen-dashboard.generating .dash-model-chevron {
+        display: none !important;
+    }
+
+    .header-gen-dashboard.generating .dash-generating {
+        max-width: 110px;
+        padding: 2px 4px;
+        gap: 6px;
+    }
+}
+
 /* ====================================================================
    FAST AI MODEL SWITCHER POPOVER (Apple / Google 2026 Style)
    ==================================================================== */
@@ -663,4 +684,16 @@
     outline: 2px solid var(--primary-color);
     outline-offset: -2px;
     background: var(--item-hover-bg);
+}
+
+@media (max-width: 768px) {
+    .header-model-dropdown {
+        position: fixed !important;
+        top: 56px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        max-width: none !important;
+        z-index: 9999 !important;
+    }
 }

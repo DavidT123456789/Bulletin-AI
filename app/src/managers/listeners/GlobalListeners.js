@@ -174,8 +174,30 @@ export const GlobalListeners = {
     },
 
     _setupScrollListeners() {
-        window.addEventListener('scroll', () => DOM.backToTopBtn?.classList.toggle('show', window.scrollY > 200), { passive: true });
-        DOM.backToTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
+        let lastScrollTop = 0;
+
+        const handleScroll = (scrollTop) => {
+            DOM.backToTopBtn?.classList.toggle('show', scrollTop > 200);
+            const fab = document.getElementById('addStudentFab');
+            if (fab) {
+                const delta = scrollTop - lastScrollTop;
+                if (scrollTop > 60 && delta > 8) {
+                    fab.classList.add('fab-scroll-hidden');
+                } else if (delta < -6 || scrollTop <= 40) {
+                    fab.classList.remove('fab-scroll-hidden');
+                }
+            }
+            lastScrollTop = Math.max(0, scrollTop);
+        };
+
+        window.addEventListener('scroll', () => handleScroll(window.scrollY), { passive: true });
+        mainContent?.addEventListener('scroll', () => handleScroll(mainContent.scrollTop), { passive: true });
+
+        DOM.backToTopBtn?.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            mainContent?.scrollTo?.({ top: 0, behavior: 'smooth' });
+        });
     },
 
     _aiFallbackListenerAttached: false,

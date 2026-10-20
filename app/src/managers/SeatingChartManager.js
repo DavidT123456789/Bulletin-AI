@@ -13,6 +13,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 import { ClassManager } from './ClassManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { SeatingAnimations } from './seating/SeatingAnimations.js';
@@ -595,6 +596,55 @@ export const SeatingChartManager = {
             this.switchToView(btn.dataset.view === 'plan' ? 'plan' : 'list');
         });
 
+        const outputSection = document.querySelector('.main-content .output-section');
+        if (outputSection && !outputSection._hasListSwipeListener) {
+            outputSection._hasListSwipeListener = true;
+            let listTouchStartX = 0;
+            let listTouchStartY = 0;
+            let listTouchValid = false;
+
+            outputSection.addEventListener('touchstart', (e) => {
+                if (this._isActive || e.touches.length !== 1 || FocusPanelManager.isOpen?.() || UI.activeModal) {
+                    listTouchValid = false;
+                    return;
+                }
+                if (e.target?.closest?.('#statsContainer, #statsPagination, input, textarea, select, button, a, .custom-dropdown')) {
+                    listTouchValid = false;
+                    return;
+                }
+                const x = e.touches[0].clientX;
+                const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
+                if (x < 24 || (viewportW > 0 && x > viewportW - 24)) {
+                    listTouchValid = false;
+                    return;
+                }
+                listTouchStartX = x;
+                listTouchStartY = e.touches[0].clientY;
+                listTouchValid = true;
+            }, { passive: true });
+
+            outputSection.addEventListener('touchend', (e) => {
+                if (!listTouchValid || this._isActive) return;
+                listTouchValid = false;
+                const endTouch = e.changedTouches?.[0];
+                if (!endTouch) return;
+                const dx = endTouch.clientX - listTouchStartX;
+                const dy = endTouch.clientY - listTouchStartY;
+                if (dx <= -72 && Math.abs(dy) < 36 && Math.abs(dx) > Math.abs(dy) * 2.2) {
+                    if (this._getCurrentClassStudents().length > 0) {
+                        if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
+                            this._planMode = 'course';
+                        }
+                        this.switchToView('plan');
+                    }
+                }
+            }, { passive: true });
+
+            outputSection.addEventListener('touchcancel', () => {
+                listTouchValid = false;
+            }, { passive: true });
+        }
+
         if (!this._globalListenersInitialized) {
             this._globalListenersInitialized = true;
 
@@ -628,15 +678,64 @@ export const SeatingChartManager = {
             });
 
             document.addEventListener('keydown', (e) => {
-                if (!this._isActive || FocusPanelManager.isOpen?.()) return;
+                if (FocusPanelManager.isOpen?.() || UI.activeModal) return;
 
                 const activeEl = document.activeElement;
                 const isTyping = activeEl && (
                     activeEl.tagName === 'INPUT' ||
                     activeEl.tagName === 'TEXTAREA' ||
+                    activeEl.tagName === 'SELECT' ||
                     activeEl.isContentEditable ||
                     activeEl.getAttribute('contenteditable') === 'true'
                 );
+
+                const hasNoModifier = !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
+                const hasCtrlOnly = e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
+                const isHorizontalArrow = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+                const isVerticalArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+                const isArrowKey = isHorizontalArrow || isVerticalArrow;
+
+                if (isArrowKey && (hasNoModifier || hasCtrlOnly) && !isTyping && !e.repeat) {
+                    if (this._listViewAnimTimer && !this._isActive && appState.activeView === 'plan') {
+                        this.switchToView('plan', { immediate: true });
+                    } else if (this._viewExitTimeout && this._isActive && appState.activeView === 'list') {
+                        this.switchToView('list', { immediate: true });
+                    }
+                }
+
+                // En vue Liste (Tableau) : Flèche Droite (avec ou sans Ctrl) -> Plan (Cours), Ctrl + Flèches Haut/Bas -> Classe précédente/suivante
+                if (!this._isActive) {
+                    if (isArrowKey &&
+                        !isTyping &&
+                        !ClassUIManager?._isDropdownOpen &&
+                        !document.querySelector('.custom-dropdown.open, #actionsDropdown.show, .action-dropdown-menu.open, .global-actions-dropdown-menu.open')) {
+                        if (e.key === 'ArrowRight' && !e.repeat && (hasNoModifier || hasCtrlOnly) && this._getCurrentClassStudents().length > 0) {
+                            e.preventDefault();
+                            if (activeEl?.closest?.('#viewToggle')) {
+                                activeEl.blur?.();
+                            }
+                            if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
+                                this._planMode = 'course';
+                            }
+                            this.switchToView('plan');
+                        } else if (isVerticalArrow && !e.repeat && hasCtrlOnly) {
+                            const delta = e.key === 'ArrowDown' ? 1 : -1;
+                            if (this._canSwitchAdjacentClass(delta)) {
+                                e.preventDefault();
+                                this._focusListScrollContainer();
+                                this._switchAdjacentClass(delta);
+                            }
+                        } else if (isVerticalArrow && hasNoModifier && !document.querySelector('#crossClassResults.visible, .appreciation-result')) {
+                            const mainContent = document.querySelector('.main-content');
+                            if (mainContent && activeEl !== mainContent) {
+                                e.preventDefault();
+                                this._focusListScrollContainer();
+                                mainContent.scrollBy?.({ top: e.key === 'ArrowDown' ? 56 : -56, behavior: 'smooth' });
+                            }
+                        }
+                    }
+                    return;
+                }
 
                 // Open search on '/' (when not already typing) or Ctrl+F / Cmd+F
                 if ((e.key === '/' && !isTyping) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) {
@@ -659,6 +758,59 @@ export const SeatingChartManager = {
                     } else if (key === 'y') {
                         e.preventDefault();
                         this._redo();
+                        return;
+                    }
+                }
+
+                const isInsideModeSwitch = Boolean(activeEl?.closest?.('#scPlanModeSwitch'));
+                const canNavigateHorizontal = isHorizontalArrow && (hasCtrlOnly || (hasNoModifier && (isInsideModeSwitch || this._isFitted)));
+                const canNavigateVertical = isVerticalArrow && hasCtrlOnly;
+                if ((canNavigateHorizontal || canNavigateVertical) && !e.repeat && !isTyping) {
+                    const hasBlockingOverlay = Boolean(
+                        ClassUIManager?._isDropdownOpen ||
+                        this._isSearchOpen() ||
+                        this._activeMobileSheet ||
+                        this._placementPopoverOpen ||
+                        this._configPopoverOpen ||
+                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show')
+                    );
+
+                    if (!hasBlockingOverlay) {
+                        if (activeEl?.closest?.('#viewToggle, #headerClassChip')) {
+                            activeEl.blur?.();
+                        }
+                        if (e.key === 'ArrowRight') {
+                            if (this._planMode === 'course' && this._canSwitchPlanMode('activity')) {
+                                e.preventDefault();
+                                this.switchPlanMode('activity');
+                                if (isInsideModeSwitch && hasNoModifier) {
+                                    document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="activity"]')?.focus();
+                                }
+                            }
+                        } else if (e.key === 'ArrowLeft') {
+                            if (this._planMode === 'activity' && (!this._isLocked || this._hasClassCoursePlan())) {
+                                e.preventDefault();
+                                this.switchPlanMode('course');
+                                if (isInsideModeSwitch && hasNoModifier) {
+                                    document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="course"]')?.focus();
+                                }
+                            } else {
+                                e.preventDefault();
+                                if (isInsideModeSwitch) {
+                                    activeEl.blur?.();
+                                }
+                                this.switchToView('list');
+                            }
+                        } else if (canNavigateVertical) {
+                            const delta = e.key === 'ArrowDown' ? 1 : -1;
+                            if (this._canSwitchAdjacentClass(delta)) {
+                                e.preventDefault();
+                                if (isInsideModeSwitch) {
+                                    activeEl.blur?.();
+                                }
+                                this._switchAdjacentClass(delta);
+                            }
+                        }
                         return;
                     }
                 }
@@ -691,7 +843,12 @@ export const SeatingChartManager = {
     },
 
     refreshStudents() {
-        if (!this._isActive) return;
+        if (!this._isActive) {
+            if (!FocusPanelManager.isOpen?.() && !UI.activeModal && (!document.activeElement || document.activeElement === document.body)) {
+                this._focusListScrollContainer();
+            }
+            return;
+        }
         this._students = this._getCurrentClassStudents();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
         if (this._selectedChipIds.length > 0) {
@@ -1555,6 +1712,39 @@ export const SeatingChartManager = {
         switchEl.classList.toggle('sc-mode-switch-hidden', shouldHide);
     },
 
+    _canSwitchPlanMode(targetMode) {
+        if (!this._isActive) return false;
+        if (targetMode !== 'course' && targetMode !== 'activity') return false;
+        if (targetMode === this._planMode) return false;
+        if (this._isLocked && targetMode === 'activity' && !this._hasClassActivityPlan()) {
+            return false;
+        }
+        return true;
+    },
+
+    _canSwitchAdjacentClass(delta) {
+        return Boolean(ClassUIManager?.getAdjacentClassId?.(delta));
+    },
+
+    _focusListScrollContainer() {
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) return;
+        if (!mainContent.hasAttribute('tabindex')) {
+            mainContent.setAttribute('tabindex', '-1');
+        }
+        mainContent.focus?.({ preventScroll: true });
+    },
+
+    _switchAdjacentClass(delta) {
+        if (!this._canSwitchAdjacentClass(delta)) return Promise.resolve(false);
+        if (this._isActive) {
+            this._restoreUnmodifiedClassLock();
+            this._savePositionsToState(true);
+            this._saveGridConfig();
+        }
+        return ClassUIManager.switchAdjacentClass(delta);
+    },
+
     switchPlanMode(mode, options = {}) {
         if (mode !== 'course' && mode !== 'activity') return;
         const { force = false, animate = true } = options;
@@ -1712,6 +1902,11 @@ export const SeatingChartManager = {
                 this._closeConfigPopover();
                 this._closePlacementPopover();
 
+                const activeEl = document.activeElement;
+                if (!activeEl || activeEl === document.body || activeEl.closest?.('#viewToggle, #seatingChartView')) {
+                    this._focusListScrollContainer();
+                }
+
                 if (animateEnter) {
                     this._animateListViewEnter();
                 }
@@ -1798,6 +1993,9 @@ export const SeatingChartManager = {
         this.updateToggleVisibility(hasResults);
         if (!this._isActive) return;
 
+        this._cleanupModeCarousel();
+        this._clearSelection();
+        this._closeMobileSheet(true);
         this._closeSearch();
         this._closeConfigPopover();
         this._closePlacementPopover();

@@ -88,6 +88,13 @@ export const UI = {
         this.initAccordions();
         // Initialize animated gliders
         this.initGliders();
+        if (!this._periodMediaQueryBound && typeof window !== 'undefined' && window.matchMedia) {
+            const mq = window.matchMedia('(max-width: 600px)');
+            if (typeof mq?.addEventListener === 'function') {
+                mq.addEventListener('change', () => this.updatePeriodLabels());
+                this._periodMediaQueryBound = true;
+            }
+        }
     },
 
     // Modal state is now managed by ModalUI
@@ -573,13 +580,17 @@ export const UI = {
     /**
      * Met à jour le texte des labels de période (court pour inactif, complet pour sélectionné)
      */
+    _isCompactMobilePeriod() {
+        return typeof window !== 'undefined' && Boolean(window.matchMedia?.('(max-width: 600px)')?.matches);
+    },
     updatePeriodLabels() {
+        const isCompactMobile = this._isCompactMobilePeriod();
         if (!DOM.mainPeriodSelector) return;
         DOM.mainPeriodSelector.querySelectorAll('label').forEach(label => {
             const input = document.getElementById(label.getAttribute('for'));
             if (input && label.dataset.short && label.dataset.full) {
                 const isActive = input.checked;
-                const targetText = isActive ? label.dataset.full : label.dataset.short;
+                const targetText = (isActive && !isCompactMobile) ? label.dataset.full : label.dataset.short;
                 const textSpan = label.querySelector('.period-label-text');
                 if (textSpan) {
                     textSpan.textContent = targetText;
@@ -639,6 +650,7 @@ export const UI = {
         } else {
             // Premier rendu ou changement de structure : on construit le HTML
             // Note: getPeriodLabel(p, false) = court (T1), getPeriodLabel(p, true) = long (Trimestre 1)
+            const isCompactMobile = this._isCompactMobilePeriod();
             DOM.mainPeriodSelector.innerHTML = periods.map(p => {
                 const isActive = appState.currentPeriod === p;
                 const tooltip = isActive ? '' : `Passer au ${Utils.getPeriodLabel(p, true)}`;
@@ -646,7 +658,7 @@ export const UI = {
                 <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${isActive ? 'checked' : ''}>
                 <label for="period${p}" class="ui-segment ${tooltip ? 'tooltip' : ''}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
                     <span class="period-label-text ${isActive ? 'is-expanded' : 'is-collapsed'}">
-                        ${isActive ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
+                        ${(isActive && !isCompactMobile) ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
                     </span>
                 </label>
             `}).join('');

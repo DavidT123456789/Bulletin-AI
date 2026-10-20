@@ -512,6 +512,23 @@ export const ListViewEvents = {
         // Selection
         addAction('#selectAllBtn-global', () => ListSelectionManager.toggleSelectVisible(true));
 
+        // Mobile sort options inside global header dropdown
+        listContainer.querySelectorAll('.mobile-sort-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                const sortField = btn.dataset.mobileSort;
+                const sortParam = btn.dataset.sortParam;
+                const selector = sortParam
+                    ? `.sortable-header[data-sort-field="${sortField}"][data-sort-param="${sortParam}"]`
+                    : `.sortable-header[data-sort-field="${sortField}"]`;
+                const targetHeader = listContainer.querySelector(selector);
+                if (targetHeader) {
+                    EventHandlersManager.handleHeaderSortClick(targetHeader);
+                }
+            }, { signal });
+        });
+
         // Maintenance - Moved to toolbar
 
         // Export

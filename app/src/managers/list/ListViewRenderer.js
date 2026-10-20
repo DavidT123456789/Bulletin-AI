@@ -349,6 +349,25 @@ export const ListViewRenderer = {
                             <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                         </button>
                         <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                            <div class="mobile-sort-section">
+                                <h5 class="dropdown-header">TRIER PAR</h5>
+                                <button type="button" class="action-dropdown-item mobile-sort-btn" data-mobile-sort="name">
+                                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                                    <span>Nom</span>
+                                    <span class="mobile-sort-indicator"></span>
+                                </button>
+                                <button type="button" class="action-dropdown-item mobile-sort-btn" data-mobile-sort="grade" data-sort-param="${activePeriodKey}">
+                                    <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                                    <span>Moyenne (${activePeriodLabel})</span>
+                                    <span class="mobile-sort-indicator"></span>
+                                </button>
+                                <button type="button" class="action-dropdown-item mobile-sort-btn" data-mobile-sort="status">
+                                    <iconify-icon icon="solar:tag-horizontal-linear"></iconify-icon>
+                                    <span>Statut</span>
+                                    <span class="mobile-sort-indicator"></span>
+                                </button>
+                                <div class="dropdown-divider"></div>
+                            </div>
                             <!-- SECTION SELECTION -->
                             <button class="action-dropdown-item" id="selectAllBtn-global">
                                 <iconify-icon icon="solar:checklist-linear"></iconify-icon> Tout sélectionner
@@ -630,6 +649,24 @@ export const ListViewRenderer = {
                     }
                 } else if (placeholder.firstChild) {
                     placeholder.innerHTML = '';
+                }
+            }
+        });
+
+        viewElement.querySelectorAll('.mobile-sort-btn').forEach(btn => {
+            const sortField = btn.dataset.mobileSort;
+            const sortParam = btn.dataset.sortParam;
+            const isSorted = sortField === field && (sortParam === undefined || sortParam === param);
+            btn.classList.toggle('active-sort', isSorted);
+            const indicator = btn.querySelector('.mobile-sort-indicator');
+            if (indicator) {
+                if (isSorted) {
+                    const iconName = direction === 'asc'
+                        ? 'solar:sort-from-bottom-to-top-linear'
+                        : 'solar:sort-from-top-to-bottom-linear';
+                    indicator.innerHTML = `<iconify-icon icon="${iconName}"></iconify-icon>`;
+                } else if (indicator.firstChild) {
+                    indicator.innerHTML = '';
                 }
             }
         });
