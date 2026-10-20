@@ -24,7 +24,6 @@
     font-weight: 600;
     color: var(--text-primary);
     min-width: 80px;
-    /* Alignement propre */
 }
 
 .privacy-option .option-desc {
@@ -38,7 +37,6 @@
     font-size: 0.72rem;
     background: rgba(var(--warning-rgb), 0.1);
     color: var(--warning-dark);
-    /* Amber/Warning */
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: 400;
@@ -58,17 +56,17 @@
 }
 
 .privacy-footer-note {
-    margin-top: 12px;
-    font-size: 0.85em;
-    opacity: 0.95;
+    margin-top: 10px;
+    font-size: 0.82rem;
     color: var(--text-secondary);
-    background: rgba(var(--primary-color-rgb), 0.05);
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 9px 13px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-left: 3px solid var(--primary-color);
+    gap: 9px;
+    line-height: 1.4;
 }
 
 .privacy-footer-note strong {
@@ -77,18 +75,18 @@
 
 .privacy-footer-note iconify-icon,
 .privacy-footer-note i {
-    color: var(--primary-color);
-    font-size: 1.2em;
+    color: var(--text-primary);
+    font-size: 1.05rem;
     flex-shrink: 0;
 }
 
 [data-theme="dark"] .privacy-footer-note {
     color: var(--text-secondary);
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-left-color: var(--primary-bright);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .privacy-footer-note iconify-icon,
 [data-theme="dark"] .privacy-footer-note i {
-    color: var(--primary-bright);
+    color: var(--text-primary);
 }

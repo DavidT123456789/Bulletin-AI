@@ -103,6 +103,12 @@
     --toggle-knob-size-small: 14px;
     --toggle-inset-small: 2px;
     --toggle-translate-small: 14px;
+    --toggle-track-off: var(--bg-tertiary);
+    --toggle-track-off-hover: #d4d4d8;
+    --toggle-track-on: var(--primary-color);
+    --toggle-track-on-hover: var(--primary-hover);
+    --toggle-knob-off: #ffffff;
+    --toggle-knob-on: #ffffff;
 
     /* Input border width (single source of truth) */
     --input-border-width: 1px;
@@ -512,6 +518,12 @@
 
     /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
     --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);
+    --toggle-track-off: rgba(255, 255, 255, 0.12);
+    --toggle-track-off-hover: rgba(255, 255, 255, 0.18);
+    --toggle-track-on: var(--primary-color);
+    --toggle-track-on-hover: var(--primary-hover);
+    --toggle-knob-off: #ffffff;
+    --toggle-knob-on: #ffffff;
 }
 
 /* ====================================================================

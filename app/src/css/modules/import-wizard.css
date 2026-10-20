@@ -2835,6 +2835,9 @@
 
 /* Warning color modifier for toggle-switch */
 .toggle-switch.color-warning input:checked+.slider {
+    background: var(--toggle-track-on) !important;
+}
+.toggle-switch.color-warning input:checked+.slider-legacy {
     background: var(--warning-color);
 }
 

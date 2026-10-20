@@ -3912,7 +3912,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Checked/ON state (Edit Mode) */
 .sc-toggle-switch[aria-checked="true"] {
-    background: var(--primary-color);
+    background: var(--toggle-track-on);
+    box-shadow: none;
 }
 
 .sc-toggle-knob {
@@ -3930,6 +3931,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 /* Checked/ON state knob position */
 .sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
     transform: translateX(var(--toggle-translate-small));
+    background: var(--toggle-knob-on);
 }
 
 [data-theme="dark"] .sc-toggle-switch {
@@ -3938,8 +3940,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 [data-theme="dark"] .sc-toggle-switch[aria-checked="true"] {
-    background: var(--primary-color);
-    box-shadow: none;
+    background: var(--toggle-track-on);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 /* Sidebar Actions */

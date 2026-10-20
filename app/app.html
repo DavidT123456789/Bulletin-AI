@@ -2348,6 +2348,50 @@
                                                     style="--swatch-color: #f97316;" title="Ambre" aria-label="Ambre">
                                                     <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                 </button>
+                                                <button type="button" class="accent-color-swatch custom-picker" id="customAccentBtn" data-color="custom"
+                                                    style="--swatch-color: #3b82f6;" title="Couleur personnalisée (Pipette & Curseurs)" aria-label="Couleur personnalisée">
+                                                    <iconify-icon icon="ph:eyedropper-bold" class="accent-swatch-picker-icon"></iconify-icon>
+                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                                    <input type="color" id="customColorPicker" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; bottom: 0; right: 0;" value="#3b82f6">
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="custom-picker-panel" id="customPickerPanel">
+                                            <div class="custom-picker-grid">
+                                                <div class="picker-control-group">
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">T</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerHueSlider" min="0" max="360" value="217" class="picker-range-slider hue-slider-track" aria-label="Ajuster la teinte">
+                                                        </div>
+                                                    </div>
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">S</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerSatSlider" min="0" max="100" value="91" class="picker-range-slider sat-slider-track" aria-label="Ajuster la saturation">
+                                                        </div>
+                                                    </div>
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">L</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerLigSlider" min="20" max="85" value="60" class="picker-range-slider lig-slider-track" aria-label="Ajuster la luminosité">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="picker-action-group">
+                                                    <div class="picker-live-preview" id="pickerLivePreview" role="button" tabindex="0" aria-label="Valider la couleur"></div>
+                                                    <div class="hex-input-container">
+                                                        <span class="hex-symbol">#</span>
+                                                        <input type="text" id="pickerHexInput" class="hex-text-input custom-input" placeholder="3B82F6" maxlength="6" autocomplete="off" spellcheck="false" aria-label="Code hexadécimal de la couleur">
+                                                    </div>
+                                                    <button type="button" id="pickerEyedropperBtn" class="picker-eyedropper-btn tooltip" data-tooltip="Pipette de couleur" aria-label="Sélectionner une couleur à l'écran">
+                                                        <iconify-icon icon="ph:eyedropper-bold"></iconify-icon>
+                                                    </button>
+                                                    <button type="button" id="pickerConfirmBtn" class="picker-confirm-btn tooltip" data-tooltip="Valider et masquer" aria-label="Valider la couleur et masquer le panneau">
+                                                        <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -171,13 +171,19 @@ export const FormUI = {
         // Synchroniser la pastille de couleur d'accentuation
         const accentSelector = document.getElementById('accentColorSelector');
         if (accentSelector) {
-            const currentAccent = ['blue', 'purple', 'pink', 'orange', 'green', 'teal'].includes(appState.accentColor)
-                ? appState.accentColor
-                : 'blue';
+            const rawAccent = appState.accentColor || 'blue';
+            const isCustomHex = typeof rawAccent === 'string' && /^#[0-9a-fA-F]{6}$/.test(rawAccent.trim());
+            const currentAccent = isCustomHex ? 'custom' : (['blue', 'purple', 'pink', 'orange', 'green', 'teal'].includes(rawAccent) ? rawAccent : 'blue');
+
+
             accentSelector.querySelectorAll('.accent-color-swatch').forEach(swatch => {
-                const isActive = swatch.getAttribute('data-color') === currentAccent;
+                const swatchColor = swatch.getAttribute('data-color');
+                const isActive = swatchColor === currentAccent;
                 swatch.classList.toggle('active', isActive);
                 swatch.setAttribute('aria-checked', String(isActive));
+                if (swatchColor === 'custom' && isCustomHex) {
+                    swatch.style.setProperty('--swatch-color', rawAccent.trim().toLowerCase());
+                }
             });
         }
 

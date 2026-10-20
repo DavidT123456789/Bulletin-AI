@@ -1251,14 +1251,14 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 9px;
     margin-top: 8px;
-    padding: 10px 14px;
-    background: rgba(var(--warning-rgb), 0.1);
-    border: 1px solid rgba(var(--warning-rgb), 0.3);
-    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    background: rgba(var(--warning-rgb), 0.08);
+    border: 1px solid rgba(var(--warning-rgb), 0.25);
+    border-radius: 10px;
     color: var(--warning-color, #f59e0b);
-    font-size: 0.9em;
+    font-size: 0.82rem;
 }
 
 .missing-key-warning span {
@@ -1586,35 +1586,10 @@
     border-radius: var(--radius-xs);
 }
 
-.missing-key-banner.compact {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    border-radius: var(--radius-xs);
-    color: var(--warning-color);
-    font-size: 0.8em;
-    margin-top: 4px;
-}
-
-.missing-key-banner.compact .btn-link {
-    font-size: inherit;
-    text-decoration: underline;
-    margin-left: auto;
-    color: inherit;
-    font-weight: 600;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
 /* Smart Banner Variations */
 .missing-key-warning.banner-warning {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
     color: var(--warning-color);
 }
 
@@ -1648,8 +1623,8 @@
 }
 
 .missing-key-warning.banner-error {
-    background: rgba(var(--error-rgb), 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(var(--error-rgb), 0.08);
+    border-color: rgba(239, 68, 68, 0.25);
     color: var(--error-color);
 }
 
@@ -1684,15 +1659,15 @@
 
 /* Compact Banner Mode (Used in Model Status Summary) */
 .missing-key-warning.compact {
-    padding: 7px 12px;
+    padding: 9px 13px;
     font-size: 0.82rem;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     margin-top: 10px;
-    gap: 8px;
+    gap: 9px;
 }
 
 .missing-key-warning.compact iconify-icon {
-    font-size: 1rem;
+    font-size: 1.05rem;
     flex-shrink: 0;
 }
 

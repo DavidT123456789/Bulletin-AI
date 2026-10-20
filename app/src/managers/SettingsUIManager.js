@@ -180,6 +180,7 @@ export const SettingsUIManager = {
         appState.evolutionThresholds.veryNegative = appState.evolutionThresholds.negative * 4;
 
         StorageManager.saveAppState();
+        UIState.settingsBeforeEdit = {};
 
         // Fermer la modale d'abord pour une animation fluide
         UI.closeModal(DOM.settingsModal);

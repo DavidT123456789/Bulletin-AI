@@ -929,11 +929,13 @@
 }
 
 .sync-toggle-checkbox:checked+.sync-toggle-switch {
-    background: var(--primary-color);
+    background: var(--toggle-track-on);
+    box-shadow: none;
 }
 
 .sync-toggle-checkbox:checked+.sync-toggle-switch::after {
     transform: translateX(var(--toggle-translate-small));
+    background: var(--toggle-knob-on);
 }
 
 [data-theme="dark"] .sync-toggle-switch {
@@ -942,8 +944,8 @@
 }
 
 [data-theme="dark"] .sync-toggle-checkbox:checked+.sync-toggle-switch {
-    background: var(--primary-color);
-    box-shadow: none;
+    background: var(--toggle-track-on);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .sync-toggle-label i {
