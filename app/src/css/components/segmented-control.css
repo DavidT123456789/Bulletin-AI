@@ -99,6 +99,7 @@
 .ui-segment.active iconify-icon,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment i,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
+    color: currentColor;
     filter: grayscale(0);
     opacity: 1;
 }
@@ -220,7 +221,10 @@
     /* Subtle glow for text */
 }
 
+[data-theme="dark"] .ui-segment.active i,
 [data-theme="dark"] .ui-segment.active iconify-icon,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment i,
 [data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon {
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+    color: currentColor;
+    filter: none;
 }

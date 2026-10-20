@@ -203,7 +203,7 @@ export const SettingsUIManager = {
             useSubjectPersonalization: appState.useSubjectPersonalization,
             subjects: JSON.parse(JSON.stringify(appState.subjects)),
             theme: appState.theme,
-            accentColor: appState.accentColor,
+            accentColor: appState.accentColor || 'blue',
             seatingStatusDots: {
                 ...DEFAULT_SEATING_STATUS_DOTS,
                 ...(appState.seatingStatusDots || {})

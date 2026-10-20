@@ -252,7 +252,7 @@
 
 .ui-tabs-btn.active iconify-icon,
 .ui-tabs-btn.active i {
-    color: var(--primary-color) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .ui-tabs-btn {
@@ -272,7 +272,7 @@
 
 [data-theme="dark"] .ui-tabs-btn.active iconify-icon,
 [data-theme="dark"] .ui-tabs-btn.active i {
-    color: var(--primary-bright) !important;
+    color: var(--text-primary) !important;
 }
 
 .ui-tabs-actions-wrapper {

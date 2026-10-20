@@ -163,10 +163,6 @@
     outline: none;
 }
 
-[data-theme="dark"] .sortable-header .sort-icon-placeholder iconify-icon {
-    color: var(--text-primary);
-}
-
 /* Disable active-sort hover effect when hovering search button */
 .name-header-with-search.active-sort:has(.inline-search-trigger-btn:hover) {
     background-color: transparent !important;
@@ -193,8 +189,7 @@
 
 .sortable-header .sort-icon-placeholder iconify-icon {
     font-size: 15px;
-    color: var(--primary-color);
-    /* Transition for color change */
+    color: var(--text-primary);
     transition: color 0.2s ease;
 }
 
@@ -943,23 +938,23 @@
 
 /* Mode Generate: Solar magic stick points upwards-right at 45° via rotate(90deg) */
 .btn-smart-action-inline.mode-generate .smart-action-icon {
-    color: var(--primary-color);
+    color: currentColor;
     transform: translate(0, 0) rotate(90deg);
     transform-origin: center;
 }
 
 [data-theme="dark"] .btn-smart-action-inline.mode-generate .smart-action-icon {
-    color: var(--primary-bright);
+    color: currentColor;
 }
 
 /* Hover: thrust forward along wand axis (45° diagonal: +X right, -Y up) */
 .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
     transform: translate(2.5px, -2.5px) rotate(90deg) scale(1.12);
-    color: var(--primary-hover);
+    color: currentColor;
 }
 
 [data-theme="dark"] .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
-    color: var(--color-blue-bright);
+    color: currentColor;
 }
 
 /* Mode Update: Refresh icon */

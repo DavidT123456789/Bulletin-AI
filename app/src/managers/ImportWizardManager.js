@@ -1988,12 +1988,14 @@ export const ImportWizardManager = {
             enabledTags.add(cb.dataset.colTag);
         });
 
+        const hasStatutColumn = Object.prototype.hasOwnProperty.call(this.state.formatMap || {}, 'STATUT');
+
         // Filter student data: strip disabled columns before import
         const filteredStudents = this.state.studentsToProcess.map(s => {
             const filtered = Utils.deepClone(s);
 
-            // Strip status if unchecked
-            if (!enabledTags.has('STATUT')) {
+            // Strip status only if the file mapped a STATUT column that the user unchecked
+            if (hasStatutColumn && !enabledTags.has('STATUT')) {
                 filtered.statuses = [];
             }
 

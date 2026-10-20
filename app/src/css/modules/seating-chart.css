@@ -830,12 +830,17 @@
     border-color: transparent;
 }
 
-.sc-student-chip.sc-chip-departed {
+.sc-student-chip.sc-chip-departed .student-avatar,
+.sc-student-chip.sc-chip-departed .sc-student-chip-name {
     opacity: 0.65;
+    filter: saturate(0.8);
+    transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
-.sc-student-chip.sc-chip-departed:hover {
+.sc-student-chip.sc-chip-departed:hover .student-avatar,
+.sc-student-chip.sc-chip-departed:hover .sc-student-chip-name {
     opacity: 0.95;
+    filter: saturate(1);
 }
 
 /* Sidebar departed subsection */
@@ -1943,7 +1948,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Neutral ghost/dashed styling for a departed student still occupying a desk */
 .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
-    opacity: 0.78;
     border-style: dashed !important;
     border-color: rgba(161, 161, 170, 0.45) !important;
     background: rgba(255, 255, 255, 0.55) !important;
@@ -1960,6 +1964,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     filter: saturate(0.8);
 }
 
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) .student-avatar,
 .sc-stacked-avatar.sc-member-departed:not(:hover):not(.is-member-hovered) .student-avatar {
     opacity: 0.78;
 }
@@ -3934,7 +3939,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 [data-theme="dark"] .sc-toggle-switch[aria-checked="true"] {
     background: var(--primary-color);
-    box-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: none;
 }
 
 /* Sidebar Actions */

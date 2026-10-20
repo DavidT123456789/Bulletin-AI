@@ -357,6 +357,68 @@ describe('StudentDataManager', () => {
             const newStudent = result.studentsToProcess.find(s => s.nom === 'NEW');
             expect(newStudent.statuses).toContain('Nouveau T2');
         });
+
+        it('should preserve auto-detected Nouveau status in ImportWizardManager._performImport when no STATUT column is mapped, and strip when STATUT column is unchecked', async () => {
+            const { ImportWizardManager } = await import('./ImportWizardManager.js');
+            const { MassImportManager } = await import('./MassImportManager.js');
+            const importSpy = vi.spyOn(MassImportManager, 'importStudentsOnly').mockResolvedValue();
+            const saveFormatSpy = vi.spyOn(ImportWizardManager, '_saveFormat').mockImplementation(() => {});
+            const closeSpy = vi.spyOn(ImportWizardManager, 'close').mockImplementation(() => {});
+
+            appState.currentPeriod = 'T2';
+            document.body.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th><label class="preview-col-header"><input type="checkbox" checked disabled data-col-tag="NOM_PRENOM"></label></th>
+                            <th><label class="preview-col-header"><input type="checkbox" checked data-col-tag="MOY_T2"></label></th>
+                        </tr>
+                    </thead>
+                </table>
+            `;
+
+            // Case 1: No STATUT column in formatMap -> auto-detected "Nouveau T2" must be preserved
+            ImportWizardManager.state = {
+                formatMap: { NOM_PRENOM: 0, MOY_T2: 1 },
+                studentsToProcess: [
+                    { nom: 'ARRIVANT', prenom: 'Léo', statuses: ['Nouveau T2'], periods: { T2: { grade: 14 } } }
+                ],
+                departedStudents: [],
+                ignoredCount: 0
+            };
+
+            await ImportWizardManager._performImport();
+            expect(importSpy).toHaveBeenCalledTimes(1);
+            expect(importSpy.mock.calls[0][0][0].statuses).toEqual(['Nouveau T2']);
+
+            // Case 2: STATUT column mapped in formatMap, but unchecked in preview table -> statuses must be stripped
+            document.body.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th><label class="preview-col-header"><input type="checkbox" checked disabled data-col-tag="NOM_PRENOM"></label></th>
+                            <th><label class="preview-col-header"><input type="checkbox" data-col-tag="STATUT"></label></th>
+                        </tr>
+                    </thead>
+                </table>
+            `;
+            ImportWizardManager.state = {
+                formatMap: { NOM_PRENOM: 0, STATUT: 1 },
+                studentsToProcess: [
+                    { nom: 'ARRIVANT', prenom: 'Léo', statuses: ['PPRE'], periods: { T2: {} } }
+                ],
+                departedStudents: [],
+                ignoredCount: 0
+            };
+
+            await ImportWizardManager._performImport();
+            expect(importSpy).toHaveBeenCalledTimes(2);
+            expect(importSpy.mock.calls[1][0][0].statuses).toEqual([]);
+
+            importSpy.mockRestore();
+            saveFormatSpy.mockRestore();
+            closeSpy.mockRestore();
+        });
     });
 
     describe('syncFilteredStudent', () => {

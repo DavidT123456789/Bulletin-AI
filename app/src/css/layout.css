@@ -286,16 +286,16 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     }
 
     .header-context-chip:hover .icon {
-        color: var(--primary-hover);
+        color: currentColor;
         opacity: 1;
         transform: scale(1.05);
     }
 
     [data-theme="dark"] .header-context-chip:hover .icon {
-        color: var(--primary-bright);
+        color: currentColor;
         opacity: 1;
         transform: scale(1.05);
-        filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.4));
+        filter: none;
     }
 }
 
@@ -307,14 +307,14 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
 }
 
 .header-context-chip.active .icon {
-    color: var(--primary-hover);
+    color: currentColor;
     opacity: 1;
 }
 
 [data-theme="dark"] .header-context-chip.active .icon {
-    color: var(--primary-bright);
+    color: currentColor;
     opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.4));
+    filter: none;
 }
 
 [data-theme="dark"] .header-context-chip {
@@ -332,7 +332,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
 }
 
 .header-context-chip .icon {
-    color: var(--primary-color);
+    color: currentColor;
     opacity: 0.95;
     transition: all var(--transition-fast);
     display: flex;
@@ -342,7 +342,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
 }
 
 [data-theme="dark"] .header-context-chip .icon {
-    color: var(--primary-bright);
+    color: currentColor;
     opacity: 1;
 }
 
@@ -357,7 +357,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
 }
 
 .ai-model-chip .icon {
-    color: var(--primary-color);
+    color: currentColor;
     transition: all var(--transition-fast);
 }
 
@@ -369,7 +369,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
 }
 
 .ai-model-chip:hover .icon {
-    color: var(--primary-hover);
+    color: currentColor;
     transform: scale(1.05);
 }
 
@@ -1530,7 +1530,7 @@ button > .icon-spin-wrapper {
 
 /* État synchronisation en cours - Rotation */
 .cloud-sync-indicator.syncing {
-    color: var(--primary-color);
+    color: currentColor;
 }
 
 .cloud-sync-indicator.syncing>i.fa-cloud {

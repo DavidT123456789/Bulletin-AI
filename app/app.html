@@ -7,42 +7,29 @@
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#09090b">
     <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#09090b">
-    <!-- Immediate Anti-White-Flash & Theme/Accent Injection (0ms, before external CSS) -->
+    <!-- Immediate Anti-White-Flash & Theme Injection (0ms, before external CSS) -->
     <script>
         (function() {
             try {
                 var standaloneTheme = localStorage.getItem('bulletin_theme');
-                var standaloneAccent = localStorage.getItem('bulletin_accent_color');
                 var theme = standaloneTheme || '';
-                var accentColor = standaloneAccent || '';
-
-                if (!theme || !accentColor) {
-                    var rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
-                                   localStorage.getItem('bulletin_app_state') ||
-                                   localStorage.getItem('appreciationGeneratorState');
-                    if (rawState) {
-                        var state = JSON.parse(rawState);
-                        if (!theme) {
-                            if (state.settings && state.settings.theme) {
-                                theme = state.settings.theme;
-                            } else if (state.theme) {
-                                theme = state.theme;
-                            } else if (state.ui && state.ui.theme) {
-                                theme = state.ui.theme;
-                            }
-                        }
-                        if (!accentColor) {
-                            if (state.settings && state.settings.accentColor) {
-                                accentColor = state.settings.accentColor;
-                            } else if (state.accentColor) {
-                                accentColor = state.accentColor;
-                            }
-                        }
+                var accent = '';
+                var rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
+                               localStorage.getItem('bulletin_app_state') ||
+                               localStorage.getItem('appreciationGeneratorState');
+                if (rawState) {
+                    var state = JSON.parse(rawState);
+                    if (!theme) {
+                        theme = (state.settings && state.settings.theme) || state.theme || (state.ui && state.ui.theme) || '';
                     }
+                    accent = (state.settings && state.settings.accentColor) || state.accentColor || (state.ui && state.ui.accentColor) || '';
                 }
 
                 if (!theme) theme = 'light';
-                if (!accentColor) accentColor = 'blue';
+                var validAccents = ['blue', 'purple', 'pink', 'orange', 'green', 'teal'];
+                if (validAccents.indexOf(accent) !== -1 && accent !== 'blue') {
+                    document.documentElement.dataset.accent = accent;
+                }
 
                 var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var effectiveTheme = (theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme) === 'dark' ? 'dark' : 'light';
@@ -73,99 +60,6 @@
                         document.documentElement.classList.add('is-first-visit');
                     }
                 } catch (_) {}
-
-                // Accent Color Pre-calculation
-                var colors = {};
-                if (accentColor.startsWith('#')) {
-                    var hexToRgb = function(hex) {
-                        var shorth = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-                        var full = hex.replace(shorth, function(m, r, g, b) { return r + r + g + g + b + b; });
-                        var res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(full);
-                        return res ? { r: parseInt(res[1], 16), g: parseInt(res[2], 16), b: parseInt(res[3], 16) } : { r: 59, g: 130, b: 246 };
-                    };
-                    var rgbToHsl = function(r, g, b) {
-                        r /= 255; g /= 255; b /= 255;
-                        var max = Math.max(r, g, b), min = Math.min(r, g, b);
-                        var h, s, l = (max + min) / 2;
-                        if (max === min) h = s = 0;
-                        else {
-                            var d = max - min;
-                            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                            switch (max) {
-                                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                                case g: h = (b - r) / d + 2; break;
-                                case b: h = (r - g) / d + 4; break;
-                            }
-                            h /= 6;
-                        }
-                        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-                    };
-                    var hslToRgb = function(h, s, l) {
-                        h /= 360; s /= 100; l /= 100;
-                        var r, g, b;
-                        if (s === 0) r = g = b = l;
-                        else {
-                            var hue2rgb = function(p, q, t) {
-                                if (t < 0) t += 1;
-                                if (t > 1) t -= 1;
-                                if (t < 1/6) return p + (q - p) * 6 * t;
-                                if (t < 1/2) return q;
-                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                                return p;
-                            };
-                            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                            var p = 2 * l - q;
-                            r = hue2rgb(p, q, h + 1/3);
-                            g = hue2rgb(p, q, h);
-                            b = hue2rgb(p, q, h - 1/3);
-                        }
-                        return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-                    };
-                    var rgbToHex = function(r, g, b) {
-                        var toHex = function(x) {
-                            var h = x.toString(16);
-                            return h.length === 1 ? '0' + h : h;
-                        };
-                        return '#' + toHex(r) + toHex(g) + toHex(b);
-                    };
-
-                    var baseRgb = hexToRgb(accentColor);
-                    var baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
-                    var adjustedL = baseHsl.l;
-                    if (effectiveTheme === 'dark') {
-                        if (baseHsl.l < 65) adjustedL = 65;
-                    } else {
-                        if (baseHsl.l > 50) adjustedL = 50;
-                    }
-                    var adjustedRgb = hslToRgb(baseHsl.h, baseHsl.s, adjustedL);
-                    var primaryColor = rgbToHex(adjustedRgb.r, adjustedRgb.g, adjustedRgb.b);
-                    var rgbString = adjustedRgb.r + ', ' + adjustedRgb.g + ', ' + adjustedRgb.b;
-                    var hoverL = Math.max(0, adjustedL - 10);
-                    var hoverRgb = hslToRgb(baseHsl.h, baseHsl.s, hoverL);
-                    var primaryHover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
-                    colors = { color: primaryColor, rgb: rgbString, hover: primaryHover };
-                } else {
-                    var presets = {
-                        blue: {
-                            light: { color: '#3b82f6', rgb: '59, 130, 246', hover: '#2563eb' },
-                            dark: { color: '#4f7df2', rgb: '79, 125, 242', hover: '#3b66f1' }
-                        },
-                        anthracite: {
-                            light: { color: '#3f3f46', rgb: '63, 63, 70', hover: '#27272a' },
-                            dark: { color: '#d4d4d8', rgb: '212, 212, 216', hover: '#a1a1aa' }
-                        },
-                        rose: {
-                            light: { color: '#f5627d', rgb: '245, 98, 125', hover: '#e11d48' },
-                            dark: { color: '#fda4af', rgb: '253, 164, 175', hover: '#fb7185' }
-                        }
-                    };
-                    var preset = presets[accentColor] || presets.blue;
-                    colors = preset[effectiveTheme] || preset.light;
-                }
-
-                document.documentElement.style.setProperty('--primary-color', colors.color);
-                document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
-                document.documentElement.style.setProperty('--primary-hover', colors.hover);
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
                 document.documentElement.style.backgroundColor = '#f7f7f8';
@@ -2420,6 +2314,49 @@
                             <div class="help-step-card mb-3">
                                 <div class="help-step-layout">
                                     <div class="help-step-number"><iconify-icon
+                                            icon="solar:pallete-2-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                                            <div>
+                                                <strong>Couleur d'accentuation</strong>
+                                                <p style="margin: 4px 0 0 0; font-size: 0.9em; color: var(--text-secondary);">
+                                                    Personnalisez la teinte des boutons d'action, repères actifs et contrôles.
+                                                </p>
+                                            </div>
+                                            <div class="accent-color-selector" id="accentColorSelector" role="radiogroup" aria-label="Couleur d'accentuation">
+                                                <button type="button" class="accent-color-swatch active" data-color="blue"
+                                                    style="--swatch-color: #3b82f6;" title="Bleu (Par défaut)" aria-label="Bleu">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                                <button type="button" class="accent-color-swatch" data-color="purple"
+                                                    style="--swatch-color: #8b5cf6;" title="Violet" aria-label="Violet">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                                <button type="button" class="accent-color-swatch" data-color="pink"
+                                                    style="--swatch-color: #ec4899;" title="Rose" aria-label="Rose">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                                <button type="button" class="accent-color-swatch" data-color="teal"
+                                                    style="--swatch-color: #06b6d4;" title="Océan" aria-label="Océan">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                                <button type="button" class="accent-color-swatch" data-color="green"
+                                                    style="--swatch-color: #10b981;" title="Émeraude" aria-label="Émeraude">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                                <button type="button" class="accent-color-swatch" data-color="orange"
+                                                    style="--swatch-color: #f97316;" title="Ambre" aria-label="Ambre">
+                                                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
                                             icon="solar:shield-user-bold"></iconify-icon></div>
                                     <div class="help-step-body">
                                         <div class="privacy-header-row">
@@ -2442,87 +2379,6 @@
                                         <div class="privacy-footer-note mt-3">
                                             <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"></iconify-icon>
                                             Le nom de famille n'est <strong>jamais</strong> transmis à l'IA.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="help-step-card mb-3">
-                                <div class="help-step-layout help-step-layout--inline">
-                                    <div class="help-step-number"><iconify-icon
-                                            icon="solar:palette-bold"></iconify-icon></div>
-                                    <div class="help-step-body" style="width: 100%;">
-                                        <div class="accent-color-row">
-                                            <div class="accent-color-info">
-                                                <strong>Thème de couleur</strong>
-                                                <p>Couleur d'accentuation de l'application.</p>
-                                            </div>
-                                            <div class="accent-color-selector" id="accentColorSelector">
-                                                <button type="button" class="accent-color-btn tooltip" data-value="blue" data-tooltip="Bleu Nebula" aria-label="Bleu Nebula">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                </button>
-                                                <button type="button" class="accent-color-btn tooltip" data-value="anthracite" data-tooltip="Gris Anthracite" aria-label="Gris Anthracite">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                </button>
-                                                <button type="button" class="accent-color-btn tooltip" data-value="rose" data-tooltip="Rose Cerise" aria-label="Rose Cerise">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                </button>
-                                                <button type="button" class="accent-color-btn tooltip" data-value="violet" data-tooltip="Violet Royal" aria-label="Violet Royal">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                </button>
-                                                <button type="button" class="accent-color-btn tooltip" data-value="teal" data-tooltip="Vert Lagon" aria-label="Vert Lagon">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                </button>
-                                                <button type="button" class="accent-color-btn custom-picker tooltip" id="customAccentBtn" data-value="custom" data-tooltip="Couleur personnalisée" aria-label="Couleur personnalisée" style="--accent-swatch-color: transparent;">
-                                                    <span class="accent-swatch-circle"></span>
-                                                    <iconify-icon icon="ph:eyedropper-bold" class="accent-swatch-picker-icon"></iconify-icon>
-                                                    <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
-                                                    <input type="color" id="customColorPicker" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; bottom: 0; right: 0;" value="#3b82f6">
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div class="custom-picker-panel" id="customPickerPanel">
-                                            <div class="custom-picker-grid">
-                                                <div class="picker-control-group">
-                                                    <div class="picker-slider-row">
-                                                        <span class="slider-label">T</span>
-                                                        <div class="slider-wrapper">
-                                                            <input type="range" id="pickerHueSlider" min="0" max="360" value="220" class="picker-range-slider hue-slider-track" aria-label="Ajuster la teinte">
-                                                        </div>
-                                                    </div>
-                                                    <div class="picker-slider-row">
-                                                        <span class="slider-label">S</span>
-                                                        <div class="slider-wrapper">
-                                                            <input type="range" id="pickerSatSlider" min="0" max="100" value="80" class="picker-range-slider sat-slider-track" aria-label="Ajuster la saturation">
-                                                        </div>
-                                                    </div>
-                                                    <div class="picker-slider-row">
-                                                        <span class="slider-label">L</span>
-                                                        <div class="slider-wrapper">
-                                                            <input type="range" id="pickerLigSlider" min="20" max="85" value="60" class="picker-range-slider lig-slider-track" aria-label="Ajuster la luminosité">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="picker-action-group">
-                                                    <div class="picker-live-preview" id="pickerLivePreview" role="button" tabindex="0" aria-label="Valider la couleur"></div>
-                                                    <div class="hex-input-container">
-                                                        <span class="hex-symbol">#</span>
-                                                        <input type="text" id="pickerHexInput" class="hex-text-input custom-input" placeholder="3B82F6" maxlength="6" autocomplete="off" spellcheck="false" aria-label="Code hexadécimal de la couleur">
-                                                    </div>
-                                                    <button type="button" id="pickerEyedropperBtn" class="picker-eyedropper-btn tooltip" data-tooltip="Pipette de couleur" aria-label="Sélectionner une couleur à l'écran">
-                                                        <iconify-icon icon="ph:eyedropper-bold"></iconify-icon>
-                                                    </button>
-                                                    <button type="button" id="pickerConfirmBtn" class="picker-confirm-btn tooltip" data-tooltip="Valider et masquer" aria-label="Valider la couleur et masquer le panneau">
-                                                        <iconify-icon icon="ph:check-bold"></iconify-icon>
-                                                    </button>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>

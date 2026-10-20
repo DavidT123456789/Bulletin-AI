@@ -943,7 +943,7 @@
 
 [data-theme="dark"] .sync-toggle-checkbox:checked+.sync-toggle-switch {
     background: var(--primary-color);
-    box-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: none;
 }
 
 .sync-toggle-label i {

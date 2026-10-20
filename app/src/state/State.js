@@ -23,8 +23,8 @@ export const userSettings = {
     /** Préférences d'interface */
     ui: {
         theme: 'light',
-        isAppreciationFullView: false,
         accentColor: 'blue',
+        isAppreciationFullView: false,
         activeView: 'list', // 'list' | 'plan'
         seatingStatusDots: { ...DEFAULT_SEATING_STATUS_DOTS },
     },
@@ -157,8 +157,8 @@ export const runtimeState = {
 const propertyMap = {
     // userSettings.ui
     theme: () => userSettings.ui,
-    isAppreciationFullView: () => userSettings.ui,
     accentColor: () => userSettings.ui,
+    isAppreciationFullView: () => userSettings.ui,
     activeView: () => userSettings.ui,
     seatingStatusDots: () => userSettings.ui,
 

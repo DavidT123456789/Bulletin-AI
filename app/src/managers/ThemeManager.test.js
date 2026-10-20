@@ -33,8 +33,14 @@ describe('ThemeManager', () => {
                 <button class="ui-segment" data-value="dark"></button>
                 <button class="ui-segment" data-value="system"></button>
             </div>
+            <div id="accentColorSelector">
+                <button class="accent-color-swatch active" data-color="blue"></button>
+                <button class="accent-color-swatch" data-color="purple"></button>
+                <button class="accent-color-swatch" data-color="teal"></button>
+            </div>
         `;
         document.documentElement.removeAttribute('data-theme');
+        document.documentElement.removeAttribute('data-accent');
         document.documentElement.style.backgroundColor = '';
         document.documentElement.style.colorScheme = '';
         document.body.style.backgroundColor = '';
@@ -52,34 +58,34 @@ describe('ThemeManager', () => {
     });
 
     describe('hydrateFromLocalStorage & init', () => {
-        it('should hydrate dark theme and accentColor from standalone localStorage keys before initial applyTheme', () => {
+        it('should hydrate dark theme from standalone localStorage key before initial applyTheme', () => {
             localStorage.setItem('bulletin_theme', 'dark');
-            localStorage.setItem('bulletin_accent_color', 'rose');
 
             ThemeManager.init();
 
             expect(appState.theme).toBe('dark');
-            expect(appState.accentColor).toBe('rose');
             expect(document.documentElement.dataset.theme).toBe('dark');
             expect(document.documentElement.style.backgroundColor).toBe('rgb(9, 9, 11)');
             expect(document.documentElement.style.colorScheme).toBe('dark');
             expect(localStorage.getItem('bulletin_theme')).toBe('dark');
         });
 
-        it('should fallback to appreciationGeneratorState_v6.2 when standalone keys are absent', () => {
+        it('should fallback to appreciationGeneratorState_v6.2 when standalone key is absent and hydrate accentColor', () => {
             localStorage.setItem('appreciationGeneratorState_v6.2', JSON.stringify({
-                settings: { theme: 'dark', accentColor: '#8b5cf6' }
+                settings: { theme: 'dark', accentColor: 'purple' }
             }));
 
             ThemeManager.hydrateFromLocalStorage();
 
             expect(appState.theme).toBe('dark');
-            expect(appState.accentColor).toBe('#8b5cf6');
+            expect(appState.accentColor).toBe('purple');
         });
 
         it('should ignore invalid or empty values in localStorage and keep current appState defaults', () => {
             localStorage.setItem('bulletin_theme', 'invalid-theme');
-            localStorage.setItem('bulletin_accent_color', 'invalid-accent');
+            localStorage.setItem('appreciationGeneratorState_v6.2', JSON.stringify({
+                settings: { accentColor: '#ff0055' }
+            }));
 
             ThemeManager.hydrateFromLocalStorage();
 
@@ -173,6 +179,38 @@ describe('ThemeManager', () => {
 
             expect(appState.theme).toBe('light');
             expect(StorageManager.saveAppState).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Accent Color Presets (data-accent)', () => {
+        it('should set data-accent on documentElement, update active swatch, and save state for non-default presets', () => {
+            ThemeManager.setAccentColor('purple');
+
+            expect(appState.accentColor).toBe('purple');
+            expect(document.documentElement.dataset.accent).toBe('purple');
+            expect(document.querySelector('[data-color="purple"]').classList.contains('active')).toBe(true);
+            expect(document.querySelector('[data-color="blue"]').classList.contains('active')).toBe(false);
+            expect(StorageManager.saveAppState).toHaveBeenCalledTimes(1);
+        });
+
+        it('should remove data-accent attribute when resetting to blue or given an invalid legacy value', () => {
+            ThemeManager.setAccentColor('teal');
+            expect(document.documentElement.dataset.accent).toBe('teal');
+
+            ThemeManager.setAccentColor('#123456');
+            expect(appState.accentColor).toBe('blue');
+            expect(document.documentElement.dataset.accent).toBeUndefined();
+            expect(document.querySelector('[data-color="blue"]').classList.contains('active')).toBe(true);
+        });
+
+        it('should update accent color when clicking a swatch in #accentColorSelector', () => {
+            ThemeManager.initAccentControl();
+            const tealSwatch = document.querySelector('[data-color="teal"]');
+            tealSwatch.click();
+
+            expect(appState.accentColor).toBe('teal');
+            expect(document.documentElement.dataset.accent).toBe('teal');
+            expect(tealSwatch.getAttribute('aria-checked')).toBe('true');
         });
     });
 });

@@ -185,6 +185,7 @@ export const StudentDataManager = {
             isPending: !hasAppreciation,
             studentData: {
                 ...newStudentData,
+                statuses: Array.isArray(newStudentData.statuses) ? newStudentData.statuses : [],
                 currentPeriod: currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
                 prompts: { appreciation: null, sw: null, ns: null }
@@ -286,8 +287,11 @@ export const StudentDataManager = {
             });
 
             existingStudentsMap.forEach((result, key) => {
-                const statuses = result.studentData.statuses || [];
-                if (!importedStudentsMap.has(key) && !statuses.some(s => s.startsWith('Départ'))) {
+                const statuses = result.studentData?.statuses || [];
+                const alreadyDeparted = typeof Utils.isStudentDeparted === 'function'
+                    ? Utils.isStudentDeparted(result, appState.currentPeriod)
+                    : statuses.some(s => String(s || '').toLowerCase().startsWith('départ') || String(s || '').toLowerCase().startsWith('depart'));
+                if (!importedStudentsMap.has(key) && !alreadyDeparted) {
                     importPreviewData.departedStudents.push({ nom: result.nom, prenom: result.prenom });
                 }
             });

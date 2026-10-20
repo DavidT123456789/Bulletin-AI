@@ -9,7 +9,6 @@
     --primary-hover: #2563eb;
     --primary-bright: var(--primary-color);
     --primary-bright-rgb: var(--primary-color-rgb);
-    /* Dynamically computed hover shade (for text links & gradients only) */
 
     /* Accent: Purple (Tailwind Purple 600) */
     --accent-color: #9333ea;
@@ -271,10 +270,10 @@
     /* Blue Glow */
 
     /* --- Brand Tokens --- */
-    --brand-primary: #3b82f6;
-    --brand-primary-rgb: 59, 130, 246;
-    --brand-purple: #9333ea;
-    --brand-purple-rgb: 147, 51, 234;
+    --brand-primary: var(--primary-color);
+    --brand-primary-rgb: var(--primary-color-rgb);
+    --brand-purple: var(--accent-color);
+    --brand-purple-rgb: var(--accent-rgb);
 
     /* Standard UI Highlight / Drop Target (Neutral Minimalist — Independent of custom accent colors) */
     --highlight-standard-border: rgba(24, 24, 27, 0.45);
@@ -438,8 +437,6 @@
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
     /* Brand Gradient Colors Overrides */
-    --brand-primary: #3b82f6;
-    --brand-primary-rgb: 59, 130, 246;
     --brand-purple: #6366f1;
     --brand-purple-rgb: 99, 102, 241;
 
@@ -489,6 +486,7 @@
     --color-blue-rgb: 96, 165, 250;
     --color-blue-bright: #93c5fd;
     --color-blue-bright-rgb: 147, 197, 253;
+    --primary-hover: #60a5fa;
     --primary-bright: var(--color-blue-bright);
     --primary-bright-rgb: var(--color-blue-bright-rgb);
 
@@ -514,4 +512,77 @@
 
     /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
     --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* ====================================================================
+   ACCENT COLOR PRESETS (Pure CSS — Light & Dark Mode Calibrated)
+   ==================================================================== */
+[data-accent="purple"] {
+    --primary-color: #8b5cf6;
+    --primary-color-rgb: 139, 92, 246;
+    --primary-hover: #7c3aed;
+    --primary-bright: #8b5cf6;
+    --primary-bright-rgb: 139, 92, 246;
+}
+
+[data-theme="dark"][data-accent="purple"] {
+    --primary-hover: #a78bfa;
+    --primary-bright: #c4b5fd;
+    --primary-bright-rgb: 196, 181, 253;
+}
+
+[data-accent="pink"] {
+    --primary-color: #ec4899;
+    --primary-color-rgb: 236, 72, 153;
+    --primary-hover: #db2777;
+    --primary-bright: #ec4899;
+    --primary-bright-rgb: 236, 72, 153;
+}
+
+[data-theme="dark"][data-accent="pink"] {
+    --primary-hover: #f472b6;
+    --primary-bright: #f9a8d4;
+    --primary-bright-rgb: 249, 168, 212;
+}
+
+[data-accent="orange"] {
+    --primary-color: #f97316;
+    --primary-color-rgb: 249, 115, 22;
+    --primary-hover: #ea580c;
+    --primary-bright: #f97316;
+    --primary-bright-rgb: 249, 115, 22;
+}
+
+[data-theme="dark"][data-accent="orange"] {
+    --primary-hover: #fb923c;
+    --primary-bright: #fdba74;
+    --primary-bright-rgb: 253, 186, 116;
+}
+
+[data-accent="green"] {
+    --primary-color: #10b981;
+    --primary-color-rgb: 16, 185, 129;
+    --primary-hover: #059669;
+    --primary-bright: #10b981;
+    --primary-bright-rgb: 16, 185, 129;
+}
+
+[data-theme="dark"][data-accent="green"] {
+    --primary-hover: #34d399;
+    --primary-bright: #6ee7b7;
+    --primary-bright-rgb: 110, 231, 183;
+}
+
+[data-accent="teal"] {
+    --primary-color: #06b6d4;
+    --primary-color-rgb: 6, 182, 212;
+    --primary-hover: #0891b2;
+    --primary-bright: #06b6d4;
+    --primary-bright-rgb: 6, 182, 212;
+}
+
+[data-theme="dark"][data-accent="teal"] {
+    --primary-hover: #22d3ee;
+    --primary-bright: #67e8f9;
+    --primary-bright-rgb: 103, 232, 249;
 }

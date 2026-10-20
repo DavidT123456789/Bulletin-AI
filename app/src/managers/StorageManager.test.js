@@ -267,16 +267,14 @@ describe('StorageManager', () => {
             expect(/^[0-9a-f]{16}$/.test(migratedHash)).toBe(true);
         });
 
-        it('should preserve standalone bulletin_theme and bulletin_accent_color when app state is absent', async () => {
+        it('should preserve standalone bulletin_theme when app state is absent', async () => {
             const { userSettings } = await import('../state/State.js');
             mockLocalStorage['bulletin_theme'] = 'dark';
-            mockLocalStorage['bulletin_accent_color'] = 'rose';
             DBService.getAll.mockResolvedValue([]);
 
             await StorageManager.loadAppState();
 
             expect(userSettings.ui.theme).toBe('dark');
-            expect(userSettings.ui.accentColor).toBe('rose');
         });
     });
 

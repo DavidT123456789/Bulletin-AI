@@ -336,7 +336,7 @@
     width: auto;
     height: auto;
     background: transparent;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-size: 26px;
     flex-shrink: 0;
     padding: 0;
@@ -362,18 +362,18 @@
 
 .modal-title-icon.color-primary,
 .modal-title .color-primary {
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .modal-title-icon,
 [data-theme="dark"] .modal-title > iconify-icon,
 [data-theme="dark"] .modal-title > i {
-    color: var(--primary-bright);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .modal-title-icon.color-primary,
 [data-theme="dark"] .modal-title .color-primary {
-    color: var(--primary-bright);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .modal-title-icon.color-accent,
@@ -698,7 +698,7 @@
 }
 
 .api-status-summary h4 i {
-    color: var(--primary-color);
+    color: currentColor;
 }
 
 /* Header avec bouton Tester tout */
@@ -728,7 +728,7 @@
 }
 
 .api-status-active-model i {
-    color: var(--primary-color);
+    color: currentColor;
 }
 
 .api-status-active-model strong {
@@ -2254,9 +2254,9 @@
 }
 
 [data-theme="dark"] .modal-alert-header-icon.cloud {
-    background: rgba(96, 165, 250, 0.10);
-    border: 1px solid rgba(96, 165, 250, 0.18);
-    color: #60a5fa;
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+    color: var(--primary-bright);
     box-shadow: none;
 }
 
@@ -2527,7 +2527,7 @@
 
 [data-theme="dark"] .pre-restore-snapshot-badge {
     background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
-    color: #93c5fd;
+    color: var(--primary-bright);
 }
 
 .pre-restore-btn {

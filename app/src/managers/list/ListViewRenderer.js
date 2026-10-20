@@ -833,8 +833,10 @@ export const ListViewRenderer = {
         return `<span class="status-badge ${status}">${icon}${label}</span>`;
     },
     getStudentStatusCellContent(result) {
-        // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.)
-        const studentStatuses = result.studentData?.statuses || [];
+        // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.) actifs sur la période courante
+        const studentStatuses = typeof Utils.getActiveStatuses === 'function'
+            ? Utils.getActiveStatuses(result, appState.currentPeriod)
+            : (result.studentData?.statuses || []);
         const getStatusPriority = (s) => {
             const lower = String(s || '').toLowerCase();
             if (lower.includes('départ') || lower.includes('depart')) return 0;

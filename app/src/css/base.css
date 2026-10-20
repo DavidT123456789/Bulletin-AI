@@ -48,12 +48,12 @@ input::-webkit-search-results-decoration {
 }
 
 ::selection {
-    background: rgba(59, 130, 246, 0.16); /* Bleu de marque doux en thème clair */
+    background: rgba(var(--primary-color-rgb), 0.16); /* Bleu de marque doux en thème clair */
     color: var(--text-primary);
 }
 
 [data-theme="dark"] ::selection {
-    background: rgba(59, 130, 246, 0.38); /* Bleu de marque plus lumineux et visible en thème sombre */
+    background: rgba(var(--primary-color-rgb), 0.35); /* Bleu de marque plus lumineux et visible en thème sombre */
     color: var(--text-primary);
 }
 

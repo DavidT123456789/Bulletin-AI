@@ -101,7 +101,6 @@ export const StudentPhotoManager = {
         if (!result) return '';
 
         const initials = this.getInitialsFromName(result.nom, result.prenom);
-        const color = this.getColorFromName(result.nom, result.prenom);
         const sizeClass = `student-avatar--${size}`;
         const selectedClass = isSelected ? 'is-selected' : '';
 
@@ -124,7 +123,7 @@ export const StudentPhotoManager = {
 
         // Fallback to initials
         return `
-            <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}" style="background-color: ${color}">
+            <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}">
                 <span class="student-avatar__initials">${initials}</span>
                 ${checkmarkHTML}
             </div>
@@ -141,38 +140,6 @@ export const StudentPhotoManager = {
         const first = (prenom && prenom[0]) ? prenom[0].toUpperCase() : '';
         const last = (nom && nom[0]) ? nom[0].toUpperCase() : '';
         return first + last || '??';
-    },
-
-    /**
-     * Generate a consistent color based on the student's name
-     * Uses a simple hash to pick from a curated palette
-     * @param {string} nom - Last name
-     * @param {string} prenom - First name
-     * @returns {string} HSL color string
-     */
-    getColorFromName(nom, prenom) {
-        const palette = [
-            'hsl(210, 70%, 55%)',  // Blue
-            'hsl(340, 65%, 55%)',  // Pink
-            'hsl(160, 60%, 45%)',  // Teal
-            'hsl(280, 55%, 55%)',  // Purple
-            'hsl(25, 80%, 55%)',   // Orange
-            'hsl(45, 85%, 50%)',   // Gold
-            'hsl(190, 70%, 45%)',  // Cyan
-            'hsl(0, 65%, 55%)',    // Red
-            'hsl(130, 50%, 45%)',  // Green
-            'hsl(260, 50%, 60%)',  // Lavender
-        ];
-
-        // Simple hash from name
-        const str = `${prenom || ''}${nom || ''}`.toLowerCase();
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        const index = Math.abs(hash) % palette.length;
-        return palette[index];
     },
 
     /**

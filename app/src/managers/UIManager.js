@@ -1088,6 +1088,10 @@ export const UI = {
         let validated = 0;
         let pending = 0;
         for (const result of results) {
+            if (Utils.isStudentDepartedBeforePeriod?.(result, currentPeriod)) {
+                continue;
+            }
+
             // Skip errors — they are handled by the Smart Action Button in the table
             if (result.errorMessage && result.errorPeriod === currentPeriod) {
                 continue;
@@ -1096,6 +1100,9 @@ export const UI = {
             // Check if has valid appreciation for current period
             const periodData = result.studentData?.periods?.[currentPeriod];
             const appreciation = periodData?.appreciation || result.appreciation;
+            const isEmptyDeparted = Utils.isStudentDeparted?.(result, currentPeriod) &&
+                (periodData?.grade === undefined || periodData?.grade === null || periodData?.grade === '') &&
+                !periodData?.context?.trim();
 
             if (appreciation && typeof appreciation === 'string') {
                 const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
@@ -1107,10 +1114,10 @@ export const UI = {
 
                 if (!isPlaceholder) {
                     validated++;
-                } else {
+                } else if (!isEmptyDeparted) {
                     pending++;
                 }
-            } else {
+            } else if (!isEmptyDeparted) {
                 pending++;
             }
         }
@@ -1710,32 +1717,23 @@ export const UI = {
         if (!DOM.headerClassChip || !DOM.headerStudentCount) return;
 
         const activePeriod = appState.currentPeriod;
-        const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
         const currentClassId = appState.currentClassId;
 
         // CORRECTIF: Filtrer par classe actuelle AVANT de compter
         const classResults = ClassManager.getStudentsForClass(currentClassId);
 
-        const activeStudents = classResults.filter(result => {
-            const statuses = result.studentData?.statuses || [];
-            const departStatus = statuses.find(s => String(s || '').toLowerCase().startsWith('départ') || String(s || '').toLowerCase().startsWith('depart'));
-            if (!departStatus) return true;
-
-            const departPeriodKey = departStatus.trim().split(/\s+/)[1];
-            const departPeriodIndex = Utils.getPeriods().indexOf(departPeriodKey);
-
-            return departPeriodIndex === -1 || departPeriodIndex >= activePeriodIndex;
-        });
+        const activeStudents = classResults.filter(
+            result => !Utils.isStudentDepartedBeforePeriod?.(result, activePeriod)
+        );
         const totalCount = activeStudents.length;
 
         let newCount = 0;
         let departedCount = 0;
         activeStudents.forEach(result => {
-            const statuses = result.studentData?.statuses || [];
-            if (statuses.some(s => s === 'Nouveau' || s === `Nouveau ${activePeriod}`)) {
+            if (Utils.isStudentNew?.(result, activePeriod)) {
                 newCount++;
             }
-            if (statuses.some(s => s === 'Départ' || s === `Départ ${activePeriod}`)) {
+            if (Utils.isStudentDeparted?.(result, activePeriod)) {
                 departedCount++;
             }
         });

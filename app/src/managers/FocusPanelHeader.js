@@ -227,16 +227,35 @@ export const FocusPanelHeader = {
                 if (nomInput) nomInput.value = '';
                 if (prenomInput) prenomInput.value = '';
 
-                // Store empty original values
+                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+                const currentPeriod = appState.currentPeriod || periods[0];
+                const isLaterPeriod = periods.indexOf(currentPeriod) > 0;
+                const activeClassId = userSettings?.academic?.currentClassId || appState?.currentClassId || null;
+                const hasExistingClassStudents = (appState.generatedResults || []).some(
+                    r => !activeClassId || r.classId === activeClassId
+                );
+                const shouldPreselectNew = isLaterPeriod && hasExistingClassStudents;
+
+                // Store initial values (with period-qualified Nouveau when pre-selected)
                 this._originalHeaderValues = {
                     nom: '',
                     prenom: '',
-                    statuses: []
+                    statuses: shouldPreselectNew ? [`Nouveau ${currentPeriod}`] : []
                 };
 
-                // Uncheck all statuses
+                // Pre-check Nouveau only in later periods on a non-empty class, and initialize tooltips
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(cb => cb.checked = false);
+                checkboxes.forEach(cb => {
+                    cb.checked = shouldPreselectNew && cb.value === 'Nouveau';
+                    const label = cb.closest('label');
+                    if (label) {
+                        const description = this._statusDescriptions[cb.value] || cb.value;
+                        label.setAttribute('data-tooltip', description);
+                        label.classList.add('tooltip');
+                    }
+                });
+
+                setTimeout(() => UI.initTooltips?.(), 0);
 
                 // Focus Name
                 if (nomInput) setTimeout(() => nomInput.focus(), 100);
@@ -536,7 +555,12 @@ export const FocusPanelHeader = {
         let headerHtml = '';
         let contextHtml = '';
 
-        statuses.forEach(s => {
+        const activePeriod = appState.currentPeriod || 'T1';
+        const activeStatuses = typeof Utils.getActiveStatuses === 'function'
+            ? Utils.getActiveStatuses(statuses || [], activePeriod)
+            : (statuses || []);
+
+        activeStatuses.forEach(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
             const lower = String(s || '').toLowerCase();
             const baseKey = Object.keys(this._statusDescriptions).find(k => lower.startsWith(k.toLowerCase()));

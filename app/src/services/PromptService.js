@@ -184,8 +184,11 @@ export const PromptService = {
         const evolutionText = this._formatEvolutions(filteredEvolutions);
 
         // Anonymisation : on n'envoie plus le nom complet, seulement les données scolaires
-        // On n'inclut la ligne Statuts que si l'élève a des statuts
-        const statusLine = (statuses && statuses.length > 0) ? `\nStatuts : ${statuses.join(', ')}` : '';
+        // On n'inclut la ligne Statuts que si l'élève a des statuts actifs sur la période
+        const activeStatuses = typeof Utils.getActiveStatuses === 'function'
+            ? Utils.getActiveStatuses(statuses, currentPeriod)
+            : (statuses || []);
+        const statusLine = (activeStatuses && activeStatuses.length > 0) ? `\nStatuts : ${activeStatuses.join(', ')}` : '';
 
         const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
@@ -284,8 +287,8 @@ export const PromptService = {
         const analysisContextParts = [];
 
         // Add statuses if present
-        if (statuses && statuses.length > 0) {
-            analysisContextParts.push(`Statuts : ${statuses.join(', ')}`);
+        if (activeStatuses && activeStatuses.length > 0) {
+            analysisContextParts.push(`Statuts : ${activeStatuses.join(', ')}`);
         }
 
         // Add period context if present

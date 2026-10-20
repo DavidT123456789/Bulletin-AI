@@ -686,6 +686,7 @@ export const SeatingChartManager = {
             window.addEventListener('student-updated', () => this.refreshStudents());
             window.addEventListener('studentsUpdated', () => this.refreshStudents());
             document.addEventListener('app-settings-changed', () => this.refreshStudents());
+            document.addEventListener('periodChanged', () => this.refreshStudents());
         }
     },
 
@@ -4212,50 +4213,11 @@ export const SeatingChartManager = {
     },
 
     _isStudentDeparted(studentResult, activePeriod = appState.currentPeriod || 'T1') {
-        if (!studentResult) return false;
-        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (Array.isArray(statuses) && statuses.length > 0) {
-            const departStatus = statuses.find(s => {
-                const lower = (s || '').toLowerCase();
-                return lower.includes('départ') || lower.includes('depart');
-            });
-            if (departStatus) {
-                const parts = departStatus.trim().split(/\s+/);
-                if (parts.length === 1) return true;
-
-                const departPeriodKey = parts[1];
-                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
-                const departPeriodIndex = periods.indexOf(departPeriodKey);
-                const activePeriodIndex = periods.indexOf(activePeriod);
-
-                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
-                return activePeriodIndex >= departPeriodIndex;
-            }
-            return false;
-        }
-        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
-        return false;
+        return Utils.isStudentDeparted(studentResult, activePeriod);
     },
 
     _isStudentNew(studentResult, activePeriod = appState.currentPeriod || 'T1') {
-        if (!studentResult) return false;
-        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (Array.isArray(statuses) && statuses.length > 0) {
-            const newStatus = statuses.find(s => {
-                const lower = (s || '').toLowerCase();
-                return lower.includes('nouveau');
-            });
-            if (newStatus) {
-                const parts = newStatus.trim().split(/\s+/);
-                if (parts.length === 1) return true;
-
-                const newPeriodKey = parts[1];
-                return newPeriodKey === activePeriod;
-            }
-            return false;
-        }
-        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
-        return false;
+        return Utils.isStudentNew(studentResult, activePeriod);
     },
 
     _getStudentDeviceStatuses(studentResult) {

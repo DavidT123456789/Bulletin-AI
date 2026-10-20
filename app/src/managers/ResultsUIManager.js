@@ -43,7 +43,6 @@ export const ResultsUIManager = {
 
         const filter = appState.activeStatFilter;
         const activePeriod = appState.currentPeriod;
-        const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
 
         // CORRECTIF: Toujours repartir de la liste complète (generatedResults) filtrée par la classe courante
         // Ne JAMAIS utiliser filteredResults comme source, sinon on perd les élèves masqués quand on retire un filtre.
@@ -65,15 +64,8 @@ export const ResultsUIManager = {
         const viewableResults = sourceResults
             .map(originalResult => {
                 const sd = originalResult.studentData;
-                const statuses = sd.statuses || [];
-                const departStatus = statuses.find(s => s.startsWith('Départ'));
-
-                if (departStatus) {
-                    const departPeriodKey = departStatus.split(' ')[1];
-                    const departPeriodIndex = Utils.getPeriods().indexOf(departPeriodKey);
-                    if (departPeriodIndex !== -1 && departPeriodIndex < activePeriodIndex) {
-                        return null;
-                    }
+                if (Utils.isStudentDepartedBeforePeriod(originalResult, activePeriod)) {
+                    return null;
                 }
 
                 const periodDataForView = sd.periods?.[activePeriod] || { grade: null, appreciation: '' };
@@ -126,9 +118,8 @@ export const ResultsUIManager = {
                     return !isNaN(grade) && grade === maxGrade;
                 }
 
-                const statuses = r.studentData.statuses || [];
-                if (filter === 'newCount') return statuses.some(s => s === 'Nouveau' || (s.startsWith('Nouveau') && s.endsWith(activePeriod)));
-                if (filter === 'departedCount') return statuses.some(s => s === 'Départ' || (s.startsWith('Départ') && s.endsWith(activePeriod)));
+                if (filter === 'newCount') return Utils.isStudentNew(r, activePeriod);
+                if (filter === 'departedCount') return Utils.isStudentDeparted(r, activePeriod);
 
                 // CORRECTIF CRITIQUE : Calculer l'évolution dynamique basée directement sur les notes de scolarité
                 // pour s'assurer que le filtrage correspond toujours à 100% aux compteurs de statistiques.
@@ -250,7 +241,9 @@ export const ResultsUIManager = {
                     // Order: Errors -> Tags (A-Z) -> Empty
                     const getStatusStr = (r) => {
                         if (r.errorMessage) return '!'; // Errors first
-                        const statuses = r.studentData?.statuses || [];
+                        const statuses = typeof Utils.getActiveStatuses === 'function'
+                            ? Utils.getActiveStatuses(r, activePeriod)
+                            : (r.studentData?.statuses || []);
                         if (statuses.length > 0) {
                             // Join tags to compare
                             return statuses.slice().sort().join(' ').toLowerCase();

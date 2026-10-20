@@ -3665,10 +3665,14 @@ export const TrombinoscopeManager = {
                             if (existing) {
                                 item.zone.studentId = existing.id;
                             } else {
+                                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+                                const currentPeriod = appState.currentPeriod || periods[0];
+                                const isLaterPeriodUpdate = Boolean(initialTargetInfo?.isUpdate) && periods.indexOf(currentPeriod) > 0;
                                 const newStudentResult = StudentDataManager.createPendingResult({
                                     nom: pdfStudent.nom,
                                     prenom: pdfStudent.prenom,
                                     classe: pdfStudent.classe || pdfStudent.originClass || '',
+                                    statuses: isLaterPeriodUpdate ? [`Nouveau ${currentPeriod}`] : [],
                                     periods: {}
                                 });
                                 newStudentResult.classId = targetClass.id;

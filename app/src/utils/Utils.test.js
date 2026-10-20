@@ -572,5 +572,70 @@ describe('Utils', () => {
             expect(Utils.isStudentDeparted(undefined)).toBe(false);
         });
     });
+
+    describe('isStudentDepartedBeforePeriod', () => {
+        it('devrait retourner true uniquement si le départ est daté d\'une période strictement antérieure', () => {
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ T1'] }, 'T2')).toBe(true);
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ T1'] }, 'T3')).toBe(true);
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ T2'] }, 'T2')).toBe(false);
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ T2'] }, 'T1')).toBe(false);
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ'] }, 'T2')).toBe(false);
+        });
+
+        it('devrait retourner false pour un élève sans statut de départ ou valeurs limites', () => {
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Nouveau T2'] }, 'T3')).toBe(false);
+            expect(Utils.isStudentDepartedBeforePeriod({}, 'T2')).toBe(false);
+            expect(Utils.isStudentDepartedBeforePeriod(null, 'T2')).toBe(false);
+            expect(Utils.isStudentDepartedBeforePeriod(undefined)).toBe(false);
+        });
+    });
+
+    describe('isStudentNew', () => {
+        it('devrait détecter un élève Nouveau (sans période ou sur la période active uniquement)', () => {
+            expect(Utils.isStudentNew({ statuses: ['Nouveau'] }, 'T1')).toBe(true);
+            expect(Utils.isStudentNew({ statuses: ['Nouveau'] }, 'T3')).toBe(true);
+            expect(Utils.isStudentNew({ statuses: ['Nouveau T2'] }, 'T2')).toBe(true);
+            expect(Utils.isStudentNew({ statuses: ['Nouveau T2'] }, 'T1')).toBe(false);
+            expect(Utils.isStudentNew({ statuses: ['Nouveau T2'] }, 'T3')).toBe(false);
+            expect(Utils.isStudentNew({ studentData: { statuses: ['nouveau T2'] } }, 'T2')).toBe(true);
+        });
+
+        it('devrait supporter le fallback booléen isNew quand statuses est vide', () => {
+            expect(Utils.isStudentNew({ isNew: true }, 'T2')).toBe(true);
+            expect(Utils.isStudentNew({ isNew: false }, 'T2')).toBe(false);
+        });
+
+        it('devrait retourner false pour un élève non nouveau ou des valeurs limites', () => {
+            expect(Utils.isStudentNew({ statuses: ['PPRE', 'Départ'] }, 'T2')).toBe(false);
+            expect(Utils.isStudentNew({}, 'T2')).toBe(false);
+            expect(Utils.isStudentNew(null, 'T2')).toBe(false);
+            expect(Utils.isStudentNew(undefined)).toBe(false);
+        });
+    });
+
+    describe('getActiveStatuses', () => {
+        it('devrait filtrer Nouveau <P> et Départ <P> selon la période active tout en conservant les dispositifs permanents', () => {
+            const student = {
+                studentData: {
+                    statuses: ['Nouveau T2', 'Départ T3', 'PPRE', 'Délégué']
+                }
+            };
+
+            expect(Utils.getActiveStatuses(student, 'T1')).toEqual(['PPRE', 'Délégué']);
+            expect(Utils.getActiveStatuses(student, 'T2')).toEqual(['Nouveau T2', 'PPRE', 'Délégué']);
+            expect(Utils.getActiveStatuses(student, 'T3')).toEqual(['Départ T3', 'PPRE', 'Délégué']);
+        });
+
+        it('devrait conserver Nouveau et Départ sans période quelle que soit la période active', () => {
+            expect(Utils.getActiveStatuses(['Nouveau', 'Départ', 'ULIS'], 'T1')).toEqual(['Nouveau', 'Départ', 'ULIS']);
+            expect(Utils.getActiveStatuses(['Nouveau', 'Départ', 'ULIS'], 'T3')).toEqual(['Nouveau', 'Départ', 'ULIS']);
+        });
+
+        it('devrait gérer les valeurs nulles ou vides sans erreur', () => {
+            expect(Utils.getActiveStatuses(null, 'T1')).toEqual([]);
+            expect(Utils.getActiveStatuses(undefined)).toEqual([]);
+            expect(Utils.getActiveStatuses([], 'T1')).toEqual([]);
+        });
+    });
 });
 

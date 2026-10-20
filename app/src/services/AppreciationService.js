@@ -167,8 +167,11 @@ export const AppreciationService = {
             });
 
             existingStudentsMap.forEach((result, key) => {
-                const statuses = result.studentData.statuses || [];
-                if (!importedStudentsMap.has(key) && !statuses.some(s => s.startsWith('Départ'))) {
+                const statuses = result.studentData?.statuses || [];
+                const alreadyDeparted = typeof Utils.isStudentDeparted === 'function'
+                    ? Utils.isStudentDeparted(result, currentPeriod)
+                    : statuses.some(s => String(s || '').toLowerCase().startsWith('départ') || String(s || '').toLowerCase().startsWith('depart'));
+                if (!importedStudentsMap.has(key) && !alreadyDeparted) {
                     importPreviewData.departedStudents.push({ nom: result.nom, prenom: result.prenom });
                 }
             });

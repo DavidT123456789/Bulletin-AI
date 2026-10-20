@@ -1085,6 +1085,9 @@ export const FocusPanelManager = {
 
         SpeechSynthesisManager.cancel();
 
+        // 0. Header status badges (Nouveau / Départ depend on active period)
+        FocusPanelHeader.renderStatusBadges(result.studentData?.statuses || []);
+
         // 1. Context card: Previous grades, current grade, and context input
         this._renderGradesAndContext(result, currentPeriod);
 

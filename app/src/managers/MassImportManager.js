@@ -341,7 +341,16 @@ export const MassImportManager = {
 
         const pendingResults = sourceResults.filter(r => {
             const currentPeriod = appState.currentPeriod;
-            const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
+            if (Utils.isStudentDepartedBeforePeriod?.(r, currentPeriod)) return false;
+
+            const periodData = r.studentData?.periods?.[currentPeriod];
+            if (Utils.isStudentDeparted?.(r, currentPeriod)) {
+                const hasGrade = periodData?.grade !== undefined && periodData?.grade !== null && periodData?.grade !== '';
+                const hasContext = Boolean(periodData?.context?.trim());
+                if (!hasGrade && !hasContext) return false;
+            }
+
+            const appRaw = periodData?.appreciation;
             const appCurrent = (r.generationPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
 
@@ -414,7 +423,9 @@ export const MassImportManager = {
             if (field === 'status') {
                 const getStatusStr = r => {
                     if (r.errorMessage) return '!';
-                    const statuses = r.studentData?.statuses || [];
+                    const statuses = typeof Utils.getActiveStatuses === 'function'
+                        ? Utils.getActiveStatuses(r, activePeriod)
+                        : (r.studentData?.statuses || []);
                     if (statuses.length > 0) return statuses.slice().sort().join(' ').toLowerCase();
                     return '\uFFFF';
                 };

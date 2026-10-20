@@ -1056,43 +1056,6 @@
     color: var(--text-primary);
 }
 
-/* === History Button - Extension of journal-header-btn === */
-/* Inherits base styles from .journal-header-btn (added in HTML) */
-/* Only defines specifics: positioning and count badge styling */
-.focus-history-btn {
-    margin-left: 4px;
-    flex-shrink: 0;
-    background: var(--surface-color);
-    box-shadow: none !important;
-    border: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .focus-history-btn {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    box-shadow: none !important;
-}
-
-/* Count badge styling - color transition on hover */
-/* font-weight inherited from .journal-header-btn span */
-.focus-history-btn .history-count {
-    color: var(--text-secondary);
-    transition: color 0.2s ease;
-}
-
-.focus-history-btn:hover {
-    background: var(--bg-secondary);
-    box-shadow: none !important;
-}
-
-[data-theme="dark"] .focus-history-btn:hover {
-    background: var(--bg-hover);
-}
-
-.focus-history-btn:hover .history-count {
-    color: var(--primary-color);
-}
-
 .period-badge {
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
@@ -2041,8 +2004,8 @@ input.context-grade-input,
 }
 
 [data-theme="dark"] .history-badge-current {
-    background: rgba(96, 165, 250, 0.15);
-    color: var(--color-blue-bright);
+    background: rgba(var(--primary-color-rgb), 0.18);
+    color: var(--primary-bright);
 }
 
 .history-version-preview {
@@ -3293,35 +3256,10 @@ input.context-grade-input,
 }
 
 .student-card-title i {
-    color: var(--primary-color);
+    color: currentColor;
 }
 
 /* Edit Toggle Button */
-.btn-icon-edit {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    transition: all var(--transition-fast);
-}
-
-.btn-icon-edit:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-.btn-icon-edit.active {
-    background: var(--primary-color);
-    color: white;
-}
-
 /* Edit Mode Styles */
 .student-card-edit-mode {
     padding: 16px;
@@ -3614,12 +3552,12 @@ input.context-grade-input,
 .btn-icon-check {
     background: var(--primary-color);
     color: white;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-icon-check:hover {
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-icon-cancel {

@@ -279,6 +279,42 @@ describe('FocusPanelManager and Save State integrity', () => {
             );
             expect(mergedRemoveNew).toEqual(['PAP', 'PAI', 'AESH']);
         });
+
+        it('pre-selects Nouveau in creation mode only in later periods (T2/T3/S2) when class already has students', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            const editMode = document.querySelector('.focus-header-edit');
+            editMode.innerHTML = `
+                <input type="text" id="headerPrenomInput">
+                <input type="text" id="headerNomInput">
+                <div class="status-checkboxes">
+                    <label><input type="checkbox" value="Nouveau"> Nouveau</label>
+                    <label><input type="checkbox" value="Départ"> Départ</label>
+                    <label><input type="checkbox" value="PPRE"> PPRE</label>
+                </div>
+            `;
+
+            FocusPanelHeader.callbacks.getIsCreationMode = () => true;
+            FocusPanelHeader.callbacks.getCurrentStudentId = () => null;
+
+            // Cas 1 : En T1 -> Nouveau NON pré-coché même si la classe a des élèves
+            appState.currentPeriod = 'T1';
+            FocusPanelHeader.toggleEditMode(true);
+            const nouveauCb = editMode.querySelector('input[value="Nouveau"]');
+            expect(nouveauCb.checked).toBe(false);
+            expect(FocusPanelHeader._originalHeaderValues.statuses).toEqual([]);
+
+            // Cas 2 : En T2 avec élèves existants dans la classe -> Nouveau pré-coché ("Nouveau T2")
+            appState.currentPeriod = 'T2';
+            FocusPanelHeader.toggleEditMode(true);
+            expect(nouveauCb.checked).toBe(true);
+            expect(FocusPanelHeader._originalHeaderValues.statuses).toEqual(['Nouveau T2']);
+
+            // Cas 3 : En T2 mais classe vide -> Nouveau NON pré-coché
+            appState.generatedResults = [];
+            FocusPanelHeader.toggleEditMode(true);
+            expect(nouveauCb.checked).toBe(false);
+            expect(FocusPanelHeader._originalHeaderValues.statuses).toEqual([]);
+        });
     });
 });
 

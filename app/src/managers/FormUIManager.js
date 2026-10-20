@@ -130,28 +130,6 @@ export const FormUI = {
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
 
-        // Synchroniser le sélecteur de couleur d'accentuation (accordéon replié par défaut)
-        const accentSelector = document.getElementById('accentColorSelector');
-        const customPickerPanel = document.getElementById('customPickerPanel');
-        if (customPickerPanel) {
-            customPickerPanel.classList.remove('open');
-        }
-        if (accentSelector) {
-            const currentAccent = appState.accentColor || 'blue';
-            const isCustom = currentAccent.startsWith('#');
-            accentSelector.querySelectorAll('.accent-color-btn').forEach(btn => {
-                const val = btn.getAttribute('data-value');
-                if (val === 'custom') {
-                    btn.classList.toggle('active', isCustom);
-                    if (isCustom) {
-                        btn.style.setProperty('--accent-swatch-color', currentAccent);
-                    }
-                } else {
-                    btn.classList.toggle('active', val === currentAccent);
-                }
-            });
-        }
-
         // Synchroniser les pastilles de statut du plan de classe
         const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
         if (seatingDotsSelector) {
@@ -188,6 +166,19 @@ export const FormUI = {
         // Confidentialité
         if (DOM.settingsPrivacyAnonymizeToggle) {
             DOM.settingsPrivacyAnonymizeToggle.checked = appState.anonymizeData;
+        }
+
+        // Synchroniser la pastille de couleur d'accentuation
+        const accentSelector = document.getElementById('accentColorSelector');
+        if (accentSelector) {
+            const currentAccent = ['blue', 'purple', 'pink', 'orange', 'green', 'teal'].includes(appState.accentColor)
+                ? appState.accentColor
+                : 'blue';
+            accentSelector.querySelectorAll('.accent-color-swatch').forEach(swatch => {
+                const isActive = swatch.getAttribute('data-color') === currentAccent;
+                swatch.classList.toggle('active', isActive);
+                swatch.setAttribute('aria-checked', String(isActive));
+            });
         }
 
         this.toggleAIKeyFields();

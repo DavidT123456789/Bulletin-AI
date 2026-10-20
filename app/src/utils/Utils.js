@@ -84,6 +84,103 @@ export const Utils = {
     },
 
     /**
+     * Détermine si un élève a quitté la classe lors d'une période strictement antérieure à la période active
+     * @param {Object} studentResult - Données de l'élève
+     * @param {string} [activePeriod] - Période active (ex: 'T2', 'T3', 'S2')
+     * @returns {boolean}
+     */
+    isStudentDepartedBeforePeriod(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return false;
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+
+        const departStatus = statuses.find(s => {
+            const lower = String(s || '').toLowerCase();
+            return lower.includes('départ') || lower.includes('depart');
+        });
+        if (!departStatus) return false;
+
+        const parts = departStatus.trim().split(/\s+/);
+        if (parts.length < 2) return false;
+
+        const departPeriodKey = parts[1];
+        const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
+        const departPeriodIndex = periods.indexOf(departPeriodKey);
+        const activePeriodIndex = periods.indexOf(activePeriod);
+
+        if (departPeriodIndex === -1 || activePeriodIndex === -1) return false;
+        return departPeriodIndex < activePeriodIndex;
+    },
+
+    /**
+     * Détermine si un élève est en statut Nouveau sur la période active
+     * @param {Object} studentResult - Données de l'élève
+     * @param {string} [activePeriod] - Période active (ex: 'T1', 'S1')
+     * @returns {boolean}
+     */
+    isStudentNew(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return false;
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (Array.isArray(statuses) && statuses.length > 0) {
+            const newStatus = statuses.find(s => {
+                const lower = String(s || '').toLowerCase();
+                return lower.includes('nouveau');
+            });
+            if (newStatus) {
+                const parts = newStatus.trim().split(/\s+/);
+                if (parts.length === 1) return true;
+
+                const newPeriodKey = parts[1];
+                return newPeriodKey === activePeriod;
+            }
+            return false;
+        }
+        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
+        return false;
+    },
+
+    /**
+     * Filtre la liste des statuts d'un élève pour ne retenir que ceux applicables à la période active
+     * (ex: "Nouveau T2" n'est actif qu'en T2 ; "Départ T2" n'est actif qu'à partir de T2)
+     * @param {Object|string[]} studentResultOrStatuses - Objet élève ou tableau de statuts
+     * @param {string} [activePeriod] - Période active (ex: 'T1', 'S1')
+     * @returns {string[]} Statuts actifs sur la période
+     */
+    getActiveStatuses(studentResultOrStatuses, activePeriod = appState.currentPeriod || 'T1') {
+        const statuses = Array.isArray(studentResultOrStatuses)
+            ? studentResultOrStatuses
+            : (studentResultOrStatuses?.studentData?.statuses || studentResultOrStatuses?.statuses || []);
+        if (!Array.isArray(statuses) || statuses.length === 0) return [];
+
+        const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
+        const activePeriodIndex = periods.indexOf(activePeriod);
+
+        return statuses.filter(s => {
+            const raw = String(s || '').trim();
+            if (!raw) return false;
+            const lower = raw.toLowerCase();
+
+            if (lower.includes('nouveau')) {
+                const parts = raw.split(/\s+/);
+                if (parts.length === 1) return true;
+                const periodKey = parts[1];
+                if (!periods.includes(periodKey)) return true;
+                return periodKey === activePeriod;
+            }
+
+            if (lower.includes('départ') || lower.includes('depart')) {
+                const parts = raw.split(/\s+/);
+                if (parts.length === 1) return true;
+                const departPeriodIndex = periods.indexOf(parts[1]);
+                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
+                return activePeriodIndex >= departPeriodIndex;
+            }
+
+            return true;
+        });
+    },
+
+    /**
      * Formate un label avec deux-points selon la typographie française
      * @param {string} label - Le label (ex: "T1", "Moyenne")
      * @param {string|number} value - La valeur à afficher

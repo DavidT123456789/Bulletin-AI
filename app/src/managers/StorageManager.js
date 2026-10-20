@@ -119,8 +119,8 @@ export const StorageManager = {
 
                     // UI Settings
                     if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
-                    if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
                     if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
+                    if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
                     if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
                     if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
                         userSettings.ui.seatingStatusDots = {
@@ -186,9 +186,6 @@ export const StorageManager = {
                     if (!userSettings.ui.theme) {
                         userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
                     }
-                    if (!userSettings.ui.accentColor) {
-                        userSettings.ui.accentColor = localStorage.getItem('bulletin_accent_color') || 'blue';
-                    }
                 }
 
                 // MIGRATION: LocalStorage -> IndexedDB
@@ -206,7 +203,6 @@ export const StorageManager = {
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
                 userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
-                userSettings.ui.accentColor = localStorage.getItem('bulletin_accent_color') || 'blue';
             }
 
             const dbResults = await DBService.getAll('generatedResults');
@@ -303,6 +299,7 @@ export const StorageManager = {
                 createdAt: Date.now(),
                 settings: {
                     theme: userSettings.ui.theme,
+                    accentColor: userSettings.ui.accentColor || 'blue',
                     periodSystem: userSettings.academic.periodSystem,
                     subjects: userSettings.academic.subjects,
                     seatingGrid: userSettings.academic.seatingGrid || null,
@@ -631,8 +628,8 @@ export const StorageManager = {
     _buildSettingsSnapshot() {
         return {
             theme: userSettings.ui.theme,
-            isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             accentColor: userSettings.ui.accentColor || 'blue',
+            isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             activeView: userSettings.ui.activeView || 'list',
             seatingStatusDots: userSettings.ui.seatingStatusDots || { ...DEFAULT_SEATING_STATUS_DOTS },
 
