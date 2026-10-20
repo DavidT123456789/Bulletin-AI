@@ -623,15 +623,11 @@ export const SeatingChartManager = {
         const outputSection = document.querySelector('.main-content .output-section');
         if (outputSection && !outputSection._hasListSwipeListener) {
             outputSection._hasListSwipeListener = true;
-            const mainContent = outputSection.closest('.main-content') || document.querySelector('.main-content');
             let listTouchStartX = 0;
             let listTouchStartY = 0;
             let listTouchValid = false;
             let listSwipeAxis = null;
             let listCurrentOx = 0;
-            let listCurrentOy = 0;
-            let listStartedAtTop = false;
-            let listStartedAtBottom = false;
             let activeListContainers = [];
             let listReleaseTimer = null;
 
@@ -642,14 +638,6 @@ export const SeatingChartManager = {
                 return style.display !== 'none' && style.visibility !== 'hidden';
             });
 
-            const getMainScrollBounds = () => {
-                if (!mainContent) return { scrollTop: 0, maxScrollY: 0 };
-                return {
-                    scrollTop: mainContent.scrollTop || 0,
-                    maxScrollY: Math.max(0, (mainContent.scrollHeight || 0) - (mainContent.clientHeight || 0))
-                };
-            };
-
             const dampListSwipe = (delta, isNavigable) => {
                 const abs = Math.abs(delta);
                 const maxOvershoot = isNavigable ? 76 : 22;
@@ -659,14 +647,12 @@ export const SeatingChartManager = {
             };
 
             const releaseListSwipe = () => {
-                if (listCurrentOx === 0 && listCurrentOy === 0) return;
+                if (listCurrentOx === 0) return;
                 listCurrentOx = 0;
-                listCurrentOy = 0;
                 const containers = activeListContainers.length > 0 ? activeListContainers : resolveListSwipeContainers();
                 activeListContainers = [];
                 containers.forEach(el => {
                     el.style.removeProperty('--swipe-offset-x');
-                    el.style.removeProperty('--swipe-offset-y');
                     el.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
                     el.style.transform = 'translate3d(0, 0, 0)';
                 });
@@ -704,15 +690,11 @@ export const SeatingChartManager = {
                     clearTimeout(listReleaseTimer);
                     listReleaseTimer = null;
                 }
-                const { scrollTop, maxScrollY } = getMainScrollBounds();
-                listStartedAtTop = scrollTop <= 2;
-                listStartedAtBottom = scrollTop >= maxScrollY - 2;
                 listTouchStartX = x;
                 listTouchStartY = e.touches[0].clientY;
                 listTouchValid = true;
                 listSwipeAxis = null;
                 listCurrentOx = 0;
-                listCurrentOy = 0;
                 activeListContainers = [];
             }, { passive: true });
 
@@ -726,18 +708,10 @@ export const SeatingChartManager = {
                     if (Math.abs(dx) > Math.abs(dy) * 1.3) {
                         listSwipeAxis = 'x';
                         activeListContainers = resolveListSwipeContainers();
-                    } else if (Math.abs(dy) > Math.abs(dx) * 1.3) {
-                        const { scrollTop, maxScrollY } = getMainScrollBounds();
-                        const pullingDownAtTop = dy > 0 && listStartedAtTop && scrollTop <= 2;
-                        const pullingUpAtBottom = dy < 0 && listStartedAtBottom && scrollTop >= maxScrollY - 2;
-                        if (pullingDownAtTop || pullingUpAtBottom) {
-                            listSwipeAxis = 'y';
-                            activeListContainers = resolveListSwipeContainers();
-                        } else {
-                            listSwipeAxis = 'scroll';
-                            listTouchValid = false;
-                            return;
-                        }
+                    } else if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+                        listSwipeAxis = 'scroll';
+                        listTouchValid = false;
+                        return;
                     } else {
                         return;
                     }
@@ -746,28 +720,10 @@ export const SeatingChartManager = {
                 if (listSwipeAxis === 'x') {
                     const ox = dampListSwipe(dx, dx < 0 && this._getCurrentClassStudents().length > 0);
                     listCurrentOx = ox;
-                    listCurrentOy = 0;
                     activeListContainers.forEach(el => {
                         el.style.transition = 'none';
                         el.style.setProperty('--swipe-offset-x', `${ox}px`);
                         el.style.transform = `translate3d(${ox}px, 0, 0)`;
-                    });
-                } else if (listSwipeAxis === 'y') {
-                    const { scrollTop, maxScrollY } = getMainScrollBounds();
-                    const stillAtBoundary = (dy > 0 && listStartedAtTop && scrollTop <= 2) ||
-                                            (dy < 0 && listStartedAtBottom && scrollTop >= maxScrollY - 2);
-                    if (!stillAtBoundary) {
-                        releaseListSwipe();
-                        listTouchValid = false;
-                        return;
-                    }
-                    const oy = dampListSwipe(dy, Boolean(this._canSwitchAdjacentClass?.(dy < 0 ? 1 : -1)));
-                    listCurrentOy = oy;
-                    listCurrentOx = 0;
-                    activeListContainers.forEach(el => {
-                        el.style.transition = 'none';
-                        el.style.setProperty('--swipe-offset-y', `${oy}px`);
-                        el.style.transform = `translate3d(0, ${oy}px, 0)`;
                     });
                 }
             }, { passive: true });
@@ -785,25 +741,14 @@ export const SeatingChartManager = {
                 }
                 const dx = endTouch.clientX - listTouchStartX;
                 const dy = endTouch.clientY - listTouchStartY;
-                if (listSwipeAxis !== 'y' && dx <= -48 && Math.abs(dx) > Math.abs(dy) * 1.35 && this._getCurrentClassStudents().length > 0) {
+                if (listSwipeAxis !== 'scroll' && dx <= -48 && Math.abs(dx) > Math.abs(dy) * 1.35 && this._getCurrentClassStudents().length > 0) {
                     listCurrentOx = 0;
-                    listCurrentOy = 0;
                     activeListContainers = [];
                     if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
                         this._planMode = 'course';
                     }
                     this.switchToView('plan');
                     return;
-                }
-                if (listSwipeAxis === 'y' && Math.abs(dy) >= 48 && Math.abs(dy) > Math.abs(dx) * 1.35) {
-                    const delta = dy < 0 ? 1 : -1;
-                    if (this._canSwitchAdjacentClass?.(delta)) {
-                        listCurrentOx = 0;
-                        listCurrentOy = 0;
-                        activeListContainers = [];
-                        this._switchAdjacentClass(delta);
-                        return;
-                    }
                 }
                 releaseListSwipe();
             }, { passive: true });

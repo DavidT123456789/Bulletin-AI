@@ -94,11 +94,12 @@
     flex-direction: column;
     border-radius: 0;
     overflow: hidden;
+    position: relative;
     /* Ensure content is constrained to wrapper height */
 }
 
 /* Voile d'atténuation & micro-flou hors en-tête lorsque le menu 3 points général (ou un menu d'en-tête) est ouvert */
-.main-content-wrapper::after {
+.app-layout::after {
     content: "";
     position: fixed;
     top: 56px;
@@ -116,12 +117,12 @@
                 visibility 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-[data-theme="dark"] .main-content-wrapper::after {
+[data-theme="dark"] .app-layout::after {
     background: rgba(0, 0, 0, 0.36);
 }
 
-body.header-menu-open .main-content-wrapper::after,
-body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open) .main-content-wrapper::after {
+body.header-menu-open .app-layout::after,
+body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open) .app-layout::after {
     opacity: 1;
     visibility: visible;
 }
@@ -144,6 +145,11 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     margin: 0;
     display: flex;
     flex-direction: column;
+}
+
+/* Offset scrollbar track below the 56px frosted-glass header on Desktop so the thumb never slides behind it */
+.main-content::-webkit-scrollbar-track {
+    margin-top: 56px;
 }
 
 .output-section {
@@ -1715,10 +1721,23 @@ button > .icon-spin-wrapper {
         grid-template-columns: 1fr;
     }
 
+    .main-content-wrapper::before,
+    .main-content-wrapper::after {
+        right: 0;
+    }
+
     .main-content {
         --content-padding-x: 16px;
         padding: 16px var(--content-padding-x);
         padding-top: calc(56px + 8px);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .main-content::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
     }
 
     .header {
@@ -1922,11 +1941,11 @@ button > .icon-spin-wrapper {
 @keyframes class-switch-out-down {
     from {
         opacity: 1;
-        transform: translate3d(0, var(--swipe-offset-y, 0px), 0);
+        transform: translate3d(0, 0, 0);
     }
     to {
         opacity: 0;
-        transform: translate3d(0, calc(var(--swipe-offset-y, 0px) + 22px), 0);
+        transform: translate3d(0, 22px, 0);
     }
 }
 
@@ -1944,11 +1963,11 @@ button > .icon-spin-wrapper {
 @keyframes class-switch-out-up {
     from {
         opacity: 1;
-        transform: translate3d(0, var(--swipe-offset-y, 0px), 0);
+        transform: translate3d(0, 0, 0);
     }
     to {
         opacity: 0;
-        transform: translate3d(0, calc(var(--swipe-offset-y, 0px) - 22px), 0);
+        transform: translate3d(0, -22px, 0);
     }
 }
 

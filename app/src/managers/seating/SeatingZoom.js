@@ -868,7 +868,7 @@ export const SeatingZoom = {
                     !this._activeMobileSheet &&
                     !this._isSearchOpen?.()
                 );
-                const canNavigateViewOrClass = isFittedSwipeSurface && (this._isLocked || canSwipeUnlockedEmpty);
+                const canNavigateView = isFittedSwipeSurface && (this._isLocked || canSwipeUnlockedEmpty);
 
                 let ox = 0;
                 let oy = 0;
@@ -878,16 +878,10 @@ export const SeatingZoom = {
                 } else {
                     const isNavX = Boolean(
                         (effX < 0 && isFittedSwipeSurface && this._isLocked && this._planMode === 'course' && this._canSwitchPlanMode?.('activity')) ||
-                        (effX > 0 && canNavigateViewOrClass)
-                    );
-                    const isNavY = Boolean(
-                        canNavigateViewOrClass && (
-                            (effY < 0 && this._canSwitchAdjacentClass?.(1)) ||
-                            (effY > 0 && this._canSwitchAdjacentClass?.(-1))
-                        )
+                        (effX > 0 && canNavigateView)
                     );
                     ox = clampOverscroll(effX, isNavX ? 84 : 28, isNavX ? 0.56 : 0.25);
-                    oy = clampOverscroll(effY, isNavY ? 84 : 28, isNavY ? 0.56 : 0.25);
+                    oy = clampOverscroll(effY, 28, 0.25);
                 }
 
                 if (Math.abs(ox) > 0 || Math.abs(oy) > 0) {
@@ -934,7 +928,7 @@ export const SeatingZoom = {
                 !this._activeMobileSheet &&
                 !this._isSearchOpen?.()
             );
-            const canSwipeViewOrClass = Boolean(
+            const canSwipeView = Boolean(
                 canSwipeBase && (this._isLocked || canSwipeUnlockedEmpty)
             );
             touchBoard = null;
@@ -962,36 +956,13 @@ export const SeatingZoom = {
                         this.switchPlanMode('activity');
                         return;
                     }
-                } else if (totalDx > 0 && rawExcessX > 0 && canSwipeViewOrClass) {
+                } else if (totalDx > 0 && rawExcessX > 0 && canSwipeView) {
                     clearOverscrollTracking();
                     if (this._isLocked && this._planMode === 'activity' && this._canSwitchPlanMode?.('course') && this._hasClassCoursePlan?.()) {
                         this.switchPlanMode('course');
                     } else {
                         this.switchToView?.('list');
                     }
-                    return;
-                }
-            }
-
-            const isVerticalSwipe = Boolean(
-                canSwipeViewOrClass &&
-                Math.abs(totalDy) >= SWIPE_MODE_MIN_DX &&
-                Math.abs(rawExcessY) >= SWIPE_MODE_MIN_EXCESS &&
-                Math.abs(totalDy) > Math.abs(totalDx) * 1.35
-            );
-
-            if (isVerticalSwipe) {
-                const delta = (totalDy < 0 && rawExcessY < 0)
-                    ? 1
-                    : (totalDy > 0 && rawExcessY > 0 ? -1 : 0);
-
-                if (delta !== 0 && this._canSwitchAdjacentClass?.(delta)) {
-                    clearOverscrollTracking();
-                    Promise.resolve(this._switchAdjacentClass(delta)).finally(() => {
-                        const board = document.getElementById('scClassroomBoard');
-                        board?.style.removeProperty('transform');
-                        board?.style.removeProperty('transition');
-                    });
                     return;
                 }
             }

@@ -534,6 +534,12 @@
         overflow: visible !important;
     }
 
+    .main-content-wrapper::before,
+    .main-content-wrapper::after,
+    .app-layout::after {
+        display: none !important;
+    }
+
     .main-content {
         padding: 0 !important;
         max-width: none !important;

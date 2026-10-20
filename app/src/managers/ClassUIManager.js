@@ -889,8 +889,6 @@ export const ClassUIManager = {
         });
 
         outgoingContainers.forEach(el => {
-            el.style.removeProperty('transform');
-            el.style.removeProperty('transition');
             void el.offsetWidth;
             el.classList.add(outClass);
         });
@@ -909,7 +907,6 @@ export const ClassUIManager = {
 
         outgoingContainers.forEach(el => {
             el.classList.remove('class-switch-out-down', 'class-switch-out-up');
-            el.style.removeProperty('--swipe-offset-y');
         });
 
         // Réinitialiser proprement la recherche Liste avant de charger la nouvelle classe

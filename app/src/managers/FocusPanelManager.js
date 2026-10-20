@@ -980,26 +980,26 @@ export const FocusPanelManager = {
 
     /**
      * Met à jour les brumes d'indication de défilement (scrims) en haut et en bas.
-     * Masque la brume haute en butée haute (scrollTop <= 4) et la brume basse
-     * en butée basse ou lorsqu'il n'y a aucun débordement.
+     * Mutualisé entre le Focus Panel (par défaut) et la vue principale (.main-content-wrapper).
+     * @param {Element|null} [scrollEl] - Conteneur scrollable
+     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-top / can-scroll-bottom
      */
-    updateScrollAffordances() {
-        const panel = document.getElementById('focusPanel');
-        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
-        const focusMainPage = panel?.querySelector('.focus-main-page');
-        if (!focusContent || !focusMainPage) return;
+    updateScrollAffordances(scrollEl, containerEl) {
+        const panel = !scrollEl ? document.getElementById('focusPanel') : null;
+        const content = scrollEl || panel?.querySelector('.focus-main-page .focus-content');
+        const container = containerEl || panel?.querySelector('.focus-main-page');
+        if (!content || !container) return;
 
-        const scrollTop = Math.max(0, focusContent.scrollTop);
-        const scrollHeight = focusContent.scrollHeight;
-        const clientHeight = focusContent.clientHeight;
-        const maxScroll = Math.max(0, scrollHeight - clientHeight);
-        const remaining = Math.max(0, maxScroll - scrollTop);
+        if (container.dataset.view === 'plan') {
+            container.classList.remove('can-scroll-top', 'can-scroll-bottom');
+            return;
+        }
 
-        const canScrollTop = scrollTop > 4;
-        const canScrollBottom = maxScroll > 4 && remaining > 4;
+        const scrollTop = Math.max(0, content.scrollTop);
+        const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
 
-        focusMainPage.classList.toggle('can-scroll-top', canScrollTop);
-        focusMainPage.classList.toggle('can-scroll-bottom', canScrollBottom);
+        container.classList.toggle('can-scroll-top', scrollTop > 4);
+        container.classList.toggle('can-scroll-bottom', maxScroll > 4 && (maxScroll - scrollTop) > 4);
     },
 
     /** Creation mode flag */

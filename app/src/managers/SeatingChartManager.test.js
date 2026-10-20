@@ -3808,7 +3808,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(document.activeElement).toBe(activityTab);
         });
 
-        it('devrait permettre de changer de classe avec Ctrl + Flèches Haut/Bas au clavier (sans bloquer le scroll natif Haut/Bas) et par glissement vertical en vue Plan', () => {
+        it('devrait permettre de changer de classe avec Ctrl + Flèches Haut/Bas au clavier sans déclencher de changement de classe au swipe vertical sur tactile', () => {
             const c1 = appState.classes[0];
             const c2 = ClassManager.createClass('4ème B');
             appState.currentClassId = c1.id;
@@ -3850,7 +3850,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(switchClassSpy).toHaveBeenCalledWith(-1);
             switchClassSpy.mockClear();
 
-            // 3. Sur mobile en vue Plan Consultation ajustée : swipe vers le bas (depuis c2) -> classe précédente (-1), même si scrollHeight déborde légèrement en mode data-fitted="true"
+            // 3. Sur mobile en vue Plan Consultation ajustée : un swipe vertical applique un rebond élastique avec verrouillage d'axe sans changer de classe
             const gridArea = document.getElementById('scGridArea');
             gridArea.setAttribute('data-fitted', 'true');
             Object.defineProperty(gridArea, 'scrollWidth', { value: 420, configurable: true });
@@ -3864,35 +3864,16 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const tmDown = new Event('touchmove');
             tmDown.touches = [{ clientX: 215, clientY: 240 }];
             gridArea.dispatchEvent(tmDown);
-            // Verrouillage d'axe strict : dx=15 est ignoré sur l'axe X dès que l'axe Y domine
             expect(document.getElementById('scClassroomBoard').style.transform).toMatch(/^translate3d\(0px, [0-9.]+px, 0\)$/);
             const teDown = new Event('touchend');
             teDown.changedTouches = [{ clientX: 215, clientY: 240 }];
             gridArea.dispatchEvent(teDown);
 
-            expect(switchClassSpy).toHaveBeenCalledWith(-1);
-            switchClassSpy.mockClear();
-
-            // 4. En vue Liste : swipe vertical en bout de course (haut/bas) change de classe, mais pas au milieu du scroll
-            SeatingChartManager.switchToView('list', { immediate: true });
-            const outputSection = document.querySelector('.main-content .output-section');
-            Object.defineProperty(mainContent, 'scrollHeight', { value: 500, configurable: true });
-            Object.defineProperty(mainContent, 'clientHeight', { value: 300, configurable: true });
-
-            // Au milieu du scroll (scrollTop = 100) : aucun déclenchement de changement de classe
-            mainContent.scrollTop = 100;
-            const tsMid = new Event('touchstart');
-            tsMid.touches = [{ clientX: 200, clientY: 120 }];
-            outputSection.dispatchEvent(tsMid);
-            const tmMid = new Event('touchmove');
-            tmMid.touches = [{ clientX: 200, clientY: 240 }];
-            outputSection.dispatchEvent(tmMid);
-            const teMid = new Event('touchend');
-            teMid.changedTouches = [{ clientX: 200, clientY: 240 }];
-            outputSection.dispatchEvent(teMid);
             expect(switchClassSpy).not.toHaveBeenCalled();
 
-            // En bout de course haut (scrollTop = 0) : tirer vers le bas depuis c2 -> classe précédente (-1)
+            // 4. En vue Liste : un swipe vertical (même en bout de course) ne change jamais de classe
+            SeatingChartManager.switchToView('list', { immediate: true });
+            const outputSection = document.querySelector('.main-content .output-section');
             mainContent.scrollTop = 0;
             const tsTop = new Event('touchstart');
             tsTop.touches = [{ clientX: 200, clientY: 120 }];
@@ -3903,7 +3884,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const teTop = new Event('touchend');
             teTop.changedTouches = [{ clientX: 200, clientY: 240 }];
             outputSection.dispatchEvent(teTop);
-            expect(switchClassSpy).toHaveBeenCalledWith(-1);
+            expect(switchClassSpy).not.toHaveBeenCalled();
             switchClassSpy.mockRestore();
         });
     });

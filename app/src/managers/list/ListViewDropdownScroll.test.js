@@ -352,6 +352,59 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
     });
 
+    it('should update can-scroll-top and can-scroll-bottom affordances on .main-content-wrapper during scroll and disable them in plan view', async () => {
+        const { GlobalListeners } = await import('../listeners/GlobalListeners.js');
+
+        // Safe when DOM is empty
+        document.body.innerHTML = '';
+        expect(() => GlobalListeners.updateMainScrollAffordances()).not.toThrow();
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'main-content-wrapper';
+        wrapper.dataset.view = 'list';
+
+        const mainContent = document.createElement('main');
+        mainContent.id = 'main-content';
+        mainContent.className = 'main-content';
+        wrapper.appendChild(mainContent);
+        document.body.appendChild(wrapper);
+
+        Object.defineProperty(mainContent, 'scrollHeight', { value: 1000, configurable: true });
+        Object.defineProperty(mainContent, 'clientHeight', { value: 500, configurable: true });
+
+        // 1. At top (scrollTop = 0) with overflow -> only bottom scrim active
+        mainContent.scrollTop = 0;
+        GlobalListeners._setupScrollListeners();
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(false);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(true);
+
+        // 2. Scrolled down in middle -> both top and bottom scrims active
+        mainContent.scrollTop = 100;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(true);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(true);
+
+        // 3. Reached bottom (remaining <= 4) -> only top scrim active
+        mainContent.scrollTop = 498;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(true);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // 4. Plan view -> both scrims disabled
+        wrapper.dataset.view = 'plan';
+        GlobalListeners.updateMainScrollAffordances();
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(false);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // 5. No overflow in list view (scrollHeight <= clientHeight) -> both scrims disabled
+        wrapper.dataset.view = 'list';
+        mainContent.scrollTop = 0;
+        Object.defineProperty(mainContent, 'scrollHeight', { value: 500, configurable: true });
+        GlobalListeners.updateMainScrollAffordances();
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(false);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(false);
+    });
+
     it('should trigger toggleAppreciationColumn when clicking #mobileCompactToggleBtn inside .appreciation-header-actions', () => {
         const toggleSpy = vi.fn();
         ListViewEvents.init({ toggleAppreciationColumn: toggleSpy });

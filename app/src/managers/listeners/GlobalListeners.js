@@ -18,6 +18,7 @@ import { ListViewManager } from '../ListViewManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { DropdownManager } from '../DropdownManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 
 export const GlobalListeners = {
     /**
@@ -173,6 +174,16 @@ export const GlobalListeners = {
         });
     },
 
+    /**
+     * Met à jour les brumes d'indication de défilement (scrims) de la vue principale via le helper mutualisé.
+     */
+    updateMainScrollAffordances() {
+        const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
+        const wrapper = mainContent?.closest('.main-content-wrapper') || document.querySelector('.main-content-wrapper');
+        if (!mainContent || !wrapper) return;
+        FocusPanelManager.updateScrollAffordances(mainContent, wrapper);
+    },
+
     _setupScrollListeners() {
         const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
         let lastScrollTop = 0;
@@ -189,10 +200,24 @@ export const GlobalListeners = {
                 }
             }
             lastScrollTop = Math.max(0, scrollTop);
+            this.updateMainScrollAffordances();
         };
 
         window.addEventListener('scroll', () => handleScroll(window.scrollY), { passive: true });
         mainContent?.addEventListener('scroll', () => handleScroll(mainContent.scrollTop), { passive: true });
+
+        if (mainContent && typeof ResizeObserver !== 'undefined') {
+            const resizeObserver = new ResizeObserver(() => {
+                this.updateMainScrollAffordances();
+            });
+            resizeObserver.observe(mainContent);
+            const outputSection = mainContent.querySelector('.output-section');
+            if (outputSection) {
+                resizeObserver.observe(outputSection);
+            }
+        }
+
+        this.updateMainScrollAffordances();
 
         DOM.backToTopBtn?.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });

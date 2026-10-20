@@ -3652,13 +3652,27 @@ input.context-grade-input,
     transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Edge Scrim Continuum (Eased Scrim Gradient - Hardware Accelerated 120fps) */
-.focus-main-page::before {
+/* Edge Scrim Continuum (Eased Scrim Gradient - Hardware Accelerated 120fps, Shared by Focus Panel & Main View) */
+.focus-main-page::before,
+.focus-main-page::after,
+.main-content-wrapper::before,
+.main-content-wrapper::after {
     content: '';
     position: absolute;
-    top: 0;
     left: 0;
     right: 0;
+    pointer-events: none;
+    z-index: 10;
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    contain: paint;
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-main-page::before,
+.main-content-wrapper::before {
+    top: 0;
     height: 28px;
     background: linear-gradient(
         to bottom,
@@ -3668,25 +3682,16 @@ input.context-grade-input,
         rgba(var(--bg-color-rgb), 0.08) 75%,
         transparent 100%
     );
-    pointer-events: none;
-    z-index: 10;
-    transform: translateZ(0);
-    will-change: transform, opacity;
-    contain: paint;
-    opacity: 0;
-    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.focus-main-page.can-scroll-top::before {
-    opacity: 1;
+.main-content-wrapper::before {
+    top: 56px;
+    right: var(--scrollbar-width, 6px);
 }
 
-.focus-main-page::after {
-    content: '';
-    position: absolute;
+.focus-main-page::after,
+.main-content-wrapper::after {
     bottom: 0;
-    left: 0;
-    right: 0;
     height: 36px;
     background: linear-gradient(
         to top,
@@ -3696,16 +3701,16 @@ input.context-grade-input,
         rgba(var(--bg-color-rgb), 0.09) 75%,
         transparent 100%
     );
-    pointer-events: none;
-    z-index: 10;
-    transform: translateZ(0);
-    will-change: transform, opacity;
-    contain: paint;
-    opacity: 0;
-    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.focus-main-page.can-scroll-bottom::after {
+.main-content-wrapper::after {
+    right: var(--scrollbar-width, 6px);
+}
+
+.focus-main-page.can-scroll-top::before,
+.main-content-wrapper:not([data-view="plan"]).can-scroll-top::before,
+.focus-main-page.can-scroll-bottom::after,
+.main-content-wrapper:not([data-view="plan"]).can-scroll-bottom::after {
     opacity: 1;
 }
 
@@ -5107,7 +5112,9 @@ input.context-grade-input,
     }
 
     /* Scrim gradient: compact on mobile */
-    .focus-main-page::after {
+    .focus-main-page::after,
+    .main-content-wrapper::before,
+    .main-content-wrapper::after {
         height: 22px;
     }
 
