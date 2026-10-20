@@ -2079,6 +2079,16 @@
         background: rgba(255, 255, 255, 0.05);
     }
 
+    .expanded-view #mobileCompactToggleBtn {
+        background: var(--item-active-bg);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .expanded-view #mobileCompactToggleBtn {
+        background: rgba(255, 255, 255, 0.12);
+        color: var(--text-primary);
+    }
+
     #mobileCompactToggleBtn:active {
         background: var(--item-active-bg);
         color: var(--icon-btn-hover);

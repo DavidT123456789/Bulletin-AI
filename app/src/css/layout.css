@@ -1829,9 +1829,7 @@ button > .icon-spin-wrapper {
     }
 
     .header-actions-pill::before {
-        margin-left: 2px;
-        margin-right: 2px;
-        height: 20px;
+        display: none;
     }
 
     .ui-segmented-control.header-style .ui-segment {
