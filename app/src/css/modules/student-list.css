@@ -1911,8 +1911,8 @@
         gap: 8px;
         align-items: center;
         background: var(--surface-color);
-        padding: 8px 10px;
-        border-radius: var(--radius-lg);
+        padding: 8px;
+        border-radius: 20px;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
         pointer-events: auto;
@@ -1984,12 +1984,13 @@
         justify-content: flex-start;
     }
 
+    .header-action-trigger.inline-search-trigger-btn,
     .inline-search-trigger-btn {
         position: static !important;
         transform: none !important;
         width: 44px;
         height: 44px;
-        border-radius: var(--radius-md);
+        border-radius: 12px;
         background: var(--item-hover-bg);
         display: flex !important;
         align-items: center;
@@ -2042,7 +2043,7 @@
         margin-left: auto;
         height: 44px;
         padding: 0 14px;
-        border-radius: var(--radius-md);
+        border-radius: 12px;
         font-size: 13px;
     }
 
@@ -2055,7 +2056,7 @@
         justify-content: center;
         width: 44px;
         height: 44px;
-        border-radius: var(--radius-md);
+        border-radius: 12px;
         background: var(--item-hover-bg);
         border: none;
         color: var(--text-secondary);
@@ -2089,7 +2090,7 @@
 
     .global-actions-dropdown .btn-action-menu-header {
         background: var(--item-hover-bg);
-        border-radius: var(--radius-md);
+        border-radius: 12px;
         width: 44px;
         height: 44px;
         opacity: 1;
@@ -2130,12 +2131,12 @@
     /* --- TBODY (Student Cards) --- */
     .student-list-table tbody tr {
         background: var(--surface-color);
-        border-radius: var(--radius-lg);
-        margin-bottom: 8px;
+        border-radius: 20px;
+        margin-bottom: 10px;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
-        padding: 10px 14px;
-        row-gap: 4px;
+        padding: 12px 16px;
+        row-gap: 6px;
         position: relative;
         display: flex;
         flex-direction: row;
@@ -2165,7 +2166,7 @@
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
     .student-list-table tbody tr.row-moving {
-        border-radius: var(--radius-lg);
+        border-radius: 20px;
     }
 
     .student-list-table tbody tr.row-moving td:first-child,
@@ -2397,7 +2398,7 @@
     /* 5. Action Cell (Absolute Top Right over name cell) */
     .action-cell {
         position: absolute;
-        top: 6px;
+        top: 8px;
         right: 8px;
         width: auto !important;
         background: transparent !important;

@@ -30,6 +30,7 @@
 }
 
 /* Search trigger button - extends .header-action-trigger */
+.header-action-trigger.inline-search-trigger-btn,
 .inline-search-trigger-btn {
     /* Position override - loupe is on the left side (absolute) */
     position: absolute;
@@ -40,7 +41,7 @@
     width: 24px;
     height: 24px;
     margin: 0;
-    border-radius: var(--radius-pill) !important; /* Premium rounded style */
+    border-radius: var(--radius-pill); /* Premium rounded style on desktop */
     transition: left 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
@@ -307,18 +308,18 @@
    ==================================================================== */
 @media (max-width: 768px) {
     .inline-search-container {
-        left: 10px;
-        width: 40px;
-        height: 40px;
+        left: 8px;
+        width: 44px;
+        height: 44px;
         padding: 0 10px;
-        border-radius: var(--radius-md);
+        border-radius: 12px;
     }
 
     .inline-search-container.active {
-        left: 10px;
-        width: calc(100% - 20px);
+        left: 8px;
+        width: calc(100% - 16px);
         padding: 0 var(--space-3);
-        border-radius: var(--radius-md);
+        border-radius: 12px;
     }
 
     .inline-search-input {

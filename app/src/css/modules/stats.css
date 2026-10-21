@@ -616,7 +616,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-5);
-    margin: -24px -24px calc(var(--space-5) - 24px) -24px;
+    margin: -24px -24px calc(var(--space-5) - 28px) -24px;
     padding: 24px 24px 28px 24px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1626,16 +1626,17 @@
     }
 
     .stats-container .stat-card {
-        padding: 10px 12px;
+        padding: 16px;
+        border-radius: 20px;
     }
 
     .stat-card-header {
         min-height: 20px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
 
     .performance-card .performance-overview {
-        margin-bottom: 6px;
+        margin-bottom: 10px;
     }
 
     .performance-card .main-average-value {
@@ -1651,7 +1652,8 @@
     }
 
     .performance-card .detail-item {
-        padding: 6px;
+        padding: 8px 6px;
+        border-radius: 12px;
     }
 
     .performance-card .detail-item .detail-value {
@@ -1675,8 +1677,9 @@
     }
 
     .evolution-card .legend-item {
-        padding: 6px 4px;
+        padding: 8px 4px;
         gap: 2px;
+        border-radius: 12px;
     }
 
     .evolution-card .legend-count {
@@ -1685,7 +1688,7 @@
 
     .stats-pagination {
         margin-top: -10px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
     }
 }
 

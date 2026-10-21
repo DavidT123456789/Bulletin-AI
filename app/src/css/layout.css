@@ -1564,7 +1564,6 @@ button > .icon-spin-wrapper {
 
     .main-content {
         --content-padding-x: 16px;
-        padding-top: calc(56px + 8px);
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -1674,7 +1673,6 @@ button > .icon-spin-wrapper {
 @media (max-width: 480px) {
     .main-content {
         --content-padding-x: 12px;
-        padding-top: calc(56px + 6px);
     }
 
     .header {
