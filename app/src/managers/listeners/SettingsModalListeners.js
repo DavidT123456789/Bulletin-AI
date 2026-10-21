@@ -1309,7 +1309,8 @@ export const SettingsModalListeners = {
                     const studentCount = runtimeState.data.generatedResults?.length || 0;
                     const classCount = userSettings.academic.classes?.length || 0;
 
-                    if (studentCount === 0) {
+                    const remoteStudentCount = SyncService.getLastSyncStudentCount?.() ?? (parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10) || null);
+                    if (studentCount === 0 && !isCloudNewer && remoteStudentCount > 0) {
                         UI.showNotification('Vos données locales sont vides (0 élève). Sauvegarde annulée pour protéger le Cloud.', 'warning');
                         return;
                     }
@@ -1328,7 +1329,7 @@ export const SettingsModalListeners = {
                             return;
                         }
                     } else {
-                        const remoteStudentCount = SyncService.getLastSyncStudentCount?.() ?? (parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10) || null);
+                        // Utiliser remoteStudentCount déjà résolu plus haut
                         if (remoteStudentCount && studentCount < remoteStudentCount) {
                             const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
                             const confirmed = await UI.showSaveConfirmationModal({

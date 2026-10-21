@@ -230,21 +230,10 @@
 }
 
 /* === Avatar Selection Overlay === */
-.student-avatar {
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
 @media (hover: hover) and (pointer: fine) {
-    .student-avatar:hover {
-        transform: scale(1.05);
-    }
-
     .student-avatar:not(.is-selected):hover .avatar-selection-overlay {
         opacity: 0.6;
         transform: scale(1);
-        cursor: pointer;
     }
 }
 
@@ -260,7 +249,8 @@
     border-radius: inherit;
     opacity: 0;
     transform: scale(0.5);
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: none;
     z-index: 2;
 }
@@ -270,49 +260,43 @@
     transform: scale(1);
 }
 
-.student-avatar.is-selected {
-    transform: scale(1.18);
-    z-index: 5;
-    box-shadow: 0 8px 16px rgba(var(--primary-color-rgb), 0.25);
-}
-
 /* === Row Selection Style === */
 .student-row:focus {
     outline: none;
 }
 
-.student-row.selected {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%) !important;
-    border-color: rgba(var(--primary-color-rgb), 0.3) !important;
-}
-
-.student-row.selected:hover {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 14%) !important;
-}
-
-[data-theme="dark"] .student-row.selected {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 14%) !important;
-    border-color: rgba(var(--primary-color-rgb), 0.4) !important;
-}
-
-[data-theme="dark"] .student-row.selected:hover {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 18%) !important;
-}
-
-.student-row.selected td {
+.student-list-table tbody tr.selected td {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%);
     border-bottom-color: rgba(var(--primary-color-rgb), 0.15);
 }
 
-.student-identity-wrapper.selected .student-nom-prenom {
-    color: var(--primary-color);
+[data-theme="dark"] .student-list-table tbody tr.selected td {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 12%);
+    border-bottom-color: rgba(var(--primary-bright-rgb), 0.18);
 }
 
-[data-theme="dark"] .student-identity-wrapper.selected .student-nom-prenom {
-    color: var(--primary-bright);
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr.selected:hover td {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-color) 15%);
+    }
+
+    [data-theme="dark"] .student-list-table tbody tr.selected:hover td {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 18%);
+    }
 }
 
 /* === Responsive Breakpoints (Adaptivity) === */
 @media (max-width: 768px) {
+    .student-list-table tbody tr.selected {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%);
+        border-color: rgba(var(--primary-color-rgb), 0.3);
+    }
+
+    [data-theme="dark"] .student-list-table tbody tr.selected {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 12%);
+        border-color: rgba(var(--primary-bright-rgb), 0.35);
+    }
+
     .selection-toolbar {
         bottom: max(var(--space-4), calc(env(safe-area-inset-bottom, 0px) + 12px));
         max-width: calc(100vw - 16px);

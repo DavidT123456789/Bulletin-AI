@@ -8,7 +8,9 @@ vi.mock('../managers/StorageManager.js', () => ({
         mergeRemoteData: vi.fn(() => Promise.resolve({ success: true, stats: { addedStudents: 1 } })),
         getPreRestoreSnapshot: vi.fn(),
         clearPreRestoreSnapshot: vi.fn(),
-        computeCurrentDataHash: vi.fn(() => 'mock-hash')
+        computeCurrentDataHash: vi.fn(() => 'mock-hash'),
+        getExportableSettings: vi.fn(() => ({ googleApiKey: 'synced-key', theme: 'dark' })),
+        getDeviceId: vi.fn(() => 'device_test')
     }
 }));
 
@@ -82,6 +84,20 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             localStorage.setItem('bulletin_google_token', JSON.stringify(validToken));
             expect(GoogleDriveProvider.isConnected()).toBe(true);
             expect(GoogleDriveProvider._token).toEqual(validToken);
+        });
+
+        it('authorize({ silent: true }) should immediately return false without loading external Google scripts when token is expired', async () => {
+            const gapiSpy = vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded');
+            localStorage.setItem('bulletin_google_token', JSON.stringify({
+                access_token: 'expired-token',
+                expiry: Date.now() - 10000
+            }));
+
+            const result = await GoogleDriveProvider.authorize({ silent: true });
+
+            expect(result).toBe(false);
+            expect(GoogleDriveProvider.needsReconnect()).toBe(true);
+            expect(gapiSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -232,15 +248,68 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             reconnectBtn = document.getElementById('cloudReconnectBtn');
         });
 
-        it('should apply has-cloud-warning when session is expired', () => {
+        it('should NOT apply has-cloud-warning when session is expired and data is in-sync', () => {
             SyncService._wasConfigured = true;
             SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '1000');
+            localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
 
             SyncService._updateCloudIndicator('expired');
 
+            const saveHint = document.getElementById('cloudSaveHint');
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+            expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
+            expect(reconnectBtn.style.display).toBe('flex');
+            expect(reconnectBtn.classList.contains('has-warning')).toBe(false);
+            expect(saveHint.style.display).toBe('block');
+            expect(saveHint.textContent).toBe('✓ À jour');
+        });
+
+        it('should apply has-cloud-warning when session is expired and local changes exist', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '2000');
+            localStorage.setItem('bulletin_last_sync_hash', 'old-synced-hash');
+
+            SyncService._updateCloudIndicator('expired');
+
+            const saveHint = document.getElementById('cloudSaveHint');
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
             expect(reconnectBtn.style.display).toBe('flex');
+            expect(reconnectBtn.classList.contains('has-warning')).toBe(true);
+            expect(saveHint.style.display).toBe('block');
+            expect(saveHint.textContent).toBe('Modifications locales');
+        });
+
+        it('should dynamically toggle has-cloud-warning via refreshLocalIndicator when data changes or reverts while expired', () => {
+            SyncService._wasConfigured = true;
+            SyncService._isOnline = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '1000');
+            localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
+
+            SyncService._updateCloudIndicator('expired');
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+
+            // Simulate a local data change (hash differs from sync hash)
+            localStorage.setItem('bulletin_last_sync_hash', 'old-hash');
+            localStorage.setItem('bulletin_last_modified', '2000');
+            SyncService.refreshLocalIndicator();
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
+            expect(reconnectBtn.classList.contains('has-warning')).toBe(true);
+
+            // Simulate reverting local data back to synced state
+            localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
+            SyncService.refreshLocalIndicator();
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+            expect(reconnectBtn.classList.contains('has-warning')).toBe(false);
         });
 
         it('should not apply has-cloud-warning or show reconnect button when offline (local state with configured provider)', () => {
@@ -330,6 +399,15 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             localStorage.setItem('bulletin_last_sync_students', '307');
 
             expect(SyncService._computeSyncState()).toBe('cloud-changes');
+        });
+
+        it('_getLocalData should request exportable settings with includeApiKeys: true for Cloud sync', async () => {
+            const { StorageManager } = await import('../managers/StorageManager.js');
+            StorageManager.getExportableSettings.mockReturnValue({ googleApiKey: 'synced-key', theme: 'dark' });
+            const payload = await SyncService._getLocalData();
+
+            expect(StorageManager.getExportableSettings).toHaveBeenCalledWith({ includeApiKeys: true });
+            expect(payload.settings).toEqual({ googleApiKey: 'synced-key', theme: 'dark' });
         });
     });
 });

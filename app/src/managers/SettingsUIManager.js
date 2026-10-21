@@ -214,6 +214,14 @@ export const SettingsUIManager = {
             currentPeriod: appState.currentPeriod,
             currentAIModel: appState.currentAIModel,
             enableApiFallback: appState.enableApiFallback,
+            openaiApiKey: appState.openaiApiKey,
+            googleApiKey: appState.googleApiKey,
+            groqApiKey: appState.groqApiKey,
+            openrouterApiKey: appState.openrouterApiKey,
+            anthropicApiKey: appState.anthropicApiKey,
+            mistralApiKey: appState.mistralApiKey,
+            validatedApiKeys: { ...(appState.validatedApiKeys || {}) },
+            apiKeyStatus: { ...(appState.apiKeyStatus || {}) },
             ollamaEnabled: appState.ollamaEnabled,
             ollamaBaseUrl: appState.ollamaBaseUrl
         };
@@ -248,6 +256,18 @@ export const SettingsUIManager = {
             }
             if (UIState.settingsBeforeEdit.enableApiFallback !== undefined) {
                 appState.enableApiFallback = UIState.settingsBeforeEdit.enableApiFallback;
+            }
+            API_KEY_PROVIDER_IDS.forEach(provider => {
+                const keyProp = `${provider}ApiKey`;
+                if (UIState.settingsBeforeEdit[keyProp] !== undefined) {
+                    appState[keyProp] = UIState.settingsBeforeEdit[keyProp];
+                }
+            });
+            if (UIState.settingsBeforeEdit.validatedApiKeys !== undefined) {
+                appState.validatedApiKeys = { ...UIState.settingsBeforeEdit.validatedApiKeys };
+            }
+            if (UIState.settingsBeforeEdit.apiKeyStatus !== undefined) {
+                appState.apiKeyStatus = { ...UIState.settingsBeforeEdit.apiKeyStatus };
             }
             if (UIState.settingsBeforeEdit.ollamaEnabled !== undefined) {
                 appState.ollamaEnabled = UIState.settingsBeforeEdit.ollamaEnabled;

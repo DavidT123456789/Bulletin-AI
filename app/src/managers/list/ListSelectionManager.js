@@ -145,9 +145,6 @@ export const ListSelectionManager = {
                 const isSelected = this.selectedIds.has(studentId);
                 row.classList.toggle('selected', isSelected);
 
-                const wrapper = row.querySelector('.student-identity-wrapper');
-                if (wrapper) wrapper.classList.toggle('selected', isSelected);
-
                 const avatar = row.querySelector('.student-avatar');
                 if (avatar) {
                     if (!avatar.querySelector('.avatar-selection-overlay')) {
@@ -163,14 +160,10 @@ export const ListSelectionManager = {
             const selectedRows = document.querySelectorAll('.student-row.selected');
             selectedRows.forEach(row => {
                 row.classList.remove('selected');
-                const wrapper = row.querySelector('.student-identity-wrapper.selected');
-                if (wrapper) wrapper.classList.remove('selected');
-
                 const avatar = row.querySelector('.student-avatar.is-selected');
                 if (avatar) avatar.classList.remove('is-selected');
             });
             // Cleanup any stray selected elements
-            document.querySelectorAll('.student-identity-wrapper.selected').forEach(w => w.classList.remove('selected'));
             document.querySelectorAll('.student-avatar.is-selected').forEach(a => a.classList.remove('is-selected'));
         }
 

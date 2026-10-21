@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ListViewRenderer } from './ListViewRenderer.js';
+import { ListSelectionManager } from './ListSelectionManager.js';
 import { ListViewEvents } from './ListViewEvents.js';
 import { ListViewManager } from '../ListViewManager.js';
 import { appState } from '../../state/State.js';
@@ -164,6 +165,31 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         vi.advanceTimersByTime(290);
         expect(container.querySelectorAll('.period-column-exit').length).toBe(0);
         vi.useRealTimers();
+    });
+
+    it('should preserve .selected class on tr across renderFresh, createRowElement, and updateRowContent', () => {
+        const periods = ['S1', 'S2'];
+        const results = [
+            { id: 's1', nom: 'DURAND', prenom: 'Paul', studentData: { periods: { S1: { grade: 12 } } } },
+            { id: 's2', nom: 'MARTIN', prenom: 'Claire', studentData: { periods: { S1: { grade: 15 } } } }
+        ];
+
+        ListSelectionManager.selectedIds.clear();
+        ListSelectionManager.selectedIds.add('s1');
+
+        ListViewRenderer.renderFresh(container, results, periods, 0);
+
+        const row1 = container.querySelector('.student-row[data-student-id="s1"]');
+        const row2 = container.querySelector('.student-row[data-student-id="s2"]');
+        expect(row1.classList.contains('selected')).toBe(true);
+        expect(row2.classList.contains('selected')).toBe(false);
+
+        const createdRow = ListViewRenderer.createRowElement(results[0], periods, 0);
+        expect(createdRow.classList.contains('selected')).toBe(true);
+
+        ListSelectionManager.selectedIds.delete('s1');
+        ListViewRenderer.updateRowContent(row1, results[0]);
+        expect(row1.classList.contains('selected')).toBe(false);
     });
 });
 

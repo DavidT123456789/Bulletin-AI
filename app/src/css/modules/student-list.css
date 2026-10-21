@@ -362,6 +362,7 @@
 
 /* Crisp first-name legibility during active spotlight */
 .student-list-table tbody tr.focus-active .student-name-cell .student-prenom,
+.student-list-table tbody tr.selected .student-name-cell .student-prenom,
 .student-list-table tbody tr.highlight-new .student-name-cell .student-prenom,
 .student-list-table tbody tr.focus-closed-flash .student-name-cell .student-prenom {
     color: var(--text-primary);

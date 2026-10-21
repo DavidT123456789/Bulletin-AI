@@ -36,6 +36,12 @@ vi.mock('../state/State.js', () => ({
             openaiApiKey: '',
             googleApiKey: '',
             openrouterApiKey: '',
+            groqApiKey: '',
+            anthropicApiKey: '',
+            mistralApiKey: '',
+            ollamaEnabled: false,
+            ollamaBaseUrl: 'http://localhost:11434',
+            ollamaInstalledModels: [],
         },
         import: {
             massImportFormats: { trimestres: {}, semestres: {} },
@@ -647,6 +653,132 @@ describe('StorageManager', () => {
             await StorageManager.importBackup(backupContent, { mergeData: false, silent: true });
             expect(userSettings.academic.currentClassId).toBe('c2');
             expect(appState.currentClassId).toBe('c2');
+        });
+
+        it('should exclude API keys and Ollama settings by default in getExportableSettings, and include API keys when includeApiKeys is true', () => {
+            userSettings.api.googleApiKey = 'AIzaSyTestKey123';
+            userSettings.api.openaiApiKey = 'sk-proj-test';
+            userSettings.api.ollamaEnabled = true;
+            userSettings.api.ollamaBaseUrl = 'http://192.168.1.50:11434';
+            userSettings.api.ollamaInstalledModels = ['llama3:8b'];
+            runtimeState.apiStatus = { google: 'valid' };
+            runtimeState.validatedApiKeys = { google: true };
+
+            const defaultExport = StorageManager.getExportableSettings();
+            expect(defaultExport.googleApiKey).toBeUndefined();
+            expect(defaultExport.openaiApiKey).toBeUndefined();
+            expect(defaultExport.ollamaEnabled).toBeUndefined();
+            expect(defaultExport.ollamaBaseUrl).toBeUndefined();
+            expect(defaultExport.ollamaInstalledModels).toBeUndefined();
+            expect(defaultExport.apiKeyStatus).toBeUndefined();
+            expect(defaultExport.validatedApiKeys).toBeUndefined();
+
+            const cloudExport = StorageManager.getExportableSettings({ includeApiKeys: true });
+            expect(cloudExport.googleApiKey).toBe('AIzaSyTestKey123');
+            expect(cloudExport.openaiApiKey).toBe('sk-proj-test');
+            expect(cloudExport.ollamaEnabled).toBeUndefined();
+            expect(cloudExport.ollamaBaseUrl).toBeUndefined();
+            expect(cloudExport.ollamaInstalledModels).toBeUndefined();
+            expect(cloudExport.apiKeyStatus).toBeUndefined();
+            expect(cloudExport.validatedApiKeys).toBeUndefined();
+        });
+
+        it('should update computeCurrentDataHash when API keys or AI model change, but ignore Ollama and validation status', () => {
+            userSettings.api.googleApiKey = 'key-v1';
+            userSettings.api.currentAIModel = 'gemini-2.5-flash';
+            userSettings.api.enableApiFallback = true;
+            const baseHash = StorageManager.computeCurrentDataHash();
+
+            // Changing API key must change data hash
+            userSettings.api.googleApiKey = 'key-v2';
+            const hashWithNewKey = StorageManager.computeCurrentDataHash();
+            expect(hashWithNewKey).not.toBe(baseHash);
+
+            // Reverting API key restores exact same hash
+            userSettings.api.googleApiKey = 'key-v1';
+            expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
+
+            // Changing AI model or fallback must change data hash
+            userSettings.api.currentAIModel = 'gpt-4o-mini';
+            expect(StorageManager.computeCurrentDataHash()).not.toBe(baseHash);
+            userSettings.api.currentAIModel = 'gemini-2.5-flash';
+
+            userSettings.api.enableApiFallback = false;
+            expect(StorageManager.computeCurrentDataHash()).not.toBe(baseHash);
+            userSettings.api.enableApiFallback = true;
+
+            // Changing local Ollama config or runtime validation state must NOT change data hash
+            userSettings.api.ollamaEnabled = true;
+            userSettings.api.ollamaBaseUrl = 'http://localhost:9999';
+            userSettings.api.ollamaInstalledModels = ['mistral:latest'];
+            runtimeState.apiStatus = { google: 'valid' };
+            runtimeState.validatedApiKeys = { google: true };
+            expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
+        });
+
+        it('should not overwrite existing API key with empty key during importBackup, and reset validation when key changes', async () => {
+            userSettings.api.googleApiKey = 'existing-google-key';
+            appState.googleApiKey = 'existing-google-key';
+            runtimeState.validatedApiKeys.google = true;
+            runtimeState.apiStatus.google = 'valid';
+
+            const backupWithEmptyAndNewKey = JSON.stringify({
+                appVersion: '4.3.0',
+                settings: {
+                    googleApiKey: '',
+                    openaiApiKey: 'new-openai-key'
+                }
+            });
+
+            runtimeState.validatedApiKeys.openai = true;
+            runtimeState.apiStatus.openai = 'valid';
+
+            const res = await StorageManager.importBackup(backupWithEmptyAndNewKey, { mergeData: true, silent: true });
+            expect(res.stats.apiKeysImported).toBe(1);
+            expect(userSettings.api.googleApiKey).toBe('existing-google-key');
+            expect(runtimeState.validatedApiKeys.google).toBe(true);
+            expect(userSettings.api.openaiApiKey).toBe('new-openai-key');
+            expect(runtimeState.validatedApiKeys.openai).toBe(false);
+            expect(runtimeState.apiStatus.openai).toBeNull();
+        });
+    });
+
+    describe('mergeRemoteData - API keys synchronization', () => {
+        it('should adopt remote API key when local key is empty or invalid, and preserve valid local key against empty or different remote key', async () => {
+            userSettings.api.googleApiKey = 'valid-local-google';
+            appState.googleApiKey = 'valid-local-google';
+            runtimeState.apiStatus.google = 'valid';
+            runtimeState.validatedApiKeys.google = true;
+
+            userSettings.api.openaiApiKey = '';
+            appState.openaiApiKey = '';
+
+            userSettings.api.openrouterApiKey = 'expired-local-or';
+            appState.openrouterApiKey = 'expired-local-or';
+            runtimeState.apiStatus.openrouter = 'invalid';
+            runtimeState.validatedApiKeys.openrouter = false;
+
+            const remoteData = {
+                settings: {
+                    googleApiKey: 'different-remote-google',
+                    openaiApiKey: 'remote-openai-key',
+                    openrouterApiKey: 'valid-remote-or',
+                    groqApiKey: ''
+                },
+                generatedResults: []
+            };
+
+            await StorageManager.mergeRemoteData(remoteData);
+
+            // Local valid key is preserved
+            expect(userSettings.api.googleApiKey).toBe('valid-local-google');
+            expect(runtimeState.validatedApiKeys.google).toBe(true);
+            // Missing local key adopts remote key
+            expect(userSettings.api.openaiApiKey).toBe('remote-openai-key');
+            expect(runtimeState.validatedApiKeys.openai).toBe(false);
+            // Invalid local key adopts non-empty remote key and resets status
+            expect(userSettings.api.openrouterApiKey).toBe('valid-remote-or');
+            expect(runtimeState.apiStatus.openrouter).toBeNull();
         });
     });
 

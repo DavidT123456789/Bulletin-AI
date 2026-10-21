@@ -33,7 +33,8 @@ export const ListViewRenderer = {
         const tr = document.createElement('tr');
         tr.dataset.studentId = result.id;
         const isDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
-        tr.className = isDeparted ? 'student-row student-row-departed' : 'student-row';
+        const isSelected = ListSelectionManager.selectedIds.has(result.id);
+        tr.className = `${isDeparted ? 'student-row student-row-departed' : 'student-row'}${isSelected ? ' selected' : ''}`;
         // Only make focusable on desktop to prevent mobile/touch focus highlight artifacts
         if (!window.matchMedia?.('(pointer: coarse)')?.matches) {
             tr.tabIndex = 0;
@@ -41,15 +42,13 @@ export const ListViewRenderer = {
 
         const studentData = result.studentData || {};
         const appreciationCell = this.getAppreciationCell(result);
-        const isSelected = ListSelectionManager.selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
         const searchQuery = context.searchQuery ?? (document.getElementById('searchInput')?.value || '');
         const currentClassName = context.currentClassName || Utils.getCurrentClassName();
         const originClass = Utils.getOriginClass(result, currentClassName);
-
         tr.innerHTML = `
             <td class="student-name-cell">
-                <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
+                <div class="student-identity-wrapper">
                     ${avatarHTML}
                     <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
                 </div>
@@ -121,21 +120,14 @@ export const ListViewRenderer = {
         if (statusCell) {
             statusCell.innerHTML = this.getStudentStatusCellContent(result);
         }
+        const isSelected = ListSelectionManager.selectedIds.has(result.id);
         row.classList.toggle('student-row-departed', Utils.isStudentDeparted(result, appState.currentPeriod));
+        row.classList.toggle('selected', isSelected);
 
         // Update Identity (Name + Avatar)
         const identityWrapper = row.querySelector('.student-identity-wrapper');
         if (identityWrapper) {
-            const isSelected = ListSelectionManager.selectedIds.has(result.id);
             const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-
-            // Update wrapper class for selection state
-            if (isSelected) {
-                identityWrapper.classList.add('selected');
-            } else {
-                identityWrapper.classList.remove('selected');
-            }
-
             const searchQuery = document.getElementById('searchInput')?.value || '';
             const currentClassName = Utils.getCurrentClassName();
             const originClass = Utils.getOriginClass(result, currentClassName);
@@ -432,13 +424,13 @@ export const ListViewRenderer = {
                 const originClass = Utils.getOriginClass(result, currentClassName);
                 const rowDelay = shouldAnimateEntrance ? (baseDelay + Math.min(index * staggerStep, 520)) : 0;
                 const isDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
-                const rowClass = `${shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row'}${isDeparted ? ' student-row-departed' : ''}`;
+                const rowClass = `${shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row'}${isDeparted ? ' student-row-departed' : ''}${isSelected ? ' selected' : ''}`;
                 const rowStyleAttr = shouldAnimateEntrance ? ` style="--row-delay: ${rowDelay}ms"` : '';
 
                 tbodyContent += `
                     <tr data-student-id="${result.id}" class="${rowClass}"${tabIndexAttr}${rowStyleAttr}>
                         <td class="student-name-cell">
-                            <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
+                            <div class="student-identity-wrapper">
                                 ${avatarHTML}
                                 <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
                             </div>

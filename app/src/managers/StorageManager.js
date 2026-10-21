@@ -32,13 +32,17 @@
 
 import { appState, userSettings, runtimeState } from '../state/State.js';
 import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { API_KEY_PROVIDER_IDS } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 
 let UI;
 let App;
 
-/** @const {string[]} Clés de navigation et d'état d'interface à ignorer lors du calcul du hash de données */
+/** @const {string[]} Clés de paramètres correspondant aux clés API des fournisseurs Cloud */
+const API_KEY_SETTINGS_KEYS = API_KEY_PROVIDER_IDS.map(id => `${id}ApiKey`);
+
+/** @const {string[]} Clés de navigation, d'interface et d'exécution locale à ignorer lors du calcul du hash de données */
 const UI_AND_NAV_KEYS = [
     'theme',
     'accentColor',
@@ -53,16 +57,8 @@ const UI_AND_NAV_KEYS = [
     'refinementEdits',
     'apiKeyStatus',
     'validatedApiKeys',
-    'openaiApiKey',
-    'googleApiKey',
-    'groqApiKey',
-    'openrouterApiKey',
-    'anthropicApiKey',
-    'mistralApiKey',
     'ollamaBaseUrl',
     'ollamaInstalledModels',
-    'currentAIModel',
-    'enableApiFallback',
     'ollamaEnabled'
 ];
 
@@ -297,14 +293,7 @@ export const StorageManager = {
             const snapshot = {
                 key: 'pre_restore_backup',
                 createdAt: Date.now(),
-                settings: {
-                    theme: userSettings.ui.theme,
-                    accentColor: userSettings.ui.accentColor || 'blue',
-                    periodSystem: userSettings.academic.periodSystem,
-                    subjects: userSettings.academic.subjects,
-                    seatingGrid: userSettings.academic.seatingGrid || null,
-                    seatingActivityGrid: userSettings.academic.seatingActivityGrid || null
-                },
+                settings: this.getExportableSettings({ includeApiKeys: true }),
                 classes: userSettings.academic.classes || [],
                 currentClassId: userSettings.academic.currentClassId,
                 generatedResults: results
@@ -763,21 +752,21 @@ export const StorageManager = {
     },
 
     /**
-     * Retourne un snapshot des paramètres utilisateur expurgé des clés API sensibles
-     * et des états de navigation transitoires pour les backups et la synchronisation Cloud.
+     * Retourne un snapshot des paramètres utilisateur expurgé des états de navigation transitoires
+     * et de la configuration matérielle locale (Ollama). Les clés API sont exclues par défaut
+     * (exports JSON) mais peuvent être incluses pour la synchronisation Cloud privée.
+     * @param {Object} [options]
+     * @param {boolean} [options.includeApiKeys=false] - Inclure les clés API dans le snapshot
      * @returns {Object} Paramètres expurgés
      */
-    getExportableSettings() {
+    getExportableSettings({ includeApiKeys = false } = {}) {
         const settings = this._buildSettingsSnapshot();
         const keysToRemove = [
-            'openaiApiKey',
-            'googleApiKey',
-            'groqApiKey',
-            'openrouterApiKey',
-            'anthropicApiKey',
-            'mistralApiKey',
             'apiKeyStatus',
             'validatedApiKeys',
+            'ollamaEnabled',
+            'ollamaBaseUrl',
+            'ollamaInstalledModels',
             'currentClassId',
             'currentPeriod',
             'currentSubject',
@@ -785,6 +774,9 @@ export const StorageManager = {
             'activeStatFilter',
             'refinementEdits'
         ];
+        if (!includeApiKeys) {
+            keysToRemove.push(...API_KEY_SETTINGS_KEYS);
+        }
         keysToRemove.forEach(k => delete settings[k]);
         return settings;
     },
@@ -827,18 +819,22 @@ export const StorageManager = {
         const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
 
         const isFirstLoad = this._isFirstLoadSave;
+        const prevDataHash = this._lastDataHash;
         if (!isFirstLoad) {
+            const hasChangedSinceLastSave = (prevDataHash && prevDataHash !== currentDataHash) ||
+                (!prevDataHash && lastSyncHash && lastSyncHash !== currentDataHash);
             if (lastSyncHash && currentDataHash === lastSyncHash) {
                 // If we reverted back to the exact cloud version, clear local changes
                 const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
                 localStorage.setItem('bulletin_last_modified', lastSync.toString());
-            } else {
+            } else if (hasChangedSinceLastSave) {
                 // If data has changed since our last save, update modified timestamp
-                if (this._lastDataHash && this._lastDataHash !== currentDataHash) {
-                    localStorage.setItem('bulletin_last_modified', Date.now().toString());
-                }
+                localStorage.setItem('bulletin_last_modified', Date.now().toString());
             }
             this._lastDataHash = currentDataHash;
+            if (hasChangedSinceLastSave || (lastSyncHash && currentDataHash === lastSyncHash)) {
+                window.SyncService?.refreshLocalIndicator?.();
+            }
         } else {
             this._lastDataHash = currentDataHash;
             // On first load, initialize sync hash ONLY if missing and no data purge was detected
@@ -865,10 +861,7 @@ export const StorageManager = {
     async resetAllSettings() {
         const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
 
-        const apiKeyCount = [
-            appState.openaiApiKey, appState.googleApiKey, appState.groqApiKey,
-            appState.openrouterApiKey, appState.anthropicApiKey, appState.mistralApiKey
-        ].filter(Boolean).length;
+        const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(appState[k])).length;
 
         const subjectCount = appState.subjects ? Object.keys(appState.subjects).length : 0;
 
@@ -939,12 +932,17 @@ export const StorageManager = {
             const parts = [];
 
             if (resetApiKeys) {
-                appState.openaiApiKey = '';
-                appState.googleApiKey = '';
-                appState.groqApiKey = '';
-                appState.openrouterApiKey = '';
-                appState.anthropicApiKey = '';
-                appState.mistralApiKey = '';
+                API_KEY_SETTINGS_KEYS.forEach(k => {
+                    const provider = k.replace('ApiKey', '');
+                    userSettings.api[k] = '';
+                    appState[k] = '';
+                    if (runtimeState.validatedApiKeys) runtimeState.validatedApiKeys[provider] = false;
+                    if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = false;
+                    if (runtimeState.apiStatus) runtimeState.apiStatus[provider] = null;
+                    if (appState.apiKeyStatus) appState.apiKeyStatus[provider] = null;
+                    if (runtimeState.apiKeyErrorDetails) delete runtimeState.apiKeyErrorDetails[provider];
+                    if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
+                });
                 parts.push('clés API');
             }
 
@@ -975,6 +973,7 @@ export const StorageManager = {
             UI.updateSettingsPromptFields();
             UI.updateSettingsFields();
             UI.renderSettingsLists();
+            if (App?.updateUIOnLoad) App.updateUIOnLoad();
             UI.showNotification(`Réinitialisé : ${parts.join(', ')} (données conservées).`, 'success');
         } catch (e) {
             UI.showNotification('Erreur lors de la réinitialisation.', 'error');
@@ -1079,8 +1078,8 @@ export const StorageManager = {
         const journalCount = results.reduce((n, r) => n + (r.journal?.length || 0), 0);
         const photoCount = results.filter(r => r.studentPhoto?.data).length;
 
-        const hasApiKeys = !!(settings.openaiApiKey || settings.googleApiKey || settings.groqApiKey || settings.openrouterApiKey || settings.anthropicApiKey || settings.mistralApiKey);
-        const apiKeyCount = [settings.openaiApiKey, settings.googleApiKey, settings.groqApiKey, settings.openrouterApiKey, settings.anthropicApiKey, settings.mistralApiKey].filter(Boolean).length;
+        const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(settings[k])).length;
+        const hasApiKeys = apiKeyCount > 0;
         const subjectCount = settings.subjects ? Object.keys(settings.subjects).length : 0;
 
         return {
@@ -1177,6 +1176,7 @@ export const StorageManager = {
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
+                    enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,
@@ -1184,14 +1184,19 @@ export const StorageManager = {
                     journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
                     activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                 });
+                userSettings.api.currentAIModel = appState.currentAIModel;
+                userSettings.api.enableApiFallback = appState.enableApiFallback;
                 stats.settingsImported = true;
             }
 
-            // Import API keys (only when explicitly selected)
+            // Import API keys (only when explicitly selected; never overwrite an existing key with empty)
             if (shouldImport('apiKeys') && settings) {
-                const keys = ['openaiApiKey', 'googleApiKey', 'groqApiKey', 'openrouterApiKey', 'anthropicApiKey', 'mistralApiKey'];
-                keys.forEach(k => {
-                    if (settings[k]) { appState[k] = settings[k]; stats.apiKeysImported++; }
+                API_KEY_SETTINGS_KEYS.forEach(k => {
+                    const importedKey = typeof settings[k] === 'string' ? settings[k].trim() : '';
+                    if (importedKey) {
+                        this._applyImportedApiKey(k, importedKey);
+                        stats.apiKeysImported++;
+                    }
                 });
             }
 
@@ -1312,6 +1317,27 @@ export const StorageManager = {
     },
 
     /**
+     * Applique une clé API importée ou fusionnée en réinitialisant son statut de validation local si elle change.
+     * @private
+     * @param {string} keyName - Nom de la propriété (ex: 'googleApiKey')
+     * @param {string} newKey - Nouvelle clé non vide
+     */
+    _applyImportedApiKey(keyName, newKey) {
+        const provider = keyName.replace('ApiKey', '');
+        const currentKey = userSettings.api[keyName] || appState[keyName] || '';
+        if (currentKey !== newKey) {
+            if (runtimeState.validatedApiKeys) runtimeState.validatedApiKeys[provider] = false;
+            if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = false;
+            if (runtimeState.apiStatus) runtimeState.apiStatus[provider] = null;
+            if (appState.apiKeyStatus) appState.apiKeyStatus[provider] = null;
+            if (runtimeState.apiKeyErrorDetails) delete runtimeState.apiKeyErrorDetails[provider];
+            if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
+        }
+        userSettings.api[keyName] = newKey;
+        appState[keyName] = newKey;
+    },
+
+    /**
      * Fusion intelligente non-destructive entre les données locales et distantes.
      * Conserve les ajouts locaux (nouveaux élèves, modifications récentes)
      * tout en intégrant les ajouts et modifications du Cloud (nouveaux élèves, entrées de journal).
@@ -1329,6 +1355,29 @@ export const StorageManager = {
             addedJournalEntries: 0,
             addedClasses: 0
         };
+
+        // 0. Fusion non-destructive des clés API et préférences IA distantes
+        if (remoteData.settings && typeof remoteData.settings === 'object') {
+            const rSettings = remoteData.settings;
+            API_KEY_SETTINGS_KEYS.forEach(k => {
+                const remoteKey = typeof rSettings[k] === 'string' ? rSettings[k].trim() : '';
+                const localKey = (userSettings.api[k] || appState[k] || '').trim();
+                const provider = k.replace('ApiKey', '');
+                const localStatus = runtimeState.apiStatus?.[provider] ?? appState.apiKeyStatus?.[provider];
+                if (remoteKey && (!localKey || localStatus === 'invalid')) {
+                    this._applyImportedApiKey(k, remoteKey);
+                }
+            });
+            const localModel = userSettings.api.currentAIModel || appState.currentAIModel;
+            if (rSettings.currentAIModel && !rSettings.currentAIModel.startsWith('ollama') && !localModel) {
+                userSettings.api.currentAIModel = rSettings.currentAIModel;
+                appState.currentAIModel = rSettings.currentAIModel;
+            }
+            if (rSettings.enableApiFallback !== undefined && userSettings.api.enableApiFallback === undefined) {
+                userSettings.api.enableApiFallback = rSettings.enableApiFallback;
+                appState.enableApiFallback = rSettings.enableApiFallback;
+            }
+        }
 
         // 1. Fusion des classes (union par ID)
         if (Array.isArray(remoteData.classes)) {
@@ -1598,6 +1647,7 @@ export const StorageManager = {
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
+                    enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,

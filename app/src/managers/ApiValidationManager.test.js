@@ -14,6 +14,9 @@ vi.mock('../state/State.js', () => ({
         googleApiKey: '',
         openaiApiKey: '',
         openrouterApiKey: ''
+    },
+    UIState: {
+        settingsBeforeEdit: {}
     }
 }));
 
@@ -312,6 +315,29 @@ describe('ApiValidationManager', () => {
             ApiValidationManager.handleApiKeyInput(mockEvent);
 
             expect(mockIcon.innerHTML).toBe('');
+        });
+
+        it('should sync UIState.settingsBeforeEdit snapshot after successful validation so closing Settings does not revert validated key', async () => {
+            const { UIState } = await import('../state/State.js');
+            UIState.settingsBeforeEdit = {
+                googleApiKey: 'old-key',
+                currentAIModel: 'gpt-4o-mini',
+                validatedApiKeys: { google: false },
+                apiKeyStatus: { google: 'invalid' }
+            };
+            AIService.callAI.mockResolvedValue({ content: 'test response' });
+
+            await ApiValidationManager.validateApiKeyUI(
+                'google',
+                mockInputEl,
+                mockErrorEl,
+                mockBtnEl
+            );
+
+            expect(UIState.settingsBeforeEdit.googleApiKey).toBe('test-api-key');
+            expect(UIState.settingsBeforeEdit.validatedApiKeys.google).toBe(true);
+            expect(UIState.settingsBeforeEdit.apiKeyStatus.google).toBe('valid');
+            expect(UIState.settingsBeforeEdit.currentAIModel).toBe(appState.currentAIModel);
         });
     });
 });

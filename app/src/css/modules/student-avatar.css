@@ -312,7 +312,7 @@
 
 /* Hover zoom triggered by entire row hover ONLY on hover-capable devices (Desktop with mouse) */
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover .student-avatar {
+    .student-list-table tbody tr:not(.focus-active):hover .student-avatar:not(.is-selected) {
         transform: scale(1.12);
         z-index: 10;
     }
@@ -376,6 +376,8 @@
 }
 
 /* Instant 100% crispness restoration upon hover, drag or selection (avatar, table row, or seating cell) */
+[data-theme="dark"] .student-avatar.is-selected .student-avatar__img,
+[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar .student-avatar__img,
 [data-theme="dark"] .sc-cell.sc-chip-selected .student-avatar .student-avatar__img,
 [data-theme="dark"] .sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img,
 [data-theme="dark"] .sc-drag-clone .student-avatar .student-avatar__img,

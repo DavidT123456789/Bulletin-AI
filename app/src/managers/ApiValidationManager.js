@@ -7,7 +7,7 @@
  * - Auto-correction des modèles non trouvés
  */
 
-import { appState } from '../state/State.js';
+import { appState, UIState } from '../state/State.js';
 import { PROVIDER_DEFAULT_MODELS } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
@@ -17,6 +17,25 @@ import { SettingsUIManager } from './SettingsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
 
 export const ApiValidationManager = {
+    /**
+     * Synchronise le snapshot de la modale des paramètres lorsqu'une clé est explicitement
+     * validée et sauvegardée, afin qu'une fermeture par "X" / "Échap" n'annule pas la clé validée.
+     * @param {string} provider
+     * @private
+     */
+    _syncSettingsSnapshotAfterValidation(provider) {
+        if (!UIState?.settingsBeforeEdit || Object.keys(UIState.settingsBeforeEdit).length === 0) return;
+        const keyProp = `${provider}ApiKey`;
+        UIState.settingsBeforeEdit[keyProp] = appState[keyProp];
+        UIState.settingsBeforeEdit.currentAIModel = appState.currentAIModel;
+        if (UIState.settingsBeforeEdit.validatedApiKeys && appState.validatedApiKeys) {
+            UIState.settingsBeforeEdit.validatedApiKeys[provider] = appState.validatedApiKeys[provider];
+        }
+        if (UIState.settingsBeforeEdit.apiKeyStatus && appState.apiKeyStatus) {
+            UIState.settingsBeforeEdit.apiKeyStatus[provider] = appState.apiKeyStatus[provider];
+        }
+    },
+
     /**
      * Valide une clé API avec UI feedback
      * @param {string} provider - Le provider ('openai', 'google', 'openrouter')
@@ -73,6 +92,7 @@ export const ApiValidationManager = {
                         errorEl.style.color = 'var(--warning-color)';
 
                         await StorageManager.saveAppState();
+                        this._syncSettingsSnapshotAfterValidation(provider);
                         SettingsUIManager.updateApiStatusDisplay();
                         if (onSuccess) onSuccess();
                         return;
@@ -129,6 +149,7 @@ export const ApiValidationManager = {
             }
 
             await StorageManager.saveAppState();
+            this._syncSettingsSnapshotAfterValidation(provider);
             SettingsUIManager.updateApiStatusDisplay();
             UI.showNotification(`Clé ${provider} validée et sauvegardée !`, 'success');
 
@@ -139,6 +160,7 @@ export const ApiValidationManager = {
                 if (recommendedModel) {
                     appState.currentAIModel = recommendedModel;
                     await StorageManager.saveAppState();
+                    this._syncSettingsSnapshotAfterValidation(provider);
 
                     // Mettre à jour le select du modèle si présent
                     if (DOM.aiModelSelect) {
@@ -207,6 +229,7 @@ export const ApiValidationManager = {
                 errorEl.style.color = 'var(--warning-color)';
 
                 await StorageManager.saveAppState();
+                this._syncSettingsSnapshotAfterValidation(provider);
                 if (onSuccess) onSuccess();
             } else if (isModelNotFoundError) {
                 appState.apiKeyStatus[provider] = 'valid';
@@ -222,6 +245,7 @@ export const ApiValidationManager = {
                 errorEl.style.color = 'var(--warning-color)';
 
                 await StorageManager.saveAppState();
+                this._syncSettingsSnapshotAfterValidation(provider);
                 if (onSuccess) onSuccess();
             } else {
                 // Vraie erreur de clé invalide - effacer la clé de appState

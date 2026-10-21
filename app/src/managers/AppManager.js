@@ -188,6 +188,9 @@ export const App = {
         UI.updateHeaderPremiumLook();
         UI.updateStatsTooltips();
 
+        // Restaurer les champs des paramètres (clés API, modèle, curseurs) avant le calcul du statut
+        UI.updateSettingsFields?.();
+
         // Restaurer l'état des API au chargement
         SettingsUIManager.updateApiStatusDisplay();
 
@@ -201,6 +204,12 @@ export const App = {
 
         // Si des clés sont validées, restaurer l'état des boutons
         this._restoreValidatedButtonStates();
+
+        // Si la modale des paramètres est ouverte (ex: restauration Cloud, import JSON ou réinitialisation),
+        // rafraîchir son snapshot pour qu'une fermeture par "✕" / "Échap" n'annule pas l'état restauré
+        if (UIState?.settingsBeforeEdit && Object.keys(UIState.settingsBeforeEdit).length > 0) {
+            SettingsUIManager.createSnapshot?.();
+        }
 
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
     },

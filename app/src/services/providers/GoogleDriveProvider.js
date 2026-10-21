@@ -97,34 +97,34 @@ export const GoogleDriveProvider = {
      */
     async authorize(options = {}) {
         try {
-            await this._ensureGapiLoaded();
-            await this._loadGapiClient();
-
-            // Check for saved token
+            // Check for saved token first (avoids loading external Google scripts at boot if token is already expired)
             const savedToken = localStorage.getItem('bulletin_google_token');
+            let hasValidSavedToken = false;
             if (savedToken) {
                 try {
                     this._token = JSON.parse(savedToken);
-                    // Validate token - still valid
-                    if (this._token.expiry && Date.now() < this._token.expiry) {
-                        window.gapi.client.setToken({ access_token: this._token.access_token });
-                        return true;
+                    if (this._token.expiry && (Date.now() + 60000) < this._token.expiry) {
+                        hasValidSavedToken = true;
+                    } else {
+                        this._needsReconnect = true;
                     }
-                    // Token expired - mark for reconnection but don't try OAuth refresh
-
-                    this._needsReconnect = true;
-                    if (options.silent) {
-                        // In silent mode, just fail - don't trigger OAuth popup
-                        return false;
-                    }
-                } catch (e) {
+                } catch {
                     localStorage.removeItem('bulletin_google_token');
+                    this._token = null;
                 }
             }
 
-            // If silent mode, never try to open OAuth popup (will be blocked by browser)
-            if (options.silent) {
+            // In silent mode, never try to open OAuth popup and skip loading GAPI/GSI if token is missing or expired
+            if (options.silent && !hasValidSavedToken) {
                 return false;
+            }
+
+            await this._ensureGapiLoaded();
+            await this._loadGapiClient();
+
+            if (hasValidSavedToken) {
+                window.gapi.client.setToken({ access_token: this._token.access_token });
+                return true;
             }
 
             // Request new authorization (or refresh expired token)

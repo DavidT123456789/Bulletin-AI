@@ -161,11 +161,9 @@ describe('ListSelectionManager', () => {
         expect(ListSelectionManager.selectedIds.has('student-1')).toBe(true);
 
         const row = document.querySelector('.student-row[data-student-id="student-1"]');
-        const wrapper = row.querySelector('.student-identity-wrapper');
         const avatar = row.querySelector('.student-avatar');
 
         expect(row.classList.contains('selected')).toBe(true);
-        expect(wrapper.classList.contains('selected')).toBe(true);
         expect(avatar.classList.contains('is-selected')).toBe(true);
 
         const toolbar = document.getElementById('selectionToolbar');

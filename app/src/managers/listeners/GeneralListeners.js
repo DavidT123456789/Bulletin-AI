@@ -347,7 +347,6 @@ export const GeneralListeners = {
                     const connected = await SyncService.connect('google');
                     if (connected) {
                         UI.showNotification('Connecté à Google Drive', 'success');
-                        closeMenu();
                     } else {
                         UI.showNotification('Connexion annulée.', 'warning');
                     }
@@ -368,6 +367,10 @@ export const GeneralListeners = {
         cloudSaveBtn.addEventListener('click', async () => {
             if (!navigator.onLine) {
                 UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
+                return;
+            }
+            if (cloudSaveBtn.classList.contains('disabled')) {
+                UI.showNotification('Session expirée : reconnectez Google Drive pour sauvegarder vos données.', 'info');
                 return;
             }
             const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
@@ -555,6 +558,10 @@ export const GeneralListeners = {
                     UI.showNotification('Mode hors-ligne : la restauration Cloud nécessite une connexion Internet.', 'info');
                     return;
                 }
+                if (cloudLoadBtn.classList.contains('disabled')) {
+                    UI.showNotification('Session expirée : reconnectez Google Drive pour restaurer vos données.', 'info');
+                    return;
+                }
                 const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
                 const iconEl = cloudLoadBtn.querySelector('iconify-icon');
                 const originalLabel = labelEl?.textContent;
@@ -630,7 +637,6 @@ export const GeneralListeners = {
 
                         restoreProgressToast = UI.showNotification('Restauration de vos données depuis le Cloud…', 'loading', 0);
 
-                        const { StorageManager } = await import('../../managers/StorageManager.js');
                         await StorageManager.savePreRestoreSnapshot();
 
                         const result = await SyncService.loadFromCloud(summary.remoteData);
@@ -694,10 +700,7 @@ export const GeneralListeners = {
                     const { SyncService } = await import('../../services/SyncService.js');
                     const success = await SyncService.reconnect({ skipIndicator: false });
 
-                    if (success) {
-                        this._updateCloudReminder(SyncService);
-                        closeMenu();
-                    } else {
+                    if (!success) {
                         UI.showNotification('Reconnexion annulée', 'info');
                     }
                 } catch (error) {
@@ -716,7 +719,7 @@ export const GeneralListeners = {
 
     /**
      * Update the cloud reminder dot on the menu button.
-     * Delegates to SyncService._computeSyncState for a unified state check.
+     * Delegates to SyncService.refreshLocalIndicator for a unified single-source state check.
      * @param {Object} [syncService] - Optional SyncService instance
      * @private
      */
@@ -726,7 +729,7 @@ export const GeneralListeners = {
             return;
         }
 
-        let service = syncService;
+        let service = syncService || window.SyncService;
         if (!service) {
             try {
                 const mod = await import('../../services/SyncService.js');
@@ -734,48 +737,13 @@ export const GeneralListeners = {
             } catch { /* Ignore */ }
         }
 
-        if (service && !service._isOnline) {
+        if (!service || !service._isOnline) {
             DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
             return;
         }
 
-        const isWarning = service ? (!service.isConnected() || service._lastSyncState === 'expired' || service._provider?.needsReconnect?.()) : false;
-        const needsAction = this._hasUnsyncedChanges(service);
-        const isConflict = service?._lastSyncState === 'conflict';
-
-        if (isWarning) {
-            DOM.headerMenuBtn?.classList.add('has-cloud-warning');
-            DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict');
-        } else {
-            DOM.headerMenuBtn?.classList.remove('has-cloud-warning');
-            DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
-            DOM.headerMenuBtn?.classList.toggle('has-cloud-conflict', isConflict);
-        }
-    },
-
-    /**
-     * Check if local data or cloud has unsynced changes (used for menu dot and boot check).
-     * @param {Object} [syncService] - Optional SyncService reference to check remote status
-     * @returns {boolean}
-     * @private
-     */
-    _hasUnsyncedChanges(syncService) {
-        const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
-        const lastModified = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-        let hasLocal = lastModified > lastSync;
-
-        // Safety net: if timestamps say "modified" but data hash matches cloud, it's a false positive
-        if (hasLocal) {
-            const syncHash = localStorage.getItem('bulletin_last_sync_hash');
-            if (syncHash && StorageManager.computeCurrentDataHash() === syncHash) {
-                hasLocal = false;
-                localStorage.setItem('bulletin_last_modified', lastSync.toString());
-            }
-        }
-
-        const remoteSync = syncService?.remoteSyncTime || 0;
-        const hasRemote = remoteSync > 0 && remoteSync > (lastSync + 5000);
-        return hasLocal || hasRemote;
+        service._wasConfigured = true;
+        service.refreshLocalIndicator();
     },
 
     /**
@@ -788,7 +756,6 @@ export const GeneralListeners = {
         try {
             const SyncService = window.SyncService || (await import('../../services/SyncService.js')).SyncService;
             await SyncService.refreshStatus({ showChecking: true });
-            this._updateCloudReminder(SyncService);
         } catch (e) {
             console.warn('[GeneralListeners] Failed to refresh cloud state on menu open:', e);
         }

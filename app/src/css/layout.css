@@ -1190,22 +1190,26 @@ body.is-cloud-syncing label {
     opacity: 0.7;
 }
 
-/* Bouton Reconnexion - Style warning */
+/* Bouton Reconnexion - Style neutre au repos, ambré uniquement si modifications en attente */
 .cloud-reconnect-item {
     background-color: transparent;
-    color: var(--warning-color);
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
-[data-theme="dark"] .cloud-reconnect-item {
+.cloud-reconnect-item.has-warning {
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .cloud-reconnect-item.has-warning {
     color: var(--warning-bright);
 }
 
-.cloud-reconnect-item:hover {
+.cloud-reconnect-item.has-warning:hover {
     color: var(--warning-dark);
 }
 
-[data-theme="dark"] .cloud-reconnect-item:hover {
+[data-theme="dark"] .cloud-reconnect-item.has-warning:hover {
     color: var(--warning-bright);
 }
 
@@ -1217,20 +1221,24 @@ body.is-cloud-syncing label {
     min-width: 24px;
     width: 24px;
     height: 24px;
-    color: var(--warning-color);
+    color: var(--text-tertiary);
     transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
-[data-theme="dark"] .cloud-reconnect-item iconify-icon {
+.cloud-reconnect-item.has-warning iconify-icon {
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .cloud-reconnect-item.has-warning iconify-icon {
     color: var(--warning-bright);
 }
 
-.cloud-reconnect-item:hover iconify-icon {
+.cloud-reconnect-item.has-warning:hover iconify-icon {
     color: var(--warning-dark);
     opacity: 1;
 }
 
-[data-theme="dark"] .cloud-reconnect-item:hover iconify-icon {
+[data-theme="dark"] .cloud-reconnect-item.has-warning:hover iconify-icon {
     color: var(--warning-bright);
 }
 
