@@ -99,7 +99,7 @@ export const ResultsUIManager = {
         }
 
         const currentClass = ClassManager.getCurrentClass();
-        const currentClassName = currentClass?.name || '';
+        const currentClassName = currentClass?.name || Utils.getCurrentClassName();
 
         const filteredAndSorted = viewableResults
             .filter(r => {

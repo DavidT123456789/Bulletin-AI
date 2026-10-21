@@ -44,7 +44,7 @@ export const ListViewRenderer = {
         const isSelected = ListSelectionManager.selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
         const searchQuery = context.searchQuery ?? (document.getElementById('searchInput')?.value || '');
-        const currentClassName = context.currentClassName ?? Utils.getCurrentClassName();
+        const currentClassName = context.currentClassName || Utils.getCurrentClassName();
         const originClass = Utils.getOriginClass(result, currentClassName);
 
         tr.innerHTML = `

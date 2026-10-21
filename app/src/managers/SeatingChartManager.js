@@ -4277,7 +4277,7 @@ export const SeatingChartManager = {
 
         const searchInput = document.getElementById('scSearchInput');
         let searchTerm = (searchInput?.value || '').trim();
-        const currentClassName = this._getCurrentClass()?.name || '';
+        const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
 
         if (returningId && searchTerm) {
             const returnedStudent = this._students.find(s => s.id === returningId);

@@ -4,7 +4,7 @@
  */
 
 import { ListViewRenderer } from './ListViewRenderer.js';
-import { userSettings } from '../../state/State.js';
+import { Utils } from '../../utils/Utils.js';
 
 export const ListViewAnimations = {
 
@@ -90,7 +90,7 @@ export const ListViewAnimations = {
             const orderedIds = newResults.map(r => r.id);
             let previousNode = null;
             const searchQuery = document.getElementById('searchInput')?.value || '';
-            const currentClassName = userSettings.academic?.classes?.find(c => c.id === userSettings.academic?.currentClassId)?.name || '';
+            const currentClassName = Utils.getCurrentClassName();
             const renderContext = { searchQuery, currentClassName };
 
             const newRowCount = orderedIds.filter(id => !keepMap.has(id)).length;

@@ -59,7 +59,7 @@ export const SeatingSearch = {
         const cleaned = (value || '').trim();
         if (!cleaned) return;
 
-        const currentClassName = this._getCurrentClass()?.name || '';
+        const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
         const matchedStudents = (this._students || []).filter(student =>
             Utils.matchesStudent(student, cleaned, { currentClassName })
         );
@@ -141,7 +141,7 @@ export const SeatingSearch = {
 
         // 1. Matched students in current class
         const matchedStudentIds = new Set();
-        const currentClassName = this._getCurrentClass()?.name || '';
+        const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
         (this._students || []).forEach(student => {
             if (Utils.matchesStudent(student, cleaned, { currentClassName })) {
                 matchedStudentIds.add(student.id);

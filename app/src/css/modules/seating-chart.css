@@ -3133,7 +3133,19 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         print-color-adjust: exact;
     }
 
-    /* ── 7. Pinned indicator (discrete print marker) ── */
+    /* ── 7. Pinned indicator (discrete print marker) & Group badges ── */
+    .sc-cell.occupied .sc-station-badge,
+    .sc-cell.occupied .sc-cell-group-badge,
+    .sc-stacked-group-tag {
+        color: #444 !important;
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    #seatingChartView[data-virtual="true"] .sc-cell-pin {
+        display: none !important;
+    }
     .sc-cell.pinned .sc-cell-pin {
         display: flex !important;
         position: absolute;
@@ -5531,7 +5543,21 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         display: none !important;
     }
 
-    .sc-station-badge {
+    .sc-classroom-board[data-plan-mode="activity"] .sc-cell-group-badge,
+    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell-group-badge {
+        left: auto;
+        right: 4.5px;
+    }
+
+    .sc-stacked-group-tag {
+        font-size: 0.45rem;
+        padding: 1px 2.5px;
+        margin-left: 2px;
+        border-radius: 3px;
+    }
+
+    .sc-station-badge,
+    .sc-cell-group-badge {
         top: 4.5px;
         left: 4.5px;
         font-size: 0.47rem;
