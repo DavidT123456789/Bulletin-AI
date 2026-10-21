@@ -3882,7 +3882,6 @@ export const SeatingChartManager = {
 
         const posKey = this._getActivePositionKey();
         const isActivity = this._isActivityMode();
-        const isVirtual = this._isVirtualClass();
         const special = this._getCellSpecial(row, col);
         const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
         const stationBadgeHTML = stationNum ? `<span class="sc-station-badge" aria-hidden="true">#${stationNum}</span>` : '';
@@ -3906,7 +3905,8 @@ export const SeatingChartManager = {
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
 
-            const tooltipText = this._getStudentTooltipText(student);
+            const classInfo = this._getStudentContextualClassInfo(student);
+            const tooltipText = this._getStudentTooltipText(student, undefined, classInfo);
 
             cell.setAttribute('data-tooltip', tooltipText);
             if (!this._isLocked) {
@@ -3916,9 +3916,8 @@ export const SeatingChartManager = {
             const statusBadgeHTML = badgeInfo
                 ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
                 : '';
-            const classInfo = isVirtual ? this._getStudentContextualClassInfo(student) : null;
-            const groupBadgeHTML = classInfo?.shortLabel
-                ? `<span class="sc-cell-group-badge" aria-label="${Utils.escapeHtml(classInfo.tooltipLabel)}">${Utils.escapeHtml(classInfo.shortLabel)}</span>`
+            const groupBadgeHTML = (classInfo?.isVirtual && classInfo.shortLabel)
+                ? `<span class="sc-stacked-group-tag" aria-label="${Utils.escapeHtml(classInfo.tooltipLabel)}">${Utils.escapeHtml(classInfo.shortLabel)}</span>`
                 : '';
             const nameInfo = this._getStudentCellNameInfo(student);
 
@@ -3927,9 +3926,8 @@ export const SeatingChartManager = {
                     ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
                     ${statusBadgeHTML}
                 </div>
-                <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
+                <span class="sc-cell-name${nameInfo.modifierClass}${groupBadgeHTML ? ' has-group-tag' : ''}">${groupBadgeHTML ? `<span class="sc-cell-name-text${nameInfo.modifierClass}">${nameInfo.html}</span>${groupBadgeHTML}` : nameInfo.html}</span>
                 ${stationBadgeHTML}
-                ${groupBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -3992,7 +3990,13 @@ export const SeatingChartManager = {
         } else if (students.length > 1) {
             // Binôme / Groupe / Classe reconstituée (2 à 4 élèves sur un même poste)
             const isPinned = students.some(s => s[posKey]?.pinned);
-            const allDeparted = students.every(s => this._isStudentDeparted(s));
+            const membersMeta = students.map(s => {
+                const isDeparted = this._isStudentDeparted(s);
+                const classInfo = this._getStudentContextualClassInfo(s);
+                const tooltip = this._getStudentTooltipText(s, undefined, classInfo);
+                return { student: s, isDeparted, classInfo, tooltip };
+            });
+            const allDeparted = membersMeta.every(m => m.isDeparted);
             cell.classList.add('occupied', 'sc-cell-stacked');
             if (allDeparted) cell.classList.add('sc-cell-departed');
             if (isPinned) cell.classList.add('pinned');
@@ -4001,29 +4005,25 @@ export const SeatingChartManager = {
             cell.dataset.groupSize = String(students.length);
 
             const canExtractMember = !this._isLocked && !isPinned;
-            const getMemberTooltip = (s) => this._getStudentTooltipText(s);
-            const avatarsHtml = students.map((s, idx) => {
-                const isMemberDeparted = this._isStudentDeparted(s);
+            const avatarsHtml = membersMeta.map(({ student: s, isDeparted: isMemberDeparted, tooltip }, idx) => {
                 const memberBadge = this._getStudentStatusBadgeInfo(s);
                 const memberDotHtml = memberBadge
                     ? `<span class="sc-cell-status-badge ${memberBadge.className}" aria-label="${Utils.escapeHtml(memberBadge.label)}">${Utils.escapeHtml(memberBadge.label)}</span>`
                     : '';
                 return `
-                <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}">
+                <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(tooltip)}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     ${memberDotHtml}
                 </div>
             `;
             }).join('');
 
-            const namesHtml = students.map(s => {
-                const isMemberDeparted = this._isStudentDeparted(s);
+            const namesHtml = membersMeta.map(({ student: s, isDeparted: isMemberDeparted, classInfo: memberClassInfo, tooltip }) => {
                 const memberNameInfo = this._getStudentCellNameInfo(s);
-                const memberClassInfo = isVirtual ? this._getStudentContextualClassInfo(s) : null;
-                const memberGroupTagHtml = memberClassInfo?.shortLabel
+                const memberGroupTagHtml = (memberClassInfo?.isVirtual && memberClassInfo.shortLabel)
                     ? `<span class="sc-stacked-group-tag" aria-label="${Utils.escapeHtml(memberClassInfo.tooltipLabel)}">${Utils.escapeHtml(memberClassInfo.shortLabel)}</span>`
                     : '';
-                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
+                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(tooltip)}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
                 return `
                 <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}${memberNameInfo.modifierClass}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text${memberNameInfo.modifierClass}">${memberNameInfo.html}</span>
@@ -4611,13 +4611,13 @@ export const SeatingChartManager = {
         };
     },
 
-    _getStudentTooltipText(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+    _getStudentTooltipText(studentResult, activePeriod = appState.currentPeriod || 'T1', classInfo = undefined) {
         if (!studentResult) return '';
         const baseName = Utils.formatStudentFirstLastName(studentResult.nom, studentResult.prenom);
-        const classInfo = this._getStudentContextualClassInfo(studentResult);
+        const resolvedClassInfo = classInfo !== undefined ? classInfo : this._getStudentContextualClassInfo(studentResult);
         const labels = [];
-        if (classInfo?.tooltipLabel) {
-            labels.push(classInfo.tooltipLabel);
+        if (resolvedClassInfo?.tooltipLabel) {
+            labels.push(resolvedClassInfo.tooltipLabel);
         }
         labels.push(...this._getStudentStatusLabels(studentResult, activePeriod));
         return labels.length > 0 ? `${baseName} • ${labels.join(' • ')}` : baseName;

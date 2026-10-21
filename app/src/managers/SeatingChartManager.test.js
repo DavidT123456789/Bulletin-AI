@@ -3932,7 +3932,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._renderGrid();
 
             const singleCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
-            expect(singleCell.querySelector('.sc-cell-group-badge')?.textContent).toBe('G1');
+            expect(singleCell.querySelector('.sc-cell-group-badge')).toBeNull();
+            expect(singleCell.querySelector('.sc-cell-name .sc-stacked-group-tag')?.textContent).toBe('G1');
             expect(singleCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Groupe 3ᵉG1');
 
             const stackedCell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="1"]');
@@ -3944,6 +3945,15 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 'Noah DUPONT • Groupe 3ᵉG2',
                 'Charly MARTIN • Groupe 3ᵉG1'
             ]);
+
+            // 5. En vue Groupe (3ᵉG1), aucun badge permanent sur la carte du plan (pureté visuelle), mais classe d'origine dans le tooltip au survol
+            appState.currentClassId = g1.id;
+            userSettings.academic.currentClassId = g1.id;
+            SeatingChartManager.onClassChange(true);
+            const g1Cell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            expect(g1Cell.querySelector('.sc-stacked-group-tag')).toBeNull();
+            expect(g1Cell.querySelector('.sc-cell-group-badge')).toBeNull();
+            expect(g1Cell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1');
         });
     });
 });

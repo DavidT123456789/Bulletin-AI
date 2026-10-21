@@ -1741,13 +1741,21 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     text-overflow: clip;
 }
 
-.sc-cell-name.is-extra-long-name,
-.sc-drag-clone .sc-cell-name.is-extra-long-name,
+.sc-cell-name:not(.has-group-tag).is-extra-long-name,
+.sc-drag-clone .sc-cell-name:not(.has-group-tag).is-extra-long-name,
 .sc-touch-ghost .sc-cell-name.is-extra-long-name,
+.sc-cell-name-text.is-extra-long-name,
 .sc-stacked-name-text.is-extra-long-name {
     text-overflow: clip;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
     mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
+}
+
+.sc-cell-name.has-group-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 82px;
 }
 
 .sc-cell-initial {
@@ -3135,7 +3143,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
     /* ── 7. Pinned indicator (discrete print marker) & Group badges ── */
     .sc-cell.occupied .sc-station-badge,
-    .sc-cell.occupied .sc-cell-group-badge,
     .sc-stacked-group-tag {
         color: #444 !important;
         background: #f0f0f0 !important;
@@ -4972,8 +4979,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     animation: scBoardCarouselOutRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.sc-station-badge,
-.sc-cell-group-badge {
+.sc-station-badge {
     position: absolute;
     top: 6px;
     bottom: auto;
@@ -4995,22 +5001,14 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     transition: color 0.2s ease, background 0.2s ease, opacity 0.18s ease, top 0.18s ease;
 }
 
-.sc-cell.occupied .sc-station-badge,
-.sc-cell.occupied .sc-cell-group-badge {
+.sc-cell.occupied .sc-station-badge {
     color: var(--text-secondary);
     background: var(--bg-secondary);
 }
 
-[data-theme="dark"] .sc-cell.occupied .sc-station-badge,
-[data-theme="dark"] .sc-cell.occupied .sc-cell-group-badge {
+[data-theme="dark"] .sc-cell.occupied .sc-station-badge {
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.08);
-}
-
-.sc-classroom-board[data-plan-mode="activity"] .sc-cell-group-badge,
-#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell-group-badge {
-    left: auto;
-    right: 6px;
 }
 
 .sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge,
@@ -5449,6 +5447,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     line-height: 1.16;
 }
 
+.sc-cell-name-text,
 .sc-stacked-name-text {
     display: block;
     min-width: 0;
@@ -5543,12 +5542,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         display: none !important;
     }
 
-    .sc-classroom-board[data-plan-mode="activity"] .sc-cell-group-badge,
-    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell-group-badge {
-        left: auto;
-        right: 4.5px;
-    }
-
     .sc-stacked-group-tag {
         font-size: 0.45rem;
         padding: 1px 2.5px;
@@ -5556,8 +5549,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         border-radius: 3px;
     }
 
-    .sc-station-badge,
-    .sc-cell-group-badge {
+    .sc-station-badge {
         top: 4.5px;
         left: 4.5px;
         font-size: 0.47rem;
