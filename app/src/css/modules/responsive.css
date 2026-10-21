@@ -102,16 +102,15 @@
 @media (max-width: 768px) {
 
     /* Modal */
-    .modal-content:not(:where(.modal-alert-ios, .modal-content-confirm, .modal-mini-content, .modal-content-backup-import, .model-selection-content)) {
-        width: 95%;
-        max-width: none;
-        max-height: 95vh;
+    .modal-content {
+        --modal-shell-width: 95%;
+        --modal-max-height: 95vh;
         margin: 0 auto;
     }
 
-    .modal-help .modal-content {
-        height: min(640px, 90vh);
-        max-height: 90vh;
+    .modal-help {
+        --modal-height: min(640px, 90vh);
+        --modal-max-height: 90vh;
     }
 
     .modal-header {
@@ -220,12 +219,8 @@
         width: 100%;
     }
 
-    /* Fullscreen workspace modals - Native iOS Sheet slide presentation */
-    .modal-content,
-    .modal-help .modal-content,
-    #helpModal > .modal-content,
-    .modal-lab .modal-content,
-    .class-dashboard-modal .modal-content {
+    /* Fullscreen workspace modals - Single Source of Truth (iOS Sheet slide presentation) */
+    .modal-content {
         width: 100%;
         max-width: 100%;
         height: 100vh;
@@ -238,19 +233,19 @@
     }
 
     /* Compact alert, dialog & card modals remain floating rounded cards */
-    .modal-content.modal-alert-ios,
-    .modal-content.modal-content-confirm,
-    .modal-content.modal-mini-content,
-    .modal-content.modal-content-backup-import,
-    .modal-content.model-selection-content,
-    .modal-prompt-preview .modal-content,
-    #classManagementModal .modal-content,
-    #welcomeModal .modal-content {
+    .modal-content:where(
+        .modal-alert-ios,
+        .modal-content-confirm,
+        .modal-mini-content,
+        .modal-content-backup-import,
+        .model-selection-content
+    ),
+    :where(#classManagementModal, #welcomeModal, .modal-prompt-preview) > .modal-content {
         width: calc(100% - 24px);
-        max-width: 100%;
+        max-width: var(--modal-width);
         height: auto;
         max-height: calc(100dvh - 32px);
-        border-radius: var(--radius-lg);
+        border-radius: var(--modal-radius);
         border: var(--modal-border);
     }
 
@@ -389,29 +384,6 @@
         text-align: left;
     }
 
-    /* About tab mobile refinements */
-    .about-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 16px;
-    }
-
-    .about-header-main {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .about-title-group h3 {
-        justify-content: center;
-    }
-
-    .support-card-premium {
-        padding: 20px 16px;
-        max-width: 100%;
-        margin-top: 24px;
-    }
 }
 
 /* ====================================================================
@@ -419,12 +391,12 @@
    ==================================================================== */
 @media (max-height: 650px) and (min-width: 769px) {
     .modal-content {
-        max-height: 94vh;
+        --modal-max-height: 94vh;
     }
 
-    .modal-help .modal-content {
-        height: 94vh;
-        max-height: 94vh;
+    .modal-help {
+        --modal-height: 94vh;
+        --modal-max-height: 94vh;
     }
 
     .modal-header {

@@ -172,18 +172,19 @@ export const ClassUIManager = {
         DOM.classDropdown.style.top = `${Math.round((chipRect?.bottom || 56) + 8)}px`;
         DOM.classDropdown.style.zIndex = '9999';
 
-        if (window.innerWidth < 768) {
+        if (window.innerWidth <= 600) {
             DOM.classDropdown.style.left = '12px';
             DOM.classDropdown.style.right = '12px';
             DOM.classDropdown.style.minWidth = 'unset';
             DOM.classDropdown.style.maxWidth = 'none';
             DOM.classDropdown.style.width = 'auto';
         } else {
-            DOM.classDropdown.style.left = `${Math.round(chipRect?.left || 16)}px`;
+            const isVerticalTablet = window.innerWidth <= 768;
+            DOM.classDropdown.style.left = `${Math.round(chipRect?.left || (isVerticalTablet ? 12 : 16))}px`;
             DOM.classDropdown.style.right = 'unset';
             DOM.classDropdown.style.minWidth = 'unset';
             DOM.classDropdown.style.maxWidth = 'unset';
-            DOM.classDropdown.style.width = '300px';
+            DOM.classDropdown.style.width = isVerticalTablet ? '320px' : '300px';
         }
     },
 

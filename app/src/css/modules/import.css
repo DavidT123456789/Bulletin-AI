@@ -3,10 +3,6 @@
    Styles pour l'import de données et la prévisualisation
    ==================================================================== */
 
-#importPreviewModal .modal-content {
-    max-width: 1000px;
-}
-
 #importPreviewModal .modal-body {
     padding-top: 24px;
 }
@@ -520,10 +516,13 @@
     overflow-x: hidden;
 }
 
+#welcomeModal {
+    --modal-shell-width: 95%;
+    --modal-width: 800px;
+}
+
 #welcomeModal .modal-content {
-    max-width: 800px;
     margin: 0 auto;
-    width: 95%;
     background: var(--glass-overlay-bg);
     backdrop-filter: blur(var(--glass-overlay-blur));
     -webkit-backdrop-filter: blur(var(--glass-overlay-blur));

@@ -537,6 +537,35 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         );
         expect(countVal.textContent).toBe('3');
     });
+
+    it('devrait positionner le dropdown en popover 320px ancré à gauche sur tablette verticale (601px–768px) et pleine largeur sur mobile (<= 600px)', () => {
+        const originalInnerWidth = window.innerWidth;
+
+        try {
+            // 1. Mobile (<= 600px) -> feuille pleine largeur avec marges 12px
+            Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 480 });
+            ClassUIManager._positionDropdown();
+            expect(DOM.classDropdown.style.left).toBe('12px');
+            expect(DOM.classDropdown.style.right).toBe('12px');
+            expect(DOM.classDropdown.style.width).toBe('auto');
+
+            // 2. Tablette verticale (601px–768px) -> popover 320px ancré à gauche
+            Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 768 });
+            ClassUIManager._positionDropdown();
+            expect(DOM.classDropdown.style.left).toBe('12px');
+            expect(DOM.classDropdown.style.right).toBe('unset');
+            expect(DOM.classDropdown.style.width).toBe('320px');
+
+            // 3. Desktop (> 768px) -> popover 300px ancré à gauche
+            Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1280 });
+            ClassUIManager._positionDropdown();
+            expect(DOM.classDropdown.style.left).toBe('16px');
+            expect(DOM.classDropdown.style.right).toBe('unset');
+            expect(DOM.classDropdown.style.width).toBe('300px');
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
+        }
+    });
 });
 
 

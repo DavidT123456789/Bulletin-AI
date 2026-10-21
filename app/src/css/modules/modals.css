@@ -29,8 +29,9 @@
     padding: 0;
     border-radius: var(--modal-radius);
     overflow: hidden;
-    width: 90%;
+    width: var(--modal-shell-width, 90%);
     max-width: var(--modal-width);
+    height: var(--modal-height, auto);
     max-height: var(--modal-max-height);
     box-shadow: var(--modal-shadow);
     border: var(--modal-border);
@@ -81,7 +82,7 @@
 }
 
 .modal-content-confirm {
-    max-width: 460px;
+    --modal-width: 460px;
 }
 
 .modal-alert-ios {
@@ -669,9 +670,8 @@
     margin-top: 0;
 }
 
-.modal-help .modal-content {
-    height: min(670px, 90vh);
-    max-height: var(--modal-max-height);
+.modal-help {
+    --modal-height: min(670px, 90vh);
 }
 
 
@@ -1699,7 +1699,7 @@
 
 /* Compact Modal Style */
 .modal-content-confirm.modal-compact {
-    max-width: 440px;
+    --modal-width: 440px;
     padding: 32px 32px 28px 32px;
     gap: 24px;
     display: flex;
@@ -1790,9 +1790,8 @@
    ==================================================================== */
 
 .model-selection-content {
-    max-width: 500px;
-    height: auto;
-    max-height: 80vh;
+    --modal-width: 500px;
+    --modal-max-height: 80vh;
 }
 
 .model-selection-content .modal-header {
@@ -2015,9 +2014,9 @@
 /* ====================================================================
    PROMPT PREVIEW MODAL — Redesigned with standard modal structure
    ==================================================================== */
-.modal-prompt-preview .modal-content {
-    max-width: 640px;
-    width: 95%;
+.modal-prompt-preview {
+    --modal-shell-width: 95%;
+    --modal-width: 640px;
 }
 
 .modal-prompt-preview .modal-body {
@@ -2093,8 +2092,8 @@
    CONFLICT RESOLUTION MODAL — 3-Choice Smart Merge Pattern
    ==================================================================== */
 .modal-content-conflict {
-    max-width: 520px;
-    width: 95%;
+    --modal-shell-width: 95%;
+    --modal-width: 520px;
 }
 
 .modal-content-conflict .modal-alert-actions {

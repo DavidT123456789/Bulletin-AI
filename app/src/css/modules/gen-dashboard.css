@@ -679,7 +679,7 @@
     background: var(--item-hover-bg);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .header-model-dropdown {
         position: fixed !important;
         top: 56px !important;

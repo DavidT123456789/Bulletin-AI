@@ -30,13 +30,13 @@
 
 /* Wider modal for personalization - base width for 2 columns */
 .personalization-modal-content {
-    max-width: 940px;
-    width: 95%;
+    --modal-shell-width: 95%;
+    --modal-width: 940px;
 }
 
 /* Expand modal when inspector is visible (3 columns) */
 .personalization-modal-content.inspector-visible {
-    max-width: 1240px;
+    --modal-width: 1240px;
 }
 
 /* 2-column grid when inspector is hidden (default) - equal 50/50 */
@@ -1831,8 +1831,8 @@
    ==================================================================== */
 
 .modal-content-backup-import {
-    max-width: 520px;
-    width: 92%;
+    --modal-shell-width: 92%;
+    --modal-width: 520px;
 }
 
 .backup-meta-line {

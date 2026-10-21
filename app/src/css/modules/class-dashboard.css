@@ -7,13 +7,10 @@
    MODAL CONTAINER
    ========================================================================== */
 
-.class-dashboard-modal .modal-content {
-    max-width: 1150px;
-    width: 95%;
-    max-height: 92vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+.class-dashboard-modal {
+    --modal-shell-width: 95%;
+    --modal-width: 1150px;
+    --modal-max-height: 92vh;
 }
 
 .class-dashboard-modal .modal-header {
@@ -1210,11 +1207,6 @@
    ========================================================================== */
 
 @media (max-width: 640px) {
-    .class-dashboard-modal .modal-content {
-        max-height: 95vh;
-        border-radius: var(--radius-lg);
-    }
-
     .class-dashboard-modal .modal-header {
         padding: var(--space-4);
         flex-direction: column;

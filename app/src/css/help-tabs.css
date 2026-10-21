@@ -4,10 +4,6 @@
    ==================================================================== */
 
 /* --- Coque Modale Guide & Contenu d'onglet --- */
-#helpModal > .modal-content {
-    height: min(640px, 88vh);
-}
-
 #helpModal > .modal-content > .modal-footer {
     display: none;
 }
@@ -18,9 +14,6 @@
     content: none !important;
 }
 
-#helpModal .ui-tabs-content {
-    padding: 22px 26px;
-}
 
 .help-tab-content {
     display: none;
@@ -141,13 +134,8 @@
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 16px 20px;
-    transition: border-color var(--transition-fast);
-}
-
-#appSettingsModal .help-step-card {
     padding: 16px 18px;
-    margin-bottom: 0;
+    transition: border-color var(--transition-fast);
 }
 
 .help-step-layout {
@@ -1500,7 +1488,19 @@
     text-underline-offset: 2px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
+    .help-tab-content.active {
+        justify-content: flex-start;
+        min-height: 0;
+    }
+
+    .help-quickstart-flow,
+    .help-interactive-demo,
+    .help-sc-canvas {
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+
     .focus-refinement-options.help-native-refine-bar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1960,14 +1960,39 @@
 }
 
 @media (max-width: 600px) {
-    .help-tab-content.active {
-        justify-content: flex-start;
-        min-height: 0;
+    .help-tab-content.active,
+    .help-quickstart-flow,
+    .help-interactive-demo,
+    .help-sc-canvas {
         gap: 10px;
     }
 
-    #helpModal .ui-tabs-content {
-        padding: 12px;
+    .help-interactive-demo,
+    .help-sc-canvas {
+        padding: 12px 14px;
+    }
+
+    .help-step-body {
+        gap: 8px;
+    }
+
+    .help-step-footer-row {
+        gap: 10px;
+    }
+
+    .help-step3-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .help-step3-box {
+        padding: 10px 12px;
+    }
+
+    .help-privacy-reassurance {
+        padding: 9px 12px;
+        font-size: 0.76rem;
+        gap: 8px;
     }
 
     .focus-refinement-options.help-native-refine-bar > :last-child:nth-child(odd) {
@@ -1978,13 +2003,48 @@
         flex-wrap: wrap;
     }
 
+    .help-preview-card .preview-card-header {
+        padding: 8px 12px;
+    }
+
+    .help-preview-text-area {
+        padding: 12px 14px;
+        min-height: 68px;
+    }
+
+    .help-preview-card .text-preview {
+        font-size: 0.84rem;
+        line-height: 1.48;
+    }
+
+    .help-preview-meta {
+        padding: 7px 12px;
+    }
+
     .help-demo-hint-inline {
         white-space: normal;
         line-height: 1.35;
     }
 
-    .help-sc-canvas {
-        padding: 14px 12px;
+    .help-writing-pillars-grid,
+    .help-seating-cards-grid {
+        gap: 8px;
+    }
+
+    .help-pillar-card,
+    .help-seating-card {
+        padding: 11px 13px;
+        gap: 10px;
+    }
+
+    .help-classroom-toolbar {
+        gap: 5px;
+    }
+
+    .help-classroom-pill {
+        padding: 3px 8px;
+        font-size: 0.7rem;
+        gap: 4px;
     }
 
     .help-sc-grid-row {
@@ -2000,17 +2060,56 @@
         width: 78px;
         height: 84px;
     }
+
+    .help-accordion summary {
+        padding: 10px 13px;
+        font-size: 0.81rem;
+    }
+
+    .help-accordion-body {
+        padding: 12px 14px;
+        font-size: 0.78rem;
+        gap: 10px;
+    }
+
+    .about-hero {
+        gap: 10px;
+    }
+
+    .about-logo-tile {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+    }
+
+    .about-title-group h3 {
+        font-size: 1.08rem;
+    }
+
+    .about-tagline {
+        font-size: 0.81rem;
+        line-height: 1.45;
+    }
+
+    .about-spec-row {
+        padding: 10px 13px;
+        gap: 11px;
+    }
+
+    .support-card-premium {
+        padding: 14px;
+        gap: 12px;
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 480px) {
-    #appSettingsModal .help-step-number {
+    .help-step-number {
         display: none;
     }
 
-    .help-step-card,
-    #appSettingsModal .help-step-card {
+    .help-step-card {
         padding: 12px 14px;
-        margin-bottom: 0;
     }
 
     .help-step-layout {
@@ -2021,13 +2120,30 @@
         min-width: 0;
     }
 
+    .help-format-tags {
+        gap: 4px;
+    }
+
+    .help-chip-tag {
+        gap: 3px;
+        padding: 2px 6px;
+        font-size: 0.66rem;
+    }
+
     .help-btn-row {
         width: 100%;
+        gap: 6px;
     }
 
     .help-btn-row .btn {
         flex: 1 1 auto;
         justify-content: center;
+    }
+
+    .help-btn-row .btn.btn-small {
+        height: 34px;
+        padding: 0 10px;
+        font-size: 0.78rem;
     }
 
     .custom-picker-panel.open .custom-picker-grid {
