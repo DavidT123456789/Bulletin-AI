@@ -293,7 +293,7 @@ export function initDOM() {
     DOM.welcomeApiKeyError = document.getElementById('welcomeApiKeyError');
     DOM.welcomeSkipApiKeyBtn = document.getElementById('welcomeSkipApiKeyBtn');
     DOM.actionsIrreversiblesContainer = document.getElementById('actions-irreversibles-container');
-    DOM.backToTopBtn = document.getElementById('backToTopBtn');
+    DOM.addStudentFab = document.getElementById('addStudentFab');
     DOM.analyzeClassBtn = document.getElementById('analyzeClassBtn');
     DOM.importHubDemoAlert = document.getElementById('importHubDemoAlert');
     DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');

@@ -57,6 +57,7 @@ export const ImportWizardManager = {
         // Also open hub from FAB button
         const fabBtn = document.getElementById('addStudentFab');
         fabBtn?.addEventListener('click', (e) => {
+            if (fabBtn.classList.contains('is-scroll-top') || fabBtn.dataset.mode === 'scroll-top') return;
             e.stopPropagation();
             this.openHub();
         });

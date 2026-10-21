@@ -186,21 +186,24 @@ export const GlobalListeners = {
 
     _setupScrollListeners() {
         const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
-        let lastScrollTop = 0;
+        const getFab = () => document.getElementById('addStudentFab') || DOM.addStudentFab;
+
+        const syncFabMode = (isScrollTop) => {
+            const fab = getFab();
+            if (!fab) return;
+            const wasScrollTop = fab.classList.contains('is-scroll-top');
+            if (wasScrollTop === isScrollTop && fab.dataset.mode) return;
+
+            fab.classList.toggle('is-scroll-top', isScrollTop);
+            fab.dataset.mode = isScrollTop ? 'scroll-top' : 'add';
+            const label = isScrollTop ? 'Retour en haut' : 'Compléter la classe';
+            fab.setAttribute('aria-label', label);
+            fab.setAttribute('data-tooltip', label);
+            TooltipsUI?.updateTooltip?.(fab, label);
+        };
 
         const handleScroll = (scrollTop) => {
-            const showBackToTop = scrollTop > 200;
-            DOM.backToTopBtn?.classList.toggle('show', showBackToTop);
-            const fab = document.getElementById('addStudentFab');
-            if (fab) {
-                const delta = scrollTop - lastScrollTop;
-                if (showBackToTop || (scrollTop > 60 && delta > 8)) {
-                    fab.classList.add('fab-scroll-hidden');
-                } else if (delta < -6 || scrollTop <= 40) {
-                    fab.classList.remove('fab-scroll-hidden');
-                }
-            }
-            lastScrollTop = Math.max(0, scrollTop);
+            syncFabMode(scrollTop > 180);
             this.updateMainScrollAffordances();
         };
 
@@ -209,6 +212,8 @@ export const GlobalListeners = {
 
         if (mainContent && typeof ResizeObserver !== 'undefined') {
             const resizeObserver = new ResizeObserver(() => {
+                const currentScrollTop = Math.max(window.scrollY || 0, mainContent.scrollTop || 0);
+                syncFabMode(currentScrollTop > 180);
                 this.updateMainScrollAffordances();
             });
             resizeObserver.observe(mainContent);
@@ -220,8 +225,13 @@ export const GlobalListeners = {
 
         this.updateMainScrollAffordances();
 
-        DOM.backToTopBtn?.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        const fab = getFab();
+        fab?.addEventListener('click', (e) => {
+            if (!fab.classList.contains('is-scroll-top') && fab.dataset.mode !== 'scroll-top') return;
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            TooltipsUI?.hideAll?.();
+            window.scrollTo?.({ top: 0, behavior: 'smooth' });
             mainContent?.scrollTo?.({ top: 0, behavior: 'smooth' });
         });
     },

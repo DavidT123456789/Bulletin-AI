@@ -171,7 +171,7 @@ describe('DOM', () => {
                 <span id="welcomeApiKeyError"></span>
                 <button id="welcomeSkipApiKeyBtn"></button>
                 <div id="actions-irreversibles-container"></div>
-                <button id="backToTopBtn"></button>
+                <button id="addStudentFab"></button>
                 <button id="analyzeClassBtn"></button>
 
                 <button id="copyAnalysisBtn"></button>

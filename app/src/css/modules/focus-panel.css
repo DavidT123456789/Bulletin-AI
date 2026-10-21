@@ -5404,11 +5404,4 @@ input.context-grade-input,
         min-width: 44px;
         min-height: 44px;
     }
-
-    /* FAB: Compact 48px touch target on mobile */
-    .fab-add-student {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-    }
 }

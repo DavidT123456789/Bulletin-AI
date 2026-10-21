@@ -608,45 +608,6 @@
     }
 }
 
-#backToTopBtn {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: var(--z-modal-backdrop);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(16px);
-    transition: 
-        opacity var(--transition-base),
-        visibility var(--transition-base),
-        transform var(--transition-spring),
-        background-color var(--transition-fast),
-        color var(--transition-fast),
-        box-shadow var(--transition-fast);
-    background-color: var(--surface-color);
-    /* fond du bouton */
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    color: var(--text-secondary);
-}
-
-#backToTopBtn.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-#backToTopBtn.show:hover {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-}
-
-#backToTopBtn.show:active {
-    transform: translateY(-1px);
-}
-
 /* ====================================================================
    MOBILE RESPONSIVENESS - iOS Premium Style Center Banner
    ==================================================================== */

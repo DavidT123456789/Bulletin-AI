@@ -1113,49 +1113,93 @@
 }
 
 /* ====================================================================
-   Floating Action Button (FAB) - Gold Standard Solid Premium Style
+   Floating Action Button (FAB) - Contextual Morphing Button (Add ↔ Top)
    ==================================================================== */
 .fab-add-student {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
     border-radius: 50%;
     background-color: var(--primary-color);
-    border: none;
+    border: 1px solid transparent;
     color: #ffffff;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 22px;
     cursor: pointer;
-    transition: all 0.35s var(--ease-spring);
+    overflow: hidden;
+    transition:
+        transform 0.35s var(--ease-spring),
+        background-color 0.25s var(--ease-material),
+        border-color 0.25s var(--ease-material),
+        color 0.25s var(--ease-material),
+        box-shadow 0.25s var(--ease-material),
+        opacity 0.25s var(--ease-material);
     z-index: 100;
 }
 
 .fab-add-student:hover {
-    transform: translateY(-4px) scale(1.05);
+    transform: translateY(-3px) scale(1.04);
     background-color: var(--primary-color);
     background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
     color: #ffffff;
     outline: none;
 }
 
 .fab-add-student:focus-visible {
-    transform: translateY(-4px) scale(1.05);
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
-    box-shadow: var(--shadow-lg), 0 0 0 3px rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: var(--shadow-xl), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
     outline: none;
 }
 
 .fab-add-student:active {
     transform: translateY(-1px) scale(0.95);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
+}
+
+/* Morphed State: Scroll to Top (Elevated Neutral Surface) */
+.fab-add-student.is-scroll-top {
+    background-color: var(--surface-color);
+    background-image: none;
+    border-color: var(--border-color-strong);
+    color: var(--text-primary);
+}
+
+.fab-add-student.is-scroll-top:hover {
+    background-color: var(--bg-secondary);
+    background-image: none;
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .fab-add-student.is-scroll-top {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .fab-add-student.is-scroll-top:hover {
+    background-color: var(--bg-tertiary);
+    background-image: linear-gradient(var(--item-hover-bg), var(--item-hover-bg));
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+}
+
+/* Stacked Icons for Vertical Morph Choreography */
+.fab-icon-stack {
+    position: relative;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
 }
 
 .fab-add-student i,
@@ -1166,8 +1210,36 @@
     justify-content: center;
 }
 
-.fab-add-student.fab-scroll-hidden,
-body:has(#backToTopBtn.show) .fab-add-student {
+.fab-add-student .fab-icon {
+    position: absolute;
+    inset: 0;
+    font-size: 1em;
+    transition:
+        transform 0.35s var(--ease-spring),
+        opacity 0.2s var(--ease-material);
+}
+
+.fab-add-student .fab-icon-add {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.fab-add-student .fab-icon-top {
+    transform: translateY(18px) scale(0.75);
+    opacity: 0;
+}
+
+.fab-add-student.is-scroll-top .fab-icon-add {
+    transform: translateY(-18px) scale(0.75);
+    opacity: 0;
+}
+
+.fab-add-student.is-scroll-top .fab-icon-top {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+body:has(.selection-toolbar.active) .fab-add-student {
     transform: translateY(calc(100% + 32px)) scale(0.85);
     opacity: 0;
     pointer-events: none;

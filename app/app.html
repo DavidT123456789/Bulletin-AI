@@ -665,9 +665,12 @@
             </main>
 
             <!-- Floating Action Button for Adding Student -->
-            <button id="addStudentFab" class="fab-add-student" data-tooltip="Compléter la classe"
+            <button id="addStudentFab" class="fab-add-student" data-mode="add" data-tooltip="Compléter la classe"
                 aria-label="Compléter la classe">
-                <iconify-icon icon="solar:user-plus-bold"></iconify-icon>
+                <span class="fab-icon-stack" aria-hidden="true">
+                    <iconify-icon class="fab-icon fab-icon-add" icon="solar:user-plus-bold"></iconify-icon>
+                    <iconify-icon class="fab-icon fab-icon-top" icon="solar:arrow-up-linear"></iconify-icon>
+                </span>
             </button>
         </div>
     </div>
@@ -3924,8 +3927,8 @@
         <div class="loading-text">Génération en cours...</div>
     </div>
 
-    <button id="backToTopBtn" class="icon-button tooltip" data-tooltip="Retour en haut"
-        aria-label="Retour en haut de la page">↑</button>
+
+
 
     <!-- TEMPLATES -->
     <template id="student-result-template">

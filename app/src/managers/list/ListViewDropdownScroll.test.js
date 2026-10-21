@@ -326,44 +326,61 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         sortSpy.mockRestore();
     });
 
-    it('should auto-hide #addStudentFab when scrolling down on #main-content and reveal it when scrolling up', async () => {
+    it('should morph #addStudentFab between add mode and scroll-top mode at 180px threshold and guard click behavior', async () => {
         const { GlobalListeners } = await import('../listeners/GlobalListeners.js');
 
         const mainContent = document.createElement('main');
         mainContent.id = 'main-content';
         mainContent.className = 'main-content';
+        mainContent.scrollTo = vi.fn();
+        window.scrollTo = vi.fn();
         const fab = document.createElement('button');
         fab.id = 'addStudentFab';
         fab.className = 'fab-add-student';
+        fab.dataset.mode = 'add';
 
         container.appendChild(mainContent);
         container.appendChild(fab);
 
         GlobalListeners._setupScrollListeners();
 
-        // Scroll down past threshold (> 60px, delta > 8)
+        const hubOpenSpy = vi.fn();
+        fab.addEventListener('click', () => {
+            if (fab.classList.contains('is-scroll-top') || fab.dataset.mode === 'scroll-top') return;
+            hubOpenSpy();
+        });
+
+        // Below threshold (<= 180px) -> stays in 'add' mode
         mainContent.scrollTop = 120;
         mainContent.dispatchEvent(new Event('scroll'));
-        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+        expect(fab.classList.contains('is-scroll-top')).toBe(false);
+        expect(fab.dataset.mode).toBe('add');
 
-        // Scroll up (delta < -6) while <= 200px
-        mainContent.scrollTop = 90;
-        mainContent.dispatchEvent(new Event('scroll'));
-        expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
+        // Click in 'add' mode -> opens hub, does not scroll to top
+        fab.click();
+        expect(hubOpenSpy).toHaveBeenCalledTimes(1);
+        expect(mainContent.scrollTo).not.toHaveBeenCalled();
 
-        // Scroll past 200px (where #backToTopBtn is shown) -> FAB stays hidden even on slight upward scroll
+        // Scroll past 180px -> morphs on the spot into 'scroll-top' mode
         mainContent.scrollTop = 260;
         mainContent.dispatchEvent(new Event('scroll'));
-        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+        expect(fab.classList.contains('is-scroll-top')).toBe(true);
+        expect(fab.dataset.mode).toBe('scroll-top');
+        expect(fab.getAttribute('aria-label')).toBe('Retour en haut');
+        expect(fab.getAttribute('data-tooltip')).toBe('Retour en haut');
 
-        mainContent.scrollTop = 230;
-        mainContent.dispatchEvent(new Event('scroll'));
-        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+        // Click in 'scroll-top' mode -> scrolls to top and blocks hub opening
+        fab.click();
+        expect(mainContent.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+        expect(hubOpenSpy).toHaveBeenCalledTimes(1);
 
-        // Scroll back above 200px -> FAB re-appears
+        // Scroll back to <= 180px -> morphs back to 'add' mode
         mainContent.scrollTop = 180;
         mainContent.dispatchEvent(new Event('scroll'));
-        expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
+        expect(fab.classList.contains('is-scroll-top')).toBe(false);
+        expect(fab.dataset.mode).toBe('add');
+        expect(fab.getAttribute('aria-label')).toBe('Compléter la classe');
+        expect(fab.getAttribute('data-tooltip')).toBe('Compléter la classe');
     });
 
     it('should update can-scroll-top and can-scroll-bottom affordances on .main-content-wrapper during scroll and disable them in plan view', async () => {

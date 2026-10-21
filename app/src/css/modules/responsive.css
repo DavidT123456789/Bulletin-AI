@@ -186,9 +186,11 @@
         min-width: 100px;
     }
 
-    /* FAB & Back-to-top aligned with 16px horizontal padding and 60px bottom clearance */
-    .fab-add-student,
-    #backToTopBtn {
+    /* Contextual FAB: compact 48px target on mobile/tablet with safe-area clearance */
+    .fab-add-student {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
         bottom: max(16px, env(safe-area-inset-bottom) + 10px);
         right: 16px;
     }
@@ -329,15 +331,8 @@
         justify-content: center;
     }
 
-    /* FAB & Back-to-top positioning with safe area */
+    /* Contextual FAB positioning on compact screens */
     .fab-add-student {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-    }
-
-    .fab-add-student,
-    #backToTopBtn {
         right: 14px;
     }
 
@@ -506,7 +501,6 @@
     .modal-backdrop,
     .modal,
     .selection-toolbar,
-    #backToTopBtn,
     #period-mismatch-container,
     .pwa-install-prompt,
     .notification-container {
