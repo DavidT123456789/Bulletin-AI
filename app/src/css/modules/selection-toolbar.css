@@ -97,7 +97,7 @@
 .selection-count-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0 2px 0 4px;
+    padding: 0 4px;
     background: transparent;
     border: none;
     color: var(--text-primary);
@@ -106,14 +106,6 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     white-space: nowrap;
-}
-
-.selection-info:has(.btn-select-all-link:not([style*="none"])) .selection-count-badge::after {
-    content: '·';
-    margin-left: 8px;
-    margin-right: 2px;
-    color: var(--text-quaternary);
-    font-weight: 400;
 }
 
 .btn-select-all-link {
@@ -331,7 +323,6 @@
         height: 48px;
     }
 
-    .selection-info:has(.btn-select-all-link:not([style*="none"])) .selection-count-badge::after,
     .btn-selection-action:not(.primary):not(.icon-only) span,
     .btn-select-all-link span {
         display: none;
