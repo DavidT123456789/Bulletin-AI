@@ -355,195 +355,26 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     opacity: 1;
 }
 
-/* Chip spécifique pour le modèle IA */
-.ai-model-chip {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.15));
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s var(--ease-spring);
-    box-shadow: none;
+/* Chevrons des sélecteurs déroulants du header (Classe & Modèle IA) */
+.class-chip .class-chevron,
+.dash-model-chevron {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+    margin-left: 2px;
 }
 
-.ai-model-chip .icon {
-    color: currentColor;
-    transition: all var(--transition-fast);
-}
-
-.ai-model-chip:hover {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.25));
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-elevation);
-    transform: translateY(-1px);
-}
-
-.ai-model-chip:hover .icon {
-    color: currentColor;
-    transform: scale(1.05);
-}
-
-[data-theme="dark"] .ai-model-chip:hover {
-    box-shadow: var(--shadow-elevation);
-}
-
-/* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
-.ai-model-chip.generating {
-    animation: none;
-    border: 1px solid transparent !important;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.6) 0%,
-            rgba(var(--primary-color-rgb), 0.6) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.6) 32%,
-            rgba(var(--primary-color-rgb), 0.6) 50%,
-            rgba(var(--primary-color-rgb), 0.6) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.6) 82%,
-            rgba(var(--primary-color-rgb), 0.6) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 8s linear infinite;
-    /* Metamorph shadow + Focus ring, replacing diffuse glow */
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        var(--shadow-elevation);
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .ai-model-chip.generating {
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-/* Le pseudo-élément ::before n'est plus nécessaire pour l'effet fluide */
-.ai-model-chip.generating::before {
-    display: none;
-}
-
-/* Le pseudo-élément ::after n'est plus nécessaire pour l'effet fluide */
-.ai-model-chip.generating::after {
-    display: none;
-}
-
-/* État: Fallback activé - Flash orange avec glow */
-/* État: Fallback activé - Flash orange avec glow et shake */
-.ai-model-chip.fallback-active {
-    animation: switch-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.25));
-    border-color: var(--warning-color);
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-}
-
-.ai-model-chip.fallback-active .icon {
-    color: var(--warning-color);
-    transform: scale(1.1);
-    /* L'icône grossit un peu */
-    transition: transform var(--transition-base);
-}
-
-.ai-model-chip.fallback-active #headerAiModelName {
-    color: var(--warning-dark);
-    font-weight: 600;
-}
-
-@keyframes switch-shake {
-    0% {
-        transform: scale(1);
-    }
-
-    15% {
-        transform: scale(1.05) rotate(-2deg);
-    }
-
-    30% {
-        transform: scale(1.05) rotate(2deg);
-    }
-
-    45% {
-        transform: scale(1.05) rotate(-2deg);
-    }
-
-    60% {
-        transform: scale(1.05) rotate(1deg);
-    }
-
-    75% {
-        transform: scale(1) rotate(0deg);
-    }
-
-    100% {
-        transform: scale(1);
+@media (hover: hover) and (pointer: fine) {
+    .class-chip:hover .class-chevron,
+    .header-gen-dashboard:hover .dash-model-chevron {
+        color: var(--text-primary);
     }
 }
 
-/* Animation de changement de modèle (texte) */
-.ai-model-chip .model-name-transition {
-    display: inline-block;
-    transition: opacity var(--transition-fast), transform var(--transition-fast);
-    /* Transition "sharp" et rapide */
-}
-
-/* 1. L'ancien texte monte et disparaît */
-.ai-model-chip .exit-up {
-    opacity: 0;
-    transform: translateY(-15px);
-}
-
-/* 2. Le nouveau texte se prépare en bas */
-.ai-model-chip .enter-from-down {
-    opacity: 0;
-    transform: translateY(15px);
-}
-
-/* 3. Inverse: L'ancien texte descend et disparaît (pour le retour) */
-.ai-model-chip .exit-down {
-    opacity: 0;
-    transform: translateY(15px);
-}
-
-/* 4. Inverse: Le nouveau texte se prépare en haut (pour le retour) */
-.ai-model-chip .enter-from-up {
-    opacity: 0;
-    transform: translateY(-15px);
-}
-
-/* Badge indicateur de fallback */
-.ai-model-chip .fallback-indicator {
-    display: none;
-    font-size: 10px;
-    padding: 2px 6px;
-    background: var(--gradient-warning);
-    color: white;
-    border-radius: var(--radius-pill);
-    margin-left: 6px;
-    font-weight: 600;
-    animation: badge-appear 0.3s ease-out;
-}
-
-.ai-model-chip.fallback-active .fallback-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-@keyframes badge-appear {
-    from {
-        opacity: 0;
-        transform: scale(0.5);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Texte du modèle avec fallback indicator */
-.ai-model-chip .model-text-container {
-    display: flex;
-    align-items: center;
+.class-chip.active .class-chevron,
+.header-gen-wrapper.open .dash-model-chevron {
+    color: var(--text-primary);
+    transform: rotate(180deg);
 }
 
 /* Badge d'erreur dans le header - MOVED to modules/generation-status.css */
@@ -1776,11 +1607,6 @@ button > .icon-spin-wrapper {
         gap: 6px;
     }
 
-    /* Compact AI model chip padding only - no text truncation */
-    .ai-model-chip {
-        padding: 6px 10px;
-    }
-
     .section-title {
         font-size: var(--font-xl);
     }
@@ -1833,6 +1659,7 @@ button > .icon-spin-wrapper {
     }
 
     .ui-segmented-control.header-style .ui-segment {
+        min-width: 32px;
         padding: 0 8px !important;
         font-size: 12px !important;
         gap: 4px !important;
@@ -1876,11 +1703,8 @@ button > .icon-spin-wrapper {
         gap: 2px;
     }
 
-    #viewToggle .view-toggle-btn span {
-        display: none;
-    }
-
     .ui-segmented-control.header-style .ui-segment {
+        min-width: 30px;
         padding: 0 7px !important;
         font-size: 11.5px !important;
     }

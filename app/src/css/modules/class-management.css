@@ -121,22 +121,6 @@
     border-color: rgba(99, 102, 241, 0.45);
 }
 
-.class-chip .class-chevron {
-    font-size: 14px;
-    color: var(--text-tertiary);
-    transition: transform var(--transition-fast), color var(--transition-fast);
-    margin-left: 2px;
-}
-
-.class-chip:hover .class-chevron,
-.class-chip.active .class-chevron {
-    color: var(--text-primary);
-}
-
-.class-chip.active .class-chevron {
-    transform: rotate(180deg);
-}
-
 /* ====================================================================
    CLASS DROPDOWN
    ==================================================================== */

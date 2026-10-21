@@ -287,4 +287,43 @@ describe('StatsUIManager', () => {
             expect(hetBadge.className).toContain('positive');
         });
     });
+
+    describe('initMobileCarousel - 1-up and 2-up pagination dots', () => {
+        it('should compute active dot from cardWidth stride on both mobile (1-up) and tablet portrait (2-up)', () => {
+            document.body.innerHTML = `
+                <div id="statsContainer">
+                    <div class="stat-card"></div>
+                    <div class="stat-card"></div>
+                    <div class="stat-card"></div>
+                </div>
+                <div class="stats-pagination">
+                    <span class="stats-dot"></span>
+                    <span class="stats-dot"></span>
+                    <span class="stats-dot"></span>
+                </div>
+            `;
+            const container = document.getElementById('statsContainer');
+            const card = container.querySelector('.stat-card');
+            const dots = document.querySelectorAll('.stats-dot');
+
+            // Simulate tablet portrait 2-up carousel: container 680px, each card 332px
+            Object.defineProperty(container, 'offsetWidth', { value: 680, configurable: true });
+            Object.defineProperty(card, 'offsetWidth', { value: 332, configurable: true });
+            container.scrollLeft = 0;
+
+            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+
+            StatsUI.initMobileCarousel();
+            expect(dots[0].classList.contains('active')).toBe(true);
+            expect(dots[1].classList.contains('active')).toBe(false);
+
+            // Scroll right by 1 card stride (348px) -> 2nd dot becomes active
+            container.scrollLeft = 348;
+            container.dispatchEvent(new Event('scroll'));
+            expect(dots[0].classList.contains('active')).toBe(false);
+            expect(dots[1].classList.contains('active')).toBe(true);
+
+            rafSpy.mockRestore();
+        });
+    });
 });

@@ -1514,9 +1514,6 @@
     .stats-container>.stat-card {
         min-width: 0;
         overflow: hidden;
-    }
-
-    .stat-card {
         padding: 12px 14px;
     }
 
@@ -1538,15 +1535,97 @@
     }
 }
 
-/* Mobile compact typography & layout (applies to carousel cards) */
-@media (max-width: 600px) {
+/* Tablette verticale (601px–768px) : 2 cartes visibles côte à côte */
+@media (min-width: 601px) and (max-width: 768px) {
     .stats-container {
+        gap: var(--space-4);
         padding: var(--space-4) var(--content-padding-x) 22px;
         margin: calc(-1 * var(--space-4)) calc(-1 * var(--content-padding-x)) -8px calc(-1 * var(--content-padding-x));
     }
 
     .stats-container .stat-card {
-        padding: 12px 14px;
+        width: calc(50% - (var(--space-4) / 2));
+        min-width: calc(50% - (var(--space-4) / 2));
+        max-width: calc(50% - (var(--space-4) / 2));
+        scroll-snap-align: start;
+        padding: 14px 16px;
+    }
+
+    .stat-card-header {
+        min-height: 22px;
+        margin-bottom: 8px;
+    }
+
+    .performance-card .performance-overview {
+        margin-bottom: 8px;
+    }
+
+    .performance-card .main-average-value {
+        font-size: 2rem;
+    }
+
+    .performance-card .average-denominator {
+        font-size: 1rem;
+    }
+
+    .performance-card .performance-details {
+        gap: 8px;
+    }
+
+    .performance-card .detail-item {
+        padding: 8px 6px;
+    }
+
+    .performance-card .detail-item .detail-value {
+        font-size: 1.25rem;
+    }
+
+    .histogram-container,
+    .dispersion-card .histogram-container {
+        height: 70px;
+        min-height: 62px;
+    }
+
+    .evolution-card .evolution-distribution-bar {
+        margin: 10px 0;
+        height: 10px;
+    }
+
+    .evolution-card .evolution-legend {
+        margin-top: 8px;
+        gap: 6px;
+    }
+
+    .evolution-card .legend-item {
+        padding: 8px 6px;
+        gap: 4px;
+    }
+
+    .evolution-card .legend-count {
+        font-size: 1.25rem;
+    }
+
+    /* 2 cartes par vue : aucune pagination requise s'il n'y a que 2 cartes actives, 2 points max si 3 cartes */
+    .stats-container:has(#evolutionCard.is-empty) + .stats-pagination,
+    .stats-pagination .stats-dot:last-child {
+        display: none;
+    }
+
+    .stats-pagination {
+        margin-top: -10px;
+        margin-bottom: 10px;
+    }
+}
+
+/* Mobile compact typography & layout (applies to carousel cards) */
+@media (max-width: 600px) {
+    .stats-container {
+        padding: var(--space-3) var(--content-padding-x) 18px;
+        margin: calc(-1 * var(--space-3)) calc(-1 * var(--content-padding-x)) -6px calc(-1 * var(--content-padding-x));
+    }
+
+    .stats-container .stat-card {
+        padding: 10px 12px;
     }
 
     .stat-card-header {
@@ -1604,8 +1683,8 @@
     }
 
     .stats-pagination {
-        margin-top: -12px;
-        margin-bottom: 8px;
+        margin-top: -10px;
+        margin-bottom: 6px;
     }
 }
 

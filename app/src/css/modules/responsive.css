@@ -310,16 +310,6 @@
         flex-shrink: 0;
     }
 
-    .ui-segmented-control.header-style {
-        gap: 0;
-        padding: 3px;
-    }
-
-    .ui-segmented-control.header-style .ui-segment {
-        padding: 0 7px !important;
-        font-size: 11.5px !important;
-    }
-
     /* Toolbar - Compact */
     .output-toolbar {
         gap: 8px;

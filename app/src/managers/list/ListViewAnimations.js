@@ -212,17 +212,21 @@ export const ListViewAnimations = {
                     const first = firstPositions.get(row.dataset.studentId);
                     if (!first) return;
 
-                    const deltaY = first.top - row.getBoundingClientRect().top;
-                    if (Math.abs(deltaY) > 2) {
-                        movedRows.push({ row, deltaY });
+                    const rect = row.getBoundingClientRect();
+                    const deltaX = (first.left ?? rect.left) - rect.left;
+                    const deltaY = first.top - rect.top;
+                    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+                        movedRows.push({ row, deltaX, deltaY });
                     }
                 });
 
                 if (movedRows.length === 0) return;
 
-                movedRows.forEach(({ row, deltaY }) => {
+                movedRows.forEach(({ row, deltaX, deltaY }) => {
                     row.classList.add('row-moving');
-                    row.style.transform = `translateY(${deltaY}px)`;
+                    row.style.transform = Math.abs(deltaX) > 2
+                        ? `translate(${deltaX}px, ${deltaY}px)`
+                        : `translateY(${deltaY}px)`;
                     row.style.transition = 'none';
                 });
 
@@ -289,7 +293,7 @@ export const ListViewAnimations = {
         const firstPositions = new Map();
         existingRows.forEach(row => {
             const rect = row.getBoundingClientRect();
-            firstPositions.set(row.dataset.studentId, { top: rect.top });
+            firstPositions.set(row.dataset.studentId, { top: rect.top, left: rect.left });
         });
 
         // Reorder rows in correct order
@@ -367,14 +371,18 @@ export const ListViewAnimations = {
             const first = firstPositions.get(row.dataset.studentId);
             if (!first) return;
 
-            const deltaY = first.top - row.getBoundingClientRect().top;
-            if (Math.abs(deltaY) > 2) {
-                invertedRows.push({ row, deltaY });
+            const rect = row.getBoundingClientRect();
+            const deltaX = (first.left ?? rect.left) - rect.left;
+            const deltaY = first.top - rect.top;
+            if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+                invertedRows.push({ row, deltaX, deltaY });
             }
         });
 
-        invertedRows.forEach(({ row, deltaY }) => {
-            row.style.transform = `translateY(${deltaY}px)`;
+        invertedRows.forEach(({ row, deltaX, deltaY }) => {
+            row.style.transform = Math.abs(deltaX) > 2
+                ? `translate(${deltaX}px, ${deltaY}px)`
+                : `translateY(${deltaY}px)`;
             row.style.transition = 'none';
         });
 

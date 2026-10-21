@@ -559,11 +559,11 @@ export const StatsUI = {
         const updateActiveDot = () => {
             const scrollLeft = container.scrollLeft;
             const containerWidth = container.offsetWidth;
-            const cardWidth = container.querySelector('.stat-card').offsetWidth;
+            const cardWidth = container.querySelector('.stat-card')?.offsetWidth || 0;
 
-            // Calculate active index based on scroll position
-            // Since cards are 100% width and snap to center, simple division works
-            const index = Math.round(scrollLeft / containerWidth);
+            // Calculate active index based on card stride (supports 1-up mobile & 2-up tablet carousels)
+            const step = cardWidth > 0 ? cardWidth : containerWidth;
+            const index = step > 0 ? Math.round(scrollLeft / step) : 0;
 
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);

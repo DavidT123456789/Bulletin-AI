@@ -67,7 +67,7 @@
 }
 
 /* Icon styling */
-.dash-model-label iconify-icon,
+.dash-model-label iconify-icon:not(.dash-model-chevron),
 .dash-model-label i,
 .dash-model-label svg {
     font-size: 16px;
@@ -482,20 +482,14 @@
     opacity: 0.85;
 }
 
-.header-gen-dashboard.unconfigured:hover {
+.header-gen-dashboard.unconfigured .dash-model-label iconify-icon:not(.dash-model-chevron) {
     opacity: 1;
 }
 
-.dash-model-chevron {
-    font-size: 11px;
-    opacity: 0.55;
-    margin-left: 2px;
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
-}
-
-.header-gen-wrapper.open .dash-model-chevron {
-    transform: rotate(180deg);
-    opacity: 0.9;
+@media (hover: hover) and (pointer: fine) {
+    .header-gen-dashboard.unconfigured:hover {
+        opacity: 1;
+    }
 }
 
 @keyframes menu-open {
