@@ -286,7 +286,10 @@ export const DropdownManager = {
         const valueSpan = wrapper.querySelector('.custom-dropdown-value');
         const selectedOption = selectEl.options[selectEl.selectedIndex];
 
-        if (selectedOption) {
+        if (selectEl.id === 'aiModelSelect' && (!selectedOption || selectedOption.disabled)) {
+            valueSpan.innerHTML = `<iconify-icon icon="solar:key-linear" class="provider-icon"></iconify-icon><span class="value-text">Configurer l'IA</span>`;
+            valueSpan.classList.add('placeholder');
+        } else if (selectedOption) {
             // Check if we should inject a provider icon (Premium UX)
             let iconHtml = '';
             if (selectedOption.parentNode && selectedOption.parentNode.tagName === 'OPTGROUP') {
@@ -306,7 +309,7 @@ export const DropdownManager = {
 
         // Mettre à jour les classes selected
         wrapper.querySelectorAll('.custom-dropdown-option').forEach(opt => {
-            const isSelected = opt.dataset.value === selectEl.value;
+            const isSelected = opt.dataset.value === selectEl.value && !opt.classList.contains('disabled');
             opt.classList.toggle('selected', isSelected);
             opt.setAttribute('aria-selected', isSelected);
         });

@@ -158,6 +158,8 @@ describe('SettingsUIManager', () => {
         appState.openrouterApiKey = '';
         appState.anthropicApiKey = '';
         appState.mistralApiKey = '';
+        appState.apiKeyStatus = {};
+        appState.validatedApiKeys = {};
         appState.ollamaEnabled = false;
         if (DOM.googleApiKey) DOM.googleApiKey.value = '';
         if (DOM.openaiApiKey) DOM.openaiApiKey.value = '';
@@ -461,6 +463,56 @@ describe('SettingsUIManager', () => {
             const badge = document.getElementById('googleStatusBadge');
             expect(badge.className).toContain('status-warning');
             expect(badge.textContent).toContain('Quota atteint');
+        });
+    });
+
+    describe('updateApiStatusDisplay() - cohérence du modèle actif sans clé', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div id="missingApiKeyWarning" style="display: flex;">
+                    <span id="missingKeyText"></span>
+                </div>
+                <div id="fallbackOrderText"></div>
+                <div id="fallbackOrderMore" style="display: none;"></div>
+            `;
+        });
+
+        it('devrait réinitialiser currentAIModel vers gemini-3.5-flash et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
+            appState.currentAIModel = 'mistral-direct-small-latest';
+            appState.mistralApiKey = '';
+            appState.googleApiKey = '';
+            appState.groqApiKey = '';
+
+            SettingsUIManager.updateApiStatusDisplay();
+
+            expect(appState.currentAIModel).toBe('gemini-3.5-flash');
+            expect(DOM.aiModelSelect.value).toBe('gemini-3.5-flash');
+            expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
+        });
+
+        it('devrait basculer automatiquement vers le premier modèle disponible si la clé du modèle actif est absente mais qu\'un autre fournisseur est configuré', () => {
+            appState.currentAIModel = 'mistral-direct-small-latest';
+            appState.mistralApiKey = '';
+            appState.googleApiKey = 'AIzaSyValidGoogleKey123';
+
+            SettingsUIManager.updateApiStatusDisplay();
+
+            expect(appState.currentAIModel).toBe('gemini-3.5-flash');
+            expect(DOM.aiModelSelect.value).toBe('gemini-3.5-flash');
+            expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
+        });
+
+        it('devrait afficher le bandeau d\'alerte uniquement si le fournisseur du modèle actif a un souci de quota ou d\'invalidation', () => {
+            appState.currentAIModel = 'gemini-3.5-flash';
+            appState.googleApiKey = 'AIzaSyValidGoogleKey123';
+            appState.apiKeyStatus.google = 'quota-warning';
+
+            SettingsUIManager.updateApiStatusDisplay();
+
+            const banner = document.getElementById('missingApiKeyWarning');
+            expect(banner.style.display).toBe('flex');
+            expect(banner.classList.contains('banner-warning')).toBe(true);
+            expect(document.getElementById('missingKeyText').textContent).toContain('quota temporairement atteint');
         });
     });
 });

@@ -98,7 +98,10 @@ export function getProviderApiKey(providerId, { state, dom } = {}) {
 
     // Priorité à la saisie DOM si disponible (clés modifiées mais non encore validées)
     if (dom && config.domKey && dom[config.domKey]?.value !== undefined) {
-        return dom[config.domKey].value.trim();
+        const domVal = dom[config.domKey].value.trim();
+        if (domVal || (typeof document !== 'undefined' && document.activeElement === dom[config.domKey])) {
+            return domVal;
+        }
     }
 
     return (state && state[config.keyProperty]) ? state[config.keyProperty].trim() : '';

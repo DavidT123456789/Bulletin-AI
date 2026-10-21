@@ -259,60 +259,6 @@ describe('FormUIManager', () => {
         });
     });
 
-    describe('toggleAIKeyFields()', () => {
-        let warningEl;
-        let warningTextEl;
-
-        beforeEach(() => {
-            warningEl = { style: { display: '' } };
-            warningTextEl = { textContent: '' };
-
-            document.getElementById = vi.fn((id) => {
-                if (id === 'missingApiKeyWarning') return warningEl;
-                if (id === 'missingKeyText') return warningTextEl;
-                return null;
-            });
-        });
-
-        it('should show warning for openai model without key', () => {
-            DOM.aiModelSelect.value = 'openai-gpt4';
-            appState.openaiApiKey = '';
-            FormUI.toggleAIKeyFields();
-            expect(warningEl.style.display).toBe('flex');
-            expect(warningTextEl.textContent).toContain('OpenAI');
-        });
-
-        it('should show warning for gemini model without key', () => {
-            DOM.aiModelSelect.value = 'gemini-pro';
-            appState.googleApiKey = '';
-            FormUI.toggleAIKeyFields();
-            expect(warningEl.style.display).toBe('flex');
-            expect(warningTextEl.textContent).toContain('Google Gemini');
-        });
-
-        it('should hide warning when key is present', () => {
-            DOM.aiModelSelect.value = 'gemini-pro';
-            appState.googleApiKey = 'valid-key-123456';
-            FormUI.toggleAIKeyFields();
-            expect(warningEl.style.display).toBe('none');
-        });
-
-        it('should show warning for openrouter models without key', () => {
-            DOM.aiModelSelect.value = 'claude-3';
-            appState.openrouterApiKey = '';
-            FormUI.toggleAIKeyFields();
-            expect(warningEl.style.display).toBe('flex');
-            expect(warningTextEl.textContent).toContain('OpenRouter');
-        });
-
-        it('should not throw if aiModelSelect is null', () => {
-            const original = DOM.aiModelSelect;
-            DOM.aiModelSelect = null;
-            expect(() => FormUI.toggleAIKeyFields()).not.toThrow();
-            DOM.aiModelSelect = original;
-        });
-    });
-
     describe('renderSettingsLists()', () => {
         it('should not throw (no-op function)', () => {
             expect(() => FormUI.renderSettingsLists()).not.toThrow();

@@ -9,12 +9,8 @@
  */
 
 import { appState } from '../state/State.js';
-import { CONFIG, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
-import { getProviderForModel } from '../config/models.js';
-import { PROVIDER_CONFIG, API_KEY_PROVIDER_IDS, hasValidApiKey, isValidKeyFormat } from '../config/providers.js';
+import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
-import { Utils } from '../utils/Utils.js';
-import { AppreciationsManager } from './AppreciationsManager.js';
 import { UI } from './UIManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
@@ -187,75 +183,8 @@ export const FormUI = {
             });
         }
 
-        this.toggleAIKeyFields();
         this.renderSettingsLists();
         this.updateModelDescription();
-        this._updateApiStatusDisplay();
-    },
-
-    /**
-     * Met à jour l'affichage du récapitulatif des APIs.
-     * Distingue : pas de clé, clé non vérifiée, quota épuisé, validée.
-     * @private
-     */
-    _updateApiStatusDisplay() {
-        API_KEY_PROVIDER_IDS.forEach(id => {
-            const config = PROVIDER_CONFIG[id];
-            const el = document.getElementById(`${id}ApiStatus`);
-            const btn = document.getElementById(`validate${id.charAt(0).toUpperCase() + id.slice(1)}ApiKeyBtn`);
-
-            if (!el) return;
-
-            const key = appState[config?.keyProperty] || '';
-            const hasKey = isValidKeyFormat(key);
-            const inputEl = document.getElementById(config?.domKey || `${id}ApiKey`);
-
-            // Vérifier l'état de validation via les classes CSS de l'input
-            let status = 'none'; // none, pending, quota, valid
-
-            // Check persisted validation state first
-            if (appState.validatedApiKeys && appState.validatedApiKeys[id]) {
-                status = 'valid';
-                if (appState.apiKeyStatus && appState.apiKeyStatus[id] === 'quota-warning') {
-                    status = 'quota';
-                }
-            } else if (hasKey) {
-                if (inputEl?.classList.contains('input-success')) {
-                    status = 'valid';
-                } else if (inputEl?.classList.contains('input-warning')) {
-                    status = 'quota';
-                } else {
-                    status = 'pending';
-                }
-            }
-
-            // Mettre à jour les classes du pill
-            el.classList.remove('active', 'inactive', 'warning');
-            const badge = el.querySelector('.api-status-badge');
-
-            if (status === 'valid') {
-                el.classList.add('active');
-                if (badge) badge.textContent = '✓ Validée';
-            } else if (status === 'quota') {
-                el.classList.add('warning');
-                if (badge) badge.textContent = '⚠️ Quota épuisé';
-            } else if (status === 'pending') {
-                el.classList.add('inactive');
-                if (badge) badge.textContent = '⏳ Non vérifiée';
-            } else {
-                el.classList.add('inactive');
-                if (badge) badge.textContent = 'Non configurée';
-            }
-
-            // Mettre à jour l'état du bouton (le badge d'en-tête porte l'état, le bouton reste une action neutre)
-            if (btn) {
-                btn.classList.remove('btn-validated');
-                if (status === 'valid' || status === 'quota') {
-                    btn.classList.remove('btn-needs-validation');
-                }
-                btn.innerHTML = 'Vérifier';
-            }
-        });
     },
 
     /**
@@ -375,33 +304,6 @@ export const FormUI = {
             this._currentSettingsTab = tabName;
             onTransitionComplete();
         }, 400);
-    },
-
-    /**
-     * Affiche un avertissement si la clé API requise pour le modèle sélectionné est manquante.
-     */
-    toggleAIKeyFields() {
-        if (!DOM.aiModelSelect) return;
-        const model = DOM.aiModelSelect.value;
-        const warningEl = document.getElementById('missingApiKeyWarning');
-        const warningTextEl = document.getElementById('missingKeyText');
-
-        if (!warningEl) return;
-
-        const requiredProvider = getProviderForModel(model);
-        const hasKey = hasValidApiKey(requiredProvider, { state: appState });
-        const providerName = PROVIDER_CONFIG[requiredProvider]?.name || requiredProvider;
-
-        if (hasKey) {
-            warningEl.style.display = 'none';
-        } else {
-            if (requiredProvider === 'ollama') {
-                warningTextEl.textContent = `Ce modèle nécessite qu'Ollama soit activé et en cours d'exécution.`;
-            } else {
-                warningTextEl.textContent = `Ce modèle requiert une clé ${providerName}.`;
-            }
-            warningEl.style.display = 'flex';
-        }
     },
 
     /**

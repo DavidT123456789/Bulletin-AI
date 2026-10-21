@@ -54,7 +54,8 @@ export const SettingsUIManager = {
             select.value = appState.currentAIModel;
         }
 
-        // Single Source of Truth : synchroniser dynamiquement les puces de modèles
+        // Single Source of Truth : synchroniser la disponibilité des options et les puces de modèles
+        this.updateModelSelectorAvailability();
         this.renderProviderModelChips();
     },
 
@@ -84,7 +85,7 @@ export const SettingsUIManager = {
             const chipsHtml = models.map(id => {
                 const rawName = MODEL_SHORT_NAMES[id] || id;
                 const cleanName = rawName.replace(' (Groq)', '').replace(' (OR)', '');
-                const isActive = appState.currentAIModel === id;
+                const isActive = appState.currentAIModel === id && this._isModelAvailable(id);
                 return `<span class="model-chip${isActive ? ' active-chip' : ''}">${cleanName}</span>`;
             }).join(' ');
 
@@ -448,69 +449,34 @@ export const SettingsUIManager = {
         // Injecter les icônes à jour avant d'afficher le statut
         this.injectProviderIcons();
 
-        const model = appState.currentAIModel || '';
+        let model = appState.currentAIModel || 'gemini-3.5-flash';
+
+        // Si le modèle actif n'est pas disponible (clé absente ou supprimée),
+        // basculer vers le premier modèle disponible, ou revenir au modèle par défaut (Gemini) si aucune clé n'existe.
+        if (!this._isModelAvailable(model)) {
+            const firstAvailable = buildFallbackQueue(model).find(m => this._isModelAvailable(m));
+            model = firstAvailable || 'gemini-3.5-flash';
+            if (appState.currentAIModel !== model) {
+                appState.currentAIModel = model;
+            }
+        }
+        const hasAnyModelAvailable = this._isModelAvailable(model);
 
         // Déterminer le provider du modèle actif via le helper centralisé
         const activeProvider = this._getProviderIdForModel(model);
 
-        // Check values from DOM if available (live typing) or fall back to state
-        const providers = API_KEY_PROVIDER_IDS.map(id => ({
-            id,
-            key: getProviderApiKey(id, { state: appState, dom: DOM })
-        }));
+        let activeProviderIssue = null; // Pour le bandeau intelligent (affiché si le fournisseur actif atteint sa limite de quota)
 
-        let activeProviderIssue = null; // Pour le bandeau intelligent
-
-        providers.forEach(({ id, key }) => {
-            const hasKey = isValidKeyFormat(key);
-            const status = appState.apiKeyStatus?.[id] || 'not-configured';
-
-            if (hasKey) {
-                if (status === 'quota-warning') {
-                    if (id === activeProvider) {
-                        activeProviderIssue = {
-                            type: 'quota',
-                            message: 'Clé valide, mais quota temporairement atteint. Patientez quelques minutes ou changez de modèle.'
-                        };
-                    }
-                } else if (status === 'invalid') {
-                    if (id === activeProvider) {
-                        activeProviderIssue = {
-                            type: 'invalid',
-                            message: 'Clé API invalide. Veuillez la vérifier dans la configuration.'
-                        };
-                    }
-                }
-            }
-        });
-
-        // Gérer le cas Ollama séparément
-        const ollamaStatus = appState.apiKeyStatus?.ollama;
-        const ollamaValidated = appState.validatedApiKeys?.ollama;
-        const ollamaEnabled = appState.ollamaEnabled;
-
-        // Si Ollama est valide et qu'on a des modèles en mémoire, mettre à jour l'intérieur de l'accordéon aussi
-        if (ollamaStatus === 'valid' || ollamaValidated) {
-            this.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
-        }
-
-        // Si Ollama est le provider actif et n'est pas validé/activé
-        if (activeProvider === 'ollama' && ollamaStatus !== 'valid' && !ollamaValidated && !ollamaEnabled) {
+        if (hasAnyModelAvailable && activeProvider !== 'ollama' && appState.apiKeyStatus?.[activeProvider] === 'quota-warning') {
             activeProviderIssue = {
-                type: 'not-configured',
-                message: 'Ollama n\'est pas connecté. Activez-le et vérifiez qu\'il est lancé.'
+                type: 'quota',
+                message: 'Clé valide, mais quota temporairement atteint. Patientez quelques minutes ou changez de modèle.'
             };
         }
 
-        // Gestion du cas "clé manquante pour le modèle actif"
-        if (activeProvider !== 'ollama') {
-            const activeKey = providers.find(p => p.id === activeProvider)?.key;
-            if (!activeKey || activeKey.length <= 5) {
-                activeProviderIssue = {
-                    type: 'missing',
-                    message: `Ce modèle requiert une clé ${this._getProviderName(activeProvider)}.`
-                };
-            }
+        // Si Ollama est valide et qu'on a des modèles en mémoire, mettre à jour l'intérieur de l'accordéon aussi
+        if (appState.apiKeyStatus?.ollama === 'valid' || appState.validatedApiKeys?.ollama) {
+            this.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
         }
 
         // === BANDEAU INTELLIGENT ===
@@ -519,17 +485,10 @@ export const SettingsUIManager = {
 
         if (warningBanner && warningText) {
             if (activeProviderIssue) {
-                // Afficher le bandeau avec le message approprié
                 warningText.textContent = activeProviderIssue.message;
                 warningBanner.style.display = 'flex';
-
-                // Adapter le style selon le type de problème
-                warningBanner.classList.remove('banner-warning', 'banner-error');
-                if (activeProviderIssue.type === 'quota') {
-                    warningBanner.classList.add('banner-warning');
-                } else {
-                    warningBanner.classList.add('banner-error');
-                }
+                warningBanner.classList.remove('banner-error');
+                warningBanner.classList.add('banner-warning');
             } else {
                 // Tout va bien pour le modèle actif : on masque le bandeau
                 warningBanner.style.display = 'none';
@@ -613,15 +572,6 @@ export const SettingsUIManager = {
         if (select.id) {
             DropdownManager.refresh(select.id);
         }
-    },
-
-    /**
-     * Retourne le nom lisible d'un provider
-     * @private
-     */
-    _getProviderName(providerId) {
-        const config = PROVIDER_CONFIG[providerId];
-        return config ? config.name : providerId;
     },
 
     /**

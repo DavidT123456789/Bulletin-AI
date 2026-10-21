@@ -97,8 +97,7 @@ vi.mock('./ThemeManager.js', () => ({
 // Mock FormUIManager
 vi.mock('./FormUIManager.js', () => ({
     FormUI: {
-        showSettingsTab: vi.fn(),
-        toggleAIKeyFields: vi.fn()
+        showSettingsTab: vi.fn()
     }
 }));
 

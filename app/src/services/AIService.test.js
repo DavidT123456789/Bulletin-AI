@@ -124,6 +124,21 @@ describe('AIService', () => {
             });
 
             expect(config.payload.contents[0].parts[0].text).toBe('test');
+            expect(config.payload.generationConfig).toEqual({ maxOutputTokens: 5 });
+            expect(config.payload.max_tokens).toBeUndefined();
+        });
+
+        it('should set max_tokens to 5 in validation mode for OpenAI-compatible providers', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.groqApiKey = 'gsk-test-groq-key';
+
+            const config = AIService._getApiConfig('test', {
+                isValidation: true,
+                validationProvider: 'groq',
+                modelOverride: 'groq-gpt-oss-120b'
+            });
+
+            expect(config.payload.max_tokens).toBe(5);
         });
     });
 

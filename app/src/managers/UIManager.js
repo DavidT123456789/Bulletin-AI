@@ -1147,7 +1147,7 @@ export const UI = {
         const providerConfig = PROVIDER_CONFIG[providerId] || PROVIDER_CONFIG.openrouter;
 
         // Check availability
-        const isKeyConfigured = hasValidApiKey(providerId, { state: appState, dom: DOM });
+        const isKeyConfigured = hasValidApiKey(providerId, { state: appState });
 
         const chevronEl = DOM.dashModelLabel?.querySelector('.dash-model-chevron');
 
@@ -1270,7 +1270,6 @@ export const UI = {
         }
         FormUI.showSettingsTab(tabName);
     },
-    toggleAIKeyFields() { FormUI.toggleAIKeyFields(); },
 
     // ====================================================================
     //  VALIDATION API ET ÉTAT DE L'APPLICATION

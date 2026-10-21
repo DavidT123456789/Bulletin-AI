@@ -129,6 +129,9 @@ export const runtimeState = {
         ollama: false,
     },
 
+    /** Détails techniques des erreurs de validation des clés API */
+    apiKeyErrorDetails: {},
+
     /** Détecté si les données IndexedDB ont été purgées par le navigateur */
     _dataPurgeDetected: false,
 
@@ -219,6 +222,9 @@ const propertyMap = {
 
     // runtimeState.validatedApiKeys
     validatedApiKeys: () => runtimeState,
+
+    // runtimeState.apiKeyErrorDetails
+    apiKeyErrorDetails: () => runtimeState,
 
     // runtimeState.data
     generatedResults: () => runtimeState.data,

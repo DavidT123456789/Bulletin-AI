@@ -339,6 +339,9 @@ export const ApiValidationManager = {
 
         // Réinitialiser le statut de validation quand la clé change
         if (provider) {
+            if (!input.value.trim()) {
+                appState[`${provider}ApiKey`] = '';
+            }
             if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = false;
             if (appState.apiKeyStatus) appState.apiKeyStatus[provider] = null;
             if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];

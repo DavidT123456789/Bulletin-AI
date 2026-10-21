@@ -197,7 +197,11 @@ export const AIService = {
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
             if (payload && typeof payload === 'object') {
-                payload.max_tokens = 5;
+                if (validationProvider === 'google') {
+                    payload.generationConfig = { maxOutputTokens: 5 };
+                } else if ('max_tokens' in payload) {
+                    payload.max_tokens = 5;
+                }
             }
             return { apiKey, apiUrl, headers: providerConfig.headers(apiKey), payload };
         }

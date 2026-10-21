@@ -171,6 +171,7 @@ describe('ApiValidationManager', () => {
             );
 
             expect(appState.validatedApiKeys.google).toBe(false);
+            expect(appState.apiKeyErrorDetails.google).toContain('Invalid API key');
             expect(mockErrorEl.style.display).toBe('block');
         });
 
@@ -290,6 +291,7 @@ describe('ApiValidationManager', () => {
             ApiValidationManager.handleApiKeyInput(mockEvent);
 
             expect(appState.validatedApiKeys.google).toBe(false);
+            expect(appState.apiKeyErrorDetails?.google).toBeUndefined();
         });
 
         it('should clear validation icon on input', () => {
