@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Utils } from './Utils.js';
+import { appState, userSettings } from '../state/State.js';
 
-// Mock appState for getPeriods
+// Mock appState & userSettings
 vi.mock('../state/State.js', () => ({
     appState: {
         periodSystem: 'trimestres',  // Use French key 'trimestres'
         currentPeriod: 'T2',
+        currentClassId: null,
+        classes: [],
+        generatedResults: [],
         evolutionThresholds: {
             positive: 0.5,
             negative: -0.5,
@@ -13,6 +17,12 @@ vi.mock('../state/State.js', () => ({
             veryNegative: -1.5
         },
         subjects: {}
+    },
+    userSettings: {
+        academic: {
+            classes: [],
+            currentClassId: null
+        }
     }
 }));
 
@@ -323,6 +333,38 @@ describe('Utils', () => {
         it('devrait retourner vide si aucun élève ou aucune classe', () => {
             expect(Utils.getOriginClass(null, 'Groupe')).toBe('');
             expect(Utils.getOriginClass({}, 'Groupe')).toBe('');
+        });
+
+        it('devrait retourner le groupe source quand on consulte une classe reconstituée (même classe d\'origine)', () => {
+            userSettings.academic.classes = [
+                { id: 'grp-1', name: '3 TECHNOLOGIE G1' },
+                { id: 'grp-2', name: '3 TECHNOLOGIE G2' }
+            ];
+            const studentG1 = { id: 's1', nom: 'MARTIN', prenom: 'Charly', classId: 'grp-1', studentData: { classe: '3 1' } };
+            const studentG2 = { id: 's2', nom: 'DUPONT', prenom: 'Noah', classId: 'grp-2', studentData: { classe: '3 1' } };
+
+            expect(Utils.getOriginClass(studentG1, '3ᵉ1')).toBe('3 TECHNOLOGIE G1');
+            expect(Utils.getOriginClass(studentG2, '3 1')).toBe('3 TECHNOLOGIE G2');
+            expect(Utils.formatShortGroupLabel(Utils.getOriginClass(studentG1, '3ᵉ1'))).toBe('G1');
+            expect(Utils.formatShortGroupLabel(Utils.getOriginClass(studentG2, '3ᵉ1'))).toBe('G2');
+
+            // Recherche par groupe dans une classe reconstituée
+            expect(Utils.matchesStudent(studentG1, 'G1', { currentClassName: '3ᵉ1' })).toBe(true);
+            expect(Utils.matchesStudent(studentG1, '3ᵉG1', { currentClassName: '3ᵉ1' })).toBe(true);
+            expect(Utils.matchesStudent(studentG1, 'G2', { currentClassName: '3ᵉ1' })).toBe(false);
+
+            userSettings.academic.classes = [];
+        });
+
+        it('devrait résoudre correctement le nom de la classe active (physique ou reconstituée)', () => {
+            userSettings.academic.classes = [{ id: 'grp-1', name: '3 TECHNOLOGIE G1' }];
+            appState.generatedResults = [{ id: 's1', studentData: { classe: '3 1' } }];
+
+            expect(Utils.getCurrentClassName('grp-1')).toBe('3 TECHNOLOGIE G1');
+            expect(Utils.getCurrentClassName('virtual_31')).toBe('3ᵉ1');
+
+            userSettings.academic.classes = [];
+            appState.generatedResults = [];
         });
     });
 

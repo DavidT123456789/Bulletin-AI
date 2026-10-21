@@ -3887,5 +3887,63 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(switchClassSpy).not.toHaveBeenCalled();
             switchClassSpy.mockRestore();
         });
+
+        it('devrait verrouiller strictement l\'édition sur une classe reconstituée (isVirtual) et afficher les badges de groupe (G1, G2) ainsi que la capsule "Vue combinée"', () => {
+            const g1 = ClassManager.createClass('3 TECHNOLOGIE G1');
+            const g2 = ClassManager.createClass('3 TECHNOLOGIE G2');
+            appState.generatedResults = [
+                { id: 's-charly', nom: 'MARTIN', prenom: 'Charly', classId: g1.id, studentData: { classe: '3 1' }, seatingPosition: { row: 0, col: 1 } },
+                { id: 's-noah', nom: 'DUPONT', prenom: 'Noah', classId: g2.id, studentData: { classe: '3 1' }, seatingPosition: { row: 0, col: 1 } },
+                { id: 's-sami', nom: 'BOUKHARI', prenom: 'Sami', classId: g1.id, studentData: { classe: '3 1' }, seatingPosition: { row: 0, col: 0 } },
+                { id: 's-unplaced', nom: 'LEROY', prenom: 'Jade', classId: g2.id, studentData: { classe: '3 1' }, seatingPosition: null }
+            ];
+
+            appState.currentClassId = 'virtual_31';
+            userSettings.academic.currentClassId = 'virtual_31';
+
+            SeatingChartManager.switchToView('plan', { immediate: true });
+
+            // 1. La classe reconstituée s'ouvre en lecture seule (verrouillée)
+            expect(SeatingChartManager._isLocked).toBe(true);
+            const view = document.getElementById('seatingChartView');
+            expect(view.dataset.virtual).toBe('true');
+
+            // 2. La capsule de statut affiche "Vue combinée · 3ᵉG1 & 3ᵉG2" sans bouton d'action "Modifier"
+            const pill = document.getElementById('scStatusPill');
+            expect(pill.classList.contains('sc-status-virtual')).toBe(true);
+            expect(pill.textContent).toContain('Vue combinée');
+            expect(pill.textContent).toContain('3ᵉG1 & 3ᵉG2');
+            expect(pill.textContent).toContain('1 non placé');
+            expect(pill.querySelector('.sc-status-pill-hover')).toBeNull();
+
+            // 3. Toute tentative de déverrouillage (_toggleLock ou clic sur la capsule) est bloquée et ne corrompt pas les positions des groupes sources
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(true);
+            pill.click();
+            expect(SeatingChartManager._isLocked).toBe(true);
+
+            SeatingChartManager._gridState[0][0] = null;
+            SeatingChartManager._savePositionsToState();
+            const samiSource = appState.generatedResults.find(r => r.id === 's-sami');
+            expect(samiSource.seatingPosition).toEqual({ row: 0, col: 0 });
+
+            // 4. Les cellules affichent clairement le groupe de chaque élève (G1 sur cellule simple, G1 et G2 sur cellule superposée)
+            SeatingChartManager._loadPositionsFromState();
+            SeatingChartManager._renderGrid();
+
+            const singleCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            expect(singleCell.querySelector('.sc-cell-group-badge')?.textContent).toBe('G1');
+            expect(singleCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Groupe 3ᵉG1');
+
+            const stackedCell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="1"]');
+            expect(stackedCell).not.toBeNull();
+            const groupTags = Array.from(stackedCell.querySelectorAll('.sc-stacked-group-tag')).map(el => el.textContent);
+            expect(groupTags).toEqual(['G2', 'G1']);
+            const memberPills = Array.from(stackedCell.querySelectorAll('.sc-stacked-member'));
+            expect(memberPills.map(el => el.getAttribute('data-tooltip'))).toEqual([
+                'Noah DUPONT • Groupe 3ᵉG2',
+                'Charly MARTIN • Groupe 3ᵉG1'
+            ]);
+        });
     });
 });
