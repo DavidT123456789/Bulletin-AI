@@ -30,18 +30,12 @@
 }
 
 /* Search trigger button - extends .header-action-trigger */
-.header-action-trigger.inline-search-trigger-btn,
 .inline-search-trigger-btn {
-    /* Position override - loupe is on the left side (absolute) */
-    position: absolute;
     left: 22px; /* Perfectly centered above the 36px avatar in normal view */
     right: auto;
-    top: 50%;
-    transform: translateY(-50%);
     width: 24px;
     height: 24px;
     margin: 0;
-    border-radius: var(--radius-pill); /* Premium rounded style on desktop */
     transition: left 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
@@ -308,18 +302,18 @@
    ==================================================================== */
 @media (max-width: 768px) {
     .inline-search-container {
-        left: 8px;
+        left: var(--space-2);
         width: 44px;
         height: 44px;
         padding: 0 10px;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
     }
 
     .inline-search-container.active {
-        left: 8px;
-        width: calc(100% - 16px);
+        left: var(--space-2);
+        width: calc(100% - var(--space-4));
         padding: 0 var(--space-3);
-        border-radius: 12px;
+        border-radius: var(--radius-md);
     }
 
     .inline-search-input {

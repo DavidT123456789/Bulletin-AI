@@ -598,3 +598,14 @@
     --primary-bright: #67e8f9;
     --primary-bright-rgb: 103, 232, 249;
 }
+
+/* ====================================================================
+   RESPONSIVE GEOMETRY TOKENS (Concentric Mobile & Tablet Card Radii)
+   Outer cards (--radius-lg: 20px) - Padding (8px) = Inner controls (--radius-md: 12px)
+   ==================================================================== */
+@media (max-width: 768px) {
+    :root {
+        --radius-lg: 20px;
+        --radius-md: 12px;
+    }
+}

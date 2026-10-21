@@ -535,6 +535,10 @@
         box-shadow: none !important;
     }
 
+    .output-section {
+        padding-bottom: 0 !important;
+    }
+
     .student-list-view {
         overflow: visible !important;
         border: none !important;

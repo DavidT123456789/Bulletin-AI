@@ -17,6 +17,11 @@
     box-sizing: border-box;
 }
 
+/* Dégagement en bas de liste pour que la dernière carte/ligne puisse toujours remonter au-dessus du FAB (.fab-add-student) */
+.output-section:has(.student-list-view) {
+    padding-bottom: 56px;
+}
+
 [data-theme="dark"] .student-list-view {
     box-shadow: none;
 }
@@ -80,7 +85,7 @@
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     opacity: 0.5;
     transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 2;
@@ -1093,26 +1098,14 @@
     display: inline-flex !important;
 }
 
-/* Dedicated Action Button - Placed at left of header, perfectly centered vertically (harmonized with .inline-search-trigger-btn) */
+/* Dedicated Action Button - Placed at left of header, perfectly centered vertically (extends .header-action-trigger) */
 .appreciation-toggle-btn {
-    position: absolute;
     left: 16px;
     right: auto;
-    top: 50%;
-    transform: translateY(-50%);
     width: 24px;
     height: 24px;
     padding: 0;
     margin: 0;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-pill) !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-tertiary);
-    opacity: 0.5;
-    cursor: pointer;
     transition: opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), color 0.2s ease !important;
     z-index: 3;
     pointer-events: auto;
@@ -1908,11 +1901,11 @@
     .student-list-table thead tr {
         display: flex;
         flex-wrap: nowrap !important;
-        gap: 8px;
+        gap: var(--space-2);
         align-items: center;
         background: var(--surface-color);
-        padding: 8px;
-        border-radius: 20px;
+        padding: var(--space-2);
+        border-radius: var(--radius-lg);
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
         pointer-events: auto;
@@ -1984,20 +1977,24 @@
         justify-content: flex-start;
     }
 
-    .header-action-trigger.inline-search-trigger-btn,
-    .inline-search-trigger-btn {
+    /* Boutons d'action carrés unifiés (44x44px) de la barre d'outils mobile */
+    .inline-search-trigger-btn,
+    #mobileCompactToggleBtn,
+    .global-actions-dropdown .btn-action-menu-header {
         position: static !important;
         transform: none !important;
         width: 44px;
         height: 44px;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         background: var(--item-hover-bg);
+        border: none;
         display: flex !important;
         align-items: center;
         justify-content: center;
         opacity: 1 !important;
         color: var(--text-secondary) !important;
-        /* MATCH THE TOGGLE BTN TEXT COLOR */
+        pointer-events: auto !important;
+        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
     }
 
     /* Actions line (Generate, Update) */
@@ -2043,43 +2040,29 @@
         margin-left: auto;
         height: 44px;
         padding: 0 14px;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         font-size: 13px;
     }
 
-    /* Bouton pour basculer la vue (compact/étendu) */
+    /* Spécificités du bouton de bascule vue compacte/étendue */
     #mobileCompactToggleBtn {
-        position: static !important;
-        transform: none !important;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: var(--item-hover-bg);
-        border: none;
-        color: var(--text-secondary);
         font-size: 1.2rem;
-        transition: all var(--transition-fast);
-        pointer-events: auto !important;
-        opacity: 1 !important;
     }
 
     .expanded-view #mobileCompactToggleBtn {
         background: var(--item-active-bg);
-        color: var(--text-primary);
+        color: var(--text-primary) !important;
     }
 
     [data-theme="dark"] .expanded-view #mobileCompactToggleBtn {
         background: rgba(255, 255, 255, 0.12);
-        color: var(--text-primary);
+        color: var(--text-primary) !important;
     }
 
     #mobileCompactToggleBtn:active {
         background: var(--item-active-bg);
-        color: var(--icon-btn-hover);
-        transform: scale(0.95);
+        color: var(--icon-btn-hover) !important;
+        transform: scale(0.95) !important;
     }
 
     /* Global Menu */
@@ -2088,27 +2071,10 @@
         order: 3;
     }
 
-    .global-actions-dropdown .btn-action-menu-header {
-        background: var(--item-hover-bg);
-        border-radius: 12px;
-        width: 44px;
-        height: 44px;
-        opacity: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
-    }
-
     .global-actions-dropdown.open .btn-action-menu-header {
         background: var(--item-active-bg) !important;
         color: var(--icon-btn-hover) !important;
         opacity: 1 !important;
-    }
-
-    [data-theme="dark"] .global-actions-dropdown.open .btn-action-menu-header {
-        background: var(--item-active-bg) !important;
-        color: var(--icon-btn-hover) !important;
     }
 
     .global-actions-dropdown .btn-action-menu-header:active {
@@ -2131,11 +2097,11 @@
     /* --- TBODY (Student Cards) --- */
     .student-list-table tbody tr {
         background: var(--surface-color);
-        border-radius: 20px;
+        border-radius: var(--radius-lg);
         margin-bottom: 10px;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
         row-gap: 6px;
         position: relative;
         display: flex;
@@ -2166,7 +2132,7 @@
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
     .student-list-table tbody tr.row-moving {
-        border-radius: 20px;
+        border-radius: var(--radius-lg);
     }
 
     .student-list-table tbody tr.row-moving td:first-child,
@@ -2299,6 +2265,11 @@
 
     .evolution-cell {
         margin-right: 2px;
+    }
+
+    .student-list-table td.evolution-cell:empty {
+        min-height: 0;
+        margin-right: 12px;
     }
 
     .grade-cell .grade-evolution,
