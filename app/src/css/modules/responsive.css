@@ -102,7 +102,7 @@
 @media (max-width: 768px) {
 
     /* Modal */
-    .modal-content:not(.modal-content-confirm):not(.modal-mini-content):not(.modal-content-backup-import):not(.model-selection-content) {
+    .modal-content:not(:where(.modal-alert-ios, .modal-content-confirm, .modal-mini-content, .modal-content-backup-import, .model-selection-content)) {
         width: 95%;
         max-width: none;
         max-height: 95vh;
@@ -222,6 +222,7 @@
 
     /* Fullscreen workspace modals - Native iOS Sheet slide presentation */
     .modal-content,
+    .modal-help .modal-content,
     #helpModal > .modal-content,
     .modal-lab .modal-content,
     .class-dashboard-modal .modal-content {
@@ -242,6 +243,7 @@
     .modal-content.modal-mini-content,
     .modal-content.modal-content-backup-import,
     .modal-content.model-selection-content,
+    .modal-prompt-preview .modal-content,
     #classManagementModal .modal-content,
     #welcomeModal .modal-content {
         width: calc(100% - 24px);
@@ -294,6 +296,12 @@
 
     .modal-title {
         font-size: 1rem;
+    }
+
+    .modal-body::-webkit-scrollbar,
+    .ui-tabs-content::-webkit-scrollbar {
+        width: 3px;
+        height: 3px;
     }
 }
 
@@ -365,14 +373,13 @@
 
     /* Settings modal improvements on mobile */
     .api-fallback-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        flex-wrap: wrap;
+        gap: 6px 10px;
     }
 
     .api-fallback-row .fallback-info {
         justify-content: flex-start;
-        width: 100%;
+        flex: 1 1 auto;
     }
 
     .missing-key-warning .btn-link {
@@ -380,46 +387,6 @@
         margin-top: 4px;
         width: 100%;
         text-align: left;
-    }
-
-    /* Spacing optimization inside settings/help tabs on small viewports */
-    .ui-tabs-content {
-        padding: 12px;
-    }
-
-    .help-step-card {
-        padding: 12px 14px;
-        margin: 10px 0;
-    }
-
-    .help-step-layout {
-        gap: 12px;
-    }
-
-    .help-section-header {
-        padding: 12px 14px;
-        margin-bottom: 16px;
-    }
-
-    .help-provider-hero {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-
-    #helpProviderSelector {
-        width: 100%;
-        display: flex;
-    }
-
-    #helpProviderSelector .ui-segment {
-        padding: 0 6px !important;
-        font-size: 11.5px !important;
-        gap: 4px !important;
-    }
-
-    #helpProviderSelector .ui-segment iconify-icon {
-        font-size: 14px !important;
     }
 
     /* About tab mobile refinements */

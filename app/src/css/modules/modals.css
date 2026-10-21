@@ -2591,14 +2591,42 @@
 }
 
 @media (max-width: 540px) {
+    .api-status-summary.compact-mode {
+        padding-top: 0;
+        gap: 8px;
+    }
+
     .model-selector-wrapper {
         flex-direction: column;
         align-items: stretch;
-        gap: 6px;
+        gap: 4px;
     }
 
     .active-model-label {
         margin-right: 0;
+    }
+
+    .api-fallback-row {
+        margin-top: 2px;
+        padding-top: 8px;
+        margin-bottom: -4px;
+    }
+
+    .api-key-section {
+        padding: 12px;
+    }
+
+    .api-key-header .btn-link {
+        padding: 2px 6px;
+    }
+
+    .api-key-section .api-key-actions {
+        gap: 8px;
+    }
+
+    .api-key-section .api-key-actions .api-key-input-container input,
+    .api-key-section .api-key-actions .btn {
+        height: 36px;
     }
 
     .api-key-actions.api-key-actions-wrap {

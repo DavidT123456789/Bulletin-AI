@@ -525,12 +525,38 @@
 }
 
 @media (max-width: 600px) {
+    .ui-tabs-sidebar {
+        padding: 6px 10px;
+        gap: 4px;
+    }
+
+    .ui-tabs-btn,
+    .ui-tabs-action-btn {
+        height: 34px;
+        padding: 0 10px;
+        font-size: 0.8rem;
+        gap: 5px;
+    }
+
+    .ui-tabs-btn iconify-icon,
+    .ui-tabs-action-btn iconify-icon {
+        width: 16px;
+        height: 16px;
+        font-size: 1.08em;
+    }
+
+    .ui-tabs-actions-wrapper {
+        margin-left: 2px;
+        padding-left: 6px;
+        gap: 4px;
+    }
+
     .ui-tabs-sidebar .btn-build-pill {
         display: none;
     }
 
     .ui-tabs-content {
-        padding: 14px 12px;
+        padding: 12px;
     }
 }
 

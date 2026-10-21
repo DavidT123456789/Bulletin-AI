@@ -36,6 +36,11 @@
     animation: helpTabSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+#appSettingsModal .help-tab-content.active {
+    justify-content: flex-start;
+    min-height: 0;
+}
+
 [data-direction="down"] .help-tab-content.active {
     animation-name: helpTabSlideUp;
 }
@@ -142,7 +147,7 @@
 
 #appSettingsModal .help-step-card {
     padding: 16px 18px;
-    margin-bottom: 14px;
+    margin-bottom: 0;
 }
 
 .help-step-layout {
@@ -1955,8 +1960,14 @@
 }
 
 @media (max-width: 600px) {
+    .help-tab-content.active {
+        justify-content: flex-start;
+        min-height: 0;
+        gap: 10px;
+    }
+
     #helpModal .ui-tabs-content {
-        padding: 14px 12px;
+        padding: 12px;
     }
 
     .focus-refinement-options.help-native-refine-bar > :last-child:nth-child(odd) {
@@ -1998,8 +2009,8 @@
 
     .help-step-card,
     #appSettingsModal .help-step-card {
-        padding: 14px;
-        margin-bottom: 12px;
+        padding: 12px 14px;
+        margin-bottom: 0;
     }
 
     .help-step-layout {
