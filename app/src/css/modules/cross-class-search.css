@@ -29,7 +29,7 @@
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
-    margin: var(--space-5) 0 var(--space-8) 0;
+    margin: var(--space-5) 0 0 0;
     padding: 0;
 }
 
@@ -336,7 +336,7 @@
    ======================================== */
 @media (max-width: 768px) {
     .cross-class-results.visible {
-        margin: var(--space-4) 0 var(--space-8) 0;
+        margin: var(--space-4) 0 0 0;
     }
 
     .cross-class-group-header {

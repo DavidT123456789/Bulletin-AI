@@ -170,7 +170,7 @@ describe('ListSelectionManager', () => {
 
         const toolbar = document.getElementById('selectionToolbar');
         expect(toolbar).not.toBeNull();
-        expect(toolbar.querySelector('#selectionCount').textContent).toBe('1 élève sélectionné');
+        expect(toolbar.querySelector('#selectionCount').textContent).toBe('1 sélectionné');
     });
 
     it('should handle rapid deselect and reselect without destroying the toolbar', () => {
@@ -196,7 +196,7 @@ describe('ListSelectionManager', () => {
         // 5. Verify removal timeout was cancelled and active class restored
         expect(ListSelectionManager._removeTimeout).toBeNull();
         expect(toolbar.classList.contains('active')).toBe(true);
-        expect(toolbar.querySelector('#selectionCount').textContent).toBe('1 élève sélectionné');
+        expect(toolbar.querySelector('#selectionCount').textContent).toBe('1 sélectionné');
 
         // 6. Fast-forward past original 400ms timeout to verify toolbar is NOT removed
         vi.advanceTimersByTime(500);
@@ -226,7 +226,7 @@ describe('ListSelectionManager', () => {
         expect(ListSelectionManager.selectedIds.size).toBe(3);
 
         const toolbar = document.getElementById('selectionToolbar');
-        expect(toolbar.querySelector('#selectionCount').textContent).toBe('3 élèves sélectionnés');
+        expect(toolbar.querySelector('#selectionCount').textContent).toBe('3 sélectionnés');
     });
 
     it('should select all and deselect all visible rows with toggleSelectVisible', () => {

@@ -50,12 +50,7 @@
    BREAKPOINT: 900px - Layout Simplification
    ==================================================================== */
 @media (max-width: 900px) {
-    /* Header padding now managed in layout.css (16px desktop, 12px mobile) */
-
-    .main-content {
-        --content-padding-x: var(--space-5);
-        padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 80px;
-    }
+    /* Header and .main-content padding managed in layout.css */
 
     .output-header,
     .output-toolbar {
@@ -190,6 +185,13 @@
         flex: 1 1 auto;
         min-width: 100px;
     }
+
+    /* FAB & Back-to-top aligned with 16px horizontal padding and 60px bottom clearance */
+    .fab-add-student,
+    #backToTopBtn {
+        bottom: max(16px, env(safe-area-inset-bottom) + 10px);
+        right: 16px;
+    }
 }
 
 /* ====================================================================
@@ -222,11 +224,7 @@
    BREAKPOINT: 480px - Mobile
    ==================================================================== */
 @media (max-width: 480px) {
-
-    .main-content {
-        --content-padding-x: 12px;
-        padding: calc(56px + 8px) var(--content-padding-x) 80px;
-    }
+    /* .main-content padding managed in layout.css */
 
     /* Fullscreen modals - Native iOS Sheet slide presentation */
     .modal-content {
@@ -340,7 +338,6 @@
 
     .fab-add-student,
     #backToTopBtn {
-        bottom: max(16px, env(safe-area-inset-bottom) + 10px);
         right: 14px;
     }
 

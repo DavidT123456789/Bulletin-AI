@@ -674,9 +674,9 @@
     background: var(--success-light) !important;
 }
 
-/* Close → Cancel style in edit mode */
+/* Close → Cancel style in edit mode (neutral at rest, red on hover) */
 .focus-header.editing .focus-close-btn {
-    color: var(--error-color);
+    color: var(--text-secondary);
 }
 
 .focus-header.editing .focus-close-btn:hover {

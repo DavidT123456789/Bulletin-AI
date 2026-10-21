@@ -13,36 +13,28 @@
     max-width: calc(100vw - var(--space-8));
     z-index: var(--z-modal-backdrop, 500);
 
-    /* Glassmorphism Ultra-Refined 2026 */
-    background: rgba(var(--surface-color-rgb), 0.86);
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    /* Minimalist Floating Capsule (2026) */
+    background: rgba(var(--surface-color-rgb), 0.94);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
 
-    border: 1px solid var(--card-glass-border);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-pill, 9999px);
 
     opacity: 0;
     transform: translateY(100px) scale(0.94);
-    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
-        opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transition: transform 0.45s var(--ease-bounce),
+        opacity 0.25s var(--ease-material),
         box-shadow 0.3s ease;
 
-    /* Subtle layered shadow & inner luminous rim */
-    box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.04),
-        0 20px 40px -4px rgba(0, 0, 0, 0.14),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95);
-
+    box-shadow: var(--shadow-lg);
     pointer-events: none;
 }
 
 [data-theme="dark"] .selection-toolbar {
-    background: rgba(24, 24, 27, 0.86);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.3),
-        0 24px 48px -4px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    background: rgba(var(--surface-color-rgb), 0.92);
+    border-color: var(--glass-surface-border);
+    box-shadow: var(--shadow-lg);
 }
 
 .selection-toolbar.active {
@@ -54,22 +46,22 @@
 .selection-toolbar-content {
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 52px;
-    padding: 0 8px 0 12px;
+    gap: 4px;
+    height: 48px;
+    padding: 0 10px;
 }
 
 /* === Info Section (Left) === */
 .selection-info {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
 }
 
 .btn-deselect {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -77,7 +69,9 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: background 0.18s var(--ease-material),
+        color 0.18s var(--ease-material),
+        transform 0.18s var(--ease-material);
     flex-shrink: 0;
     border-radius: 50%;
     font-size: 15px;
@@ -85,24 +79,23 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-deselect:hover {
-        background: var(--bg-secondary);
+        background: var(--item-hover-bg);
         color: var(--text-primary);
-        transform: scale(1.08);
     }
 }
 
 .btn-deselect:active {
-    transform: scale(0.92);
+    transform: scale(0.94);
 }
 
 .selection-count-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0 4px;
+    padding: 0 4px 0 2px;
     background: transparent;
     border: none;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: var(--font-sm);
     font-weight: 600;
     letter-spacing: -0.01em;
     white-space: nowrap;
@@ -111,32 +104,33 @@
 .btn-select-all-link {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    background: transparent;
-    border: none;
+    justify-content: center;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
-    font-size: 12px;
+    font-size: var(--font-xs);
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: background 0.18s var(--ease-material),
+        border-color 0.18s var(--ease-material),
+        color 0.18s var(--ease-material),
+        transform 0.18s var(--ease-material);
     white-space: nowrap;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-color: rgba(125, 125, 125, 0.3);
 }
 
 .btn-select-all-link iconify-icon {
-    font-size: 14px;
+    display: none;
+    font-size: 16px;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-select-all-link:hover {
         color: var(--text-primary);
-        text-decoration-color: var(--text-primary);
-        background: var(--item-hover-bg, rgba(125, 125, 125, 0.1));
-        transform: translateY(-0.5px);
+        background: var(--item-hover-bg);
+        border-color: var(--border-color-strong);
     }
 }
 
@@ -147,10 +141,9 @@
 /* === Dividers === */
 .selection-divider {
     width: 1px;
-    height: 20px;
-    background: var(--border-color);
-    opacity: 0.6;
-    margin: 0 4px;
+    height: 18px;
+    background: var(--border-color-strong);
+    margin: 0 6px;
     flex-shrink: 0;
 }
 
@@ -172,17 +165,27 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 11px;
+    padding: 0 11px;
     border-radius: var(--radius-pill);
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: var(--font-sm);
     font-weight: 500;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: background 0.18s var(--ease-material),
+        color 0.18s var(--ease-material),
+        transform 0.18s var(--ease-material);
     white-space: nowrap;
     height: 34px;
+}
+
+.btn-selection-action.icon-only {
+    width: 34px;
+    padding: 0;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .btn-selection-action iconify-icon {
@@ -190,64 +193,35 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease;
+}
+
+.btn-selection-action.icon-only iconify-icon {
+    font-size: 18px;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action:hover {
-        background: var(--item-hover-bg, rgba(125, 125, 125, 0.1));
+        background: var(--item-hover-bg);
         color: var(--text-primary);
-        transform: translateY(-1px);
     }
 
-    .btn-selection-action:hover iconify-icon {
-        transform: scale(1.06);
+    .btn-selection-action.warning:hover {
+        background: var(--warning-light);
+        color: var(--color-amber);
+    }
+
+    .btn-selection-action.danger:hover {
+        background: var(--error-light);
+        color: var(--error-color);
+    }
+
+    [data-theme="dark"] .btn-selection-action.danger:hover {
+        color: var(--error-bright);
     }
 }
 
 .btn-selection-action:active {
-    transform: scale(0.96) translateY(0);
-}
-
-/* Primary / Hero Action (Régénérer - Minimalist Ghost) */
-.btn-selection-action.primary {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn-selection-action.primary:hover {
-        background: rgba(var(--primary-color-rgb), 0.12);
-        color: var(--primary-color);
-    }
-
-    [data-theme="dark"] .btn-selection-action.primary:hover {
-        color: var(--primary-bright);
-    }
-}
-
-/* Warning / Content Clear Action (Effacer - Minimalist Ghost) */
-.btn-selection-action.warning {
-    color: var(--color-amber, #f59e0b);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn-selection-action.warning:hover {
-        background: rgba(var(--warning-rgb), 0.12);
-        color: var(--color-amber, #f59e0b);
-    }
-}
-
-/* Danger / Destructive Action (Supprimer - Minimalist Ghost) */
-.btn-selection-action.danger {
-    color: var(--error-color, #ef4444);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn-selection-action.danger:hover {
-        background: rgba(var(--error-rgb), 0.12);
-        color: var(--error-color, #ef4444);
-    }
+    transform: scale(0.96);
 }
 
 /* === Avatar Selection Overlay === */
@@ -328,25 +302,11 @@
     color: var(--primary-color);
 }
 
-/* === Responsive Breakpoints (Adaptivity) === */
-@media (max-width: 960px) {
-    .btn-selection-action:not(.primary):not(.icon-only) span {
-        display: none;
-    }
-
-    .btn-selection-action:not(.primary) {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        border-radius: 50%;
-        justify-content: center;
-    }
-
-    .btn-selection-action iconify-icon {
-        font-size: 18px;
-    }
+[data-theme="dark"] .student-identity-wrapper.selected .student-nom-prenom {
+    color: var(--primary-bright);
 }
 
+/* === Responsive Breakpoints (Adaptivity) === */
 @media (max-width: 768px) {
     .selection-toolbar {
         bottom: max(var(--space-4), calc(env(safe-area-inset-bottom, 0px) + 12px));
@@ -354,31 +314,37 @@
     }
 
     .selection-toolbar-content {
-        padding: 0 8px 0 10px;
-        height: 50px;
-        gap: 6px;
+        padding: 0 8px;
+        height: 46px;
     }
 
-    .btn-select-all-link {
-        display: inline-flex;
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        justify-content: center;
-        border-radius: 50%;
-    }
-
+    .btn-selection-action:not(.primary):not(.icon-only) span,
     .btn-select-all-link span {
         display: none;
     }
 
+    .btn-selection-action:not(.primary),
+    .btn-select-all-link {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+        background: transparent;
+        border-color: transparent;
+    }
+
     .btn-select-all-link iconify-icon {
-        font-size: 16px;
+        display: inline-flex;
+    }
+
+    .btn-selection-action iconify-icon {
+        font-size: 18px;
     }
 
     .selection-count-badge {
-        font-size: 12px;
-        padding: 3px 8px;
+        font-size: var(--font-xs);
+        padding: 0 4px;
     }
 }
 
@@ -388,21 +354,25 @@
     }
 
     .btn-selection-action.primary {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         padding: 0;
         border-radius: 50%;
         justify-content: center;
     }
 
     .selection-toolbar-content {
-        padding: 0 6px 0 8px;
-        gap: 4px;
+        padding: 0 6px;
+        gap: 2px;
+    }
+
+    .selection-divider {
+        margin: 0 4px;
     }
 
     .btn-deselect {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         font-size: 14px;
     }
 }

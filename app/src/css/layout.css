@@ -139,7 +139,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     /* --content-padding-x: single source of truth for padding.
        Ensures left, right AND top margins are perfectly symmetrical . */
     --content-padding-x: var(--space-6);
-    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 80px;
+    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 68px;
     max-width: none;
     width: 100%;
     margin: 0;
@@ -1533,9 +1533,7 @@ button > .icon-spin-wrapper {
 /* Tablette (max-width: 1024px) */
 @media (max-width: 1024px) {
     .main-content {
-        --content-padding-x: var(--space-6);
-        padding: var(--space-6) var(--content-padding-x);
-        padding-top: calc(56px + var(--space-5));
+        --content-padding-x: var(--space-5);
     }
 
     /* Header inherits 16px from base - no override needed */
@@ -1558,8 +1556,8 @@ button > .icon-spin-wrapper {
 
     .main-content {
         --content-padding-x: 16px;
-        padding: 16px var(--content-padding-x);
         padding-top: calc(56px + 8px);
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -1669,8 +1667,7 @@ button > .icon-spin-wrapper {
 @media (max-width: 480px) {
     .main-content {
         --content-padding-x: 12px;
-        padding: 12px var(--content-padding-x);
-        padding-top: calc(56px + 4px);
+        padding-top: calc(56px + 6px);
     }
 
     .header {

@@ -1668,24 +1668,30 @@
     transition: color var(--transition-fast);
 }
 
-.action-dropdown-item.warning,
-.action-dropdown-item.warning i,
-.action-dropdown-item.warning iconify-icon {
-    color: var(--color-amber, #f59e0b);
+.action-dropdown-item.warning:hover,
+.action-dropdown-item.warning:hover i,
+.action-dropdown-item.warning:hover iconify-icon {
+    color: var(--color-amber);
 }
 
 .action-dropdown-item.warning:hover {
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--warning-light);
 }
 
-.action-dropdown-item.danger,
-.action-dropdown-item.danger i,
-.action-dropdown-item.danger iconify-icon {
+.action-dropdown-item.danger:hover,
+.action-dropdown-item.danger:hover i,
+.action-dropdown-item.danger:hover iconify-icon {
     color: var(--error-color);
 }
 
+[data-theme="dark"] .action-dropdown-item.danger:hover,
+[data-theme="dark"] .action-dropdown-item.danger:hover i,
+[data-theme="dark"] .action-dropdown-item.danger:hover iconify-icon {
+    color: var(--error-bright);
+}
+
 .action-dropdown-item.danger:hover {
-    background: rgba(var(--error-rgb), 0.1);
+    background: var(--error-light);
 }
 
 
@@ -1874,8 +1880,6 @@
         background: transparent;
         border: none;
         box-shadow: none;
-        margin-bottom: 24px;
-        overflow: visible;
     }
 
     .student-list-table,
@@ -2147,6 +2151,10 @@
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
+    }
+
+    .student-list-table tbody tr:last-child {
+        margin-bottom: 0;
     }
 
     [data-theme="dark"] .student-list-table tbody tr {
