@@ -4073,6 +4073,16 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._handleFormFactorCheck()).toBe(true);
             const view = document.getElementById('seatingChartView');
             expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(true);
+
+            // Maximisation d'une fenêtre desktop (> 768px -> > 768px) -> ignorée (aucun faux positif)
+            SeatingChartManager._cleanupFoldContinuum();
+            SeatingChartManager._wasCompactLayout = false;
+            SeatingChartManager._lastViewportW = 820;
+            SeatingChartManager._lastViewportH = 700;
+            window.innerWidth = 1920;
+            window.innerHeight = 1080;
+            expect(SeatingChartManager._handleFormFactorCheck()).toBe(false);
+            expect(view.classList.contains('sc-fold-transitioning')).toBe(false);
         });
 
         it('devrait différer l’animation si l’écran est en cours de bascule matérielle (visibilityState === hidden) et respecter prefers-reduced-motion', () => {

@@ -1183,7 +1183,7 @@ export const SeatingChartManager = {
         const currArea = w * h;
         const minArea = Math.min(currArea, prevArea);
         const areaJumpRatio = minArea > 0 ? Math.abs(currArea - prevArea) / minArea : 0;
-        const isFoldableAreaJump = widthJumpRatio >= 0.45 && areaJumpRatio >= 0.35;
+        const isFoldableAreaJump = minW <= 480 && widthJumpRatio >= 0.45 && areaJumpRatio >= 0.35;
 
         if (!crossedBreakpoint && !isFoldableAreaJump) {
             if (w > 0) this._lastViewportW = w;

@@ -260,6 +260,7 @@ export const SeatingAnimations = {
      * @param {boolean} [isUnfolding=true] - true when opening from smartphone to tablet, false when folding back
      */
     _animateFoldContinuum(isUnfolding = true) {
+        const wasAlreadyTransitioning = Boolean(this._foldTransitionTimer);
         this._cleanupFoldContinuum();
 
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
@@ -274,6 +275,15 @@ export const SeatingAnimations = {
         const view = document.getElementById('seatingChartView');
         const board = document.getElementById('scClassroomBoard');
         if (!view || !board) return;
+
+        const desk = board.querySelector('.sc-desk');
+        const hadEnteringDesk = Boolean(desk?.classList.contains('sc-desk-entering'));
+        if (hadEnteringDesk) {
+            desk.classList.remove('sc-desk-entering');
+        }
+        if (wasAlreadyTransitioning || hadEnteringDesk) {
+            void view.offsetWidth;
+        }
 
         const cols = Math.max(1, this._getCols?.() || 6);
         const rows = Math.max(1, this._getRows?.() || 5);
@@ -296,15 +306,10 @@ export const SeatingAnimations = {
 
             cell.style.setProperty('--fold-hinge-dx', `${hingeDx}px`);
             cell.style.setProperty('--fold-cell-i', radialIndex.toFixed(2));
+            cell.classList.add('sc-fold-cell-wave');
         });
 
-        const desk = board.querySelector('.sc-desk');
-        desk?.classList.remove('sc-desk-entering');
-
-        void view.offsetWidth;
-
         view.classList.add('sc-fold-transitioning', isUnfolding ? 'sc-unfolding-to-tablet' : 'sc-folding-to-mobile');
-        cells.forEach(cell => cell.classList.add('sc-fold-cell-wave'));
         desk?.classList.add('sc-desk-entering');
 
         if (!this._isLocked) {

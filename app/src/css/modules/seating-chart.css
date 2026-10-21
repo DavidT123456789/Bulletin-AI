@@ -375,11 +375,15 @@
     border-right: 1px solid var(--border-color);
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
+    --sc-sidebar-vis-delay: 0s;
     translate: 0 0;
     opacity: 1;
+    visibility: visible;
     will-change: translate;
     contain: layout style;
     transition: translate var(--sc-drawer-transition),
+                opacity var(--sc-drawer-transition),
+                visibility 0s linear var(--sc-sidebar-vis-delay),
                 border-color var(--transition-fast),
                 box-shadow var(--sc-drawer-transition),
                 background-color var(--transition-fast);
@@ -2028,7 +2032,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 
 /* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
+    --sc-sidebar-vis-delay: 0.52s;
     translate: -100% 0;
+    opacity: 0;
+    visibility: hidden;
     box-shadow: none;
     border-right-color: transparent;
     pointer-events: none;
@@ -3230,13 +3237,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         flex-shrink: 0;
         overflow: visible;
         transition: max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-                    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+                    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0s linear var(--sc-sidebar-vis-delay);
     }
 
     /* Locked sidebar collapses vertically on mobile */
     #seatingChartView[data-locked="true"] .sc-sidebar {
+        --sc-sidebar-vis-delay: 0.38s;
         translate: none !important;
         opacity: 0;
+        visibility: hidden;
         width: 100%;
         max-height: 0;
         margin-left: 0;
@@ -6649,6 +6659,18 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     will-change: transform, opacity;
 }
 
+#seatingChartView.sc-fold-transitioning .sc-classroom-board,
+#seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+#seatingChartView.sc-fold-transitioning .sc-sidebar {
+    transition: none !important;
+}
+
+#seatingChartView.sc-fold-transitioning[data-locked="true"] .sc-sidebar {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    animation: none !important;
+}
+
 #seatingChartView.sc-unfolding-to-tablet:not([data-locked="true"]) .sc-sidebar {
     animation: scSidebarUnfoldDock 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -6663,12 +6685,10 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board,
-    #seatingChartView.sc-folding-to-mobile .sc-classroom-board,
-    #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after,
+    #seatingChartView.sc-fold-transitioning .sc-classroom-board,
+    #seatingChartView.sc-fold-transitioning .sc-classroom-board::after,
     #seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave,
-    #seatingChartView.sc-unfolding-to-tablet:not([data-locked="true"]) .sc-sidebar,
-    #seatingChartView.sc-folding-to-mobile:not([data-locked="true"]) .sc-sidebar,
+    #seatingChartView.sc-fold-transitioning .sc-sidebar,
     #seatingChartView.sc-fold-transitioning .sc-top-left-bar,
     #seatingChartView.sc-fold-transitioning .sc-floating-actions {
         animation: none !important;
