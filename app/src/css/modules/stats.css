@@ -642,6 +642,7 @@
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
+        scroll-padding-inline: var(--content-padding-x);
         gap: calc(var(--content-padding-x) * 2);
         grid-template-columns: none;
         padding: var(--space-6) var(--content-padding-x) 28px;

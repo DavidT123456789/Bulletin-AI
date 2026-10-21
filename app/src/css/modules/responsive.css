@@ -331,11 +331,15 @@
         justify-content: center;
     }
 
-    /* FAB positioning with safe area */
+    /* FAB & Back-to-top positioning with safe area */
     .fab-add-student {
         width: 48px;
         height: 48px;
         font-size: 20px;
+    }
+
+    .fab-add-student,
+    #backToTopBtn {
         bottom: max(16px, env(safe-area-inset-bottom) + 10px);
         right: 14px;
     }

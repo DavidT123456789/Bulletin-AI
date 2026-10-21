@@ -10,7 +10,7 @@
 .header-gen-dashboard {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 0;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -223,7 +223,6 @@
 /* Subtle generating state - border glow matches Landing Page feel */
 .header-gen-dashboard.generating {
     border-color: transparent !important;
-    gap: 0;
 
     /* Background starts EMPTY (white/transparent) so the bar can fill it */
     background: var(--surface-color);

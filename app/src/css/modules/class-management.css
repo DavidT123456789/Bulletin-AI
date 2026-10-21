@@ -80,13 +80,23 @@
     color: var(--primary-bright);
 }
 
-.class-chip:hover .student-count-badge,
+@media (hover: hover) and (pointer: fine) {
+    .class-chip:hover .student-count-badge {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+
+    .class-chip:hover .student-count-badge iconify-icon {
+        color: #ffffff;
+        opacity: 1;
+    }
+}
+
 .class-chip.active .student-count-badge {
     background: var(--primary-color);
     color: #ffffff;
 }
 
-.class-chip:hover .student-count-badge iconify-icon,
 .class-chip.active .student-count-badge iconify-icon {
     color: #ffffff;
     opacity: 1;
@@ -116,7 +126,12 @@
     border-color: rgba(129, 140, 248, 0.35);
 }
 
-.class-chip:hover .class-virtual-tag,
+@media (hover: hover) and (pointer: fine) {
+    .class-chip:hover .class-virtual-tag {
+        border-color: rgba(99, 102, 241, 0.45);
+    }
+}
+
 .class-chip.active .class-virtual-tag {
     border-color: rgba(99, 102, 241, 0.45);
 }

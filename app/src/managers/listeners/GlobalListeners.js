@@ -189,11 +189,12 @@ export const GlobalListeners = {
         let lastScrollTop = 0;
 
         const handleScroll = (scrollTop) => {
-            DOM.backToTopBtn?.classList.toggle('show', scrollTop > 200);
+            const showBackToTop = scrollTop > 200;
+            DOM.backToTopBtn?.classList.toggle('show', showBackToTop);
             const fab = document.getElementById('addStudentFab');
             if (fab) {
                 const delta = scrollTop - lastScrollTop;
-                if (scrollTop > 60 && delta > 8) {
+                if (showBackToTop || (scrollTop > 60 && delta > 8)) {
                     fab.classList.add('fab-scroll-hidden');
                 } else if (delta < -6 || scrollTop <= 40) {
                     fab.classList.remove('fab-scroll-hidden');

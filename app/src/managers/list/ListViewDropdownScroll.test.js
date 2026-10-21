@@ -346,8 +346,22 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         mainContent.dispatchEvent(new Event('scroll'));
         expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
 
-        // Scroll up (delta < -6)
+        // Scroll up (delta < -6) while <= 200px
         mainContent.scrollTop = 90;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
+
+        // Scroll past 200px (where #backToTopBtn is shown) -> FAB stays hidden even on slight upward scroll
+        mainContent.scrollTop = 260;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+
+        mainContent.scrollTop = 230;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.classList.contains('fab-scroll-hidden')).toBe(true);
+
+        // Scroll back above 200px -> FAB re-appears
+        mainContent.scrollTop = 180;
         mainContent.dispatchEvent(new Event('scroll'));
         expect(fab.classList.contains('fab-scroll-hidden')).toBe(false);
     });
