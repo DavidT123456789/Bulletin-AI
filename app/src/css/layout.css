@@ -157,7 +157,6 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     padding: 0;
     touch-action: pan-y;
     position: relative;
-    overflow-x: clip;
     /* For absolute positioned filter banner */
 }
 
