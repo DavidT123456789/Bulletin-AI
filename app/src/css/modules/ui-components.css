@@ -174,6 +174,39 @@
     }
 }
 
+@media (max-width: 600px) {
+    .ui-stepper {
+        gap: 2px;
+    }
+
+    .ui-stepper-step {
+        padding: 4px 9px !important;
+    }
+
+    .ui-stepper-label {
+        font-size: 0.78rem;
+    }
+
+    .ui-stepper-separator {
+        padding: 0;
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .ui-stepper-separator {
+        display: none;
+    }
+
+    .ui-stepper-step {
+        padding: 4px 7px !important;
+    }
+
+    .ui-stepper-label {
+        font-size: 0.74rem;
+    }
+}
+
 /* === UI VERTICAL TABS === */
 .ui-tabs-vertical {
     display: flex;
@@ -397,11 +430,13 @@
         width: 100%;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
-        padding: 10px;
         flex-direction: row;
         overflow-x: auto;
         height: auto;
         /* Hide scrollbars for a premium swipe experience */
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -412,12 +447,16 @@
 
     .ui-tabs-actions-wrapper {
         margin-top: 0;
+        margin-left: 4px;
         padding-top: 0;
+        padding-left: 10px;
         border-top: none;
+        border-left: 1px solid var(--border-color);
         width: auto;
         display: flex;
         flex-direction: row;
-        gap: 8px;
+        align-items: center;
+        gap: 6px;
         flex-shrink: 0;
     }
 
@@ -426,16 +465,17 @@
         width: auto;
         white-space: nowrap;
         flex-shrink: 0;
-        padding: 8px 14px;
+        height: 36px;
+        padding: 0 12px;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--surface-color);
+        background: var(--bg-secondary);
         color: var(--text-secondary);
-        font-size: 0.92em;
-        box-shadow: var(--shadow-sm);
+        font-size: 0.84rem;
+        box-shadow: none;
         cursor: pointer;
         transition: all var(--transition-fast);
-        gap: 8px;
+        gap: 6px;
     }
 
     .ui-tabs-action-btn iconify-icon {
@@ -472,13 +512,25 @@
         width: auto;
         white-space: nowrap;
         flex-shrink: 0;
-        padding: 8px 14px;
-        gap: 8px;
+        height: 36px;
+        padding: 0 12px;
+        font-size: 0.84rem;
+        gap: 6px;
     }
 
     .ui-tabs-btn iconify-icon {
         width: 18px;
         font-size: 1.15em;
+    }
+}
+
+@media (max-width: 600px) {
+    .ui-tabs-sidebar .btn-build-pill {
+        display: none;
+    }
+
+    .ui-tabs-content {
+        padding: 14px 12px;
     }
 }
 

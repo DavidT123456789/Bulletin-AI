@@ -234,6 +234,88 @@ export const SeatingAnimations = {
         }
     },
 
+    /** Clean up any active Fold / Unfold Continuum transition classes & custom properties */
+    _cleanupFoldContinuum() {
+        if (this._foldTransitionTimer) {
+            clearTimeout(this._foldTransitionTimer);
+            this._foldTransitionTimer = null;
+        }
+        const view = document.getElementById('seatingChartView');
+        if (view) {
+            view.classList.remove('sc-fold-transitioning', 'sc-unfolding-to-tablet', 'sc-folding-to-mobile');
+            view.querySelectorAll('.sc-cell.sc-fold-cell-wave').forEach(cell => {
+                cell.classList.remove('sc-fold-cell-wave');
+                cell.style.removeProperty('--fold-hinge-dx');
+                cell.style.removeProperty('--fold-cell-i');
+            });
+            view.querySelector('.sc-desk.sc-desk-entering')?.classList.remove('sc-desk-entering');
+        }
+    },
+
+    /**
+     * Play Galaxy Z Fold / Foldable Continuum animation when crossing the smartphone ↔ tablet form factor.
+     * - In Plan view: orchestrates a center-hinge spring bloom on the classroom board, a radial outward/inward wave on desks,
+     *   a directional dock/tray morph on the unplaced sidebar, and a soft settle on floating capsules.
+     * - In List view: triggers a staggered cascade on stat cards and student rows/cards as the layout morphs.
+     * @param {boolean} [isUnfolding=true] - true when opening from smartphone to tablet, false when folding back
+     */
+    _animateFoldContinuum(isUnfolding = true) {
+        this._cleanupFoldContinuum();
+
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            return;
+        }
+
+        if (!this._isActive) {
+            this._staggerListViewEntrance();
+            return;
+        }
+
+        const view = document.getElementById('seatingChartView');
+        const board = document.getElementById('scClassroomBoard');
+        if (!view || !board) return;
+
+        const cols = Math.max(1, this._getCols?.() || 6);
+        const rows = Math.max(1, this._getRows?.() || 5);
+        const isStudent = this._isStudentOrientation
+            ? this._isStudentOrientation()
+            : (!this._isActivityMode?.() && this._orientation === 'student');
+        const centerCol = (cols - 1) / 2;
+        const centerRow = (rows - 1) / 2;
+
+        const cells = board.querySelectorAll('.sc-cell:not([class*="sc-cell-special-"])');
+        cells.forEach(cell => {
+            const r = Number(cell.dataset.row) || 0;
+            const c = Number(cell.dataset.col) || 0;
+            const visualCol = isStudent ? (cols - 1 - c) : c;
+            const visualRow = isStudent ? (rows - 1 - r) : r;
+            const colOffset = visualCol - centerCol;
+            const rowOffset = visualRow - centerRow;
+            const radialIndex = Math.hypot(colOffset, rowOffset * 0.6);
+            const hingeDx = Math.round((isUnfolding ? -colOffset * 11 : colOffset * 7) * 10) / 10;
+
+            cell.style.setProperty('--fold-hinge-dx', `${hingeDx}px`);
+            cell.style.setProperty('--fold-cell-i', radialIndex.toFixed(2));
+        });
+
+        const desk = board.querySelector('.sc-desk');
+        desk?.classList.remove('sc-desk-entering');
+
+        void view.offsetWidth;
+
+        view.classList.add('sc-fold-transitioning', isUnfolding ? 'sc-unfolding-to-tablet' : 'sc-folding-to-mobile');
+        cells.forEach(cell => cell.classList.add('sc-fold-cell-wave'));
+        desk?.classList.add('sc-desk-entering');
+
+        if (!this._isLocked) {
+            this._staggerSidebarEntrance(isUnfolding ? 55 : 40);
+        }
+
+        this._foldTransitionTimer = setTimeout(() => {
+            this._cleanupFoldContinuum();
+        }, 620);
+    },
+
     /** Capture outgoing classroom board clone for simultaneous carousel cross-slide */
     _captureModeCarouselGhost(prevMode) {
         this._cleanupModeCarousel();
@@ -528,7 +610,7 @@ export const SeatingAnimations = {
         const startRect = cell.getBoundingClientRect();
         const destRect = sidebar.getBoundingClientRect();
 
-        const isMobile = this._isMobileView();
+        const isMobile = this._isCompactLayout ? this._isCompactLayout() : this._isMobileView();
         const targetX = isMobile
             ? destRect.left + destRect.width / 2
             : destRect.right - 40;

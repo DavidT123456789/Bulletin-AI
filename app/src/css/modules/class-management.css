@@ -2189,4 +2189,36 @@
         transform: translate(-50%, -50%);
         cursor: pointer;
     }
+}
+
+@media (max-width: 600px) {
+    #classManagementModal .modal-header {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    #classManagementModal .modal-title-icon,
+    #classManagementModal .modal-header-actions-divider {
+        display: none;
+    }
+
+    #classManagementModal .modal-header-actions {
+        gap: 4px;
+    }
+
+    #classManagementModal .add-class-modal-btn {
+        padding: 0 10px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .delete-confirm-inline {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .delete-confirm-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }

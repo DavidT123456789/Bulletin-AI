@@ -170,6 +170,7 @@
     --color-orange: #f97316;
     --color-orange-deep: #ea580c;
     --color-emerald: #10b981;
+    --color-emerald-rgb: 16, 185, 129;
     --color-emerald-bright: #34d399;
     --color-emerald-pastel: #a7f3d0;
     --color-emerald-deep: #047857;
@@ -178,6 +179,7 @@
     --color-blue-rgb: 59, 130, 246;
     --color-blue-bright: #60a5fa;
     --color-blue-bright-rgb: 96, 165, 250;
+    --color-blue-deep: #2563eb;
 
     /* Close Button Design Tokens (Neutral 2026 - No alarming red) */
     --close-btn-bg: transparent;
@@ -485,6 +487,7 @@
     --color-orange: #fb923c;
     --color-orange-deep: #f97316;
     --color-emerald: #34d399;
+    --color-emerald-rgb: 52, 211, 153;
     --color-emerald-bright: #6ee7b7;
     --color-emerald-deep: #10b981;
     --color-teal: #2dd4bf;
@@ -492,6 +495,7 @@
     --color-blue-rgb: 96, 165, 250;
     --color-blue-bright: #93c5fd;
     --color-blue-bright-rgb: 147, 197, 253;
+    --color-blue-deep: #3b82f6;
     --primary-hover: #60a5fa;
     --primary-bright: var(--color-blue-bright);
     --primary-bright-rgb: var(--color-blue-bright-rgb);

@@ -588,7 +588,7 @@
                 box-shadow var(--transition-fast), opacity var(--transition-fast);
     user-select: none;
     -webkit-user-select: none;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 @media (hover: hover) {
@@ -958,7 +958,8 @@
     margin-bottom: 4px;
 }
 
-/* Prevent scrollbar flicker while card rotates or slides in mode carousel */
+/* Prevent scrollbar flicker while card rotates, slides in mode carousel, or unfolds/folds */
+#seatingChartView.sc-fold-transitioning .sc-grid-area,
 #seatingChartView:has(.sc-classroom-board.sc-orienting, .sc-classroom-board.sc-mode-carousel-in-right, .sc-classroom-board.sc-mode-carousel-in-left) .sc-grid-area {
     overflow: hidden;
 }
@@ -6505,6 +6506,175 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         display: none !important;
     }
 }
+
+/* ====================================================================
+   FOLDABLE CONTINUUM (Smartphone ↔ Tablet / Galaxy Z Fold Choreography)
+   ==================================================================== */
+
+@keyframes scBoardFoldOpen {
+    0% {
+        opacity: 0.76;
+        transform: perspective(900px) rotateY(-4deg) scale3d(0.84, 0.91, 1);
+    }
+    66% {
+        opacity: 1;
+        transform: perspective(900px) rotateY(0.5deg) scale3d(1.014, 1.006, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(900px) rotateY(0deg) scale3d(1, 1, 1);
+    }
+}
+
+@keyframes scBoardFoldClose {
+    0% {
+        opacity: 0.82;
+        transform: scale3d(1.08, 1.03, 1);
+    }
+    70% {
+        opacity: 1;
+        transform: scale3d(0.992, 0.996, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+@keyframes scHingeCreaseGlow {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scaleX(0.25);
+    }
+    28% {
+        opacity: 0.85;
+        transform: translateX(-50%) scaleX(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) scaleX(2.4);
+    }
+}
+
+@keyframes scCellHingeWave {
+    0% {
+        opacity: 0.72;
+        transform: translate3d(var(--fold-hinge-dx, 0px), 4px, 0) scale(0.9);
+    }
+    68% {
+        opacity: 1;
+        transform: translate3d(calc(var(--fold-hinge-dx, 0px) * -0.06), -1px, 0) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes scSidebarUnfoldDock {
+    0% {
+        opacity: 0;
+        transform: translate3d(-28px, 0, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes scSidebarFoldTray {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 24px, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes scFloatingFoldSettle {
+    0% {
+        opacity: 0.55;
+        transform: translateY(-4px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#seatingChartView.sc-unfolding-to-tablet .sc-classroom-board {
+    animation: scBoardFoldOpen 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, scale, opacity;
+}
+
+#seatingChartView.sc-folding-to-mobile .sc-classroom-board {
+    animation: scBoardFoldClose 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, scale, opacity;
+}
+
+/* Specular center-crease sweep on unfold */
+#seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 50%;
+    width: 64px;
+    pointer-events: none;
+    z-index: 60;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) 50%,
+        transparent 100%
+    );
+    animation: scHingeCreaseGlow 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-theme="dark"] #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.14) 50%,
+        transparent 100%
+    );
+}
+
+#seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave {
+    animation: scCellHingeWave 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--fold-cell-i, 0) * 20ms);
+    will-change: transform, opacity;
+}
+
+#seatingChartView.sc-unfolding-to-tablet:not([data-locked="true"]) .sc-sidebar {
+    animation: scSidebarUnfoldDock 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#seatingChartView.sc-folding-to-mobile:not([data-locked="true"]) .sc-sidebar {
+    animation: scSidebarFoldTray 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+#seatingChartView.sc-fold-transitioning .sc-floating-actions {
+    animation: scFloatingFoldSettle 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board,
+    #seatingChartView.sc-folding-to-mobile .sc-classroom-board,
+    #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after,
+    #seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave,
+    #seatingChartView.sc-unfolding-to-tablet:not([data-locked="true"]) .sc-sidebar,
+    #seatingChartView.sc-folding-to-mobile:not([data-locked="true"]) .sc-sidebar,
+    #seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+    #seatingChartView.sc-fold-transitioning .sc-floating-actions {
+        animation: none !important;
+    }
+}
+
 
 
 

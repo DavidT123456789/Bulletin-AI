@@ -245,30 +245,8 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Hover state - Generic Lift & Shadow */
-.import-hub-card:hover {
-    transform: translateY(-4px);
-    /* Border color is now handled specifically per card below */
-    box-shadow:
-        0 20px 40px -6px rgba(0, 0, 0, 0.08),
-        /* Enhanced shadow for borderless feel */
-        0 8px 12px -4px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="dark"] .import-hub-card:hover {
-    background: var(--bg-hover);
-    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
-}
-
 .import-hub-card:active {
     transform: translateY(-2px) scale(0.98);
-}
-
-/* Focus state for accessibility */
-.import-hub-card:focus-visible {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
 }
 
 /* === CARD ICON === */
@@ -284,6 +262,7 @@
     font-size: 1.85rem;
     color: var(--text-secondary);
     transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    flex-shrink: 0;
 }
 
 [data-theme="dark"] .import-hub-icon {
@@ -292,132 +271,94 @@
 }
 
 /* ====================================================================
-   CARD-SPECIFIC ACCENT COLORS - PERMANENT COLOR & BORDER ON HOVER
+   MUTUALIZED HUB CARD ACCENTS (.import-hub-card & .empty-state-hub-card)
+   Fixed semantic palette (Blue / Emerald / Violet) with equalized
+   Light & Dark contour visibility, independent of user accent preset.
    ==================================================================== */
 
-/* === INDIVIDUAL CARD === */
-/* Color: Blue-500 (#3b82f6) */
-.import-hub-card[data-action="individual"] {
-    border-color: rgba(var(--brand-primary-rgb), 0.12);
+.import-hub-card[data-action="individual"],
+.empty-state-hub-card[data-action="individual"] {
+    --hub-card-color: var(--color-blue);
+    --hub-card-rgb: var(--color-blue-rgb);
+    --hub-card-bright: var(--color-blue-bright);
+    --hub-card-deep: var(--color-blue-deep);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="individual"] {
-    border-color: rgba(var(--brand-primary-rgb), 0.2);
+.import-hub-card[data-action="mass"],
+.empty-state-hub-card[data-action="mass"] {
+    --hub-card-color: var(--color-emerald);
+    --hub-card-rgb: var(--color-emerald-rgb);
+    --hub-card-bright: var(--color-emerald-bright);
+    --hub-card-deep: var(--color-emerald-deep);
 }
 
-.import-hub-card[data-action="individual"] .import-hub-icon {
-    background: rgba(var(--brand-primary-rgb), 0.08);
-    color: var(--brand-primary);
+.import-hub-card[data-action="photos"],
+.empty-state-hub-card[data-action="photos"] {
+    --hub-card-color: var(--color-violet);
+    --hub-card-rgb: var(--color-violet-rgb);
+    --hub-card-bright: var(--color-violet-bright);
+    --hub-card-deep: var(--color-violet-deep);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: rgba(var(--brand-primary-rgb), 0.15);
-    color: var(--color-blue-bright);
+.import-hub-card[data-action],
+.empty-state-hub-card[data-action] {
+    border-color: rgba(var(--hub-card-rgb), 0.16);
 }
 
-.import-hub-card[data-action="individual"]:hover {
-    background: rgba(var(--brand-primary-rgb), 0.04);
-    border-color: var(--brand-primary);
+[data-theme="dark"] .import-hub-card[data-action],
+[data-theme="dark"] .empty-state-hub-card[data-action] {
+    border-color: rgba(var(--hub-card-rgb), 0.24);
 }
 
-.import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: var(--brand-primary);
+.import-hub-card[data-action] .import-hub-icon,
+.empty-state-hub-card[data-action] .empty-state-hub-icon {
+    background: rgba(var(--hub-card-rgb), 0.09);
+    color: var(--hub-card-color);
+}
+
+[data-theme="dark"] .import-hub-card[data-action] .import-hub-icon,
+[data-theme="dark"] .empty-state-hub-card[data-action] .empty-state-hub-icon {
+    background: rgba(var(--hub-card-rgb), 0.16);
+    color: var(--hub-card-bright);
+}
+
+.import-hub-card[data-action]:hover,
+.empty-state-hub-card[data-action]:hover {
+    transform: translateY(-4px);
+    background: rgba(var(--hub-card-rgb), 0.04);
+    border-color: var(--hub-card-color);
+    box-shadow:
+        0 20px 40px -6px rgba(0, 0, 0, 0.08),
+        0 8px 12px -4px rgba(var(--hub-card-rgb), 0.12);
+}
+
+.import-hub-card[data-action]:hover .import-hub-icon,
+.empty-state-hub-card[data-action]:hover .empty-state-hub-icon {
+    background: var(--hub-card-color);
     color: #ffffff;
     transform: scale(1.08);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="individual"]:hover {
-    background: rgba(var(--brand-primary-rgb), 0.08);
-    border-color: rgba(var(--brand-primary-rgb), 0.5);
+[data-theme="dark"] .import-hub-card[data-action]:hover,
+[data-theme="dark"] .empty-state-hub-card[data-action]:hover {
+    background: rgba(var(--hub-card-rgb), 0.08);
+    border-color: rgba(var(--hub-card-rgb), 0.55);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(var(--hub-card-rgb), 0.2);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: var(--brand-primary);
+[data-theme="dark"] .import-hub-card[data-action]:hover .import-hub-icon,
+[data-theme="dark"] .empty-state-hub-card[data-action]:hover .empty-state-hub-icon {
+    background: var(--hub-card-deep);
     color: #ffffff;
 }
 
-
-/* === MASS IMPORT CARD (Excel / CSV / Fichiers) === */
-/* Color: Emerald-500 (#10b981) */
-.import-hub-card[data-action="mass"] {
-    border-color: rgba(var(--success-rgb), 0.15);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"] {
-    border-color: rgba(var(--success-rgb), 0.2);
-}
-
-.import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(var(--success-rgb), 0.08);
-    color: var(--success-color);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--color-emerald-bright);
-}
-
-.import-hub-card[data-action="mass"]:hover {
-    background: rgba(var(--success-rgb), 0.04);
-    border-color: var(--success-color);
-}
-
-.import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: var(--success-color);
-    color: #ffffff;
-    transform: scale(1.08);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
-    background: rgba(var(--success-rgb), 0.08);
-    border-color: rgba(var(--success-rgb), 0.5);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: var(--success-color);
-    color: #ffffff;
-}
-
-
-/* === PHOTOS CARD (Trombinoscope) === */
-/* Color: Violet-500 (#8b5cf6) */
-.import-hub-card[data-action="photos"] {
-    border-color: rgba(var(--purple-rgb), 0.08);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="photos"] {
-    border-color: rgba(var(--purple-rgb), 0.2);
-}
-
-.import-hub-card[data-action="photos"] .import-hub-icon {
-    background: rgba(var(--purple-rgb), 0.05);
-    color: var(--color-violet);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="photos"] .import-hub-icon {
-    background: rgba(var(--purple-rgb), 0.15);
-    color: var(--color-violet-bright);
-}
-
-.import-hub-card[data-action="photos"]:hover {
-    background: rgba(var(--purple-rgb), 0.04);
-    border-color: var(--color-violet);
-}
-
-.import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: var(--color-violet);
-    color: #ffffff;
-    transform: scale(1.08);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
-    background: rgba(var(--purple-rgb), 0.08);
-    border-color: rgba(var(--purple-rgb), 0.5);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: var(--purple-color);
-    color: #ffffff;
+.import-hub-card[data-action]:focus-visible,
+.empty-state-hub-card[data-action]:focus-visible {
+    outline: none;
+    border-color: var(--hub-card-color);
+    box-shadow: 0 0 0 3px rgba(var(--hub-card-rgb), 0.2);
 }
 
 /* === CARD TEXT === */
@@ -428,18 +369,6 @@
     margin: 0;
     text-align: center;
     transition: color 0.3s ease;
-}
-
-[data-theme="dark"] .import-hub-card-title {
-    color: var(--text-primary);
-}
-
-.import-hub-card:hover .import-hub-card-title {
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .import-hub-card:hover .import-hub-card-title {
-    color: var(--text-primary);
 }
 
 .import-hub-card-desc {
@@ -456,34 +385,66 @@
 
 /* === RESPONSIVE === */
 @media (max-width: 600px) {
+    .import-hub-modal {
+        width: min(92vw, 420px);
+        border-radius: 28px;
+    }
+
+    .import-hub-close {
+        top: 16px;
+        right: 16px;
+    }
+
+    .import-hub-header {
+        padding: 36px 20px 22px;
+    }
+
+    .import-hub-title {
+        font-size: 1.4rem;
+    }
+
     .import-hub-choices {
         grid-template-columns: 1fr;
-        padding: 0 24px 32px;
+        gap: 14px;
+        padding: 0 20px 24px;
     }
 
     .import-hub-card {
-        flex-direction: row;
-        padding: 20px;
-        gap: 20px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 16px;
+        row-gap: 2px;
+        align-items: center;
+        padding: 16px 18px;
+        border-radius: var(--radius-lg);
         text-align: left;
     }
 
     .import-hub-card .import-hub-icon {
-        width: 52px;
-        height: 52px;
+        grid-row: 1 / span 2;
+        width: 50px;
+        height: 50px;
         border-radius: 14px;
-        font-size: 1.4rem;
+        font-size: 1.45rem;
         flex-shrink: 0;
     }
 
-    .import-hub-card-title,
-    .import-hub-card-desc {
+    .import-hub-card-title {
+        grid-column: 2;
+        align-self: end;
         text-align: left;
-        align-items: flex-start;
+        font-size: 1rem;
+        line-height: 1.25;
+        margin: 0;
     }
 
-    .import-hub-card-title {
-        margin-bottom: 2px;
+    .import-hub-card-desc {
+        grid-column: 2;
+        align-self: start;
+        text-align: left;
+        font-size: 0.84rem;
+        line-height: 1.35;
+        margin: 0;
     }
 }
 

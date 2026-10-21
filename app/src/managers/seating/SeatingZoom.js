@@ -207,7 +207,7 @@ export const SeatingZoom = {
         }
 
         const isLockToggle = Boolean(options.lockToggle);
-        const isMobile = this._isMobileView();
+        const isMobile = this._isCompactLayout ? this._isCompactLayout() : this._isMobileView();
         const sameScale = Math.abs(rBefore.width - rAfter.width) <= 2 && Math.abs(rBefore.height - rAfter.height) <= 2;
         const isHorizontalDesktopDrawer = isLockToggle && !isMobile && sameScale;
 

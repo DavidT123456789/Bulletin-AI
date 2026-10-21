@@ -52,7 +52,10 @@ const init = () => {
             // Determine direction: going down in list = content exits up
             const direction = newIndex > currentIndex ? 'down' : 'up';
             const contentArea = container.querySelector('.ui-tabs-content');
-            if (contentArea) contentArea.dataset.direction = direction;
+            if (contentArea) {
+                contentArea.dataset.direction = direction;
+                contentArea.scrollTop = 0;
+            }
 
             // Remove active class from all buttons and contents in this container
             buttons.forEach(b => {
@@ -64,6 +67,7 @@ const init = () => {
             // Add active class to clicked button and corresponding content
             btn.classList.add('active');
             if (btn.hasAttribute('aria-selected')) btn.setAttribute('aria-selected', 'true');
+            btn.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
             // Search inside the container first for scoped IDs, fallback to global
             const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);

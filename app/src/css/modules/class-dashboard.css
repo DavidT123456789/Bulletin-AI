@@ -1298,3 +1298,27 @@
         transform: translateY(0);
     }
 }
+
+@media (max-width: 600px) {
+    .class-dashboard-modal .modal-header {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 12px 16px;
+    }
+
+    .dashboard-header-left {
+        flex: 1;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .dashboard-panel {
+        padding: 14px;
+    }
+
+    .dashboard-panel .panel-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}

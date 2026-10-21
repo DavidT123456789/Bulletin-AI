@@ -154,6 +154,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 /* === Icônes des providers dans les labels de groupe === */
@@ -362,6 +364,8 @@
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
     width: 100%;
 }
 

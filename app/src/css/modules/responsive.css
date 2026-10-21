@@ -102,7 +102,7 @@
 @media (max-width: 768px) {
 
     /* Modal */
-    .modal-content {
+    .modal-content:not(.modal-content-confirm):not(.modal-mini-content):not(.modal-content-backup-import):not(.model-selection-content) {
         width: 95%;
         max-width: none;
         max-height: 95vh;
@@ -118,7 +118,7 @@
         padding: 10px 14px;
     }
 
-    .modal-body {
+    .modal-body:not(.modal-body-flex) {
         padding: 14px;
     }
 
@@ -220,21 +220,36 @@
         width: 100%;
     }
 
-}
-
-/* ====================================================================
-   BREAKPOINT: 480px - Mobile
-   ==================================================================== */
-@media (max-width: 480px) {
-    /* .main-content padding managed in layout.css */
-
-    /* Fullscreen modals - Native iOS Sheet slide presentation */
-    .modal-content {
+    /* Fullscreen workspace modals - Native iOS Sheet slide presentation */
+    .modal-content,
+    #helpModal > .modal-content,
+    .modal-lab .modal-content,
+    .class-dashboard-modal .modal-content {
         width: 100%;
-        height: 100%;
-        max-height: 100%;
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
         border-radius: 0;
+        border: none;
         transform: translateY(24px);
+    }
+
+    /* Compact alert, dialog & card modals remain floating rounded cards */
+    .modal-content.modal-alert-ios,
+    .modal-content.modal-content-confirm,
+    .modal-content.modal-mini-content,
+    .modal-content.modal-content-backup-import,
+    .modal-content.model-selection-content,
+    #classManagementModal .modal-content,
+    #welcomeModal .modal-content {
+        width: calc(100% - 24px);
+        max-width: 100%;
+        height: auto;
+        max-height: calc(100dvh - 32px);
+        border-radius: var(--radius-lg);
+        border: var(--modal-border);
     }
 
     .modal.modal-visible .modal-content {
@@ -245,32 +260,48 @@
         transform: translateY(16px) !important;
     }
 
-    .modal-help .modal-content {
-        height: 100%;
-        max-height: 100%;
-    }
-
     .modal-header {
-        padding: 8px 12px;
+        padding: 10px 14px;
+        min-height: 52px;
     }
 
-    .modal-body {
-        padding: 12px 12px 32px 12px;
+    .modal-body:not(.modal-body-flex) {
+        padding: 14px 14px 24px 14px;
     }
 
     .modal-footer {
-        padding: 8px 12px;
-        flex-direction: column;
-        gap: 8px;
+        padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        min-height: auto;
+    }
+
+    .modal-footer > .form-group-inline {
+        flex: 1 1 100%;
+        width: 100%;
+        margin: 0 0 2px 0;
     }
 
     .modal-footer .btn {
-        width: 100%;
+        flex: 1 1 calc(50% - 5px);
+        width: auto;
+        min-width: 110px;
+        min-height: 44px;
+        justify-content: center;
+        margin: 0;
     }
 
     .modal-title {
         font-size: 1rem;
     }
+}
+
+/* ====================================================================
+   BREAKPOINT: 480px - Mobile
+   ==================================================================== */
+@media (max-width: 480px) {
+    /* .main-content padding managed in layout.css */
 
     /* Cards */
     .appreciation-result {
@@ -417,9 +448,9 @@
 }
 
 /* ====================================================================
-   SHORT VIEWPORT (Landscape Tablets / Compact screens)
+   SHORT VIEWPORT (Landscape Tablets / Compact Desktop screens)
    ==================================================================== */
-@media (max-height: 650px) {
+@media (max-height: 650px) and (min-width: 769px) {
     .modal-content {
         max-height: 94vh;
     }

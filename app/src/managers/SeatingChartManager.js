@@ -57,6 +57,12 @@ export const SeatingChartManager = {
     _fitScale: 1,
     _resizeDebounceTimer: null,
     _modeCarouselTimer: null,
+    _foldTransitionTimer: null,
+    _wasCompactLayout: null,
+    _lastViewportW: 0,
+    _lastViewportH: 0,
+    _pendingFoldDirection: null,
+    _pendingFoldTimestamp: 0,
     _activeMobileSheet: null,
     _activeSearchTerm: '',
     _searchMatchIndex: 0,
@@ -475,6 +481,7 @@ export const SeatingChartManager = {
                 this._lastObservedGridH = Math.round(gridArea.offsetHeight || gridArea.clientHeight || 0);
                 this._gridResizeObserver = new ResizeObserver((entries) => {
                     if (!this._isActive || this._isPinching || this._zoomAnimCleanup || this._modeCarouselTimer) return;
+                    if (this._handleFormFactorCheck()) return;
                     const entry = entries[0];
                     const borderBox = Array.isArray(entry?.borderBoxSize) ? entry.borderBoxSize[0] : entry?.borderBoxSize;
                     const w = Math.round(borderBox?.inlineSize ?? gridArea.offsetWidth ?? entry?.contentRect?.width ?? gridArea.clientWidth ?? 0);
@@ -494,15 +501,41 @@ export const SeatingChartManager = {
             }
         }
 
+        this._wasCompactLayout = this._isCompactLayout();
+        this._lastViewportW = window.innerWidth || 0;
+        this._lastViewportH = window.innerHeight || 0;
+
         if (!this._resizeListenerInitialized) {
             this._resizeListenerInitialized = true;
             window.addEventListener('resize', () => {
+                if (this._handleFormFactorCheck()) return;
                 clearTimeout(this._resizeDebounceTimer);
                 this._resizeDebounceTimer = setTimeout(() => {
                     if (this._isActive) {
                         this._applySmartFit();
                     }
                 }, 100);
+            });
+
+            const foldMq = window.matchMedia?.('(max-width: 768px)');
+            if (foldMq && typeof foldMq.addEventListener === 'function') {
+                foldMq.addEventListener('change', () => {
+                    this._handleFormFactorCheck();
+                });
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && typeof this._pendingFoldDirection === 'boolean') {
+                    const dir = this._pendingFoldDirection;
+                    const elapsed = Date.now() - (this._pendingFoldTimestamp || 0);
+                    this._pendingFoldDirection = null;
+                    if (elapsed < 2500) {
+                        if (this._isActive) {
+                            this._applySmartFit(true);
+                        }
+                        this._animateFoldContinuum(dir);
+                    }
+                }
             });
         }
 
@@ -1120,8 +1153,79 @@ export const SeatingChartManager = {
     // MOBILE ACTION SHEETS & TAP-TO-PLACE (iOS / Material 2026 Gold Standard)
     // ========================================================================
 
+    _isCompactLayout() {
+        return Boolean(window.innerWidth <= 768);
+    },
+
     _isMobileView() {
-        return Boolean(window.innerWidth <= 768 || window.matchMedia?.('(pointer: coarse)')?.matches);
+        return Boolean(this._isCompactLayout() || window.matchMedia?.('(pointer: coarse)')?.matches);
+    },
+
+    _handleFormFactorCheck() {
+        const w = window.innerWidth || 0;
+        const h = window.innerHeight || 0;
+        const isCompactNow = this._isCompactLayout();
+
+        if (typeof this._wasCompactLayout !== 'boolean') {
+            this._wasCompactLayout = isCompactNow;
+            this._lastViewportW = w;
+            this._lastViewportH = h;
+            return false;
+        }
+
+        const prevW = this._lastViewportW || w;
+        const prevH = this._lastViewportH || h;
+        const crossedBreakpoint = isCompactNow !== this._wasCompactLayout;
+
+        const minW = Math.min(w, prevW);
+        const widthJumpRatio = minW > 0 ? Math.abs(w - prevW) / minW : 0;
+        const prevArea = prevW * prevH;
+        const currArea = w * h;
+        const minArea = Math.min(currArea, prevArea);
+        const areaJumpRatio = minArea > 0 ? Math.abs(currArea - prevArea) / minArea : 0;
+        const isFoldableAreaJump = widthJumpRatio >= 0.45 && areaJumpRatio >= 0.35;
+
+        if (!crossedBreakpoint && !isFoldableAreaJump) {
+            if (w > 0) this._lastViewportW = w;
+            if (h > 0) this._lastViewportH = h;
+            return false;
+        }
+
+        const isUnfolding = crossedBreakpoint
+            ? (this._wasCompactLayout && !isCompactNow)
+            : (w > prevW);
+
+        this._wasCompactLayout = isCompactNow;
+        if (w > 0) this._lastViewportW = w;
+        if (h > 0) this._lastViewportH = h;
+
+        clearTimeout(this._resizeDebounceTimer);
+        this._resizeDebounceTimer = null;
+
+        if (this._isActive) {
+            this._cleanupModeCarousel();
+            this._closeConfigPopover();
+            this._closePlacementPopover();
+            this._closeMobileSheet(true);
+            TooltipsUI?.hideAll?.();
+            this._applySmartFit(true);
+            this._updatePlanModeSwitchUI?.();
+        }
+
+        const toggleWrapper = document.getElementById('viewToggle');
+        if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
+            window.UI.updateGlider(toggleWrapper, false);
+        }
+
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+            this._pendingFoldDirection = isUnfolding;
+            this._pendingFoldTimestamp = Date.now();
+            return true;
+        }
+
+        this._pendingFoldDirection = null;
+        this._animateFoldContinuum(isUnfolding);
+        return true;
     },
 
     _findStudentGridPos(studentId) {
@@ -1824,6 +1928,7 @@ export const SeatingChartManager = {
         if (!shouldAnimateCarousel) {
             this._cleanupModeCarousel();
         }
+        this._cleanupFoldContinuum();
 
         // 1. Persist current mode state before switching
         if (this._isActive) {
@@ -1939,6 +2044,7 @@ export const SeatingChartManager = {
             const finishList = (animateEnter = false) => {
                 const wasActive = this._isActive;
                 this._cleanupModeCarousel();
+                this._cleanupFoldContinuum();
                 if (this._staggerCellTimer) {
                     clearTimeout(this._staggerCellTimer);
                     this._staggerCellTimer = null;
@@ -2058,6 +2164,7 @@ export const SeatingChartManager = {
         if (!this._isActive) return;
 
         this._cleanupModeCarousel();
+        this._cleanupFoldContinuum();
         this._clearSelection();
         this._closeMobileSheet(true);
         this._closeSearch();
@@ -2513,7 +2620,7 @@ export const SeatingChartManager = {
         const gridContainer = document.getElementById('scGridContainer');
         const expectedCells = this._getEffectiveRowCount() * this._getCols();
         const didRebuildGrid = this._isActivityMode() && gridContainer?.children.length !== expectedCells;
-        const isNativeDesktopSlide = !this._isMobileView()
+        const isNativeDesktopSlide = !this._isCompactLayout()
             && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
             && !didRebuildGrid;
         const rBefore = isNativeDesktopSlide ? null : (board?.getBoundingClientRect?.() || null);
@@ -5216,7 +5323,7 @@ export const SeatingChartManager = {
             // Touch gestures disambiguation
             if (!hasMoved) {
                 if (sourceInfo.type === 'sidebar') {
-                    if (this._isMobileView()) {
+                    if (this._isCompactLayout()) {
                         // Horizontal motion in bottom tray: prioritize native horizontal list scrolling
                         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
                             isScrolling = true;
@@ -5237,15 +5344,27 @@ export const SeatingChartManager = {
                             }
                             this._createTouchGhost(element, touch);
                         }
-                    } else if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-                        clearTimeout(longPressTimer);
-                        hasMoved = true;
-                        this._touchSourceInfo = pendingSourceInfo;
-                        this._suppressTouchTooltips(0);
-                        if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                            this._clearSelection();
+                    } else {
+                        // Vertical sidebar dock on tablet (> 768px): vertical motion scrolls the list
+                        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
+                            isScrolling = true;
+                            clearTimeout(longPressTimer);
+                            pendingSourceInfo = null;
+                            this._touchSourceInfo = null;
+                            return;
                         }
-                        this._createTouchGhost(element, touch);
+
+                        // Horizontal motion pulling rightward toward the board: engage drag immediately
+                        if (dx > 10 && Math.abs(dx) > Math.abs(dy) * 1.1) {
+                            clearTimeout(longPressTimer);
+                            hasMoved = true;
+                            this._touchSourceInfo = pendingSourceInfo;
+                            this._suppressTouchTooltips(0);
+                            if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                                this._clearSelection();
+                            }
+                            this._createTouchGhost(element, touch);
+                        }
                     }
                 } else if (sourceInfo.type === 'cell' || sourceInfo.type === 'multi-cell') {
                     // On board: any quick motion before long-press is board panning/scrolling

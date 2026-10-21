@@ -3956,4 +3956,159 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(g1Cell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1');
         });
     });
+
+    describe('Foldable Continuum (Galaxy Z Fold Smartphone ↔ Tablet Transition)', () => {
+        let originalWidth;
+        let originalHeight;
+        let originalMatchMedia;
+
+        beforeEach(() => {
+            originalWidth = window.innerWidth;
+            originalHeight = window.innerHeight;
+            originalMatchMedia = window.matchMedia;
+            SeatingChartManager._cleanupFoldContinuum();
+            SeatingChartManager._pendingFoldDirection = null;
+            SeatingChartManager._pendingFoldTimestamp = 0;
+        });
+
+        afterEach(() => {
+            window.innerWidth = originalWidth;
+            window.innerHeight = originalHeight;
+            window.matchMedia = originalMatchMedia;
+            SeatingChartManager._cleanupFoldContinuum();
+        });
+
+        it('devrait distinguer _isCompactLayout (<= 768px) de _isMobileView sur tablette tactile dépliée (pointer: coarse)', () => {
+            window.innerWidth = 880;
+            window.matchMedia = vi.fn().mockImplementation((query) => ({
+                matches: query === '(pointer: coarse)',
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
+            }));
+
+            expect(SeatingChartManager._isCompactLayout()).toBe(false);
+            expect(SeatingChartManager._isMobileView()).toBe(true);
+
+            window.innerWidth = 390;
+            expect(SeatingChartManager._isCompactLayout()).toBe(true);
+            expect(SeatingChartManager._isMobileView()).toBe(true);
+        });
+
+        it('devrait orchestrer l’animation d’ouverture (unfold: 390px -> 880px) avec vague radiale depuis la charnière centrale et nettoyage automatique', () => {
+            vi.useFakeTimers();
+            try {
+                window.innerWidth = 390;
+                window.innerHeight = 844;
+                SeatingChartManager.switchToView('plan', { immediate: true });
+                SeatingChartManager._wasCompactLayout = true;
+                SeatingChartManager._lastViewportW = 390;
+                SeatingChartManager._lastViewportH = 844;
+                SeatingChartManager._isLocked = false;
+                SeatingChartManager._openConfigPopover();
+
+                const smartFitSpy = vi.spyOn(SeatingChartManager, '_applySmartFit');
+
+                // Ouverture du téléphone (Smartphone -> Tablette)
+                window.innerWidth = 880;
+                window.innerHeight = 844;
+                const triggered = SeatingChartManager._handleFormFactorCheck();
+
+                expect(triggered).toBe(true);
+                expect(SeatingChartManager._wasCompactLayout).toBe(false);
+                expect(SeatingChartManager._configPopoverOpen).toBe(false);
+                expect(smartFitSpy).toHaveBeenCalledWith(true);
+
+                const view = document.getElementById('seatingChartView');
+                expect(view.classList.contains('sc-fold-transitioning')).toBe(true);
+                expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(true);
+                expect(view.classList.contains('sc-folding-to-mobile')).toBe(false);
+
+                const leftCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+                const rightCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="3"]');
+                expect(leftCell.classList.contains('sc-fold-cell-wave')).toBe(true);
+                expect(rightCell.classList.contains('sc-fold-cell-wave')).toBe(true);
+                // En ouverture, les colonnes de gauche partent légèrement décalées vers la droite (> 0) et celles de droite vers la gauche (< 0)
+                expect(parseFloat(leftCell.style.getPropertyValue('--fold-hinge-dx'))).toBeGreaterThan(0);
+                expect(parseFloat(rightCell.style.getPropertyValue('--fold-hinge-dx'))).toBeLessThan(0);
+
+                // Nettoyage complet après la fin de l'animation (620ms)
+                vi.advanceTimersByTime(650);
+                expect(view.classList.contains('sc-fold-transitioning')).toBe(false);
+                expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(false);
+                expect(leftCell.classList.contains('sc-fold-cell-wave')).toBe(false);
+                expect(leftCell.style.getPropertyValue('--fold-hinge-dx')).toBe('');
+                expect(leftCell.style.getPropertyValue('--fold-cell-i')).toBe('');
+
+                // Fermeture du téléphone (Tablette -> Smartphone)
+                window.innerWidth = 390;
+                const folded = SeatingChartManager._handleFormFactorCheck();
+                expect(folded).toBe(true);
+                expect(view.classList.contains('sc-folding-to-mobile')).toBe(true);
+                expect(parseFloat(leftCell.style.getPropertyValue('--fold-hinge-dx'))).toBeLessThan(0);
+                expect(parseFloat(rightCell.style.getPropertyValue('--fold-hinge-dx'))).toBeGreaterThan(0);
+
+                vi.advanceTimersByTime(650);
+                expect(view.classList.contains('sc-folding-to-mobile')).toBe(false);
+                smartFitSpy.mockRestore();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('devrait détecter le dépliage même avec un fort zoom d’affichage One UI (344x780 -> 690x780) mais ignorer un simple changement de hauteur (clavier/barre d’adresse)', () => {
+            window.innerWidth = 344;
+            window.innerHeight = 780;
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager._wasCompactLayout = true;
+            SeatingChartManager._lastViewportW = 344;
+            SeatingChartManager._lastViewportH = 780;
+
+            // Simple changement de hauteur (barre d'adresse ou clavier virtuel) -> ignoré
+            window.innerHeight = 520;
+            expect(SeatingChartManager._handleFormFactorCheck()).toBe(false);
+
+            // Dépliage vers l'écran interne avec zoom d'écran élevé (largeur x2, surface x2, tout en restant <= 768px)
+            window.innerWidth = 690;
+            window.innerHeight = 780;
+            expect(SeatingChartManager._handleFormFactorCheck()).toBe(true);
+            const view = document.getElementById('seatingChartView');
+            expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(true);
+        });
+
+        it('devrait différer l’animation si l’écran est en cours de bascule matérielle (visibilityState === hidden) et respecter prefers-reduced-motion', () => {
+            window.innerWidth = 390;
+            window.innerHeight = 844;
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager._wasCompactLayout = true;
+            SeatingChartManager._lastViewportW = 390;
+            SeatingChartManager._lastViewportH = 844;
+
+            const visibilitySpy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+            window.innerWidth = 880;
+            expect(SeatingChartManager._handleFormFactorCheck()).toBe(true);
+
+            const view = document.getElementById('seatingChartView');
+            expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(false);
+            expect(SeatingChartManager._pendingFoldDirection).toBe(true);
+
+            // L'écran interne s'allume
+            visibilitySpy.mockReturnValue('visible');
+            document.dispatchEvent(new Event('visibilitychange'));
+            expect(SeatingChartManager._pendingFoldDirection).toBeNull();
+            expect(view.classList.contains('sc-unfolding-to-tablet')).toBe(true);
+
+            // Respect de prefers-reduced-motion: reduce
+            SeatingChartManager._cleanupFoldContinuum();
+            window.matchMedia = vi.fn().mockImplementation((query) => ({
+                matches: query === '(prefers-reduced-motion: reduce)',
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
+            }));
+            window.innerWidth = 390;
+            expect(SeatingChartManager._handleFormFactorCheck()).toBe(true);
+            expect(view.classList.contains('sc-fold-transitioning')).toBe(false);
+
+            visibilitySpy.mockRestore();
+        });
+    });
 });

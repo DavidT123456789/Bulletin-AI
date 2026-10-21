@@ -571,6 +571,8 @@ export const ImportWizardManager = {
         // Update step content - scope to modal only
         const modal = document.getElementById('importWizardModal');
         if (modal) {
+            const wizardBody = modal.querySelector('.import-wizard-body');
+            if (wizardBody) wizardBody.scrollTop = 0;
             modal.querySelectorAll('.wizard-step-content').forEach((el, i) => {
                 const isActive = i + 1 === this.currentStep;
                 el.classList.remove('slide-next', 'slide-prev');

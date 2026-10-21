@@ -345,14 +345,88 @@
     background: var(--bg-secondary);
 }
 
-/* === RESPONSIVE: Hide guide panel on mobile === */
+/* === RESPONSIVE: Compact guide toolbar on mobile === */
 @media (max-width: 768px) {
+    .import-wizard-layout {
+        flex-direction: column;
+    }
+
     .wizard-guide-panel {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
+        overflow: visible;
+    }
+
+    .wizard-guide-panel .guide-divider,
+    .wizard-guide-panel .guide-text,
+    .wizard-guide-panel .guide-hint,
+    .wizard-guide-panel [data-guide-step="1"] .guide-section:not(:last-child),
+    #trombiGuidePanel .guide-section:not(:last-child),
+    .wizard-guide-panel [data-guide-step="2"] .guide-section:first-child,
+    .wizard-guide-panel [data-guide-step="3"] .guide-section:not(:nth-of-type(2)),
+    .wizard-guide-panel [data-guide-step="1"] .guide-section-title,
+    #trombiGuidePanel .guide-section-title,
+    .wizard-guide-panel [data-guide-step="2"] .guide-section:last-child .guide-section-title,
+    .wizard-guide-panel [data-guide-step="3"] .guide-section-title,
+    .wizard-guide-panel .guide-legend-overwrite-hint {
         display: none;
     }
 
-    .import-wizard-layout {
-        flex-direction: column;
+    .wizard-guide-panel .guide-content.active {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 12px;
+    }
+
+    .wizard-guide-panel .guide-section {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .wizard-guide-panel [data-guide-step="1"] .guide-section:last-child,
+    #trombiGuidePanel .guide-section:last-child,
+    .wizard-guide-panel [data-guide-step="3"] .guide-section:nth-of-type(2) {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .wizard-guide-panel .guide-section-title {
+        margin-bottom: 0;
+    }
+
+    .wizard-guide-panel .guide-sample-btn,
+    .wizard-guide-panel .guide-sample-btn.btn-full,
+    .wizard-guide-panel .help-context-trigger {
+        width: auto;
+        margin-top: 0 !important;
+    }
+
+    .wizard-guide-panel .guide-legend-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        margin-top: 0;
+    }
+
+    .wizard-guide-panel .guide-legend-count {
+        margin-left: 2px;
+        min-width: 0;
+    }
+
+    .wizard-guide-panel .guide-departed-action {
+        width: auto;
+        margin-top: 0;
+        margin-left: auto;
     }
 }
 
@@ -3131,30 +3205,43 @@
     }
 
 
-    /* Step 3 Footer adjustments */
-    #wizardStep3Footer {
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px 16px;
+    .wizard-context-pill {
+        padding: 4px 10px;
+        gap: 6px;
     }
 
-    #wizardStep3Footer .btn {
+    .wizard-context-class {
+        max-width: 90px;
+        font-size: 0.85rem;
+    }
+
+    /* Unified 2-button footer row on mobile */
+    .import-wizard-footer,
+    #wizardStep3Footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    }
+
+    .import-wizard-footer .modal-footer-info,
+    #wizardStep3FooterInfo {
+        order: -1;
+        flex: 1 1 100%;
         width: 100%;
         justify-content: center;
-    }
-
-    #wizardStep3FooterInfo {
-        order: 2;
+        text-align: center;
         font-size: 0.75rem;
-        justify-content: center;
     }
 
-    #wizardStep3PrevBtn {
+    .import-wizard-footer .btn,
+    #wizardStep3Footer .btn {
+        flex: 1 1 calc(50% - 5px);
+        width: auto;
+        min-width: 0;
         order: 1;
-    }
-
-    #wizardImportOnlyBtn {
-        order: 3;
+        justify-content: center;
     }
 }
 
