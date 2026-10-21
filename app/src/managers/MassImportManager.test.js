@@ -34,8 +34,9 @@ vi.mock('../utils/DOM.js', () => ({
     }
 }));
 
-vi.mock('../utils/Utils.js', () => ({
+vi.mock('../utils/Utils.js', async (importOriginal) => ({
     Utils: {
+        ...(await importOriginal()).Utils,
         normalizeName: (nom, prenom) => `${nom}_${prenom}`.toLowerCase(),
         translateErrorMessage: (msg) => msg,
         detectGender: (prenom) => 'M',

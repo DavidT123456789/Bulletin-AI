@@ -3665,7 +3665,7 @@ export const TrombinoscopeManager = {
                             if (existing) {
                                 item.zone.studentId = existing.id;
                             } else {
-                                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+                                const periods = Utils.getPeriods();
                                 const currentPeriod = appState.currentPeriod || periods[0];
                                 const isLaterPeriodUpdate = Boolean(initialTargetInfo?.isUpdate) && periods.indexOf(currentPeriod) > 0;
                                 const newStudentResult = StudentDataManager.createPendingResult({

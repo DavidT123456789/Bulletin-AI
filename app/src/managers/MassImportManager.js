@@ -333,46 +333,9 @@ export const MassImportManager = {
         }
         // Récupérer les élèves en attente de la classe courante
         // CORRECTIF: Utiliser TOUS les élèves de la classe courante, pas seulement ceux filtrés/visibles
-        // Le bouton affiche le nombre total (sourceResults), l'action doit correspondre.
-        const currentClassId = appState.currentClassId;
-        const sourceResults = currentClassId
-            ? appState.generatedResults.filter(r => r.classId === currentClassId)
-            : appState.generatedResults.filter(r => !r.classId);
-
-        const pendingResults = sourceResults.filter(r => {
-            const currentPeriod = appState.currentPeriod;
-            if (Utils.isStudentDepartedBeforePeriod?.(r, currentPeriod)) return false;
-
-            const periodData = r.studentData?.periods?.[currentPeriod];
-            if (Utils.isStudentDeparted?.(r, currentPeriod)) {
-                const hasGrade = periodData?.grade !== undefined && periodData?.grade !== null && periodData?.grade !== '';
-                const hasContext = Boolean(periodData?.context?.trim());
-                if (!hasGrade && !hasContext) return false;
-            }
-
-            const appRaw = periodData?.appreciation;
-            const appCurrent = (r.generationPeriod === currentPeriod) ? r.appreciation : null;
-            const effectiveApp = appRaw || appCurrent;
-
-            // Erreur bloquante uniquement si elle concerne la période actuelle
-            const hasBlockingError = r.errorMessage && r.errorPeriod === currentPeriod;
-
-            // Priorité au flag explicite
-            if (r.isPending) return !hasBlockingError;
-
-            // Si pas de contenu -> En attente
-            if (!effectiveApp) return !hasBlockingError;
-
-            // Nettoyage strict contenu vide
-            const textOnly = effectiveApp.replace(/<[^>]*>/g, '').trim().toLowerCase();
-            const isPlaceholder = textOnly === '' ||
-                textOnly.includes('en attente') ||
-                textOnly.includes('aucune appréciation') ||
-                textOnly.includes('cliquez sur') ||
-                textOnly.startsWith('remplissez');
-
-            return isPlaceholder && !hasBlockingError;
-        });
+        // Même source et même règle (Utils.isPendingForPeriod) que le compteur du bouton : l'action doit correspondre.
+        const pendingResults = ClassManager.getStudentsForClass(appState.currentClassId)
+            .filter(r => Utils.isPendingForPeriod(r, appState.currentPeriod));
 
         if (pendingResults.length === 0) {
             UI?.showNotification('Aucun élève en attente de génération', 'info');
@@ -423,9 +386,7 @@ export const MassImportManager = {
             if (field === 'status') {
                 const getStatusStr = r => {
                     if (r.errorMessage) return '!';
-                    const statuses = typeof Utils.getActiveStatuses === 'function'
-                        ? Utils.getActiveStatuses(r, activePeriod)
-                        : (r.studentData?.statuses || []);
+                    const statuses = Utils.getActiveStatuses(r, activePeriod);
                     if (statuses.length > 0) return statuses.slice().sort().join(' ').toLowerCase();
                     return '\uFFFF';
                 };

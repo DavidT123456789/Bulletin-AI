@@ -259,25 +259,53 @@ describe('FocusPanelManager and Save State integrity', () => {
             FocusPanelManager._activeGenerations.clear();
         });
 
-        it('preserves period-qualified statuses (e.g. Nouveau T2) and extra imported statuses (PAI, AESH) when merging header status checkboxes', async () => {
+        it('qualifies newly checked Nouveau/Départ with the active period and keeps inactive history when merging header checkboxes', async () => {
             const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
             const allCheckboxValues = ['Nouveau', 'Départ', 'PPRE', 'PAP', 'ULIS', 'Délégué'];
+            const merge = (base, checked, period) => FocusPanelHeader.mergeEditedStatuses(base, checked, allCheckboxValues, period);
 
-            // 1. Conserve "Nouveau T2" et "PAI" quand "Nouveau" reste coché et qu'on ajoute "ULIS"
-            const mergedKeep = FocusPanelHeader.mergeEditedStatuses(
-                ['Nouveau T2', 'PAI'],
-                ['Nouveau', 'ULIS'],
-                allCheckboxValues
-            );
-            expect(mergedKeep).toEqual(['Nouveau T2', 'ULIS', 'PAI']);
+            // T2 : conserve "Nouveau T2" et "PAI" quand "Nouveau" reste coché et qu'on ajoute "ULIS"
+            expect(merge(['Nouveau T2', 'PAI'], ['Nouveau', 'ULIS'], 'T2')).toEqual(['Nouveau T2', 'ULIS', 'PAI']);
+            // T2 : retire "Nouveau T2" quand "Nouveau" est décoché, conserve les statuts importés
+            expect(merge(['Nouveau T2', 'PAI', 'AESH'], ['PAP'], 'T2')).toEqual(['PAP', 'PAI', 'AESH']);
+            // Saisie manuelle : Nouveau/Départ cochés sont qualifiés par la période active
+            expect(merge([], ['Nouveau', 'Départ', 'PPRE'], 'T2')).toEqual(['Nouveau T2', 'Départ T2', 'PPRE']);
+            // T3 : "Nouveau T2" (inactif, case non cochée) est conservé comme historique
+            expect(merge(['Nouveau T2'], [], 'T3')).toEqual(['Nouveau T2']);
+            // T3 : recocher "Nouveau" requalifie le statut sur la période active
+            expect(merge(['Nouveau T2'], ['Nouveau'], 'T3')).toEqual(['Nouveau T3']);
+            // Statut historique sans période : conservé tel quel
+            expect(merge(['Nouveau'], ['Nouveau'], 'T3')).toEqual(['Nouveau']);
+        });
 
-            // 2. Retire "Nouveau T2" quand "Nouveau" est décoché, mais conserve "PAI" et "AESH"
-            const mergedRemoveNew = FocusPanelHeader.mergeEditedStatuses(
-                ['Nouveau T2', 'PAI', 'AESH'],
-                ['PAP'],
-                allCheckboxValues
-            );
-            expect(mergedRemoveNew).toEqual(['PAP', 'PAI', 'AESH']);
+        it('checks status boxes in edit mode according to the active period', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            const editMode = document.querySelector('.focus-header-edit');
+            editMode.innerHTML = `
+                <input type="text" id="headerPrenomInput">
+                <input type="text" id="headerNomInput">
+                <div class="status-checkboxes">
+                    <label><input type="checkbox" value="Nouveau"> Nouveau</label>
+                    <label><input type="checkbox" value="Départ"> Départ</label>
+                </div>
+            `;
+            appState.generatedResults = [
+                { id: 's-period', nom: 'DUPONT', prenom: 'Alice', studentData: { statuses: ['Nouveau T2', 'Départ T3'], periods: {} } }
+            ];
+            FocusPanelHeader.callbacks.getIsCreationMode = () => false;
+            FocusPanelHeader.callbacks.getCurrentStudentId = () => 's-period';
+            const nouveauCb = editMode.querySelector('input[value="Nouveau"]');
+            const departCb = editMode.querySelector('input[value="Départ"]');
+
+            appState.currentPeriod = 'T2';
+            FocusPanelHeader.toggleEditMode(true);
+            expect(nouveauCb.checked).toBe(true);
+            expect(departCb.checked).toBe(false);
+
+            appState.currentPeriod = 'T3';
+            FocusPanelHeader.toggleEditMode(true);
+            expect(nouveauCb.checked).toBe(false);
+            expect(departCb.checked).toBe(true);
         });
 
         it('pre-selects Nouveau in creation mode only in later periods (T2/T3/S2) when class already has students', async () => {

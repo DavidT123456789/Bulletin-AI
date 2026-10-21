@@ -287,10 +287,7 @@ export const StudentDataManager = {
             });
 
             existingStudentsMap.forEach((result, key) => {
-                const statuses = result.studentData?.statuses || [];
-                const alreadyDeparted = typeof Utils.isStudentDeparted === 'function'
-                    ? Utils.isStudentDeparted(result, appState.currentPeriod)
-                    : statuses.some(s => String(s || '').toLowerCase().startsWith('départ') || String(s || '').toLowerCase().startsWith('depart'));
+                const alreadyDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
                 if (!importedStudentsMap.has(key) && !alreadyDeparted) {
                     importPreviewData.departedStudents.push({ nom: result.nom, prenom: result.prenom });
                 }

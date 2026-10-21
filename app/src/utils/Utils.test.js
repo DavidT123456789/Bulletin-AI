@@ -646,5 +646,73 @@ describe('Utils', () => {
             expect(Utils.getActiveStatuses([], 'T1')).toEqual([]);
         });
     });
+
+    describe('statuts multiples et périodes inconnues', () => {
+        it('devrait évaluer chaque statut de mouvement (historique + requalification)', () => {
+            const student = { statuses: ['Nouveau T2', 'Nouveau T3'] };
+            expect(Utils.isStudentNew(student, 'T3')).toBe(true);
+            expect(Utils.isStudentNew(student, 'T1')).toBe(false);
+            expect(Utils.isStudentDeparted({ statuses: ['Départ T3', 'Départ T1'] }, 'T2')).toBe(true);
+        });
+
+        it('devrait traiter une période inconnue comme un statut sans période, de façon cohérente entre helpers', () => {
+            const student = { statuses: ['Nouveau arrivant'] };
+            expect(Utils.isStudentNew(student, 'T2')).toBe(true);
+            expect(Utils.getActiveStatuses(student, 'T2')).toEqual(['Nouveau arrivant']);
+            expect(Utils.isStudentDepartedBeforePeriod({ statuses: ['Départ X9'] }, 'T3')).toBe(false);
+        });
+    });
+
+    describe('isPlaceholderAppreciation', () => {
+        it('devrait reconnaître les textes vides ou placeholders', () => {
+            expect(Utils.isPlaceholderAppreciation('')).toBe(true);
+            expect(Utils.isPlaceholderAppreciation(null)).toBe(true);
+            expect(Utils.isPlaceholderAppreciation('<p>  </p>')).toBe(true);
+            expect(Utils.isPlaceholderAppreciation('En attente de génération')).toBe(true);
+            expect(Utils.isPlaceholderAppreciation('Remplissez les notes')).toBe(true);
+        });
+
+        it('devrait accepter une vraie appréciation', () => {
+            expect(Utils.isPlaceholderAppreciation('<p>Bon trimestre, élève sérieux.</p>')).toBe(false);
+        });
+    });
+
+    describe('getPeriodAppreciation', () => {
+        it('devrait privilégier la période puis le champ racine seulement s\'il a été généré pour cette période', () => {
+            expect(Utils.getPeriodAppreciation({ studentData: { periods: { T2: { appreciation: 'A' } } } }, 'T2')).toBe('A');
+            expect(Utils.getPeriodAppreciation({ appreciation: 'B', generationPeriod: 'T2' }, 'T2')).toBe('B');
+            expect(Utils.getPeriodAppreciation({ appreciation: 'B', generationPeriod: 'T1' }, 'T2')).toBe('');
+            expect(Utils.getPeriodAppreciation(null, 'T2')).toBe('');
+        });
+    });
+
+    describe('isPendingForPeriod', () => {
+        const withPeriod = (data, statuses = []) => ({ studentData: { statuses, periods: { T2: data } } });
+
+        it('devrait considérer en attente un élève sans appréciation', () => {
+            expect(Utils.isPendingForPeriod(withPeriod({ grade: 12 }), 'T2')).toBe(true);
+            expect(Utils.isPendingForPeriod({ isPending: true, studentData: { statuses: [] } }, 'T2')).toBe(true);
+        });
+
+        it('ne devrait pas considérer en attente un élève déjà évalué ou en erreur sur la période', () => {
+            expect(Utils.isPendingForPeriod(withPeriod({ appreciation: 'Très bien.' }), 'T2')).toBe(false);
+            expect(Utils.isPendingForPeriod({ ...withPeriod({}), errorMessage: 'quota', errorPeriod: 'T2' }, 'T2')).toBe(false);
+            expect(Utils.isPendingForPeriod({ ...withPeriod({}), errorMessage: 'quota', errorPeriod: 'T1' }, 'T2')).toBe(true);
+        });
+
+        it('devrait exclure un élève parti avant la période', () => {
+            expect(Utils.isPendingForPeriod(withPeriod({ grade: 10 }, ['Départ T1']), 'T2')).toBe(false);
+        });
+
+        it('devrait exclure un élève parti sur la période sans note ni contexte, mais garder celui qui a des données', () => {
+            expect(Utils.isPendingForPeriod(withPeriod({}, ['Départ T2']), 'T2')).toBe(false);
+            expect(Utils.isPendingForPeriod(withPeriod({ grade: 0 }, ['Départ T2']), 'T2')).toBe(true);
+            expect(Utils.isPendingForPeriod(withPeriod({ context: 'Part fin novembre' }, ['Départ T2']), 'T2')).toBe(true);
+        });
+
+        it('devrait gérer les valeurs nulles', () => {
+            expect(Utils.isPendingForPeriod(null, 'T2')).toBe(false);
+        });
+    });
 });
 

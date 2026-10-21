@@ -363,7 +363,7 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
 
         await ClassManager.switchClass(class5A.id);
         appState.generatedResults = [
-            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class5A.id, appreciation: 'Très bon trimestre.' }
+            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class5A.id, appreciation: 'Très bon trimestre.', generationPeriod: appState.currentPeriod }
         ];
 
         ClassUIManager.showManageClassesModal();

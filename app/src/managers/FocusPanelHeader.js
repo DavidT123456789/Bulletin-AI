@@ -54,23 +54,59 @@ export const FocusPanelHeader = {
         return false;
     },
 
-    mergeEditedStatuses(baseStatuses = [], checkedValues = [], allCheckboxValues = []) {
+    /**
+     * Indique si une case de statut doit être cochée pour la période active
+     * ("Nouveau T2" n'apparaît plus coché en T3, "Départ T2" l'est à partir de T2)
+     * @param {string[]} statuses - Statuts enregistrés
+     * @param {string} checkboxValue - Valeur de la case
+     * @returns {boolean}
+     * @private
+     */
+    _isCheckboxActive(statuses, checkboxValue) {
+        return Utils.getActiveStatuses(statuses || [], appState.currentPeriod)
+            .some(s => this._statusMatchesCheckbox(s, checkboxValue));
+    },
+
+    /**
+     * Fusionne les cases cochées avec les statuts enregistrés.
+     * - Un statut Nouveau/Départ nouvellement coché est qualifié par la période active ("Nouveau T2").
+     * - Les statuts inactifs sur la période (ex: "Nouveau T2" vu en T3) sont conservés comme historique,
+     *   sauf si la même case est recochée (le statut est alors requalifié sur la période active).
+     * - Les statuts non gérés par une case (PAI, AESH importés...) sont conservés.
+     */
+    mergeEditedStatuses(baseStatuses = [], checkedValues = [], allCheckboxValues = [], activePeriod = appState.currentPeriod) {
         const base = Array.isArray(baseStatuses) ? baseStatuses : [];
+        const activeBase = Utils.getActiveStatuses(base, activePeriod);
         const merged = [];
+        const requalifiedValues = [];
 
         for (const val of checkedValues) {
-            const existingMatch = base.find(s => this._statusMatchesCheckbox(s, val));
-            merged.push(existingMatch || val);
+            const existingMatch = activeBase.find(s => this._statusMatchesCheckbox(s, val));
+            if (existingMatch) {
+                merged.push(existingMatch);
+            } else if (this._isMovementCheckbox(val)) {
+                merged.push(`${val} ${activePeriod}`);
+                requalifiedValues.push(val);
+            } else {
+                merged.push(val);
+            }
         }
 
         for (const s of base) {
-            const isManagedByCheckbox = allCheckboxValues.some(cbVal => this._statusMatchesCheckbox(s, cbVal));
-            if (!isManagedByCheckbox && !merged.includes(s)) {
+            if (merged.includes(s)) continue;
+            const managingValue = allCheckboxValues.find(cbVal => this._statusMatchesCheckbox(s, cbVal));
+            const isInactiveHistory = managingValue && !activeBase.includes(s) && !requalifiedValues.includes(managingValue);
+            if (!managingValue || isInactiveHistory) {
                 merged.push(s);
             }
         }
 
         return merged;
+    },
+
+    /** @private */
+    _isMovementCheckbox(value) {
+        return this._statusMatchesCheckbox(value, 'Nouveau') || this._statusMatchesCheckbox(value, 'Départ');
     },
 
     /**
@@ -204,7 +240,7 @@ export const FocusPanelHeader = {
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 const currentStatuses = result.studentData.statuses || [];
                 checkboxes.forEach(cb => {
-                    cb.checked = currentStatuses.some(s => this._statusMatchesCheckbox(s, cb.value));
+                    cb.checked = this._isCheckboxActive(currentStatuses, cb.value);
 
                     // Add tooltip to parent label
                     const label = cb.closest('label');
@@ -227,7 +263,7 @@ export const FocusPanelHeader = {
                 if (nomInput) nomInput.value = '';
                 if (prenomInput) prenomInput.value = '';
 
-                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+                const periods = Utils.getPeriods();
                 const currentPeriod = appState.currentPeriod || periods[0];
                 const isLaterPeriod = periods.indexOf(currentPeriod) > 0;
                 const activeClassId = userSettings?.academic?.currentClassId || appState?.currentClassId || null;
@@ -246,7 +282,7 @@ export const FocusPanelHeader = {
                 // Pre-check Nouveau only in later periods on a non-empty class, and initialize tooltips
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = shouldPreselectNew && cb.value === 'Nouveau';
+                    cb.checked = this._isCheckboxActive(this._originalHeaderValues.statuses, cb.value);
                     const label = cb.closest('label');
                     if (label) {
                         const description = this._statusDescriptions[cb.value] || cb.value;
@@ -276,7 +312,7 @@ export const FocusPanelHeader = {
                 // Restore checkboxes
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = this._originalHeaderValues.statuses.some(s => this._statusMatchesCheckbox(s, cb.value));
+                    cb.checked = this._isCheckboxActive(this._originalHeaderValues.statuses, cb.value);
                 });
 
                 // CRITICAL FIX: Revert mutated state that was modified live by handleDataChange
@@ -555,12 +591,7 @@ export const FocusPanelHeader = {
         let headerHtml = '';
         let contextHtml = '';
 
-        const activePeriod = appState.currentPeriod || 'T1';
-        const activeStatuses = typeof Utils.getActiveStatuses === 'function'
-            ? Utils.getActiveStatuses(statuses || [], activePeriod)
-            : (statuses || []);
-
-        activeStatuses.forEach(s => {
+        Utils.getActiveStatuses(statuses || [], appState.currentPeriod).forEach(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
             const lower = String(s || '').toLowerCase();
             const baseKey = Object.keys(this._statusDescriptions).find(k => lower.startsWith(k.toLowerCase()));

@@ -52,6 +52,52 @@ export const Utils = {
     },
 
     /**
+     * Analyse un statut de mouvement ("Nouveau T2", "Départ", ...)
+     * @param {string} status - Statut brut
+     * @returns {{kind: 'new'|'depart', period: string|null}|null} null si ce n'est pas un statut de mouvement
+     * @private
+     */
+    _parseMovementStatus(status) {
+        const raw = String(status || '').trim();
+        const lower = raw.toLowerCase();
+        let kind = null;
+        if (lower.startsWith('nouveau')) kind = 'new';
+        else if (lower.startsWith('départ') || lower.startsWith('depart')) kind = 'depart';
+        if (!kind) return null;
+
+        const periodToken = raw.split(/\s+/)[1];
+        const period = periodToken && this.getPeriods().includes(periodToken) ? periodToken : null;
+        return { kind, period };
+    },
+
+    /**
+     * Indique si un statut de mouvement s'applique à la période active.
+     * Sans période : toujours actif. "Nouveau Tx" : actif uniquement en Tx. "Départ Tx" : actif à partir de Tx.
+     * @private
+     */
+    _isMovementActive(movement, activePeriod) {
+        if (!movement.period) return true;
+        if (movement.kind === 'new') return movement.period === activePeriod;
+        const periods = this.getPeriods();
+        const activeIndex = periods.indexOf(activePeriod);
+        return activeIndex === -1 || activeIndex >= periods.indexOf(movement.period);
+    },
+
+    /** @private */
+    _getStatusList(studentResult) {
+        const statuses = studentResult?.studentData?.statuses || studentResult?.statuses;
+        return Array.isArray(statuses) ? statuses : [];
+    },
+
+    /** @private */
+    _hasMovement(studentResult, kind, activePeriod) {
+        return this._getStatusList(studentResult).some(s => {
+            const movement = this._parseMovementStatus(s);
+            return movement?.kind === kind && this._isMovementActive(movement, activePeriod);
+        });
+    },
+
+    /**
      * Détermine si un élève est en statut Départ sur la période active
      * @param {Object} studentResult - Données de l'élève
      * @param {string} [activePeriod] - Période active (ex: 'T1', 'S1')
@@ -59,28 +105,8 @@ export const Utils = {
      */
     isStudentDeparted(studentResult, activePeriod = appState.currentPeriod || 'T1') {
         if (!studentResult) return false;
-        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (Array.isArray(statuses) && statuses.length > 0) {
-            const departStatus = statuses.find(s => {
-                const lower = String(s || '').toLowerCase();
-                return lower.includes('départ') || lower.includes('depart');
-            });
-            if (departStatus) {
-                const parts = departStatus.trim().split(/\s+/);
-                if (parts.length === 1) return true;
-
-                const departPeriodKey = parts[1];
-                const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
-                const departPeriodIndex = periods.indexOf(departPeriodKey);
-                const activePeriodIndex = periods.indexOf(activePeriod);
-
-                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
-                return activePeriodIndex >= departPeriodIndex;
-            }
-            return false;
-        }
-        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
-        return false;
+        if (this._getStatusList(studentResult).length === 0) return Boolean(studentResult.isDeparted);
+        return this._hasMovement(studentResult, 'depart', activePeriod);
     },
 
     /**
@@ -90,26 +116,13 @@ export const Utils = {
      * @returns {boolean}
      */
     isStudentDepartedBeforePeriod(studentResult, activePeriod = appState.currentPeriod || 'T1') {
-        if (!studentResult) return false;
-        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (!Array.isArray(statuses) || statuses.length === 0) return false;
-
-        const departStatus = statuses.find(s => {
-            const lower = String(s || '').toLowerCase();
-            return lower.includes('départ') || lower.includes('depart');
+        const periods = this.getPeriods();
+        const activeIndex = periods.indexOf(activePeriod);
+        if (activeIndex === -1) return false;
+        return this._getStatusList(studentResult).some(s => {
+            const movement = this._parseMovementStatus(s);
+            return movement?.kind === 'depart' && movement.period !== null && periods.indexOf(movement.period) < activeIndex;
         });
-        if (!departStatus) return false;
-
-        const parts = departStatus.trim().split(/\s+/);
-        if (parts.length < 2) return false;
-
-        const departPeriodKey = parts[1];
-        const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
-        const departPeriodIndex = periods.indexOf(departPeriodKey);
-        const activePeriodIndex = periods.indexOf(activePeriod);
-
-        if (departPeriodIndex === -1 || activePeriodIndex === -1) return false;
-        return departPeriodIndex < activePeriodIndex;
     },
 
     /**
@@ -120,23 +133,8 @@ export const Utils = {
      */
     isStudentNew(studentResult, activePeriod = appState.currentPeriod || 'T1') {
         if (!studentResult) return false;
-        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (Array.isArray(statuses) && statuses.length > 0) {
-            const newStatus = statuses.find(s => {
-                const lower = String(s || '').toLowerCase();
-                return lower.includes('nouveau');
-            });
-            if (newStatus) {
-                const parts = newStatus.trim().split(/\s+/);
-                if (parts.length === 1) return true;
-
-                const newPeriodKey = parts[1];
-                return newPeriodKey === activePeriod;
-            }
-            return false;
-        }
-        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
-        return false;
+        if (this._getStatusList(studentResult).length === 0) return Boolean(studentResult.isNew);
+        return this._hasMovement(studentResult, 'new', activePeriod);
     },
 
     /**
@@ -149,35 +147,62 @@ export const Utils = {
     getActiveStatuses(studentResultOrStatuses, activePeriod = appState.currentPeriod || 'T1') {
         const statuses = Array.isArray(studentResultOrStatuses)
             ? studentResultOrStatuses
-            : (studentResultOrStatuses?.studentData?.statuses || studentResultOrStatuses?.statuses || []);
-        if (!Array.isArray(statuses) || statuses.length === 0) return [];
-
-        const periods = typeof this.getPeriods === 'function' ? this.getPeriods() : ['T1', 'T2', 'T3'];
-        const activePeriodIndex = periods.indexOf(activePeriod);
-
+            : this._getStatusList(studentResultOrStatuses);
         return statuses.filter(s => {
-            const raw = String(s || '').trim();
-            if (!raw) return false;
-            const lower = raw.toLowerCase();
-
-            if (lower.includes('nouveau')) {
-                const parts = raw.split(/\s+/);
-                if (parts.length === 1) return true;
-                const periodKey = parts[1];
-                if (!periods.includes(periodKey)) return true;
-                return periodKey === activePeriod;
-            }
-
-            if (lower.includes('départ') || lower.includes('depart')) {
-                const parts = raw.split(/\s+/);
-                if (parts.length === 1) return true;
-                const departPeriodIndex = periods.indexOf(parts[1]);
-                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
-                return activePeriodIndex >= departPeriodIndex;
-            }
-
-            return true;
+            if (!String(s || '').trim()) return false;
+            const movement = this._parseMovementStatus(s);
+            return !movement || this._isMovementActive(movement, activePeriod);
         });
+    },
+
+    /**
+     * Indique si un texte d'appréciation est vide ou un simple placeholder
+     * @param {string} appreciation - Texte (HTML accepté)
+     * @returns {boolean}
+     */
+    isPlaceholderAppreciation(appreciation) {
+        if (!appreciation || typeof appreciation !== 'string') return true;
+        const text = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+        return text === '' ||
+            text.includes('en attente') ||
+            text.includes('aucune appréciation') ||
+            text.includes('cliquez sur') ||
+            text.startsWith('remplissez');
+    },
+
+    /**
+     * Retourne l'appréciation d'un élève pour une période
+     * (le champ racine n'est retenu que s'il a été généré pour cette période)
+     * @param {Object} result - Résultat élève
+     * @param {string} period - Période (ex: 'T2')
+     * @returns {string}
+     */
+    getPeriodAppreciation(result, period) {
+        const periodApp = result?.studentData?.periods?.[period]?.appreciation;
+        if (periodApp) return periodApp;
+        return result?.generationPeriod === period ? (result.appreciation || '') : '';
+    },
+
+    /**
+     * Indique si un élève attend une génération d'appréciation sur la période.
+     * Exclut : erreur bloquante sur la période, élève parti avant la période,
+     * élève parti sur la période sans note ni contexte (rien à évaluer).
+     * @param {Object} result - Résultat élève
+     * @param {string} [period] - Période (défaut : période active)
+     * @returns {boolean}
+     */
+    isPendingForPeriod(result, period = appState.currentPeriod) {
+        if (!result) return false;
+        if (result.errorMessage && result.errorPeriod === period) return false;
+        if (this.isStudentDepartedBeforePeriod(result, period)) return false;
+        if (this.isStudentDeparted(result, period)) {
+            const periodData = result.studentData?.periods?.[period];
+            const hasGrade = periodData?.grade !== undefined && periodData?.grade !== null && periodData?.grade !== '';
+            const hasContext = Boolean(String(periodData?.context || '').trim());
+            if (!hasGrade && !hasContext) return false;
+        }
+        if (result.isPending) return true;
+        return this.isPlaceholderAppreciation(this.getPeriodAppreciation(result, period));
     },
 
     /**

@@ -1105,10 +1105,7 @@ export const ClassUIManager = {
                     return;
                 }
 
-                const periodData = result.studentData?.periods?.[currentPeriod];
-                const appreciation = periodData?.appreciation || result.appreciation;
-
-                if (!this._isPlaceholderAppreciation(appreciation)) {
+                if (!Utils.isPlaceholderAppreciation(Utils.getPeriodAppreciation(result, currentPeriod))) {
                     completedCount++;
                 }
             });
@@ -1198,20 +1195,6 @@ export const ClassUIManager = {
     },
 
     /**
-     * Vérifie si un texte d'appréciation est un placeholder vide
-     * @private
-     */
-    _isPlaceholderAppreciation(appreciation) {
-        if (!appreciation || typeof appreciation !== 'string') return true;
-        const text = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-        return text === '' ||
-            text.includes('en attente') ||
-            text.includes('aucune appréciation') ||
-            text.includes('cliquez sur') ||
-            text.startsWith('remplissez');
-    },
-
-    /**
      * Calcule les statistiques d'une classe (élèves, progression)
      * @param {string} classId 
      * @returns {{total: number, completed: number, errors: number, icon: string, statusClass: string}}
@@ -1232,10 +1215,7 @@ export const ClassUIManager = {
                 return;
             }
 
-            const periodData = result.studentData?.periods?.[currentPeriod];
-            const appreciation = periodData?.appreciation || result.appreciation;
-
-            if (!this._isPlaceholderAppreciation(appreciation)) {
+            if (!Utils.isPlaceholderAppreciation(Utils.getPeriodAppreciation(result, currentPeriod))) {
                 completed++;
             }
         });

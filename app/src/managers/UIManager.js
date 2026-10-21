@@ -1100,37 +1100,14 @@ export const UI = {
         let validated = 0;
         let pending = 0;
         for (const result of results) {
-            if (Utils.isStudentDepartedBeforePeriod?.(result, currentPeriod)) {
-                continue;
-            }
-
             // Skip errors — they are handled by the Smart Action Button in the table
-            if (result.errorMessage && result.errorPeriod === currentPeriod) {
-                continue;
-            }
+            if (result.errorMessage && result.errorPeriod === currentPeriod) continue;
+            if (Utils.isStudentDepartedBeforePeriod(result, currentPeriod)) continue;
 
-            // Check if has valid appreciation for current period
-            const periodData = result.studentData?.periods?.[currentPeriod];
-            const appreciation = periodData?.appreciation || result.appreciation;
-            const isEmptyDeparted = Utils.isStudentDeparted?.(result, currentPeriod) &&
-                (periodData?.grade === undefined || periodData?.grade === null || periodData?.grade === '') &&
-                !periodData?.context?.trim();
-
-            if (appreciation && typeof appreciation === 'string') {
-                const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-                const isPlaceholder = textOnly === '' ||
-                    textOnly.includes('en attente') ||
-                    textOnly.includes('aucune appréciation') ||
-                    textOnly.includes('cliquez sur') ||
-                    textOnly.startsWith('remplissez');
-
-                if (!isPlaceholder) {
-                    validated++;
-                } else if (!isEmptyDeparted) {
-                    pending++;
-                }
-            } else if (!isEmptyDeparted) {
+            if (Utils.isPendingForPeriod(result, currentPeriod)) {
                 pending++;
+            } else if (!Utils.isPlaceholderAppreciation(Utils.getPeriodAppreciation(result, currentPeriod))) {
+                validated++;
             }
         }
 
@@ -1734,17 +1711,17 @@ export const UI = {
         const classResults = ClassManager.getStudentsForClass(currentClassId);
 
         const activeStudents = classResults.filter(
-            result => !Utils.isStudentDepartedBeforePeriod?.(result, activePeriod)
+            result => !Utils.isStudentDepartedBeforePeriod(result, activePeriod)
         );
         const totalCount = activeStudents.length;
 
         let newCount = 0;
         let departedCount = 0;
         activeStudents.forEach(result => {
-            if (Utils.isStudentNew?.(result, activePeriod)) {
+            if (Utils.isStudentNew(result, activePeriod)) {
                 newCount++;
             }
-            if (Utils.isStudentDeparted?.(result, activePeriod)) {
+            if (Utils.isStudentDeparted(result, activePeriod)) {
                 departedCount++;
             }
         });

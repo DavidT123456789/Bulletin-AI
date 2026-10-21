@@ -161,16 +161,7 @@ export const ResultsUIManager = {
                 // Dashboard badge filters
                 if (filter === 'generated') {
                     // Has valid appreciation for current period (not placeholder)
-                    const periodApp = r.studentData?.periods?.[activePeriod]?.appreciation;
-                    const appreciation = periodApp || ((r.generationPeriod === activePeriod) ? r.appreciation : null);
-                    if (!appreciation) return false;
-                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-                    const isPlaceholder = textOnly === '' ||
-                        textOnly.includes('en attente') ||
-                        textOnly.includes('aucune appréciation') ||
-                        textOnly.includes('cliquez sur') ||
-                        textOnly.startsWith('remplissez');
-                    return !isPlaceholder && !r.errorMessage;
+                    return !Utils.isPlaceholderAppreciation(Utils.getPeriodAppreciation(r, activePeriod)) && !r.errorMessage;
                 }
 
                 if (filter === 'error') {
@@ -178,17 +169,7 @@ export const ResultsUIManager = {
                 }
 
                 if (filter === 'pending') {
-                    // No valid appreciation for current period
-                    if (r.errorMessage && r.errorPeriod === activePeriod) return false;
-                    const periodApp = r.studentData?.periods?.[activePeriod]?.appreciation;
-                    const appreciation = periodApp || ((r.generationPeriod === activePeriod) ? r.appreciation : null);
-                    if (!appreciation) return true;
-                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-                    return textOnly === '' ||
-                        textOnly.includes('en attente') ||
-                        textOnly.includes('aucune appréciation') ||
-                        textOnly.includes('cliquez sur') ||
-                        textOnly.startsWith('remplissez');
+                    return Utils.isPendingForPeriod(r, activePeriod);
                 }
 
                 return false;
@@ -241,9 +222,7 @@ export const ResultsUIManager = {
                     // Order: Errors -> Tags (A-Z) -> Empty
                     const getStatusStr = (r) => {
                         if (r.errorMessage) return '!'; // Errors first
-                        const statuses = typeof Utils.getActiveStatuses === 'function'
-                            ? Utils.getActiveStatuses(r, activePeriod)
-                            : (r.studentData?.statuses || []);
+                        const statuses = Utils.getActiveStatuses(r, activePeriod);
                         if (statuses.length > 0) {
                             // Join tags to compare
                             return statuses.slice().sort().join(' ').toLowerCase();
@@ -459,22 +438,7 @@ export const ResultsUIManager = {
         const sourceResults = ClassManager.getStudentsForClass(currentClassId);
 
         // Count pending (empty/placeholder)
-        const pendingCount = sourceResults.filter(r => {
-            const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
-            const appCurrent = (r.generationPeriod === currentPeriod) ? r.appreciation : null;
-            const effectiveApp = appRaw || appCurrent;
-            const hasBlockingError = r.errorMessage && r.errorPeriod === currentPeriod;
-
-            if (hasBlockingError) return false;
-            if (!effectiveApp) return true;
-
-            const textOnly = effectiveApp.replace(/<[^>]*>/g, '').trim().toLowerCase();
-            return textOnly === '' ||
-                textOnly.includes('en attente') ||
-                textOnly.includes('aucune appréciation') ||
-                textOnly.includes('cliquez sur') ||
-                textOnly.startsWith('remplissez');
-        }).length;
+        const pendingCount = sourceResults.filter(r => Utils.isPendingForPeriod(r, currentPeriod)).length;
 
         // Count needs update (dirty OR error)
         let errorUpdateCount = 0;

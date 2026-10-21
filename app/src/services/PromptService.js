@@ -185,10 +185,8 @@ export const PromptService = {
 
         // Anonymisation : on n'envoie plus le nom complet, seulement les données scolaires
         // On n'inclut la ligne Statuts que si l'élève a des statuts actifs sur la période
-        const activeStatuses = typeof Utils.getActiveStatuses === 'function'
-            ? Utils.getActiveStatuses(statuses, currentPeriod)
-            : (statuses || []);
-        const statusLine = (activeStatuses && activeStatuses.length > 0) ? `\nStatuts : ${activeStatuses.join(', ')}` : '';
+        const activeStatuses = Utils.getActiveStatuses(statuses, currentPeriod);
+        const statusLine = activeStatuses.length > 0 ? `\nStatuts : ${activeStatuses.join(', ')}` : '';
 
         const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
@@ -287,7 +285,7 @@ export const PromptService = {
         const analysisContextParts = [];
 
         // Add statuses if present
-        if (activeStatuses && activeStatuses.length > 0) {
+        if (activeStatuses.length > 0) {
             analysisContextParts.push(`Statuts : ${activeStatuses.join(', ')}`);
         }
 

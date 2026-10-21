@@ -82,6 +82,7 @@ vi.mock('../utils/DOM.js', () => ({
 
 vi.mock('../utils/Utils.js', () => ({
     Utils: {
+        getPeriods: () => ['T1', 'T2', 'T3'],
         debounce: (fn) => fn,
         normalizeName: (nom, prenom) => `${nom || ''} ${prenom || ''}`.trim().toLowerCase(),
         formatStudentName: (nom, prenom) => `${nom} ${prenom}`,

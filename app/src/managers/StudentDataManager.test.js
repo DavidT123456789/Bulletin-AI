@@ -22,8 +22,9 @@ vi.mock('../state/State.js', () => ({
     }
 }));
 
-vi.mock('../utils/Utils.js', () => ({
+vi.mock('../utils/Utils.js', async (importOriginal) => ({
     Utils: {
+        ...(await importOriginal()).Utils,
         normalizeName: (nom, prenom) => `${nom}_${prenom}`.toLowerCase(),
         parseStudentLine: vi.fn(),
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),

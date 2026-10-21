@@ -28,8 +28,9 @@ vi.mock('../config/Config.js', () => ({
     }
 }));
 
-vi.mock('../utils/Utils.js', () => ({
+vi.mock('../utils/Utils.js', async (importOriginal) => ({
     Utils: {
+        ...(await importOriginal()).Utils,
         getPeriods: vi.fn(),
         getPeriodLabel: vi.fn(),
         countWords: vi.fn(s => s ? s.split(' ').length : 0),

@@ -38,8 +38,9 @@ vi.mock('../config/Config.js', () => ({
     }
 }));
 
-vi.mock('../utils/Utils.js', () => ({
+vi.mock('../utils/Utils.js', async (importOriginal) => ({
     Utils: {
+        ...(await importOriginal()).Utils,
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         getPeriodLabel: vi.fn((p, full) => full ? `Trimestre ${p.slice(1)}` : p),
         countWords: vi.fn((text) => text ? text.split(/\s+/).filter(w => w).length : 0),
@@ -93,7 +94,6 @@ describe('AppreciationService', () => {
             expect(AppreciationService.getAllPrompts).toBeDefined();
             expect(AppreciationService.getRefinementPrompt).toBeDefined();
             expect(AppreciationService.generateAppreciation).toBeDefined();
-            expect(AppreciationService.prepareStudentListForImport).toBeDefined();
             expect(AppreciationService.parseStrengthsWeaknesses).toBeDefined();
         });
     });
@@ -483,38 +483,6 @@ describe('AppreciationService', () => {
             const result = AppreciationService.parseStrengthsWeaknesses(text);
 
             expect(result).toContain('Aucun point fort notable');
-        });
-    });
-
-    describe('prepareStudentListForImport()', () => {
-        it('should return import preview data structure', () => {
-            const result = AppreciationService.prepareStudentListForImport(
-                [], {}, 'merge', [], 'T1'
-            );
-
-            expect(result).toHaveProperty('newStudents');
-            expect(result).toHaveProperty('updatedStudents');
-            expect(result).toHaveProperty('departedStudents');
-            expect(result).toHaveProperty('studentsToProcess');
-            expect(result).toHaveProperty('ignoredCount');
-        });
-
-        it('should count ignored lines', () => {
-            const lines = ['invalid line', 'another invalid'];
-            const result = AppreciationService.prepareStudentListForImport(
-                lines, {}, 'merge', [], 'T1'
-            );
-
-            expect(result.ignoredCount).toBe(2);
-        });
-
-        it('should identify new students in replace mode', () => {
-            const lines = ['Dupont Marie | status | 14'];
-            const result = AppreciationService.prepareStudentListForImport(
-                lines, {}, 'replace', [], 'T1'
-            );
-
-            expect(result.newStudents.length).toBeGreaterThanOrEqual(0);
         });
     });
 });
