@@ -6,6 +6,7 @@
 .custom-dropdown {
     position: relative;
     width: 100%;
+    min-width: 0;
     font-family: inherit;
 }
 
@@ -16,6 +17,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12.5px 14.5px;
+    min-width: 0;
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: var(--dropdown-radius-sm);

@@ -85,7 +85,7 @@ export const SeatingZoom = {
 
         const isMobile = window.innerWidth <= 768;
         const reservedTop = isMobile ? (56 + 48) : (56 + 24);
-        const reservedBottom = isMobile ? 20 : 24;
+        const reservedBottom = isMobile ? (this._isLocked ? 48 : 12) : 24;
         const reservedHoriz = isMobile ? 24 : 48;
 
         // On desktop, always account for the 260px sidebar so fit scale is identical between locked and unlocked modes

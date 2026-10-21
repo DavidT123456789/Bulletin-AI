@@ -3433,40 +3433,20 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         transform: scale(0.92);
     }
 
-    /* ── Grid Area: safe top spacing so status pills never overlap desks ── */
-    .sc-grid-area {
-        padding: 12px;
-        padding-top: calc(56px + 48px);
-        margin-left: 0 !important;
-        width: 100% !important;
+    /* ── Grid Area: symétrie verticale entre la barre flottante haute (48px sous header) et la pilule Bas (48px en mode verrouillé, 12px au-dessus du tiroir en édition) ── */
+    .sc-grid-area,
+    .sc-grid-area[data-fitted="true"],
+    .sc-grid-area[data-fitted="false"] {
+        padding: calc(56px + 48px) 12px 12px;
         scrollbar-width: none; /* Firefox */
+    }
+
+    #seatingChartView[data-locked="true"] .sc-grid-area {
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
     }
 
     .sc-grid-area::-webkit-scrollbar {
         display: none; /* Chrome/Safari */
-    }
-
-    #seatingChartView[data-locked="false"] .sc-grid-area,
-    #seatingChartView[data-locked="true"] .sc-grid-area {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding-top: calc(56px + 48px);
-    }
-
-    .sc-grid-area[data-fitted="true"] {
-        overflow: hidden;
-        justify-content: center;
-        align-items: center;
-        padding-top: calc(56px + 48px);
-        padding-bottom: 12px;
-    }
-
-    .sc-grid-area[data-fitted="false"] {
-        overflow: auto;
-        justify-content: safe center;
-        align-items: safe center;
-        padding-top: calc(56px + 48px);
-        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
     }
 
     :root {

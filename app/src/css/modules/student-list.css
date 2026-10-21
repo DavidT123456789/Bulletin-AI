@@ -17,8 +17,8 @@
     box-sizing: border-box;
 }
 
-/* Dégagement en bas de liste pour que la dernière carte/ligne puisse toujours remonter au-dessus du FAB (.fab-add-student) */
-.output-section:has(.student-list-view) {
+/* Dégagement en bas de vue Liste uniquement pour que la dernière carte/ligne puisse toujours remonter au-dessus du FAB (.fab-add-student) */
+.main-content-wrapper:not([data-view="plan"]) .output-section:has(.student-list-view) {
     padding-bottom: 56px;
 }
 
