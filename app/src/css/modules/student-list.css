@@ -17,6 +17,10 @@
     box-sizing: border-box;
 }
 
+[data-theme="dark"] .student-list-view {
+    box-shadow: none;
+}
+
 .student-list-table {
     width: 100%;
     max-width: 100%;
@@ -1900,10 +1904,6 @@
         margin-bottom: 10px;
     }
 
-    [data-theme="dark"] .student-list-table thead {
-        background: transparent !important;
-    }
-
     .student-list-table thead tr {
         display: flex;
         flex-wrap: nowrap !important;
@@ -1913,15 +1913,11 @@
         padding: 8px 10px;
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--card-glass-border);
         pointer-events: auto;
         position: relative;
         width: 100%;
         box-sizing: border-box !important;
-    }
-
-    [data-theme="dark"] .student-list-table thead tr {
-        background: var(--surface-color);
     }
 
     /* Hide standard headers */
@@ -2135,8 +2131,8 @@
         background: var(--surface-color);
         border-radius: var(--radius-lg);
         margin-bottom: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--card-glass-border);
         padding: 10px 14px;
         row-gap: 4px;
         position: relative;
@@ -2157,14 +2153,13 @@
         margin-bottom: 0;
     }
 
+    [data-theme="dark"] .student-list-table thead tr,
     [data-theme="dark"] .student-list-table tbody tr {
-        background: var(--surface-color);
         box-shadow: none;
     }
 
     .student-list-table tbody tr:active {
         transform: scale(0.98);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
@@ -2209,8 +2204,8 @@
     @keyframes row-spotlight-card-new {
         0% {
             background-color: var(--surface-color);
-            border-color: var(--border-color);
-            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-color: var(--card-glass-border);
+            box-shadow: inset 0 0 0 0 transparent, var(--shadow-sm);
         }
         14%,
         56% {
@@ -2220,13 +2215,13 @@
         }
         36% {
             background-color: var(--row-spotlight-bg-mid);
-            border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--border-color));
+            border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--card-glass-border));
             box-shadow: inset 3.5px 0 0 0 color-mix(in srgb, var(--row-spotlight-accent) 70%, transparent), 0 4px 12px rgba(0, 0, 0, 0.09);
         }
         100% {
             background-color: var(--surface-color);
-            border-color: var(--border-color);
-            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-color: var(--card-glass-border);
+            box-shadow: inset 0 0 0 0 transparent, var(--shadow-sm);
         }
     }
 
@@ -2239,8 +2234,8 @@
         }
         100% {
             background-color: var(--surface-color);
-            border-color: var(--border-color);
-            box-shadow: inset 0 0 0 0 transparent, 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-color: var(--card-glass-border);
+            box-shadow: inset 0 0 0 0 transparent, var(--shadow-sm);
         }
     }
 
@@ -2252,10 +2247,6 @@
         /* Espace pour l'action cell à droite */
         padding-bottom: 0 !important;
         width: 100% !important;
-    }
-
-    [data-theme="dark"] .student-name-cell {
-        border-bottom-color: rgba(255, 255, 255, 0.05);
     }
 
     .student-identity-wrapper {
