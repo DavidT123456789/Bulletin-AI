@@ -139,7 +139,7 @@ body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.ope
     /* --content-padding-x: single source of truth for padding.
        Ensures left, right AND top margins are perfectly symmetrical . */
     --content-padding-x: var(--space-6);
-    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 68px;
+    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) calc(var(--content-padding-x) + env(safe-area-inset-bottom, 0px));
     max-width: none;
     width: 100%;
     margin: 0;
@@ -1557,7 +1557,6 @@ button > .icon-spin-wrapper {
     .main-content {
         --content-padding-x: 16px;
         padding-top: calc(56px + 8px);
-        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
         scrollbar-width: none;
         -ms-overflow-style: none;
     }

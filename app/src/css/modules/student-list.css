@@ -2159,7 +2159,7 @@
 
     [data-theme="dark"] .student-list-table tbody tr {
         background: var(--surface-color);
-        border-color: rgba(255, 255, 255, 0.05);
+        box-shadow: none;
     }
 
     .student-list-table tbody tr:active {
