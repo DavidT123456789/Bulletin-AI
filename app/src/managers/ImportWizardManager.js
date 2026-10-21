@@ -427,11 +427,6 @@ export const ImportWizardManager = {
 
         // Sync with the application period (will trigger 'periodChanged' event after delay)
         UI.setPeriod(newPeriod);
-
-        UI.showNotification(`Période modifiée : ${Utils.getPeriodLabel(newPeriod, true)}`, 'info', 4000, {
-            group: 'period-change',
-            replaceExisting: true
-        });
     },
 
     /**

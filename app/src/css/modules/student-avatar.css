@@ -259,7 +259,8 @@
 }
 
 .student-list-table tbody tr:hover .student-origin-class-tag,
-.cross-class-result:hover .student-origin-class-tag {
+.cross-class-result:hover .student-origin-class-tag,
+.sc-student-chip:hover .student-origin-class-tag {
     color: var(--text-secondary);
     background: var(--bg-tertiary);
     border-color: var(--border-hover-color, var(--border-color));

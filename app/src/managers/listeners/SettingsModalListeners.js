@@ -637,7 +637,7 @@ export const SettingsModalListeners = {
             if (wordCountEl) {
                 const wordCount = Utils.countWords(cached.appreciation);
                 const charCount = Utils.countCharacters(cached.appreciation);
-                wordCountEl.textContent = `${wordCount} mots • ${charCount} car.`;
+                wordCountEl.textContent = `${wordCount} mot${wordCount !== 1 ? 's' : ''} • ${charCount} car.`;
             }
 
             const modelBadgeEl = document.getElementById('previewModelBadge');
@@ -955,7 +955,7 @@ export const SettingsModalListeners = {
             if (wordCountEl) {
                 const wordCount = Utils.countWords(result.appreciation);
                 const charCount = Utils.countCharacters(result.appreciation);
-                wordCountEl.textContent = `${wordCount} mots • ${charCount} car.`;
+                wordCountEl.textContent = `${wordCount} mot${wordCount !== 1 ? 's' : ''} • ${charCount} car.`;
             }
 
             // Update current period table cell with newly generated text

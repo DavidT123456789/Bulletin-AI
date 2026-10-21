@@ -1742,7 +1742,6 @@ export const TrombinoscopeManager = {
                 this._renderZones();
                 this._renderAssignmentGrid();
                 this._updateSizeSliderValue();
-                UI.showNotification('Positions initiales restaurées (toutes les pages)', 'info');
                 return;
             }
 
@@ -2297,7 +2296,6 @@ export const TrombinoscopeManager = {
         
         this._renderZones();
         this._renderAssignmentGrid();
-        UI.showNotification('Décalage vers le bas effectué', 'success');
     },
 
     /**
@@ -2323,7 +2321,6 @@ export const TrombinoscopeManager = {
         
         this._renderZones();
         this._renderAssignmentGrid();
-        UI.showNotification('Décalage vers le haut effectué', 'success');
     },
 
     _autoAssignInOrder() {
@@ -2338,7 +2335,6 @@ export const TrombinoscopeManager = {
         });
         this._renderZones();
         this._renderAssignmentGrid();
-        UI.showNotification('Attribution automatique effectuée', 'success');
     },
 
     // ========================================================================
@@ -2674,6 +2670,7 @@ export const TrombinoscopeManager = {
             // Individual mode: move only this zone
             zone.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, newCx));
             zone.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, newCy));
+            zone.isPlaceholder = false;
         }
 
         this._renderZones();
@@ -3466,6 +3463,7 @@ export const TrombinoscopeManager = {
         // Reactive update for footer counters, buttons and card dimming
         const updateFooterAndDimming = () => {
             const updateExisting = this._updateExistingPhotos;
+            const realPhotoCount = assignedItems.filter(item => !item.zone.isPlaceholder).length;
 
             // Update dimming on existing student cards
             const existingCards = container.querySelectorAll('.preview-item.is-existing-student');
@@ -3501,13 +3499,13 @@ export const TrombinoscopeManager = {
                                 : `Ajouter ${newAssignedCount > 1 ? `les ${newAssignedCount} nouveaux élèves` : `le nouvel élève`}`;
                             confirmBtn.innerHTML = `<iconify-icon icon="ph:user-plus-bold"></iconify-icon> ${studentLabel}`;
                         } else {
-                            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}, ${assignedCount} photos)`;
+                            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}${realPhotoCount > 0 ? `, ${realPhotoCount} photo${realPhotoCount > 1 ? 's' : ''}` : ''})`;
                         }
                     } else {
-                        confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Mettre à jour les ${assignedCount} photos`;
+                        confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Mettre à jour ${realPhotoCount > 1 ? `les ${realPhotoCount} photos` : 'la photo'}`;
                     }
                 } else {
-                    const photoLabel = assignedCount > 1 ? `${assignedCount} photos` : 'la photo';
+                    const photoLabel = realPhotoCount > 1 ? `${realPhotoCount} photos` : (realPhotoCount === 1 ? 'la photo' : `${assignedCount} élève${assignedCount > 1 ? 's' : ''}`);
                     confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer ${photoLabel}`;
                 }
             }
@@ -3544,7 +3542,7 @@ export const TrombinoscopeManager = {
             // Buffer 160x160 for HiDPI, displayed at 80x80 CSS
             previewItem.innerHTML = `
                 <div class="preview-canvas-wrapper">
-                    <canvas class="preview-canvas" width="160" height="160"></canvas>
+                    ${item.zone.isPlaceholder ? `<div class="student-avatar preview-canvas">${StudentPhotoManager.getInitialsFromName(student.nom, student.prenom)}</div>` : '<canvas class="preview-canvas" width="160" height="160"></canvas>'}
                     ${badgeHtml}
                 </div>
                 <span class="preview-student-name">${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
@@ -3552,7 +3550,9 @@ export const TrombinoscopeManager = {
             list.appendChild(previewItem);
 
             // Draw preview
-            this._drawPreview(previewItem.querySelector('canvas'), item.zone, item.pageIndex);
+            if (!item.zone.isPlaceholder) {
+                this._drawPreview(previewItem.querySelector('canvas'), item.zone, item.pageIndex);
+            }
         }
 
         updateFooterAndDimming();
@@ -3706,6 +3706,15 @@ export const TrombinoscopeManager = {
 
                     const page = this._parsedPdfData.pages[item.pageIndex];
                     if (!page || !page.canvas) continue;
+                    if (item.zone.isPlaceholder) {
+                        const existingStudent = appState.generatedResults.find(r => r.id === studentId);
+                        if (existingStudent?.studentPhoto) {
+                            existingStudent.studentPhoto = null;
+                            existingStudent._lastModified = Date.now();
+                            StudentDataManager.syncFilteredStudent(studentId, existingStudent);
+                        }
+                        continue;
+                    }
                     const r = item.zone.r || this._globalRadius;
                     const diameter = r * 2;
                     const sx = Math.max(0, cx - r);
@@ -3860,8 +3869,6 @@ export const TrombinoscopeManager = {
         this._renderZones();
         this._renderAssignmentGrid();
         this._updateUndoButton();
-        
-        UI.showNotification('Action annulée', 'info');
     },
 
     _updateUndoButton() {

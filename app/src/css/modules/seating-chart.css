@@ -1362,6 +1362,23 @@
     display: none !important;
 }
 
+.sc-status-pill.sc-status-virtual {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    cursor: default;
+}
+
+.sc-status-pill.sc-status-virtual:active {
+    transform: none;
+}
+
+[data-theme="dark"] .sc-status-pill.sc-status-virtual {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
 /* Hover & Morphing interactions */
 @media (hover: hover) {
     .sc-status-pill.sc-status-locked:hover {
@@ -1388,17 +1405,17 @@
         box-shadow: 0 2px 14px rgba(var(--warning-rgb, 245, 158, 11), 0.18);
     }
 
-    .sc-status-pill:hover .sc-status-pill-rest {
+    .sc-status-pill:not(.sc-status-virtual):hover .sc-status-pill-rest {
         opacity: 0;
         transform: translateY(-6px);
     }
 
-    .sc-status-pill:hover .sc-status-pill-hover {
+    .sc-status-pill:not(.sc-status-virtual):hover .sc-status-pill-hover {
         opacity: 1;
         transform: translateY(0);
     }
 
-    .sc-status-pill:hover .sc-status-pill-date {
+    .sc-status-pill:not(.sc-status-virtual):hover .sc-status-pill-date {
         max-width: 120px;
         opacity: 0.85;
     }
@@ -2420,7 +2437,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-#seatingChartView[data-locked="true"] .sc-onboarding-hint {
+#seatingChartView[data-locked="true"]:not([data-virtual="true"]) .sc-onboarding-hint {
     display: none !important;
 }
 
@@ -3397,60 +3414,6 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         transform: scale(0.92);
     }
 
-    /* Empty sidebar message adapts to horizontal layout */
-    .sc-empty-sidebar {
-        flex-direction: row !important;
-        padding: 8px 12px;
-        font-size: 0.78rem;
-        gap: 8px;
-        justify-content: center !important;
-        align-items: center !important;
-        flex: none !important;
-        height: auto !important;
-    }
-
-    .sc-empty-success-badge {
-        width: 26px !important;
-        height: 26px !important;
-        margin-bottom: 0 !important;
-        order: 1 !important;
-        border-radius: 50%;
-        background: var(--item-idle-bg) !important;
-        border: 1px solid var(--border-color-strong) !important;
-    }
-
-    .sc-empty-engraved-svg {
-        width: 15px !important;
-        height: 15px !important;
-    }
-
-    .sc-empty-engraved-path {
-        stroke: var(--text-secondary) !important;
-        stroke-width: 7 !important;
-        filter: none !important;
-    }
-
-    .sc-empty-text {
-        order: 2 !important;
-        font-size: 0.75rem !important;
-        max-width: none !important;
-        text-align: left !important;
-        margin-bottom: 0 !important;
-    }
-
-    .sc-empty-text strong {
-        font-size: 0.75rem;
-        margin-bottom: 0;
-    }
-
-    #seatingChartView[data-all-placed="true"] .sc-student-list {
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        padding: 8px 12px;
-        height: auto;
-    }
-
     /* ── Grid Area: safe top spacing so status pills never overlap desks ── */
     .sc-grid-area {
         padding: 12px;
@@ -3929,6 +3892,82 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 @keyframes scFadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile: compact horizontal strip (declared after the base empty-state rules so it wins the cascade) */
+@media (max-width: 768px) {
+    /* Empty sidebar message adapts to horizontal layout */
+    .sc-empty-sidebar {
+        flex-direction: row !important;
+        padding: 2px 4px;
+        font-size: 0.78rem;
+        gap: 8px;
+        justify-content: center !important;
+        align-items: center !important;
+        flex: none !important;
+        height: auto !important;
+    }
+
+    .sc-empty-success-badge {
+        width: 26px !important;
+        height: 26px !important;
+        margin-bottom: 0 !important;
+        order: 1 !important;
+        border-radius: 50%;
+        background: var(--item-idle-bg) !important;
+        border: 1px solid var(--border-color-strong) !important;
+    }
+
+    .sc-empty-engraved-svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .sc-empty-engraved-path {
+        stroke: var(--text-secondary) !important;
+        stroke-width: 7 !important;
+        filter: none !important;
+    }
+
+    .sc-empty-text {
+        order: 2 !important;
+        font-size: 0.75rem !important;
+        max-width: none !important;
+        text-align: left !important;
+        margin-bottom: 0 !important;
+    }
+
+    .sc-empty-text strong {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    #seatingChartView[data-all-placed="true"] .sc-student-list {
+        flex-direction: row;
+        justify-content: safe center;
+        align-items: center;
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+        height: auto;
+    }
+
+    /* Departed students: inline in the horizontal strip, separated by a vertical hairline (each chip's "Départ" badge carries the meaning) */
+    .sc-sidebar-departed-section {
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        margin: 0 0 0 4px;
+        padding: 0 0 0 10px;
+        border-top: none;
+        border-left: 1px dashed var(--border-color);
+    }
+
+    .sc-sidebar-departed-header {
+        display: none;
+    }
+
+    .sc-sidebar-departed-list {
+        flex-direction: row;
+    }
 }
 
 /* ────────── REDUCE MOTION ────────── */
@@ -4921,7 +4960,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     animation: scBoardCarouselOutRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.sc-station-badge {
+.sc-station-badge,
+.sc-cell-group-badge {
     position: absolute;
     top: 6px;
     bottom: auto;
@@ -4943,14 +4983,22 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     transition: color 0.2s ease, background 0.2s ease, opacity 0.18s ease, top 0.18s ease;
 }
 
-.sc-cell.occupied .sc-station-badge {
+.sc-cell.occupied .sc-station-badge,
+.sc-cell.occupied .sc-cell-group-badge {
     color: var(--text-secondary);
     background: var(--bg-secondary);
 }
 
-[data-theme="dark"] .sc-cell.occupied .sc-station-badge {
+[data-theme="dark"] .sc-cell.occupied .sc-station-badge,
+[data-theme="dark"] .sc-cell.occupied .sc-cell-group-badge {
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.08);
+}
+
+.sc-classroom-board[data-plan-mode="activity"] .sc-cell-group-badge,
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell-group-badge {
+    left: auto;
+    right: 6px;
 }
 
 .sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge,
@@ -5396,6 +5444,29 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.sc-stacked-group-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.51rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 1.5px 3.5px;
+    margin-left: 3.5px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+    pointer-events: none;
+    user-select: none;
+}
+
+[data-theme="dark"] .sc-stacked-group-tag {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.09);
 }
 
 @media (hover: hover) {

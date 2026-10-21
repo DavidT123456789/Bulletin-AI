@@ -241,7 +241,6 @@ export const FocusPanelRefinement = {
                 || error.message?.includes('annulé');
 
             if (isAborted) {
-                UI.showNotification('Amélioration annulée', 'info');
                 FocusPanelStatus.refreshAppreciationStatus();
                 // We must delete the active generation since we return early
                 panel._activeGenerations.delete(refineStudentId);

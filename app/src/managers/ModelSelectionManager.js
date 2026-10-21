@@ -324,9 +324,6 @@ export const ModelSelectionManager = {
             UI.updateHeaderPremiumLook();
         }
 
-        const modelName = MODEL_SHORT_NAMES[modelId] || modelId;
-        UI.showNotification(`Modèle actif : ${modelName}`, 'info');
-
         this.closeDropdown();
     },
 

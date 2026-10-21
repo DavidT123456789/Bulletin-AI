@@ -446,7 +446,6 @@ export const FocusPanelJournal = {
                             JournalManager.deleteEntry(result.id, entryId);
                             // Re-render to update timeline and isolated states
                             this.render(result);
-                            UI.showNotification('Observation supprimée', 'success');
                             // Refresh badge status
                             this._refreshStatus();
                         }, 400); // Wait for animation
@@ -985,14 +984,12 @@ export const FocusPanelJournal = {
                     tags: [...this._selectedJournalTags],
                     note: note
                 });
-                if (entry) UI.showNotification('Observation modifiée', 'success');
             } else {
                 // Create new
                 entry = JournalManager.addEntry(studentId, {
                     tags: [...this._selectedJournalTags],
                     note: note
                 });
-                if (entry) UI.showNotification('Observation enregistrée', 'success');
             }
 
             if (entry) {

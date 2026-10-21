@@ -5,7 +5,6 @@
  */
 
 import { FocusPanelManager } from '../FocusPanelManager.js';
-import { UI } from '../UIManager.js';
 import { Utils } from '../../utils/Utils.js';
 import { ClassManager } from '../ClassManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
@@ -263,16 +262,11 @@ export const SeatingSearch = {
     },
 
     async _switchClassFromSearch(classId, studentId = null, term = '') {
-        const classInfo = ClassManager.getClassById(classId);
-        const className = classInfo?.name || 'Classe';
-
         if (typeof ClassUIManager?.handleClassSwitch === 'function') {
             await ClassUIManager.handleClassSwitch(classId, studentId);
         } else {
             await ClassManager.switchClass(classId);
         }
-
-        UI?.showNotification?.(`Basculé vers ${className}`, 'info');
 
         // Maintenir la barre de recherche ouverte avec le terme actif
         const searchWrap = document.getElementById('scFloatingSearch');

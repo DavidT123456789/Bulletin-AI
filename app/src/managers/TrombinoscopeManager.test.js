@@ -19,7 +19,8 @@ vi.mock('../state/State.js', () => ({
 
 vi.mock('./StudentPhotoManager.js', () => ({
     StudentPhotoManager: {
-        bulkAssignPhotos: vi.fn().mockResolvedValue(2)
+        bulkAssignPhotos: vi.fn().mockResolvedValue(2),
+        getInitialsFromName: vi.fn((nom, prenom) => ((prenom?.[0] || '') + (nom?.[0] || '')).toUpperCase() || '??')
     }
 }));
 
@@ -53,7 +54,8 @@ vi.mock('./StudentDataManager.js', () => ({
         createPendingResult: vi.fn((data) => ({
             id: 'mock-student-' + (data.nom || 'id'),
             ...data
-        }))
+        })),
+        syncFilteredStudent: vi.fn()
     }
 }));
 
@@ -431,6 +433,89 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         expect(ClassUIManager.updateHeaderDisplay).toHaveBeenCalled();
         expect(ClassUIManager.renderClassList).toHaveBeenCalled();
         expect(AppreciationsManager.renderResults).toHaveBeenCalled();
+    });
+
+    it('should create the student but skip the photo crop for a Pronote initials placeholder zone', async () => {
+        const { appState } = await import('../state/State.js');
+        const { ClassManager } = await import('./ClassManager.js');
+        const { StudentPhotoManager } = await import('./StudentPhotoManager.js');
+
+        appState.generatedResults = [];
+        ClassManager.getAllClasses.mockReturnValue([]);
+        ClassManager.createClass.mockReturnValue({ id: 'class-new-5-2', name: '5 2' });
+        StudentPhotoManager.bulkAssignPhotos.mockClear();
+        StudentPhotoManager.bulkAssignPhotos.mockResolvedValueOnce(1);
+
+        const mockCanvas = {
+            width: 1000,
+            height: 1400,
+            getContext: vi.fn(() => ({ clearRect: vi.fn(), drawImage: vi.fn() }))
+        };
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '5 2',
+            schoolYear: '2024-2025',
+            students: [
+                { id: 'pdf-1', nom: 'BERNARD', prenom: 'Lucas' },
+                { id: 'pdf-2', nom: 'ENFERT', prenom: 'Tom' }
+            ],
+            pages: [
+                {
+                    width: 1000,
+                    height: 1400,
+                    canvas: mockCanvas,
+                    zones: [
+                        { id: 1, cx: 100, cy: 100, r: 50, studentId: 'pdf-1', isPlaceholder: false },
+                        { id: 2, cx: 200, cy: 100, r: 50, studentId: 'pdf-2', isPlaceholder: true }
+                    ]
+                }
+            ]
+        };
+        TrombinoscopeManager._zones = TrombinoscopeManager._parsedPdfData.pages[0].zones;
+
+        await TrombinoscopeManager._handleImport();
+
+        // Both students are created, only the real photo is assigned
+        expect(appState.generatedResults.map(r => r.prenom).sort()).toEqual(['Lucas', 'Tom']);
+        const lucas = appState.generatedResults.find(r => r.prenom === 'Lucas');
+        expect(StudentPhotoManager.bulkAssignPhotos).toHaveBeenCalledWith([
+            { studentId: lucas.id, photoData: expect.any(String) }
+        ]);
+
+        // Re-importing over an existing student whose zone is a placeholder clears any previously imported grey square
+        const tom = appState.generatedResults.find(r => r.prenom === 'Tom');
+        tom.studentPhoto = { data: 'data:image/jpeg;base64,old-grey-square', source: 'trombinoscope' };
+        ClassManager.getAllClasses.mockReturnValue([{ id: 'class-new-5-2', name: '5 2' }]);
+        TrombinoscopeManager._updateExistingPhotos = true;
+
+        await TrombinoscopeManager._handleImport();
+        expect(tom.studentPhoto).toBeNull();
+
+        // Step 3 preview renders native initials avatar instead of canvas for placeholder zones
+        TrombinoscopeManager._parsedPdfData = {
+            className: '5 2',
+            schoolYear: '2024-2025',
+            students: [
+                { id: lucas.id, nom: 'BERNARD', prenom: 'Lucas' },
+                { id: tom.id, nom: 'ENFERT', prenom: 'Tom' }
+            ],
+            pages: [{
+                width: 1000,
+                height: 1400,
+                canvas: mockCanvas,
+                zones: [
+                    { id: 1, cx: 100, cy: 100, r: 50, studentId: lucas.id, isPlaceholder: false },
+                    { id: 2, cx: 200, cy: 100, r: 50, studentId: tom.id, isPlaceholder: true }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = TrombinoscopeManager._parsedPdfData.pages[0].zones;
+        TrombinoscopeManager._initStep3();
+        expect(document.querySelectorAll('#trombiPreviewGrid canvas.preview-canvas').length).toBe(1);
+        const nativeAvatar = document.querySelector('#trombiPreviewGrid .student-avatar.preview-canvas');
+        expect(nativeAvatar).toBeTruthy();
+        expect(nativeAvatar.textContent).toBe('TE');
+        expect(document.getElementById('trombiConfirmBtn').innerHTML).toContain('Mettre à jour la photo');
     });
 
     it('should switch PDF pages in Step 2 preserving zone changes', () => {

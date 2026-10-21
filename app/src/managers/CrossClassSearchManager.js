@@ -13,7 +13,6 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
-import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 
 const TRANSITION_ANIM_CLASSES = [
@@ -378,9 +377,6 @@ export const CrossClassSearchManager = {
      * @private
      */
     async _handleResultClick(classId, studentId) {
-        const classInfo = ClassManager.getClassById(classId);
-        const className = classInfo?.name || 'Classe';
-
         // Annuler tout timer de recherche en attente pour éviter un re-rendu parasite après la bascule
         this.cancelPendingSearch();
 
@@ -390,9 +386,6 @@ export const CrossClassSearchManager = {
 
         // Filet de sécurité idempotent (ex: si handleClassSwitch est mocké en test)
         this.clearListSearch({ renderList: false, immediate: true });
-
-        // Notification de feedback
-        UI?.showNotification(`Basculé vers ${className}`, 'info');
     },
 
     /**

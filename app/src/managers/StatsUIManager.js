@@ -375,13 +375,13 @@ export const StatsUI = {
         if (avgWordsEl) {
             avgWordsEl.style.display = stats.avgWords > 0 ? 'inline-flex' : 'none';
             if (stats.avgWords > 0) {
-                const currentVal = parseInt(avgWordsEl.textContent.replace('Ø ', '').replace(' mots', '')) || 0;
+                const currentVal = parseInt(avgWordsEl.textContent.replace('Ø ', '')) || 0;
                 if (currentVal !== stats.avgWords) {
-                    animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `Ø ${val} mots`));
+                    animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `Ø ${val} mot${val > 1 ? 's' : ''}`));
                 }
                 // Update tooltip with richer info: avg chars + target words
                 const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || 60;
-                avgWordsEl.setAttribute('data-tooltip', `Ø ${stats.avgWords} mots (${stats.avgChars} car.)<br>Cible : ${targetWords} mots<br><span class="kbd-hint">Modifier</span>`);
+                avgWordsEl.setAttribute('data-tooltip', `Ø ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots<br><span class="kbd-hint">Modifier</span>`);
                 avgWordsEl.classList.add('tooltip', 'clickable-chip');
                 avgWordsEl.style.cursor = 'pointer';
 

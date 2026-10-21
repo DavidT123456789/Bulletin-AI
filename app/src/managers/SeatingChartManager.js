@@ -1153,26 +1153,6 @@ export const SeatingChartManager = {
         this._render();
         this._animateCellSwap(r1, c1, r2, c2);
         this._haptic([12, 40, 12]);
-
-        const ids1 = Array.isArray(val1) ? val1 : [val1];
-        const ids2 = Array.isArray(val2) ? val2 : [val2];
-        const label1 = ids1.map(id => {
-            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
-            return s ? (s.prenom || s.nom) : '';
-        }).filter(Boolean).join(' & ');
-        const label2 = ids2.map(id => {
-            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
-            return s ? (s.prenom || s.nom) : '';
-        }).filter(Boolean).join(' & ');
-
-        if (label1 && label2) {
-            UI?.showNotification?.(`Échange : ${label1} ↔ ${label2}`, 'success', 4000, {
-                action: {
-                    label: 'Annuler',
-                    onClick: () => this._undo()
-                }
-            });
-        }
     },
 
     _notifyGroupFull(row, col) {
@@ -1201,26 +1181,11 @@ export const SeatingChartManager = {
             }
         }
         this._snapshotGrid();
-        const prevIds = this._getCellStudentIds(row, col);
         this._gridState[row][col] = unplacedId;
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
         this._animateCellPlaced(row, col);
-
-        const sNew = this._studentMap?.get(unplacedId) || this._students.find(s => s.id === unplacedId);
-        const sOld = prevIds[0] ? (this._studentMap?.get(prevIds[0]) || this._students.find(s => s.id === prevIds[0])) : null;
-        if (sNew) {
-            const msg = sOld 
-                ? `${sNew.prenom || sNew.nom} remplace ${sOld.prenom || sOld.nom}` 
-                : `${sNew.prenom || sNew.nom} placé à cette table`;
-            UI?.showNotification?.(msg, 'success', 4000, {
-                action: {
-                    label: 'Annuler',
-                    onClick: () => this._undo()
-                }
-            });
-        }
     },
 
     _joinStudentsToCell(row, col, studentIdsToJoin) {
@@ -1255,21 +1220,6 @@ export const SeatingChartManager = {
         this._render();
         this._animateCellPlaced(row, col);
         this._haptic(15);
-
-        const names = combined.map(id => {
-            const s = this._studentMap?.get(id) || this._students.find(st => st.id === id);
-            return s ? (s.prenom || s.nom) : '';
-        }).filter(Boolean).join(' + ');
-
-        if (names) {
-            const groupLabel = combined.length === 2 ? 'Binôme' : `Groupe (${combined.length})`;
-            UI?.showNotification?.(`${groupLabel} : ${names}`, 'success', 4000, {
-                action: {
-                    label: 'Annuler',
-                    onClick: () => this._undo()
-                }
-            });
-        }
         return true;
     },
 
@@ -1314,7 +1264,11 @@ export const SeatingChartManager = {
             ? (students.length === 2 ? `Binôme (${students.length} élèves)` : `Groupe (${students.length} élèves)`)
             : `${primary.prenom || ''} ${primary.nom || ''}`;
 
-        const primaryStatuses = !isMulti ? this._getStudentStatusLabels(primary) : [];
+        const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
+        const primaryClassInfo = !isMulti ? this._getStudentContextualClassInfo(primary) : null;
+        const primaryStatuses = !isMulti
+            ? [...(primaryClassInfo?.tooltipLabel ? [primaryClassInfo.tooltipLabel] : []), ...this._getStudentStatusLabels(primary)]
+            : [];
         const primaryStatusSuffix = primaryStatuses.length > 0
             ? ` • ${primaryStatuses.join(' • ')}`
             : '';
@@ -1341,7 +1295,7 @@ export const SeatingChartManager = {
                     <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${s.id}">
                         <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${s.id}" type="button">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                             ${memberStatusBadge}
                         </button>
                         <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${s.prenom || s.nom}">
@@ -1360,7 +1314,7 @@ export const SeatingChartManager = {
                     <button class="sc-sheet-picker-item" data-join-student-id="${s.id}" type="button">
                         <div class="sc-sheet-picker-user">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                         </div>
                         <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:user-plus-linear"></iconify-icon> Associer</span>
                     </button>
@@ -1530,6 +1484,7 @@ export const SeatingChartManager = {
             deskIcon = 'solar:forbidden-circle-linear';
         }
 
+        const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
         const headerEntityName = stationNum
             ? `Poste #${stationNum} • Rangée ${row + 1}, Col ${col + 1}`
             : `Rangée ${row + 1} • Table ${col + 1}`;
@@ -1561,7 +1516,7 @@ export const SeatingChartManager = {
                             <button class="sc-sheet-picker-item" data-student-id="${s.id}" type="button">
                                 <div class="sc-sheet-picker-user">
                                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                                    <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                                    <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                                 </div>
                                 <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Placer</span>
                             </button>
@@ -1668,15 +1623,6 @@ export const SeatingChartManager = {
                 this._savePositionsToState();
                 this._render();
                 this._animateCellPlaced(row, col);
-                const s = this._studentMap?.get(studentId) || this._students.find(st => st.id === studentId);
-                if (s) {
-                    UI?.showNotification?.(`${s.prenom || s.nom} placé à la table (${row + 1}, ${col + 1})`, 'success', 4000, {
-                        action: {
-                            label: 'Annuler',
-                            onClick: () => this._undo()
-                        }
-                    });
-                }
             });
         });
 
@@ -1905,7 +1851,7 @@ export const SeatingChartManager = {
         this._loadPositionsFromState();
 
         const currentClass = this._getCurrentClass();
-        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const isVirtual = this._isVirtualClass(currentClass);
         const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
 
         this._applyLockState(locked, { skipSmartFit: true });
@@ -2059,7 +2005,7 @@ export const SeatingChartManager = {
                 this._loadGridConfig();
                 this._loadPositionsFromState();
                 const currentClass = this._getCurrentClass();
-                const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+                const isVirtual = this._isVirtualClass(currentClass);
                 const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
                 this._applyLockState(locked, { skipSmartFit: true });
                 this._updateSidebarLockState();
@@ -2137,7 +2083,7 @@ export const SeatingChartManager = {
         this._loadGridConfig();
         this._loadPositionsFromState();
 
-        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const isVirtual = this._isVirtualClass(currentClass);
         // En mode consultation par défaut dès qu'au moins un élève est placé (ou classe reconstituée)
         const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
         this._applyLockState(locked, { skipSmartFit: true });
@@ -2398,8 +2344,12 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _syncLockControlsUI(locked) {
+        const isVirtual = this._isVirtualClass();
         const view = document.getElementById('seatingChartView');
-        if (view) view.dataset.locked = locked;
+        if (view) {
+            view.dataset.locked = locked;
+            view.dataset.virtual = isVirtual ? 'true' : 'false';
+        }
         const board = document.getElementById('scClassroomBoard');
         if (board) board.dataset.locked = locked ? 'true' : 'false';
 
@@ -2408,7 +2358,9 @@ export const SeatingChartManager = {
 
         const btn = document.getElementById('scLockBtn');
         if (btn) {
-            const btnLabel = locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan';
+            const btnLabel = isVirtual
+                ? 'Classe reconstituée en lecture seule'
+                : (locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
             btn.classList.toggle('locked', locked);
             btn.setAttribute('aria-checked', (!locked).toString());
             btn.setAttribute('aria-label', btnLabel);
@@ -2418,6 +2370,7 @@ export const SeatingChartManager = {
 
         const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
         if (floatingUnlockBtn) {
+            floatingUnlockBtn.style.display = isVirtual ? 'none' : '';
             const floatLabel = locked ? 'Déverrouiller pour ajuster' : 'Mode Édition';
             floatingUnlockBtn.setAttribute('aria-label', floatLabel);
             floatingUnlockBtn.setAttribute('data-tooltip', floatLabel);
@@ -2488,6 +2441,15 @@ export const SeatingChartManager = {
     },
 
     _toggleLock() {
+        if (this._isVirtualClass()) {
+            this._isLocked = true;
+            this._syncLockControlsUI(true);
+            UI?.showNotification?.(
+                'Classe reconstituée en lecture seule. Modifiez le plan directement dans chaque groupe.',
+                'info'
+            );
+            return;
+        }
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
             this._zoomAnimCleanup = null;
@@ -2536,8 +2498,6 @@ export const SeatingChartManager = {
                     shouldPersistValidation = Boolean(this._hasChangesSinceUnlock || !wasAlreadyValidated);
                     if (shouldPersistValidation) {
                         currentClass[validatedKey] = Date.now();
-                        const planLabel = this._isActivityMode() ? "Plan d'activité" : 'Plan de classe';
-                        UI?.showNotification?.(`${planLabel} validé et figé`, 'success');
                     }
                     this._wasLockedBeforeEdit = true;
                     this._hasChangesSinceUnlock = false;
@@ -2873,8 +2833,9 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _printChart() {
-        const classData = appState.classes?.find(c => c.id === appState.currentClassId);
-        const className = classData?.name || 'Plan de classe';
+        const classData = this._getCurrentClass() || appState.classes?.find(c => c.id === appState.currentClassId);
+        const baseClassName = classData?.name || 'Plan de classe';
+        const className = this._isVirtualClass(classData) ? `${baseClassName} (Reconstituée)` : baseClassName;
         const activeStudents = (this._students || []).filter(s => !this._isStudentDeparted(s));
         const studentCount = activeStudents.length;
         const dateStr = new Date().toLocaleDateString('fr-FR');
@@ -3272,6 +3233,7 @@ export const SeatingChartManager = {
     },
 
     _saveGridConfig() {
+        if (this._isVirtualClass()) return;
         const rows = this._getRows();
         const cols = this._getCols();
         const locked = this._isLocked;
@@ -3408,7 +3370,7 @@ export const SeatingChartManager = {
         }
 
         const currentClass = this._getCurrentClass();
-        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const isVirtual = this._isVirtualClass(currentClass);
         const maxPerCell = (isVirtual || this._isActivityMode()) ? MAX_ACTIVITY_GROUP_SIZE : 1;
 
         for (const [key, items] of cellBuckets.entries()) {
@@ -3454,6 +3416,12 @@ export const SeatingChartManager = {
         const classId = appState.currentClassId;
         if (!classId) return null;
         return ClassManager.getClassById(classId) || (appState.classes || []).find(c => c.id === classId) || null;
+    },
+
+    _isVirtualClass(cls = this._getCurrentClass()) {
+        if (cls?.isVirtual) return true;
+        const id = cls?.id || appState.currentClassId;
+        return ClassManager.isVirtualClass(id);
     },
 
     _getCellSpecial(row, col) {
@@ -3776,7 +3744,7 @@ export const SeatingChartManager = {
         });
 
         const currentClass = this._getCurrentClass();
-        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        const isVirtual = this._isVirtualClass(currentClass);
         const maxPerCell = (isVirtual || this._isActivityMode()) ? MAX_ACTIVITY_GROUP_SIZE : 1;
 
         for (const [key, items] of cellBuckets.entries()) {
@@ -3787,6 +3755,7 @@ export const SeatingChartManager = {
     },
 
     _savePositionsToState(preserveOutOfBounds = false) {
+        if (this._isVirtualClass()) return;
         const placed = this._getPlacedMap();
         const posKey = this._getActivePositionKey();
         const updatedKey = this._getActiveClassUpdatedKey();
@@ -3859,7 +3828,7 @@ export const SeatingChartManager = {
             this._applySearchHighlight(this._activeSearchTerm);
         }
 
-        if (this._getPlacedIds().size > 0 || this._isLocked) {
+        if (this._getPlacedIds().size > 0 || (this._isLocked && !this._isVirtualClass())) {
             this._dismissOnboardingHint();
         } else {
             this._maybeShowOnboardingHint();
@@ -3913,6 +3882,7 @@ export const SeatingChartManager = {
 
         const posKey = this._getActivePositionKey();
         const isActivity = this._isActivityMode();
+        const isVirtual = this._isVirtualClass();
         const special = this._getCellSpecial(row, col);
         const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
         const stationBadgeHTML = stationNum ? `<span class="sc-station-badge" aria-hidden="true">#${stationNum}</span>` : '';
@@ -3946,6 +3916,10 @@ export const SeatingChartManager = {
             const statusBadgeHTML = badgeInfo
                 ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
                 : '';
+            const classInfo = isVirtual ? this._getStudentContextualClassInfo(student) : null;
+            const groupBadgeHTML = classInfo?.shortLabel
+                ? `<span class="sc-cell-group-badge" aria-label="${Utils.escapeHtml(classInfo.tooltipLabel)}">${Utils.escapeHtml(classInfo.shortLabel)}</span>`
+                : '';
             const nameInfo = this._getStudentCellNameInfo(student);
 
             cell.innerHTML = `
@@ -3955,6 +3929,7 @@ export const SeatingChartManager = {
                 </div>
                 <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
                 ${stationBadgeHTML}
+                ${groupBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -4044,10 +4019,15 @@ export const SeatingChartManager = {
             const namesHtml = students.map(s => {
                 const isMemberDeparted = this._isStudentDeparted(s);
                 const memberNameInfo = this._getStudentCellNameInfo(s);
+                const memberClassInfo = isVirtual ? this._getStudentContextualClassInfo(s) : null;
+                const memberGroupTagHtml = memberClassInfo?.shortLabel
+                    ? `<span class="sc-stacked-group-tag" aria-label="${Utils.escapeHtml(memberClassInfo.tooltipLabel)}">${Utils.escapeHtml(memberClassInfo.shortLabel)}</span>`
+                    : '';
                 const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(getMemberTooltip(s))}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
                 return `
                 <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}${memberNameInfo.modifierClass}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text${memberNameInfo.modifierClass}">${memberNameInfo.html}</span>
+                    ${memberGroupTagHtml}
                     <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
@@ -4209,8 +4189,6 @@ export const SeatingChartManager = {
                         this._savePositionsToState();
                         this._render();
                         this._animateCellPlaced(row, col);
-                        const s = this._studentMap?.get(selectedId) || this._students.find(st => st.id === selectedId);
-                        if (s) UI?.showNotification?.(`${s.prenom || s.nom} déplacé`, 'info');
                     } else {
                         this._placeSelectedAt(row, col);
                     }
@@ -4388,7 +4366,7 @@ export const SeatingChartManager = {
                 return `
                 <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                    <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                    <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                     ${chipBadgeHtml}
                     <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                         <iconify-icon icon="solar:user-id-linear"></iconify-icon>
@@ -4407,7 +4385,7 @@ export const SeatingChartManager = {
                     ${filteredDeparted.map(s => `
                         <div class="sc-student-chip sc-chip-departed" draggable="true" data-result-id="${s.id}">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                            <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
                             <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                                 <iconify-icon icon="solar:user-id-linear"></iconify-icon>
@@ -4612,10 +4590,36 @@ export const SeatingChartManager = {
         return labels;
     },
 
+    _getStudentContextualClassInfo(studentResult) {
+        if (!studentResult) return null;
+        const currentClass = this._getCurrentClass();
+        const isVirtual = this._isVirtualClass(currentClass);
+        const currentClassName = currentClass?.name || Utils.getCurrentClassName();
+        const rawOrigin = Utils.getOriginClass(studentResult, currentClassName);
+        if (!rawOrigin) return null;
+        const displayLabel = Utils.formatClassDisplayName(rawOrigin);
+        if (!displayLabel) return null;
+        const isGroup = isVirtual || Utils.isGroupClassName(rawOrigin) || Utils.isGroupClassName(displayLabel);
+        const shortLabel = isGroup ? Utils.formatShortGroupLabel(rawOrigin) : displayLabel;
+        return {
+            raw: rawOrigin,
+            displayLabel,
+            shortLabel,
+            isGroup,
+            isVirtual,
+            tooltipLabel: isGroup ? `Groupe ${displayLabel}` : `Classe ${displayLabel}`
+        };
+    },
+
     _getStudentTooltipText(studentResult, activePeriod = appState.currentPeriod || 'T1') {
         if (!studentResult) return '';
         const baseName = Utils.formatStudentFirstLastName(studentResult.nom, studentResult.prenom);
-        const labels = this._getStudentStatusLabels(studentResult, activePeriod);
+        const classInfo = this._getStudentContextualClassInfo(studentResult);
+        const labels = [];
+        if (classInfo?.tooltipLabel) {
+            labels.push(classInfo.tooltipLabel);
+        }
+        labels.push(...this._getStudentStatusLabels(studentResult, activePeriod));
         return labels.length > 0 ? `${baseName} • ${labels.join(' • ')}` : baseName;
     },
 
@@ -4665,7 +4669,7 @@ export const SeatingChartManager = {
             : (gridConfig?.cols || this._getDefaultCols(mode));
         const globalSpecial = gridConfig?.specialLayout || {};
         const classSpecial = cls[classSpecialKey] || {};
-        const isVirtual = cls.isVirtual || ClassManager.isVirtualClass(cls.id);
+        const isVirtual = this._isVirtualClass(cls);
         const maxPerCell = (isVirtual || mode === 'activity') ? MAX_ACTIVITY_GROUP_SIZE : 1;
 
         const results = classResults || ClassManager.getStudentsForClass(cls.id);
@@ -4707,12 +4711,33 @@ export const SeatingChartManager = {
         const totalPlaced = classResults.filter(r => validPlacedIds.has(r.id)).length;
         const unplaced = Math.max(0, total - placedActive);
 
+        const isVirtual = this._isVirtualClass(cls);
+
         if (total === 0 || totalPlaced === 0) {
             return {
                 status: 'empty',
+                isVirtual,
                 label: 'À faire',
                 shortLabel: 'À faire',
                 icon: 'solar:map-point-linear',
+                placed: totalPlaced,
+                total,
+                unplaced
+            };
+        }
+
+        if (isVirtual) {
+            const sourceGroups = Array.isArray(cls.sourceGroupNames) && cls.sourceGroupNames.length > 0
+                ? cls.sourceGroupNames.join(' & ')
+                : '';
+            const label = sourceGroups ? `Vue combinée (${sourceGroups})` : 'Vue combinée';
+            return {
+                status: 'virtual',
+                isVirtual: true,
+                label,
+                shortLabel: 'Vue combinée',
+                sourceGroups,
+                icon: 'solar:layers-minimalistic-linear',
                 placed: totalPlaced,
                 total,
                 unplaced
@@ -4770,13 +4795,37 @@ export const SeatingChartManager = {
 
         pill.className = `sc-status-pill sc-status-${info.status}`;
         pill.style.display = '';
-        pill.setAttribute('role', 'button');
-        pill.setAttribute('tabindex', '0');
 
         const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
         const unplacedWarning = info.unplaced > 0
             ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
             : '';
+
+        if (info.status === 'virtual') {
+            const sourceSuffix = info.sourceGroups ? ` · ${Utils.escapeHtml(info.sourceGroups)}` : '';
+            const tooltipMsg = info.sourceGroups
+                ? `Superposition en lecture seule des groupes ${info.sourceGroups}. Modifiez le plan dans chaque groupe.`
+                : 'Classe reconstituée en lecture seule. Modifiez le plan dans chaque groupe.';
+            pill.removeAttribute('role');
+            pill.removeAttribute('tabindex');
+            pill.innerHTML = `
+                <div class="sc-status-pill-inner">
+                    <div class="sc-status-pill-side sc-status-pill-rest">
+                        <iconify-icon class="sc-status-pill-icon" icon="solar:layers-minimalistic-linear"></iconify-icon>
+                        <span class="sc-status-pill-text">Vue combinée${sourceSuffix}</span>
+                        ${unplacedWarning}
+                    </div>
+                </div>
+            `;
+            pill.removeAttribute('title');
+            pill.setAttribute('data-tooltip', tooltipMsg);
+            pill.setAttribute('aria-label', tooltipMsg);
+            TooltipsUI?.updateTooltip?.(pill, tooltipMsg);
+            return;
+        }
+
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
 
         const isLocked = info.status === 'locked';
         const iconRest = isLocked ? 'solar:lock-bold' : 'solar:test-tube-linear';
@@ -4935,27 +4984,6 @@ export const SeatingChartManager = {
         } else {
             this._animateCellPlaced(targetRow, targetCol);
         }
-
-        if (this._isMobileView() && window.UI?.showNotification) {
-            const student = this._studentMap?.get(resultId);
-            const sName = student ? `${student.prenom || ''} ${student.nom || ''}`.trim() : 'Élève';
-            const actionMsg = isSwap ? 'Places permutées' : `${sName} placé`;
-            window.UI.showNotification(actionMsg, 'info', 4000, {
-                group: 'sc-undo-toast',
-                replaceExisting: true,
-                bypassCoalescing: true,
-                icon: 'solar:undo-left-round-linear',
-                action: {
-                    label: 'Annuler',
-                    onClick: () => {
-                        this._undo();
-                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                            try { navigator.vibrate(15); } catch (_) {}
-                        }
-                    }
-                }
-            });
-        }
     },
 
     _removeStudentFromCell(row, col, studentId) {
@@ -4997,25 +5025,6 @@ export const SeatingChartManager = {
             this._updateFooter();
             this._updateSidebarLockState();
             this._onRemovalComplete();
-
-            if (this._isMobileView() && window.UI?.showNotification) {
-                const msg = removedIds.length > 1 ? 'Poste libéré' : 'Élève retiré du plan';
-                window.UI.showNotification(msg, 'info', 4000, {
-                    group: 'sc-undo-toast',
-                    replaceExisting: true,
-                    bypassCoalescing: true,
-                    icon: 'solar:undo-left-round-linear',
-                    action: {
-                        label: 'Annuler',
-                        onClick: () => {
-                            this._undo();
-                            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                                try { navigator.vibrate(15); } catch (_) {}
-                            }
-                        }
-                    }
-                });
-            }
         });
     },
 
@@ -5537,31 +5546,11 @@ export const SeatingChartManager = {
                 this._updateFooter();
                 this._updateSidebarLockState();
                 this._onRemovalComplete();
-
-                if (this._isMobileView() && window.UI?.showNotification) {
-                    const msg = removedIds.length > 1 ? 'Poste libéré' : 'Élève retiré du plan';
-                    window.UI.showNotification(msg, 'info', 4000, {
-                        group: 'sc-undo-toast',
-                        replaceExisting: true,
-                        bypassCoalescing: true,
-                        icon: 'solar:undo-left-round-linear',
-                        action: {
-                            label: 'Annuler',
-                            onClick: () => {
-                                this._undo();
-                                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                                    try { navigator.vibrate(15); } catch (_) {}
-                                }
-                            }
-                        }
-                    });
-                }
             });
         } else if (type === 'multi-cell') {
             const rows = this._getRows();
             const cols = this._getCols();
             let delay = 0;
-            const removedIds = [];
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -5578,7 +5567,6 @@ export const SeatingChartManager = {
                             }
                         }
                         this._setCellStudentIds(r, c, remaining);
-                        removedIds.push(...matching);
                     }
                 }
             }
@@ -5592,25 +5580,6 @@ export const SeatingChartManager = {
                 this._updateSidebarLockState();
                 this._onRemovalComplete();
                 this._clearSelection();
-
-                if (this._isMobileView() && window.UI?.showNotification) {
-                    const count = removedIds.length;
-                    window.UI.showNotification(`${count} élève${count > 1 ? 's' : ''} retiré${count > 1 ? 's' : ''} du plan`, 'info', 4000, {
-                        group: 'sc-undo-toast',
-                        replaceExisting: true,
-                        bypassCoalescing: true,
-                        icon: 'solar:undo-left-round-linear',
-                        action: {
-                            label: 'Annuler',
-                            onClick: () => {
-                                this._undo();
-                                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                                    try { navigator.vibrate(15); } catch (_) {}
-                                }
-                            }
-                        }
-                    });
-                }
             }, Math.min(delay * 30 + 300, 600));
         }
 
@@ -5622,6 +5591,9 @@ export const SeatingChartManager = {
         return ClassManager.getStudentsForClass(classId)
             .map(r => ({
                 id: r.id, nom: r.nom, prenom: r.prenom,
+                classId: r.classId,
+                classe: r.classe,
+                originClass: r.originClass,
                 studentPhoto: r.studentPhoto,
                 seatingPosition: r.seatingPosition,
                 seatingActivityPosition: r.seatingActivityPosition,
@@ -5654,6 +5626,7 @@ export const SeatingChartManager = {
     },
 
     _getEffectiveOnboardingStep() {
+        if (this._isVirtualClass()) return 'virtual-empty';
         if (this._isActivityMode()) return 'activity';
         if (this._onboardingStep === 'room' || this._onboardingStep === 'placement') {
             return this._onboardingStep;
@@ -5756,7 +5729,8 @@ export const SeatingChartManager = {
     },
 
     _maybeShowOnboardingHint() {
-        if (this._getPlacedIds().size > 0 || this._isLocked) return;
+        const isVirtual = this._isVirtualClass();
+        if (this._getPlacedIds().size > 0 || (this._isLocked && !isVirtual)) return;
 
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea) return;
@@ -5788,7 +5762,29 @@ export const SeatingChartManager = {
     },
 
     _renderOnboardingHintContent(hint, step) {
-        if (step === 'activity') {
+        if (step === 'virtual-empty') {
+            const currentClass = this._getCurrentClass();
+            const sourceIds = Array.isArray(currentClass?.sourceGroupIds) ? currentClass.sourceGroupIds : [];
+            const sourceNames = Array.isArray(currentClass?.sourceGroupNames) ? currentClass.sourceGroupNames : [];
+            const groupButtonsHtml = sourceIds.map((gid, idx) => {
+                const gName = sourceNames[idx] || Utils.getCurrentClassName(gid) || 'Groupe';
+                return `
+                    <button type="button" class="sc-onboarding-btn secondary" data-switch-group-id="${Utils.escapeHtml(gid)}">
+                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                        <span>Ouvrir ${Utils.escapeHtml(gName)}</span>
+                    </button>
+                `;
+            }).join('');
+
+            hint.innerHTML = `
+                <div class="sc-onboarding-hint-text">
+                    <span class="sc-hint-step-badge">Classe reconstituée · Lecture seule</span>
+                    <div class="sc-hint-title">Aucun élève placé pour l'instant</div>
+                    <div class="sc-hint-subtitle">Cette vue superpose automatiquement les plans de vos groupes. Placez vos élèves directement dans chaque groupe :</div>
+                </div>
+                ${groupButtonsHtml ? `<div class="sc-onboarding-actions">${groupButtonsHtml}</div>` : ''}
+            `;
+        } else if (step === 'activity') {
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan d'activité vide</div>
@@ -5959,6 +5955,19 @@ export const SeatingChartManager = {
     },
 
     _bindOnboardingHintEvents(hint) {
+        hint.querySelectorAll('[data-switch-group-id]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const gid = btn.dataset.switchGroupId;
+                if (!gid) return;
+                if (typeof ClassUIManager?.handleClassSwitch === 'function') {
+                    ClassUIManager.handleClassSwitch(gid);
+                } else {
+                    ClassManager.switchClass(gid);
+                }
+            });
+        });
+
         hint.querySelectorAll('.sc-room-preset-card').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();

@@ -275,6 +275,30 @@ describe('PronoteTrombiParser Unit Tests', () => {
 
             // Et Tom ne doit PAS empiéter sur Gaultier (ligne du dessus)
             expect(tom.zone.cy).toBeGreaterThan(gaultier.textY);
+
+            // Seul Tom est marqué comme carré d'initiales Pronote (photo à ne pas importer)
+            expect(tom.zone.isPlaceholder).toBe(true);
+            expect(sofia.zone.isPlaceholder).toBe(false);
+            expect(gaultier.zone.isPlaceholder).toBe(false);
+        });
+
+        it('should not flag placeholders when no image could be detected on the page (crop fallback kept)', () => {
+            const mockViewport = {
+                width: 1200,
+                height: 1600,
+                scale: 2,
+                convertToViewportPoint: (x, y) => [x, y]
+            };
+            const mockItems = [
+                { str: 'ALVES Lucas', transform: [0, 0, 0, 0, 200, 300], width: 100, height: 10 },
+                { str: 'BERNARD Julie', transform: [0, 0, 0, 0, 600, 300], width: 100, height: 10 }
+            ];
+
+            for (const images of [[], undefined, null]) {
+                const students = extractStudentsFromTextItems(mockItems, mockViewport, 0, images);
+                expect(students).toHaveLength(2);
+                expect(students.every(s => s.zone.isPlaceholder === false)).toBe(true);
+            }
         });
 
         it('should use document-wide calibration when an entire row has no photos', () => {

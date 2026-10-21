@@ -1524,6 +1524,12 @@
     border-color: var(--success-color);
 }
 
+.preview-item .student-avatar.preview-canvas {
+    border-color: var(--border-color-strong);
+    font-size: 1.25rem;
+    cursor: default;
+}
+
 .trombi-preview-badge {
     position: absolute;
     bottom: -6px;

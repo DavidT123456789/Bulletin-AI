@@ -1,5 +1,5 @@
 
-import { appState } from '../state/State.js';
+import { appState, userSettings } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { DOMHelper } from './DOMHelper.js';
 
@@ -424,14 +424,19 @@ export const Utils = {
         const { includeAppreciation = false, currentClassName = '' } = options;
         const originClass = this.getOriginClass(student, currentClassName);
         const displayOriginClass = originClass ? this.formatClassDisplayName(originClass) : '';
+        const isGroupOrigin = originClass ? (this.isGroupClassName(originClass) || this.isGroupClassName(displayOriginClass)) : false;
+        const shortGroupOrigin = isGroupOrigin ? this.formatShortGroupLabel(originClass) : '';
 
         const searchFields = [
             student.nom,
             student.prenom,
             originClass,
             displayOriginClass,
+            shortGroupOrigin,
             originClass ? `classe ${originClass}` : '',
             displayOriginClass ? `classe ${displayOriginClass}` : '',
+            isGroupOrigin && displayOriginClass ? `groupe ${displayOriginClass}` : '',
+            shortGroupOrigin ? `groupe ${shortGroupOrigin}` : '',
             originClass ? this.normalizeClassName(originClass) : ''
         ];
 
@@ -506,7 +511,9 @@ export const Utils = {
             const nomDisplay = highlightQuery ? this.highlightMatch(nomUpper, highlightQuery) : this.escapeHtml(nomUpper);
             const prenomDisplay = highlightQuery ? this.highlightMatch(prenomClean, highlightQuery) : this.escapeHtml(prenomClean);
             const displayOrigin = originClass ? this.formatClassDisplayName(originClass) : '';
-            const originBadge = displayOrigin ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${this.escapeHtml(displayOrigin)}">${this.escapeHtml(displayOrigin)}</span>` : '';
+            const isGroupOrigin = displayOrigin ? (this.isGroupClassName(originClass) || this.isGroupClassName(displayOrigin)) : false;
+            const badgeTitle = isGroupOrigin ? `Groupe : ${this.escapeHtml(displayOrigin)}` : `Classe d'origine : ${this.escapeHtml(displayOrigin)}`;
+            const originBadge = displayOrigin ? ` <span class="student-origin-class-tag" title="${badgeTitle}">${this.escapeHtml(displayOrigin)}</span>` : '';
             return `<span class="student-nom">${nomDisplay}</span> <span class="student-prenom">${prenomDisplay}${originBadge}</span>`;
         }
         return `${nomUpper} ${prenomClean}`.trim();
@@ -626,28 +633,79 @@ export const Utils = {
         const trimmed = name.trim();
         if (!trimmed) return false;
         return (
-            /^[3-6]\s*(?:(?:eme|ème|ieme|ième|e|°|-)\s*)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
-            /^2\s*(?:nde|de|nd)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
-            /^1\s*(?:ere|ère|er)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
-            /^(?:term(?:inale)?|tle).*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^[3-6]\s*(?:(?:eme|ème|ieme|ième|e|ᵉ|°|-)\s*)?.*?(?:\b|(?<=[0-9°eèéêᵉ]))(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^2\s*(?:nde|de|nd|ⁿᵈ)?.*?(?:\b|(?<=[0-9°eèéêᵈ]))(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^1\s*(?:ere|ère|er|ʳᵉ)?.*?(?:\b|(?<=[0-9°eèéêᵉ]))(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^(?:term(?:inale)?|tle).*?(?:\b|(?<=[a-zA-Z]))(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
             /\b(?:groupe|grp)\b/i.test(trimmed)
         );
     },
 
     /**
-     * Récupère la classe d'origine d'un élève si elle est distincte de la classe courante
+     * Formate une étiquette courte de groupe pour les cellules du plan de classe (ex: "3 TECHNOLOGIE G1" -> "G1", "3ᵉG2" -> "G2")
+     * @param {string} name - Nom brut ou formaté du groupe
+     * @returns {string} Étiquette courte du groupe (ex: "G1")
+     */
+    formatShortGroupLabel(name) {
+        if (!name || typeof name !== 'string') return '';
+        const trimmed = name.trim();
+        if (!trimmed) return '';
+        const groupMatch = trimmed.match(/(?:^|[\s0-9°eèéêᵉʳᵈⁿ._-])(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        if (groupMatch) {
+            return `G${groupMatch[1].toUpperCase()}`;
+        }
+        const formatted = this.formatClassDisplayName(trimmed);
+        return formatted.length <= 6 ? formatted : formatted.slice(0, 6);
+    },
+
+    /**
+     * Résout le nom de la classe active (physique ou reconstituée) sans dépendance circulaire
+     * @param {string|null} [classId=null] - ID de la classe (par défaut la classe active)
+     * @returns {string} Nom de la classe active ou chaîne vide
+     */
+    getCurrentClassName(classId = null) {
+        const activeId = classId || appState?.currentClassId || userSettings?.academic?.currentClassId || '';
+        if (!activeId) return '';
+        const classes = userSettings?.academic?.classes || appState?.classes || [];
+        const realClass = classes.find(c => c.id === activeId);
+        if (realClass?.name) return realClass.name;
+        if (typeof activeId === 'string' && activeId.startsWith('virtual_')) {
+            const normTarget = activeId.slice('virtual_'.length);
+            const results = appState?.generatedResults || [];
+            for (const r of results) {
+                const origin = (r?.studentData?.classe || r?.classe || r?.originClass || '').trim();
+                if (origin && this.normalizeClassName(origin) === normTarget) {
+                    return this.formatClassDisplayName(origin);
+                }
+            }
+            return normTarget;
+        }
+        return '';
+    },
+
+    /**
+     * Récupère la classe d'origine d'un élève si elle est distincte de la classe courante,
+     * ou son groupe d'enseignement source lorsqu'on consulte une classe reconstituée.
      * @param {Object} result - Objet élève
      * @param {string} [currentClassName=''] - Nom de la classe active
-     * @returns {string} Classe d'origine ou chaîne vide
+     * @returns {string} Classe d'origine / groupe source ou chaîne vide
      */
     getOriginClass(result, currentClassName = '') {
         if (!result) return '';
+        const normCurrent = currentClassName ? this.normalizeClassName(currentClassName) : '';
         const origin = (result.studentData?.classe || result.classe || result.originClass || '').trim();
-        if (!origin) return '';
-        if (currentClassName && this.normalizeClassName(origin) === this.normalizeClassName(currentClassName)) {
-            return '';
+        if (origin && (!normCurrent || this.normalizeClassName(origin) !== normCurrent)) {
+            return origin;
         }
-        return origin;
+        if (result.classId || result.sourceGroupName) {
+            const classes = userSettings?.academic?.classes || appState?.classes || [];
+            const sourceClass = result.classId ? classes.find(c => c.id === result.classId) : null;
+            const groupName = (sourceClass?.name || result.sourceGroupName || '').trim();
+            if (groupName && (!normCurrent || this.normalizeClassName(groupName) !== normCurrent)) {
+                return groupName;
+            }
+        }
+        return '';
     },
 
     /**

@@ -258,10 +258,18 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
         }
 
         // Éliminer les initiales orphelines de remplacement (ex: "ET") et les annotations de classe isolées (ex: "(3 1)")
+        let pendingOrphanInitials = false;
         const filteredEntries = groupedEntries.filter((entry, idx, arr) => {
             const text = entry.textParts.join(' ').trim();
-            if (/^[A-Z]{1,3}$/.test(text) && idx < arr.length - 1) return false;
+            if (/^[A-Z]{1,3}$/.test(text) && idx < arr.length - 1) {
+                pendingOrphanInitials = true;
+                return false;
+            }
             if (/^\s*\([^)]+\)\s*$/.test(text)) return false;
+            if (pendingOrphanInitials) {
+                entry.hadOrphanInitials = true;
+                pendingOrphanInitials = false;
+            }
             return true;
         });
 
@@ -300,7 +308,8 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
                 originClass: studentClass || undefined,
                 classe: studentClass || undefined,
                 colCenterX: col.centerX,
-                textY: entry.y
+                textY: entry.y,
+                hadOrphanInitials: Boolean(entry.hadOrphanInitials)
             });
         });
     });
@@ -464,7 +473,9 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
             zone: {
                 cx,
                 cy,
-                r
+                r,
+                // Carré gris Pronote (initiales) : absence de photo bitmap sur la page ou initiales orphelines détectées
+                isPlaceholder: !student.matchedRect && (matchedStudents.length > 0 || Boolean(student.hadOrphanInitials))
             }
         };
     });
@@ -609,11 +620,11 @@ export async function parsePronoteTrombiPdf(fileOrBuffer, options = {}) {
         // Extraction géométrique des élèves avec alignement exact sur les images
         const pageStudents = extractStudentsFromTextItems(textContent.items, viewport, pageIndex, imageRects);
 
-        // Découper la photo pour chaque élève
+        // Découper la photo pour chaque élève (hors carrés d'initiales Pronote)
         const pageZones = [];
         for (const student of pageStudents) {
             student.id = `trombi-student-${globalIdCounter++}`;
-            student.photoData = cropStudentPhoto(canvas, student.zone);
+            student.photoData = student.zone.isPlaceholder ? null : cropStudentPhoto(canvas, student.zone);
             student.zone.id = globalIdCounter;
             student.zone.studentId = student.id;
 

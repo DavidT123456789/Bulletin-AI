@@ -327,8 +327,6 @@ export const SingleStudentManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result) return;
 
-        UI.showNotification(`Modification de ${Utils.formatStudentName(result.nom, result.prenom)}.`, 'info');
-
         appState.currentEditingId = id;
 
         document.querySelectorAll('.appreciation-result.is-editing').forEach(c => c.classList.remove('is-editing'));

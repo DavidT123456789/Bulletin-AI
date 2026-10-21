@@ -1546,7 +1546,7 @@ export const FocusPanelManager = {
      * @param {string} studentId - ID of student to cancel
      * @private
      */
-    _cancelGenerationForStudent(studentId, { notify = true, restoreUI = true } = {}) {
+    _cancelGenerationForStudent(studentId, { restoreUI = true } = {}) {
         if (this._activeGenerations.has(studentId)) {
             const controller = this._activeGenerations.get(studentId);
             controller.abort();
@@ -1578,10 +1578,6 @@ export const FocusPanelManager = {
                     this._updateListRow(result);
                 }
                 UI.updateControlButtons();
-            }
-
-            if (notify) {
-                UI.showNotification('Génération annulée.', 'info');
             }
         }
     },

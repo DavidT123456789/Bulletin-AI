@@ -355,15 +355,6 @@ describe('SingleStudentManager', () => {
             expect(DOM.prenomInput.value).toBe('Lucas');
             expect(appState.currentEditingId).toBe('test-id');
         });
-
-        it('should show notification', () => {
-            SingleStudentManager.loadIntoForm('test-id');
-
-            expect(UI.showNotification).toHaveBeenCalledWith(
-                'Modification de MARTIN Lucas.',
-                'info'
-            );
-        });
     });
 
     describe('edit', () => {

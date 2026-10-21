@@ -521,10 +521,6 @@ export const FocusPanelHeader = {
         this.callbacks.onUpdateListRow(result);
         ClassUIManager.updateStudentCount();
         window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
-
-        if (!isCreationMode) {
-            UI.showNotification('Modifications enregistrées', 'success');
-        }
     },
 
     /**
@@ -561,11 +557,13 @@ export const FocusPanelHeader = {
         }
 
         const activeClassId = userSettings?.academic?.currentClassId || appState?.currentClassId;
-        const currentClassName = userSettings?.academic?.classes?.find(c => c.id === activeClassId)?.name || '';
+        const currentClassName = Utils.getCurrentClassName(activeClassId);
         const originClass = Utils.getOriginClass(result, currentClassName);
         const displayClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
+        const isGroupOrigin = displayClass ? (Utils.isGroupClassName(originClass) || Utils.isGroupClassName(displayClass)) : false;
+        const badgePrefix = isGroupOrigin ? 'Groupe' : 'Classe';
         const originBadge = displayClass ? `
-            <span class="focus-origin-class-badge">Classe ${Utils.escapeHtml(displayClass)}</span>
+            <span class="focus-origin-class-badge">${badgePrefix} ${Utils.escapeHtml(displayClass)}</span>
         ` : '';
 
         nameEl.innerHTML = `
@@ -665,7 +663,6 @@ export const FocusPanelHeader = {
                         }
                     }
                 }
-                UI.showNotification('Photo ajoutée', 'success');
             } else {
                 UI.showNotification('Erreur lors du téléchargement', 'error');
             }
@@ -716,8 +713,6 @@ export const FocusPanelHeader = {
                     imgEl.src = base64Data;
                     if (initialsEl) initialsEl.style.display = 'none';
                 }
-
-                UI.showNotification('Photo ajoutée (sera enregistrée avec l\'élève)', 'success');
             };
             reader.readAsDataURL(file);
         };

@@ -114,7 +114,6 @@ describe('ModelSelectionManager', () => {
         expect(DOM.aiModelSelect.value).toBe('gemini-3.8-flash');
         expect(refreshSpy).toHaveBeenCalledWith('aiModelSelect');
         expect(StorageManager.saveAppState).toHaveBeenCalled();
-        expect(UI.showNotification).toHaveBeenCalledWith('Modèle actif : Gemini 3.8 Flash', 'info');
         expect(ModelSelectionManager.isOpen).toBe(false);
     });
 

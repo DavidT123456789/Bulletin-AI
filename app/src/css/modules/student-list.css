@@ -1972,11 +1972,10 @@
 
     /* Make search button visible as an action button */
     .student-list-table th.name-header-with-search {
-        flex: 0 0 40px !important;
-        /* REDUCED to match orange button height */
+        flex: 0 0 44px !important;
+        /* 44px minimum touch target (aligned with the other toolbar buttons) */
         order: 1;
-        width: 40px !important;
-        /* REDUCED */
+        width: 44px !important;
         min-width: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -1987,22 +1986,16 @@
     .inline-search-trigger-btn {
         position: static !important;
         transform: none !important;
-        width: 40px;
-        /* REDUCED to match others */
-        height: 40px;
-        /* REDUCED */
+        width: 44px;
+        height: 44px;
         border-radius: var(--radius-md);
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--item-hover-bg);
         display: flex !important;
         align-items: center;
         justify-content: center;
         opacity: 1 !important;
         color: var(--text-secondary) !important;
         /* MATCH THE TOGGLE BTN TEXT COLOR */
-    }
-
-    [data-theme="dark"] .inline-search-trigger-btn {
-        background: rgba(255, 255, 255, 0.05);
     }
 
     /* Actions line (Generate, Update) */
@@ -2032,10 +2025,6 @@
         display: none !important;
     }
 
-    [data-theme="dark"] #avgWordsChip {
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-
     .appreciation-header-actions {
         position: static !important;
         transform: none !important;
@@ -2050,7 +2039,7 @@
 
     .appreciation-header-actions .btn-smart-action-inline {
         margin-left: auto;
-        height: 40px;
+        height: 44px;
         padding: 0 14px;
         border-radius: var(--radius-md);
         font-size: 13px;
@@ -2063,20 +2052,16 @@
         display: flex !important;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: var(--radius-md);
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--item-hover-bg);
         border: none;
         color: var(--text-secondary);
         font-size: 1.2rem;
         transition: all var(--transition-fast);
         pointer-events: auto !important;
         opacity: 1 !important;
-    }
-
-    [data-theme="dark"] #mobileCompactToggleBtn {
-        background: rgba(255, 255, 255, 0.05);
     }
 
     .expanded-view #mobileCompactToggleBtn {
@@ -2102,19 +2087,15 @@
     }
 
     .global-actions-dropdown .btn-action-menu-header {
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--item-hover-bg);
         border-radius: var(--radius-md);
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         opacity: 1;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
-    }
-
-    [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
-        background: rgba(255, 255, 255, 0.05);
     }
 
     .global-actions-dropdown.open .btn-action-menu-header {
