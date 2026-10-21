@@ -1381,13 +1381,13 @@
 }
 
 .status-badge.pending {
-    background: rgba(0, 0, 0, 0.06);
-    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-tertiary);
 }
 
 [data-theme="dark"] .status-badge.pending {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-tertiary);
 }
 
 .status-badge.error {
@@ -2143,6 +2143,10 @@
         transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
                     box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1),
                     background-color var(--transition-fast);
+        /* Long-press opens the actions menu: block native text selection & iOS callout */
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
     }
 
     [data-theme="dark"] .student-list-table tbody tr {
@@ -2358,10 +2362,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         background: rgba(0, 0, 0, 0.02);
-        padding: 10px 12px;
+        padding: 7px 12px;
         border-radius: var(--radius-md);
         border: 1px solid rgba(0, 0, 0, 0.02);
-        font-size: 13.5px;
+        font-size: 13px;
         line-height: 1.5;
         transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
                     background-color var(--transition-fast),

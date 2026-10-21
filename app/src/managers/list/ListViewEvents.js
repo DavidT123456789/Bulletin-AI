@@ -1,6 +1,6 @@
 /**
  * @fileoverview List View Events
- * Handles all DOM event listeners (click, keyboard, contextmenu) for the List View
+ * Handles all DOM event listeners (click, keyboard, contextmenu, touch long-press) for the List View
  */
 
 import { appState } from '../../state/State.js';
@@ -158,6 +158,37 @@ export const ListViewEvents = {
             });
         };
 
+        // Open a row actions menu anchored to its 3-dots button (auto dropup near the viewport bottom)
+        const openRowMenu = (menuBtn) => {
+            const dropdown = menuBtn.closest('.action-dropdown');
+            const menu = dropdown?.querySelector('.action-dropdown-menu');
+            if (!menu) return;
+
+            // Cancel pending cleanup if re-opening same menu
+            if (menu.dataset.closeTimeout) {
+                clearTimeout(parseInt(menu.dataset.closeTimeout));
+                delete menu.dataset.closeTimeout;
+            }
+
+            // CRITICAL: Explicitly clear inline styles to ensure default positioning (relative to button)
+            // This fixes the case where menu was previously opened via context menu (absolute/fixed position)
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.width = '';
+            menu.style.zIndex = '';
+
+            // Inversion automatique vers le haut si trop proche du bas de l'écran
+            const rect = menuBtn.getBoundingClientRect();
+            const openUp = (window.innerHeight - rect.bottom) < 260 && rect.top > 260;
+            dropdown.classList.toggle('dropup', openUp);
+
+            menu.classList.add('open');
+            dropdown.classList.add('open');
+            menuBtn.setAttribute('aria-expanded', 'true');
+        };
+
         // Close open menus on scroll (outside the menu itself)
         const handleScrollDismiss = (e) => {
             if (e.target?.closest?.('.action-dropdown-menu, .global-actions-dropdown-menu')) {
@@ -233,31 +264,7 @@ export const ListViewEvents = {
                 closeAllMenus();
 
                 // Toggle this menu (if it was closed, open it; if it was open, it stays closed)
-                if (!wasOpen) {
-                    // Cancel pending cleanup if re-opening same menu
-                    if (menu.dataset.closeTimeout) {
-                        clearTimeout(parseInt(menu.dataset.closeTimeout));
-                        delete menu.dataset.closeTimeout;
-                    }
-
-                    // CRITICAL: Explicitly clear inline styles to ensure default positioning (relative to button)
-                    // This fixes the case where menu was previously opened via context menu (absolute/fixed position)
-                    menu.style.position = '';
-                    menu.style.top = '';
-                    menu.style.left = '';
-                    menu.style.right = '';
-                    menu.style.width = '';
-                    menu.style.zIndex = '';
-
-                    // Inversion automatique vers le haut si trop proche du bas de l'écran
-                    const rect = menuBtn.getBoundingClientRect();
-                    const openUp = (window.innerHeight - rect.bottom) < 260 && rect.top > 260;
-                    dropdown?.classList.toggle('dropup', openUp);
-
-                    menu?.classList.add('open');
-                    dropdown?.classList.add('open');
-                    menuBtn.setAttribute('aria-expanded', 'true');
-                }
+                if (!wasOpen) openRowMenu(menuBtn);
                 return;
             }
 
@@ -373,8 +380,64 @@ export const ListViewEvents = {
             }
         }, { signal });
 
+        // Touch long-press on a student card opens its actions menu (shortcut for the 3-dots button)
+        const LONG_PRESS_DELAY_MS = 450;
+        const LONG_PRESS_MOVE_TOLERANCE_PX = 8;
+        const longPress = { timer: null, startX: 0, startY: 0, fired: false };
+
+        const cancelLongPress = () => {
+            clearTimeout(longPress.timer);
+            longPress.timer = null;
+        };
+
+        const triggerLongPress = (row) => {
+            cancelLongPress();
+            const menuBtn = row.querySelector('[data-action="toggle-menu"]');
+            if (!menuBtn) return;
+            longPress.fired = true;
+            navigator.vibrate?.(10);
+            closeAllMenus();
+            openRowMenu(menuBtn);
+        };
+
+        listContainer.addEventListener('touchstart', (e) => {
+            cancelLongPress();
+            longPress.fired = false;
+            if (e.touches.length !== 1) return;
+            const row = e.target.closest('.student-row');
+            if (!row || e.target.closest('.action-dropdown, a, input')) return;
+            longPress.startX = e.touches[0].clientX;
+            longPress.startY = e.touches[0].clientY;
+            longPress.timer = setTimeout(() => triggerLongPress(row), LONG_PRESS_DELAY_MS);
+        }, { passive: true, signal });
+
+        listContainer.addEventListener('touchmove', (e) => {
+            if (!longPress.timer) return;
+            const touch = e.touches[0];
+            const distance = Math.hypot(touch.clientX - longPress.startX, touch.clientY - longPress.startY);
+            if (distance > LONG_PRESS_MOVE_TOLERANCE_PX) cancelLongPress();
+        }, { passive: true, signal });
+
+        const endLongPress = (e) => {
+            cancelLongPress();
+            if (!longPress.fired) return;
+            // Swallow the synthetic click: neither open the Focus Panel nor dismiss the freshly opened menu
+            if (e.cancelable) e.preventDefault();
+            longPress.fired = false;
+        };
+        listContainer.addEventListener('touchend', endLongPress, { signal });
+        listContainer.addEventListener('touchcancel', endLongPress, { signal });
+
         // Right click (context menu) on student row to open actions menu
         listContainer.addEventListener('contextmenu', (e) => {
+            // Android fires contextmenu on long-press: the touch handler owns it (menu anchored to the 3-dots button)
+            if (longPress.timer || longPress.fired) {
+                e.preventDefault();
+                const pressedRow = e.target.closest('.student-row');
+                if (longPress.timer && pressedRow) triggerLongPress(pressedRow);
+                return;
+            }
+
             const row = e.target.closest('.student-row');
             // Allow default context menu on inputs/links/text-selection or if no row found
             if (!row || e.target.closest('a') || e.target.closest('input')) return;
