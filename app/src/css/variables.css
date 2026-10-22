@@ -374,7 +374,7 @@
     /* Repos : contour fin neutre, pas d'ombre */
     --card-item-bg: var(--surface-color);
     --card-item-border: 1px solid var(--border-color);
-    --card-item-radius: var(--radius-lg);
+    --card-item-radius: var(--radius-md);
     --card-item-shadow: none;
     /* Hover : contour bleu primaire subtil, ombre douce */
     --card-item-hover-border-color: rgba(var(--primary-color-rgb), 0.3);

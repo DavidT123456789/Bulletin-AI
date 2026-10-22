@@ -615,11 +615,11 @@
 }
 
 .ui-table th:first-child {
-    border-top-left-radius: var(--radius-lg);
+    border-top-left-radius: var(--radius-md);
 }
 
 .ui-table th:last-child {
-    border-top-right-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-md);
 }
 
 .ui-table td {
@@ -639,11 +639,11 @@
 }
 
 .ui-table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-left-radius: var(--radius-md);
 }
 
 .ui-table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-md);
 }
 
 .ui-table tbody tr:hover td {

@@ -1080,7 +1080,7 @@
     height: 32px;
     color: var(--text-tertiary);
     cursor: grab;
-    border-radius: var(--radius-md);
+    border-radius: 50%;
     transition: all var(--transition-fast);
     opacity: 0.4;
     font-size: 1.1rem;
@@ -1258,7 +1258,7 @@
 .manage-delete-btn {
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-sm);
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1534,7 +1534,7 @@
 .inline-create-form.class-dropdown-item .inline-cancel-btn {
     width: 28px;
     height: 28px;
-    border-radius: var(--radius-sm);
+    border-radius: 50%;
     background: transparent;
     color: var(--text-secondary);
     border: none;
@@ -1849,7 +1849,7 @@
     padding: 0 12px;
     background: var(--bg-color);
     border: 1px solid var(--border-color-strong);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     font-size: 0.96rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -1882,7 +1882,7 @@
     height: 32px;
     min-width: 32px;
     min-height: 32px;
-    border-radius: var(--radius-sm);
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;

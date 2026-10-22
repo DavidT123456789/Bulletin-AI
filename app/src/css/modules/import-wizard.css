@@ -1000,8 +1000,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    margin: 4px 0;
+    width: auto;
+    margin: 10px 4px;
     position: relative;
 }
 
@@ -1010,7 +1010,7 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--border-color);
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
 }
 
 .import-divider-horizontal span {
@@ -1155,6 +1155,7 @@
     will-change: transform, box-shadow, border-color;
 }
 
+textarea.import-textarea,
 .import-textarea {
     width: 100%;
     flex: 1;
@@ -1164,7 +1165,7 @@
     font-size: 0.8rem;
     font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
-    background: transparent;
+    background: transparent !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
@@ -1173,6 +1174,12 @@
     resize: none;
     line-height: 1.6;
     letter-spacing: 0.01em;
+}
+
+.import-textarea::placeholder {
+    font-family: inherit;
+    color: var(--text-tertiary);
+    opacity: 0.75;
 }
 
 /* OVERRIDE GLOBAL COMPONENT STYLES (CRITICAL) */

@@ -3270,7 +3270,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         justify-content: center;
         width: fit-content;
         background: var(--bg-secondary);
-        border-radius: 24px;
+        border-radius: var(--radius-pill);
         border-bottom: none;
         box-shadow: var(--shadow-sm);
     }
@@ -4091,7 +4091,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     align-items: center;
     gap: 4px;
     background: var(--bg-secondary);
-    border-radius: 20px;
+    border-radius: var(--radius-pill);
     padding: 4px;
 }
 

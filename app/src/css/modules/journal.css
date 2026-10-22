@@ -15,8 +15,8 @@
     border-bottom: 1px solid var(--border-color);
     /* FIXED: Static card header */
     cursor: default;
-    border-top-left-radius: var(--radius-lg);
-    border-top-right-radius: var(--radius-lg);
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
 }
 
 /* Removed hover effects */
@@ -884,8 +884,8 @@
 /* FIX: Handle collapsed state appearance */
 .journal-section.collapsed .journal-header {
     border-bottom: none;
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
     transition: border-radius 0.2s ease, border-bottom 0.2s ease;
 }
 
