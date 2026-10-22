@@ -4905,7 +4905,7 @@ export const SeatingChartManager = {
 
         const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
         const unplacedWarning = info.unplaced > 0
-            ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
+            ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced">${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span>`
             : '';
 
         if (info.status === 'virtual') {

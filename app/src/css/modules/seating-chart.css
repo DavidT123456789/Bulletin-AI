@@ -1309,17 +1309,12 @@
 .sc-status-pill-unplaced {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
     color: #f59e0b;
     font-weight: 600;
 }
 
 [data-theme="dark"] .sc-status-pill-unplaced {
     color: #fbbf24;
-}
-
-.sc-status-pill-unplaced iconify-icon {
-    font-size: 0.95rem;
 }
 
 .sc-footer-all-placed {
