@@ -671,7 +671,7 @@
 }
 
 .modal-help {
-    --modal-height: min(670px, 90vh);
+    --modal-height: min(685px, 90vh);
 }
 
 

@@ -50,10 +50,10 @@ export const SettingsModalListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
-        // Écouter l'ouverture des modales de paramétrage pour créer un snapshot
+        // Écouter l'ouverture de la modale de personnalisation pour créer un snapshot annulable
         document.addEventListener('settings-modal-open', (e) => {
-            SettingsUIManager.createSnapshot();
             if (e.detail?.modalId === 'personalizationModal') {
+                SettingsUIManager.createSnapshot();
                 this._updateNavArrowsState();
                 requestAnimationFrame(() => {
                     this._updateStudentContextAndPrompt();
@@ -65,6 +65,7 @@ export const SettingsModalListeners = {
         DOM.periodSystemRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 EventHandlersManager.handlePeriodSystemChange(e);
+                StorageManager.saveAppState();
                 // Note: Glider animation is handled by the listener in initGliders()
                 // Sync lab preview with new period system
                 setTimeout(() => this._updateStudentContextAndPrompt(), 100);
@@ -81,12 +82,47 @@ export const SettingsModalListeners = {
             });
         }
 
-        // Toggle pour le basculement automatique entre APIs
+        // Toggle pour le basculement automatique entre APIs (sauvegarde immédiate)
         if (DOM.enableApiFallbackToggle) {
             DOM.enableApiFallbackToggle.addEventListener('change', (e) => {
                 appState.enableApiFallback = e.target.checked;
+                SettingsUIManager.updateApiStatusDisplay();
+                StorageManager.saveAppState();
             });
         }
+
+        // Sauvegarde immédiate des préférences (Anonymisation RGPD, Seuils d'évolution, Pastilles Plan de classe)
+        if (DOM.settingsPrivacyAnonymizeToggle) {
+            DOM.settingsPrivacyAnonymizeToggle.addEventListener('change', (e) => {
+                appState.anonymizeData = e.target.checked;
+                StorageManager.saveAppState();
+            });
+        }
+
+        const syncEvolutionThresholds = () => {
+            if (DOM.settingsEvolutionThresholdPositive) {
+                const pos = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
+                if (!Number.isNaN(pos)) {
+                    appState.evolutionThresholds.positive = pos;
+                    appState.evolutionThresholds.veryPositive = pos * 4;
+                }
+            }
+            if (DOM.settingsEvolutionThresholdNegative) {
+                const neg = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
+                if (!Number.isNaN(neg)) {
+                    appState.evolutionThresholds.negative = neg;
+                    appState.evolutionThresholds.veryNegative = neg * 4;
+                }
+            }
+            StorageManager.saveAppState();
+            AppreciationsManager.renderResults();
+        };
+        DOM.settingsEvolutionThresholdPositive?.addEventListener('change', syncEvolutionThresholds);
+        DOM.settingsEvolutionThresholdNegative?.addEventListener('change', syncEvolutionThresholds);
+
+        document.getElementById('seatingStatusDotsSelector')?.addEventListener('change', () => {
+            StorageManager.saveAppState();
+        });
 
         // API validation - delegated to ApiValidationManager
         addClickListener(DOM.validateOpenaiApiKeyBtn, () => ApiValidationManager.validateApiKey('openai'));
@@ -233,6 +269,7 @@ export const SettingsModalListeners = {
         if (DOM.ollamaEnabledToggle) {
             DOM.ollamaEnabledToggle.addEventListener('change', async (e) => {
                 appState.ollamaEnabled = e.target.checked;
+                StorageManager.saveAppState();
                 if (e.target.checked) {
                     await SettingsUIManager.validateOllamaConnection();
                 } else {
@@ -249,7 +286,8 @@ export const SettingsModalListeners = {
 
         if (DOM.ollamaBaseUrl) {
             DOM.ollamaBaseUrl.addEventListener('change', (e) => {
-                appState.ollamaBaseUrl = e.target.value;
+                appState.ollamaBaseUrl = e.target.value.trim();
+                StorageManager.saveAppState();
             });
         }
 
@@ -1080,7 +1118,7 @@ export const SettingsModalListeners = {
         DOM.settingsModal.addEventListener('click', (e) => {
             if (e.target === DOM.settingsModal) {
                 clearCache();
-                SettingsUIManager.cancelSettings();
+                SettingsUIManager.saveSettings(false);
             }
         });
 
@@ -1115,7 +1153,7 @@ export const SettingsModalListeners = {
             if (e.key === 'Escape') {
                 e.stopPropagation(); // Empêcher le handler global de recevoir cet événement
                 clearCache();
-                SettingsUIManager.cancelSettings();
+                SettingsUIManager.saveSettings(false);
             }
         });
 
@@ -1251,7 +1289,7 @@ export const SettingsModalListeners = {
 
         addClickListener(DOM.saveSettingsBtn, SettingsUIManager.saveSettings.bind(SettingsUIManager));
         addClickListener(DOM.cancelSettingsBtn, SettingsUIManager.cancelSettings.bind(SettingsUIManager));
-        addClickListener(DOM.closeSettingsModalBtn, SettingsUIManager.cancelSettings.bind(SettingsUIManager));
+        addClickListener(DOM.closeSettingsModalBtn, () => SettingsUIManager.saveSettings(false));
 
         // Cloud sync - Google Drive connection
         if (DOM.connectGoogleBtn) {

@@ -4,7 +4,8 @@
    ==================================================================== */
 
 /* --- Coque Modale Guide & Contenu d'onglet --- */
-#helpModal > .modal-content > .modal-footer {
+#helpModal > .modal-content > .modal-footer,
+#appSettingsModal > .modal-content > .modal-footer {
     display: none;
 }
 
@@ -25,13 +26,14 @@
     flex-direction: column;
     justify-content: space-between;
     min-height: 100%;
-    gap: 14px;
+    gap: 12px;
     animation: helpTabSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 #appSettingsModal .help-tab-content.active {
     justify-content: flex-start;
     min-height: 0;
+    gap: 20px;
 }
 
 [data-direction="down"] .help-tab-content.active {
@@ -597,7 +599,7 @@
 .help-pillar-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 14px 16px;
     display: flex;
     align-items: flex-start;
@@ -693,7 +695,7 @@
    ONGLET 3 : PLAN & TROMBI (Vraie grille .sc-cell + 2 cartes d'action)
    ==================================================================== */
 .help-sc-canvas {
-    background-color: var(--bg-color);
+    background-color: var(--surface-color);
     background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.12) 1.2px, transparent 1.2px);
     background-size: 18px 18px;
     border: 1px solid var(--border-color);
@@ -964,9 +966,19 @@
 .help-accordion {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.help-accordion:hover {
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .help-accordion:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .help-accordion summary {
@@ -981,19 +993,20 @@
     font-weight: 600;
     color: var(--text-primary);
     user-select: none;
-    transition: background var(--transition-fast);
+    background: transparent;
 }
 
 .help-accordion summary::-webkit-details-marker {
     display: none;
 }
 
-.help-accordion summary:hover {
-    background: var(--item-hover-bg);
+.help-accordion[open]:not(.is-closing) {
+    border-color: rgba(0, 0, 0, 0.13);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.help-accordion[open]:not(.is-closing) summary {
-    background: var(--item-hover-bg);
+[data-theme="dark"] .help-accordion[open]:not(.is-closing) {
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 .help-accordion-title {
@@ -1064,15 +1077,19 @@
 }
 
 .help-accordion-body {
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
-    padding: 15px 18px;
+    background: var(--surface-color);
+    border-top: none;
+    padding: 2px 18px 15px 42px;
     font-size: 0.81rem;
     line-height: 1.5;
     color: var(--text-secondary);
     display: flex;
     flex-direction: column;
-    gap: 13px;
+    gap: 12px;
+}
+
+.help-accordion-body .help-kbd-badge {
+    background: var(--bg-secondary);
 }
 
 .help-detail-list {
@@ -1109,7 +1126,7 @@
 .help-shortcuts-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 14px 16px;
 }
 
@@ -1189,7 +1206,11 @@
 .about-hero {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
 }
 
 .about-header {
@@ -1203,16 +1224,15 @@
 .about-header-main {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 14px;
 }
 
 .about-logo-tile {
-    width: 56px;
-    height: 56px;
-    border-radius: 15px;
-    background: var(--surface-color);
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1370,9 +1390,8 @@
 .support-card-premium {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    padding: 18px 22px;
+    padding: 16px 18px;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
     margin: 0;
     width: 100%;
     max-width: none;

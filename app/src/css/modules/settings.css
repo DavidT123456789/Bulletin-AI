@@ -1106,23 +1106,11 @@
     padding: 0;
 }
 
-/* API key category headers & status badges */
-.api-category-header {
+/* API key groups list & status badges */
+.api-keys-list {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
-    margin: 8px 2px 6px 2px;
-}
-
-.api-category-header.api-category-spaced {
-    margin-top: 20px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-color);
+    flex-direction: column;
+    gap: 20px;
 }
 
 .api-key-title-group {
@@ -1571,26 +1559,7 @@
     }
 }
 
-/* === Privacy Settings Styles === */
-.privacy-description-container {
-    line-height: 1.5;
-    font-size: 0.95em;
-}
 
-.privacy-option-item {
-    margin-top: 4px;
-}
-
-.privacy-note {
-    margin-top: 6px;
-    font-style: italic;
-    opacity: 0.8;
-    font-size: 0.9em;
-}
-
-.privacy-note i {
-    font-size: 0.9em;
-}
 
 /* Preview Model Badge - Shows AI model used for generation */
 .preview-model-badge {
@@ -2039,43 +2008,319 @@
 }
 
 /* ==========================================================================
-   Harmonized Data Cards (Paramètres > Données)
+   Full-Bleed Split View & Single-Level Settings Groups (macOS / iOS 2026)
    ========================================================================== */
 
-.data-card-header {
-    margin-bottom: 12px;
+.ui-tabs-sidebar-heading {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    padding: 6px 12px 10px 12px;
+    user-select: none;
 }
 
-.data-card-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+@media (min-width: 769px) {
+    #appSettingsModal > .modal-content,
+    #helpModal > .modal-content {
+        position: relative;
+        --modal-width: 960px;
+    }
+
+    #appSettingsModal > .modal-content > .modal-header,
+    #helpModal > .modal-content > .modal-header {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 25;
+        padding: 0;
+        min-height: 0;
+        border-bottom: none;
+        background: transparent;
+        pointer-events: none;
+    }
+
+    #appSettingsModal > .modal-content > .modal-header > .modal-title,
+    #helpModal > .modal-content > .modal-header > .modal-title {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #appSettingsModal > .modal-content > .modal-header > .close-button,
+    #helpModal > .modal-content > .modal-header > .close-button {
+        pointer-events: auto;
+    }
+
+    #appSettingsModal .ui-tabs-content,
+    #helpModal .ui-tabs-content {
+        padding: 18px 40px 26px 46px;
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0px,
+            rgba(0, 0, 0, 0.4) 5px,
+            rgba(0, 0, 0, 0.85) 11px,
+            #000 17px,
+            #000 calc(100% - 18px),
+            rgba(0, 0, 0, 0.85) calc(100% - 12px),
+            rgba(0, 0, 0, 0.4) calc(100% - 5px),
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0px,
+            rgba(0, 0, 0, 0.4) 5px,
+            rgba(0, 0, 0, 0.85) 11px,
+            #000 17px,
+            #000 calc(100% - 18px),
+            rgba(0, 0, 0, 0.85) calc(100% - 12px),
+            rgba(0, 0, 0, 0.4) calc(100% - 5px),
+            transparent 100%
+        );
+    }
+
+    #helpModal .ui-tabs-content {
+        padding: 18px 44px 20px 44px;
+    }
 }
 
-.data-card-title-row strong {
-    font-size: 0.95rem;
-    font-weight: 600;
+@media (max-width: 768px) {
+    .ui-tabs-sidebar-heading {
+        display: none;
+    }
+}
+
+.settings-tab-header {
+    margin: 0 0 -4px 0;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#helpModal .settings-tab-header {
+    margin: 0 0 -2px 0;
+    padding: 0 0 10px 0;
+}
+
+.settings-tab-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--text-primary);
+    letter-spacing: -0.015em;
+    line-height: 1.3;
 }
 
-.data-card-desc {
-    margin: 4px 0 0;
-    font-size: 0.88rem;
+.settings-tab-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 0.86rem;
     color: var(--text-secondary);
     line-height: 1.45;
 }
+
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px;
+    flex-wrap: wrap;
+}
+
+.settings-group-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-group-tag {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.settings-group-card,
+#apiStatusSummary.settings-group-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.settings-group-card:focus-within,
+.settings-group-card:has(.custom-dropdown.open) {
+    z-index: 30;
+}
+
+#apiStatusSummary.settings-group-card .missing-key-warning.compact {
+    margin: 2px 0 14px 0;
+}
+
+.settings-row,
+.settings-row.api-status-header.compact,
+.settings-row.api-fallback-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 0;
+    margin: 0;
+    width: 100%;
+}
+
+#appSettingsModal .api-keys-container {
+    gap: 20px;
+}
+
+.settings-row.settings-row-stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.settings-row-block {
+    display: flex;
+    flex-direction: column;
+    padding: 14px 0;
+    width: 100%;
+}
+
+.settings-row + .settings-row,
+.settings-row + .settings-row-block,
+.settings-row-block + .settings-row,
+.settings-row-block + .settings-row-block {
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-row-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.settings-row-info .fallback-info {
+    justify-content: flex-start;
+    margin-top: 4px;
+}
+
+.settings-row-info .fallback-info:empty {
+    display: none;
+}
+
+.settings-row-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.35;
+}
+
+label.settings-row-title {
+    cursor: pointer;
+}
+
+.settings-row-desc {
+    font-size: 0.81rem;
+    color: var(--text-secondary);
+    line-height: 1.42;
+    margin: 0;
+}
+
+.settings-row-desc strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.settings-row-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.settings-row-control.model-selector-wrapper,
+.settings-row-control.model-selector-row {
+    flex: 0 0 295px;
+    width: 295px;
+    max-width: 100%;
+}
+
+.settings-row-control .model-selector-wrapper {
+    width: 100%;
+}
+
+.settings-group-card .number-input-wrapper {
+    background: var(--bg-secondary);
+    height: 32px;
+}
+
+/* API Provider Rows inside Single-Level Card */
+.settings-providers-card > .api-key-section {
+    padding: 15px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+.settings-providers-card > .api-key-section + .api-key-section {
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-providers-card > .api-key-section.settings-focus-highlight {
+    margin: 0 -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: var(--radius-md);
+}
+
+/* ==========================================================================
+   Harmonized Data Cards (Paramètres > Données)
+   ========================================================================== */
 
 /* Status Badges */
 .data-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
     padding: 2px 8px;
     border-radius: var(--radius-pill);
     line-height: 1.25;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 .data-badge-success {
@@ -2102,13 +2347,15 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 12px 0;
-    border-top: 1px dashed var(--border-color);
+    padding: 14px 0;
+    border-top: none;
     gap: 16px;
 }
 
-.data-action-row:first-of-type {
-    margin-top: 4px;
+.data-action-row + .data-action-row,
+.data-action-row + .pre-restore-snapshot-row,
+.pre-restore-snapshot-row + .data-action-row {
+    border-top: 1px solid var(--border-color);
 }
 
 .data-action-info {
@@ -2118,23 +2365,23 @@
 
 .data-action-title {
     display: block;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 3px;
 }
 
 .data-action-desc {
-    font-size: 0.84rem;
+    font-size: 0.81rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.42;
     display: block;
     margin: 0;
 }
 
 .data-action-meta {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-tertiary);
     margin-top: 4px;
 }
@@ -2185,13 +2432,13 @@
 }
 
 .data-provider-name {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .data-provider-email {
-    font-size: 0.82rem;
+    font-size: 0.81rem;
     color: var(--text-secondary);
 }
 
@@ -2226,74 +2473,12 @@
     border-color: rgba(var(--error-rgb), 0.3) !important;
 }
 
-.data-danger-icon {
-    background: rgba(var(--error-rgb), 0.12) !important;
-    color: var(--error-color) !important;
-}
-
 .data-danger-title {
     color: var(--error-color) !important;
 }
 
-.data-danger-card .data-action-row {
-    border-top-color: rgba(var(--error-rgb), 0.15) !important;
-}
-
-@media (max-width: 640px) {
-    .data-action-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .data-action-buttons {
-        width: 100%;
-        justify-content: flex-end;
-    }
-}
-
-/* ==========================================================================
-   Typographic Settings Tab Headers (iOS / macOS 2026 Style)
-   Replaces bulky boxed cards with clean, scannable typographic headers
-   ========================================================================== */
-
-.settings-tab-header {
-    margin-bottom: 4px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.settings-tab-title {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.015em;
-    line-height: 1.3;
-}
-
-.settings-tab-subtitle {
-    margin: 4px 0 0 0;
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-}
-
-@media (max-width: 640px) {
-    .settings-tab-header {
-        margin-bottom: 0;
-        padding-bottom: 8px;
-    }
-
-    .settings-tab-title {
-        font-size: 0.98rem;
-    }
-
-    .settings-tab-subtitle {
-        margin-top: 2px;
-        font-size: 0.8rem;
-        line-height: 1.35;
-    }
+.data-danger-card .data-action-row + .data-action-row {
+    border-top-color: rgba(var(--error-rgb), 0.18) !important;
 }
 
 /* Ollama Section Elements */
@@ -2320,23 +2505,69 @@
 }
 
 /* ====================================================================
-   MOBILE REFINEMENTS (Settings & Personalization Lab)
+   EVOLUTION THRESHOLDS & MOBILE REFINEMENTS
    ==================================================================== */
 
 .evolution-thresholds-inline {
     display: flex;
-    gap: 24px;
+    gap: 14px;
     align-items: center;
     flex-wrap: wrap;
 }
 
-@media (max-width: 600px) {
-    .evolution-thresholds-inline {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+.settings-group-card .threshold-item-compact {
+    align-items: center;
+    gap: 6px;
+}
+
+.settings-group-card .threshold-item-compact .threshold-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    gap: 5px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+
+@media (max-width: 640px) {
+    .settings-group-card,
+    #apiStatusSummary.settings-group-card {
+        padding: 0 14px;
     }
 
+    .settings-row,
+    .data-action-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 0;
+    }
+
+    .settings-row-control,
+    .settings-row-control.model-selector-wrapper,
+    .settings-row-control.model-selector-row {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .data-action-buttons {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .settings-tab-title {
+        font-size: 1rem;
+    }
+
+    .settings-tab-subtitle {
+        margin-top: 2px;
+        font-size: 0.8rem;
+        line-height: 1.35;
+    }
+}
+
+@media (max-width: 600px) {
     .modal-lab .modal-header-actions.spaced {
         gap: 4px;
     }
@@ -2344,4 +2575,4 @@
     .modal-lab .modal-title-icon {
         display: none;
     }
-}
+}

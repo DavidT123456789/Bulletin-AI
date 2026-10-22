@@ -253,6 +253,21 @@ describe('SettingsUIManager', () => {
             vi.advanceTimersByTime(260);
             expect(AppreciationsManager.renderResults).toHaveBeenCalled();
         });
+
+        it('should persist settings silently without toast notification when showNotification is false (auto-save close)', () => {
+            vi.useFakeTimers();
+            DOM.settingsPrivacyAnonymizeToggle = { checked: false };
+
+            SettingsUIManager.saveSettings(false);
+
+            expect(appState.anonymizeData).toBe(false);
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
+            expect(UI.closeModal).toHaveBeenCalledWith(DOM.settingsModal);
+
+            vi.advanceTimersByTime(260);
+            expect(UI.showNotification).not.toHaveBeenCalled();
+            expect(AppreciationsManager.renderResults).toHaveBeenCalled();
+        });
     });
 
     describe('cancelSettings()', () => {
