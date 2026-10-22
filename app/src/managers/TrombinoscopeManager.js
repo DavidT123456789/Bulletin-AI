@@ -118,7 +118,11 @@ export const TrombinoscopeManager = {
         const dropZone = document.getElementById('trombiDropZone');
         const fileInput = document.getElementById('trombiFileInput');
 
-        dropZone?.addEventListener('click', () => fileInput?.click());
+        dropZone?.addEventListener('click', () => {
+            if (dropZone.classList.contains('has-image')) return;
+            fileInput?.click();
+        });
+        document.getElementById('trombiStep1PageSelectorBar')?.addEventListener('click', (e) => e.stopPropagation());
         dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone?.addEventListener('drop', e => {
@@ -488,10 +492,11 @@ export const TrombinoscopeManager = {
             // Hide the real target wrapper while ghost is smoothly flying into position
             targetWrapper.style.opacity = '0';
 
-            // Prepare the student list panel and toolbar for progressive entrance
+            // Prepare the student list panel, controls, and toolbar for progressive entrance
             const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
             const zoomControls = toContent.querySelector('.trombi-zoom-controls');
             const pageBar = toContent.querySelector('#trombiPageSelectorBar');
+            const gridPanel = toContent.querySelector('.grid-control-panel');
 
             if (assignmentPanel) {
                 assignmentPanel.style.transform = 'translateX(28px)';
@@ -502,6 +507,9 @@ export const TrombinoscopeManager = {
             }
             if (pageBar && pageBar.style.display !== 'none') {
                 pageBar.style.opacity = '0';
+            }
+            if (gridPanel) {
+                gridPanel.style.opacity = '0';
             }
 
             // 5. Animate ghost gliding to targetRect while student list appears on right
@@ -529,6 +537,10 @@ export const TrombinoscopeManager = {
                         pageBar.style.transition = 'opacity 0.28s ease 0.08s';
                         pageBar.style.opacity = '1';
                     }
+                    if (gridPanel) {
+                        gridPanel.style.transition = 'opacity 0.28s ease 0.08s';
+                        gridPanel.style.opacity = '1';
+                    }
 
                     setTimeout(() => {
                         targetWrapper.style.opacity = '1';
@@ -546,6 +558,10 @@ export const TrombinoscopeManager = {
                         if (pageBar) {
                             pageBar.style.transition = '';
                             pageBar.style.opacity = '';
+                        }
+                        if (gridPanel) {
+                            gridPanel.style.transition = '';
+                            gridPanel.style.opacity = '';
                         }
                         this._isTransitioning = false;
                     }, 380);
@@ -953,7 +969,7 @@ export const TrombinoscopeManager = {
                 if (parsed.numPages > 1) {
                     step1PageBar.style.display = 'flex';
                     step1PageBar.innerHTML = parsed.pages.map((p, idx) => `
-                        <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}">
+                        <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}" title="Page ${idx + 1} (${p.studentsCount} élèves)">
                             <span>Page ${idx + 1}</span>
                             <span class="page-tab-sep" aria-hidden="true">·</span>
                             <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
@@ -1131,12 +1147,32 @@ export const TrombinoscopeManager = {
         return offset;
     },
 
+    _getViewportFitMetrics(viewport) {
+        const cs = window.getComputedStyle ? window.getComputedStyle(viewport) : null;
+        const padX = cs ? ((parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)) : 0;
+        const padY = cs ? ((parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)) : 0;
+        const totalPadX = Math.max(32, padX);
+        const totalPadY = Math.max(32, padY);
+
+        const vpW = viewport.clientWidth || viewport.offsetWidth || 600;
+        const vpH = viewport.clientHeight || viewport.offsetHeight || 600;
+        const availW = Math.max(100, vpW - totalPadX);
+        const availH = Math.max(100, vpH - totalPadY);
+        const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
+        return { availW, availH, scaleToFit };
+    },
+
     _applyZoom() {
         const viewport = document.querySelector('.trombi-viewport');
         const wrapper = document.querySelector('.trombi-content-wrapper');
         const zoomLabel = document.getElementById('trombiZoomLevel');
         if (zoomLabel) {
             zoomLabel.textContent = `${Math.round(this._zoomLevel * 100)}%`;
+        }
+        const zoomFitBtn = document.getElementById('trombiZoomFitBtn');
+        if (zoomFitBtn) {
+            const currentPct = Math.round(this._zoomLevel * 100);
+            zoomFitBtn.title = this._zoomLevel > 1.0 ? `Ajuster à 100% (actuel : ${currentPct}%)` : 'Pleine largeur / Vue complète';
         }
         const zoomOutBtn = document.getElementById('trombiZoomOutBtn');
         if (zoomOutBtn) {
@@ -1148,15 +1184,7 @@ export const TrombinoscopeManager = {
         // Toggle is-zoomed class: scrollbars are ONLY permitted when zoomed in > 100%
         viewport.classList.toggle('is-zoomed', this._zoomLevel > 1.0);
 
-        // Stable viewport dimensions immune to scrollbar jitter
-        const pad = 32;
-        const vpW = viewport.clientWidth || viewport.offsetWidth || 600;
-        const vpH = viewport.clientHeight || viewport.offsetHeight || 600;
-        const availW = Math.max(100, vpW - pad);
-        const availH = Math.max(100, vpH - pad);
-
-        // Exact scalar to fit natural page inside available area (guarantees zero distortion)
-        const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
+        const { scaleToFit } = this._getViewportFitMetrics(viewport);
         const baseW = this._imageNaturalWidth * scaleToFit;
         const baseH = this._imageNaturalHeight * scaleToFit;
 
@@ -1192,12 +1220,7 @@ export const TrombinoscopeManager = {
         } else {
             const viewport = document.querySelector('.trombi-viewport');
             if (viewport && this._imageNaturalWidth && this._imageNaturalHeight) {
-                const pad = 32;
-                const vpW = viewport.offsetWidth || viewport.clientWidth || 600;
-                const vpH = viewport.offsetHeight || viewport.clientHeight || 600;
-                const availW = Math.max(100, vpW - pad);
-                const availH = Math.max(100, vpH - pad);
-                const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
+                const { availW, scaleToFit } = this._getViewportFitMetrics(viewport);
                 const fitW = this._imageNaturalWidth * scaleToFit;
                 // Si la page est en portrait, "Pleine largeur" permet d'occuper la largeur disponible
                 if (availW > fitW * 1.1) {
@@ -1235,7 +1258,7 @@ export const TrombinoscopeManager = {
             if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
                 pageBar.style.display = 'flex';
                 pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => `
-                    <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}">
+                    <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}" title="Page ${idx + 1} (${p.studentsCount} élèves)">
                         <span>Page ${idx + 1}</span>
                         <span class="page-tab-sep" aria-hidden="true">·</span>
                         <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
@@ -1275,23 +1298,26 @@ export const TrombinoscopeManager = {
                 <button type="button" class="zoom-btn" id="trombiZoomOutBtn" title="Dézoomer (-25%)">
                     <iconify-icon icon="ph:minus"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" title="Réinitialiser le zoom (100%)">
-                    <span id="trombiZoomLevel">${Math.round(this._zoomLevel * 100)}%</span>
-                </button>
                 <button type="button" class="zoom-btn" id="trombiZoomInBtn" title="Zoomer (+25%)">
                     <iconify-icon icon="ph:plus"></iconify-icon>
                 </button>
                 <button type="button" class="zoom-btn" id="trombiZoomFitBtn" title="Pleine largeur / Vue complète">
                     <iconify-icon icon="ph:arrows-out-simple"></iconify-icon>
                 </button>
+                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" style="display: none;" aria-hidden="true" title="Réinitialiser le zoom (100%)">
+                    <span id="trombiZoomLevel">${Math.round(this._zoomLevel * 100)}%</span>
+                </button>
             </div>
             <div class="trombi-viewport">
-                <div class="trombi-content-wrapper" style="aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight};">
+                <div class="trombi-content-wrapper" style="width: 0px; height: 0px; aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight};">
                     <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image" draggable="false">
                     <div class="trombi-zones-overlay" id="trombiZonesOverlay"></div>
                 </div>
             </div>
         `;
+
+        // Setup control panel first so its height is accounted for in viewport layout before measuring zoom fit
+        this._setupControlPanel();
 
         // Bind zoom controls
         document.getElementById('trombiZoomInBtn')?.addEventListener('click', (e) => {
@@ -1391,14 +1417,6 @@ export const TrombinoscopeManager = {
 
         // Render student assignment grid
         this._renderAssignmentGrid();
-
-        // Setup control panel with sliders
-        this._setupControlPanel();
-
-        // Bind Auto button (now in HTML, not generated by _setupControlPanel)
-        document.getElementById('autoOrderBtn')?.addEventListener('click', () => {
-            this._autoAssignInOrder();
-        });
 
         this._updateUndoButton();
     },

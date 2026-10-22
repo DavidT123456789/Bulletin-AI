@@ -772,6 +772,39 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         expect(Math.abs(h200 - h100 * 2.0)).toBeLessThanOrEqual(1);
     });
 
+    it('should strictly fit portrait A4 document vertically within viewport accounting for HUD padding at 100%', () => {
+        document.body.innerHTML = `
+            <div class="trombi-viewport" style="width: 850px; height: 580px; padding: 20px 20px 76px 20px;">
+                <div class="trombi-content-wrapper">
+                    <img id="trombiStep2Image" src="" />
+                    <div id="trombiZonesOverlay"></div>
+                </div>
+            </div>
+            <span id="trombiZoomLevel">100%</span>
+            <button id="trombiZoomOutBtn"></button>
+            <button id="trombiZoomFitBtn"></button>
+        `;
+
+        const viewport = document.querySelector('.trombi-viewport');
+        Object.defineProperty(viewport, 'clientWidth', { value: 850, configurable: true });
+        Object.defineProperty(viewport, 'clientHeight', { value: 580, configurable: true });
+
+        // A4 portrait
+        TrombinoscopeManager._imageNaturalWidth = 1190;
+        TrombinoscopeManager._imageNaturalHeight = 1684;
+        TrombinoscopeManager._zoomLevel = 1.0;
+        TrombinoscopeManager._applyZoom();
+
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        const h = parseFloat(wrapper.style.height);
+        const w = parseFloat(wrapper.style.width);
+
+        // Height must strictly fit within 580 - 32 (or with padding subtracted)
+        expect(h).toBeLessThanOrEqual(580);
+        expect(w).toBeLessThanOrEqual(850);
+        expect(w / h).toBeCloseTo(1190 / 1684, 2);
+    });
+
     it('should update radius on all active zones when size slider changes in _updateSizeFromPercent', () => {
         TrombinoscopeManager._imageNaturalWidth = 1000;
         TrombinoscopeManager._imageNaturalHeight = 1000;

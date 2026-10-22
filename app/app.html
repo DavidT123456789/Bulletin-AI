@@ -1520,8 +1520,7 @@
                         </aside>
 
                         <!-- Main Content -->
-                        <div class="wizard-main-content" style="padding: 16px;">
-                            <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar" style="display: none; margin-bottom: 12px;"></div>
+                        <div class="wizard-main-content">
                             <div class="trombi-drop-zone" id="trombiDropZone">
                                 <!-- Placeholder content (shown when no image) -->
                                 <div class="drop-zone-content" id="trombiDropPlaceholder">
@@ -1536,6 +1535,7 @@
                                 </div>
                                 <!-- Preview content (shown when image loaded) -->
                                 <div class="drop-zone-preview" id="trombiDropPreview">
+                                    <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar floating-overlay" style="display: none;"></div>
                                     <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
                                     <button class="drop-zone-remove-btn" id="trombiRemoveImageBtn"
                                         aria-label="Supprimer l'image">
@@ -1550,10 +1550,10 @@
                 </div>
 
                 <!-- Step 2: Assign students to zones -->
-                <div class="trombi-step-content trombi-step-padded" id="trombiStep2" style="display: none;">
-                    <div id="trombiPageSelectorBar" class="trombi-page-selector-bar" style="display: none;"></div>
+                <div class="trombi-step-content" id="trombiStep2" style="display: none;">
                     <div class="trombi-split-view">
                         <div class="trombi-image-panel">
+                            <div id="trombiPageSelectorBar" class="trombi-page-selector-bar floating-overlay" style="display: none;"></div>
                             <div id="trombiImageWithZones" class="trombi-image-wrapper">
                                 <!-- Image with zone overlay will be cloned here -->
                             </div>
