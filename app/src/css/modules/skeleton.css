@@ -82,7 +82,7 @@
    ==================================================================== */
 .skeleton-card {
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 20px;
     box-shadow: var(--shadow-sm);
     animation: skeleton-pulse 1.5s ease-in-out infinite;
@@ -145,7 +145,7 @@
    ==================================================================== */
 .skeleton-stat-card {
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 16px 20px;
     box-shadow: var(--shadow-sm);
 }
@@ -425,7 +425,7 @@
 .student-list-view.skeleton-table-view {
     pointer-events: none;
     user-select: none;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--glass-surface-border);

@@ -41,7 +41,7 @@
     background: var(--surface-color);
     border: 1px solid rgba(226, 232, 240, 0.8);
     /* Slate-200 neutral border */
-    border-radius: 32px;
+    border-radius: var(--modal-radius);
     box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.08),
         /* Very soft shadow */
@@ -150,7 +150,7 @@
     padding: 12px 18px;
     background: rgba(245, 158, 11, 0.08);
     border: 1px solid rgba(245, 158, 11, 0.25);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     text-align: left;
     animation: fadeIn 0.3s ease-out;
 }
@@ -228,7 +228,7 @@
     background: var(--surface-color);
     border: 1px solid transparent;
     /* Borderless (transparent to prevent layout shift on hover) */
-    border-radius: 24px;
+    border-radius: var(--radius-md);
     /* Squircle card */
     cursor: pointer;
     overflow: hidden;
@@ -416,7 +416,7 @@
         row-gap: 2px;
         align-items: center;
         padding: 16px 18px;
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
         text-align: left;
     }
 

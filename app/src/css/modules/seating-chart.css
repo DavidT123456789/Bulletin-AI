@@ -5842,7 +5842,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     align-items: center;
     gap: 14px;
     padding: 12px 14px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-control);
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -6299,7 +6299,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     padding: 8px;
     z-index: 300;

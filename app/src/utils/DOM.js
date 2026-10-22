@@ -159,8 +159,6 @@ export function initDOM() {
     DOM.settingsEvolutionThresholdNegative = document.getElementById('evolutionThresholdNegative');
     DOM.suggestionsList = document.getElementById('suggestionsList');
     DOM.resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
-    DOM.saveSettingsBtn = document.getElementById('saveSettingsBtn');
-    DOM.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.enableApiFallbackToggle = document.getElementById('enableApiFallbackToggle');
     DOM.aiModelSelect = document.getElementById('aiModelSelect');

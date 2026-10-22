@@ -1287,8 +1287,6 @@ export const SettingsModalListeners = {
             });
         }
 
-        addClickListener(DOM.saveSettingsBtn, SettingsUIManager.saveSettings.bind(SettingsUIManager));
-        addClickListener(DOM.cancelSettingsBtn, SettingsUIManager.cancelSettings.bind(SettingsUIManager));
         addClickListener(DOM.closeSettingsModalBtn, () => SettingsUIManager.saveSettings(false));
 
         // Cloud sync - Google Drive connection

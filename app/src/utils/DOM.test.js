@@ -70,8 +70,6 @@ describe('DOM', () => {
                 <input id="evolutionThresholdNegative" />
                 <ul id="suggestionsList"></ul>
                 <button id="resetAllSettingsBtn"></button>
-                <button id="saveSettingsBtn"></button>
-                <button id="cancelSettingsBtn"></button>
                 <div class="settings-tab"></div>
                 <input type="checkbox" id="personalizationToggle" />
                 <div id="templatesTabContent"></div>

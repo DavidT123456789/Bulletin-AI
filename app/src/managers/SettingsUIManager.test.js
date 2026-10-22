@@ -270,26 +270,28 @@ describe('SettingsUIManager', () => {
         });
     });
 
-    describe('cancelSettings()', () => {
-        it('should close modal immediately', () => {
-            SettingsUIManager.cancelSettings();
+    describe('createSnapshot() & restoreSnapshot()', () => {
+        it('should create a snapshot and restore state when cancelled', () => {
+            appState.useSubjectPersonalization = true;
+            appState.subjects = { MonStyle: { iaConfig: { length: 60 } } };
 
-            expect(UI.closeModal).toHaveBeenCalledWith(DOM.settingsModal);
+            SettingsUIManager.createSnapshot();
+
+            appState.useSubjectPersonalization = false;
+            appState.subjects = { MonStyle: { iaConfig: { length: 90 } } };
+
+            const restored = SettingsUIManager.restoreSnapshot();
+
+            expect(restored).toBe(true);
+            expect(appState.useSubjectPersonalization).toBe(true);
+            expect(appState.subjects.MonStyle.iaConfig.length).toBe(60);
+            expect(UIState.settingsBeforeEdit).toEqual({});
         });
 
-        it('should restore from snapshot after timeout', () => {
-            vi.useFakeTimers();
-            UIState.settingsBeforeEdit = {
-                useSubjectPersonalization: true,
-                subjects: { 'Test': {} },
-                currentSettingsSubject: 'Test',
-                currentSubject: 'Test'
-            };
+        it('should return false when no snapshot exists', () => {
+            UIState.settingsBeforeEdit = {};
 
-            SettingsUIManager.cancelSettings();
-
-            vi.advanceTimersByTime(260);
-            expect(appState.useSubjectPersonalization).toBe(true);
+            expect(SettingsUIManager.restoreSnapshot()).toBe(false);
         });
     });
 

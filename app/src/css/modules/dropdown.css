@@ -20,7 +20,7 @@
     min-width: 0;
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--dropdown-radius-sm);
+    border-radius: var(--radius-control);
     font-size: 14px;
     color: var(--text-primary);
     cursor: pointer;
@@ -100,13 +100,13 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background-color: rgba(var(--surface-color-rgb), 0.94);
+    background-color: var(--dropdown-bg);
     /* Glass effect */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
+    border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
     max-height: 320px;
     overflow-y: auto;
@@ -130,12 +130,6 @@
     transform: translateY(0) scale(1);
 }
 
-[data-theme="dark"] .custom-dropdown-menu {
-    background-color: rgba(24, 24, 27, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
 /* === Optgroup (groupe d'options) === */
 .custom-dropdown-group {
     padding: 4px 0;
@@ -148,12 +142,12 @@
 }
 
 .custom-dropdown-group-label {
-    padding: 8px 12px 6px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-secondary);
+    padding: 6px 12px 4px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-tertiary);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -331,31 +325,22 @@
 
 /* Sélection subtile et cohérente */
 .custom-dropdown-option.selected {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-[data-theme="dark"] .custom-dropdown-option.selected {
-    color: var(--primary-bright);
+    background: var(--item-active-bg);
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
 /* Focus clavier subtil - sans outline voyant */
 .custom-dropdown-option.focused {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    /* Même que hover */
+    background-color: var(--item-hover-bg);
     outline: none;
 }
 
 .custom-dropdown-option-check {
     width: 16px;
-    color: var(--primary-color);
+    color: var(--text-primary);
     opacity: 0;
     transition: opacity var(--transition-fast);
-}
-
-[data-theme="dark"] .custom-dropdown-option-check {
-    color: var(--primary-bright);
 }
 
 .custom-dropdown-option.selected .custom-dropdown-option-check {
@@ -383,13 +368,7 @@
 }
 
 .custom-dropdown-option.selected .custom-dropdown-option-text .model-qualifier {
-    color: var(--primary-color);
-    opacity: 0.85;
-}
-
-[data-theme="dark"] .custom-dropdown-option.selected .custom-dropdown-option-text .model-qualifier {
-    color: var(--primary-bright);
-    opacity: 0.9;
+    color: var(--text-secondary);
 }
 
 /* === Scrollbar personnalisée === */

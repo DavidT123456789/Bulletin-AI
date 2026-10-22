@@ -165,11 +165,6 @@ export const SettingsUIManager = {
             appState.seatingStatusDots = nextDots;
         }
 
-        const journalThresholdInput = document.getElementById('journalThresholdInput');
-        if (journalThresholdInput) {
-            appState.journalThreshold = parseInt(journalThresholdInput.value, 10) || 2;
-        }
-
         // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
         document.dispatchEvent(new CustomEvent('app-settings-changed', {
             detail: { settings: appState }
@@ -301,24 +296,6 @@ export const SettingsUIManager = {
             return true;
         }
         return false;
-    },
-
-    /**
-     * Annule les modifications des paramètres.
-     */
-    cancelSettings() {
-        // Fermer la modale d'abord pour une animation fluide
-        UI.closeModal(DOM.settingsModal);
-
-        // Restaurer l'état après l'animation de fermeture (250ms)
-        setTimeout(() => {
-            const restored = this.restoreSnapshot();
-
-            if (restored) {
-                this.updatePersonalizationState();
-                UI.updateSettingsFields();
-            }
-        }, 260);
     },
 
     /**

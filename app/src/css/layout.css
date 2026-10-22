@@ -918,6 +918,8 @@ body.is-cloud-syncing label {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     background-color: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: var(--dropdown-border);
     border-radius: var(--dropdown-radius);
     box-shadow: var(--dropdown-shadow);
@@ -954,7 +956,8 @@ body.is-cloud-syncing label {
     align-items: center;
     width: 100%;
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: var(--text-secondary);
     background: transparent;
     border: none;

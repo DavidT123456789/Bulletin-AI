@@ -111,7 +111,7 @@
     padding: 7px 6px;
     margin: 8px 16px 0 16px;
     background: transparent;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: none;
     border: 1px solid transparent;
     flex-shrink: 0;
@@ -724,7 +724,7 @@
 .focus-appreciation,
 .journal-section {
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 0;
     /* Flat Design Test: No shadows */
     box-shadow: none !important;
@@ -3867,7 +3867,7 @@ input.context-grade-input,
 /* Individual Analysis Card */
 .analysis-card {
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
     overflow: hidden;

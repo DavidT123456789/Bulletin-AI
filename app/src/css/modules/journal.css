@@ -338,7 +338,7 @@
     padding: 14px;
     background: color-mix(in srgb, var(--surface-color) 60%, var(--bg-tertiary));
     border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color));
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
     position: relative;
     overflow: visible;
@@ -583,12 +583,6 @@
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
-}
-
-[data-theme="dark"] .journal-pill-menu {
-    background-color: rgba(24, 24, 27, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .journal-pill-menu .journal-dropdown-option {

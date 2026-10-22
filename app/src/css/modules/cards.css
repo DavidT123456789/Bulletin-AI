@@ -16,7 +16,7 @@
     backdrop-filter: blur(var(--glass-surface-blur));
     -webkit-backdrop-filter: blur(var(--glass-surface-blur));
     border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: var(--space-6);
     /* Uniform padding on all 4 sides */
     box-shadow: var(--shadow-sm);
@@ -113,7 +113,7 @@
     content: '';
     position: absolute;
     inset: 2px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background: var(--surface-color);
     z-index: -1;
     pointer-events: none;

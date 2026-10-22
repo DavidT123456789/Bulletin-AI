@@ -10,7 +10,7 @@
     border: none;
     padding: 0 20px;
     height: 40px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
@@ -219,7 +219,7 @@
 .btn-organic {
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     font-weight: 600;
     position: relative;
     overflow: hidden;
@@ -396,7 +396,7 @@
 .btn-icon {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: 50%;
     width: 40px;
     height: 40px;
     color: var(--text-secondary);
@@ -489,7 +489,7 @@
 /* === Sidebar Cards (Cartes flottantes dans le formulaire) === */
 .sidebar-card {
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     margin-bottom: 14px;
     /* Allow dropdowns to extend beyond card boundaries */
@@ -514,7 +514,7 @@
     font-size: 13px;
     color: var(--text-primary);
     /* Fix corners since parent has overflow: visible */
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 [data-theme="dark"] .sidebar-card-header {
@@ -715,7 +715,7 @@ textarea:not(.focus-context-textarea),
 select {
     padding: 12.5px 14.5px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     font-size: 14px;
     background-color: var(--bg-color);
     color: var(--text-primary);
@@ -953,7 +953,7 @@ input[type="number"]::-webkit-outer-spin-button {
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -1138,7 +1138,7 @@ textarea {
 /* --- Drop Zone - Style épuré Apple 2025 --- */
 .drop-zone {
     border: 2px dashed rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 32px;
     text-align: center;
     color: var(--text-secondary);
@@ -1350,12 +1350,12 @@ textarea {
     position: absolute;
     top: 100%;
     right: 0;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    background: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     min-width: 200px;
-    padding: 8px;
+    padding: 6px;
     z-index: var(--z-modal);
     visibility: hidden;
     opacity: 0;
@@ -1371,8 +1371,8 @@ textarea {
 
 .btn-dropdown-item {
     color: var(--text-secondary);
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    border-radius: var(--dropdown-item-radius);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1381,7 +1381,8 @@ textarea {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
     transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
@@ -1427,18 +1428,33 @@ textarea {
 }
 
 .dropdown-header {
-    margin: 0;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    /* plus petit */
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin: 4px 0 0 0;
+    padding: 8px 12px 4px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: none;
+    letter-spacing: normal;
     position: relative;
-    border-radius: var(--radius-sm);
-    /* rayon de la maquette */
+    border-radius: 0;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
     outline: none;
+}
+
+.dropdown-header:first-child {
+    margin-top: 0;
+    padding-top: 4px;
+    border-top: none;
+}
+
+.dropdown-header i,
+.dropdown-header iconify-icon {
+    font-size: 0.85em;
+    opacity: 0.7;
 }
 
 /* --- Chips --- */
@@ -1585,7 +1601,7 @@ textarea {
     justify-content: center;
     background: var(--bg-secondary);
     border: 1.5px dashed var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-spring);
     position: relative;
@@ -1654,7 +1670,7 @@ textarea {
     justify-content: center;
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     color: var(--text-secondary);
     font-size: 1.75rem;
     box-shadow: var(--shadow-sm);

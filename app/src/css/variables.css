@@ -73,6 +73,7 @@
     --radius-lg: 24px;
     --radius-md: 16px;
     --radius-sm: 8px;
+    --radius-control: 10px;
     --radius-xs: 4px;
 
     /* --- Range Sliders Tokens --- */
@@ -350,9 +351,9 @@
 
 
     /* --- Dropdown System Tokens (Core Foundation) --- */
-    --dropdown-radius: var(--radius-lg);         /* 24px - Large panels */
+    --dropdown-radius: var(--radius-md);         /* 16px - Concentric outer shell (8px item + 6px padding) */
     --dropdown-radius-sm: var(--radius-md);      /* 16px - Selects/Context menus */
-    --dropdown-item-radius: var(--radius-md);    /* 16px - Large item style */
+    --dropdown-item-radius: var(--radius-sm);    /* 8px - Unified soft-rectangle item style (Google 2026) */
     --dropdown-item-radius-sm: var(--radius-sm); /* 8px - Compact item style */
     --dropdown-bg: var(--surface-color);
     --dropdown-bg-glass: var(--glass-overlay-bg);
@@ -517,8 +518,16 @@
     /* Universal Interactive Item Hover (Neutral) */
     --item-idle-bg: rgba(255, 255, 255, 0.03);
     --item-hover-bg: rgba(255, 255, 255, 0.07);
-    --item-active-bg: rgba(255, 255, 255, 0.10);
+    --item-active-bg: rgba(255, 255, 255, 0.09);
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
+
+    /* --- Dropdown System Tokens (Dark Mode Single Source of Truth) --- */
+    --dropdown-bg: rgba(24, 24, 27, 0.96);
+    --dropdown-bg-glass: rgba(24, 24, 27, 0.96);
+    --dropdown-border: 1px solid rgba(255, 255, 255, 0.10);
+    --dropdown-border-glass: 1px solid rgba(255, 255, 255, 0.10);
+    --dropdown-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+    --dropdown-shadow-sm: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
 
     /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
     --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);

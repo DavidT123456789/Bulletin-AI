@@ -8,7 +8,7 @@
     width: 100%;
     max-width: 100%;
     background: var(--surface-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--glass-surface-border);
     overflow: visible;
@@ -1640,18 +1640,16 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 10px 12px;
-    /* Harmonisé avec le menu global */
+    padding: 8px 12px;
     border: none;
     background: transparent;
-    font-size: 13px;
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: left;
-    border-radius: var(--dropdown-item-radius-sm);
-    /* Harmonisé avec le menu global */
+    border-radius: var(--dropdown-item-radius);
 }
 
 .action-dropdown-item:hover {
@@ -1811,41 +1809,6 @@
     pointer-events: none;
 }
 
-[data-theme="dark"] .action-dropdown-menu,
-[data-theme="dark"] .global-actions-dropdown-menu {
-    background-color: rgba(24, 24, 27, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
-/* === Headers sectionnels (Partagé global + individuel) === */
-.global-actions-dropdown-menu .dropdown-header,
-.action-dropdown-menu .dropdown-header {
-    margin: 0;
-    padding: 8px 12px 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border-top: 1px solid var(--border-color);
-}
-
-.global-actions-dropdown-menu .dropdown-header:first-of-type,
-.action-dropdown-menu .dropdown-header:first-of-type {
-    border-top: none;
-    padding-top: 4px;
-}
-
-.global-actions-dropdown-menu .dropdown-header i,
-.action-dropdown-menu .dropdown-header i {
-    font-size: 10px;
-    opacity: 0.6;
-}
-
 /* Divider danger (spécifique au menu global) */
 .global-actions-dropdown-menu .dropdown-divider.danger-divider,
 .action-dropdown-menu .dropdown-divider {
@@ -1918,7 +1881,7 @@
         align-items: center;
         background: var(--surface-color);
         padding: var(--space-2);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
         pointer-events: auto;
@@ -2107,18 +2070,10 @@
         transform: translateY(0) scale(1);
     }
 
-    .global-actions-dropdown-menu .action-dropdown-item {
-        padding: 8px 12px;
-    }
-
-    .global-actions-dropdown-menu .dropdown-header {
-        padding: 6px 12px 4px;
-    }
-
     /* --- TBODY (Student Cards) --- */
     .student-list-table tbody tr {
         background: var(--surface-color);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
         margin-bottom: 10px;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--card-glass-border);
@@ -2153,7 +2108,7 @@
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
     .student-list-table tbody tr.row-moving {
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
     }
 
     .student-list-table tbody tr.row-moving td:first-child,

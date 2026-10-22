@@ -78,7 +78,7 @@ export const ListViewRenderer = {
     generateActionMenuHTML(studentId) {
         return `
             <div class="action-dropdown-menu">
-                <h5 class="dropdown-header">APPRÉCIATION</h5>
+                <h5 class="dropdown-header">Appréciation</h5>
                 <button class="action-dropdown-item" data-action="regenerate-student">
                     <iconify-icon icon="solar:refresh-linear"></iconify-icon> Régénérer
                 </button>
@@ -86,7 +86,7 @@ export const ListViewRenderer = {
                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                 </button>
                 
-                <h5 class="dropdown-header">ÉLÈVE</h5>
+                <h5 class="dropdown-header">Élève</h5>
                 <button class="action-dropdown-item" data-action="move-student">
                     <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
                 </button>
@@ -342,7 +342,7 @@ export const ListViewRenderer = {
                         </button>
                         <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                             <div class="mobile-sort-section">
-                                <h5 class="dropdown-header">TRIER PAR</h5>
+                                <h5 class="dropdown-header">Trier par</h5>
                                 <button type="button" class="action-dropdown-item mobile-sort-btn" data-mobile-sort="name">
                                     <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
                                     <span>Nom</span>
@@ -371,7 +371,7 @@ export const ListViewRenderer = {
                             </button>
 
                             <!-- SECTION COPIER -->
-                            <h5 class="dropdown-header">COPIER</h5>
+                            <h5 class="dropdown-header">Copier</h5>
                             <button class="action-dropdown-item" id="copyAllAppreciationsBtn">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon> Toutes les appréciations
                             </button>
@@ -380,7 +380,7 @@ export const ListViewRenderer = {
                             </button>
 
                             <!-- SECTION EXPORT -->
-                            <h5 class="dropdown-header">EXPORTER</h5>
+                            <h5 class="dropdown-header">Exporter</h5>
                             <button class="action-dropdown-item" id="exportPdfBtn">
                                 <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
                             </button>

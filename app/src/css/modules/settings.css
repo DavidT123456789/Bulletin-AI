@@ -229,7 +229,7 @@
     backdrop-filter: blur(var(--glass-surface-blur));
     -webkit-backdrop-filter: blur(var(--glass-surface-blur));
     border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 16px;
     margin-bottom: 16px;
     /* Restore spacing between cards */
@@ -1618,7 +1618,7 @@
 .refinement-group {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -2012,12 +2012,12 @@
    ========================================================================== */
 
 .ui-tabs-sidebar-heading {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
     color: var(--text-tertiary);
-    padding: 6px 12px 10px 12px;
+    padding: 6px 12px 8px 12px;
     user-select: none;
 }
 
@@ -2091,6 +2091,12 @@
     #helpModal .ui-tabs-content {
         padding: 18px 44px 20px 44px;
     }
+
+    #appSettingsModal .ui-tabs-content::-webkit-scrollbar-track,
+    #helpModal .ui-tabs-content::-webkit-scrollbar-track {
+        margin-top: 48px;
+        margin-bottom: 16px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -2143,10 +2149,10 @@
 
 .settings-group-title {
     margin: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
     color: var(--text-tertiary);
     display: inline-flex;
     align-items: center;
@@ -2163,7 +2169,7 @@
 #apiStatusSummary.settings-group-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 0 18px;
     display: flex;
     flex-direction: column;

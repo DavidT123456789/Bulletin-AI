@@ -921,11 +921,7 @@ export const StorageManager = {
 
         if (!resetApiKeys && !resetSubjects && !resetThresholds && !resetPreferences) return;
 
-        const saveBtn = document.getElementById('saveSettingsBtn');
-        const cancelBtn = document.getElementById('cancelSettingsBtn');
         const closeBtn = document.getElementById('closeSettingsModalBtn');
-        if (saveBtn) saveBtn.disabled = true;
-        if (cancelBtn) cancelBtn.disabled = true;
         if (closeBtn) closeBtn.disabled = true;
 
         try {
@@ -978,8 +974,6 @@ export const StorageManager = {
         } catch (e) {
             UI.showNotification('Erreur lors de la réinitialisation.', 'error');
         } finally {
-            if (saveBtn) saveBtn.disabled = false;
-            if (cancelBtn) cancelBtn.disabled = false;
             if (closeBtn) closeBtn.disabled = false;
         }
     },
@@ -1013,13 +1007,9 @@ export const StorageManager = {
 
         if (!confirmed) return;
 
-        const saveBtn = document.getElementById('saveSettingsBtn');
-        const cancelBtn = document.getElementById('cancelSettingsBtn');
         const closeBtn = document.getElementById('closeSettingsModalBtn');
         const modalFunctions = document.querySelectorAll('.settings-modal button, .settings-modal input, .settings-modal select');
 
-        if (saveBtn) saveBtn.disabled = true;
-        if (cancelBtn) cancelBtn.disabled = true;
         if (closeBtn) closeBtn.disabled = true;
         modalFunctions.forEach(el => el.disabled = true);
 

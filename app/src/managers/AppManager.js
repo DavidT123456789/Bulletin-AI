@@ -459,7 +459,6 @@ export const App = {
 
     // Settings
     saveSettings() { SettingsUIManager.saveSettings(); },
-    cancelSettings() { SettingsUIManager.cancelSettings(); },
     resetPersonalStyle() { SettingsUIManager.resetPersonalStyle(); },
     handlePersonalizationToggleChange(e) {
         appState.useSubjectPersonalization = e.target.checked;

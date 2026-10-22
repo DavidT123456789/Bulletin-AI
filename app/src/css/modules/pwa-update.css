@@ -17,7 +17,7 @@
     -webkit-backdrop-filter: blur(var(--glass-surface-blur, 16px)) saturate(180%);
 
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
 
     width: min(500px, calc(100vw - var(--space-6) * 2));

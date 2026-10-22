@@ -9,7 +9,6 @@ import { MODEL_SHORT_NAMES } from '../../config/models.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
 import { UI } from '../UIManager.js';
-import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
@@ -103,12 +102,6 @@ export const GlobalListeners = {
             if (UI.activeModal) {
                 if (e.key === 'Escape') UI.closeAllModals();
                 if (e.key === 'Tab') EventHandlersManager.handleFocusTrap(e, UI.activeModal);
-
-                // Ctrl+S to save settings when settings modal is open
-                if (e.ctrlKey && (e.key === 's' || e.key === 'S') && UI.activeModal.id === 'settingsModal') {
-                    e.preventDefault();
-                    SettingsUIManager.saveSettings();
-                }
 
                 const keyMap = {
                     'studentDetailsModal': { 'ArrowLeft': DOM.prevStudentBtn, 'ArrowRight': DOM.nextStudentBtn }

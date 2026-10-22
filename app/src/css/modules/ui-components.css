@@ -9,7 +9,7 @@
     backdrop-filter: blur(var(--glass-surface-blur));
     -webkit-backdrop-filter: blur(var(--glass-surface-blur));
     border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     margin-bottom: 16px;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
@@ -37,7 +37,7 @@
     justify-content: flex-start;
     gap: 10px;
     transition: background-color var(--transition-fast);
-    border-radius: calc(var(--radius-lg) - 1px);
+    border-radius: calc(var(--radius-md) - 1px);
 }
 
 .ui-accordion[open]:not(.is-closing)>summary {
@@ -240,7 +240,7 @@
     gap: 10px;
     padding: 9px 12px;
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
     font-weight: 500;
@@ -257,15 +257,15 @@
 }
 
 .ui-tabs-btn.active {
-    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    background: var(--item-active-bg);
     border-color: transparent;
     color: var(--text-primary) !important;
-    font-weight: 600;
+    font-weight: 500;
     box-shadow: none;
 }
 
 .ui-tabs-btn.active:hover {
-    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+    background: var(--item-hover-bg-elevated);
 }
 
 .ui-tabs-btn iconify-icon {
@@ -288,26 +288,6 @@
     color: var(--text-primary) !important;
 }
 
-[data-theme="dark"] .ui-tabs-btn {
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .ui-tabs-btn.active {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: transparent;
-    color: var(--text-primary) !important;
-    box-shadow: none;
-}
-
-[data-theme="dark"] .ui-tabs-btn.active:hover {
-    background: rgba(255, 255, 255, 0.11);
-}
-
-[data-theme="dark"] .ui-tabs-btn.active iconify-icon,
-[data-theme="dark"] .ui-tabs-btn.active i {
-    color: var(--text-primary) !important;
-}
-
 .ui-tabs-actions-wrapper {
     margin-top: auto;
     padding-top: 10px;
@@ -327,7 +307,7 @@
     padding: 7px 12px;
     width: 100%;
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
     font-size: 0.80em;
@@ -356,7 +336,6 @@
 }
 
 .ui-tabs-action-btn:hover iconify-icon:not(.rotate-icon):not(.icon-spin) {
-    transform: scale(1.1);
     color: var(--text-primary);
 }
 
@@ -468,7 +447,7 @@
         height: 36px;
         padding: 0 12px;
         border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-sm);
         background: var(--bg-secondary);
         color: var(--text-secondary);
         font-size: 0.84rem;
@@ -609,7 +588,7 @@
 .ui-table-container {
     width: 100%;
     overflow-x: auto;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
@@ -744,7 +723,7 @@
     padding: 16px 20px;
     background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.02));
     border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     margin-bottom: 24px;
     box-shadow: var(--shadow-sm);
     animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

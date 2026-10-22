@@ -1180,7 +1180,7 @@
 .drop-zone-premium {
     position: relative;
     border: 2px dashed var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 32px 24px;
     text-align: center;
     background: var(--bg-secondary);
@@ -1244,7 +1244,7 @@
 .import-data-preview {
     background: var(--card-glass-bg, rgba(255, 255, 255, 0.03));
     border: 1px solid var(--card-glass-border, var(--border-color));
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 16px;
     margin-top: 12px;
     backdrop-filter: blur(8px);
@@ -1353,7 +1353,7 @@
     padding: 14px 24px;
     font-size: 1rem;
     font-weight: 600;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-control);
     border: none;
     cursor: pointer;
     display: flex;
@@ -1404,7 +1404,7 @@
     padding: 16px;
     background: var(--card-glass-bg);
     border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     backdrop-filter: blur(8px);
 }
 
