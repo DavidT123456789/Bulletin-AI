@@ -1143,6 +1143,12 @@
     z-index: 100;
 }
 
+body:has(.global-actions-dropdown.open) .fab-add-student {
+    opacity: 0.35;
+    filter: blur(1.5px);
+    pointer-events: none;
+}
+
 .fab-add-student:hover {
     transform: translateY(-3px) scale(1.04);
     background-color: var(--primary-color);

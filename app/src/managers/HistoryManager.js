@@ -26,6 +26,17 @@ export const HistoryManager = {
     /** @type {number} Timestamp du dernier appui retour à la racine */
     _lastRootBackTime: 0,
 
+    /** @type {boolean} Indique qu'une fermeture manuelle attend d'être remplacée par un prochain pushState */
+    _pendingReplace: false,
+
+    /** @type { ReturnType<typeof setTimeout>|null } Timer de repli si aucun pushState ne suit une fermeture différée */
+    _pendingReplaceTimer: null,
+
+    /** @type {EventTarget|null} Cible du geste tactile en cours (pour ignorer le scroll-chaining issu d'un menu) */
+    _activeTouchTarget: null,
+    _touchStartHandler: null,
+    _touchEndHandler: null,
+
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
      * Crée également un état de base pour éviter de quitter l'application intempestivement.
@@ -85,9 +96,40 @@ export const HistoryManager = {
                 }
             };
 
+            this._touchStartHandler = (e) => {
+                this._activeTouchTarget = e.target || null;
+            };
+            this._touchEndHandler = () => {
+                this._activeTouchTarget = null;
+            };
+
             window.addEventListener('popstate', this._popstateHandler);
+            window.addEventListener('touchstart', this._touchStartHandler, { capture: true, passive: true });
+            window.addEventListener('touchend', this._touchEndHandler, { capture: true, passive: true });
+            window.addEventListener('touchcancel', this._touchEndHandler, { capture: true, passive: true });
             this._listenerAttached = true;
         }
+    },
+
+    /**
+     * Indique si un événement de défilement (ou le geste tactile qui l'a initié) provient de l'intérieur d'un conteneur.
+     * Empêche la fermeture accidentelle d'un menu lorsque le défilement atteint sa butée sur mobile.
+     * 
+     * @param {Event} e - Événement scroll
+     * @param {Element|string|null} containerOrSelector - Élément DOM ou sélecteur CSS du menu
+     * @returns {boolean}
+     */
+    isScrollInside(e, containerOrSelector) {
+        if (!containerOrSelector) return false;
+        const target = e?.target;
+        const touchTarget = this._activeTouchTarget;
+        if (typeof containerOrSelector === 'string') {
+            return Boolean(target?.closest?.(containerOrSelector) || touchTarget?.closest?.(containerOrSelector));
+        }
+        return Boolean(
+            (target instanceof Node && containerOrSelector.contains(target)) ||
+            (touchTarget instanceof Node && containerOrSelector.contains(touchTarget))
+        );
     },
 
     /**
@@ -103,14 +145,28 @@ export const HistoryManager = {
 
         // Éviter de pousser deux fois de suite le même ID au sommet
         if (this._stack.length > 0 && this._stack[this._stack.length - 1].id === id) {
+            this._stack[this._stack.length - 1].closeCallback = closeCallback;
             return;
         }
 
-        try {
-            if (typeof history !== 'undefined' && history.pushState) {
-                history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+        if (this._pendingReplace) {
+            this._pendingReplace = false;
+            if (this._pendingReplaceTimer) {
+                clearTimeout(this._pendingReplaceTimer);
+                this._pendingReplaceTimer = null;
             }
-        } catch (_) {}
+            try {
+                if (typeof history !== 'undefined' && history.replaceState) {
+                    history.replaceState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+                }
+            } catch (_) {}
+        } else {
+            try {
+                if (typeof history !== 'undefined' && history.pushState) {
+                    history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+                }
+            } catch (_) {}
+        }
 
         this._stack.push({ id, closeCallback });
     },
@@ -120,23 +176,44 @@ export const HistoryManager = {
      * Synchronise physiquement l'historique du navigateur sans déclencher le closeCallback.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
+     * @param {Object} [options={}]
+     * @param {boolean} [options.deferBack=false] - Diffère history.back() pour permettre à un pushState immédiat (ex: menu -> modale) de faire un replaceState sans collision
      */
-    handleManualClose(id) {
+    handleManualClose(id, options = {}) {
         if (!id || this._stack.length === 0) return;
 
         const topIndex = this._stack.length - 1;
         const top = this._stack[topIndex];
+        let removed = false;
 
         if (top.id === id) {
             this._stack.pop();
-            this._triggerProgrammaticBack();
+            removed = true;
         } else {
             // Fermeture désordonnée (ex: parent fermé emportant un enfant)
             const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
-                this._triggerProgrammaticBack();
+                removed = true;
             }
+        }
+
+        if (!removed) return;
+
+        if (options.deferBack) {
+            this._pendingReplace = true;
+            if (this._pendingReplaceTimer) {
+                clearTimeout(this._pendingReplaceTimer);
+            }
+            this._pendingReplaceTimer = setTimeout(() => {
+                this._pendingReplaceTimer = null;
+                if (this._pendingReplace) {
+                    this._pendingReplace = false;
+                    this._triggerProgrammaticBack();
+                }
+            }, 60);
+        } else {
+            this._triggerProgrammaticBack();
         }
     },
 
@@ -193,16 +270,33 @@ export const HistoryManager = {
         this._stack = [];
         this._programmaticBackCount = 0;
         this._lastRootBackTime = 0;
+        this._pendingReplace = false;
+        this._activeTouchTarget = null;
+        if (this._pendingReplaceTimer) {
+            clearTimeout(this._pendingReplaceTimer);
+            this._pendingReplaceTimer = null;
+        }
     },
 
     /**
      * Détache l'écouteur et réinitialise (pour tests unitaires)
      */
     destroy() {
-        if (this._listenerAttached && this._popstateHandler && typeof window !== 'undefined') {
-            window.removeEventListener('popstate', this._popstateHandler);
+        if (this._listenerAttached && typeof window !== 'undefined') {
+            if (this._popstateHandler) {
+                window.removeEventListener('popstate', this._popstateHandler);
+            }
+            if (this._touchStartHandler) {
+                window.removeEventListener('touchstart', this._touchStartHandler, { capture: true });
+            }
+            if (this._touchEndHandler) {
+                window.removeEventListener('touchend', this._touchEndHandler, { capture: true });
+                window.removeEventListener('touchcancel', this._touchEndHandler, { capture: true });
+            }
             this._listenerAttached = false;
             this._popstateHandler = null;
+            this._touchStartHandler = null;
+            this._touchEndHandler = null;
         }
         this.clearStack();
         this._baseStateInitialized = false;

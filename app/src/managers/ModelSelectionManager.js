@@ -13,6 +13,9 @@ import { SettingsUIManager } from './SettingsUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { UI } from './UIManager.js';
 import { DropdownManager } from './DropdownManager.js';
+import { HistoryManager } from './HistoryManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
+import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 export const ModelSelectionManager = {
     isOpen: false,
@@ -53,7 +56,7 @@ export const ModelSelectionManager = {
         this._boundScrollHandler = (e) => {
             if (!this.isOpen) return;
             const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
-            if (dropdown && !(e.target instanceof Node && dropdown.contains(e.target))) {
+            if (dropdown && !HistoryManager.isScrollInside(e, dropdown)) {
                 this.closeDropdown();
             }
         };
@@ -173,17 +176,8 @@ export const ModelSelectionManager = {
         if (trigger.classList.contains('generating')) return;
 
         // Fermer les autres dropdowns ouverts pour éviter les superpositions
-        if (DOM.classDropdown && DOM.classDropdown.style.display !== 'none') {
-            DOM.classDropdown.classList.remove('visible');
-            DOM.classDropdown.style.display = 'none';
-            DOM.headerClassChip?.classList.remove('active');
-        }
-        if (DOM.headerMenuDropdown?.classList.contains('open')) {
-            DOM.headerMenuDropdown.classList.remove('open');
-            DOM.headerMenuBtn?.classList.remove('active');
-            DOM.headerMenuBtn?.setAttribute('aria-expanded', 'false');
-            document.body.classList.remove('header-menu-open');
-        }
+        ClassUIManager.closeDropdown?.({ replacingHistory: true });
+        GeneralListeners.closeHeaderMenu?.({ replacingHistory: true });
 
         this.renderDropdown();
 
@@ -193,6 +187,7 @@ export const ModelSelectionManager = {
         dropdown.style.display = 'flex';
         this.isOpen = true;
         trigger.setAttribute('aria-expanded', 'true');
+        HistoryManager.pushState('modelDropdown', (opts) => this.closeDropdown(opts));
 
         // Focus accessible sur le modèle actif
         setTimeout(() => {
@@ -205,9 +200,14 @@ export const ModelSelectionManager = {
 
     /**
      * Ferme le popover de sélection de modèle.
+     * @param {Object} [options={}]
      */
-    closeDropdown() {
+    closeDropdown(options = {}) {
         if (!this.isOpen) return;
+
+        if (!options?.causedByHistory && HistoryManager.isOpen('modelDropdown')) {
+            HistoryManager.handleManualClose('modelDropdown', { deferBack: Boolean(options?.replacingHistory) });
+        }
 
         const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
         const trigger = DOM.headerGenDashboard || document.getElementById('headerGenDashboard');
@@ -332,7 +332,7 @@ export const ModelSelectionManager = {
      * @param {string|null} highlightTarget - Identifiant optionnel d'élément à cibler
      */
     openAllSettings(highlightTarget = null) {
-        this.closeDropdown();
+        this.closeDropdown({ replacingHistory: true });
         UI.openModal(DOM.settingsModal);
         UI.showSettingsTab('settings-engine');
         SettingsUIManager.updateApiStatusDisplay();

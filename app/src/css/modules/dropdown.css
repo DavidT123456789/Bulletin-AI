@@ -110,6 +110,9 @@
     z-index: var(--z-dropdown);
     max-height: 320px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
     opacity: 0;
     visibility: hidden;
     transform-origin: top center;

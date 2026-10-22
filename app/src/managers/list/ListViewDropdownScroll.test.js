@@ -466,4 +466,102 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(toggleSpy).toHaveBeenCalledTimes(1);
         expect(toggleSpy).toHaveBeenCalledWith(listContainer);
     });
+
+    it('should close open list menus on Back button (popstate via HistoryManager) and clean up HistoryManager on manual close', async () => {
+        const { HistoryManager } = await import('../HistoryManager.js');
+        HistoryManager.destroy();
+
+        const globalMenu = listContainer.querySelector('.global-actions-dropdown-menu');
+        const globalToggleBtn = listContainer.querySelector('.btn-action-menu-header');
+        const rowMenu = listContainer.querySelector('.action-dropdown-menu');
+        const rowToggleBtn = listContainer.querySelector('[data-action="toggle-menu"]');
+
+        // 1. Open global menu -> pushes 'listActionMenu' to HistoryManager
+        globalToggleBtn.click();
+        expect(globalMenu.classList.contains('open')).toBe(true);
+        expect(HistoryManager.isOpen('listActionMenu')).toBe(true);
+
+        // Press mobile Back button (popstate) -> closes global menu
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        expect(globalMenu.classList.contains('open')).toBe(false);
+        expect(globalToggleBtn.getAttribute('aria-expanded')).toBe('false');
+        expect(HistoryManager.isOpen('listActionMenu')).toBe(false);
+
+        // 2. Open row menu -> pushes 'listActionMenu' to HistoryManager
+        rowToggleBtn.click();
+        expect(rowMenu.classList.contains('open')).toBe(true);
+        expect(HistoryManager.isOpen('listActionMenu')).toBe(true);
+
+        // Close manually via outside tap -> cleans up HistoryManager stack
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(rowMenu.classList.contains('open')).toBe(false);
+        expect(HistoryManager.isOpen('listActionMenu')).toBe(false);
+    });
+
+    it('should close #headerMenuDropdown on Back button (popstate via HistoryManager)', async () => {
+        const { DOM } = await import('../../utils/DOM.js');
+        const { GeneralListeners } = await import('../listeners/GeneralListeners.js');
+        const { HistoryManager } = await import('../HistoryManager.js');
+        HistoryManager.destroy();
+
+        const headerWrapper = document.createElement('div');
+        headerWrapper.innerHTML = `
+            <button id="headerMenuBtn"></button>
+            <div id="headerMenuDropdown" class="header-dropdown-menu">
+                <button class="menu-item">Item</button>
+            </div>
+        `;
+        container.appendChild(headerWrapper);
+
+        DOM.headerMenuBtn = headerWrapper.querySelector('#headerMenuBtn');
+        DOM.headerMenuDropdown = headerWrapper.querySelector('#headerMenuDropdown');
+
+        GeneralListeners.init({ handleGenerateClick: vi.fn(), handleClearClick: vi.fn() });
+        vi.spyOn(GeneralListeners, '_onMenuOpen').mockImplementation(() => {});
+        vi.spyOn(GeneralListeners, 'setupCloudListeners').mockImplementation(() => {});
+
+        GeneralListeners.setup((el, fn) => {
+            if (el) el.addEventListener('click', fn);
+        });
+
+        DOM.headerMenuBtn.click();
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(true);
+        expect(HistoryManager.isOpen('headerMenu')).toBe(true);
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        expect(DOM.headerMenuDropdown.classList.contains('open')).toBe(false);
+        expect(DOM.headerMenuBtn.getAttribute('aria-expanded')).toBe('false');
+        expect(HistoryManager.isOpen('headerMenu')).toBe(false);
+    });
+
+    it('should constrain menu maxHeight to available viewport space when opened and keep menu open during touch-scroll inside menu', () => {
+        const globalMenu = listContainer.querySelector('.global-actions-dropdown-menu');
+        const globalToggleBtn = listContainer.querySelector('.btn-action-menu-header');
+        const actionItem = globalMenu.querySelector('.action-dropdown-item');
+
+        vi.spyOn(globalToggleBtn, 'getBoundingClientRect').mockReturnValue({
+            bottom: 240,
+            top: 196,
+            left: 300,
+            right: 344,
+            width: 44,
+            height: 44
+        });
+        window.innerHeight = 640;
+
+        globalToggleBtn.click();
+        expect(globalMenu.classList.contains('open')).toBe(true);
+        // 640 - 240 - 16 = 384px
+        expect(globalMenu.style.maxHeight).toBe('384px');
+
+        // Start touch gesture inside the menu, then fire a scroll event on window -> menu must NOT close
+        actionItem.dispatchEvent(new Event('touchstart', { bubbles: true }));
+        window.dispatchEvent(new Event('scroll'));
+        expect(globalMenu.classList.contains('open')).toBe(true);
+
+        // End touch gesture -> subsequent scroll outside closes the menu
+        actionItem.dispatchEvent(new Event('touchend', { bubbles: true }));
+        window.dispatchEvent(new Event('scroll'));
+        expect(globalMenu.classList.contains('open')).toBe(false);
+    });
 });

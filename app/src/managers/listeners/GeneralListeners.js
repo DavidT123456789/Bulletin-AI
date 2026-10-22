@@ -15,6 +15,7 @@ import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { MassImportManager } from '../MassImportManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { ModelSelectionManager } from '../ModelSelectionManager.js';
+import { HistoryManager } from '../HistoryManager.js';
 
 import { APP_LINKS } from '../../config/Config.js';
 
@@ -49,12 +50,14 @@ export const GeneralListeners = {
             DOM.headerMenuBtn.setAttribute('aria-haspopup', 'menu');
             DOM.headerMenuBtn.setAttribute('aria-expanded', 'false');
 
-            const closeMenu = () => {
+            const closeMenu = (options = {}) => {
+                const wasOpen = DOM.headerMenuDropdown.classList.contains('open');
                 DOM.headerMenuDropdown.classList.remove('open');
                 DOM.headerMenuBtn.classList.remove('active');
                 DOM.headerMenuBtn.setAttribute('aria-expanded', 'false');
                 DOM.headerMenuBtn.blur();
                 document.body.classList.remove('header-menu-open');
+                DOM.headerMenuDropdown.style.maxHeight = '';
 
                 // RESTORE to header if it was teleported
                 if (DOM.headerMenuDropdown.parentElement === document.body && originalParent) {
@@ -66,6 +69,10 @@ export const GeneralListeners = {
                     DOM.headerMenuDropdown.style.position = '';
                     DOM.headerMenuDropdown.style.width = '';
                 }
+
+                if (wasOpen && !options?.causedByHistory && HistoryManager.isOpen('headerMenu')) {
+                    HistoryManager.handleManualClose('headerMenu', { deferBack: Boolean(options?.replacingHistory) });
+                }
             };
             this.closeHeaderMenu = closeMenu;
 
@@ -75,17 +82,23 @@ export const GeneralListeners = {
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
-                    ModelSelectionManager.closeDropdown?.();
+                    ModelSelectionManager.closeDropdown?.({ replacingHistory: true });
                     DOM.headerMenuDropdown.classList.add('open');
                     DOM.headerMenuBtn.classList.add('active');
                     DOM.headerMenuBtn.setAttribute('aria-expanded', 'true');
                     document.body.classList.add('header-menu-open');
 
+                    const btnRect = DOM.headerMenuBtn.getBoundingClientRect();
+                    const availableBelow = window.innerHeight - btnRect.bottom - 20;
+                    if (availableBelow > 120) {
+                        DOM.headerMenuDropdown.style.maxHeight = `${Math.floor(availableBelow)}px`;
+                    }
+                    DOM.headerMenuDropdown.scrollTop = 0;
+
                     // TELEPORTATION FIX FOR MOBILE
                     // When header has glassmorphism (backdrop-filter), it creates a stacking context 
                     // that traps fixed/absolute children. We must move the menu to body.
                     if (window.innerWidth < 768) {
-                        const btnRect = DOM.headerMenuBtn.getBoundingClientRect();
                         document.body.appendChild(DOM.headerMenuDropdown);
 
                         // Calculated positioning
@@ -97,6 +110,7 @@ export const GeneralListeners = {
                         DOM.headerMenuDropdown.style.width = '220px'; // Ensure good width
                     }
 
+                    HistoryManager.pushState('headerMenu', (opts) => closeMenu(opts));
                     this._onMenuOpen();
                 } else {
                     closeMenu();
@@ -125,7 +139,7 @@ export const GeneralListeners = {
             }
             this._headerMenuScroll = (e) => {
                 if (DOM.headerMenuDropdown.classList.contains('open') &&
-                    !(e.target instanceof Node && DOM.headerMenuDropdown.contains(e.target))) {
+                    !HistoryManager.isScrollInside(e, DOM.headerMenuDropdown)) {
                     closeMenu();
                 }
             };
@@ -178,14 +192,14 @@ export const GeneralListeners = {
             // Integrated Menu Items Handlers
             if (DOM.personalizationBtn) {
                 addClickListener(DOM.personalizationBtn, () => {
-                    closeMenu();
+                    closeMenu({ replacingHistory: true });
                     UI.openModal(DOM.personalizationModal);
                 });
             }
 
             if (DOM.settingsButton) {
                 addClickListener(DOM.settingsButton, () => {
-                    closeMenu();
+                    closeMenu({ replacingHistory: true });
                     UI.openModal(DOM.settingsModal);
                     SettingsUIManager.updateApiStatusDisplay();
                 });
@@ -193,7 +207,7 @@ export const GeneralListeners = {
 
             if (DOM.helpButton) {
                 addClickListener(DOM.helpButton, () => {
-                    closeMenu();
+                    closeMenu({ replacingHistory: true });
                     App.handleHelpButtonClick();
                 });
             }

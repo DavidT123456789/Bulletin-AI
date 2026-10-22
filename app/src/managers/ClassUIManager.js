@@ -65,7 +65,7 @@ export const ClassUIManager = {
         // Manage classes button
         DOM.manageClassesBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.closeDropdown();
+            this.closeDropdown({ replacingHistory: true });
             this.showManageClassesModal();
         });
 
@@ -90,7 +90,7 @@ export const ClassUIManager = {
             window.removeEventListener('scroll', this._boundOutsideScroll, true);
         }
         this._boundOutsideScroll = (e) => {
-            if (this._isDropdownOpen && !(e.target instanceof Node && DOM.classDropdown?.contains(e.target))) {
+            if (this._isDropdownOpen && !HistoryManager.isScrollInside(e, DOM.classDropdown)) {
                 this.closeDropdown();
             }
         };
@@ -121,7 +121,7 @@ export const ClassUIManager = {
             }
 
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                const items = Array.from(DOM.classDropdownList?.querySelectorAll('.class-dropdown-item') || []);
+                const items = Array.from(DOM.classDropdownList?.querySelectorAll('.class-dropdown-item:not(.is-collapsed)') || []);
                 if (items.length === 0) return;
 
                 e.preventDefault();
@@ -129,7 +129,7 @@ export const ClassUIManager = {
                 const index = items.indexOf(activeEl);
 
                 if (index === -1) {
-                    const activeItem = DOM.classDropdownList.querySelector('.class-dropdown-item.active');
+                    const activeItem = items.find(el => el.classList.contains('active'));
                     (activeItem || items[0])?.focus();
                 } else {
                     const nextIndex = e.key === 'ArrowDown'
@@ -236,8 +236,8 @@ export const ClassUIManager = {
         if (!DOM.classDropdown) return;
 
         // [UX Mobile] History Cleanup
-        if (!options.causedByHistory && this._isDropdownOpen) {
-            HistoryManager.handleManualClose('classDropdown');
+        if (!options?.causedByHistory && this._isDropdownOpen) {
+            HistoryManager.handleManualClose('classDropdown', { deferBack: Boolean(options?.replacingHistory) });
         }
 
         this._isDropdownOpen = false;

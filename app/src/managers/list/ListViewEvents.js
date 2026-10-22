@@ -106,32 +106,31 @@ export const ListViewEvents = {
             }, { signal });
         }
 
-        // Close any open menus
-        const closeAllMenus = () => {
+        const MENU_SELECTOR = '.action-dropdown-menu, .global-actions-dropdown-menu';
+        const OPEN_MENU_SELECTOR = '.action-dropdown-menu.open, .global-actions-dropdown-menu.open';
 
-            // Fermer les menus d'actions individuelles
-            listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
-                // Trigger exit animation
+        // Close any open menus
+        const closeAllMenus = (options = {}) => {
+            const openMenus = listContainer.querySelectorAll(OPEN_MENU_SELECTOR);
+            if (openMenus.length === 0) return;
+
+            openMenus.forEach(menu => {
                 menu.classList.remove('open');
 
-                // Remove open and dropup classes from parent dropdown
-                const dropdown = menu.closest('.action-dropdown');
+                const dropdown = menu.closest('.action-dropdown, .global-actions-dropdown');
                 if (dropdown) {
                     dropdown.classList.remove('open', 'dropup');
-                    const btn = dropdown.querySelector('.btn-action-menu');
+                    const btn = dropdown.querySelector('.btn-action-menu, .btn-action-menu-header');
                     btn?.blur?.();
                     btn?.setAttribute('aria-expanded', 'false');
                 }
 
-                // Clear any existing timeout to avoid conflict
                 if (menu.dataset.closeTimeout) {
                     clearTimeout(parseInt(menu.dataset.closeTimeout));
                 }
 
                 // DELAY CLEANUP: Wait for CSS transition (200ms) before resetting styles
-                // This prevents the menu from jumping to default position while fading out
                 const timeoutId = setTimeout(() => {
-                    // Only cleanup if it hasn't been reopened in the meantime
                     if (!menu.classList.contains('open')) {
                         menu.style.position = '';
                         menu.style.top = '';
@@ -139,23 +138,31 @@ export const ListViewEvents = {
                         menu.style.right = '';
                         menu.style.width = '';
                         menu.style.zIndex = '';
+                        menu.style.maxHeight = '';
                     }
                     delete menu.dataset.closeTimeout;
                 }, 200);
 
                 menu.dataset.closeTimeout = timeoutId.toString();
             });
-            // Fermer le menu global du header
-            listContainer.querySelectorAll('.global-actions-dropdown-menu.open').forEach(menu => {
-                menu.classList.remove('open');
-                const dropdown = menu.closest('.global-actions-dropdown');
-                if (dropdown) {
-                    dropdown.classList.remove('open');
-                    const btn = dropdown.querySelector('.btn-action-menu-header');
-                    btn?.blur?.();
-                    btn?.setAttribute('aria-expanded', 'false');
-                }
-            });
+
+            if (!options?.causedByHistory && HistoryManager.isOpen('listActionMenu')) {
+                HistoryManager.handleManualClose('listActionMenu', { deferBack: Boolean(options?.replacingHistory) });
+            }
+        };
+
+        // Shared helper to activate a dropdown menu, constrain its height to the viewport, and push history state
+        const activateMenu = (menu, dropdown, triggerBtn, availableSpace) => {
+            if (menu.dataset.closeTimeout) {
+                clearTimeout(parseInt(menu.dataset.closeTimeout));
+                delete menu.dataset.closeTimeout;
+            }
+            menu.style.maxHeight = availableSpace > 120 ? `${Math.floor(availableSpace)}px` : '';
+            menu.scrollTop = 0;
+            menu.classList.add('open');
+            dropdown?.classList.add('open');
+            triggerBtn?.setAttribute('aria-expanded', 'true');
+            HistoryManager.pushState('listActionMenu', (opts) => closeAllMenus(opts));
         };
 
         // Open a row actions menu anchored to its 3-dots button (auto dropup near the viewport bottom)
@@ -163,12 +170,6 @@ export const ListViewEvents = {
             const dropdown = menuBtn.closest('.action-dropdown');
             const menu = dropdown?.querySelector('.action-dropdown-menu');
             if (!menu) return;
-
-            // Cancel pending cleanup if re-opening same menu
-            if (menu.dataset.closeTimeout) {
-                clearTimeout(parseInt(menu.dataset.closeTimeout));
-                delete menu.dataset.closeTimeout;
-            }
 
             // CRITICAL: Explicitly clear inline styles to ensure default positioning (relative to button)
             // This fixes the case where menu was previously opened via context menu (absolute/fixed position)
@@ -181,20 +182,20 @@ export const ListViewEvents = {
 
             // Inversion automatique vers le haut si trop proche du bas de l'écran
             const rect = menuBtn.getBoundingClientRect();
-            const openUp = (window.innerHeight - rect.bottom) < 260 && rect.top > 260;
+            const spaceBelow = window.innerHeight - rect.bottom - 16;
+            const spaceAbove = rect.top - 72;
+            const openUp = spaceBelow < 240 && spaceAbove > spaceBelow;
             dropdown.classList.toggle('dropup', openUp);
 
-            menu.classList.add('open');
-            dropdown.classList.add('open');
-            menuBtn.setAttribute('aria-expanded', 'true');
+            activateMenu(menu, dropdown, menuBtn, openUp ? spaceAbove : spaceBelow);
         };
 
         // Close open menus on scroll (outside the menu itself)
         const handleScrollDismiss = (e) => {
-            if (e.target?.closest?.('.action-dropdown-menu, .global-actions-dropdown-menu')) {
+            if (HistoryManager.isScrollInside(e, MENU_SELECTOR)) {
                 return;
             }
-            if (listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open')) {
+            if (listContainer.querySelector(OPEN_MENU_SELECTOR)) {
                 closeAllMenus();
             }
         };
@@ -208,8 +209,7 @@ export const ListViewEvents = {
                 return;
             }
 
-            const hasOpenMenu = listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
-            if (hasOpenMenu) {
+            if (listContainer.querySelector(OPEN_MENU_SELECTOR)) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -237,12 +237,11 @@ export const ListViewEvents = {
                 const menu = dropdown?.querySelector('.global-actions-dropdown-menu');
 
                 const wasOpen = menu?.classList.contains('open');
-                closeAllMenus();
+                closeAllMenus({ replacingHistory: !wasOpen });
 
-                if (!wasOpen) {
-                    menu?.classList.add('open');
-                    dropdown?.classList.add('open');
-                    globalMenuBtn.setAttribute('aria-expanded', 'true');
+                if (!wasOpen && menu) {
+                    const rect = globalMenuBtn.getBoundingClientRect();
+                    activateMenu(menu, dropdown, globalMenuBtn, window.innerHeight - rect.bottom - 16);
                 }
                 return;
             }
@@ -261,7 +260,7 @@ export const ListViewEvents = {
                 const wasOpen = menu?.classList.contains('open');
 
                 // Close other menus first
-                closeAllMenus();
+                closeAllMenus({ replacingHistory: !wasOpen });
 
                 // Toggle this menu (if it was closed, open it; if it was open, it stays closed)
                 if (!wasOpen) openRowMenu(menuBtn);
@@ -272,7 +271,7 @@ export const ListViewEvents = {
             const moveBtn = target.closest('[data-action="move-student"]');
             if (moveBtn) {
                 e.stopPropagation();
-                closeAllMenus();
+                closeAllMenus({ replacingHistory: true });
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
@@ -300,7 +299,7 @@ export const ListViewEvents = {
             const resetBtn = target.closest('[data-action="reset-student"]');
             if (resetBtn) {
                 e.stopPropagation();
-                closeAllMenus();
+                closeAllMenus({ replacingHistory: true });
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
@@ -326,7 +325,7 @@ export const ListViewEvents = {
             const deleteBtn = target.closest('[data-action="delete-student"]');
             if (deleteBtn) {
                 e.stopPropagation();
-                closeAllMenus();
+                closeAllMenus({ replacingHistory: true });
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) this.callbacks.deleteStudent(studentId, row);
@@ -396,14 +395,14 @@ export const ListViewEvents = {
             if (!menuBtn) return;
             longPress.fired = true;
             navigator.vibrate?.(10);
-            closeAllMenus();
+            closeAllMenus({ replacingHistory: true });
             openRowMenu(menuBtn);
         };
 
         listContainer.addEventListener('touchstart', (e) => {
             cancelLongPress();
             longPress.fired = false;
-            if (e.touches.length !== 1) return;
+            if (e.touches?.length !== 1) return;
             const row = e.target.closest('.student-row');
             if (!row || e.target.closest('.action-dropdown, a, input')) return;
             longPress.startX = e.touches[0].clientX;
@@ -453,14 +452,9 @@ export const ListViewEvents = {
             if (menuBtn) {
                 const dropdown = menuBtn.closest('.action-dropdown');
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
+                if (!menu) return;
 
-                closeAllMenus();
-
-                // Cancel pending cleanup
-                if (menu.dataset.closeTimeout) {
-                    clearTimeout(parseInt(menu.dataset.closeTimeout));
-                    delete menu.dataset.closeTimeout;
-                }
+                closeAllMenus({ replacingHistory: true });
 
                 // Position at mouse cursor [USER REQUEST]
                 // Use absolute positioning relative to parent so it follows scroll
@@ -476,9 +470,7 @@ export const ListViewEvents = {
                 menu.style.width = 'max-content';
                 menu.style.zIndex = '9999';
 
-                menu?.classList.add('open');
-                dropdown?.classList.add('open');
-                menuBtn.setAttribute('aria-expanded', 'true');
+                activateMenu(menu, dropdown, menuBtn, window.innerHeight - e.clientY - 16);
             }
         }, { signal });
 
@@ -491,8 +483,7 @@ export const ListViewEvents = {
         this.state.activeKeydownListener = (e) => {
             if (e.key === 'Escape') {
                 // Priority 1: Close menus if any are open
-                const openMenus = listContainer.querySelectorAll('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
-                if (openMenus.length > 0) {
+                if (listContainer.querySelector(OPEN_MENU_SELECTOR)) {
                     closeAllMenus();
                 }
                 // Priority 2: Clear selections if no menu was open
@@ -561,12 +552,12 @@ export const ListViewEvents = {
      */
     attachGlobalActionsListeners(listContainer, closeAllMenus, signal) {
         // Helper pour ajouter un listener qui ferme le menu
-        const addAction = (selector, handler) => {
+        const addAction = (selector, handler, options = {}) => {
             const btn = listContainer.querySelector(selector);
             if (btn) {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    closeAllMenus();
+                    closeAllMenus(options);
                     await handler();
                 }, { signal });
             }
@@ -600,7 +591,7 @@ export const ListViewEvents = {
         addAction('#exportPdfBtn', () => ExportManager.exportToPdf());
 
         // Analyze class (in dropdown menu)
-        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
+        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard(), { replacingHistory: true });
 
         // Copy All Appreciations
         addAction('#copyAllAppreciationsBtn', () => {
