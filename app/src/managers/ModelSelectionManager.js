@@ -56,7 +56,7 @@ export const ModelSelectionManager = {
         this._boundScrollHandler = (e) => {
             if (!this.isOpen) return;
             const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
-            if (dropdown && !HistoryManager.isScrollInside(e, dropdown)) {
+            if (dropdown && !(e.target instanceof Node && dropdown.contains(e.target))) {
                 this.closeDropdown();
             }
         };
@@ -176,8 +176,8 @@ export const ModelSelectionManager = {
         if (trigger.classList.contains('generating')) return;
 
         // Fermer les autres dropdowns ouverts pour éviter les superpositions
-        ClassUIManager.closeDropdown?.({ replacingHistory: true });
-        GeneralListeners.closeHeaderMenu?.({ replacingHistory: true });
+        ClassUIManager.closeDropdown?.();
+        GeneralListeners.closeHeaderMenu?.();
 
         this.renderDropdown();
 
@@ -206,7 +206,7 @@ export const ModelSelectionManager = {
         if (!this.isOpen) return;
 
         if (!options?.causedByHistory && HistoryManager.isOpen('modelDropdown')) {
-            HistoryManager.handleManualClose('modelDropdown', { deferBack: Boolean(options?.replacingHistory) });
+            HistoryManager.handleManualClose('modelDropdown');
         }
 
         const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
@@ -332,7 +332,7 @@ export const ModelSelectionManager = {
      * @param {string|null} highlightTarget - Identifiant optionnel d'élément à cibler
      */
     openAllSettings(highlightTarget = null) {
-        this.closeDropdown({ replacingHistory: true });
+        this.closeDropdown();
         UI.openModal(DOM.settingsModal);
         UI.showSettingsTab('settings-engine');
         SettingsUIManager.updateApiStatusDisplay();

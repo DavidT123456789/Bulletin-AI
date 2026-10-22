@@ -65,7 +65,7 @@ export const ClassUIManager = {
         // Manage classes button
         DOM.manageClassesBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.closeDropdown({ replacingHistory: true });
+            this.closeDropdown();
             this.showManageClassesModal();
         });
 
@@ -90,7 +90,7 @@ export const ClassUIManager = {
             window.removeEventListener('scroll', this._boundOutsideScroll, true);
         }
         this._boundOutsideScroll = (e) => {
-            if (this._isDropdownOpen && !HistoryManager.isScrollInside(e, DOM.classDropdown)) {
+            if (this._isDropdownOpen && !(e.target instanceof Node && DOM.classDropdown?.contains(e.target))) {
                 this.closeDropdown();
             }
         };
@@ -237,7 +237,7 @@ export const ClassUIManager = {
 
         // [UX Mobile] History Cleanup
         if (!options?.causedByHistory && this._isDropdownOpen) {
-            HistoryManager.handleManualClose('classDropdown', { deferBack: Boolean(options?.replacingHistory) });
+            HistoryManager.handleManualClose('classDropdown');
         }
 
         this._isDropdownOpen = false;

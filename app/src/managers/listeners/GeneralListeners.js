@@ -71,7 +71,7 @@ export const GeneralListeners = {
                 }
 
                 if (wasOpen && !options?.causedByHistory && HistoryManager.isOpen('headerMenu')) {
-                    HistoryManager.handleManualClose('headerMenu', { deferBack: Boolean(options?.replacingHistory) });
+                    HistoryManager.handleManualClose('headerMenu');
                 }
             };
             this.closeHeaderMenu = closeMenu;
@@ -82,7 +82,7 @@ export const GeneralListeners = {
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
-                    ModelSelectionManager.closeDropdown?.({ replacingHistory: true });
+                    ModelSelectionManager.closeDropdown?.();
                     DOM.headerMenuDropdown.classList.add('open');
                     DOM.headerMenuBtn.classList.add('active');
                     DOM.headerMenuBtn.setAttribute('aria-expanded', 'true');
@@ -139,7 +139,7 @@ export const GeneralListeners = {
             }
             this._headerMenuScroll = (e) => {
                 if (DOM.headerMenuDropdown.classList.contains('open') &&
-                    !HistoryManager.isScrollInside(e, DOM.headerMenuDropdown)) {
+                    !(e.target instanceof Node && DOM.headerMenuDropdown.contains(e.target))) {
                     closeMenu();
                 }
             };
@@ -192,14 +192,14 @@ export const GeneralListeners = {
             // Integrated Menu Items Handlers
             if (DOM.personalizationBtn) {
                 addClickListener(DOM.personalizationBtn, () => {
-                    closeMenu({ replacingHistory: true });
+                    closeMenu();
                     UI.openModal(DOM.personalizationModal);
                 });
             }
 
             if (DOM.settingsButton) {
                 addClickListener(DOM.settingsButton, () => {
-                    closeMenu({ replacingHistory: true });
+                    closeMenu();
                     UI.openModal(DOM.settingsModal);
                     SettingsUIManager.updateApiStatusDisplay();
                 });
@@ -207,7 +207,7 @@ export const GeneralListeners = {
 
             if (DOM.helpButton) {
                 addClickListener(DOM.helpButton, () => {
-                    closeMenu({ replacingHistory: true });
+                    closeMenu();
                     App.handleHelpButtonClick();
                 });
             }

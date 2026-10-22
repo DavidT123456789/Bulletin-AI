@@ -147,7 +147,7 @@ export const ListViewEvents = {
             });
 
             if (!options?.causedByHistory && HistoryManager.isOpen('listActionMenu')) {
-                HistoryManager.handleManualClose('listActionMenu', { deferBack: Boolean(options?.replacingHistory) });
+                HistoryManager.handleManualClose('listActionMenu');
             }
         };
 
@@ -190,9 +190,17 @@ export const ListViewEvents = {
             activateMenu(menu, dropdown, menuBtn, openUp ? spaceAbove : spaceBelow);
         };
 
-        // Close open menus on scroll (outside the menu itself)
+        // Close open menus on scroll (outside the menu itself, including mobile touch gestures inside the menu)
+        let isTouchingMenu = false;
+        listContainer.addEventListener('touchstart', (e) => {
+            isTouchingMenu = Boolean(e.target?.closest?.(MENU_SELECTOR));
+        }, { capture: true, passive: true, signal });
+        const clearTouchMenu = () => { isTouchingMenu = false; };
+        listContainer.addEventListener('touchend', clearTouchMenu, { capture: true, passive: true, signal });
+        listContainer.addEventListener('touchcancel', clearTouchMenu, { capture: true, passive: true, signal });
+
         const handleScrollDismiss = (e) => {
-            if (HistoryManager.isScrollInside(e, MENU_SELECTOR)) {
+            if (isTouchingMenu || e.target?.closest?.(MENU_SELECTOR)) {
                 return;
             }
             if (listContainer.querySelector(OPEN_MENU_SELECTOR)) {
@@ -237,7 +245,7 @@ export const ListViewEvents = {
                 const menu = dropdown?.querySelector('.global-actions-dropdown-menu');
 
                 const wasOpen = menu?.classList.contains('open');
-                closeAllMenus({ replacingHistory: !wasOpen });
+                closeAllMenus();
 
                 if (!wasOpen && menu) {
                     const rect = globalMenuBtn.getBoundingClientRect();
@@ -260,7 +268,7 @@ export const ListViewEvents = {
                 const wasOpen = menu?.classList.contains('open');
 
                 // Close other menus first
-                closeAllMenus({ replacingHistory: !wasOpen });
+                closeAllMenus();
 
                 // Toggle this menu (if it was closed, open it; if it was open, it stays closed)
                 if (!wasOpen) openRowMenu(menuBtn);
@@ -271,7 +279,7 @@ export const ListViewEvents = {
             const moveBtn = target.closest('[data-action="move-student"]');
             if (moveBtn) {
                 e.stopPropagation();
-                closeAllMenus({ replacingHistory: true });
+                closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
@@ -299,7 +307,7 @@ export const ListViewEvents = {
             const resetBtn = target.closest('[data-action="reset-student"]');
             if (resetBtn) {
                 e.stopPropagation();
-                closeAllMenus({ replacingHistory: true });
+                closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
@@ -325,7 +333,7 @@ export const ListViewEvents = {
             const deleteBtn = target.closest('[data-action="delete-student"]');
             if (deleteBtn) {
                 e.stopPropagation();
-                closeAllMenus({ replacingHistory: true });
+                closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) this.callbacks.deleteStudent(studentId, row);
@@ -395,7 +403,7 @@ export const ListViewEvents = {
             if (!menuBtn) return;
             longPress.fired = true;
             navigator.vibrate?.(10);
-            closeAllMenus({ replacingHistory: true });
+            closeAllMenus();
             openRowMenu(menuBtn);
         };
 
@@ -454,7 +462,7 @@ export const ListViewEvents = {
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
                 if (!menu) return;
 
-                closeAllMenus({ replacingHistory: true });
+                closeAllMenus();
 
                 // Position at mouse cursor [USER REQUEST]
                 // Use absolute positioning relative to parent so it follows scroll
@@ -552,12 +560,12 @@ export const ListViewEvents = {
      */
     attachGlobalActionsListeners(listContainer, closeAllMenus, signal) {
         // Helper pour ajouter un listener qui ferme le menu
-        const addAction = (selector, handler, options = {}) => {
+        const addAction = (selector, handler) => {
             const btn = listContainer.querySelector(selector);
             if (btn) {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    closeAllMenus(options);
+                    closeAllMenus();
                     await handler();
                 }, { signal });
             }
@@ -591,7 +599,7 @@ export const ListViewEvents = {
         addAction('#exportPdfBtn', () => ExportManager.exportToPdf());
 
         // Analyze class (in dropdown menu)
-        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard(), { replacingHistory: true });
+        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
 
         // Copy All Appreciations
         addAction('#copyAllAppreciationsBtn', () => {
