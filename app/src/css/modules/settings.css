@@ -2179,9 +2179,19 @@
     z-index: 1;
 }
 
+.settings-group:has(.custom-dropdown.open),
+.settings-group.has-open-dropdown {
+    position: relative;
+    z-index: 100;
+}
+
 .settings-group-card:focus-within,
-.settings-group-card:has(.custom-dropdown.open) {
-    z-index: 30;
+.settings-group-card:has(.custom-dropdown.open),
+.settings-group-card.has-open-dropdown,
+#apiStatusSummary.settings-group-card:focus-within,
+#apiStatusSummary.settings-group-card:has(.custom-dropdown.open),
+#apiStatusSummary.settings-group-card.has-open-dropdown {
+    z-index: 100;
 }
 
 #apiStatusSummary.settings-group-card .missing-key-warning.compact {

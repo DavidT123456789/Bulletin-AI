@@ -542,12 +542,13 @@
 
 .custom-dropdown-hint {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    padding: 8px 12px;
-    margin-top: 4px;
+    padding: 9px 12px;
+    margin: 6px -6px -6px -6px;
     border-top: 1px solid var(--border-color);
     font-size: 0.76rem;
+    line-height: 1.4;
     color: var(--text-tertiary);
     background: var(--item-hover-bg, rgba(255, 255, 255, 0.03));
     border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
@@ -557,6 +558,7 @@
     font-size: 0.95rem;
     color: var(--text-tertiary);
     flex-shrink: 0;
+    margin-top: 1px;
 }
 
 .custom-dropdown-empty-notice {

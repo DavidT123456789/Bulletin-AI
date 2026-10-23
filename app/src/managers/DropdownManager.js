@@ -336,17 +336,21 @@ export const DropdownManager = {
             const selected = wrapper.querySelector('.custom-dropdown-option.selected');
             if (selected) {
                 selected.classList.add('focused');
-                selected.scrollIntoView({ block: 'nearest' });
+                selected.scrollIntoView?.({ block: 'nearest' });
             }
 
             // Initialiser les tooltips pour les options désactivées
             // (nécessaire car les éléments sont ajoutés dynamiquement)
             TooltipsUI.initTooltips();
 
-            // Fix z-index stacking context for settings cards
-            const parentCard = wrapper.closest('.settings-card');
+            // Fix z-index stacking context for settings cards, group cards and groups
+            const parentCard = wrapper.closest('.settings-card, .settings-group-card');
             if (parentCard) {
                 parentCard.classList.add('has-open-dropdown');
+            }
+            const parentGroup = wrapper.closest('.settings-group');
+            if (parentGroup) {
+                parentGroup.classList.add('has-open-dropdown');
             }
 
             // [UX Mobile] History integration
@@ -373,10 +377,9 @@ export const DropdownManager = {
                 opt.classList.remove('focused');
             });
             // Cleanup z-index fix
-            const parentCard = dd.closest('.settings-card');
-            if (parentCard) {
-                parentCard.classList.remove('has-open-dropdown');
-            }
+            document.querySelectorAll('.has-open-dropdown').forEach(el => {
+                el.classList.remove('has-open-dropdown');
+            });
         });
 
         if (hadOpen && HistoryManager.isOpen('customDropdown')) {
@@ -455,7 +458,7 @@ export const DropdownManager = {
             // Si l'option n'est pas désactivée, on la sélectionne
             if (!options[newIndex].classList.contains('disabled')) {
                 options[newIndex].classList.add('focused');
-                options[newIndex].scrollIntoView({ block: 'nearest' });
+                options[newIndex]?.scrollIntoView?.({ block: 'nearest' });
                 return;
             }
 
