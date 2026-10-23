@@ -714,9 +714,10 @@
 }
 
 .control-row-size {
-    flex: 1 1 150px;
-    max-width: 210px;
-    min-width: 120px;
+    flex: 1 1 180px;
+    max-width: 280px;
+    min-width: 130px;
+    gap: 12px;
 }
 
 .grid-toolbar-divider {
@@ -890,6 +891,7 @@
     font-weight: 500;
     color: var(--text-secondary);
     white-space: nowrap;
+    margin: 0;
 }
 
 .grid-advanced-controls .control-row label {
@@ -1448,6 +1450,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     user-select: none;
+    margin: 0;
     transition: color var(--transition-fast);
 }
 
