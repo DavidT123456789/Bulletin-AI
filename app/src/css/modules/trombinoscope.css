@@ -168,7 +168,7 @@
 }
 
 .trombi-step-padded {
-    padding: var(--modal-padding);
+    padding: var(--modal-padding) 0 0 0;
 }
 
 /* Trombinoscope Drop Zone: Full-bleed Studio Canvas (Option A) */
@@ -611,7 +611,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    padding: 16px 20px 0 20px;
+    padding: 16px 0 0 20px;
     box-sizing: border-box;
     background: var(--surface-color);
     overflow: hidden;
@@ -1070,6 +1070,7 @@
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 12px;
+    padding-right: 20px;
     flex-shrink: 0;
 }
 
@@ -1100,21 +1101,9 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 4px 4px 16px 4px;
+    padding: 4px 14px 16px 0;
     scroll-padding-bottom: 16px;
     box-sizing: border-box;
-}
-
-.assignment-header {
-    display: grid;
-    grid-template-columns: 40px 1fr 42px;
-    gap: 8px;
-    padding: 4px 8px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .assignment-row {
@@ -1378,7 +1367,7 @@
 
 /* Step 3: Reassurance Banner */
 .trombi-reassurance-banner-wrapper {
-    margin-bottom: 14px;
+    margin: 0 var(--modal-padding) 14px var(--modal-padding);
     flex-shrink: 0;
 }
 
@@ -1494,21 +1483,6 @@
     min-height: 0;
 }
 
-.preview-summary {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background: rgba(var(--success-rgb), 0.1);
-    border-radius: var(--radius-md);
-    color: var(--success-color);
-    font-size: 15px;
-}
-
-.preview-summary i {
-    font-size: 24px;
-}
-
 .preview-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -1517,7 +1491,9 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 8px;
+    padding: 4px var(--modal-padding) 16px var(--modal-padding);
+    scroll-padding-bottom: 16px;
+    box-sizing: border-box;
 }
 
 .preview-item {
@@ -1877,7 +1853,11 @@
         flex: 1 1 auto;
         height: auto;
         min-height: 200px;
-        padding: 12px 16px 0 16px;
+        padding: 12px 0 0 16px;
+    }
+
+    .trombi-assignment-panel-header {
+        padding-right: 16px;
     }
 
     .trombi-wizard-stepper .step-label {
@@ -2201,7 +2181,15 @@
     }
 
     .trombi-step-padded {
-        padding: 12px;
+        padding: 12px 0 0 0;
+    }
+
+    .trombi-reassurance-banner-wrapper {
+        margin: 0 12px 12px 12px;
+    }
+
+    .preview-list {
+        padding: 4px 12px 16px 12px;
     }
 
     .control-row-group {
