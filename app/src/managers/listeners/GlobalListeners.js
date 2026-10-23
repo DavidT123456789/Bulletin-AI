@@ -100,8 +100,13 @@ export const GlobalListeners = {
     _setupKeyboardListeners() {
         document.addEventListener('keydown', (e) => {
             if (UI.activeModal) {
-                if (e.key === 'Escape') UI.closeAllModals();
-                if (e.key === 'Tab') EventHandlersManager.handleFocusTrap(e, UI.activeModal);
+                if (e.key === 'Escape') {
+                    if (UI.stackedModal) {
+                        UI.closeModal(UI.activeModal);
+                    } else {
+                        UI.closeAllModals();
+                    }
+                }
 
                 const keyMap = {
                     'studentDetailsModal': { 'ArrowLeft': DOM.prevStudentBtn, 'ArrowRight': DOM.nextStudentBtn }
@@ -112,7 +117,7 @@ export const GlobalListeners = {
                     e.preventDefault();
                     navButtons[e.key].click();
                 }
-            } else {
+            } else if (!UI.isAnyModalOpen() && !FocusPanelManager.isOpen?.()) {
                 // Global keyboard shortcuts when no modal is open
 
                 // Ctrl+Shift+Enter to generate and go to next

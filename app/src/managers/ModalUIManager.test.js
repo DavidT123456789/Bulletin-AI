@@ -706,5 +706,88 @@ describe('ModalUIManager', () => {
             await localChangesPromise;
         });
     });
+
+    describe('isAnyModalOpen & Focus Isolation', () => {
+        it('should detect standard modals and standalone overlays (#trombiWizardModal, #importHubBackdrop, #pwaModalOverlay)', () => {
+            expect(ModalUI.isAnyModalOpen()).toBe(false);
+
+            const trombi = document.createElement('div');
+            trombi.id = 'trombiWizardModal';
+            document.body.appendChild(trombi);
+            expect(ModalUI.isAnyModalOpen()).toBe(false);
+
+            trombi.classList.add('visible');
+            expect(ModalUI.isAnyModalOpen()).toBe(true);
+            trombi.classList.remove('visible');
+            expect(ModalUI.isAnyModalOpen()).toBe(false);
+
+            const hub = document.createElement('div');
+            hub.id = 'importHubBackdrop';
+            hub.classList.add('active');
+            document.body.appendChild(hub);
+            expect(ModalUI.isAnyModalOpen()).toBe(true);
+            hub.classList.remove('active');
+            expect(ModalUI.isAnyModalOpen()).toBe(false);
+        });
+
+        it('should immediately move focus off background .main-content on openModal while preserving lastFocusedElement', () => {
+            const mainContent = document.createElement('main');
+            mainContent.className = 'main-content';
+            mainContent.setAttribute('tabindex', '-1');
+            document.body.appendChild(mainContent);
+            mainContent.focus();
+            expect(document.activeElement).toBe(mainContent);
+
+            ModalUI.openModal(testModal);
+
+            // Immediately (before 150ms timer), focus is moved off mainContent onto testModal
+            expect(document.activeElement).toBe(testModal);
+            expect(ModalUI.lastFocusedElement).toBe(mainContent);
+
+            // At 150ms, focus moves to the first focusable element inside testModal (when visible)
+            const focusableBtn = document.getElementById('focusable');
+            Object.defineProperty(focusableBtn, 'offsetParent', { value: testModal, configurable: true });
+            vi.advanceTimersByTime(150);
+            expect(document.activeElement).toBe(focusableBtn);
+
+            // Closing restores focus to mainContent
+            ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
+            expect(document.activeElement).toBe(mainContent);
+        });
+
+        it('should preserve underlying stackedModal when chaining two dynamic modals (customConfirmModal -> hardConfirmModal)', () => {
+            ModalUI.openModal(testModal);
+
+            const confirmModal = document.createElement('div');
+            confirmModal.id = 'customConfirmModal';
+            confirmModal.className = 'modal';
+            document.body.appendChild(confirmModal);
+
+            ModalUI.openModal(confirmModal);
+            expect(ModalUI.stackedModal).toBe(testModal);
+
+            // Close first dynamic modal and immediately open second dynamic modal before 250ms timeout
+            ModalUI.closeModal(confirmModal);
+            const hardModal = document.createElement('div');
+            hardModal.id = 'hardConfirmModal';
+            hardModal.className = 'modal';
+            document.body.appendChild(hardModal);
+            ModalUI.openModal(hardModal);
+
+            expect(ModalUI.stackedModal).toBe(testModal);
+            expect(ModalUI.activeModal).toBe(hardModal);
+
+            vi.advanceTimersByTime(250);
+            expect(ModalUI.activeModal).toBe(hardModal);
+            expect(ModalUI.stackedModal).toBe(testModal);
+
+            // Closing second dynamic modal restores testModal
+            ModalUI.closeModal(hardModal);
+            vi.advanceTimersByTime(250);
+            expect(ModalUI.activeModal).toBe(testModal);
+            expect(ModalUI.stackedModal).toBeNull();
+        });
+    });
 });
 

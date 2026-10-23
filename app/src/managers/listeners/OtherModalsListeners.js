@@ -75,27 +75,28 @@ export const OtherModalsListeners = {
 
         addClickListener(DOM.relaunchWelcomeGuideBtn, (e) => WelcomeManager.handleRelaunchWelcomeGuide(e));
 
-        // Navigation clavier accessible (Flèches Haut/Bas/Gauche/Droite) sur les onglets du Guide
-        const tablist = DOM.helpModal?.querySelector('.ui-tabs-sidebar[role="tablist"]');
-        tablist?.addEventListener('keydown', (e) => {
-            if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
-            const tabs = Array.from(tablist.querySelectorAll('.ui-tabs-btn[role="tab"]'));
-            const currentIndex = tabs.indexOf(document.activeElement);
-            if (currentIndex === -1) return;
+        // Navigation clavier accessible (Flèches Haut/Bas/Gauche/Droite) sur les onglets latéraux (Guide & Paramètres)
+        document.querySelectorAll('.ui-tabs-sidebar').forEach((tablist) => {
+            tablist.addEventListener('keydown', (e) => {
+                if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
+                const tabs = Array.from(tablist.querySelectorAll('.ui-tabs-btn'));
+                const currentIndex = tabs.indexOf(document.activeElement);
+                if (currentIndex === -1) return;
 
-            e.preventDefault();
-            let nextIndex = currentIndex;
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                nextIndex = (currentIndex + 1) % tabs.length;
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-            } else if (e.key === 'Home') {
-                nextIndex = 0;
-            } else if (e.key === 'End') {
-                nextIndex = tabs.length - 1;
-            }
-            tabs[nextIndex]?.focus();
-            tabs[nextIndex]?.click();
+                e.preventDefault();
+                let nextIndex = currentIndex;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    nextIndex = (currentIndex + 1) % tabs.length;
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                } else if (e.key === 'Home') {
+                    nextIndex = 0;
+                } else if (e.key === 'End') {
+                    nextIndex = tabs.length - 1;
+                }
+                tabs[nextIndex]?.focus();
+                tabs[nextIndex]?.click();
+            });
         });
 
         // Mise à jour dynamique du badge de statut IA (Étape 1)

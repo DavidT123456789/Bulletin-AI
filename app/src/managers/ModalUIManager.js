@@ -19,7 +19,8 @@ const DYNAMIC_MODAL_IDS = new Set([
     'promptPreviewModal',
     'conflictResolutionModal',
     'restoreConfirmationModal',
-    'saveConfirmationModal'
+    'saveConfirmationModal',
+    'backupImportModal'
 ]);
 
 /**
@@ -47,7 +48,21 @@ export const ModalUI = {
 
     /** @private */
     _isOverlayModal(modal, options = {}) {
-        return modal.id === 'helpModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
+        return modal.id === 'helpModal' || modal.id === 'moveStudentModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
+    },
+
+    /**
+     * Indique si au moins une modale ou un dialogue plein écran est actuellement ouvert.
+     * Couvre à la fois les modales gérées par ModalUI et les dialogues autonomes (Trombinoscope, Hub d'import, PWA).
+     * @returns {boolean}
+     */
+    isAnyModalOpen() {
+        if (this.activeModal) return true;
+        if (typeof document === 'undefined') return false;
+        if (document.body?.classList?.contains('modal-open')) return true;
+        return Boolean(document.querySelector(
+            '.modal.modal-visible, .modal.show, #trombiWizardModal.visible, #importHubBackdrop.active, #pwaModalOverlay.visible'
+        ));
     },
 
     /**
@@ -79,7 +94,9 @@ export const ModalUI = {
 
         // Une modale "overlay" (aide, confirmation dynamique) s'empile sur la modale active
         if (this.activeModal && this.activeModal !== modal && this._isOverlayModal(modal, options)) {
-            this.stackedModal = this.activeModal;
+            if (!this.activeModal.classList.contains('modal-closing') || !this.stackedModal) {
+                this.stackedModal = this.activeModal;
+            }
         } else if (!options.isRestoringStacked) {
             this.lastFocusedElement = document.activeElement;
         }
@@ -105,6 +122,15 @@ export const ModalUI = {
 
         this.activeModal = modal;
         document.body.classList.add('modal-open');
+
+        // Retirer immédiatement le focus de l'interface d'arrière-plan (ex: .main-content)
+        // avant le délai de 150ms pour éviter que les flèches clavier n'agissent derrière la modale
+        if (!modal.hasAttribute('tabindex')) {
+            modal.setAttribute('tabindex', '-1');
+        }
+        if (!modal.contains(document.activeElement)) {
+            modal.focus?.({ preventScroll: true });
+        }
 
         this._isIgnoringTooltips = true;
 
@@ -227,14 +253,16 @@ export const ModalUI = {
                 !this.stackedModal.classList.contains('modal-closing')
             );
 
-            if (this._isOverlayModal(modal, options) && canRestoreStacked) {
+            if (this.activeModal && this.activeModal !== modal) {
+                // Une autre modale a été ouverte pendant la fermeture (ex: bascule Trombi -> ImportWizard ou customConfirm -> hardConfirm)
+                if (!canRestoreStacked || !this._isOverlayModal(this.activeModal)) {
+                    this.stackedModal = null;
+                }
+            } else if (this._isOverlayModal(modal, options) && canRestoreStacked) {
                 // Restaure la modale sous-jacente (focus trap) sans dupliquer l'historique
                 this.activeModal = this.stackedModal;
                 this.stackedModal = null;
                 this.openModal(this.activeModal, { isRestoringStacked: true });
-            } else if (this.activeModal && this.activeModal !== modal) {
-                // Une autre modale a été ouverte pendant la fermeture (ex: bascule Trombi -> ImportWizard)
-                if (!canRestoreStacked) this.stackedModal = null;
             } else {
                 this.stackedModal = null;
                 if (this._focusTrapHandler) {
@@ -1315,19 +1343,18 @@ export const ModalUI = {
     },
 
     closeAllModals(options = {}) {
-        this.stackedModal = null; // Prevent restoring stacked modals when closing all
-        const modals = [
+        const modals = new Set([
+            this.activeModal,
+            this.stackedModal,
             DOM.settingsModal,
+            DOM.personalizationModal,
             DOM.studentDetailsModal,
             DOM.helpModal,
             DOM.welcomeModal,
-            document.getElementById('customConfirmModal'),
-            document.getElementById('customChoicesModal'),
-            document.getElementById('hardConfirmModal'),
-            document.getElementById('classDashboardModal'),
-            document.getElementById('promptPreviewModal'),
-            DOM.importPreviewModal
-        ];
+            DOM.importPreviewModal,
+            ...document.querySelectorAll('.modal.modal-visible, .modal.show')
+        ]);
+        this.stackedModal = null; // Prevent restoring stacked modals when closing all
         modals.forEach(m => {
             if (m) this.closeModal(m, options);
         });

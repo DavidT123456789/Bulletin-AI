@@ -434,7 +434,7 @@ export const FocusPanelManager = {
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
-            if (!this.isOpen()) return;
+            if (!this.isOpen() || UI.isAnyModalOpen()) return;
             const activeEl = document.activeElement;
             const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
 
@@ -1194,7 +1194,10 @@ export const FocusPanelManager = {
         this._updateActiveRow(studentId);
 
         // Focus the panel for accessibility
-        panel?.focus();
+        if (panel && !panel.hasAttribute('tabindex')) {
+            panel.setAttribute('tabindex', '-1');
+        }
+        panel?.focus?.({ preventScroll: true });
 
     },
 

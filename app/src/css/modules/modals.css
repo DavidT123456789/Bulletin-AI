@@ -8,6 +8,7 @@
     position: fixed;
     z-index: var(--z-modal);
     inset: 0;
+    outline: none;
     background: rgba(0, 0, 0, 0);
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);

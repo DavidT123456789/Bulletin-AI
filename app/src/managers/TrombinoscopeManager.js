@@ -78,6 +78,9 @@ export const TrombinoscopeManager = {
     /** History stack for undo */
     _history: [],
 
+    /** History stack for redo */
+    _redoHistory: [],
+
     /** Max history levels */
     _maxHistoryLevels: 20,
 
@@ -96,8 +99,9 @@ export const TrombinoscopeManager = {
     _selectionBoxDragActive: false,
     _restoreGroupedDrag: false,
     _isTransitioning: false,
-    _drawerAnimRaf: null,
-    _drawerAnimActive: false,
+    _zoomAnimCleanup: null,
+    _lastViewportW: 0,
+    _lastViewportH: 0,
     _viewportResizeRaf: null,
 
     // ========================================================================
@@ -220,8 +224,15 @@ export const TrombinoscopeManager = {
         this._reset();
         const modal = document.getElementById('trombiWizardModal');
         if (modal) {
+            this._lastFocusedElement = document.activeElement;
             modal.classList.remove('closing');
             modal.classList.add('visible');
+            if (!modal.hasAttribute('tabindex')) {
+                modal.setAttribute('tabindex', '-1');
+            }
+            if (!modal.contains(document.activeElement)) {
+                modal.focus?.({ preventScroll: true });
+            }
         }
 
         // Update class badge in header
@@ -248,6 +259,10 @@ export const TrombinoscopeManager = {
             this._closeTimer = null;
             modal.classList.remove('visible', 'closing');
             this._reset();
+            if (this._lastFocusedElement) {
+                this._lastFocusedElement.focus?.({ preventScroll: true });
+                this._lastFocusedElement = null;
+            }
         }, 250); // Match CSS transition duration
     },
 
@@ -267,6 +282,7 @@ export const TrombinoscopeManager = {
         this._lastFocusedControl = null;
         this._lastFocusedZoneId = null;
         this._history = [];
+        this._redoHistory = [];
         this._tempSliderSnapshot = null;
         this._tempDragSnapshot = null;
         this._isNewUpload = false;
@@ -279,10 +295,11 @@ export const TrombinoscopeManager = {
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
         this._isTransitioning = false;
-        this._drawerAnimActive = false;
-        if (this._drawerAnimRaf) {
-            cancelAnimationFrame(this._drawerAnimRaf);
-            this._drawerAnimRaf = null;
+        this._lastViewportW = 0;
+        this._lastViewportH = 0;
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
         }
         if (this._viewportResizeRaf) {
             cancelAnimationFrame(this._viewportResizeRaf);
@@ -968,13 +985,17 @@ export const TrombinoscopeManager = {
             if (step1PageBar) {
                 if (parsed.numPages > 1) {
                     step1PageBar.style.display = 'flex';
-                    step1PageBar.innerHTML = parsed.pages.map((p, idx) => `
-                        <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}" title="Page ${idx + 1} (${p.studentsCount} élèves)">
+                    step1PageBar.innerHTML = parsed.pages.map((p, idx) => {
+                        const pageLabel = `Page ${idx + 1} (${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''})`;
+                        return `
+                        <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}" aria-label="${pageLabel}" data-tooltip="${pageLabel}">
                             <span>Page ${idx + 1}</span>
                             <span class="page-tab-sep" aria-hidden="true">·</span>
                             <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
                         </button>
-                    `).join('');
+                    `;
+                    }).join('');
+                    UI.initTooltips?.(step1PageBar);
 
                     step1PageBar.querySelectorAll('.page-tab-btn').forEach(btn => {
                         btn.addEventListener('click', (e) => {
@@ -1162,77 +1183,224 @@ export const TrombinoscopeManager = {
         return { availW, availH, scaleToFit };
     },
 
-    _applyZoom() {
+    _applyZoom(scrollOptions = null) {
         const viewport = document.querySelector('.trombi-viewport');
         const wrapper = document.querySelector('.trombi-content-wrapper');
+        const currentPct = Math.round(this._zoomLevel * 100);
+        const isZoomed = this._zoomLevel > 1.0;
+
         const zoomLabel = document.getElementById('trombiZoomLevel');
         if (zoomLabel) {
-            zoomLabel.textContent = `${Math.round(this._zoomLevel * 100)}%`;
+            zoomLabel.textContent = `${currentPct}%`;
         }
         const zoomFitBtn = document.getElementById('trombiZoomFitBtn');
         if (zoomFitBtn) {
-            const currentPct = Math.round(this._zoomLevel * 100);
-            zoomFitBtn.title = this._zoomLevel > 1.0 ? `Ajuster à 100% (actuel : ${currentPct}%)` : 'Pleine largeur / Vue complète';
+            const nextLabel = isZoomed ? `Ajuster à 100% (actuel : ${currentPct}%)` : 'Pleine largeur / Vue complète';
+            const nextIcon = isZoomed ? 'ph:arrows-in-simple' : 'ph:arrows-out-simple';
+            const iconEl = zoomFitBtn.querySelector('iconify-icon');
+            if (iconEl && iconEl.getAttribute('icon') !== nextIcon) {
+                iconEl.setAttribute('icon', nextIcon);
+                zoomFitBtn.classList.remove('zoom-icon-pop');
+                void zoomFitBtn.offsetWidth;
+                zoomFitBtn.classList.add('zoom-icon-pop');
+            }
+            zoomFitBtn.setAttribute('aria-label', nextLabel);
+            if (zoomFitBtn.getAttribute('data-tooltip') !== nextLabel) {
+                if (typeof UI?.updateTooltip === 'function') {
+                    UI.updateTooltip(zoomFitBtn, nextLabel);
+                } else {
+                    zoomFitBtn.setAttribute('data-tooltip', nextLabel);
+                }
+            }
         }
         const zoomOutBtn = document.getElementById('trombiZoomOutBtn');
         if (zoomOutBtn) {
-            zoomOutBtn.disabled = this._zoomLevel <= 1.0;
-            zoomOutBtn.classList.toggle('disabled', this._zoomLevel <= 1.0);
+            const isMin = this._zoomLevel <= 1.0;
+            zoomOutBtn.disabled = isMin;
+            zoomOutBtn.classList.toggle('disabled', isMin);
+        }
+        const zoomInBtn = document.getElementById('trombiZoomInBtn');
+        if (zoomInBtn) {
+            const isMax = this._zoomLevel >= 2.5;
+            zoomInBtn.disabled = isMax;
+            zoomInBtn.classList.toggle('disabled', isMax);
         }
         if (!viewport || !wrapper || !this._imageNaturalWidth || !this._imageNaturalHeight) return;
 
+        // Reserve space for the floating drawer via viewport bottom padding (clips at outer padding box)
+        const advancedDrawer = document.getElementById('gridAdvancedControls');
+        if (advancedDrawer?.classList.contains('is-open')) {
+            const drawerH = advancedDrawer.offsetHeight || 68;
+            viewport.style.paddingBottom = `${16 + drawerH}px`;
+        } else {
+            viewport.style.removeProperty('padding-bottom');
+        }
+
         // Toggle is-zoomed class: scrollbars are ONLY permitted when zoomed in > 100%
-        viewport.classList.toggle('is-zoomed', this._zoomLevel > 1.0);
+        viewport.classList.toggle('is-zoomed', isZoomed);
+
+        const vpW = viewport.clientWidth || viewport.offsetWidth || 0;
+        const vpH = viewport.clientHeight || viewport.offsetHeight || 0;
+        this._lastViewportW = vpW;
+        this._lastViewportH = vpH;
 
         const { scaleToFit } = this._getViewportFitMetrics(viewport);
         const baseW = this._imageNaturalWidth * scaleToFit;
         const baseH = this._imageNaturalHeight * scaleToFit;
 
         // Use Math.floor when fitting to strictly ensure wrapper never exceeds available space
-        const targetW = this._zoomLevel <= 1.0 ? Math.floor(baseW) : Math.round(baseW * this._zoomLevel);
-        const targetH = this._zoomLevel <= 1.0 ? Math.floor(baseH) : Math.round(baseH * this._zoomLevel);
+        const targetW = !isZoomed ? Math.floor(baseW) : Math.round(baseW * this._zoomLevel);
+        const targetH = !isZoomed ? Math.floor(baseH) : Math.round(baseH * this._zoomLevel);
 
         wrapper.style.aspectRatio = `${this._imageNaturalWidth} / ${this._imageNaturalHeight}`;
         wrapper.style.width = `${targetW}px`;
         wrapper.style.height = `${targetH}px`;
 
         this._renderZones(targetW, targetH);
+
+        if (!isZoomed) {
+            viewport.scrollLeft = 0;
+            viewport.scrollTop = 0;
+        } else if (scrollOptions) {
+            const maxScrollX = Math.max(0, (viewport.scrollWidth || 0) - (viewport.clientWidth || 0));
+            const maxScrollY = Math.max(0, (viewport.scrollHeight || 0) - (viewport.clientHeight || 0));
+            if (maxScrollX > 0) viewport.scrollLeft = Math.round(maxScrollX * (scrollOptions.ratioX ?? 0.5));
+            if (maxScrollY > 0) viewport.scrollTop = Math.round(maxScrollY * (scrollOptions.ratioY ?? 0.5));
+        }
+    },
+
+    _setZoomLevel(nextZoom, options = {}) {
+        const clamped = Math.min(2.5, Math.max(1.0, Math.round(nextZoom * 100) / 100));
+        const zoomChanged = clamped !== this._zoomLevel;
+
+        const viewport = document.querySelector('.trombi-viewport');
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        const rBefore = (zoomChanged && options.animate !== false && wrapper)
+            ? wrapper.getBoundingClientRect?.()
+            : null;
+
+        let ratioX = 0.5;
+        let ratioY = 0.5;
+        if (viewport && this._zoomLevel > 1.0) {
+            const maxScrollXBefore = Math.max(0, (viewport.scrollWidth || 0) - (viewport.clientWidth || 0));
+            const maxScrollYBefore = Math.max(0, (viewport.scrollHeight || 0) - (viewport.clientHeight || 0));
+            if (maxScrollXBefore > 0) ratioX = viewport.scrollLeft / maxScrollXBefore;
+            if (maxScrollYBefore > 0) ratioY = viewport.scrollTop / maxScrollYBefore;
+        }
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        this._zoomLevel = clamped;
+        this._applyZoom(zoomChanged ? { ratioX, ratioY } : null);
+
+        if (zoomChanged && rBefore && rBefore.width > 0) {
+            this._animateSheetFLIP(rBefore, options);
+        }
+    },
+
+    _animateSheetFLIP(rBefore, options = {}) {
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        if (!wrapper || !rBefore || rBefore.width <= 0 || prefersReducedMotion) {
+            return;
+        }
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        const rAfter = wrapper.getBoundingClientRect?.();
+        if (!rAfter || rAfter.width <= 0 || rAfter.height <= 0) {
+            return;
+        }
+
+        const centerBeforeX = rBefore.left + rBefore.width / 2;
+        const centerBeforeY = rBefore.top + rBefore.height / 2;
+        const centerAfterX = rAfter.left + rAfter.width / 2;
+        const centerAfterY = rAfter.top + rAfter.height / 2;
+
+        const dx = Math.round((centerBeforeX - centerAfterX) * 100) / 100;
+        const dy = Math.round((centerBeforeY - centerAfterY) * 100) / 100;
+        const sx = Math.round((rBefore.width / rAfter.width) * 10000) / 10000;
+        const sy = Math.round((rBefore.height / rAfter.height) * 10000) / 10000;
+
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.005 && Math.abs(sy - 1) < 0.005) {
+            return;
+        }
+
+        wrapper.style.willChange = 'transform';
+        wrapper.style.transformOrigin = '50% 50%';
+        wrapper.style.transition = 'none';
+        wrapper.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
+
+        void wrapper.offsetWidth;
+        if (typeof window.getComputedStyle === 'function') {
+            void window.getComputedStyle(wrapper).transform;
+        }
+
+        const duration = options.duration || 360;
+        const easing = options.easing || 'cubic-bezier(0.22, 1, 0.36, 1)';
+        wrapper.style.transition = `transform ${duration}ms ${easing}`;
+        wrapper.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+
+        let cleaned = false;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            clearTimeout(timer);
+            wrapper.removeEventListener('transitionend', onEnd);
+            wrapper.style.removeProperty('transition');
+            wrapper.style.removeProperty('transform');
+            wrapper.style.removeProperty('transform-origin');
+            wrapper.style.removeProperty('will-change');
+            if (this._zoomAnimCleanup === cleanup) {
+                this._zoomAnimCleanup = null;
+            }
+        };
+        const onEnd = (e) => {
+            if (e.target === wrapper && e.propertyName === 'transform') {
+                cleanup();
+            }
+        };
+        wrapper.addEventListener('transitionend', onEnd);
+        const timer = setTimeout(cleanup, duration + 60);
+        this._zoomAnimCleanup = cleanup;
     },
 
     _zoomIn() {
-        this._zoomLevel = Math.min(2.5, Math.round((this._zoomLevel + 0.25) * 100) / 100);
-        this._applyZoom();
+        this._setZoomLevel(this._zoomLevel + 0.25);
     },
 
     _zoomOut() {
-        this._zoomLevel = Math.max(1.0, Math.round((this._zoomLevel - 0.25) * 100) / 100);
-        this._applyZoom();
+        this._setZoomLevel(this._zoomLevel - 0.25);
     },
 
     _zoomReset() {
-        this._zoomLevel = 1.0;
-        this._applyZoom();
+        this._setZoomLevel(1.0);
     },
 
     _zoomToggleFit() {
-        if (this._zoomLevel !== 1.0) {
-            this._zoomLevel = 1.0;
-        } else {
+        let targetZoom = 1.0;
+        if (this._zoomLevel === 1.0) {
             const viewport = document.querySelector('.trombi-viewport');
             if (viewport && this._imageNaturalWidth && this._imageNaturalHeight) {
                 const { availW, scaleToFit } = this._getViewportFitMetrics(viewport);
                 const fitW = this._imageNaturalWidth * scaleToFit;
                 // Si la page est en portrait, "Pleine largeur" permet d'occuper la largeur disponible
                 if (availW > fitW * 1.1) {
-                    this._zoomLevel = Math.min(2.5, Math.round((availW / fitW) * 100) / 100);
+                    targetZoom = Math.min(2.5, Math.round((availW / fitW) * 100) / 100);
                 } else {
-                    this._zoomLevel = 1.5;
+                    targetZoom = 1.5;
                 }
             } else {
-                this._zoomLevel = 1.5;
+                targetZoom = 1.5;
             }
         }
-        this._applyZoom();
+        this._setZoomLevel(targetZoom);
     },
 
     // ========================================================================
@@ -1257,13 +1425,16 @@ export const TrombinoscopeManager = {
         if (pageBar) {
             if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
                 pageBar.style.display = 'flex';
-                pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => `
-                    <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}" title="Page ${idx + 1} (${p.studentsCount} élèves)">
+                pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => {
+                    const pageLabel = `Page ${idx + 1} (${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''})`;
+                    return `
+                    <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}" aria-label="${pageLabel}" data-tooltip="${pageLabel}">
                         <span>Page ${idx + 1}</span>
                         <span class="page-tab-sep" aria-hidden="true">·</span>
                         <span class="page-tab-count">${p.studentsCount} élève${p.studentsCount > 1 ? 's' : ''}</span>
                     </button>
-                `).join('');
+                `;
+                }).join('');
 
                 pageBar.querySelectorAll('.page-tab-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
@@ -1295,16 +1466,16 @@ export const TrombinoscopeManager = {
         // Setup image with overlay - wrapped in a container for correct aspect ratio positioning
         imagePanel.innerHTML = `
             <div class="trombi-zoom-controls">
-                <button type="button" class="zoom-btn" id="trombiZoomOutBtn" title="Dézoomer (-25%)">
+                <button type="button" class="zoom-btn" id="trombiZoomOutBtn" aria-label="Dézoomer (-25%)" data-tooltip="Dézoomer (-25%)">
                     <iconify-icon icon="ph:minus"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn" id="trombiZoomInBtn" title="Zoomer (+25%)">
+                <button type="button" class="zoom-btn" id="trombiZoomInBtn" aria-label="Zoomer (+25%)" data-tooltip="Zoomer (+25%)">
                     <iconify-icon icon="ph:plus"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn" id="trombiZoomFitBtn" title="Pleine largeur / Vue complète">
+                <button type="button" class="zoom-btn" id="trombiZoomFitBtn" aria-label="Pleine largeur / Vue complète" data-tooltip="Pleine largeur / Vue complète">
                     <iconify-icon icon="ph:arrows-out-simple"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" style="display: none;" aria-hidden="true" title="Réinitialiser le zoom (100%)">
+                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" style="display: none;" aria-hidden="true" data-tooltip="Réinitialiser le zoom (100%)">
                     <span id="trombiZoomLevel">${Math.round(this._zoomLevel * 100)}%</span>
                 </button>
             </div>
@@ -1367,7 +1538,9 @@ export const TrombinoscopeManager = {
         if (this._viewportResizeObserver) this._viewportResizeObserver.disconnect();
 
         this._viewportResizeObserver = new ResizeObserver(() => {
-            if (this._drawerAnimActive) return;
+            const vpW = viewport?.clientWidth || viewport?.offsetWidth || 0;
+            const vpH = viewport?.clientHeight || viewport?.offsetHeight || 0;
+            if (vpW === this._lastViewportW && vpH === this._lastViewportH) return;
             if (this._viewportResizeRaf) cancelAnimationFrame(this._viewportResizeRaf);
             this._viewportResizeRaf = window.requestAnimationFrame(() => {
                 this._viewportResizeRaf = null;
@@ -1493,13 +1666,14 @@ export const TrombinoscopeManager = {
         this._groupedDrag = true; // Grouped drag mode (default = true)
 
         const isAdvancedOpen = !hasDetectedStudents;
+        const resetLabel = hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille';
 
         const gridControlsHtml = `
             <div class="grid-advanced-controls ${isAdvancedOpen ? 'is-open' : ''}" id="gridAdvancedControls">
                 <div class="grid-advanced-controls-inner">
                     <div class="control-row-group">
                         <div class="control-row">
-                            <label><iconify-icon icon="solar:gallery-vertical-linear"></iconify-icon> Colonnes</label>
+                            <label for="colsSlider">Colonnes</label>
                             <div class="slider-group">
                                 <div class="slider-track">
                                     <input type="range" class="control-slider" id="colsSlider" 
@@ -1509,7 +1683,7 @@ export const TrombinoscopeManager = {
                             </div>
                         </div>
                         <div class="control-row">
-                            <label><iconify-icon icon="solar:gallery-horizontal-linear"></iconify-icon> Lignes</label>
+                            <label for="rowsSlider">Lignes</label>
                             <div class="slider-group">
                                 <div class="slider-track">
                                     <input type="range" class="control-slider" id="rowsSlider" 
@@ -1521,7 +1695,7 @@ export const TrombinoscopeManager = {
                     </div>
                     <div class="control-row-group">
                         <div class="control-row">
-                            <label><iconify-icon icon="solar:sort-horizontal-linear"></iconify-icon> Écart H</label>
+                            <label for="gapHSlider">Écart H</label>
                             <div class="slider-group">
                                 <div class="slider-track">
                                     <input type="range" class="control-slider" id="gapHSlider" 
@@ -1531,7 +1705,7 @@ export const TrombinoscopeManager = {
                             </div>
                         </div>
                         <div class="control-row">
-                            <label><iconify-icon icon="solar:sort-vertical-linear"></iconify-icon> Écart V</label>
+                            <label for="gapVSlider">Écart V</label>
                             <div class="slider-group">
                                 <div class="slider-track">
                                     <input type="range" class="control-slider" id="gapVSlider" 
@@ -1548,9 +1722,9 @@ export const TrombinoscopeManager = {
         const panelHtml = `
             <div class="grid-control-panel">
                 ${gridControlsHtml}
-                <div class="control-row-group">
-                    <div class="control-row">
-                        <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
+                <div class="grid-main-controls" role="toolbar" aria-label="Outils d'ajustement de la grille">
+                    <div class="control-row control-row-size">
+                        <label for="sizeSlider">Taille</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="sizeSlider" 
@@ -1559,25 +1733,31 @@ export const TrombinoscopeManager = {
                             <span class="slider-value" id="sizeValue">60%</span>
                         </div>
                     </div>
-                    <div class="control-row">
-                        <label class="sync-toggle-label">
-                            <span class="toggle-text"><iconify-icon icon="solar:layers-linear"></iconify-icon> Groupé</span>
-                            <span class="toggle-wrapper">
-                                <input type="checkbox" id="groupedDragToggle" class="sync-toggle-checkbox" checked>
-                                <span class="sync-toggle-switch"></span>
+                    <span class="grid-toolbar-divider" aria-hidden="true"></span>
+                    <div class="grid-toolbar-center">
+                        <label class="sync-toggle-label" for="groupedDragToggle">
+                            <span class="toggle-text">Groupé</span>
+                            <span class="toggle-switch small">
+                                <input type="checkbox" id="groupedDragToggle" checked>
+                                <span class="slider"></span>
                             </span>
                         </label>
-                        <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" title="Afficher ou masquer les réglages avancés de grille et d'espacement">
-                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon> <span id="toggleGridToolsText">${isAdvancedOpen ? 'Masquer grille' : 'Grille'}</span> <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
+                        <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" aria-expanded="${isAdvancedOpen}" data-tooltip="Afficher ou masquer les réglages avancés de grille et d'espacement">
+                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon>
+                            <span>Grille</span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
                         </button>
-                        <div class="grid-control-actions">
-                            <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled>
-                                <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
-                            </button>
-                            <button type="button" class="grid-reset-btn" id="gridResetBtn" title="${hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille'}">
-                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
-                            </button>
-                        </div>
+                    </div>
+                    <div class="grid-control-actions">
+                        <button type="button" class="grid-reset-btn" id="trombiUndoBtn" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler (Ctrl+Z)" disabled>
+                            <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
+                        </button>
+                        <button type="button" class="grid-reset-btn" id="trombiRedoBtn" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir (Ctrl+Y)" disabled>
+                            <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
+                        </button>
+                        <button type="button" class="grid-reset-btn" id="gridResetBtn" aria-label="${resetLabel}" data-tooltip="${resetLabel}">
+                            <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1657,47 +1837,25 @@ export const TrombinoscopeManager = {
 
         const toggleBtn = document.getElementById('toggleGridToolsBtn');
         const advancedDrawer = document.getElementById('gridAdvancedControls');
-        const toggleText = document.getElementById('toggleGridToolsText');
 
         toggleBtn?.addEventListener('click', () => {
             if (!advancedDrawer) return;
+            const wrapper = document.querySelector('.trombi-content-wrapper');
+            const rBefore = wrapper?.getBoundingClientRect?.() || null;
+
+            if (this._zoomAnimCleanup) {
+                this._zoomAnimCleanup();
+                this._zoomAnimCleanup = null;
+            }
+
             const isOpen = advancedDrawer.classList.toggle('is-open');
             toggleBtn.classList.toggle('active', isOpen);
-            if (toggleText) {
-                toggleText.textContent = isOpen ? 'Masquer grille' : 'Grille';
+            toggleBtn.setAttribute('aria-expanded', String(isOpen));
+
+            this._applyZoom();
+            if (rBefore && rBefore.width > 0) {
+                this._animateSheetFLIP(rBefore);
             }
-
-            if (this._drawerAnimRaf) {
-                cancelAnimationFrame(this._drawerAnimRaf);
-                this._drawerAnimRaf = null;
-            }
-
-            const viewport = document.querySelector('.trombi-viewport');
-            viewport?.classList.add('is-animating');
-
-            if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-                this._applyZoom();
-                viewport?.classList.remove('is-animating');
-                return;
-            }
-
-            this._drawerAnimActive = true;
-
-            // Smooth 60fps real-time recalculation of the sheet during the drawer transition
-            const startTime = performance.now();
-            const duration = 380;
-            const step = (now) => {
-                this._applyZoom();
-                if (now - startTime < duration) {
-                    this._drawerAnimRaf = requestAnimationFrame(step);
-                } else {
-                    this._drawerAnimRaf = null;
-                    this._drawerAnimActive = false;
-                    viewport?.classList.remove('is-animating');
-                    this._applyZoom();
-                }
-            };
-            this._drawerAnimRaf = requestAnimationFrame(step);
         });
 
         // Bind Undo slider drag listeners
@@ -1716,11 +1874,7 @@ export const TrombinoscopeManager = {
                                      this._gapV !== this._tempSliderSnapshot.gapV ||
                                      this._globalRadius !== this._tempSliderSnapshot.globalRadius;
                     if (hasChanged) {
-                        this._history.push(this._tempSliderSnapshot);
-                        if (this._history.length > this._maxHistoryLevels) {
-                            this._history.shift();
-                        }
-                        this._updateUndoButton();
+                        this._saveState(this._tempSliderSnapshot);
                     }
                     this._tempSliderSnapshot = null;
                 }
@@ -1735,6 +1889,10 @@ export const TrombinoscopeManager = {
 
         document.getElementById('trombiUndoBtn')?.addEventListener('click', () => {
             this._undo();
+        });
+
+        document.getElementById('trombiRedoBtn')?.addEventListener('click', () => {
+            this._redo();
         });
 
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
@@ -1763,31 +1921,8 @@ export const TrombinoscopeManager = {
                 return;
             }
 
-            let cols = 4;
-            let rows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
-
-            // Use smart geometric aspect ratio detection for reset baseline
-            const detected = this._detectGridFromImage();
-            if (detected) {
-                cols = detected.cols;
-                rows = detected.rows;
-            } else if (this._imageNaturalWidth && this._imageNaturalHeight) {
-                const isPortrait = this._imageNaturalHeight / this._imageNaturalWidth > 1.1;
-                const cellRatio = isPortrait ? 0.82 : 1.83;
-                rows = Math.round(cols * (this._imageNaturalHeight / this._imageNaturalWidth) * cellRatio);
-                rows = Math.max(2, Math.min(12, rows));
-            }
-
-            this._gridCols = cols;
-            this._gridRows = rows;
-            this._gapH = 0;
-            this._gapV = 0;
-            if (colsSlider) { colsSlider.value = this._gridCols; colsValue.textContent = this._gridCols; }
-            if (rowsSlider) { rowsSlider.value = this._gridRows; rowsValue.textContent = this._gridRows; }
-            if (sizeSlider) { sizeSlider.value = 60; sizeValue.textContent = '60%'; }
-            if (gapHSlider) { gapHSlider.value = 0; gapHValue.textContent = '0'; }
-            if (gapVSlider) { gapVSlider.value = 0; gapVValue.textContent = '0'; }
-            this._createGridSilent(this._gridCols, this._gridRows);
+            this._zones = [];
+            this._createDefaultGrid();
         });
 
         // Only create initial grid if we don't have any zones yet and no PDF data
@@ -1997,21 +2132,18 @@ export const TrombinoscopeManager = {
             // FALLBACK GEOMETRIC ESTIMATE (based on image aspect ratio, not class size)
             cols = 4; // default columns count
             const ratio = this._imageNaturalWidth / this._imageNaturalHeight;
-            let cellRatio = 0.95;
-            if (ratio > 1.5) {
-                cellRatio = 4.25;
-            } else if (ratio > 1.1) {
-                cellRatio = 1.1;
-            }
+            const cellRatio = ratio > 1.1 ? 1.05 : 0.95;
             rows = Math.round(cols * (this._imageNaturalHeight / this._imageNaturalWidth) * cellRatio);
             rows = Math.max(2, Math.min(12, rows));
         }
 
         this._gridCols = cols;
         this._gridRows = rows;
-        this._createGridSilent(cols, rows);
+        this._gapH = detected?.gapH ?? 0;
+        this._gapV = detected?.gapV ?? 0;
 
-        // Sync control panel sliders if they are already rendered
+        this._zones = [];
+        this._createGridSilent(cols, rows, detected);
         this._syncSlidersToState();
     },
 
@@ -2049,31 +2181,72 @@ export const TrombinoscopeManager = {
                 gray[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
             }
 
-            // Analyze X projection variance to find grid columns (highly robust, no vertical text)
-            const cols = this._analyzeProjection(gray, size, 'x');
+            // Analyze X projection variance to find grid columns
+            const xSegments = this._analyzeProjection(gray, size, 'x');
+            const cols = xSegments.length;
 
             // Sanity check for columns
             if (cols >= 2 && cols <= 12) {
-                // Classify layout orientation and cell aspect ratio
+                const avgSegWidth = xSegments.reduce((sum, s) => sum + s.width, 0) / cols;
+                const xFillRatio = avgSegWidth / (size / cols);
+
+                // Classify layout orientation and cell aspect ratio:
+                // Only treat wide images (ratio > 1.5) as compact multi-column lists when the
+                // detected avatar segments are narrow (< 35% of column width); otherwise it is a photo grid.
                 const ratio = img.naturalWidth / img.naturalHeight;
+                const isCompactList = ratio > 1.5 && xFillRatio < 0.35;
                 let cellRatio = 0.95; // portrait default
-                if (ratio > 1.5) {
-                    cellRatio = 4.25; // very wide landscape (list layouts)
+                if (isCompactList) {
+                    cellRatio = 4.25; // wide multi-column list layout
                 } else if (ratio > 1.1) {
-                    cellRatio = 1.1;  // standard landscape (photos grids)
+                    cellRatio = 1.05; // landscape photo grid
                 }
 
                 // Geometrically calculate rows (immune to horizontal text interference)
                 const rows = Math.round(cols * (img.naturalHeight / img.naturalWidth) * cellRatio);
+                const ySegments = !isCompactList ? this._analyzeProjection(gray, size, 'y') : [];
 
                 if (rows >= 2 && rows <= 12) {
-                    return { cols, rows };
+                    const xCalib = this._calibrateAxisFromSegments(xSegments, cols, size, img.naturalWidth);
+                    const yCalib = this._calibrateAxisFromSegments(ySegments, rows, size, img.naturalHeight);
+                    return {
+                        cols,
+                        rows,
+                        refCx: xCalib?.refCenter ?? null,
+                        gapH: xCalib?.gap ?? 0,
+                        refCy: yCalib?.refCenter ?? null,
+                        gapV: yCalib?.gap ?? 0
+                    };
                 }
             }
         } catch (e) {
             console.warn('[Trombinoscope] Error during auto-grid detection:', e);
         }
         return null;
+    },
+
+    _calibrateAxisFromSegments(segments, count, size, naturalSpan) {
+        if (!segments || segments.length !== count || count < 2 || !naturalSpan) return null;
+        const avgPitch = (segments[count - 1].center - segments[0].center) / (count - 1);
+        if (avgPitch * count < size * 0.45) return null;
+
+        for (let i = 0; i < count - 1; i++) {
+            const pitch = segments[i + 1].center - segments[i].center;
+            if (Math.abs(pitch - avgPitch) > avgPitch * 0.35) return null;
+        }
+
+        const pitchPx = (avgPitch / size) * naturalSpan;
+        const baseCell = naturalSpan / count;
+        const rawGap = ((pitchPx - baseCell) / baseCell) * 100;
+        const gap = Math.max(-50, Math.min(50, Math.round(rawGap * 2) / 2));
+
+        // Center the grid on the mean of all detected segments so gap rounding never drifts toward one edge
+        const meanSegCenter = segments.reduce((sum, s) => sum + s.center, 0) / count;
+        const meanCenterPx = (meanSegCenter / size) * naturalSpan;
+        const effectivePitch = baseCell * (1 + gap / 100);
+        const refCenter = meanCenterPx - ((count - 1) / 2) * effectivePitch;
+
+        return { refCenter, gap };
     },
 
     _analyzeProjection(gray, size, axis) {
@@ -2119,48 +2292,71 @@ export const TrombinoscopeManager = {
         }
 
         const range = maxVar - minVar;
-        if (range < 10) return 0; // Very low contrast or solid image
+        if (range < 10) return []; // Very low contrast or solid image
 
         // Threshold to distinguish "student photo area" from "gutter/margin area"
         // Since gutters have low variance, threshold is set at 35% of the range above min
         const threshold = minVar + range * 0.35;
 
-        // Count continuous segments of high variance (photos)
-        let segments = 0;
+        // Collect raw high-variance segments
+        const rawSegments = [];
         let inSegment = false;
-        let minSegmentWidth = Math.max(3, Math.round(size * 0.03)); // ignore tiny noise spikes
+        let segStart = 0;
 
-        let currentSegmentWidth = 0;
         for (let i = 0; i < size; i++) {
-            const isHighVariance = smooth[i] > threshold;
-            if (isHighVariance) {
+            if (smooth[i] > threshold) {
                 if (!inSegment) {
                     inSegment = true;
-                    currentSegmentWidth = 1;
-                } else {
-                    currentSegmentWidth++;
+                    segStart = i;
                 }
-            } else {
-                if (inSegment) {
-                    if (currentSegmentWidth >= minSegmentWidth) {
-                        segments++;
-                    }
-                    inSegment = false;
-                    currentSegmentWidth = 0;
-                }
+            } else if (inSegment) {
+                rawSegments.push({ start: segStart, end: i - 1 });
+                inSegment = false;
             }
         }
-        // Handle segment ending at the border
-        if (inSegment && currentSegmentWidth >= minSegmentWidth) {
-            segments++;
+        if (inSegment) {
+            rawSegments.push({ start: segStart, end: size - 1 });
         }
 
-        return segments;
+        // Bridge internal micro-dips (<= 4px on 150px grid, e.g. uniform face center)
+        // without merging distinct columns/rows
+        const maxMicroGap = Math.max(2, Math.round(size * 0.028));
+        const maxMergedSpan = Math.round(size * 0.45);
+        const mergedSegments = [];
+
+        for (const seg of rawSegments) {
+            const prev = mergedSegments[mergedSegments.length - 1];
+            if (
+                prev &&
+                (seg.start - prev.end - 1) <= maxMicroGap &&
+                (seg.end - prev.start + 1) <= maxMergedSpan
+            ) {
+                prev.end = seg.end;
+            } else {
+                mergedSegments.push({ start: seg.start, end: seg.end });
+            }
+        }
+
+        const minSegmentWidth = Math.max(3, Math.round(size * 0.03)); // ignore tiny noise spikes
+        const candidates = [];
+        let maxWidth = 0;
+        for (const s of mergedSegments) {
+            const width = s.end - s.start + 1;
+            if (width >= minSegmentWidth) {
+                if (width > maxWidth) maxWidth = width;
+                // Pixel i spans [i, i + 1], so the continuous midpoint of [start, end] is (start + end + 1) / 2
+                candidates.push({ start: s.start, end: s.end, width, center: (s.start + s.end + 1) / 2 });
+            }
+        }
+
+        // Discard thin secondary bands (e.g. horizontal text caption rows ~9px vs 44px photo rows)
+        return candidates.filter(s => s.width >= maxWidth * 0.5);
     },
 
-    _createGrid(cols, rows, preserveReference = false, silent = false) {
-        // Save the reference zone position if we want to preserve it
-        let refCx = null, refCy = null;
+    _createGrid(cols, rows, preserveReference = false, silent = false, initialRef = null) {
+        // Save the reference zone position if we want to preserve it or apply initial calibration
+        let refCx = initialRef?.refCx ?? null;
+        let refCy = initialRef?.refCy ?? null;
         if (preserveReference && this._zones.length > 0) {
             refCx = this._zones[0].cx;
             refCy = this._zones[0].cy;
@@ -2177,8 +2373,8 @@ export const TrombinoscopeManager = {
         const cellW = w / cols;
         const cellH = h / rows;
 
-        // Global radius = 40% of the smaller cell dimension
-        this._globalRadius = Math.min(cellW, cellH) * 0.4;
+        // Global radius = 34.5% of the smaller cell dimension (fits portrait medallions without overlapping captions)
+        this._globalRadius = Math.min(cellW, cellH) * 0.345;
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
@@ -2191,13 +2387,10 @@ export const TrombinoscopeManager = {
             }
         }
 
-        // If we had a reference position stored, restore it and rebuild positions
-        if (refCx !== null && refCy !== null) {
-            // Move zone 0 back to its original position
-            this._zones[0].cx = refCx;
-            this._zones[0].cy = refCy;
-
-            // Recalculate other zone positions relative to zone 0 with gaps
+        // Apply reference position and/or gaps if present
+        if (this._zones.length > 0 && (refCx !== null || refCy !== null || this._gapH || this._gapV)) {
+            if (refCx !== null) this._zones[0].cx = refCx;
+            if (refCy !== null) this._zones[0].cy = refCy;
             this._applyGapsInternal(cellW, cellH);
         }
 
@@ -2213,10 +2406,10 @@ export const TrombinoscopeManager = {
      * Also auto-assigns students to zones
      * Preserves reference zone position when zones already exist
      */
-    _createGridSilent(cols, rows) {
+    _createGridSilent(cols, rows, initialRef = null) {
         // Preserve reference position if zones already exist (user has adjusted positions)
         const hasExistingZones = this._zones.length > 0;
-        this._createGrid(cols, rows, hasExistingZones, true);
+        this._createGrid(cols, rows, hasExistingZones, true, initialRef);
         // Auto-assign students to zones automatically
         this._autoAssignSilent(true);
         
@@ -2797,11 +2990,7 @@ export const TrombinoscopeManager = {
             // Check if it actually moved
             const hasMoved = Math.abs(zone.cx - startCx) > 0.01 || Math.abs(zone.cy - startCy) > 0.01;
             if (hasMoved && this._tempDragSnapshot) {
-                this._history.push(this._tempDragSnapshot);
-                if (this._history.length > this._maxHistoryLevels) {
-                    this._history.shift();
-                }
-                this._updateUndoButton();
+                this._saveState(this._tempDragSnapshot);
             }
             this._tempDragSnapshot = null;
             this._dragging = null;
@@ -2832,13 +3021,21 @@ export const TrombinoscopeManager = {
      * - When zone select is focused: all 4 arrows move the zone position
      */
     _handleKeyDown(e) {
-        // Handle Ctrl+Z / Cmd+Z
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        // Handle Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Y / Ctrl+Shift+Z (Redo)
+        if (e.ctrlKey || e.metaKey) {
+            const key = e.key.toLowerCase();
             const modal = document.getElementById('trombiWizardModal');
             if (modal?.classList.contains('visible') && this._currentStep === 2) {
-                e.preventDefault();
-                this._undo();
-                return;
+                if ((key === 'z' && e.shiftKey) || key === 'y') {
+                    e.preventDefault();
+                    this._redo();
+                    return;
+                }
+                if (key === 'z') {
+                    e.preventDefault();
+                    this._undo();
+                    return;
+                }
             }
         }
 
@@ -2998,7 +3195,7 @@ export const TrombinoscopeManager = {
 
         const sliderHtml = `
             <div class="size-slider-container">
-                <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
+                <label>Taille</label>
                 <input type="range" class="control-slider size-slider" 
                        min="${minR}" max="${maxR}" value="${currentR}" step="1">
             </div>
@@ -3841,8 +4038,8 @@ export const TrombinoscopeManager = {
     _getCurrentStateSnapshot() {
         return {
             zones: this._zones.map(z => ({ ...z })),
-            pages: this._parsedPdfData?.pages?.map(p => ({
-                zones: (p.zones || []).map(z => ({ ...z }))
+            pages: this._parsedPdfData?.pages?.map((p, idx) => ({
+                zones: (idx === this._currentPageIndex ? this._zones : (p.zones || [])).map(z => ({ ...z }))
             })),
             gridCols: this._gridCols,
             gridRows: this._gridRows,
@@ -3852,33 +4049,58 @@ export const TrombinoscopeManager = {
         };
     },
 
-    _saveState() {
+    _saveState(snapshot = this._getCurrentStateSnapshot()) {
         if (!this._history) this._history = [];
-        this._history.push(this._getCurrentStateSnapshot());
+        this._history.push(snapshot);
         if (this._history.length > this._maxHistoryLevels) {
             this._history.shift();
         }
+        this._redoHistory = [];
         this._updateUndoButton();
     },
 
     _undo() {
         if (!this._history || this._history.length === 0) return;
+        if (!this._redoHistory) this._redoHistory = [];
+        this._redoHistory.push(this._getCurrentStateSnapshot());
+        if (this._redoHistory.length > this._maxHistoryLevels) {
+            this._redoHistory.shift();
+        }
         const prevState = this._history.pop();
-        
+        this._applyHistorySnapshot(prevState);
+    },
+
+    _redo() {
+        if (!this._redoHistory || this._redoHistory.length === 0) return;
+        if (!this._history) this._history = [];
+        this._history.push(this._getCurrentStateSnapshot());
+        if (this._history.length > this._maxHistoryLevels) {
+            this._history.shift();
+        }
+        const nextState = this._redoHistory.pop();
+        this._applyHistorySnapshot(nextState);
+    },
+
+    _applyHistorySnapshot(state) {
+        if (!state) return;
+        if (this._nudgeTimer) {
+            clearTimeout(this._nudgeTimer);
+            this._nudgeTimer = null;
+        }
         this._selectedZoneIds.clear();
-        this._zones = prevState.zones.map(z => ({ ...z }));
-        if (prevState.pages && this._parsedPdfData?.pages) {
+        this._zones = state.zones.map(z => ({ ...z }));
+        if (state.pages && this._parsedPdfData?.pages) {
             this._parsedPdfData.pages.forEach((p, idx) => {
-                if (prevState.pages[idx]?.zones) {
-                    p.zones = prevState.pages[idx].zones.map(z => ({ ...z }));
+                if (state.pages[idx]?.zones) {
+                    p.zones = state.pages[idx].zones.map(z => ({ ...z }));
                 }
             });
         }
-        this._gridCols = prevState.gridCols;
-        this._gridRows = prevState.gridRows;
-        this._gapH = prevState.gapH;
-        this._gapV = prevState.gapV;
-        this._globalRadius = prevState.globalRadius;
+        this._gridCols = state.gridCols;
+        this._gridRows = state.gridRows;
+        this._gapH = state.gapH;
+        this._gapV = state.gapV;
+        this._globalRadius = state.globalRadius;
 
         // Synchronize sliders UI
         this._syncSlidersToState();
@@ -3893,6 +4115,10 @@ export const TrombinoscopeManager = {
         const undoBtn = document.getElementById('trombiUndoBtn');
         if (undoBtn) {
             undoBtn.disabled = !this._history || this._history.length === 0;
+        }
+        const redoBtn = document.getElementById('trombiRedoBtn');
+        if (redoBtn) {
+            redoBtn.disabled = !this._redoHistory || this._redoHistory.length === 0;
         }
     },
 

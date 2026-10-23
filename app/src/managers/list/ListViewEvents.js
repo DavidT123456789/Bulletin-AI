@@ -5,6 +5,7 @@
 
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { UI } from '../UIManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
@@ -489,6 +490,7 @@ export const ListViewEvents = {
             document.removeEventListener('keydown', this.state.activeKeydownListener);
         }
         this.state.activeKeydownListener = (e) => {
+            if (UI.isAnyModalOpen() || FocusPanelManager.isOpen?.()) return;
             if (e.key === 'Escape') {
                 // Priority 1: Close menus if any are open
                 if (listContainer.querySelector(OPEN_MENU_SELECTOR)) {
@@ -839,6 +841,7 @@ export const ListViewEvents = {
 
         // Ctrl+F keyboard shortcut to activate search
         document.addEventListener('keydown', (e) => {
+            if (UI.isAnyModalOpen() || FocusPanelManager.isOpen?.()) return;
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 // Only intercept if the list view is visible
                 if (listContainer.offsetParent !== null) {

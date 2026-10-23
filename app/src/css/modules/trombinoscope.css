@@ -11,6 +11,7 @@
     display: none;
     align-items: center;
     justify-content: center;
+    outline: none;
 }
 
 .trombi-wizard-modal.visible {
@@ -634,10 +635,6 @@
     overflow: auto;
 }
 
-.trombi-viewport.is-animating {
-    overflow: hidden !important;
-}
-
 /* Wrapper: The container that holds Image + Overlay
    It must shrink-wrap the image exactly to preserve overlay coordinate system.
 */
@@ -671,9 +668,8 @@
     margin: 0;
     background: var(--surface-color);
     border: none;
-    border-top: 1px solid var(--border-color);
     border-radius: 0;
-    padding: 8px 16px;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -683,10 +679,27 @@
 
 [data-theme="dark"] .grid-control-panel {
     background: var(--bg-secondary);
+}
+
+.grid-main-controls {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .grid-main-controls,
+[data-theme="dark"] .grid-advanced-controls-inner {
+    background: var(--bg-secondary);
     border-top-color: var(--border-color);
 }
 
-/* Two-column layout for compact display */
+/* Two-column layout for drawer sliders */
 .control-row-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -700,91 +713,133 @@
     min-height: 28px;
 }
 
+.control-row-size {
+    flex: 1 1 150px;
+    max-width: 210px;
+    min-width: 120px;
+}
+
+.grid-toolbar-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+.grid-toolbar-center {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
 .grid-control-actions {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
+}
+
+.grid-reset-btn,
+.assignment-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
 .grid-reset-btn {
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 6px);
-    background: var(--bg-secondary);
     color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.grid-reset-btn:hover {
+.grid-reset-btn iconify-icon,
+.assignment-action-btn iconify-icon {
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#gridResetBtn iconify-icon {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#gridResetBtn:hover:not(:disabled) iconify-icon {
+    transform: rotate(-45deg);
+}
+
+.grid-reset-btn:hover:not(:disabled),
+.assignment-action-btn:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 
+.grid-reset-btn:active:not(:disabled),
+.assignment-action-btn:active {
+    transform: scale(0.92);
+}
+
 .grid-reset-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    opacity: 0.35;
+    cursor: default;
     pointer-events: none;
 }
 
-/* Collapsible advanced grid controls - Fluid CSS Grid Accordion */
+/* Collapsible advanced grid controls - 120Hz GPU-composited drawer */
 .grid-advanced-controls {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    visibility: hidden;
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: 1px solid transparent;
-    transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.22s ease,
-                margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                padding-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.22s ease,
-                visibility 0s linear 0.35s;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
     overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1;
+    transition: visibility 0s linear 0.36s;
 }
 
 .grid-advanced-controls.is-open {
-    grid-template-rows: 1fr;
-    opacity: 1;
     visibility: visible;
-    margin-bottom: 6px;
-    padding-bottom: 6px;
-    border-bottom-color: var(--border-color);
-    transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.25s ease 0.05s,
-                margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                padding-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.25s ease,
-                visibility 0s linear 0s;
+    pointer-events: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    transition: visibility 0s linear 0s;
 }
 
 .grid-advanced-controls-inner {
-    min-height: 0;
-    overflow: hidden;
+    padding: 10px 16px 8px 16px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transform: translateY(-6px);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate3d(0, 100%, 0);
+    will-change: transform;
+    transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .grid-advanced-controls.is-open .grid-advanced-controls-inner {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
 }
 
 .grid-tools-toggle-btn {
-    min-width: 112px;
+    height: 26px;
     justify-content: center;
-    padding: 4px 8px;
+    padding: 0 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm, 6px);
     background: var(--bg-secondary);
@@ -813,7 +868,7 @@
 .grid-tools-toggle-btn .toggle-chevron {
     font-size: 11px;
     display: inline-flex;
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .grid-tools-toggle-btn.active .toggle-chevron {
@@ -828,35 +883,24 @@
     }
 }
 
-/* Full width row (for size slider) */
-.control-row.full-width {
-    grid-column: 1 / -1;
-}
-
 .control-row label {
     display: flex;
     align-items: center;
-    gap: 4px;
     font-size: 11px;
     font-weight: 500;
     color: var(--text-secondary);
-    min-width: 60px;
     white-space: nowrap;
-    margin-top: 4px; /* Correction visuelle d'alignement avec la réglette */
 }
 
-.control-row label i {
-    color: var(--text-tertiary);
-    width: 12px;
-    text-align: center;
-    font-size: 10px;
+.grid-advanced-controls .control-row label {
+    min-width: 52px;
 }
 
 .slider-group {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 /* Slider track wrapper - épuré et invisible */
@@ -868,6 +912,7 @@
     height: 20px; /* Zone d'interaction compacte et centrée */
     display: flex;
     align-items: center;
+    margin: 0 2px;
 }
 
 .control-slider {
@@ -964,82 +1009,28 @@
     padding: 2px 2px;
 }
 
-/* Sync Toggle - iOS style switch */
+/* Sync Toggle - Uses standard .toggle-switch.small */
 .sync-toggle-label {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 7px;
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
     color: var(--text-secondary);
     user-select: none;
-    margin-top: 2px;
+    margin: 0;
 }
 
 .toggle-text {
     display: flex;
     align-items: center;
-    gap: 5px;
-    min-width: 65px;
 }
 
-.toggle-wrapper {
-    display: flex;
-    align-items: center;
-    position: relative;
-    margin-left: auto;
-}
-
-.sync-toggle-checkbox {
-    display: none;
-}
-
-.sync-toggle-switch {
-    position: relative;
-    width: var(--toggle-width-small);
-    height: var(--toggle-height-small);
-    background: var(--bg-secondary);
-    border-radius: var(--radius-full);
-    transition: background 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.sync-toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: var(--toggle-inset-small);
-    left: var(--toggle-inset-small);
-    width: var(--toggle-knob-size-small);
-    height: var(--toggle-knob-size-small);
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.sync-toggle-checkbox:checked+.sync-toggle-switch {
-    background: var(--toggle-track-on);
-    box-shadow: none;
-}
-
-.sync-toggle-checkbox:checked+.sync-toggle-switch::after {
-    transform: translateX(var(--toggle-translate-small));
-    background: var(--toggle-knob-on);
-}
-
-[data-theme="dark"] .sync-toggle-switch {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-}
-
-[data-theme="dark"] .sync-toggle-checkbox:checked+.sync-toggle-switch {
-    background: var(--toggle-track-on);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-}
-
-.sync-toggle-label i {
-    color: var(--text-tertiary);
-    font-size: 10px;
+.sync-toggle-label .toggle-switch input:focus-visible + .slider,
+.trombi-exclude-toggle-wrapper .toggle-switch input:focus-visible + .slider {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* Bouton Auto (affiché dans le header du panneau d'association) */
@@ -1170,39 +1161,9 @@
     align-items: center;
 }
 
-.assignment-action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
-}
-
-.assignment-action-btn:hover {
-    color: var(--text-primary);
-    background: var(--item-hover-bg);
-}
-
 .assignment-action-btn.danger:hover {
     color: var(--error-color);
     background: rgba(var(--error-rgb), 0.12);
-}
-
-.assignment-action-btn:active {
-    transform: scale(0.92);
-}
-
-.assignment-action-btn iconify-icon {
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .assignment-row:hover {
@@ -2064,7 +2025,7 @@
 @keyframes trombiPageSlideNext {
     0% {
         opacity: 0.15;
-        transform: translateX(36px) scale(0.975);
+        transform: translateX(22px) scale(0.985);
     }
     100% {
         opacity: 1;
@@ -2075,7 +2036,7 @@
 @keyframes trombiPageSlidePrev {
     0% {
         opacity: 0.15;
-        transform: translateX(-36px) scale(0.975);
+        transform: translateX(-22px) scale(0.985);
     }
     100% {
         opacity: 1;
@@ -2084,11 +2045,11 @@
 }
 
 .trombi-page-slide-next {
-    animation: trombiPageSlideNext 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: trombiPageSlideNext 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .trombi-page-slide-prev {
-    animation: trombiPageSlidePrev 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: trombiPageSlidePrev 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2131,6 +2092,22 @@
 
 .trombi-zoom-controls .zoom-btn iconify-icon {
     font-size: 13px;
+}
+
+.trombi-zoom-controls .zoom-btn.zoom-icon-pop iconify-icon {
+    animation: trombiZoomIconPop 0.36s cubic-bezier(0.28, 1.35, 0.5, 1);
+}
+
+@keyframes trombiZoomIconPop {
+    0% {
+        transform: scale(0.76);
+    }
+    60% {
+        transform: scale(1.14);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .trombi-zoom-controls .zoom-btn:hover {
@@ -2226,5 +2203,19 @@
 
     .control-row-group {
         grid-template-columns: 1fr;
+    }
+
+    .grid-main-controls {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .control-row-size {
+        flex: 1 1 100%;
+        max-width: none;
+    }
+
+    .grid-toolbar-divider {
+        display: none;
     }
 }

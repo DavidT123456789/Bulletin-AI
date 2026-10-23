@@ -700,7 +700,7 @@ export const SeatingChartManager = {
             };
 
             outputSection.addEventListener('touchstart', (e) => {
-                if (this._isActive || e.touches.length !== 1 || FocusPanelManager.isOpen?.() || UI.activeModal) {
+                if (this._isActive || e.touches.length !== 1 || FocusPanelManager.isOpen?.() || UI.isAnyModalOpen()) {
                     listTouchValid = false;
                     return;
                 }
@@ -826,9 +826,10 @@ export const SeatingChartManager = {
             });
 
             document.addEventListener('keydown', (e) => {
-                if (FocusPanelManager.isOpen?.() || UI.activeModal) return;
+                if (FocusPanelManager.isOpen?.() || UI.isAnyModalOpen()) return;
 
                 const activeEl = document.activeElement;
+
                 const isTyping = activeEl && (
                     activeEl.tagName === 'INPUT' ||
                     activeEl.tagName === 'TEXTAREA' ||
@@ -856,7 +857,7 @@ export const SeatingChartManager = {
                     if (isArrowKey &&
                         !isTyping &&
                         !ClassUIManager?._isDropdownOpen &&
-                        !document.querySelector('.custom-dropdown.open, #actionsDropdown.show, .action-dropdown-menu.open, .global-actions-dropdown-menu.open')) {
+                        !document.querySelector('.custom-dropdown.open, #actionsDropdown.show, .action-dropdown-menu.open, .global-actions-dropdown-menu.open, #headerGenWrapper.open, #headerMenuDropdown.open')) {
                         if (e.key === 'ArrowRight' && !e.repeat && (hasNoModifier || hasCtrlOnly) && this._getCurrentClassStudents().length > 0) {
                             e.preventDefault();
                             if (activeEl?.closest?.('#viewToggle')) {
@@ -920,7 +921,7 @@ export const SeatingChartManager = {
                         this._activeMobileSheet ||
                         this._placementPopoverOpen ||
                         this._configPopoverOpen ||
-                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show')
+                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
                     );
 
                     if (!hasBlockingOverlay) {
@@ -992,7 +993,7 @@ export const SeatingChartManager = {
 
     refreshStudents() {
         if (!this._isActive) {
-            if (!FocusPanelManager.isOpen?.() && !UI.activeModal && (!document.activeElement || document.activeElement === document.body)) {
+            if (!FocusPanelManager.isOpen?.() && !UI.isAnyModalOpen() && (!document.activeElement || document.activeElement === document.body)) {
                 this._focusListScrollContainer();
             }
             return;
@@ -1892,6 +1893,7 @@ export const SeatingChartManager = {
     },
 
     _focusListScrollContainer() {
+        if (FocusPanelManager.isOpen?.() || UI.isAnyModalOpen()) return;
         const mainContent = document.querySelector('.main-content');
         if (!mainContent) return;
         if (!mainContent.hasAttribute('tabindex')) {

@@ -1724,3 +1724,305 @@ describe('TrombinoscopeManager Mid-Year Student Re-upload & Data Safety', () => 
         expect(info.newStudents).toHaveLength(2);
     });
 });
+
+describe('TrombinoscopeManager Undo / Redo History State Machine', () => {
+    beforeEach(() => {
+        TrombinoscopeManager._reset();
+        document.body.innerHTML = `
+            <div id="trombiWizardModal" class="visible"></div>
+            <div class="trombi-image-panel"></div>
+            <div id="trombiZonesOverlay"></div>
+            <img id="trombiStep2Image" src="" />
+            <div id="trombiAssignmentGrid"></div>
+        `;
+        TrombinoscopeManager._currentStep = 2;
+        TrombinoscopeManager._imageNaturalWidth = 1000;
+        TrombinoscopeManager._imageNaturalHeight = 1000;
+        TrombinoscopeManager._globalRadius = 40;
+        TrombinoscopeManager._zones = [
+            { id: 1, cx: 100, cy: 100, r: 40, studentId: 's1' }
+        ];
+        TrombinoscopeManager._setupControlPanel();
+        TrombinoscopeManager._updateUndoButton();
+    });
+
+    it('should undo and redo zone and slider adjustments while updating button disabled states', () => {
+        const undoBtn = document.getElementById('trombiUndoBtn');
+        const redoBtn = document.getElementById('trombiRedoBtn');
+        expect(undoBtn.disabled).toBe(true);
+        expect(redoBtn.disabled).toBe(true);
+
+        // Save initial state and apply change
+        TrombinoscopeManager._saveState();
+        TrombinoscopeManager._zones[0].cx = 250;
+        TrombinoscopeManager._globalRadius = 60;
+
+        expect(undoBtn.disabled).toBe(false);
+        expect(redoBtn.disabled).toBe(true);
+
+        // Undo restores initial state and enables Redo
+        TrombinoscopeManager._undo();
+        expect(TrombinoscopeManager._zones[0].cx).toBe(100);
+        expect(TrombinoscopeManager._globalRadius).toBe(40);
+        expect(undoBtn.disabled).toBe(true);
+        expect(redoBtn.disabled).toBe(false);
+
+        // Redo reapplies change and enables Undo
+        TrombinoscopeManager._redo();
+        expect(TrombinoscopeManager._zones[0].cx).toBe(250);
+        expect(TrombinoscopeManager._globalRadius).toBe(60);
+        expect(undoBtn.disabled).toBe(false);
+        expect(redoBtn.disabled).toBe(true);
+    });
+
+    it('should clear redo stack when a new action is recorded after an undo', () => {
+        const redoBtn = document.getElementById('trombiRedoBtn');
+
+        TrombinoscopeManager._saveState();
+        TrombinoscopeManager._zones[0].cx = 200;
+
+        TrombinoscopeManager._undo();
+        expect(TrombinoscopeManager._redoHistory.length).toBe(1);
+        expect(redoBtn.disabled).toBe(false);
+
+        // New edit branches history and clears redo stack
+        TrombinoscopeManager._saveState();
+        TrombinoscopeManager._zones[0].cx = 300;
+        expect(TrombinoscopeManager._redoHistory.length).toBe(0);
+        expect(redoBtn.disabled).toBe(true);
+    });
+
+    it('should safely no-op on empty undo/redo stacks and handle Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z shortcuts', () => {
+        // Safe no-op when empty
+        expect(() => TrombinoscopeManager._undo()).not.toThrow();
+        expect(() => TrombinoscopeManager._redo()).not.toThrow();
+
+        TrombinoscopeManager._saveState();
+        TrombinoscopeManager._zones[0].cy = 400;
+
+        // Ctrl+Z -> Undo
+        TrombinoscopeManager._handleKeyDown(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+        expect(TrombinoscopeManager._zones[0].cy).toBe(100);
+
+        // Ctrl+Y -> Redo
+        TrombinoscopeManager._handleKeyDown(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true }));
+        expect(TrombinoscopeManager._zones[0].cy).toBe(400);
+
+        // Ctrl+Z -> Undo, then Ctrl+Shift+Z -> Redo
+        TrombinoscopeManager._handleKeyDown(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+        expect(TrombinoscopeManager._zones[0].cy).toBe(100);
+        TrombinoscopeManager._handleKeyDown(new KeyboardEvent('keydown', { key: 'Z', ctrlKey: true, shiftKey: true }));
+        expect(TrombinoscopeManager._zones[0].cy).toBe(400);
+    });
+});
+
+describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
+    const mockAnalysisCanvas = (rgba, size = 150) => {
+        const origCreateElement = document.createElement.bind(document);
+        return vi.spyOn(document, 'createElement').mockImplementation((tag) => {
+            if (tag === 'canvas') {
+                return {
+                    width: size,
+                    height: size,
+                    getContext: () => ({
+                        drawImage: vi.fn(),
+                        getImageData: () => ({ data: rgba })
+                    })
+                };
+            }
+            return origCreateElement(tag);
+        });
+    };
+
+    beforeEach(() => {
+        TrombinoscopeManager._reset();
+    });
+
+    it('should bridge internal micro-dips inside a face column and discard thin text rows in _analyzeProjection', () => {
+        const size = 150;
+        const gray = new Uint8Array(size * size).fill(220);
+
+        // Paint 4 columns (14..33, 50..66, 82..101 with a 4px uniform dip at 90..93, 118..134)
+        // across 2 rows (13..55 with a 3px dip at 34..36, and 82..125)
+        const xRanges = [
+            [14, 33],
+            [50, 66],
+            [82, 89],
+            [94, 101], // 4px internal dip (90..93) inside column 3
+            [118, 134]
+        ];
+        const yRanges = [
+            [13, 33],
+            [37, 55],  // 3px internal dip (34..36) inside row 1
+            [64, 72],  // 9px horizontal text caption row ("BERNARD Thomas...") -> must be discarded (< 50% of 43px photo row)
+            [82, 125]
+        ];
+
+        for (const [y0, y1] of yRanges) {
+            for (let y = y0; y <= y1; y++) {
+                for (const [x0, x1] of xRanges) {
+                    for (let x = x0; x <= x1; x++) {
+                        // High vertical & horizontal contrast pattern inside avatar blocks
+                        gray[y * size + x] = ((x + y) % 2 === 0) ? 25 : 245;
+                    }
+                }
+            }
+        }
+
+        const xSegs = TrombinoscopeManager._analyzeProjection(gray, size, 'x');
+        const ySegs = TrombinoscopeManager._analyzeProjection(gray, size, 'y');
+
+        expect(xSegs).toHaveLength(4);
+        expect(ySegs).toHaveLength(2);
+    });
+
+    it('should detect 4x2 grid (not 5x12) on 16:9 photo grids like sample-trombinoscope and calibrate zone centers', () => {
+        document.body.innerHTML = `
+            <div class="trombi-image-panel"></div>
+            <div id="trombiZonesOverlay"></div>
+            <img id="trombiStep2Image" src="data:sample" />
+            <div id="trombiAssignmentGrid"></div>
+            <span id="trombiZonesInfo"></span>
+        `;
+
+        const img = document.getElementById('trombiStep2Image');
+        Object.defineProperty(img, 'complete', { value: true, configurable: true });
+        Object.defineProperty(img, 'naturalWidth', { value: 1024, configurable: true });
+        Object.defineProperty(img, 'naturalHeight', { value: 558, configurable: true });
+
+        TrombinoscopeManager._imageNaturalWidth = 1024;
+        TrombinoscopeManager._imageNaturalHeight = 558;
+
+        // Build synthetic 150x150 RGBA buffer matching sample-trombinoscope's 4x2 avatar layout
+        const size = 150;
+        const rgba = new Uint8ClampedArray(size * size * 4).fill(220);
+        const xCols = [[14, 33], [50, 66], [82, 89], [94, 101], [118, 134]];
+        const yRows = [[13, 33], [38, 55], [64, 72], [82, 125]];
+
+        for (const [y0, y1] of yRows) {
+            for (let y = y0; y <= y1; y++) {
+                for (const [x0, x1] of xCols) {
+                    for (let x = x0; x <= x1; x++) {
+                        const idx = (y * size + x) * 4;
+                        const val = ((x + y) % 2 === 0) ? 20 : 240;
+                        rgba[idx] = val;
+                        rgba[idx + 1] = val;
+                        rgba[idx + 2] = val;
+                        rgba[idx + 3] = 255;
+                    }
+                }
+            }
+        }
+
+        const createElementSpy = mockAnalysisCanvas(rgba, size);
+
+        try {
+            TrombinoscopeManager._setupControlPanel();
+
+            expect(TrombinoscopeManager._gridCols).toBe(4);
+            expect(TrombinoscopeManager._gridRows).toBe(2);
+            expect(TrombinoscopeManager._zones).toHaveLength(8);
+
+            // First zone should be calibrated near the detected first avatar center (~164px, ~128px), not default cell center (128, 139.5)
+            expect(TrombinoscopeManager._zones[0].cx).toBeCloseTo(164.2, 0);
+            expect(TrombinoscopeManager._zones[0].cy).toBeCloseTo(128.3, 0);
+            expect(TrombinoscopeManager._globalRadius).toBeCloseTo(88.3, 0);
+            expect(TrombinoscopeManager._gapH).toBeCloseTo(-9, 1);
+            expect(TrombinoscopeManager._gapV).toBeCloseTo(-7.5, 1);
+
+            // Moving zone 0 and clicking Reset restores calibrated 4x2 grid
+            TrombinoscopeManager._zones[0].cx = 500;
+            document.getElementById('gridResetBtn').click();
+            expect(TrombinoscopeManager._zones).toHaveLength(8);
+            expect(TrombinoscopeManager._zones[0].cx).toBeCloseTo(164.2, 0);
+        } finally {
+            createElementSpy.mockRestore();
+        }
+    });
+
+    it('should preserve compact list row estimation (cellRatio 4.25) when wide image has narrow avatar segments', () => {
+        document.body.innerHTML = `<img id="trombiStep2Image" src="data:list" />`;
+        const img = document.getElementById('trombiStep2Image');
+        Object.defineProperty(img, 'complete', { value: true, configurable: true });
+        Object.defineProperty(img, 'naturalWidth', { value: 1600, configurable: true });
+        Object.defineProperty(img, 'naturalHeight', { value: 900, configurable: true });
+
+        const size = 150;
+        const rgba = new Uint8ClampedArray(size * size * 4).fill(240);
+        // 3 columns of very narrow avatar strips (width = 6px out of 50px column = 12% fill ratio < 35%)
+        const narrowCols = [[8, 13], [58, 63], [108, 113]];
+        for (let y = 10; y < 140; y++) {
+            for (const [x0, x1] of narrowCols) {
+                for (let x = x0; x <= x1; x++) {
+                    const idx = (y * size + x) * 4;
+                    const val = (y % 2 === 0) ? 15 : 245;
+                    rgba[idx] = val;
+                    rgba[idx + 1] = val;
+                    rgba[idx + 2] = val;
+                    rgba[idx + 3] = 255;
+                }
+            }
+        }
+
+        const createElementSpy = mockAnalysisCanvas(rgba, size);
+
+        try {
+            const detected = TrombinoscopeManager._detectGridFromImage();
+            expect(detected).not.toBeNull();
+            expect(detected.cols).toBe(3);
+            // 3 * (900 / 1600) * 4.25 = 7.17 -> 7 rows
+            expect(detected.rows).toBe(7);
+        } finally {
+            createElementSpy.mockRestore();
+        }
+    });
+
+    it('should update zoomInBtn disabled state at max zoom (2.5), swap zoomFitBtn icon, and clean up FLIP transition', () => {
+        document.body.innerHTML = `
+            <div class="trombi-image-panel">
+                <div class="trombi-viewport" style="width: 800px; height: 600px;">
+                    <div class="trombi-content-wrapper" style="width: 400px; height: 500px;">
+                        <img id="trombiStep2Image" src="" />
+                        <div id="trombiZonesOverlay"></div>
+                    </div>
+                </div>
+            </div>
+            <button id="trombiZoomOutBtn"></button>
+            <button id="trombiZoomInBtn"></button>
+            <button id="trombiZoomFitBtn"><iconify-icon icon="ph:arrows-out-simple"></iconify-icon></button>
+            <span id="trombiZoomLevel">100%</span>
+        `;
+
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        let currentRect = { left: 200, top: 50, width: 400, height: 500 };
+        wrapper.getBoundingClientRect = () => currentRect;
+
+        TrombinoscopeManager._imageNaturalWidth = 800;
+        TrombinoscopeManager._imageNaturalHeight = 1000;
+        TrombinoscopeManager._zoomLevel = 1.0;
+        TrombinoscopeManager._applyZoom();
+
+        const zoomInBtn = document.getElementById('trombiZoomInBtn');
+        const zoomFitBtn = document.getElementById('trombiZoomFitBtn');
+        const fitIcon = zoomFitBtn.querySelector('iconify-icon');
+
+        expect(zoomInBtn.disabled).toBe(false);
+        expect(fitIcon.getAttribute('icon')).toBe('ph:arrows-out-simple');
+
+        // Simulate FLIP transition when zooming in to max (2.5)
+        currentRect = { left: 100, top: 0, width: 600, height: 750 };
+        TrombinoscopeManager._setZoomLevel(2.5);
+        expect(TrombinoscopeManager._zoomLevel).toBe(2.5);
+        expect(zoomInBtn.disabled).toBe(true);
+        expect(fitIcon.getAttribute('icon')).toBe('ph:arrows-in-simple');
+        expect(zoomFitBtn.classList.contains('zoom-icon-pop')).toBe(true);
+
+        // Verify FLIP cleanup on transitionend
+        TrombinoscopeManager._animateSheetFLIP({ left: 200, top: 50, width: 400, height: 500 }, { lockViewportOverflow: true });
+        expect(wrapper.style.transform).toBe('translate3d(0, 0, 0) scale(1, 1)');
+        const ev = new Event('transitionend');
+        Object.defineProperty(ev, 'propertyName', { value: 'transform' });
+        wrapper.dispatchEvent(ev);
+        expect(wrapper.style.transform).toBe('');
+    });
+});

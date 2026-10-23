@@ -79,36 +79,6 @@ export const EventHandlersManager = {
     },
 
     /**
-     * Gère le piège à focus dans les modales pour l'accessibilité.
-     * @param {KeyboardEvent} e - L'événement keydown
-     * @param {HTMLElement} container - Le conteneur de la modale active
-     */
-    handleFocusTrap(e, container) {
-        const focusable = Array.from(container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
-            .filter(el => el.offsetParent !== null && !el.disabled);
-
-        if (focusable.length === 0) {
-            e.preventDefault();
-            return;
-        }
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-
-        if (e.shiftKey) {
-            if (document.activeElement === first) {
-                last.focus();
-                e.preventDefault();
-            }
-        } else {
-            if (document.activeElement === last) {
-                first.focus();
-                e.preventDefault();
-            }
-        }
-    },
-
-    /**
      * Gère la navigation au clavier dans la liste des résultats (Haut/Bas).
      * @param {KeyboardEvent} e - L'événement keydown
      */

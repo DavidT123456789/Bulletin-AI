@@ -4121,4 +4121,74 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             visibilitySpy.mockRestore();
         });
     });
+
+    describe('Isolation clavier des modales (Flèches Haut/Bas/Gauche/Droite)', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <main class="main-content" tabindex="-1">
+                    <div id="outputAndActionsWrapper" data-view="list">
+                        <div id="outputSection"></div>
+                        <div id="seatingChartView" style="display: none;">
+                            <div id="scGridContainer"></div>
+                        </div>
+                    </div>
+                </main>
+                <div id="trombiWizardModal" class="trombi-modal">
+                    <button id="trombiBtn" type="button">Zone</button>
+                </div>
+                <div id="appSettingsModal" class="modal">
+                    <div class="modal-content">
+                        <button id="settingsBtn" type="button">Paramètres</button>
+                    </div>
+                </div>
+            `;
+            SeatingChartManager._globalListenersInitialized = false;
+            SeatingChartManager._isActive = false;
+            appState.activeView = 'list';
+            appState.generatedResults = [
+                { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: appState.currentClassId }
+            ];
+            SeatingChartManager.init();
+        });
+
+        it('ne doit ni basculer en vue Plan ni scroller .main-content quand les flèches sont utilisées dans #trombiWizardModal ou une modale ouverte', () => {
+            const mainContent = document.querySelector('.main-content');
+            mainContent.scrollBy = vi.fn();
+            const switchSpy = vi.spyOn(SeatingChartManager, 'switchToView');
+
+            // Cas 1 : Modale autonome #trombiWizardModal ouverte (.visible)
+            const trombiModal = document.getElementById('trombiWizardModal');
+            const trombiBtn = document.getElementById('trombiBtn');
+            trombiModal.classList.add('visible');
+            trombiBtn.focus();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, bubbles: true }));
+
+            expect(switchSpy).not.toHaveBeenCalled();
+            expect(mainContent.scrollBy).not.toHaveBeenCalled();
+            expect(document.activeElement).toBe(trombiBtn);
+
+            // _focusListScrollContainer ne doit pas voler le focus tant qu'une modale est ouverte
+            SeatingChartManager._focusListScrollContainer();
+            expect(document.activeElement).toBe(trombiBtn);
+
+            trombiModal.classList.remove('visible');
+
+            // Cas 2 : Modale standard ouverte via UI.openModal
+            const settingsModal = document.getElementById('appSettingsModal');
+            UI.openModal(settingsModal);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+
+            expect(switchSpy).not.toHaveBeenCalled();
+            expect(mainContent.scrollBy).not.toHaveBeenCalled();
+
+            UI.activeModal = null;
+            document.body.classList.remove('modal-open');
+            switchSpy.mockRestore();
+        });
+    });
 });
