@@ -561,12 +561,28 @@ export const SeatingAutoPlace = {
         blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         e.dataTransfer?.setDragImage?.(blank, 0, 0);
 
-        clone.style.left = `${e.clientX}px`;
-        clone.style.top = `${e.clientY}px`;
+        if (this._isTouchInteractionActive?.() || e?.sourceCapabilities?.firesTouchEvents) {
+            return;
+        }
+
+        let startX = Number(e?.clientX);
+        let startY = Number(e?.clientY);
+        if (!Number.isFinite(startX) || !Number.isFinite(startY) || (startX <= 0 && startY <= 0)) {
+            const rect = sourceEl?.getBoundingClientRect?.();
+            if (rect && (rect.width > 0 || rect.height > 0)) {
+                startX = rect.left + rect.width / 2;
+                startY = rect.top + rect.height / 2;
+            } else {
+                return;
+            }
+        }
+
+        clone.style.left = `${startX}px`;
+        clone.style.top = `${startY}px`;
         document.body.appendChild(clone);
 
         const onDrag = (ev) => {
-            if (ev.clientX === 0 && ev.clientY === 0) return;
+            if (ev.clientX <= 0 && ev.clientY <= 0) return;
             clone.style.left = `${ev.clientX}px`;
             clone.style.top = `${ev.clientY}px`;
         };

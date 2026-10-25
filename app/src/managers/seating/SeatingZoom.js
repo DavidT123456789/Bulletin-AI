@@ -42,6 +42,8 @@ export const SeatingZoom = {
         const board = document.getElementById('scClassroomBoard');
         if (!view || !gridArea || !board) return;
 
+        this._stopPanInertia?.();
+
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
             this._zoomAnimCleanup = null;
@@ -141,6 +143,7 @@ export const SeatingZoom = {
         if (!gridArea || !board) return;
 
         TooltipsUI?.hideAll?.();
+        this._stopPanInertia?.();
 
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
@@ -326,30 +329,21 @@ export const SeatingZoom = {
 
         let pinchState = null;
         let rafPending = false;
-        let pinchEndTimer = null;
-
-        const clearPinchEndTimer = () => {
-            if (pinchEndTimer) {
-                clearTimeout(pinchEndTimer);
-                pinchEndTimer = null;
-            }
-        };
 
         const onTouchStart = (e) => {
             if (e.touches.length !== 2) {
-                clearPinchEndTimer();
                 if (pinchState) {
                     const stateToFinish = pinchState;
                     pinchState = null;
-                    this._endPinch(stateToFinish, gridArea);
+                    this._endPinch(stateToFinish, gridArea, e.touches.length === 1);
                     this._suppressTouchTooltips(450);
                 }
                 this._isPinching = false;
                 return;
             }
 
-            clearPinchEndTimer();
             if (e.cancelable) e.preventDefault();
+            this._stopPanInertia?.();
             this._isPinching = true;
             this._cleanupTouch();
             this._suppressTouchTooltips(0);
@@ -357,12 +351,16 @@ export const SeatingZoom = {
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
 
+            const hadPriorTransform = Boolean(board.style.transform);
+            const rVisualBefore = hadPriorTransform ? (board.getBoundingClientRect?.() || null) : null;
+
             if (this._zoomAnimCleanup) {
                 this._zoomAnimCleanup();
                 this._zoomAnimCleanup = null;
             }
 
             board.style.removeProperty('transform');
+            board.style.removeProperty('transform-origin');
             board.style.removeProperty('transition');
 
             const t1 = e.touches[0];
@@ -380,13 +378,21 @@ export const SeatingZoom = {
             const boardRect = board.getBoundingClientRect?.() || { left: midX, top: midY, width: 300, height: 300 };
             const bw = boardRect.width > 0 ? boardRect.width : 300;
             const bh = boardRect.height > 0 ? boardRect.height : 300;
-            const originPercentX = Math.round(((midX - boardRect.left) / bw) * 10000) / 100;
-            const originPercentY = Math.round(((midY - boardRect.top) / bh) * 10000) / 100;
+
+            const visualShiftX = (rVisualBefore && rVisualBefore.width > 0 && boardRect.width > 0 && Math.abs(rVisualBefore.width - boardRect.width) <= 4)
+                ? (rVisualBefore.left - boardRect.left)
+                : 0;
+            const visualShiftY = (rVisualBefore && rVisualBefore.height > 0 && boardRect.height > 0 && Math.abs(rVisualBefore.height - boardRect.height) <= 4)
+                ? (rVisualBefore.top - boardRect.top)
+                : 0;
+
+            const originPercentX = Math.round(((midX - (boardRect.left + visualShiftX)) / bw) * 10000) / 100;
+            const originPercentY = Math.round(((midY - (boardRect.top + visualShiftY)) / bh) * 10000) / 100;
 
             const naturalW = board.offsetWidth > 0 ? board.offsetWidth : (bw / startScale);
             const naturalH = board.offsetHeight > 0 ? board.offsetHeight : (bh / startScale);
-            const originCompX = -((originPercentX - 50) / 100) * naturalW * ((1 - startScale) / startScale);
-            const originCompY = -((originPercentY - 50) / 100) * naturalH * ((1 - startScale) / startScale);
+            const originCompX = -((originPercentX - 50) / 100) * naturalW * ((1 - startScale) / startScale) + (visualShiftX / startScale);
+            const originCompY = -((originPercentY - 50) / 100) * naturalH * ((1 - startScale) / startScale) + (visualShiftY / startScale);
 
             pinchState = {
                 startDist: dist,
@@ -399,7 +405,12 @@ export const SeatingZoom = {
                 originPercentY,
                 originCompX,
                 originCompY,
-                boardRect,
+                boardRect: {
+                    left: boardRect.left + visualShiftX,
+                    top: boardRect.top + visualShiftY,
+                    width: boardRect.width,
+                    height: boardRect.height
+                },
                 currentScale: startScale,
                 currentMidX: midX,
                 currentMidY: midY
@@ -475,8 +486,7 @@ export const SeatingZoom = {
 
         const onTouchEnd = (e) => {
             if (!pinchState) {
-                if (this._isPinching && (!e.touches || e.touches.length === 0)) {
-                    clearPinchEndTimer();
+                if (this._isPinching && (!e.touches || e.touches.length < 2)) {
                     this._isPinching = false;
                     this._suppressTouchTooltips(450);
                 }
@@ -489,18 +499,10 @@ export const SeatingZoom = {
                 }
                 const stateToFinish = pinchState;
                 pinchState = null;
-                this._endPinch(stateToFinish, gridArea);
-                clearPinchEndTimer();
-                if (e.touches.length === 0) {
-                    this._isPinching = false;
-                    this._suppressTouchTooltips(450);
-                } else {
-                    pinchEndTimer = setTimeout(() => {
-                        pinchEndTimer = null;
-                        this._isPinching = false;
-                        this._suppressTouchTooltips(400);
-                    }, 200);
-                }
+                const hasRemainingTouch = Boolean(e.touches && e.touches.length === 1);
+                this._endPinch(stateToFinish, gridArea, hasRemainingTouch);
+                this._isPinching = false;
+                this._suppressTouchTooltips(450);
             }
         };
 
@@ -515,6 +517,7 @@ export const SeatingZoom = {
             if (!e.ctrlKey) return;
             e.preventDefault();
             TooltipsUI?.hideAll?.();
+            this._stopPanInertia?.();
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
@@ -580,7 +583,7 @@ export const SeatingZoom = {
         }, { passive: false });
     },
 
-    _endPinch(pinchState, gridArea) {
+    _endPinch(pinchState, gridArea, hasRemainingTouch = false) {
         const board = document.getElementById('scClassroomBoard');
         if (!board) return;
 
@@ -594,7 +597,7 @@ export const SeatingZoom = {
         } else if (Math.abs(currentScale - minScale) / minScale < 0.08) {
             targetScale = minScale;
         } else {
-            targetScale = Math.round(currentScale * 100) / 100;
+            targetScale = Math.round(currentScale * 1000) / 1000;
         }
 
         const isFitted = (Math.abs(targetScale - minScale) < 0.02);
@@ -659,12 +662,18 @@ export const SeatingZoom = {
         }
 
         if (rBefore && rBefore.width > 0) {
+            if (!isFitted && hasRemainingTouch && currentScale >= minScale && currentScale <= maxScale) {
+                const rAfter = board.getBoundingClientRect?.();
+                if (rAfter && rAfter.width > 0 && Math.abs(rBefore.left - rAfter.left) <= 2.5 && Math.abs(rBefore.top - rAfter.top) <= 2.5) {
+                    return;
+                }
+            }
             this._animateFLIPTransition(rBefore);
         }
     },
 
     // ========================================================================
-    // OVERSCROLL EDGE REBOUND (iOS/Android Photo-style elastic bounce)
+    // OVERSCROLL EDGE REBOUND & UNIFIED 1-FINGER PAN
     // ========================================================================
 
     _setupOverscrollBounce(gridArea) {
@@ -680,6 +689,8 @@ export const SeatingZoom = {
         let prevTouchY = 0;
         let prevScrollLeft = 0;
         let prevScrollTop = 0;
+        let virtualScrollLeft = 0;
+        let virtualScrollTop = 0;
         let baseMaxScrollX = 0;
         let baseMaxScrollY = 0;
         let rawExcessX = 0;
@@ -687,17 +698,28 @@ export const SeatingZoom = {
         let lockedAxis = null;
         let isTouching = false;
         let isOverscrolling = false;
+        let isPostPinchPanPending = false;
         let isEdgeSwipe = false;
         let startedOnOverlayControl = false;
         let canSwipeUnlockedEmpty = false;
         let touchBoard = null;
         let currentOverscrollX = 0;
         let currentOverscrollY = 0;
-        let lastTouchEndTime = 0;
-        let releaseScrollLeft = 0;
-        let releaseScrollTop = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+        let lastMoveTime = 0;
+        let panInertiaRaf = null;
+        let lastScrollX = gridArea.scrollLeft;
+        let lastScrollY = gridArea.scrollTop;
+        let lastScrollTime = performance.now();
+        let lastVelocityX = 0;
+        let lastVelocityY = 0;
+        let lastBounceTime = 0;
 
         const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+        const calcImpactBounce = (speed, scaleComp) =>
+            Math.round((Math.min(22, Math.max(7, Math.abs(speed) * 16)) / scaleComp) * 10) / 10;
 
         const getEffectiveMaxScroll = () => {
             if (this._isFitted && gridArea.getAttribute('data-fitted') === 'true') {
@@ -725,23 +747,163 @@ export const SeatingZoom = {
             return val - Math.sign(val) * deadZone;
         };
 
+        const resetOverscrollTracking = () => {
+            isOverscrolling = false;
+            currentOverscrollX = 0;
+            currentOverscrollY = 0;
+            rawExcessX = 0;
+            rawExcessY = 0;
+            lockedAxis = null;
+            velocityX = 0;
+            velocityY = 0;
+        };
+
+        const syncScrollBaseline = (syncMax = true) => {
+            prevScrollLeft = gridArea.scrollLeft;
+            prevScrollTop = gridArea.scrollTop;
+            virtualScrollLeft = prevScrollLeft;
+            virtualScrollTop = prevScrollTop;
+            lastScrollX = prevScrollLeft;
+            lastScrollY = prevScrollTop;
+            lastVelocityX = 0;
+            lastVelocityY = 0;
+            if (syncMax) {
+                const { maxX, maxY } = getEffectiveMaxScroll();
+                baseMaxScrollX = maxX;
+                baseMaxScrollY = maxY;
+            }
+        };
+
+        const beginSingleTouch = (touch, board, postPinch = false) => {
+            touchBoard = board;
+            isTouching = true;
+            isPostPinchPanPending = postPinch;
+            resetOverscrollTracking();
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            prevTouchX = touchStartX;
+            prevTouchY = touchStartY;
+            lastMoveTime = performance.now();
+            syncScrollBaseline(true);
+        };
+
+        const stopPanInertia = () => {
+            if (panInertiaRaf) {
+                cancelAnimationFrame(panInertiaRaf);
+                panInertiaRaf = null;
+            }
+            velocityX = 0;
+            velocityY = 0;
+        };
+        this._stopPanInertia = stopPanInertia;
+
+        const startPanInertia = (initialVx, initialVy) => {
+            stopPanInertia();
+            let vx = initialVx;
+            let vy = initialVy;
+            let prevFrameTime = performance.now();
+
+            const step = () => {
+                if (!this._isActive || this._isPinching || isTouching || this._dragSource || this._touchDragEl || this._isFitted) {
+                    panInertiaRaf = null;
+                    return;
+                }
+                const now = performance.now();
+                const dt = Math.min(32, Math.max(1, now - prevFrameTime));
+                prevFrameTime = now;
+
+                const friction = Math.pow(0.94, dt / 16.67);
+                vx *= friction;
+                vy *= friction;
+
+                const { maxX, maxY } = getEffectiveMaxScroll();
+                let hitEdgeX = 0;
+                let hitEdgeY = 0;
+                const scaleComp = Math.max(1, this._zoomScale || 1);
+
+                if (maxX > 0 && Math.abs(vx) > 0.02) {
+                    const nextX = virtualScrollLeft - vx * dt;
+                    if (nextX <= 0) {
+                        if (virtualScrollLeft > 0.5 && vx > 0.42) {
+                            hitEdgeX = calcImpactBounce(vx, scaleComp);
+                        }
+                        virtualScrollLeft = 0;
+                        gridArea.scrollLeft = 0;
+                        vx = 0;
+                    } else if (nextX >= maxX) {
+                        if (virtualScrollLeft < maxX - 0.5 && vx < -0.42) {
+                            hitEdgeX = -calcImpactBounce(vx, scaleComp);
+                        }
+                        virtualScrollLeft = maxX;
+                        gridArea.scrollLeft = maxX;
+                        vx = 0;
+                    } else {
+                        virtualScrollLeft = nextX;
+                        gridArea.scrollLeft = Math.round(virtualScrollLeft);
+                    }
+                } else {
+                    vx = 0;
+                }
+
+                if (maxY > 0 && Math.abs(vy) > 0.02) {
+                    const nextY = virtualScrollTop - vy * dt;
+                    if (nextY <= 0) {
+                        if (virtualScrollTop > 0.5 && vy > 0.42) {
+                            hitEdgeY = calcImpactBounce(vy, scaleComp);
+                        }
+                        virtualScrollTop = 0;
+                        gridArea.scrollTop = 0;
+                        vy = 0;
+                    } else if (nextY >= maxY) {
+                        if (virtualScrollTop < maxY - 0.5 && vy < -0.42) {
+                            hitEdgeY = -calcImpactBounce(vy, scaleComp);
+                        }
+                        virtualScrollTop = maxY;
+                        gridArea.scrollTop = maxY;
+                        vy = 0;
+                    } else {
+                        virtualScrollTop = nextY;
+                        gridArea.scrollTop = Math.round(virtualScrollTop);
+                    }
+                } else {
+                    vy = 0;
+                }
+
+                prevScrollLeft = gridArea.scrollLeft;
+                prevScrollTop = gridArea.scrollTop;
+                lastScrollX = prevScrollLeft;
+                lastScrollY = prevScrollTop;
+                lastVelocityX = 0;
+                lastVelocityY = 0;
+
+                if (hitEdgeX !== 0 || hitEdgeY !== 0) {
+                    this._triggerEdgeImpactBounce(hitEdgeX, hitEdgeY);
+                }
+
+                if (Math.hypot(vx, vy) < 0.03) {
+                    panInertiaRaf = null;
+                    return;
+                }
+                panInertiaRaf = requestAnimationFrame(step);
+            };
+            panInertiaRaf = requestAnimationFrame(step);
+        };
+
         const onTouchStart = (e) => {
-            if (this._isPinching || e.touches.length !== 1 || this._dragSource || this._touchSourceInfo) {
+            stopPanInertia();
+            if (this._isPinching || e.touches.length !== 1 || this._dragSource || this._touchDragEl) {
                 if (isOverscrolling && !this._isPinching && (!e.touches || e.touches.length < 2)) {
                     this._releaseOverscrollBounce();
                 }
-                isOverscrolling = false;
                 isTouching = false;
-                rawExcessX = 0;
-                rawExcessY = 0;
-                lockedAxis = null;
+                isPostPinchPanPending = false;
                 touchBoard = null;
+                resetOverscrollTracking();
                 return;
             }
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
-            touchBoard = board;
 
             if (this._overscrollApexTimer) {
                 clearTimeout(this._overscrollApexTimer);
@@ -750,50 +912,75 @@ export const SeatingZoom = {
                 board.style.transform = 'translate3d(0, 0, 0)';
             }
 
-            isTouching = true;
-            isOverscrolling = false;
-            currentOverscrollX = 0;
-            currentOverscrollY = 0;
-            rawExcessX = 0;
-            rawExcessY = 0;
-            lockedAxis = null;
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            prevTouchX = touchStartX;
-            prevTouchY = touchStartY;
+            beginSingleTouch(e.touches[0], board, false);
             const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
             isEdgeSwipe = touchStartX < SWIPE_EDGE_GUARD || (viewportW > 0 && touchStartX > viewportW - SWIPE_EDGE_GUARD);
             startedOnOverlayControl = Boolean(
                 e.target?.closest?.('.sc-top-left-bar, .sc-floating-actions, .sc-status-pill, .sc-desk, .sc-mobile-sheet, .sc-onboarding-hint')
             );
             canSwipeUnlockedEmpty = !this._isLocked && (this._getPlacedIds?.().size || 0) === 0;
-            prevScrollLeft = gridArea.scrollLeft;
-            prevScrollTop = gridArea.scrollTop;
-            const { maxX, maxY } = getEffectiveMaxScroll();
-            baseMaxScrollX = maxX;
-            baseMaxScrollY = maxY;
         };
 
         const onTouchMove = (e) => {
-            if (!isTouching || e.touches.length !== 1 || this._dragSource || this._touchSourceInfo) return;
+            if (!isTouching || e.touches.length !== 1 || this._isPinching || this._dragSource || this._touchDragEl) {
+                if (this._touchDragEl) {
+                    isTouching = false;
+                    isPostPinchPanPending = false;
+                }
+                return;
+            }
 
             const board = touchBoard || document.getElementById('scClassroomBoard');
             if (!board) return;
 
             const touch = e.touches[0];
+            const totalMoveX = touch.clientX - touchStartX;
+            const totalMoveY = touch.clientY - touchStartY;
+
+            // If a cell hold timer is still disambiguating drag vs pan (< 6px), wait before scrolling
+            if (this._longPressTimer) {
+                prevTouchX = touch.clientX;
+                prevTouchY = touch.clientY;
+                lastMoveTime = performance.now();
+                return;
+            }
+
+            // If 1 finger remained after lifting the 2nd finger of a pinch, wait for intentional >= 6px slide
+            if (isPostPinchPanPending) {
+                if (Math.hypot(totalMoveX, totalMoveY) < 6) {
+                    prevTouchX = touch.clientX;
+                    prevTouchY = touch.clientY;
+                    lastMoveTime = performance.now();
+                    return;
+                }
+                isPostPinchPanPending = false;
+                if (this._zoomAnimCleanup) {
+                    this._zoomAnimCleanup();
+                    this._zoomAnimCleanup = null;
+                }
+                syncScrollBaseline(true);
+            }
 
             const stepX = touch.clientX - prevTouchX;
             const stepY = touch.clientY - prevTouchY;
-            const dScrollX = gridArea.scrollLeft - prevScrollLeft;
-            const dScrollY = gridArea.scrollTop - prevScrollTop;
+            const extScrollX = gridArea.scrollLeft - prevScrollLeft;
+            const extScrollY = gridArea.scrollTop - prevScrollTop;
+
+            if (Math.abs(extScrollX) > 0.5) virtualScrollLeft = gridArea.scrollLeft;
+            if (Math.abs(extScrollY) > 0.5) virtualScrollTop = gridArea.scrollTop;
 
             prevTouchX = touch.clientX;
             prevTouchY = touch.clientY;
-            prevScrollLeft = gridArea.scrollLeft;
-            prevScrollTop = gridArea.scrollTop;
 
-            const totalMoveX = touch.clientX - touchStartX;
-            const totalMoveY = touch.clientY - touchStartY;
+            const now = performance.now();
+            const dt = now - lastMoveTime;
+            if (dt > 0) {
+                const instVx = stepX / dt;
+                const instVy = stepY / dt;
+                velocityX = velocityX === 0 ? instVx : (velocityX * 0.35 + instVx * 0.65);
+                velocityY = velocityY === 0 ? instVy : (velocityY * 0.35 + instVy * 0.65);
+                lastMoveTime = now;
+            }
 
             if (Math.abs(totalMoveX) > 6 || Math.abs(totalMoveY) > 6) {
                 this._suppressTouchTooltips(400);
@@ -803,10 +990,10 @@ export const SeatingZoom = {
             const maxScrollX = baseMaxScrollX > 0 ? baseMaxScrollX : moveMax.maxX;
             const maxScrollY = baseMaxScrollY > 0 ? baseMaxScrollY : moveMax.maxY;
 
-            const scrollingBackX = (rawExcessX > 0 && (dScrollX > 0.5 || gridArea.scrollLeft > 1.5)) ||
-                                   (rawExcessX < 0 && (dScrollX < -0.5 || gridArea.scrollLeft < maxScrollX - 2));
-            const scrollingBackY = (rawExcessY > 0 && (dScrollY > 0.5 || gridArea.scrollTop > 1.5)) ||
-                                   (rawExcessY < 0 && (dScrollY < -0.5 || gridArea.scrollTop < maxScrollY - 2));
+            const scrollingBackX = (rawExcessX > 0 && (extScrollX > 0.5 || gridArea.scrollLeft > 1.5)) ||
+                                   (rawExcessX < 0 && (extScrollX < -0.5 || gridArea.scrollLeft < maxScrollX - 2));
+            const scrollingBackY = (rawExcessY > 0 && (extScrollY > 0.5 || gridArea.scrollTop > 1.5)) ||
+                                   (rawExcessY < 0 && (extScrollY < -0.5 || gridArea.scrollTop < maxScrollY - 2));
 
             if (scrollingBackX || scrollingBackY) {
                 rawExcessX = 0;
@@ -817,6 +1004,7 @@ export const SeatingZoom = {
                     currentOverscrollY = 0;
                     this._releaseOverscrollBounce();
                 }
+                syncScrollBaseline(false);
                 return;
             }
 
@@ -824,16 +1012,44 @@ export const SeatingZoom = {
                 lockedAxis = Math.abs(totalMoveX) >= Math.abs(totalMoveY) ? 'x' : 'y';
             }
 
+            let dScrollX = extScrollX;
+            let dScrollY = extScrollY;
+            let unabsorbedStepX = stepX;
+            let unabsorbedStepY = stepY;
+
+            if (maxScrollX > 0 && rawExcessX === 0 && Math.abs(extScrollX) <= 0.5) {
+                const nextScrollX = clamp(virtualScrollLeft - stepX, 0, maxScrollX);
+                dScrollX = nextScrollX - virtualScrollLeft;
+                unabsorbedStepX = stepX + dScrollX;
+                virtualScrollLeft = nextScrollX;
+                gridArea.scrollLeft = Math.round(virtualScrollLeft);
+            }
+
+            if (maxScrollY > 0 && rawExcessY === 0 && Math.abs(extScrollY) <= 0.5) {
+                const nextScrollY = clamp(virtualScrollTop - stepY, 0, maxScrollY);
+                dScrollY = nextScrollY - virtualScrollTop;
+                unabsorbedStepY = stepY + dScrollY;
+                virtualScrollTop = nextScrollY;
+                gridArea.scrollTop = Math.round(virtualScrollTop);
+            }
+
             if (maxScrollX > 0) {
-                if (gridArea.scrollLeft <= 1 && stepX > 0 && rawExcessX >= 0 && Math.abs(dScrollY) < 1) {
-                    rawExcessX = clamp(rawExcessX + Math.max(0, stepX + dScrollX), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
-                } else if (gridArea.scrollLeft >= maxScrollX - 1.5 && stepX < 0 && rawExcessX <= 0 && Math.abs(dScrollY) < 1) {
-                    rawExcessX = clamp(rawExcessX + Math.min(0, stepX + dScrollX), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                if (gridArea.scrollLeft <= 1 && unabsorbedStepX > 0 && rawExcessX >= 0 && Math.abs(dScrollY) < 1) {
+                    rawExcessX = clamp(rawExcessX + unabsorbedStepX, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (gridArea.scrollLeft >= maxScrollX - 1.5 && unabsorbedStepX < 0 && rawExcessX <= 0 && Math.abs(dScrollY) < 1) {
+                    rawExcessX = clamp(rawExcessX + unabsorbedStepX, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
                 } else if (rawExcessX !== 0) {
                     const decayX = Math.max(Math.abs(stepX), Math.abs(dScrollX)) * 1.15;
-                    rawExcessX = rawExcessX > 0
-                        ? Math.max(0, rawExcessX - decayX)
-                        : Math.min(0, rawExcessX + decayX);
+                    if (Math.abs(rawExcessX) > decayX) {
+                        rawExcessX = rawExcessX > 0
+                            ? Math.max(0, rawExcessX - decayX)
+                            : Math.min(0, rawExcessX + decayX);
+                    } else {
+                        const leftoverMoveX = stepX + (rawExcessX / 1.15);
+                        rawExcessX = 0;
+                        virtualScrollLeft = clamp(virtualScrollLeft - leftoverMoveX, 0, maxScrollX);
+                        gridArea.scrollLeft = Math.round(virtualScrollLeft);
+                    }
                 }
             } else if (lockedAxis !== 'y' && Math.abs(dScrollY) < 1) {
                 const factorX = (rawExcessX !== 0 && Math.sign(stepX) !== Math.sign(rawExcessX)) ? 1.5 : 1;
@@ -841,20 +1057,34 @@ export const SeatingZoom = {
             }
 
             if (maxScrollY > 0) {
-                if (gridArea.scrollTop <= 1 && stepY > 0 && rawExcessY >= 0 && Math.abs(dScrollX) < 1) {
-                    rawExcessY = clamp(rawExcessY + Math.max(0, stepY + dScrollY), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
-                } else if (gridArea.scrollTop >= maxScrollY - 1.5 && stepY < 0 && rawExcessY <= 0 && Math.abs(dScrollX) < 1) {
-                    rawExcessY = clamp(rawExcessY + Math.min(0, stepY + dScrollY), -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                if (gridArea.scrollTop <= 1 && unabsorbedStepY > 0 && rawExcessY >= 0 && Math.abs(dScrollX) < 1) {
+                    rawExcessY = clamp(rawExcessY + unabsorbedStepY, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                } else if (gridArea.scrollTop >= maxScrollY - 1.5 && unabsorbedStepY < 0 && rawExcessY <= 0 && Math.abs(dScrollX) < 1) {
+                    rawExcessY = clamp(rawExcessY + unabsorbedStepY, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
                 } else if (rawExcessY !== 0) {
                     const decayY = Math.max(Math.abs(stepY), Math.abs(dScrollY)) * 1.15;
-                    rawExcessY = rawExcessY > 0
-                        ? Math.max(0, rawExcessY - decayY)
-                        : Math.min(0, rawExcessY + decayY);
+                    if (Math.abs(rawExcessY) > decayY) {
+                        rawExcessY = rawExcessY > 0
+                            ? Math.max(0, rawExcessY - decayY)
+                            : Math.min(0, rawExcessY + decayY);
+                    } else {
+                        const leftoverMoveY = stepY + (rawExcessY / 1.15);
+                        rawExcessY = 0;
+                        virtualScrollTop = clamp(virtualScrollTop - leftoverMoveY, 0, maxScrollY);
+                        gridArea.scrollTop = Math.round(virtualScrollTop);
+                    }
                 }
             } else if (lockedAxis !== 'x' && Math.abs(dScrollX) < 1) {
                 const factorY = (rawExcessY !== 0 && Math.sign(stepY) !== Math.sign(rawExcessY)) ? 1.5 : 1;
                 rawExcessY = clamp(rawExcessY + stepY * factorY, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
             }
+
+            prevScrollLeft = gridArea.scrollLeft;
+            prevScrollTop = gridArea.scrollTop;
+            lastScrollX = prevScrollLeft;
+            lastScrollY = prevScrollTop;
+            lastVelocityX = 0;
+            lastVelocityY = 0;
 
             if (lockedAxis === 'x') rawExcessY = 0;
             if (lockedAxis === 'y') rawExcessX = 0;
@@ -907,14 +1137,28 @@ export const SeatingZoom = {
                 currentOverscrollY = 0;
                 this._releaseOverscrollBounce();
             }
+
+            if ((maxScrollX > 0 || maxScrollY > 0 || isOverscrolling) && e.cancelable) {
+                e.preventDefault();
+            }
         };
 
         const onTouchEnd = (e) => {
+            // Handoff from 2-finger pinch to 1-finger pan when lifting one finger
+            if (e?.touches && e.touches.length === 1 && !this._isPinching && !this._dragSource && !this._touchDragEl) {
+                const board = document.getElementById('scClassroomBoard');
+                if (board) {
+                    beginSingleTouch(e.touches[0], board, true);
+                    startedOnOverlayControl = true;
+                    canSwipeUnlockedEmpty = false;
+                }
+                return;
+            }
+
             if (!isTouching) return;
             isTouching = false;
-            lastTouchEndTime = performance.now();
-            releaseScrollLeft = gridArea.scrollLeft;
-            releaseScrollTop = gridArea.scrollTop;
+            isPostPinchPanPending = false;
+            const now = performance.now();
 
             const endTouch = e?.changedTouches?.[0];
             const endX = typeof endTouch?.clientX === 'number' ? endTouch.clientX : prevTouchX;
@@ -938,15 +1182,6 @@ export const SeatingZoom = {
             );
             touchBoard = null;
 
-            const clearOverscrollTracking = () => {
-                isOverscrolling = false;
-                currentOverscrollX = 0;
-                currentOverscrollY = 0;
-                rawExcessX = 0;
-                rawExcessY = 0;
-                lockedAxis = null;
-            };
-
             const isHorizontalSwipe = Boolean(
                 canSwipeBase &&
                 Math.abs(totalDx) >= SWIPE_MODE_MIN_DX &&
@@ -957,12 +1192,12 @@ export const SeatingZoom = {
             if (isHorizontalSwipe) {
                 if (totalDx < 0 && rawExcessX < 0) {
                     if (this._isLocked && this._planMode === 'course' && this._canSwitchPlanMode?.('activity')) {
-                        clearOverscrollTracking();
+                        resetOverscrollTracking();
                         this.switchPlanMode('activity');
                         return;
                     }
                 } else if (totalDx > 0 && rawExcessX > 0 && canSwipeView) {
-                    clearOverscrollTracking();
+                    resetOverscrollTracking();
                     if (this._isLocked && this._planMode === 'activity' && this._canSwitchPlanMode?.('course') && this._hasClassCoursePlan?.()) {
                         this.switchPlanMode('course');
                     } else {
@@ -974,29 +1209,26 @@ export const SeatingZoom = {
 
             if (isOverscrolling && (currentOverscrollX !== 0 || currentOverscrollY !== 0)) {
                 this._releaseOverscrollBounce();
+            } else if (
+                e?.type !== 'touchcancel' &&
+                (baseMaxScrollX > 0 || baseMaxScrollY > 0) &&
+                (now - lastMoveTime) < 65 &&
+                Math.hypot(velocityX, velocityY) > 0.18
+            ) {
+                startPanInertia(velocityX, velocityY);
             }
-            isOverscrolling = false;
-            rawExcessX = 0;
-            rawExcessY = 0;
-            lockedAxis = null;
+            resetOverscrollTracking();
         };
 
         gridArea.addEventListener('touchstart', onTouchStart, { passive: true });
-        gridArea.addEventListener('touchmove', onTouchMove, { passive: true });
+        gridArea.addEventListener('touchmove', onTouchMove, { passive: false });
         gridArea.addEventListener('touchend', onTouchEnd, { passive: true });
         gridArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
-        let lastScrollX = gridArea.scrollLeft;
-        let lastScrollY = gridArea.scrollTop;
-        let lastScrollTime = performance.now();
-        let lastVelocityX = 0;
-        let lastVelocityY = 0;
-        let lastBounceTime = 0;
 
         const onScroll = () => {
             TooltipsUI?.hideAll?.();
 
-            if (this._isPinching || isTouching || this._dragSource || this._touchSourceInfo || this._zoomAnimCleanup || this._isFitted) {
+            if (this._isPinching || isTouching || panInertiaRaf || this._dragSource || this._touchSourceInfo || this._zoomAnimCleanup || this._isFitted) {
                 lastScrollX = gridArea.scrollLeft;
                 lastScrollY = gridArea.scrollTop;
                 lastScrollTime = performance.now();
@@ -1016,32 +1248,24 @@ export const SeatingZoom = {
             const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
             const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
 
-            const cooldownElapsed = (now - lastBounceTime) > 380;
-            const traveledSinceReleaseX = Math.abs(currentX - releaseScrollLeft);
-            const traveledSinceReleaseY = Math.abs(currentY - releaseScrollTop);
-            const recentlyReleased = (now - lastTouchEndTime) < 650;
-
-            if (cooldownElapsed) {
+            if ((now - lastBounceTime) > 380) {
                 let hitEdgeX = 0;
                 let hitEdgeY = 0;
 
                 const speedX = currentX < lastScrollX ? Math.min(vx, lastVelocityX) : Math.max(vx, lastVelocityX);
                 const speedY = currentY < lastScrollY ? Math.min(vy, lastVelocityY) : Math.max(vy, lastVelocityY);
-
-                const canBounceX = !recentlyReleased || traveledSinceReleaseX > 36;
-                const canBounceY = !recentlyReleased || traveledSinceReleaseY > 36;
                 const scaleComp = Math.max(1, this._zoomScale || 1);
 
-                if (canBounceX && currentX <= 2 && currentX < lastScrollX && lastScrollX > 0.5 && speedX < -0.42) {
-                    hitEdgeX = Math.round((Math.min(22, Math.max(7, Math.abs(speedX) * 16)) / scaleComp) * 10) / 10;
-                } else if (canBounceX && maxScrollX > 0 && currentX >= maxScrollX - 2.5 && currentX > lastScrollX && lastScrollX < maxScrollX - 0.5 && speedX > 0.42) {
-                    hitEdgeX = -Math.round((Math.min(22, Math.max(7, Math.abs(speedX) * 16)) / scaleComp) * 10) / 10;
+                if (currentX <= 2 && currentX < lastScrollX && lastScrollX > 0.5 && speedX < -0.42) {
+                    hitEdgeX = calcImpactBounce(speedX, scaleComp);
+                } else if (maxScrollX > 0 && currentX >= maxScrollX - 2.5 && currentX > lastScrollX && lastScrollX < maxScrollX - 0.5 && speedX > 0.42) {
+                    hitEdgeX = -calcImpactBounce(speedX, scaleComp);
                 }
 
-                if (canBounceY && currentY <= 2 && currentY < lastScrollY && lastScrollY > 0.5 && speedY < -0.42) {
-                    hitEdgeY = Math.round((Math.min(22, Math.max(7, Math.abs(speedY) * 16)) / scaleComp) * 10) / 10;
-                } else if (canBounceY && maxScrollY > 0 && currentY >= maxScrollY - 2.5 && currentY > lastScrollY && lastScrollY < maxScrollY - 0.5 && speedY > 0.42) {
-                    hitEdgeY = -Math.round((Math.min(22, Math.max(7, Math.abs(speedY) * 16)) / scaleComp) * 10) / 10;
+                if (currentY <= 2 && currentY < lastScrollY && lastScrollY > 0.5 && speedY < -0.42) {
+                    hitEdgeY = calcImpactBounce(speedY, scaleComp);
+                } else if (maxScrollY > 0 && currentY >= maxScrollY - 2.5 && currentY > lastScrollY && lastScrollY < maxScrollY - 0.5 && speedY > 0.42) {
+                    hitEdgeY = -calcImpactBounce(speedY, scaleComp);
                 }
 
                 if (hitEdgeX !== 0 || hitEdgeY !== 0) {

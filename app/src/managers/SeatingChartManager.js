@@ -294,7 +294,7 @@ export const SeatingChartManager = {
         if (this._isLocked) return false;
         if (this._isMousePointerActive) return true;
         if (this._isTouchActive) return false;
-        if (typeof window !== 'undefined' && window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches) {
+        if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse), (hover: none)')?.matches) {
             return false;
         }
         return true;
@@ -320,6 +320,7 @@ export const SeatingChartManager = {
                 this._isMousePointerActive = false;
                 this._lastTouchTime = Date.now();
                 viewEl.setAttribute('data-touch-active', 'true');
+                try { window.getSelection?.()?.removeAllRanges?.(); } catch (_) {}
                 if (!this._isLocked) {
                     this._suppressTouchTooltips(0);
                 }
@@ -333,6 +334,12 @@ export const SeatingChartManager = {
                 }
             }
         }, { capture: true, passive: true });
+
+        viewEl?.addEventListener('selectstart', (e) => {
+            if (!e.target?.closest?.('input, textarea')) {
+                e.preventDefault();
+            }
+        });
 
         viewEl?.addEventListener('contextmenu', (e) => {
             if (!this._isLocked || e.target.closest?.('.sc-student-chip')) {
@@ -5443,7 +5450,9 @@ export const SeatingChartManager = {
                 clearHoldTimer();
                 isScrolling = true;
                 pendingSourceInfo = null;
-                this._cleanupTouch();
+                if (this._touchSourceInfo || this._touchDragEl || this._touchPressedElement) {
+                    this._cleanupTouch();
+                }
                 return;
             }
             if ((!pendingSourceInfo && !this._touchSourceInfo) || this._isLocked || isScrolling || element.classList.contains('pinned')) return;
@@ -5511,8 +5520,10 @@ export const SeatingChartManager = {
 
             if (hasMoved && this._touchDragEl) {
                 if (e.cancelable) e.preventDefault();
-                this._touchDragEl.style.left = `${touch.clientX}px`;
-                this._touchDragEl.style.top = `${touch.clientY}px`;
+                if (touch.clientX > 0 || touch.clientY > 0) {
+                    this._touchDragEl.style.left = `${touch.clientX}px`;
+                    this._touchDragEl.style.top = `${touch.clientY}px`;
+                }
                 this._highlightCellUnderTouch(touch.clientX, touch.clientY);
                 this._updateTouchAutoScroll(touch.clientX, touch.clientY);
             }
@@ -5549,12 +5560,23 @@ export const SeatingChartManager = {
 
         element.addEventListener('touchcancel', () => {
             clearHoldTimer();
-            this._cleanupTouch();
+            this._cleanupTouch({ preserveTouchTimestamp: true });
         });
     },
 
     _createTouchGhost(element, touch) {
         this._removeTouchGhost();
+        let x = Number(touch?.clientX);
+        let y = Number(touch?.clientY);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || (x <= 0 && y <= 0)) {
+            const rect = element?.getBoundingClientRect?.();
+            if (rect && (rect.width > 0 || rect.height > 0)) {
+                x = rect.left + rect.width / 2;
+                y = rect.top + rect.height / 2;
+            } else {
+                return;
+            }
+        }
         const isGroupMember = this._touchSourceInfo?.type === 'group-member' && this._touchSourceInfo.resultId;
         const memberStudent = isGroupMember
             ? (this._studentMap?.get(this._touchSourceInfo.resultId) || this._students?.find(s => s.id === this._touchSourceInfo.resultId) || false)
@@ -5565,8 +5587,8 @@ export const SeatingChartManager = {
             count,
             memberStudent
         });
-        ghost.style.left = `${touch.clientX}px`;
-        ghost.style.top = `${touch.clientY}px`;
+        ghost.style.left = `${x}px`;
+        ghost.style.top = `${y}px`;
         document.body.appendChild(ghost);
         this._touchDragEl = ghost;
     },
@@ -5650,7 +5672,7 @@ export const SeatingChartManager = {
         }
     },
 
-    _cleanupTouch() {
+    _cleanupTouch({ preserveTouchTimestamp = false } = {}) {
         const hadActiveDrag = Boolean(this._touchDragEl || this._touchSourceInfo);
         if (this._longPressTimer) {
             clearTimeout(this._longPressTimer);
@@ -5665,8 +5687,10 @@ export const SeatingChartManager = {
             const el = this._touchPressedElement;
             this._touchPressedElement = null;
             this._isTouchActive = false;
-            this._lastTouchTime = 0;
-            const canDrag = this._isNativeDraggableAllowed() && !el.classList.contains('pinned');
+            if (!preserveTouchTimestamp) {
+                this._lastTouchTime = 0;
+            }
+            const canDrag = !preserveTouchTimestamp && this._isNativeDraggableAllowed() && !el.classList.contains('pinned');
             el.draggable = canDrag;
             el.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
                 memberEl.draggable = canDrag;
@@ -5679,7 +5703,7 @@ export const SeatingChartManager = {
         this._removeTouchGhost();
         this._touchSourceInfo = null;
         this._isTouchActive = false;
-        this._lastTouchTime = 0;
+        this._lastTouchTime = preserveTouchTimestamp ? Date.now() : 0;
         if ((hadActiveDrag || !this._isLocked) && !this._isPinching) {
             this._suppressTouchTooltips(400);
         }

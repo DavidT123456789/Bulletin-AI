@@ -614,14 +614,18 @@ export const SeatingAnimations = {
 
         const startRect = cell.getBoundingClientRect();
         const destRect = sidebar.getBoundingClientRect();
+        const hasSidebarBounds = destRect.width > 0 || destRect.height > 0;
+        const viewRect = !hasSidebarBounds
+            ? (document.getElementById('seatingChartView')?.getBoundingClientRect?.() || { left: 0, top: 0, right: window.innerWidth || 360, bottom: window.innerHeight || 640, width: window.innerWidth || 360, height: window.innerHeight || 640 })
+            : null;
 
         const isMobile = this._isCompactLayout ? this._isCompactLayout() : this._isMobileView();
-        const targetX = isMobile
-            ? destRect.left + destRect.width / 2
-            : destRect.right - 40;
-        const targetY = isMobile
-            ? destRect.top + 35
-            : Math.min(Math.max(startRect.top + startRect.height / 2, destRect.top + 80), destRect.bottom - 60);
+        const targetX = hasSidebarBounds
+            ? (isMobile ? destRect.left + destRect.width / 2 : destRect.right - 40)
+            : (isMobile ? viewRect.left + viewRect.width / 2 : viewRect.left + 80);
+        const targetY = hasSidebarBounds
+            ? (isMobile ? destRect.top + 35 : Math.min(Math.max(startRect.top + startRect.height / 2, destRect.top + 80), destRect.bottom - 60))
+            : (isMobile ? viewRect.bottom - 40 : startRect.top + startRect.height / 2);
 
         const flyer = cell.cloneNode(true);
         flyer.className = `sc-cell occupied sc-flight-token${cell.classList.contains('sc-cell-stacked') ? ' sc-cell-stacked' : ''}`;

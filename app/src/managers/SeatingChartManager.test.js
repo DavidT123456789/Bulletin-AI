@@ -1859,6 +1859,88 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             touchEnd.touches = [];
             gridArea.dispatchEvent(touchEnd);
         });
+
+        it('devrait permettre d’enchaîner un pan à 1 doigt puis un zoom à 2 doigts et inversement sans jamais relâcher le premier doigt', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._fitScale = 0.7;
+            SeatingChartManager._zoomScale = 1.2;
+            SeatingChartManager._isFitted = false;
+            gridArea.setAttribute('data-fitted', 'false');
+
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 900, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 450, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 700, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 350, configurable: true });
+            gridArea.scrollLeft = 100;
+            gridArea.scrollTop = 80;
+
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 50,
+                top: 40,
+                width: 600,
+                height: 450
+            });
+
+            // 1. Pose du 1er doigt et glissement (pan JS direct avec preventDefault pour éviter le verrouillage du scroll natif)
+            const tStart1 = new Event('touchstart', { cancelable: true });
+            tStart1.touches = [{ clientX: 250, clientY: 200 }];
+            gridArea.dispatchEvent(tStart1);
+
+            const tMove1 = new Event('touchmove', { cancelable: true });
+            tMove1.touches = [{ clientX: 210, clientY: 170 }]; // -40px X, -30px Y -> scrollLeft +40, scrollTop +30
+            gridArea.dispatchEvent(tMove1);
+
+            expect(tMove1.defaultPrevented).toBe(true);
+            expect(gridArea.scrollLeft).toBe(140);
+            expect(gridArea.scrollTop).toBe(110);
+
+            // 2. Sans relâcher le 1er doigt, pose du 2e doigt -> passage immédiat en pinch à 2 doigts
+            const tStart2 = new Event('touchstart', { cancelable: true });
+            tStart2.touches = [
+                { clientX: 210, clientY: 170 },
+                { clientX: 310, clientY: 170 } // dist initiale = 100
+            ];
+            gridArea.dispatchEvent(tStart2);
+
+            expect(SeatingChartManager._isPinching).toBe(true);
+
+            // Écartement des 2 doigts (dist = 150 -> ratio 1.5 -> scale = 1.8)
+            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => { cb(); return 1; });
+            const tMovePinch = new Event('touchmove', { cancelable: true });
+            tMovePinch.touches = [
+                { clientX: 185, clientY: 170 },
+                { clientX: 335, clientY: 170 }
+            ];
+            gridArea.dispatchEvent(tMovePinch);
+
+            expect(tMovePinch.defaultPrevented).toBe(true);
+            expect(board.style.transform).toContain('scale(1.5000)');
+
+            // 3. Relâchement du 2e doigt uniquement (le 1er doigt reste posé à 185, 170)
+            const tEndSecondFinger = new Event('touchend', { cancelable: true });
+            tEndSecondFinger.touches = [{ clientX: 185, clientY: 170 }];
+            tEndSecondFinger.changedTouches = [{ clientX: 335, clientY: 170 }];
+            gridArea.dispatchEvent(tEndSecondFinger);
+
+            expect(SeatingChartManager._isPinching).toBe(false);
+            expect(SeatingChartManager._zoomScale).toBe(1.8);
+
+            // 4. Glissement continu avec le 1er doigt resté posé (-10px pour engager le relais post-pinch, puis -30px = -40px au total)
+            const scrollBeforePostPan = gridArea.scrollLeft;
+            const tMovePostPinch1 = new Event('touchmove', { cancelable: true });
+            tMovePostPinch1.touches = [{ clientX: 175, clientY: 170 }];
+            gridArea.dispatchEvent(tMovePostPinch1);
+
+            const tMovePostPinch2 = new Event('touchmove', { cancelable: true });
+            tMovePostPinch2.touches = [{ clientX: 145, clientY: 170 }];
+            gridArea.dispatchEvent(tMovePostPinch2);
+
+            expect(gridArea.scrollLeft).toBe(scrollBeforePostPan + 40);
+
+            rafSpy.mockRestore();
+        });
     });
 
     describe('SeatingChartManager - Mode Édition Mobile & Tap-to-Place (2026 Gold Standard)', () => {
@@ -2063,10 +2145,27 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
                 const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
 
-                // En mode Édition, contextmenu (appui long système ~500ms) est bloqué pour éviter la vibration/menu natif
+                // En mode Édition, contextmenu et selectstart (sélection de texte ULIS / nom) sont bloqués
                 const ctxEdit = new Event('contextmenu', { bubbles: true, cancelable: true });
                 cell.dispatchEvent(ctxEdit);
                 expect(ctxEdit.defaultPrevented).toBe(true);
+
+                const selStart = new Event('selectstart', { bubbles: true, cancelable: true });
+                cell.dispatchEvent(selStart);
+                expect(selStart.defaultPrevented).toBe(true);
+
+                // Un touchcancel suivi d'un dragstart tardif à (0, 0) ne doit jamais monter de clone en haut à gauche
+                const tsCancel = new Event('touchstart');
+                tsCancel.touches = [{ clientX: 120, clientY: 140 }];
+                cell.dispatchEvent(tsCancel);
+                cell.dispatchEvent(new Event('touchcancel'));
+                const lateDragAfterCancel = new Event('dragstart', { cancelable: true });
+                lateDragAfterCancel.clientX = 0;
+                lateDragAfterCancel.clientY = 0;
+                cell.dispatchEvent(lateDragAfterCancel);
+                expect(lateDragAfterCancel.defaultPrevented).toBe(true);
+                expect(document.querySelector('.sc-drag-clone')).toBeNull();
+                vi.advanceTimersByTime(900);
 
                 // 1. Cas A : Glissement immédiat sur une table du plateau ajusté (_isFitted = true) -> aucune vibration, drag HTML5 natif désarmé
                 const ts = new Event('touchstart');

@@ -1607,25 +1607,41 @@
     box-shadow: none;
 }
 
-/* Prevent native image drag + unify grab zone */
+/* Prevent native image drag, text selection & touch callout + unify grab zone */
 .sc-cell .student-avatar,
 .sc-cell .sc-cell-name,
+.sc-cell .sc-cell-status-badge,
+.sc-cell .sc-station-badge,
+.sc-cell .sc-stacked-group-tag,
 .sc-cell .sc-evolution-dot,
 .sc-student-chip .student-avatar,
-.sc-student-chip .sc-student-chip-name {
+.sc-student-chip .sc-student-chip-name,
+.sc-student-chip .sc-chip-badge {
     pointer-events: none;
     -webkit-user-drag: none;
     user-select: none;
+    -webkit-user-select: none;
 }
 
+#seatingChartView,
 #seatingChartView .sc-cell,
+#seatingChartView .sc-cell *,
 #seatingChartView .sc-student-chip,
+#seatingChartView .sc-student-chip *,
 #seatingChartView .sc-stacked-avatar,
 #seatingChartView .sc-stacked-member {
+    user-select: none;
+    -webkit-user-select: none;
     -webkit-touch-callout: none;
 }
 
-@media (hover: none) and (pointer: coarse) {
+#seatingChartView input,
+#seatingChartView textarea {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+@media (pointer: coarse), (hover: none) {
     #seatingChartView .sc-cell.occupied,
     #seatingChartView .sc-student-chip,
     #seatingChartView .sc-stacked-avatar,
@@ -1665,7 +1681,7 @@
 }
 
 .sc-touch-ghost {
-    --sc-ghost-y: -85%;
+    --sc-ghost-y: -112%;
     z-index: 9999 !important;
 }
 
