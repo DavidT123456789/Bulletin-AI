@@ -295,6 +295,24 @@ export const SeatingChartManager = {
             if (e.pointerType === 'mouse') {
                 this._isTouchActive = false;
                 this._lastTouchTime = 0;
+                const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
+                if (dragTarget && !this._isLocked && !dragTarget.classList.contains('pinned')) {
+                    dragTarget.draggable = true;
+                    dragTarget.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+                        el.draggable = true;
+                    });
+                }
+            } else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                this._isTouchActive = true;
+                this._lastTouchTime = Date.now();
+                const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
+                if (dragTarget && !this._isLocked) {
+                    this._touchPressedElement = dragTarget;
+                    dragTarget.draggable = false;
+                    dragTarget.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+                        el.draggable = false;
+                    });
+                }
             }
         }, { capture: true, passive: true });
 
@@ -5313,6 +5331,7 @@ export const SeatingChartManager = {
             }
             clearHoldTimer();
             hasMoved = true;
+            this._haptic(18);
             this._touchSourceInfo = pendingSourceInfo;
             this._touchDraggedElement = element;
             if (pendingSourceInfo.type === 'group-member' && pendingSourceInfo.resultId) {
@@ -5323,7 +5342,6 @@ export const SeatingChartManager = {
                 element.classList.add('dragging');
             }
             this._suppressTouchTooltips(0);
-            this._haptic(18);
             if (pendingSourceInfo.resultId && !this._selectedChipIds.includes(pendingSourceInfo.resultId)) {
                 this._clearSelection();
             }
@@ -5385,12 +5403,13 @@ export const SeatingChartManager = {
             }
             pendingSourceInfo = activeSourceInfo;
 
-            // Unified touch hold affordance (200ms hold lifts the card with haptic feedback in any direction)
+            // Unified touch hold affordance (snappy 115ms on fitted board cells, 140ms on scrollable sidebar/zoomed board)
             clearHoldTimer();
+            const holdDelay = (activeSourceInfo.type !== 'sidebar' && this._isFitted) ? 115 : 140;
             longPressTimer = setTimeout(() => {
                 this._longPressTimer = null;
                 engageTouchDrag({ clientX: lastTouchX, clientY: lastTouchY });
-            }, 200);
+            }, holdDelay);
             this._longPressTimer = longPressTimer;
         }, { passive: true });
 
@@ -5423,8 +5442,8 @@ export const SeatingChartManager = {
                             return;
                         }
 
-                        // Vertical motion pulling upward toward the board: engage unified drag immediately
-                        if (dy < -10 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                        // Vertical motion pulling upward toward the board: engage unified drag on first upward move
+                        if (dy < -5 && Math.abs(dy) > Math.abs(dx) * 1.1) {
                             engageTouchDrag(touch);
                         }
                     } else {
@@ -5437,15 +5456,15 @@ export const SeatingChartManager = {
                             return;
                         }
 
-                        // Horizontal motion pulling rightward toward the board: engage unified drag immediately
-                        if (dx > 10 && Math.abs(dx) > Math.abs(dy) * 1.1) {
+                        // Horizontal motion pulling rightward toward the board: engage unified drag on first rightward move
+                        if (dx > 5 && Math.abs(dx) > Math.abs(dy) * 1.1) {
                             engageTouchDrag(touch);
                         }
                     }
                 } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member') {
                     if (this._isFitted) {
-                        // On fitted board (no pan/scroll): sliding finger > 8px immediately engages unified drag
-                        if (Math.hypot(dx, dy) > 8) {
+                        // On fitted board (no pan/scroll): OS touch slop already filtered micro-jitter, engage on first move (> 3px)
+                        if (Math.hypot(dx, dy) > 3) {
                             engageTouchDrag(touch);
                         }
                     } else if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {

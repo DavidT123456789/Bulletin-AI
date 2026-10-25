@@ -2075,10 +2075,10 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(nativeDragStart.defaultPrevented).toBe(true);
                 expect(document.querySelector('.sc-drag-clone')).toBeNull();
 
-                // Mouvement de 12px à t = 60ms -> engage immédiatement l'état unique de drag tactile
-                vi.advanceTimersByTime(60);
+                // Mouvement de 4px (> 3px) à t = 30ms -> engage dès la 1ère frame de glissement l'état unique de drag tactile
+                vi.advanceTimersByTime(30);
                 const tm = new Event('touchmove', { cancelable: true });
-                tm.touches = [{ clientX: 112, clientY: 100 }];
+                tm.touches = [{ clientX: 104, clientY: 100 }];
                 cell.dispatchEvent(tm);
 
                 const ghost = document.querySelector('.sc-touch-ghost');
@@ -2088,27 +2088,27 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(hapticSpy).toHaveBeenCalledTimes(1);
                 expect(hapticSpy).toHaveBeenCalledWith(18);
 
-                // Franchissement du délai de maintien (200ms) pendant le déplacement : aucun second état ni seconde vibration
-                vi.advanceTimersByTime(250);
+                // Franchissement du délai de maintien (115ms) pendant le déplacement : aucun second état ni seconde vibration
+                vi.advanceTimersByTime(150);
                 expect(hapticSpy).toHaveBeenCalledTimes(1);
                 expect(document.querySelectorAll('.sc-touch-ghost').length).toBe(1);
 
                 const te = new Event('touchend', { cancelable: true });
                 te.touches = [];
-                te.changedTouches = [{ clientX: 112, clientY: 100 }];
+                te.changedTouches = [{ clientX: 104, clientY: 100 }];
                 cell.dispatchEvent(te);
 
                 expect(document.querySelector('.sc-touch-ghost')).toBeNull(); vi.advanceTimersByTime(400);
                 expect(cell.classList.contains('dragging')).toBe(false);
                 expect(cell.draggable).toBe(true);
 
-                // 2. Cas B : Maintien sur place (200ms) avant de bouger -> produit exactement le même état et la même échelle
+                // 2. Cas B : Maintien sur place (115ms) avant de bouger -> produit exactement le même état et la même échelle
                 hapticSpy.mockClear();
                 const tsHold = new Event('touchstart');
                 tsHold.touches = [{ clientX: 100, clientY: 100 }];
                 cell.dispatchEvent(tsHold);
 
-                vi.advanceTimersByTime(200);
+                vi.advanceTimersByTime(115);
                 const ghostHold = document.querySelector('.sc-touch-ghost');
                 expect(ghostHold).not.toBeNull();
                 expect(ghostHold.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
