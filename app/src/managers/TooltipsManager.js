@@ -40,13 +40,23 @@ const getCommonTippyConfig = () => {
             strategy: 'fixed'
         },
         onTrigger(instance, event) {
-            if (ModalUI._isIgnoringTooltips || (event?.touches && event.touches.length > 1)) {
+            const isEditSeatingCardTouch = event?.type?.startsWith('touch') &&
+                instance.reference?.closest?.('#seatingChartView[data-locked="false"]') &&
+                instance.reference?.matches?.('.sc-cell, .sc-stacked-avatar, .sc-stacked-member, .sc-student-chip');
+            if (ModalUI._isIgnoringTooltips || (event?.touches && event.touches.length > 1) || isEditSeatingCardTouch) {
                 instance.hide?.();
             }
         },
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
             if (ModalUI._isIgnoringTooltips) return false;
+            // En mode Édition tactile du plan de classe, ne jamais afficher le tooltip d'appui long sur les étiquettes élèves
+            if (
+                instance.reference?.closest?.('#seatingChartView[data-locked="false"][data-touch-active="true"]') &&
+                instance.reference?.matches?.('.sc-cell, .sc-stacked-avatar, .sc-stacked-member, .sc-student-chip')
+            ) {
+                return false;
+            }
             // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
             // Prevent parent tooltip from showing if a child [data-tooltip] is currently hovered

@@ -2049,7 +2049,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._removeDragClones();
         });
 
-        it('devrait harmoniser le drag tactile en un état unique (désarmement du drag HTML5 natif, échelle --sc-drag-scale alignée sur le plateau, et 1 seule vibration que le geste parte en glissement immédiat ou en maintien)', () => {
+        it('devrait harmoniser le drag tactile en un état unique sans vibration parasite ni débordement de l’appui long du mode lecture (draggable désarmé, contextmenu bloqué en édition, échelle --sc-drag-scale alignée)', () => {
             vi.useFakeTimers();
             try {
                 SeatingChartManager._isFitted = true;
@@ -2063,21 +2063,24 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
                 const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
 
-                // 1. Cas A : Glissement immédiat sur une table du plateau ajusté (_isFitted = true) -> vibration immédiate à 0ms dès touchstart
+                // En mode Édition, contextmenu (appui long système ~500ms) est bloqué pour éviter la vibration/menu natif
+                const ctxEdit = new Event('contextmenu', { bubbles: true, cancelable: true });
+                cell.dispatchEvent(ctxEdit);
+                expect(ctxEdit.defaultPrevented).toBe(true);
+
+                // 1. Cas A : Glissement immédiat sur une table du plateau ajusté (_isFitted = true) -> aucune vibration, drag HTML5 natif désarmé
                 const ts = new Event('touchstart');
                 ts.touches = [{ clientX: 100, clientY: 100 }];
                 cell.dispatchEvent(ts);
 
-                // La vibration haptique se déclenche instantanément (0ms) au contact du doigt et le drag HTML5 natif est désarmé
-                expect(hapticSpy).toHaveBeenCalledTimes(1);
-                expect(hapticSpy).toHaveBeenCalledWith(18);
+                expect(hapticSpy).not.toHaveBeenCalled();
                 expect(cell.draggable).toBe(false);
                 const nativeDragStart = new Event('dragstart', { cancelable: true });
                 cell.dispatchEvent(nativeDragStart);
                 expect(nativeDragStart.defaultPrevented).toBe(true);
                 expect(document.querySelector('.sc-drag-clone')).toBeNull();
 
-                // Mouvement dès la 1ère frame (2px) -> engage le fantôme visuel sans seconde vibration retardée
+                // Mouvement dès la 1ère frame (2px) -> engage le fantôme visuel sans vibration
                 vi.advanceTimersByTime(16);
                 const tm = new Event('touchmove', { cancelable: true });
                 tm.touches = [{ clientX: 102, clientY: 100 }];
@@ -2087,11 +2090,11 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(ghost).not.toBeNull();
                 expect(ghost.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
                 expect(cell.classList.contains('dragging')).toBe(true);
-                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(hapticSpy).not.toHaveBeenCalled();
 
-                // Franchissement du délai de maintien (115ms) pendant le déplacement : aucun second état ni seconde vibration
-                vi.advanceTimersByTime(150);
-                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                // Franchissement du délai de maintien pendant le déplacement : aucun second état ni vibration
+                vi.advanceTimersByTime(500);
+                expect(hapticSpy).not.toHaveBeenCalled();
                 expect(document.querySelectorAll('.sc-touch-ghost').length).toBe(1);
 
                 const te = new Event('touchend', { cancelable: true });
@@ -2099,25 +2102,24 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 te.changedTouches = [{ clientX: 112, clientY: 100 }];
                 cell.dispatchEvent(te);
 
-                expect(document.querySelector('.sc-touch-ghost')).toBeNull(); vi.advanceTimersByTime(400);
+                expect(document.querySelector('.sc-touch-ghost')).toBeNull();
+                vi.advanceTimersByTime(400);
                 expect(cell.classList.contains('dragging')).toBe(false);
                 expect(cell.draggable).toBe(true);
 
-                // 2. Cas B : Maintien sur place avant de bouger -> la vibration a eu lieu dès 0ms, et le fantôme apparaît sans re-vibrer à retardement
+                // 2. Cas B : Maintien sur place avant de bouger -> le fantôme apparaît sans aucune vibration
                 hapticSpy.mockClear();
                 const tsHold = new Event('touchstart');
                 tsHold.touches = [{ clientX: 100, clientY: 100 }];
                 cell.dispatchEvent(tsHold);
-                expect(hapticSpy).toHaveBeenCalledTimes(1);
-                expect(hapticSpy).toHaveBeenCalledWith(18);
+                expect(hapticSpy).not.toHaveBeenCalled();
 
                 vi.advanceTimersByTime(115);
                 const ghostHold = document.querySelector('.sc-touch-ghost');
                 expect(ghostHold).not.toBeNull();
                 expect(ghostHold.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
                 expect(cell.classList.contains('dragging')).toBe(true);
-                expect(hapticSpy).toHaveBeenCalledTimes(1);
-                expect(hapticSpy).toHaveBeenCalledWith(18);
+                expect(hapticSpy).not.toHaveBeenCalled();
 
                 const teHold = new Event('touchend', { cancelable: true });
                 teHold.touches = [];

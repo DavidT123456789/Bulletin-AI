@@ -290,11 +290,24 @@ export const SeatingChartManager = {
     // EVENT LISTENERS
     // ========================================================================
 
+    _isNativeDraggableAllowed() {
+        if (this._isLocked) return false;
+        if (this._isMousePointerActive) return true;
+        if (this._isTouchActive) return false;
+        if (typeof window !== 'undefined' && window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches) {
+            return false;
+        }
+        return true;
+    },
+
     _setupEventListeners() {
-        document.getElementById('seatingChartView')?.addEventListener('pointerdown', (e) => {
+        const viewEl = document.getElementById('seatingChartView');
+        viewEl?.addEventListener('pointerdown', (e) => {
             if (e.pointerType === 'mouse') {
                 this._isTouchActive = false;
+                this._isMousePointerActive = true;
                 this._lastTouchTime = 0;
+                viewEl.removeAttribute('data-touch-active');
                 const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                 if (dragTarget && !this._isLocked && !dragTarget.classList.contains('pinned')) {
                     dragTarget.draggable = true;
@@ -304,7 +317,12 @@ export const SeatingChartManager = {
                 }
             } else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                 this._isTouchActive = true;
+                this._isMousePointerActive = false;
                 this._lastTouchTime = Date.now();
+                viewEl.setAttribute('data-touch-active', 'true');
+                if (!this._isLocked) {
+                    this._suppressTouchTooltips(0);
+                }
                 const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                 if (dragTarget && !this._isLocked) {
                     this._touchPressedElement = dragTarget;
@@ -315,6 +333,12 @@ export const SeatingChartManager = {
                 }
             }
         }, { capture: true, passive: true });
+
+        viewEl?.addEventListener('contextmenu', (e) => {
+            if (!this._isLocked || e.target.closest?.('.sc-student-chip')) {
+                e.preventDefault();
+            }
+        });
 
         document.getElementById('scPlanModeSwitch')?.addEventListener('click', (e) => {
             const tab = e.target.closest('.sc-mode-tab');
@@ -1295,7 +1319,6 @@ export const SeatingChartManager = {
         this._savePositionsToState();
         this._render();
         this._animateCellSwap(r1, c1, r2, c2);
-        this._haptic([12, 40, 12]);
     },
 
     _notifyGroupFull(row, col) {
@@ -1362,7 +1385,6 @@ export const SeatingChartManager = {
         this._savePositionsToState();
         this._render();
         this._animateCellPlaced(row, col);
-        this._haptic(15);
         return true;
     },
 
@@ -2825,7 +2847,7 @@ export const SeatingChartManager = {
     _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
-            const canDrag = !this._isLocked && !isPinned;
+            const canDrag = this._isNativeDraggableAllowed() && !isPinned;
             cell.draggable = canDrag;
             cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
                 el.draggable = canDrag;
@@ -4053,7 +4075,7 @@ export const SeatingChartManager = {
             }
             if (badgeInfo) cell.classList.add('has-status-badge');
             if (isPinned) cell.classList.add('pinned');
-            cell.draggable = !this._isLocked && !isPinned;
+            cell.draggable = this._isNativeDraggableAllowed() && !isPinned;
 
             const classInfo = this._getStudentContextualClassInfo(student);
             const tooltipText = this._getStudentTooltipText(student, undefined, classInfo);
@@ -4150,11 +4172,10 @@ export const SeatingChartManager = {
             cell.classList.add('occupied', 'sc-cell-stacked');
             if (allDeparted) cell.classList.add('sc-cell-departed');
             if (isPinned) cell.classList.add('pinned');
-            cell.draggable = !this._isLocked && !isPinned;
+            const canExtractMember = this._isNativeDraggableAllowed() && !isPinned;
+            cell.draggable = canExtractMember;
             cell.dataset.resultId = students[0].id;
             cell.dataset.groupSize = String(students.length);
-
-            const canExtractMember = !this._isLocked && !isPinned;
             const avatarsHtml = membersMeta.map(({ student: s, isDeparted: isMemberDeparted, tooltip }, idx) => {
                 const memberBadge = this._getStudentStatusBadgeInfo(s);
                 const memberDotHtml = memberBadge
@@ -4513,8 +4534,9 @@ export const SeatingChartManager = {
                 const chipBadgeHtml = badgeInfo
                     ? `<span class="sc-chip-badge sc-chip-badge-${badgeInfo.type}">${Utils.escapeHtml(chipBadgeLabel)}</span>`
                     : '';
+                const canDragChip = this._isNativeDraggableAllowed();
                 return `
-                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
+                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="${canDragChip}" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                     ${chipBadgeHtml}
@@ -4533,7 +4555,7 @@ export const SeatingChartManager = {
                 </div>
                 <div class="sc-sidebar-departed-list">
                     ${filteredDeparted.map(s => `
-                        <div class="sc-student-chip sc-chip-departed" draggable="true" data-result-id="${s.id}">
+                        <div class="sc-student-chip sc-chip-departed" draggable="${this._isNativeDraggableAllowed()}" data-result-id="${s.id}">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
@@ -5125,7 +5147,6 @@ export const SeatingChartManager = {
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
-        this._haptic(isSwap ? [12, 40, 12] : 15);
 
         if (type === 'sidebar' || type === 'group-member') {
             this._animateCellPlaced(targetRow, targetCol);
@@ -5151,7 +5172,6 @@ export const SeatingChartManager = {
         this._setCellStudentIds(row, col, remainingIds);
         this._savePositionsToState();
         this._renderGrid();
-        this._haptic(12);
         this._renderSidebar(studentId);
         this._updateFooter();
         this._updateSidebarLockState();
@@ -5170,7 +5190,6 @@ export const SeatingChartManager = {
             this._gridState[row][col] = null;
             this._savePositionsToState();
             this._renderGrid();
-            this._haptic(12);
             this._renderSidebar(primaryRemovedId);
             this._updateFooter();
             this._updateSidebarLockState();
@@ -5205,7 +5224,7 @@ export const SeatingChartManager = {
             return;
         }
         cell.classList.toggle('pinned', Boolean(isPinned));
-        const canDrag = !this._isLocked && !isPinned;
+        const canDrag = this._isNativeDraggableAllowed() && !isPinned;
         cell.draggable = canDrag;
         cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
             el.draggable = canDrag;
@@ -5309,7 +5328,7 @@ export const SeatingChartManager = {
     },
 
     _addTouchDrag(element, sourceInfo) {
-        let startX, startY, lastTouchX, lastTouchY, hasMoved = false, hasDragged = false, hasVibrated = false;
+        let startX, startY, lastTouchX, lastTouchY, hasMoved = false, hasDragged = false;
         let isScrolling = false;
         let longPressTimer = null;
         let pendingSourceInfo = null;
@@ -5331,10 +5350,6 @@ export const SeatingChartManager = {
             }
             clearHoldTimer();
             hasMoved = true;
-            if (!hasVibrated) {
-                hasVibrated = true;
-                this._haptic(18);
-            }
             this._touchSourceInfo = pendingSourceInfo;
             this._touchDraggedElement = element;
             if (pendingSourceInfo.type === 'group-member' && pendingSourceInfo.resultId) {
@@ -5355,7 +5370,12 @@ export const SeatingChartManager = {
 
         element.addEventListener('touchstart', (e) => {
             this._isTouchActive = true;
+            this._isMousePointerActive = false;
             this._lastTouchTime = Date.now();
+            document.getElementById('seatingChartView')?.setAttribute('data-touch-active', 'true');
+            if (!this._isLocked) {
+                this._suppressTouchTooltips(0);
+            }
             if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove')) {
                 clearHoldTimer();
                 pendingSourceInfo = null;
@@ -5369,11 +5389,7 @@ export const SeatingChartManager = {
             lastTouchY = startY;
             hasMoved = false;
             hasDragged = false;
-            hasVibrated = true;
             isScrolling = false;
-
-            // Instantaneous 0ms haptic feedback on finger contact (guaranteed user activation & zero hold lag)
-            this._haptic(18);
 
             // Disarm native HTML5 touch drag during finger interaction so only the unified touch ghost is used
             this._touchPressedElement = element;
@@ -5648,7 +5664,9 @@ export const SeatingChartManager = {
         if (this._touchPressedElement) {
             const el = this._touchPressedElement;
             this._touchPressedElement = null;
-            const canDrag = !this._isLocked && !el.classList.contains('pinned');
+            this._isTouchActive = false;
+            this._lastTouchTime = 0;
+            const canDrag = this._isNativeDraggableAllowed() && !el.classList.contains('pinned');
             el.draggable = canDrag;
             el.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
                 memberEl.draggable = canDrag;
@@ -5662,7 +5680,7 @@ export const SeatingChartManager = {
         this._touchSourceInfo = null;
         this._isTouchActive = false;
         this._lastTouchTime = 0;
-        if (hadActiveDrag && !this._isPinching) {
+        if ((hadActiveDrag || !this._isLocked) && !this._isPinching) {
             this._suppressTouchTooltips(400);
         }
         document.body.classList.remove('sc-drag-over-sidebar');
@@ -5771,7 +5789,6 @@ export const SeatingChartManager = {
                 this._gridState[row][col] = null;
                 this._savePositionsToState();
                 this._renderGrid();
-                this._haptic(12);
                 this._renderSidebar(resultId || removedIds[0]);
                 this._updateFooter();
                 this._updateSidebarLockState();
@@ -5804,7 +5821,6 @@ export const SeatingChartManager = {
             setTimeout(() => {
                 this._savePositionsToState();
                 this._renderGrid();
-                this._haptic(15);
                 this._renderSidebar();
                 this._updateFooter();
                 this._updateSidebarLockState();
