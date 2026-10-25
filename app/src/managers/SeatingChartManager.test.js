@@ -2206,6 +2206,28 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(cell.classList.contains('dragging')).toBe(false);
                 expect(cell.draggable).toBe(true);
 
+                // Vérifie que _getCellUnderPoint cible le centre visuel de la carte surélevée (.sc-touch-ghost) plutôt que le point caché sous le doigt
+                const targetDesk = document.querySelector('.sc-cell[data-row="0"][data-col="1"]');
+                const origElementsFromPoint = document.elementsFromPoint;
+                document.elementsFromPoint = vi.fn((px, py) => {
+                    // Le centre du fantôme surélevé est à (200, 68), alors que le doigt est plus bas à (200, 100)
+                    if (Math.abs(px - 200) < 5 && Math.abs(py - 68) < 5) return [targetDesk];
+                    return [];
+                });
+                try {
+                    SeatingChartManager._createTouchGhost(cell, { clientX: 200, clientY: 100 });
+                    vi.spyOn(SeatingChartManager._touchDragEl, 'getBoundingClientRect').mockReturnValue({
+                        left: 156,
+                        top: 20,
+                        width: 88,
+                        height: 96
+                    });
+                    expect(SeatingChartManager._getCellUnderPoint(200, 100)).toBe(targetDesk);
+                } finally {
+                    SeatingChartManager._removeTouchGhost();
+                    document.elementsFromPoint = origElementsFromPoint;
+                }
+
                 // 2. Cas B : Maintien sur place avant de bouger -> le fantôme apparaît sans aucune vibration
                 hapticSpy.mockClear();
                 const tsHold = new Event('touchstart');

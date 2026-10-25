@@ -5461,7 +5461,7 @@ export const SeatingChartManager = {
             lastTouchY = touch.clientY;
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
-            if (Math.hypot(dx, dy) > 4) {
+            if (Math.hypot(dx, dy) > 5) {
                 hasDragged = true;
             }
 
@@ -5502,9 +5502,8 @@ export const SeatingChartManager = {
                     }
                 } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member') {
                     if (this._isFitted) {
-                        // On fitted board (no pan/scroll): engage immediately on the very first touchmove frame
+                        // On fitted board (no pan/scroll): engage visual ghost immediately on first touchmove frame
                         if (Math.hypot(dx, dy) >= 1) {
-                            hasDragged = true;
                             engageTouchDrag(touch);
                         }
                     } else if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
@@ -5524,8 +5523,10 @@ export const SeatingChartManager = {
                     this._touchDragEl.style.left = `${touch.clientX}px`;
                     this._touchDragEl.style.top = `${touch.clientY}px`;
                 }
-                this._highlightCellUnderTouch(touch.clientX, touch.clientY);
-                this._updateTouchAutoScroll(touch.clientX, touch.clientY);
+                if (hasDragged) {
+                    this._highlightCellUnderTouch(touch.clientX, touch.clientY);
+                    this._updateTouchAutoScroll(touch.clientX, touch.clientY);
+                }
             }
         }, { passive: false });
 
@@ -5745,6 +5746,15 @@ export const SeatingChartManager = {
     },
 
     _getCellUnderPoint(x, y) {
+        if (this._touchDragEl) {
+            const ghostRect = this._touchDragEl.getBoundingClientRect?.();
+            if (ghostRect && ghostRect.width > 0 && ghostRect.height > 0) {
+                const centerX = ghostRect.left + ghostRect.width / 2;
+                const centerY = ghostRect.top + ghostRect.height / 2;
+                const cellUnderGhost = (document.elementsFromPoint?.(centerX, centerY) || []).find(el => el.classList.contains('sc-cell'));
+                if (cellUnderGhost) return cellUnderGhost;
+            }
+        }
         return (document.elementsFromPoint?.(x, y) || []).find(el => el.classList.contains('sc-cell')) || null;
     },
 
@@ -5790,6 +5800,7 @@ export const SeatingChartManager = {
     },
 
     _isTouchOverSidebar(x, y) {
+        if (this._touchSourceInfo?.type === 'sidebar') return false;
         return (document.elementsFromPoint?.(x, y) || []).some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
     },
 

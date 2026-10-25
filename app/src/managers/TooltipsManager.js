@@ -40,16 +40,19 @@ const getCommonTippyConfig = () => {
             strategy: 'fixed'
         },
         onTrigger(instance, event) {
-            const isEditSeatingCardTouch = event?.type?.startsWith('touch') &&
+            const isEditSeatingCardTouch = Boolean(
+                event?.type?.startsWith('touch') &&
                 instance.reference?.closest?.('#seatingChartView[data-locked="false"]') &&
-                instance.reference?.matches?.('.sc-cell, .sc-stacked-avatar, .sc-stacked-member, .sc-student-chip');
+                instance.reference?.matches?.('.sc-cell, .sc-stacked-avatar, .sc-stacked-member, .sc-student-chip')
+            );
+            instance._blockedByEditTouch = isEditSeatingCardTouch;
             if (ModalUI._isIgnoringTooltips || (event?.touches && event.touches.length > 1) || isEditSeatingCardTouch) {
                 instance.hide?.();
             }
         },
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
-            if (ModalUI._isIgnoringTooltips) return false;
+            if (ModalUI._isIgnoringTooltips || instance._blockedByEditTouch) return false;
             // En mode Édition tactile du plan de classe, ne jamais afficher le tooltip d'appui long sur les étiquettes élèves
             if (
                 instance.reference?.closest?.('#seatingChartView[data-locked="false"][data-touch-active="true"]') &&

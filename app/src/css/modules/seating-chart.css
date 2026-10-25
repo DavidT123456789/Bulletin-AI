@@ -1660,7 +1660,7 @@
 /* Unified floating drag clone (.sc-drag-clone mouse / .sc-touch-ghost touch) */
 .sc-drag-clone,
 .sc-touch-ghost {
-    --sc-ghost-y: -50%;
+    --sc-ghost-lift: 0%;
     position: fixed !important;
     z-index: 10000 !important;
     pointer-events: none !important;
@@ -1675,13 +1675,13 @@
     box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
     opacity: 1 !important;
     border: 1.5px solid var(--highlight-standard-border) !important;
-    transform: translate(-50%, var(--sc-ghost-y)) scale(calc(var(--sc-drag-scale, 1) * 1.05)) !important;
+    transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 1.05)) translateY(var(--sc-ghost-lift)) !important;
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     overflow: visible !important;
 }
 
 .sc-touch-ghost {
-    --sc-ghost-y: -112%;
+    --sc-ghost-lift: -32%;
     z-index: 9999 !important;
 }
 
@@ -1698,7 +1698,7 @@ body:has(#scSidebar.drag-over) .sc-drag-clone,
 body.sc-drag-over-sidebar .sc-touch-ghost,
 body:has(#scSidebar.drag-over) .sc-touch-ghost {
     opacity: 0.22 !important;
-    transform: translate(-50%, var(--sc-ghost-y)) scale(calc(var(--sc-drag-scale, 1) * 0.82)) !important;
+    transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 0.82)) translateY(var(--sc-ghost-lift)) !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
 }
 
