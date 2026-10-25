@@ -44,6 +44,11 @@ export const SeatingChartManager = {
     _dragSource: null,
     _touchDragEl: null,
     _touchSourceInfo: null,
+    _touchPressedElement: null,
+    _touchDraggedElement: null,
+    _isTouchActive: false,
+    _lastTouchTime: 0,
+    _lastTouchDragEndTime: 0,
     _configPopoverOpen: false,
     _placementPopoverOpen: false,
     _prevPlacedCount: 0,
@@ -286,6 +291,13 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _setupEventListeners() {
+        document.getElementById('seatingChartView')?.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse') {
+                this._isTouchActive = false;
+                this._lastTouchTime = 0;
+            }
+        }, { capture: true, passive: true });
+
         document.getElementById('scPlanModeSwitch')?.addEventListener('click', (e) => {
             const tab = e.target.closest('.sc-mode-tab');
             if (!tab) return;
@@ -2684,7 +2696,7 @@ export const SeatingChartManager = {
         cell._hasDragListeners = true;
 
         cell.addEventListener('dragstart', (e) => {
-            if (this._isLocked || cell.classList.contains('pinned')) {
+            if (this._isLocked || cell.classList.contains('pinned') || this._isTouchInteractionActive()) {
                 e.preventDefault();
                 return;
             }
@@ -2731,7 +2743,7 @@ export const SeatingChartManager = {
             memberEl._hasMemberDragListeners = true;
 
             memberEl.addEventListener('dragstart', (e) => {
-                if (this._isLocked || cell.classList.contains('pinned') || e.target.closest?.('.sc-stacked-member-remove')) {
+                if (this._isLocked || cell.classList.contains('pinned') || e.target.closest?.('.sc-stacked-member-remove') || this._isTouchInteractionActive()) {
                     e.preventDefault();
                     return;
                 }
@@ -4058,7 +4070,7 @@ export const SeatingChartManager = {
             `;
 
             cell.addEventListener('click', (e) => {
-                if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
+                if (this._wasRecentTouchDrag() || e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
                 const currentlyPinned = cell.classList.contains('pinned');
                 if (this._isLocked) {
                     FocusPanelManager.open(student.id);
@@ -4190,7 +4202,7 @@ export const SeatingChartManager = {
             });
 
             cell.addEventListener('click', (e) => {
-                if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin') || e.target.closest('.sc-stacked-member-remove')) return;
+                if (this._wasRecentTouchDrag() || e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin') || e.target.closest('.sc-stacked-member-remove')) return;
                 const currentlyPinned = cell.classList.contains('pinned');
                 if (this._isLocked) {
                     const targetStudentEl = e.target.closest('[data-result-id]');
@@ -4534,7 +4546,7 @@ export const SeatingChartManager = {
             });
 
             chip.addEventListener('dragstart', (e) => {
-                if (this._isLocked || e.target.closest?.('.sc-chip-profile-btn')) {
+                if (this._isLocked || e.target.closest?.('.sc-chip-profile-btn') || this._isTouchInteractionActive()) {
                     e.preventDefault();
                     return;
                 }
@@ -4561,7 +4573,7 @@ export const SeatingChartManager = {
             });
 
             chip.addEventListener('click', (e) => {
-                if (e.defaultPrevented || this._isLocked || e.target.closest?.('.sc-chip-profile-btn')) return;
+                if (e.defaultPrevented || this._wasRecentTouchDrag() || this._isLocked || e.target.closest?.('.sc-chip-profile-btn')) return;
                 if (e.shiftKey && this._lastSelectedSidebarIndex !== null) {
                     this._selectSidebarRange(this._lastSelectedSidebarIndex, index, allVisible);
                 } else {
@@ -5262,19 +5274,69 @@ export const SeatingChartManager = {
     // TOUCH DRAG & DROP
     // ========================================================================
 
+    _isTouchInteractionActive() {
+        const touchElapsed = this._lastTouchTime > 0 ? (Date.now() - this._lastTouchTime) : -1;
+        return Boolean(
+            this._isTouchActive ||
+            this._touchSourceInfo ||
+            this._touchDragEl ||
+            (touchElapsed >= 0 && touchElapsed < 800)
+        );
+    },
+
+    _wasRecentTouchDrag() {
+        const elapsed = this._lastTouchDragEndTime > 0 ? (Date.now() - this._lastTouchDragEndTime) : -1;
+        this._lastTouchDragEndTime = 0;
+        return elapsed >= 0 && elapsed < 350;
+    },
+
     _addTouchDrag(element, sourceInfo) {
-        let startX, startY, hasMoved = false;
+        let startX, startY, lastTouchX, lastTouchY, hasMoved = false;
         let isScrolling = false;
         let longPressTimer = null;
         let pendingSourceInfo = null;
 
-        element.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn')) {
+        const clearHoldTimer = () => {
+            if (longPressTimer) {
                 clearTimeout(longPressTimer);
-                if (this._longPressTimer) {
-                    clearTimeout(this._longPressTimer);
-                    this._longPressTimer = null;
-                }
+                longPressTimer = null;
+            }
+            if (this._longPressTimer) {
+                clearTimeout(this._longPressTimer);
+                this._longPressTimer = null;
+            }
+        };
+
+        const engageTouchDrag = (touchPoint) => {
+            if (hasMoved || isScrolling || this._isPinching || !pendingSourceInfo || this._isLocked || element.classList.contains('pinned')) {
+                return false;
+            }
+            clearHoldTimer();
+            hasMoved = true;
+            this._touchSourceInfo = pendingSourceInfo;
+            this._touchDraggedElement = element;
+            if (pendingSourceInfo.type === 'group-member' && pendingSourceInfo.resultId) {
+                element.querySelectorAll(`.sc-stacked-avatar[data-result-id="${pendingSourceInfo.resultId}"], .sc-stacked-member[data-result-id="${pendingSourceInfo.resultId}"]`).forEach(el => {
+                    el.classList.add('dragging-member');
+                });
+            } else {
+                element.classList.add('dragging');
+            }
+            this._suppressTouchTooltips(0);
+            this._haptic(18);
+            if (pendingSourceInfo.resultId && !this._selectedChipIds.includes(pendingSourceInfo.resultId)) {
+                this._clearSelection();
+            }
+            this._createTouchGhost(element, touchPoint);
+            this._highlightCellUnderTouch(touchPoint.clientX, touchPoint.clientY);
+            return true;
+        };
+
+        element.addEventListener('touchstart', (e) => {
+            this._isTouchActive = true;
+            this._lastTouchTime = Date.now();
+            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove')) {
+                clearHoldTimer();
                 pendingSourceInfo = null;
                 return;
             }
@@ -5282,9 +5344,18 @@ export const SeatingChartManager = {
             const touch = e.touches[0];
             startX = touch.clientX;
             startY = touch.clientY;
+            lastTouchX = startX;
+            lastTouchY = startY;
             hasMoved = false;
             isScrolling = false;
-            
+
+            // Disarm native HTML5 touch drag during finger interaction so only the unified touch ghost is used
+            this._touchPressedElement = element;
+            element.draggable = false;
+            element.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
+                el.draggable = false;
+            });
+
             let activeSourceInfo = { ...sourceInfo };
             if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
                 const r = parseInt(element.dataset.row, 10);
@@ -5292,37 +5363,40 @@ export const SeatingChartManager = {
                 if (!isNaN(r) && !isNaN(c)) {
                     activeSourceInfo.row = r;
                     activeSourceInfo.col = c;
+                    const cellIds = this._getCellStudentIds(r, c);
+                    if (cellIds.length > 0) {
+                        activeSourceInfo.resultId = cellIds[0];
+                    }
+                    const memberEl = cellIds.length > 1
+                        ? e.target.closest?.('.sc-stacked-avatar[data-result-id], .sc-stacked-member[data-result-id]')
+                        : null;
+                    if (memberEl?.dataset?.resultId && !this._selectedChipIds.includes(activeSourceInfo.resultId)) {
+                        activeSourceInfo = {
+                            type: 'group-member',
+                            resultId: memberEl.dataset.resultId,
+                            row: r,
+                            col: c
+                        };
+                    }
                 }
             }
-            if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
+            if (activeSourceInfo.type !== 'group-member' && activeSourceInfo.resultId && this._selectedChipIds.includes(activeSourceInfo.resultId)) {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
             }
             pendingSourceInfo = activeSourceInfo;
 
-            // Long-press affordance on touch (280ms hold triggers drag in any direction with subtle haptic):
-            // - Sidebar chips: hold unlocks free omnidirectional drag
-            // - Board cells: hold lifts the desk to drag, leaving quick swipes to pan/scroll the board!
-            clearTimeout(longPressTimer);
-            if (this._longPressTimer) clearTimeout(this._longPressTimer);
+            // Unified touch hold affordance (200ms hold lifts the card with haptic feedback in any direction)
+            clearHoldTimer();
             longPressTimer = setTimeout(() => {
                 this._longPressTimer = null;
-                if (!hasMoved && !isScrolling && !this._isPinching && pendingSourceInfo) {
-                    hasMoved = true;
-                    this._touchSourceInfo = pendingSourceInfo;
-                    this._suppressTouchTooltips(0);
-                    this._haptic(18);
-                    if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                        this._clearSelection();
-                    }
-                    this._createTouchGhost(element, touch);
-                }
-            }, 280);
+                engageTouchDrag({ clientX: lastTouchX, clientY: lastTouchY });
+            }, 200);
             this._longPressTimer = longPressTimer;
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
             if (this._isPinching || (e.touches && e.touches.length > 1)) {
-                clearTimeout(longPressTimer);
+                clearHoldTimer();
                 isScrolling = true;
                 pendingSourceInfo = null;
                 this._cleanupTouch();
@@ -5330,60 +5404,54 @@ export const SeatingChartManager = {
             }
             if ((!pendingSourceInfo && !this._touchSourceInfo) || this._isLocked || isScrolling || element.classList.contains('pinned')) return;
             const touch = e.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
 
             // Touch gestures disambiguation
             if (!hasMoved) {
-                if (sourceInfo.type === 'sidebar') {
+                const candidateType = pendingSourceInfo?.type || sourceInfo.type;
+                if (candidateType === 'sidebar') {
                     if (this._isCompactLayout()) {
                         // Horizontal motion in bottom tray: prioritize native horizontal list scrolling
                         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
                             isScrolling = true;
-                            clearTimeout(longPressTimer);
+                            clearHoldTimer();
                             pendingSourceInfo = null;
                             this._touchSourceInfo = null;
                             return;
                         }
 
-                        // Vertical motion pulling upward toward the board: engage drag immediately
-                        if (dy < -12 && Math.abs(dy) > Math.abs(dx) * 1.1) {
-                            clearTimeout(longPressTimer);
-                            hasMoved = true;
-                            this._touchSourceInfo = pendingSourceInfo;
-                            this._suppressTouchTooltips(0);
-                            if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                                this._clearSelection();
-                            }
-                            this._createTouchGhost(element, touch);
+                        // Vertical motion pulling upward toward the board: engage unified drag immediately
+                        if (dy < -10 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                            engageTouchDrag(touch);
                         }
                     } else {
                         // Vertical sidebar dock on tablet (> 768px): vertical motion scrolls the list
                         if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
                             isScrolling = true;
-                            clearTimeout(longPressTimer);
+                            clearHoldTimer();
                             pendingSourceInfo = null;
                             this._touchSourceInfo = null;
                             return;
                         }
 
-                        // Horizontal motion pulling rightward toward the board: engage drag immediately
+                        // Horizontal motion pulling rightward toward the board: engage unified drag immediately
                         if (dx > 10 && Math.abs(dx) > Math.abs(dy) * 1.1) {
-                            clearTimeout(longPressTimer);
-                            hasMoved = true;
-                            this._touchSourceInfo = pendingSourceInfo;
-                            this._suppressTouchTooltips(0);
-                            if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
-                                this._clearSelection();
-                            }
-                            this._createTouchGhost(element, touch);
+                            engageTouchDrag(touch);
                         }
                     }
-                } else if (sourceInfo.type === 'cell' || sourceInfo.type === 'multi-cell') {
-                    // On board: any quick motion before long-press is board panning/scrolling
-                    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member') {
+                    if (this._isFitted) {
+                        // On fitted board (no pan/scroll): sliding finger > 8px immediately engages unified drag
+                        if (Math.hypot(dx, dy) > 8) {
+                            engageTouchDrag(touch);
+                        }
+                    } else if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                        // On zoomed board: quick motion before hold pans/scrolls the board
                         isScrolling = true;
-                        clearTimeout(longPressTimer);
+                        clearHoldTimer();
                         pendingSourceInfo = null;
                         this._touchSourceInfo = null;
                         return;
@@ -5401,14 +5469,16 @@ export const SeatingChartManager = {
         }, { passive: false });
 
         element.addEventListener('touchend', (e) => {
-            clearTimeout(longPressTimer);
+            clearHoldTimer();
             if (this._isPinching || !hasMoved || !this._touchSourceInfo) {
                 this._cleanupTouch();
                 return;
             }
+            this._lastTouchDragEndTime = Date.now();
+            if (e.cancelable) e.preventDefault();
             const touch = e.changedTouches[0];
             if (this._isTouchOverSidebar(touch.clientX, touch.clientY)) {
-                if (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell') {
+                if (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell' || this._touchSourceInfo.type === 'group-member') {
                     this._dragSource = this._touchSourceInfo;
                     this._handleRemoveFromSidebarDrop();
                 }
@@ -5428,51 +5498,23 @@ export const SeatingChartManager = {
         });
 
         element.addEventListener('touchcancel', () => {
-            clearTimeout(longPressTimer);
+            clearHoldTimer();
             this._cleanupTouch();
         });
     },
 
     _createTouchGhost(element, touch) {
         this._removeTouchGhost();
-        const ghost = element.cloneNode(true);
-        ghost.className = 'sc-touch-ghost';
-        if (element.classList.contains('sc-cell-stacked')) {
-            ghost.classList.add('sc-cell', 'sc-cell-stacked');
-        }
-        const sampleCell = element.classList.contains('sc-cell')
-            ? element
-            : document.querySelector('#scGridContainer .sc-cell');
-        if (sampleCell && sampleCell.offsetWidth > 0 && sampleCell.offsetHeight > 0) {
-            ghost.style.setProperty('--sc-cell-w', `${sampleCell.offsetWidth}px`);
-            ghost.style.setProperty('--sc-cell-h', `${sampleCell.offsetHeight}px`);
-        }
-        ghost.classList.remove('sc-chip-selected');
-        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
-
-        if (element.classList.contains('sc-student-chip')) {
-            const chipNameEl = ghost.querySelector('.sc-student-chip-name');
-            if (chipNameEl) {
-                const studentId = element.dataset?.resultId;
-                const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
-                if (student) {
-                    const nameInfo = this._getStudentCellNameInfo(student);
-                    chipNameEl.className = `sc-cell-name${nameInfo.modifierClass}`;
-                    chipNameEl.innerHTML = nameInfo.html;
-                } else {
-                    chipNameEl.className = 'sc-cell-name';
-                }
-            }
-        }
-
-        if (this._touchSourceInfo?.type === 'multi-cell' && this._touchSourceInfo.ids.length > 1) {
-            const badge = document.createElement('div');
-            badge.className = 'sc-drag-badge';
-            badge.textContent = `+${this._touchSourceInfo.ids.length - 1}`;
-            ghost.appendChild(badge);
-            ghost.classList.add('sc-drag-multi');
-        }
-
+        const isGroupMember = this._touchSourceInfo?.type === 'group-member' && this._touchSourceInfo.resultId;
+        const memberStudent = isGroupMember
+            ? (this._studentMap?.get(this._touchSourceInfo.resultId) || this._students?.find(s => s.id === this._touchSourceInfo.resultId) || false)
+            : null;
+        const count = this._touchSourceInfo?.type === 'multi-cell' ? this._touchSourceInfo.ids.length : 1;
+        const ghost = this._buildFloatingDragClone(element, {
+            baseClass: 'sc-touch-ghost',
+            count,
+            memberStudent
+        });
         ghost.style.left = `${touch.clientX}px`;
         ghost.style.top = `${touch.clientY}px`;
         document.body.appendChild(ghost);
@@ -5564,9 +5606,28 @@ export const SeatingChartManager = {
             clearTimeout(this._longPressTimer);
             this._longPressTimer = null;
         }
+        if (this._touchDraggedElement) {
+            this._touchDraggedElement.classList.remove('dragging');
+            this._touchDraggedElement.querySelectorAll('.dragging-member').forEach(el => el.classList.remove('dragging-member'));
+            this._touchDraggedElement = null;
+        }
+        if (this._touchPressedElement) {
+            const el = this._touchPressedElement;
+            this._touchPressedElement = null;
+            const canDrag = !this._isLocked && !el.classList.contains('pinned');
+            el.draggable = canDrag;
+            el.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
+                memberEl.draggable = canDrag;
+            });
+        }
+        document.querySelectorAll('#seatingChartView .dragging, #seatingChartView .dragging-member').forEach(el => {
+            el.classList.remove('dragging', 'dragging-member');
+        });
         this._stopTouchAutoScroll();
         this._removeTouchGhost();
         this._touchSourceInfo = null;
+        this._isTouchActive = false;
+        this._lastTouchTime = 0;
         if (hadActiveDrag && !this._isPinching) {
             this._suppressTouchTooltips(400);
         }
@@ -5608,7 +5669,7 @@ export const SeatingChartManager = {
     },
 
     _getCellUnderPoint(x, y) {
-        return (document.elementsFromPoint(x, y) || []).find(el => el.classList.contains('sc-cell')) || null;
+        return (document.elementsFromPoint?.(x, y) || []).find(el => el.classList.contains('sc-cell')) || null;
     },
 
     // ========================================================================
@@ -5653,7 +5714,7 @@ export const SeatingChartManager = {
     },
 
     _isTouchOverSidebar(x, y) {
-        return (document.elementsFromPoint(x, y) || []).some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
+        return (document.elementsFromPoint?.(x, y) || []).some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
     },
 
     _handleRemoveFromSidebarDrop() {

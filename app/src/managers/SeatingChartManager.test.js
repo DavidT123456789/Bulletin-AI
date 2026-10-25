@@ -2049,6 +2049,120 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._removeDragClones();
         });
 
+        it('devrait harmoniser le drag tactile en un état unique (désarmement du drag HTML5 natif, échelle --sc-drag-scale alignée sur le plateau, et 1 seule vibration que le geste parte en glissement immédiat ou en maintien)', () => {
+            vi.useFakeTimers();
+            try {
+                SeatingChartManager._isFitted = true;
+                SeatingChartManager._render();
+                const board = document.getElementById('scClassroomBoard');
+                board?.style.setProperty('--sc-scale', '0.75');
+
+                const cell = document.querySelector('.sc-cell.occupied[data-row="0"][data-col="0"]');
+                expect(cell).not.toBeNull();
+                expect(cell.draggable).toBe(true);
+
+                const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+                // 1. Cas A : Glissement immédiat (< 200ms) sur une table du plateau ajusté (_isFitted = true)
+                const ts = new Event('touchstart');
+                ts.touches = [{ clientX: 100, clientY: 100 }];
+                cell.dispatchEvent(ts);
+
+                // Le drag HTML5 natif est immédiatement désarmé pendant l'appui tactile
+                expect(cell.draggable).toBe(false);
+                const nativeDragStart = new Event('dragstart', { cancelable: true });
+                cell.dispatchEvent(nativeDragStart);
+                expect(nativeDragStart.defaultPrevented).toBe(true);
+                expect(document.querySelector('.sc-drag-clone')).toBeNull();
+
+                // Mouvement de 12px à t = 60ms -> engage immédiatement l'état unique de drag tactile
+                vi.advanceTimersByTime(60);
+                const tm = new Event('touchmove', { cancelable: true });
+                tm.touches = [{ clientX: 112, clientY: 100 }];
+                cell.dispatchEvent(tm);
+
+                const ghost = document.querySelector('.sc-touch-ghost');
+                expect(ghost).not.toBeNull();
+                expect(ghost.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
+                expect(cell.classList.contains('dragging')).toBe(true);
+                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(hapticSpy).toHaveBeenCalledWith(18);
+
+                // Franchissement du délai de maintien (200ms) pendant le déplacement : aucun second état ni seconde vibration
+                vi.advanceTimersByTime(250);
+                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(document.querySelectorAll('.sc-touch-ghost').length).toBe(1);
+
+                const te = new Event('touchend', { cancelable: true });
+                te.touches = [];
+                te.changedTouches = [{ clientX: 112, clientY: 100 }];
+                cell.dispatchEvent(te);
+
+                expect(document.querySelector('.sc-touch-ghost')).toBeNull(); vi.advanceTimersByTime(400);
+                expect(cell.classList.contains('dragging')).toBe(false);
+                expect(cell.draggable).toBe(true);
+
+                // 2. Cas B : Maintien sur place (200ms) avant de bouger -> produit exactement le même état et la même échelle
+                hapticSpy.mockClear();
+                const tsHold = new Event('touchstart');
+                tsHold.touches = [{ clientX: 100, clientY: 100 }];
+                cell.dispatchEvent(tsHold);
+
+                vi.advanceTimersByTime(200);
+                const ghostHold = document.querySelector('.sc-touch-ghost');
+                expect(ghostHold).not.toBeNull();
+                expect(ghostHold.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
+                expect(cell.classList.contains('dragging')).toBe(true);
+                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(hapticSpy).toHaveBeenCalledWith(18);
+
+                const teHold = new Event('touchend', { cancelable: true });
+                teHold.touches = [];
+                teHold.changedTouches = [{ clientX: 100, clientY: 100 }];
+                cell.dispatchEvent(teHold);
+
+                expect(document.querySelector('.sc-touch-ghost')).toBeNull();
+                vi.advanceTimersByTime(400);
+                expect(cell.draggable).toBe(true);
+
+                // 3. Cas C : Appui tactile sur un élève d'un binôme (.sc-stacked-member) extrait uniquement cet élève (group-member)
+                SeatingChartManager._gridState[0][0] = ['s1', 's2'];
+                SeatingChartManager._gridState[0][1] = null;
+                SeatingChartManager._renderGrid();
+                const stackedCell = document.querySelector('.sc-cell.sc-cell-stacked[data-row="0"][data-col="0"]');
+                const memberPill = stackedCell.querySelector('.sc-stacked-member[data-result-id="s2"]');
+                expect(memberPill).not.toBeNull();
+
+                const tsMember = new Event('touchstart', { bubbles: true });
+                tsMember.touches = [{ clientX: 110, clientY: 110 }];
+                memberPill.dispatchEvent(tsMember);
+
+                vi.advanceTimersByTime(200);
+                const memberGhost = document.querySelector('.sc-touch-ghost');
+                expect(memberGhost).not.toBeNull();
+                expect(SeatingChartManager._touchSourceInfo).toEqual({
+                    type: 'group-member',
+                    resultId: 's2',
+                    row: 0,
+                    col: 0
+                });
+                expect(memberPill.classList.contains('dragging-member')).toBe(true);
+                expect(memberGhost.querySelector('.sc-cell-name')?.textContent).toBe('Emma');
+
+                const teMember = new Event('touchend', { cancelable: true });
+                teMember.touches = [];
+                teMember.changedTouches = [{ clientX: 110, clientY: 110 }];
+                stackedCell.dispatchEvent(teMember);
+
+                expect(document.querySelector('.sc-touch-ghost')).toBeNull();
+                expect(memberPill.classList.contains('dragging-member')).toBe(false);
+                vi.advanceTimersByTime(400);
+                hapticSpy.mockRestore();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it('devrait afficher uniquement le prénom sans homonyme et ajouter l’initiale uniquement en cas d’homonyme (y compris avec accents)', () => {
             const sShort = { id: 's-short-1', nom: 'DUPONT', prenom: 'Chloé' };
             const sLong = { id: 's-long-1', nom: 'DUPONT', prenom: 'Justin Nolan' };

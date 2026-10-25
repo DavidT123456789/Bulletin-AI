@@ -485,47 +485,61 @@ export const SeatingAutoPlace = {
         document.body.classList.remove('sc-drag-over-sidebar');
     },
 
-    /** Hides native ghost and creates a floating clone that follows the cursor */
-    _setCleanDragImage(e, sourceEl, count = 1) {
-        this._removeDragClones();
-        const blank = new Image();
-        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        e.dataTransfer.setDragImage(blank, 0, 0);
+    /** Builds a unified floating card clone for both mouse (.sc-drag-clone) and touch (.sc-touch-ghost) */
+    _buildFloatingDragClone(sourceEl, { baseClass = 'sc-drag-clone', count = 1, memberStudent = null } = {}) {
+        let clone;
+        if (memberStudent !== null) {
+            clone = document.createElement('div');
+            clone.className = baseClass;
+            if (memberStudent) {
+                const nameInfo = this._getStudentCellNameInfo(memberStudent);
+                clone.innerHTML = `
+                    ${StudentPhotoManager.getAvatarHTML(memberStudent, 'sm')}
+                    <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
+                `;
+            } else if (sourceEl) {
+                clone.innerHTML = sourceEl.innerHTML;
+            }
+        } else {
+            clone = sourceEl.cloneNode(true);
+            clone.className = baseClass;
+            if (sourceEl.classList.contains('sc-cell-stacked')) {
+                clone.classList.add('sc-cell', 'sc-cell-stacked');
+            }
+            if (sourceEl.classList.contains('has-status-badge')) {
+                clone.classList.add('has-status-badge');
+            }
+            clone.classList.remove('sc-chip-selected', 'dragging');
+            clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
 
-        const clone = sourceEl.cloneNode(true);
-        clone.className = 'sc-drag-clone';
-        if (sourceEl.classList.contains('sc-cell-stacked')) {
-            clone.classList.add('sc-cell', 'sc-cell-stacked');
-        }
-        if (sourceEl.classList.contains('has-status-badge')) {
-            clone.classList.add('has-status-badge');
-        }
-        if (sourceEl.offsetWidth > 0 && sourceEl.offsetHeight > 0 && sourceEl.classList.contains('sc-cell')) {
-            clone.style.setProperty('--sc-cell-w', `${sourceEl.offsetWidth}px`);
-            clone.style.setProperty('--sc-cell-h', `${sourceEl.offsetHeight}px`);
-        } else if (this._isActivityMode() && sourceEl.classList.contains('sc-cell')) {
-            clone.style.setProperty('--sc-cell-w', '118px');
-            clone.style.setProperty('--sc-cell-h', '114px');
-        }
-        clone.classList.remove('sc-chip-selected');
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
-
-        if (sourceEl.classList.contains('sc-student-chip')) {
-            const chipNameEl = clone.querySelector('.sc-student-chip-name');
-            if (chipNameEl) {
-                const studentId = sourceEl.dataset?.resultId;
-                const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
-                if (student) {
-                    const nameInfo = this._getStudentCellNameInfo(student);
-                    chipNameEl.className = `sc-cell-name${nameInfo.modifierClass}`;
-                    chipNameEl.innerHTML = nameInfo.html;
-                } else {
-                    chipNameEl.className = 'sc-cell-name';
+            if (sourceEl.classList.contains('sc-student-chip')) {
+                const chipNameEl = clone.querySelector('.sc-student-chip-name');
+                if (chipNameEl) {
+                    const studentId = sourceEl.dataset?.resultId;
+                    const student = studentId ? (this._studentMap?.get(studentId) || this._students?.find(s => s.id === studentId)) : null;
+                    if (student) {
+                        const nameInfo = this._getStudentCellNameInfo(student);
+                        chipNameEl.className = `sc-cell-name${nameInfo.modifierClass}`;
+                        chipNameEl.innerHTML = nameInfo.html;
+                    } else {
+                        chipNameEl.className = 'sc-cell-name';
+                    }
                 }
             }
         }
 
-        const board = sourceEl.closest?.('#scClassroomBoard');
+        const sampleCell = sourceEl?.classList?.contains('sc-cell')
+            ? sourceEl
+            : document.querySelector('#scGridContainer .sc-cell');
+        if (sampleCell && sampleCell.offsetWidth > 0 && sampleCell.offsetHeight > 0) {
+            clone.style.setProperty('--sc-cell-w', `${sampleCell.offsetWidth}px`);
+            clone.style.setProperty('--sc-cell-h', `${sampleCell.offsetHeight}px`);
+        } else if (this._isActivityMode() && sourceEl?.classList?.contains('sc-cell')) {
+            clone.style.setProperty('--sc-cell-w', '118px');
+            clone.style.setProperty('--sc-cell-h', '114px');
+        }
+
+        const board = sourceEl?.closest?.('#scClassroomBoard') || document.getElementById('scClassroomBoard');
         if (board) {
             const boardScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1;
             clone.style.setProperty('--sc-drag-scale', boardScale.toString());
@@ -538,6 +552,14 @@ export const SeatingAutoPlace = {
             clone.appendChild(badge);
             clone.classList.add('sc-drag-multi');
         }
+
+        return clone;
+    },
+
+    _mountMouseDragClone(e, sourceEl, clone) {
+        const blank = new Image();
+        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer?.setDragImage?.(blank, 0, 0);
 
         clone.style.left = `${e.clientX}px`;
         clone.style.top = `${e.clientY}px`;
@@ -564,53 +586,17 @@ export const SeatingAutoPlace = {
         window.addEventListener('drop', onDragEnd, { once: true });
     },
 
+    /** Hides native ghost and creates a floating clone that follows the cursor */
+    _setCleanDragImage(e, sourceEl, count = 1) {
+        this._removeDragClones();
+        const clone = this._buildFloatingDragClone(sourceEl, { baseClass: 'sc-drag-clone', count });
+        this._mountMouseDragClone(e, sourceEl, clone);
+    },
+
     _setCleanMemberDragImage(e, student, sourceEl) {
         this._removeDragClones();
-        const blank = new Image();
-        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        e.dataTransfer?.setDragImage?.(blank, 0, 0);
-
-        const clone = document.createElement('div');
-        clone.className = 'sc-drag-clone';
-        if (student) {
-            const nameInfo = this._getStudentCellNameInfo(student);
-            clone.innerHTML = `
-                ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-cell-name${nameInfo.modifierClass}">${nameInfo.html}</span>
-            `;
-        } else {
-            clone.innerHTML = sourceEl.innerHTML;
-        }
-
-        const board = sourceEl.closest?.('#scClassroomBoard');
-        if (board) {
-            const boardScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1;
-            clone.style.setProperty('--sc-drag-scale', boardScale.toString());
-        }
-
-        clone.style.left = `${e.clientX}px`;
-        clone.style.top = `${e.clientY}px`;
-        document.body.appendChild(clone);
-
-        const onDrag = (ev) => {
-            if (ev.clientX === 0 && ev.clientY === 0) return;
-            clone.style.left = `${ev.clientX}px`;
-            clone.style.top = `${ev.clientY}px`;
-        };
-
-        const onDragEnd = () => {
-            clone.remove();
-            document.body.classList.remove('sc-drag-over-sidebar');
-            sourceEl.removeEventListener('drag', onDrag);
-            sourceEl.removeEventListener('dragend', onDragEnd);
-            window.removeEventListener('dragend', onDragEnd);
-            window.removeEventListener('drop', onDragEnd);
-        };
-
-        sourceEl.addEventListener('drag', onDrag);
-        sourceEl.addEventListener('dragend', onDragEnd);
-        window.addEventListener('dragend', onDragEnd, { once: true });
-        window.addEventListener('drop', onDragEnd, { once: true });
+        const clone = this._buildFloatingDragClone(sourceEl, { baseClass: 'sc-drag-clone', memberStudent: student || false });
+        this._mountMouseDragClone(e, sourceEl, clone);
     },
 
     _clearAll() {
