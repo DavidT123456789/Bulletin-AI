@@ -281,6 +281,13 @@ describe('StorageManager', () => {
             await StorageManager.loadAppState();
 
             expect(userSettings.ui.theme).toBe('dark');
+            // Verify deprecated gemini-3.5-flash migration to gemini-3.6-flash
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { currentAIModel: 'gemini-3.5-flash' }
+            });
+            await StorageManager.loadAppState();
+            expect(userSettings.api.currentAIModel).toBe('gemini-3.6-flash');
         });
     });
 

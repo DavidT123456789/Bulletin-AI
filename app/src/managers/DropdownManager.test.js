@@ -86,7 +86,7 @@ describe('DropdownManager', () => {
                 <div class="settings-group">
                     <div class="settings-group-card">
                         <select id="modelSelect">
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                         </select>
                     </div>
                 </div>

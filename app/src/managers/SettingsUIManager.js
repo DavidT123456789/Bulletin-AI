@@ -446,13 +446,13 @@ export const SettingsUIManager = {
         // Injecter les icônes à jour avant d'afficher le statut
         this.injectProviderIcons();
 
-        let model = appState.currentAIModel || 'gemini-3.5-flash';
+        let model = appState.currentAIModel || 'gemini-3.6-flash';
 
         // Si le modèle actif n'est pas disponible (clé absente ou supprimée),
         // basculer vers le premier modèle disponible, ou revenir au modèle par défaut (Gemini) si aucune clé n'existe.
         if (!this._isModelAvailable(model)) {
             const firstAvailable = buildFallbackQueue(model).find(m => this._isModelAvailable(m));
-            model = firstAvailable || 'gemini-3.5-flash';
+            model = firstAvailable || 'gemini-3.6-flash';
             if (appState.currentAIModel !== model) {
                 appState.currentAIModel = model;
             }
@@ -576,7 +576,7 @@ export const SettingsUIManager = {
      * Aligné avec AIService._getProviderForModel() pour garantir la cohérence.
      * Seuls les modèles 'mistral-direct-*' utilisent l'API Mistral directe.
      * Les autres (ministral-3b, mistral-small, etc.) passent par OpenRouter.
-     * @param {string} model - ID du modèle (ex: 'gemini-2.5-flash', 'ollama-llama3')
+     * @param {string} model - ID du modèle (ex: 'gemini-3.6-flash', 'ollama-llama3')
      * @returns {string} ID du provider (ex: 'google', 'ollama', 'openrouter')
      * @private
      */

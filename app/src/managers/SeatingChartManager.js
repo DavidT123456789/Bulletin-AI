@@ -5429,9 +5429,12 @@ export const SeatingChartManager = {
         if (element.classList.contains('sc-cell-stacked')) {
             ghost.classList.add('sc-cell', 'sc-cell-stacked');
         }
-        if (element.offsetWidth > 0 && element.offsetHeight > 0 && element.classList.contains('sc-cell')) {
-            ghost.style.setProperty('--sc-cell-w', `${element.offsetWidth}px`);
-            ghost.style.setProperty('--sc-cell-h', `${element.offsetHeight}px`);
+        const sampleCell = element.classList.contains('sc-cell')
+            ? element
+            : document.querySelector('#scGridContainer .sc-cell');
+        if (sampleCell && sampleCell.offsetWidth > 0 && sampleCell.offsetHeight > 0) {
+            ghost.style.setProperty('--sc-cell-w', `${sampleCell.offsetWidth}px`);
+            ghost.style.setProperty('--sc-cell-h', `${sampleCell.offsetHeight}px`);
         }
         ghost.classList.remove('sc-chip-selected');
         ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());

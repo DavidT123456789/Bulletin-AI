@@ -57,7 +57,7 @@ export function parseRetryDelay(errorMessage) {
 
 /**
  * @typedef {Object} GoogleModel
- * @property {string} name - Nom du modèle (ex: "models/gemini-2.5-flash")
+ * @property {string} name - Nom du modèle (ex: "models/gemini-3.6-flash")
  * @property {string} displayName - Nom d'affichage
  */
 
@@ -193,7 +193,7 @@ export const AIService = {
             if (!providerConfig) throw new Error("Fournisseur de validation inconnu.");
             const apiKey = providerConfig.apiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
-            const validationModel = modelOverride || 'gemini-3.5-flash';
+            const validationModel = modelOverride || 'gemini-3.6-flash';
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
             if (payload && typeof payload === 'object') {

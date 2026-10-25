@@ -1,6 +1,6 @@
 /**
  * @fileoverview Configuration des modèles IA, coûts et fallback.
- * Support complet des modèles de dernière génération (Gemini 3.8/3.5 Flash, 3.1 Pro, Claude Sonnet 5)
+ * Support complet des modèles de dernière génération (Gemini 3.8/3.6 Flash, 3.1 Pro, Claude Sonnet 5)
  * et des modèles legacy en fallback (Gemini 2.5, Claude 3.7 / 3.5).
  * @module config/models
  */
@@ -8,6 +8,7 @@
 export const COSTS_PER_MILLION_TOKENS = {
     // Google (clé API directe)
     'gemini-3.8-flash': { input: 0.75, output: 3.75 },
+    'gemini-3.6-flash': { input: 0.75, output: 3.75 },
     'gemini-3.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.1-pro-preview': { input: 2.00, output: 12.00 },
     'gemini-3.7-flash': { input: 0.15, output: 0.60 },
@@ -57,7 +58,8 @@ export const MODEL_DESCRIPTIONS = {
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
     'openai-gpt-4o-mini': "Économique et performant.",
     // Google
-    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
+    'gemini-3.6-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
+    'gemini-3.5-flash': "<strong>Stable.</strong> Flash éprouvé, redirigé vers Gemini 3.6 Flash.",
     'gemini-3.8-flash': "<strong>🚀 Nouveau.</strong> Raisonnement multi-étapes et agents autonomes.",
     'gemini-3.1-pro-preview': "<strong>🔥 Synthèses complexes.</strong> Raisonnement approfondi pour dossiers denses.",
     'gemini-3.7-flash': "<strong>🧠 Raisonnement avancé.</strong> Réflexion hybride adaptative.",
@@ -121,6 +123,7 @@ export function getProviderForModel(model) {
  */
 export const MODEL_SHORT_NAMES = {
     'gemini-3.8-flash': 'Gemini 3.8 Flash',
+    'gemini-3.6-flash': 'Gemini 3.6 Flash',
     'gemini-3.5-flash': 'Gemini 3.5 Flash',
     'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
     'gemini-3.7-flash': 'Gemini 3.7 Flash',
@@ -170,7 +173,7 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: 'Google Gemini — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.6-flash', qualifier: 'Recommandé' },
             { id: 'gemini-3.8-flash', qualifier: 'Raisonnement' },
             { id: 'gemini-3.1-pro-preview', qualifier: 'Synthèses complexes' },
         ]
@@ -284,7 +287,7 @@ export const PROVIDER_DEFAULT_MODELS = {
  * Utilisés pour générer dynamiquement les puces dans l'interface (Single Source of Truth).
  */
 export const PROVIDER_SHOWCASE_MODELS = {
-    google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
+    google: ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
     groq: ['groq-gpt-oss-120b', 'groq-gpt-oss-20b'],
     anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-opus-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],

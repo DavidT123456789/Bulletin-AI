@@ -47,7 +47,7 @@ export const userSettings = {
 
     /** Configuration API */
     api: {
-        currentAIModel: 'gemini-3.5-flash',
+        currentAIModel: 'gemini-3.6-flash',
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',

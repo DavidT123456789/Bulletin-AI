@@ -300,7 +300,7 @@ describe('AIService', () => {
             expect(AIService._hasApiKeyForModel('groq-llama-3.3-70b')).toBe(true);
 
             appState.googleApiKey = 'AIzaSyGoogle12345';
-            expect(AIService._hasApiKeyForModel('gemini-3.5-flash')).toBe(true);
+            expect(AIService._hasApiKeyForModel('gemini-3.6-flash')).toBe(true);
         });
 
         it('should return false when API key is missing or invalid', async () => {

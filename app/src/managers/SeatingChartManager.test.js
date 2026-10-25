@@ -1328,6 +1328,43 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.style.getPropertyValue('--sc-scale')).toBe('1');
         });
 
+        it('devrait ajuster harmonieusement la carte Activité sur tablette verticale (540-768px) tout en préservant l’échelle Cours et le plafond smartphone', () => {
+            const prevInnerWidth = window.innerWidth;
+            try {
+                SeatingChartManager._isLocked = true;
+                const gridArea = document.getElementById('scGridArea');
+                const board = document.getElementById('scClassroomBoard');
+
+                // 1. Tablette verticale / pliable déplié (645px x 800px) -> availW = 645 - 76 = 569
+                Object.defineProperty(window, 'innerWidth', { value: 645, configurable: true, writable: true });
+                Object.defineProperty(gridArea, 'clientWidth', { value: 645, configurable: true });
+                Object.defineProperty(gridArea, 'clientHeight', { value: 800, configurable: true });
+
+                // Carte Cours (8 colonnes = 568px x 446px) -> reste à 1.00
+                Object.defineProperty(board, 'offsetWidth', { value: 568, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 446, configurable: true });
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(1.0);
+
+                // Carte Activité (5 postes = 478px x 205px) -> agrandie à 1.19 pour égaler l'envergure de Cours
+                Object.defineProperty(board, 'offsetWidth', { value: 478, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 205, configurable: true });
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(1.19);
+                expect(board.style.getPropertyValue('--sc-scale')).toBe('1.19');
+
+                // 2. Smartphone étroit (< 540px) avec petite grille -> plafond strict maintenu à 1.0
+                Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true, writable: true });
+                Object.defineProperty(gridArea, 'clientWidth', { value: 390, configurable: true });
+                Object.defineProperty(board, 'offsetWidth', { value: 250, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 200, configurable: true });
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(1.0);
+            } finally {
+                Object.defineProperty(window, 'innerWidth', { value: prevInnerWidth, configurable: true, writable: true });
+            }
+        });
+
         it('devrait appliquer le smart-fit et permettre le zoom également en mode édition (déverrouillé)', () => {
             SeatingChartManager._isLocked = false;
             const gridArea = document.getElementById('scGridArea');

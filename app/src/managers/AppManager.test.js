@@ -108,7 +108,7 @@ describe('AppManager — handleAiModelSelectChange', () => {
         vi.clearAllMocks();
         document.body.innerHTML = `
             <select id="aiModelSelect">
-                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                 <option value="groq-llama-3.3-70b">Llama 3.3 70B</option>
             </select>
         `;

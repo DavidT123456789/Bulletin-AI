@@ -83,10 +83,11 @@ export const SeatingZoom = {
             return;
         }
 
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = this._isCompactLayout ? this._isCompactLayout() : (window.innerWidth <= 768);
+        const isCompactTablet = isMobile && areaWidth >= 540;
         const reservedTop = isMobile ? (56 + 48) : (56 + 24);
         const reservedBottom = isMobile ? (this._isLocked ? 48 : 12) : 24;
-        const reservedHoriz = isMobile ? 24 : 48;
+        const reservedHoriz = isCompactTablet ? 76 : (isMobile ? 24 : 48);
 
         // On desktop, always account for the 260px sidebar so fit scale is identical between locked and unlocked modes
         const effectiveAreaW = (!isMobile && areaWidth >= 600) ? (areaWidth - 260) : areaWidth;
@@ -117,7 +118,7 @@ export const SeatingZoom = {
         const scaleH = availH / boardH;
         let scale = Math.min(scaleW, scaleH);
 
-        const maxFitScale = isMobile ? 1.0 : 1.65;
+        const maxFitScale = isCompactTablet ? 1.25 : (isMobile ? 1.0 : 1.65);
         scale = Math.min(maxFitScale, Math.max(0.35, Math.round(scale * 100) / 100));
 
         this._fitScale = scale;

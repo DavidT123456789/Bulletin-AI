@@ -386,7 +386,7 @@ describe('SettingsUIManager', () => {
             expect(tooltip).toContain('Ordre complet :');
             expect(tooltip).toContain('Mistral Small');
             expect(tooltip).toContain('Mistral Large');
-            expect(tooltip).toContain('Gemini 3.5 Flash');
+            expect(tooltip).toContain('Gemini 3.6 Flash');
             expect(tooltip).toContain('Gemini 3.8 Flash');
             expect(tooltip).toContain('Gemini 3.1 Pro');
             // Ne doit PAS contenir les modèles fantômes
@@ -494,7 +494,7 @@ describe('SettingsUIManager', () => {
             `;
         });
 
-        it('devrait réinitialiser currentAIModel vers gemini-3.5-flash et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
+        it('devrait réinitialiser currentAIModel vers gemini-3.6-flash et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
             appState.currentAIModel = 'mistral-direct-small-latest';
             appState.mistralApiKey = '';
             appState.googleApiKey = '';
@@ -502,8 +502,8 @@ describe('SettingsUIManager', () => {
 
             SettingsUIManager.updateApiStatusDisplay();
 
-            expect(appState.currentAIModel).toBe('gemini-3.5-flash');
-            expect(DOM.aiModelSelect.value).toBe('gemini-3.5-flash');
+            expect(appState.currentAIModel).toBe('gemini-3.6-flash');
+            expect(DOM.aiModelSelect.value).toBe('gemini-3.6-flash');
             expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
         });
 
@@ -514,13 +514,13 @@ describe('SettingsUIManager', () => {
 
             SettingsUIManager.updateApiStatusDisplay();
 
-            expect(appState.currentAIModel).toBe('gemini-3.5-flash');
-            expect(DOM.aiModelSelect.value).toBe('gemini-3.5-flash');
+            expect(appState.currentAIModel).toBe('gemini-3.6-flash');
+            expect(DOM.aiModelSelect.value).toBe('gemini-3.6-flash');
             expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
         });
 
         it('devrait afficher le bandeau d\'alerte uniquement si le fournisseur du modèle actif a un souci de quota ou d\'invalidation', () => {
-            appState.currentAIModel = 'gemini-3.5-flash';
+            appState.currentAIModel = 'gemini-3.6-flash';
             appState.googleApiKey = 'AIzaSyValidGoogleKey123';
             appState.apiKeyStatus.google = 'quota-warning';
 

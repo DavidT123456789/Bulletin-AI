@@ -22,7 +22,7 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should correctly identify google gemini models', () => {
-            expect(getProviderForModel('gemini-3.5-flash')).toBe('google');
+            expect(getProviderForModel('gemini-3.6-flash')).toBe('google');
             expect(getProviderForModel('gemini-3.8-flash')).toBe('google');
             expect(getProviderForModel('gemini-3.1-pro-preview')).toBe('google');
         });
@@ -78,11 +78,12 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should NOT contain deprecated or unlisted models in google', () => {
+            expect(FALLBACK_CONFIG.google).not.toContain('gemini-3.5-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-3.7-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-2.5-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-2.5-pro');
             expect(FALLBACK_CONFIG.google).toEqual([
-                'gemini-3.5-flash',
+                'gemini-3.6-flash',
                 'gemini-3.8-flash',
                 'gemini-3.1-pro-preview'
             ]);
@@ -105,7 +106,7 @@ describe('models.js configuration & helpers', () => {
 
     describe('PROVIDER_DEFAULT_MODELS', () => {
         it('should map each provider to its primary recommended model', () => {
-            expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.5-flash');
+            expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.6-flash');
             expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-gpt-oss-120b');
             expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.openrouter).toBe('llama-3.3-70b-free');
@@ -123,7 +124,7 @@ describe('models.js configuration & helpers', () => {
 
         it('should prioritize other models from the same provider before switching providers', () => {
             const queue = buildFallbackQueue('gemini-3.8-flash');
-            expect(queue[1]).toBe('gemini-3.5-flash');
+            expect(queue[1]).toBe('gemini-3.6-flash');
             expect(queue[2]).toBe('gemini-3.1-pro-preview');
             // Next provider should be groq (since groq is next in providerOrder after google)
             expect(queue[3]).toBe('groq-gpt-oss-120b');
@@ -178,7 +179,7 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should preserve model name if already in target format', () => {
-            expect(getApiModelName('gemini-3.5-flash')).toBe('gemini-3.5-flash');
+            expect(getApiModelName('gemini-3.6-flash')).toBe('gemini-3.6-flash');
         });
 
         it('should return default model if model is null or undefined', () => {

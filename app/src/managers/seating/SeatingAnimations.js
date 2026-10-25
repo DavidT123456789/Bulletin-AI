@@ -624,9 +624,9 @@ export const SeatingAnimations = {
             : Math.min(Math.max(startRect.top + startRect.height / 2, destRect.top + 80), destRect.bottom - 60);
 
         const flyer = cell.cloneNode(true);
-        flyer.className = 'sc-cell occupied sc-flight-token';
+        flyer.className = `sc-cell occupied sc-flight-token${cell.classList.contains('sc-cell-stacked') ? ' sc-cell-stacked' : ''}`;
         flyer.removeAttribute('id');
-        flyer.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+        flyer.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge').forEach(el => el.remove());
 
         // Immediately hide content of the originating cell so it detaches cleanly
         cell.style.opacity = '0';

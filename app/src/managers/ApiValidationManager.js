@@ -72,7 +72,7 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : (PROVIDER_DEFAULT_MODELS.google || 'gemini-3.5-flash');
+                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : (PROVIDER_DEFAULT_MODELS.google || 'gemini-3.6-flash');
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
@@ -106,7 +106,7 @@ export const ApiValidationManager = {
                     openrouter: 'deepseek/deepseek-chat',
                     anthropic: 'anthropic-claude-3-7-sonnet-latest'
                 };
-                const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || 'gemini-3.5-flash';
+                const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || 'gemini-3.6-flash';
                 await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
 
                 appState.apiKeyStatus[provider] = 'valid';
@@ -184,7 +184,7 @@ export const ApiValidationManager = {
                     const modelIds = models.map(m => m.name.replace('models/', ''));
 
                     // Check if we can fallback to a known working model
-                    const fallbackModel = 'gemini-2.5-flash';
+                    const fallbackModel = PROVIDER_DEFAULT_MODELS.google || 'gemini-3.6-flash';
                     if (modelIds.includes(fallbackModel)) {
                         appState.currentAIModel = fallbackModel;
 
