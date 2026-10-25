@@ -84,11 +84,13 @@ export const SeatingZoom = {
         }
 
         const isMobile = this._isCompactLayout ? this._isCompactLayout() : (window.innerWidth <= 768);
-        const isCompactTablet = isMobile && areaWidth >= 540;
+        const isMobileLandscape = isMobile && areaWidth > areaHeight;
+        const isCompactTablet = isMobile && !isMobileLandscape && areaWidth >= 540;
         const isLandscapeTabletLocked = !isMobile && Boolean(this._isLocked) && areaWidth < 1180;
-        const reservedTop = isMobile ? (56 + 48) : (56 + 24);
-        const reservedBottom = isMobile ? (this._isLocked ? 48 : 12) : 24;
-        const reservedHoriz = isLandscapeTabletLocked ? 96 : (isCompactTablet ? 76 : (isMobile ? 24 : 48));
+        const landscapePad = areaHeight <= 460 ? 30 : 46;
+        const reservedTop = isMobileLandscape ? (56 + 30) : (isMobile ? (56 + 48) : (56 + (isLandscapeTabletLocked ? landscapePad : 24)));
+        const reservedBottom = isMobileLandscape ? (this._isLocked ? 30 : 12) : (isMobile ? (this._isLocked ? 48 : 12) : (isLandscapeTabletLocked ? landscapePad : 24));
+        const reservedHoriz = isLandscapeTabletLocked ? (landscapePad * 2) : (isMobileLandscape ? 60 : (isCompactTablet ? 76 : (isMobile ? 24 : 48)));
 
         // On wide desktop (>= 1180px) or when unlocked, account for the 260px sidebar;
         // on landscape tablets (< 1180px) in locked consultation mode, reclaim the hidden sidebar width.
@@ -120,7 +122,7 @@ export const SeatingZoom = {
         const scaleH = availH / boardH;
         let scale = Math.min(scaleW, scaleH);
 
-        const maxFitScale = isCompactTablet ? 1.25 : (isMobile ? 1.0 : 1.65);
+        const maxFitScale = (isCompactTablet || isMobileLandscape) ? 1.25 : (isMobile ? 1.0 : 1.65);
         scale = Math.min(maxFitScale, Math.max(0.35, Math.round(scale * 100) / 100));
 
         this._fitScale = scale;

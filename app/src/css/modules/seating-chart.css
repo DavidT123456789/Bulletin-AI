@@ -3451,6 +3451,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
     }
 
+    @media (orientation: landscape) {
+        .sc-grid-area:not([data-fitted="false"]) {
+            padding: calc(56px + 30px) 12px 12px;
+        }
+
+        #seatingChartView[data-locked="true"] .sc-grid-area:not([data-fitted="false"]) {
+            padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+        }
+    }
+
     .sc-grid-area::-webkit-scrollbar {
         display: none; /* Chrome/Safari */
     }

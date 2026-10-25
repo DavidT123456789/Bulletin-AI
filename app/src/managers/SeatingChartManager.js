@@ -487,13 +487,19 @@ export const SeatingChartManager = {
                     const w = Math.round(borderBox?.inlineSize ?? gridArea.offsetWidth ?? entry?.contentRect?.width ?? gridArea.clientWidth ?? 0);
                     const h = Math.round(borderBox?.blockSize ?? gridArea.offsetHeight ?? entry?.contentRect?.height ?? gridArea.clientHeight ?? 0);
                     if (w <= 0 || h <= 0) return;
-                    if (Math.abs(w - (this._lastObservedGridW || 0)) < 2 && Math.abs(h - (this._lastObservedGridH || 0)) < 2) return;
+                    const prevGridW = this._lastObservedGridW || 0;
+                    const prevGridH = this._lastObservedGridH || 0;
+                    if (Math.abs(w - prevGridW) < 2 && Math.abs(h - prevGridH) < 2) return;
+                    const orientationFlipped = prevGridW > 0 && prevGridH > 0 && Math.abs(w - prevGridW) >= 40 && ((prevGridW > prevGridH) !== (w > h));
+                    if (orientationFlipped) this._pendingOrientationFlip = true;
                     this._lastObservedGridW = w;
                     this._lastObservedGridH = h;
                     clearTimeout(this._resizeDebounceTimer);
                     this._resizeDebounceTimer = setTimeout(() => {
                         if (this._isActive && !this._isPinching && !this._zoomAnimCleanup && !this._modeCarouselTimer) {
-                            this._applySmartFit();
+                            const forceFit = Boolean(this._pendingOrientationFlip);
+                            this._pendingOrientationFlip = false;
+                            this._applySmartFit(forceFit);
                         }
                     }, 80);
                 });
@@ -512,7 +518,9 @@ export const SeatingChartManager = {
                 clearTimeout(this._resizeDebounceTimer);
                 this._resizeDebounceTimer = setTimeout(() => {
                     if (this._isActive) {
-                        this._applySmartFit();
+                        const forceFit = Boolean(this._pendingOrientationFlip);
+                        this._pendingOrientationFlip = false;
+                        this._applySmartFit(forceFit);
                     }
                 }, 100);
             });

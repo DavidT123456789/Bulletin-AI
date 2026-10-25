@@ -1311,7 +1311,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // availW = 908 - 260 - 48 = 600, availH = 604 - 80 - 24 = 500 -> fitScale = 1.0
             Object.defineProperty(gridArea, 'clientWidth', { value: 908, configurable: true });
-            Object.defineProperty(gridArea, 'clientHeight', { value: 604, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 648, configurable: true });
             Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
             Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
 
@@ -1367,6 +1367,24 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 SeatingChartManager._isLocked = false;
                 SeatingChartManager._applySmartFit(true);
                 expect(SeatingChartManager._fitScale).toBe(0.81);
+
+                // Carte Cours sur la même tablette horizontale en consultation (853px x 563px) -> marge verticale harmonisée (46px haut/bas = 0.73)
+                SeatingChartManager._isLocked = true;
+                Object.defineProperty(gridArea, 'clientHeight', { value: 563, configurable: true });
+                Object.defineProperty(board, 'offsetWidth', { value: 676, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 568, configurable: true });
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(0.73);
+
+                // Mobile horizontal en consultation (615px x 413px, <= 768px) -> marge verticale réduite à 30px (availH = 413 - 86 - 30 = 297 -> scale = 0.68)
+                Object.defineProperty(window, 'innerWidth', { value: 615, configurable: true, writable: true });
+                Object.defineProperty(gridArea, 'clientWidth', { value: 615, configurable: true });
+                Object.defineProperty(gridArea, 'clientHeight', { value: 413, configurable: true });
+                Object.defineProperty(board, 'offsetWidth', { value: 566, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 436, configurable: true });
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(0.68);
+                Object.defineProperty(gridArea, 'clientHeight', { value: 800, configurable: true });
 
                 // 3. Smartphone étroit (< 540px) avec petite grille -> plafond strict maintenu à 1.0
                 SeatingChartManager._isLocked = true;
