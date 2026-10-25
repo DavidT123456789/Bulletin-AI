@@ -863,7 +863,6 @@ export const SyncService = {
             },
             settings: StorageManager.getExportableSettings({ includeApiKeys: true }),
             classes: userSettings.academic.classes || [],
-            currentClassId: userSettings.academic.currentClassId,
             generatedResults: results
         };
     },

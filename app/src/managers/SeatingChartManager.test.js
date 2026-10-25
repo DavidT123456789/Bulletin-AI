@@ -2063,22 +2063,24 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
                 const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
 
-                // 1. Cas A : Glissement immédiat (< 200ms) sur une table du plateau ajusté (_isFitted = true)
+                // 1. Cas A : Glissement immédiat sur une table du plateau ajusté (_isFitted = true) -> vibration immédiate à 0ms dès touchstart
                 const ts = new Event('touchstart');
                 ts.touches = [{ clientX: 100, clientY: 100 }];
                 cell.dispatchEvent(ts);
 
-                // Le drag HTML5 natif est immédiatement désarmé pendant l'appui tactile
+                // La vibration haptique se déclenche instantanément (0ms) au contact du doigt et le drag HTML5 natif est désarmé
+                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(hapticSpy).toHaveBeenCalledWith(18);
                 expect(cell.draggable).toBe(false);
                 const nativeDragStart = new Event('dragstart', { cancelable: true });
                 cell.dispatchEvent(nativeDragStart);
                 expect(nativeDragStart.defaultPrevented).toBe(true);
                 expect(document.querySelector('.sc-drag-clone')).toBeNull();
 
-                // Mouvement de 4px (> 3px) à t = 30ms -> engage dès la 1ère frame de glissement l'état unique de drag tactile
-                vi.advanceTimersByTime(30);
+                // Mouvement dès la 1ère frame (2px) -> engage le fantôme visuel sans seconde vibration retardée
+                vi.advanceTimersByTime(16);
                 const tm = new Event('touchmove', { cancelable: true });
-                tm.touches = [{ clientX: 104, clientY: 100 }];
+                tm.touches = [{ clientX: 102, clientY: 100 }];
                 cell.dispatchEvent(tm);
 
                 const ghost = document.querySelector('.sc-touch-ghost');
@@ -2086,7 +2088,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(ghost.style.getPropertyValue('--sc-drag-scale')).toBe('0.75');
                 expect(cell.classList.contains('dragging')).toBe(true);
                 expect(hapticSpy).toHaveBeenCalledTimes(1);
-                expect(hapticSpy).toHaveBeenCalledWith(18);
 
                 // Franchissement du délai de maintien (115ms) pendant le déplacement : aucun second état ni seconde vibration
                 vi.advanceTimersByTime(150);
@@ -2095,18 +2096,20 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
                 const te = new Event('touchend', { cancelable: true });
                 te.touches = [];
-                te.changedTouches = [{ clientX: 104, clientY: 100 }];
+                te.changedTouches = [{ clientX: 112, clientY: 100 }];
                 cell.dispatchEvent(te);
 
                 expect(document.querySelector('.sc-touch-ghost')).toBeNull(); vi.advanceTimersByTime(400);
                 expect(cell.classList.contains('dragging')).toBe(false);
                 expect(cell.draggable).toBe(true);
 
-                // 2. Cas B : Maintien sur place (115ms) avant de bouger -> produit exactement le même état et la même échelle
+                // 2. Cas B : Maintien sur place avant de bouger -> la vibration a eu lieu dès 0ms, et le fantôme apparaît sans re-vibrer à retardement
                 hapticSpy.mockClear();
                 const tsHold = new Event('touchstart');
                 tsHold.touches = [{ clientX: 100, clientY: 100 }];
                 cell.dispatchEvent(tsHold);
+                expect(hapticSpy).toHaveBeenCalledTimes(1);
+                expect(hapticSpy).toHaveBeenCalledWith(18);
 
                 vi.advanceTimersByTime(115);
                 const ghostHold = document.querySelector('.sc-touch-ghost');

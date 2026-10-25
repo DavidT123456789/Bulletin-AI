@@ -238,26 +238,7 @@ export const StorageManager = {
                 runtimeState._dataPurgeDetected = false;
             }
 
-            const currentClassId = userSettings.academic.currentClassId;
-            if (currentClassId) {
-                if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
-                    const normOrigin = currentClassId.replace('virtual_', '');
-                    runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                        r => {
-                            const origin = r.studentData?.classe || r.classe || r.originClass || '';
-                            return origin && Utils.normalizeClassName(origin) === normOrigin;
-                        }
-                    );
-                } else {
-                    runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                        r => r.classId === currentClassId
-                    );
-                }
-            } else {
-                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                    r => !r.classId
-                );
-            }
+            this._updateFilteredResultsForCurrentClass();
 
         } catch (e) {
             console.error("Erreur chargement données (StorageManager):", e);
@@ -285,6 +266,74 @@ export const StorageManager = {
         } catch { /* non-critical */ }
     },
 
+    /**
+     * Vérifie si un objet classe correspond à la classe d'exemple/démo.
+     * @private
+     * @param {Object|null|undefined} cls
+     * @returns {boolean}
+     */
+    _isDemoClassObj(cls) {
+        return Boolean(cls && (cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple'));
+    },
+
+    /**
+     * Résout la classe active après un import ou une fusion de classes sans dépendre
+     * d'un `currentClassId` externe issu d'une sauvegarde :
+     * - Conserve la classe locale active si elle existe toujours dans la liste (et n'est pas
+     *   la classe démo alors que de vraies classes sont disponibles).
+     * - Sinon, sélectionne la première classe réelle (ou la première classe de la liste).
+     * @private
+     */
+    _resolveActiveClassAfterImport() {
+        const classes = userSettings.academic.classes || [];
+        if (classes.length === 0) {
+            userSettings.academic.currentClassId = null;
+            appState.currentClassId = null;
+            return;
+        }
+
+        const currentId = userSettings.academic.currentClassId;
+        const currentCls = classes.find(c => c.id === currentId);
+        const hasRealClass = classes.some(c => !this._isDemoClassObj(c));
+
+        if (currentCls && (!this._isDemoClassObj(currentCls) || !hasRealClass)) {
+            appState.currentClassId = currentId;
+            return;
+        }
+
+        const defaultCls = classes.find(c => !this._isDemoClassObj(c)) || classes[0];
+        userSettings.academic.currentClassId = defaultCls.id;
+        appState.currentClassId = defaultCls.id;
+    },
+
+    /**
+     * Met à jour `runtimeState.data.filteredResults` en fonction de la classe active courante.
+     * @private
+     */
+    _updateFilteredResultsForCurrentClass() {
+        const currentClassId = userSettings.academic.currentClassId;
+        const allResults = runtimeState.data.generatedResults || [];
+        if (currentClassId) {
+            if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
+                const normOrigin = currentClassId.replace('virtual_', '');
+                runtimeState.data.filteredResults = allResults.filter(
+                    r => {
+                        const origin = r.studentData?.classe || r.classe || r.originClass || '';
+                        return origin && Utils.normalizeClassName(origin) === normOrigin;
+                    }
+                );
+            } else {
+                runtimeState.data.filteredResults = allResults.filter(
+                    r => r.classId === currentClassId
+                );
+            }
+        } else {
+            runtimeState.data.filteredResults = allResults.filter(
+                r => !r.classId
+            );
+        }
+    },
+
     async savePreRestoreSnapshot() {
         try {
             const results = runtimeState.data.generatedResults || [];
@@ -295,7 +344,6 @@ export const StorageManager = {
                 createdAt: Date.now(),
                 settings: this.getExportableSettings({ includeApiKeys: true }),
                 classes: userSettings.academic.classes || [],
-                currentClassId: userSettings.academic.currentClassId,
                 generatedResults: results
             };
             await DBService.put('appData', snapshot);
@@ -1098,7 +1146,6 @@ export const StorageManager = {
             settings: this.getExportableSettings(),
             // Classes
             classes: userSettings.academic.classes || [],
-            currentClassId: userSettings.academic.currentClassId,
             // Student data with per-item timestamps
             generatedResults: (runtimeState.data.generatedResults || []).map(result => ({
                 ...result,
@@ -1205,15 +1252,7 @@ export const StorageManager = {
                     stats.classesAdded = backup.classes.length;
                 }
 
-                const targetClassId = backup.currentClassId || userSettings.academic.currentClassId;
-                const classExists = (userSettings.academic.classes || []).some(c => c.id === targetClassId);
-                if (classExists) {
-                    userSettings.academic.currentClassId = targetClassId;
-                    appState.currentClassId = targetClassId;
-                } else if (userSettings.academic.classes.length > 0) {
-                    userSettings.academic.currentClassId = userSettings.academic.classes[0].id;
-                    appState.currentClassId = userSettings.academic.classes[0].id;
-                }
+                this._resolveActiveClassAfterImport();
             }
 
             // Import student data
@@ -1286,6 +1325,7 @@ export const StorageManager = {
             if (runtimeState.data.generatedResults?.length > 0) {
                 runtimeState._dataPurgeDetected = false;
             }
+            this._updateFilteredResultsForCurrentClass();
             this._ensureDefaultState();
             this._ensureConfigUpgrades();
             await this.saveAppState();
@@ -1393,6 +1433,7 @@ export const StorageManager = {
                 }
             });
             userSettings.academic.classes = localClasses;
+            this._resolveActiveClassAfterImport();
         }
 
         // 2. Fusion des élèves (generatedResults)
@@ -1587,24 +1628,7 @@ export const StorageManager = {
         await DBService.putAll('generatedResults', cleanResults);
 
         // 4. Mettre à jour les filtres d'affichage si nécessaire
-        const currentClassId = userSettings.academic.currentClassId;
-        if (currentClassId) {
-            if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
-                const normOrigin = currentClassId.replace('virtual_', '');
-                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                    r => {
-                        const origin = r.studentData?.classe || r.classe || r.originClass || '';
-                        return origin && Utils.normalizeClassName(origin) === normOrigin;
-                    }
-                );
-            } else {
-                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                    r => r.classId === currentClassId
-                );
-            }
-        } else {
-            runtimeState.data.filteredResults = runtimeState.data.generatedResults;
-        }
+        this._updateFilteredResultsForCurrentClass();
 
         // 5. Sauvegarde de l'état
         if (runtimeState.data.generatedResults?.length > 0) {

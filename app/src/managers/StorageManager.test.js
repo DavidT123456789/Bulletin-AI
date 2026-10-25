@@ -647,19 +647,51 @@ describe('StorageManager', () => {
             expect(appState.activeView).toBe('plan');
         });
 
-        it('should align currentClassId with restored classes when importing', async () => {
+        it('should ignore backup.currentClassId, select first real class when no valid local class is active, and preserve active local class when still present', async () => {
+            userSettings.academic.classes = [
+                { id: 'demo', name: 'Classe exemple', isDemo: true }
+            ];
+            userSettings.academic.currentClassId = 'demo';
+
             const backupContent = JSON.stringify({
                 appVersion: '4.3.0',
                 classes: [
                     { id: 'c1', name: '3A' },
                     { id: 'c2', name: '3B' }
                 ],
-                currentClassId: 'c2'
+                currentClassId: 'c2',
+                generatedResults: [
+                    { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } },
+                    { id: 's2', nom: 'Martin', prenom: 'Bob', classId: 'c2', studentData: { periods: {} } }
+                ]
             });
 
-            await StorageManager.importBackup(backupContent, { mergeData: false, silent: true });
+            // 1. Fresh/demo session -> ignores backup.currentClassId ('c2') and selects first real class ('c1')
+            await StorageManager.importBackup(backupContent, { mergeData: true, silent: true });
+            expect(userSettings.academic.currentClassId).toBe('c1');
+            expect(appState.currentClassId).toBe('c1');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s1']);
+
+            // 2. Active real class ('c2') -> preserved across import even if backup specifies another class
+            userSettings.academic.currentClassId = 'c2';
+            appState.currentClassId = 'c2';
+            const secondBackup = JSON.stringify({
+                appVersion: '4.3.0',
+                classes: [
+                    { id: 'c1', name: '3A' },
+                    { id: 'c2', name: '3B' }
+                ],
+                currentClassId: 'c1',
+                generatedResults: [
+                    { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } },
+                    { id: 's2', nom: 'Martin', prenom: 'Bob', classId: 'c2', studentData: { periods: {} } }
+                ]
+            });
+
+            await StorageManager.importBackup(secondBackup, { mergeData: false, silent: true });
             expect(userSettings.academic.currentClassId).toBe('c2');
             expect(appState.currentClassId).toBe('c2');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s2']);
         });
 
         it('should exclude API keys and Ollama settings by default in getExportableSettings, and include API keys when includeApiKeys is true', () => {
@@ -856,5 +888,3 @@ describe('StorageManager', () => {
         });
     });
 });
-
-

@@ -1537,6 +1537,10 @@
     touch-action: pan-x pan-y;
 }
 
+#seatingChartView[data-locked="false"] #scGridArea[data-fitted="true"] .sc-cell.occupied:not(.pinned) {
+    touch-action: none;
+}
+
 #seatingChartView[data-locked="true"] .sc-cell.occupied {
     cursor: pointer;
 }

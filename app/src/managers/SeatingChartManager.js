@@ -5309,7 +5309,7 @@ export const SeatingChartManager = {
     },
 
     _addTouchDrag(element, sourceInfo) {
-        let startX, startY, lastTouchX, lastTouchY, hasMoved = false;
+        let startX, startY, lastTouchX, lastTouchY, hasMoved = false, hasDragged = false, hasVibrated = false;
         let isScrolling = false;
         let longPressTimer = null;
         let pendingSourceInfo = null;
@@ -5331,7 +5331,10 @@ export const SeatingChartManager = {
             }
             clearHoldTimer();
             hasMoved = true;
-            this._haptic(18);
+            if (!hasVibrated) {
+                hasVibrated = true;
+                this._haptic(18);
+            }
             this._touchSourceInfo = pendingSourceInfo;
             this._touchDraggedElement = element;
             if (pendingSourceInfo.type === 'group-member' && pendingSourceInfo.resultId) {
@@ -5365,7 +5368,12 @@ export const SeatingChartManager = {
             lastTouchX = startX;
             lastTouchY = startY;
             hasMoved = false;
+            hasDragged = false;
+            hasVibrated = true;
             isScrolling = false;
+
+            // Instantaneous 0ms haptic feedback on finger contact (guaranteed user activation & zero hold lag)
+            this._haptic(18);
 
             // Disarm native HTML5 touch drag during finger interaction so only the unified touch ghost is used
             this._touchPressedElement = element;
@@ -5402,8 +5410,9 @@ export const SeatingChartManager = {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
             }
             pendingSourceInfo = activeSourceInfo;
+            this._touchSourceInfo = activeSourceInfo;
 
-            // Unified touch hold affordance (snappy 115ms on fitted board cells, 140ms on scrollable sidebar/zoomed board)
+            // Lift visual ghost under finger if held stationary (without any delayed second vibration)
             clearHoldTimer();
             const holdDelay = (activeSourceInfo.type !== 'sidebar' && this._isFitted) ? 115 : 140;
             longPressTimer = setTimeout(() => {
@@ -5427,6 +5436,9 @@ export const SeatingChartManager = {
             lastTouchY = touch.clientY;
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
+            if (Math.hypot(dx, dy) > 4) {
+                hasDragged = true;
+            }
 
             // Touch gestures disambiguation
             if (!hasMoved) {
@@ -5443,7 +5455,8 @@ export const SeatingChartManager = {
                         }
 
                         // Vertical motion pulling upward toward the board: engage unified drag on first upward move
-                        if (dy < -5 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                        if (dy < -3 && Math.abs(dy) >= Math.abs(dx) * 0.75) {
+                            hasDragged = true;
                             engageTouchDrag(touch);
                         }
                     } else {
@@ -5457,14 +5470,16 @@ export const SeatingChartManager = {
                         }
 
                         // Horizontal motion pulling rightward toward the board: engage unified drag on first rightward move
-                        if (dx > 5 && Math.abs(dx) > Math.abs(dy) * 1.1) {
+                        if (dx > 3 && Math.abs(dx) >= Math.abs(dy) * 0.75) {
+                            hasDragged = true;
                             engageTouchDrag(touch);
                         }
                     }
                 } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member') {
                     if (this._isFitted) {
-                        // On fitted board (no pan/scroll): OS touch slop already filtered micro-jitter, engage on first move (> 3px)
-                        if (Math.hypot(dx, dy) > 3) {
+                        // On fitted board (no pan/scroll): engage immediately on the very first touchmove frame
+                        if (Math.hypot(dx, dy) >= 1) {
+                            hasDragged = true;
                             engageTouchDrag(touch);
                         }
                     } else if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
@@ -5489,7 +5504,7 @@ export const SeatingChartManager = {
 
         element.addEventListener('touchend', (e) => {
             clearHoldTimer();
-            if (this._isPinching || !hasMoved || !this._touchSourceInfo) {
+            if (this._isPinching || !hasMoved || !hasDragged || !this._touchSourceInfo) {
                 this._cleanupTouch();
                 return;
             }
