@@ -2132,8 +2132,9 @@ export const ClassUIManager = {
             }
         };
 
-        // Initial render
+        // Initial render & scroll to active class
         refreshList();
+        modalEl.querySelector('.class-management-item.active-switch')?.scrollIntoView?.({ block: 'nearest' });
     },
 
     /**

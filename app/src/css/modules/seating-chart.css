@@ -1619,15 +1619,11 @@
 .sc-student-chip .sc-chip-badge {
     pointer-events: none;
     -webkit-user-drag: none;
-    user-select: none;
-    -webkit-user-select: none;
 }
 
 #seatingChartView,
 #seatingChartView .sc-cell,
-#seatingChartView .sc-cell *,
 #seatingChartView .sc-student-chip,
-#seatingChartView .sc-student-chip *,
 #seatingChartView .sc-stacked-avatar,
 #seatingChartView .sc-stacked-member {
     user-select: none;
@@ -1648,13 +1644,6 @@
     #seatingChartView .sc-stacked-member {
         -webkit-user-drag: none;
     }
-}
-
-#seatingChartView[data-touch-active="true"] .sc-cell.occupied,
-#seatingChartView[data-touch-active="true"] .sc-student-chip,
-#seatingChartView[data-touch-active="true"] .sc-stacked-avatar,
-#seatingChartView[data-touch-active="true"] .sc-stacked-member {
-    -webkit-user-drag: none;
 }
 
 /* Unified floating drag clone (.sc-drag-clone mouse / .sc-touch-ghost touch) */

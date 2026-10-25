@@ -54,8 +54,8 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
+    background: var(--item-active-bg);
+    color: var(--text-secondary);
     height: 20px;
     min-width: 24px;
     padding: 0 7px;
@@ -72,34 +72,29 @@
     font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
-    opacity: 0.85;
-}
-
-[data-theme="dark"] .class-chip .student-count-badge {
-    background: rgba(var(--primary-color-rgb), 0.18);
-    color: var(--primary-bright);
+    opacity: 0.75;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .class-chip:hover .student-count-badge {
-        background: var(--primary-color);
-        color: #ffffff;
+        background: var(--item-hover-bg-elevated);
+        color: var(--text-primary);
     }
 
     .class-chip:hover .student-count-badge iconify-icon {
-        color: #ffffff;
-        opacity: 1;
+        color: currentColor;
+        opacity: 0.9;
     }
 }
 
 .class-chip.active .student-count-badge {
-    background: var(--primary-color);
-    color: #ffffff;
+    background: var(--item-hover-bg-elevated);
+    color: var(--text-primary);
 }
 
 .class-chip.active .student-count-badge iconify-icon {
-    color: #ffffff;
-    opacity: 1;
+    color: currentColor;
+    opacity: 0.9;
 }
 
 .class-chip .class-virtual-tag {
@@ -492,7 +487,7 @@
 .class-dropdown-item .class-meta {
     font-size: 0.75rem;
     line-height: 1.3;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     display: flex;
     align-items: center;
     gap: 7px;
@@ -790,111 +785,6 @@
 }
 
 /* ====================================================================
-   MODAL MINI - Style iOS pour création de classe
-   ==================================================================== */
-
-.modal-mini-content {
-    --modal-width: 420px;
-    --modal-radius: var(--radius-lg);
-}
-
-.modal-header-centered {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 32px 24px 16px;
-    border-bottom: none;
-    gap: 12px;
-}
-
-.modal-icon-wrapper {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color, var(--primary-color)));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.3);
-    animation: icon-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes icon-pop {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.modal-icon-wrapper i {
-    font-size: 1.5rem;
-    color: white;
-}
-
-.modal-header-centered .modal-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.modal-body-compact {
-    padding: 8px 24px 24px;
-}
-
-/* Premium Input Group */
-.premium-input-group {
-    position: relative;
-}
-
-.premium-input {
-    width: 100%;
-    padding: 16px 20px;
-    font-size: 1rem;
-    border: 2px solid transparent;
-    border-radius: var(--radius-control);
-    background: var(--bg-color);
-    transition: all var(--transition-fast);
-    text-align: center;
-}
-
-.premium-input:focus {
-    outline: none;
-}
-
-.premium-input::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.6;
-}
-
-.input-char-count {
-    position: absolute;
-    right: 12px;
-    bottom: -24px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    opacity: 0.7;
-}
-
-/* Footer buttons — create class modal */
-.modal-footer-buttons {
-    padding: var(--modal-footer-padding);
-    min-height: var(--modal-footer-height);
-    border-top: var(--modal-footer-border);
-    background: var(--modal-bg);
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-
-/* ====================================================================
    INLINE CONFIRMATION ANIMATIONS
    ==================================================================== */
 
@@ -1038,6 +928,8 @@
     cursor: pointer;
     position: relative;
     outline: none;
+    scroll-margin-top: 12px;
+    scroll-margin-bottom: 12px;
 }
 
 .class-management-item:focus {
@@ -1056,19 +948,15 @@
 }
 
 .class-management-item:not(.active-switch):not(.editing):hover {
-    background-color: var(--bg-color);
+    background: linear-gradient(var(--item-hover-bg), var(--item-hover-bg)), var(--surface-color);
     border-bottom-color: var(--border-color);
     box-shadow: none;
 }
 
-[data-theme="dark"] .class-management-item:not(.active-switch):not(.editing):hover {
-    background-color: var(--bg-hover);
-}
-
 .class-management-item:not(.editing):focus-visible {
-    background-color: var(--item-hover-bg);
+    background: linear-gradient(var(--item-hover-bg), var(--item-hover-bg)), var(--surface-color);
     outline: none;
-    box-shadow: inset 0 0 0 2px var(--primary-color);
+    box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.45);
 }
 
 /* Drag Handle */
@@ -1253,137 +1141,39 @@
     opacity: 1;
 }
 
-.manage-rename-btn,
-.manage-duplicate-btn,
-.manage-delete-btn {
+.class-management-actions .btn-icon-small {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    transition: all var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.15rem;
 }
 
-.manage-rename-btn:hover,
-.manage-duplicate-btn:hover {
-    background: var(--item-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-}
-
-.manage-delete-btn:hover {
-    background: var(--error-light);
-    border-color: transparent;
-    color: var(--error-color);
-    box-shadow: 0 2px 6px rgba(var(--error-rgb), 0.08);
-}
-
 /* ====================================================================
-   ACTIVE CLASS ITEM - SOLID PRIMARY SURFACE
-   Scoped to :not(.editing) so in-situ renaming and delete confirmation
-   temporarily switch to a clean neutral/danger surface without clashing
+   ACTIVE CLASS ITEM - NEUTRAL ELEVATED SURFACE
+   Aligned with .class-dropdown-item.active (--item-active-bg)
    ==================================================================== */
 
 .class-management-item.active-switch:not(.editing) {
-    background-color: var(--primary-color);
-    border-bottom-color: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(var(--item-active-bg), var(--item-active-bg)), var(--surface-color);
     z-index: 1;
 }
 
-.class-management-item.active-switch:not(.editing):hover {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
-}
-
+.class-management-item.active-switch:not(.editing):hover,
 .class-management-item.active-switch:not(.editing):focus-visible {
-    background-color: var(--primary-color);
-    box-shadow: inset 0 0 0 2px #ffffff;
-}
-
-.class-management-item.active-switch:not(.editing) .class-drag-handle {
-    color: rgba(255, 255, 255, 0.65);
-    opacity: 0.75;
-}
-
-.class-management-item.active-switch:not(.editing):hover .class-drag-handle {
-    color: rgba(255, 255, 255, 0.9);
-    opacity: 1;
-}
-
-.class-management-item.active-switch:not(.editing) .class-drag-handle:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.class-management-item.active-switch:not(.editing) .class-management-name {
-    color: #ffffff;
+    background: linear-gradient(var(--item-hover-bg-elevated), var(--item-hover-bg-elevated)), var(--surface-color);
 }
 
 .class-management-item.active-switch:not(.editing) .class-stat-badge {
-    background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: var(--surface-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] .class-management-item.active-switch:not(.editing) .class-stat-badge {
-    background: linear-gradient(var(--item-hover-bg), var(--item-hover-bg)), var(--surface-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-.class-management-item.active-switch:not(.editing) .meta-item-inline {
-    color: rgba(255, 255, 255, 0.92);
-}
-
-.class-management-item.active-switch:not(.editing) .meta-item-inline.meta-empty-state {
-    color: rgba(255, 255, 255, 0.75);
-}
-
-.class-management-item.active-switch:not(.editing) .meta-item-inline iconify-icon {
-    color: rgba(255, 255, 255, 0.95);
-    opacity: 0.9;
-}
-
-.class-management-item.active-switch:not(.editing) .meta-separator {
-    color: rgba(255, 255, 255, 0.5);
-    opacity: 1;
-}
-
-.class-management-item.active-switch:not(.editing) .class-management-meta .status-complete,
-.class-management-item.active-switch:not(.editing) .class-management-meta .status-complete iconify-icon {
-    color: var(--color-emerald-bright);
-}
-
-.class-management-item.active-switch:not(.editing) .class-management-meta .status-error,
-.class-management-item.active-switch:not(.editing) .class-management-meta .status-error iconify-icon {
-    color: #fca5a5;
-}
-
-.class-management-item.active-switch:not(.editing) .class-management-actions {
-    opacity: 0.95;
-}
-
-.class-management-item.active-switch:not(.editing) .manage-rename-btn,
-.class-management-item.active-switch:not(.editing) .manage-duplicate-btn,
-.class-management-item.active-switch:not(.editing) .manage-delete-btn {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.class-management-item.active-switch:not(.editing) .manage-rename-btn:hover,
-.class-management-item.active-switch:not(.editing) .manage-duplicate-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.14);
     box-shadow: none;
 }
 
-.class-management-item.active-switch:not(.editing) .manage-delete-btn:hover {
-    background: linear-gradient(var(--error-light), var(--error-light)), var(--surface-color);
-    color: var(--error-color);
-    box-shadow: 0 2px 6px rgba(var(--error-rgb), 0.15);
+.class-management-item.active-switch:not(.editing) .class-management-actions {
+    opacity: 1;
 }
 
 /* ====================================================================
@@ -1402,9 +1192,7 @@
 }
 
 .class-management-item.active-switch:not(.editing).dragging {
-    background: var(--primary-color) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 12px 28px -4px rgba(var(--primary-color-rgb), 0.45), var(--shadow-md);
+    background: linear-gradient(var(--item-active-bg), var(--item-active-bg)), var(--surface-color) !important;
 }
 
 .class-management-item.dragging,
@@ -1433,144 +1221,6 @@
 
 #classManagementModal .modal-body::-webkit-scrollbar-thumb:hover {
     background: var(--text-tertiary);
-}
-
-/* ====================================================================
-   INLINE CREATE FORM ANIMATIONS
-   ==================================================================== */
-
-@keyframes slideDownExpand {
-    from {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        max-height: 120px;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideUpCollapse {
-    from {
-        opacity: 1;
-        max-height: 120px;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        max-height: 0;
-        padding: 0;
-        transform: translateY(-10px);
-    }
-}
-
-.inline-create-form.class-dropdown-item {
-    cursor: default;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    box-sizing: border-box;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all var(--transition-fast);
-    animation: slideDownExpand 0.25s ease-out;
-}
-
-.inline-create-form.class-dropdown-item:hover {
-    background: var(--bg-secondary);
-}
-
-/* Style the parent card as the focused element */
-.inline-create-form.class-dropdown-item:focus-within {
-    background: var(--surface-color);
-}
-
-/* Borderless input that blends seamlessly into the card background */
-.inline-create-form.class-dropdown-item .inline-class-input {
-    flex: 1;
-    padding: 6px 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    border: none !important;
-    background: transparent !important;
-    background-image: none !important;
-    animation: none !important;
-    color: var(--text-primary);
-    outline: none !important;
-    margin-right: 8px;
-    width: 0;
-    box-shadow: none !important;
-    transition: all var(--transition-fast);
-}
-
-.inline-create-form.class-dropdown-item .inline-class-input:hover,
-.inline-create-form.class-dropdown-item .inline-class-input:focus,
-.inline-create-form.class-dropdown-item .inline-class-input:focus-visible,
-.inline-create-form.class-dropdown-item .inline-class-input:active,
-.inline-create-form.class-dropdown-item .inline-class-input:hover:not(:disabled):not(:focus) {
-    border: 0 none transparent !important;
-    outline: 0 none transparent !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    -webkit-box-shadow: none !important;
-    animation: none !important;
-    transition: none !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-}
-
-.inline-create-form.class-dropdown-item .inline-create-btn,
-.inline-create-form.class-dropdown-item .inline-cancel-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.05rem;
-    transition: all var(--transition-fast);
-    padding: 0;
-    flex-shrink: 0;
-}
-
-.inline-create-form.class-dropdown-item .inline-create-btn {
-    color: var(--text-secondary);
-}
-
-.inline-create-form.class-dropdown-item .inline-create-btn:not(:disabled):hover {
-    background: rgba(var(--success-color-rgb), 0.15);
-    color: var(--success-dark);
-}
-
-.inline-create-form.class-dropdown-item .inline-cancel-btn:hover {
-    background: rgba(var(--error-color-rgb), 0.15);
-    color: var(--error-dark);
-}
-
-.inline-create-form.class-dropdown-item button:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    background: transparent;
-    color: var(--text-tertiary);
-}
-
-.inline-class-input::placeholder {
-    color: var(--text-tertiary);
 }
 
 .class-management-item.editing,
@@ -1936,10 +1586,6 @@
 .new-class-input:-webkit-autofill:hover,
 .new-class-input:-webkit-autofill:focus,
 .new-class-input:-webkit-autofill:active,
-.inline-class-input:-webkit-autofill,
-.inline-class-input:-webkit-autofill:hover,
-.inline-class-input:-webkit-autofill:focus,
-.inline-class-input:-webkit-autofill:active,
 .in-situ-rename-input:-webkit-autofill,
 .in-situ-rename-input:-webkit-autofill:hover,
 .in-situ-rename-input:-webkit-autofill:focus,
@@ -1992,17 +1638,9 @@
 .inline-action-btn:focus-visible,
 .manage-rename-btn:focus-visible,
 .manage-duplicate-btn:focus-visible,
-.manage-delete-btn:focus-visible,
-.inline-create-form.class-dropdown-item .inline-create-btn:focus-visible,
-.inline-create-form.class-dropdown-item .inline-cancel-btn:focus-visible {
+.manage-delete-btn:focus-visible {
     outline: none !important;
     box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--primary-color) !important;
-}
-
-.class-management-item.active-switch:not(.editing) .manage-rename-btn:focus-visible,
-.class-management-item.active-switch:not(.editing) .manage-duplicate-btn:focus-visible,
-.class-management-item.active-switch:not(.editing) .manage-delete-btn:focus-visible {
-    box-shadow: 0 0 0 2px #ffffff !important;
 }
 
 /* ====================================================================
@@ -2013,9 +1651,7 @@
     .inline-action-btn,
     .manage-rename-btn,
     .manage-duplicate-btn,
-    .manage-delete-btn,
-    .inline-create-form.class-dropdown-item .inline-create-btn,
-    .inline-create-form.class-dropdown-item .inline-cancel-btn {
+    .manage-delete-btn {
         position: relative;
     }
 
@@ -2023,9 +1659,7 @@
     .inline-action-btn::after,
     .manage-rename-btn::after,
     .manage-duplicate-btn::after,
-    .manage-delete-btn::after,
-    .inline-create-form.class-dropdown-item .inline-create-btn::after,
-    .inline-create-form.class-dropdown-item .inline-cancel-btn::after {
+    .manage-delete-btn::after {
         content: '';
         position: absolute;
         top: 50%;

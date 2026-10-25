@@ -236,7 +236,6 @@
     .modal-content:where(
         .modal-alert-ios,
         .modal-content-confirm,
-        .modal-mini-content,
         .modal-content-backup-import,
         .model-selection-content
     ),

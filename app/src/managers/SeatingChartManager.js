@@ -307,7 +307,6 @@ export const SeatingChartManager = {
                 this._isTouchActive = false;
                 this._isMousePointerActive = true;
                 this._lastTouchTime = 0;
-                viewEl.removeAttribute('data-touch-active');
                 const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                 if (dragTarget && !this._isLocked && !dragTarget.classList.contains('pinned')) {
                     dragTarget.draggable = true;
@@ -319,11 +318,7 @@ export const SeatingChartManager = {
                 this._isTouchActive = true;
                 this._isMousePointerActive = false;
                 this._lastTouchTime = Date.now();
-                viewEl.setAttribute('data-touch-active', 'true');
                 try { window.getSelection?.()?.removeAllRanges?.(); } catch (_) {}
-                if (!this._isLocked) {
-                    this._suppressTouchTooltips(0);
-                }
                 const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                 if (dragTarget && !this._isLocked) {
                     this._touchPressedElement = dragTarget;
@@ -2520,6 +2515,11 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _syncLockControlsUI(locked) {
+        if (this._tooltipSuppressTimer) {
+            clearTimeout(this._tooltipSuppressTimer);
+            this._tooltipSuppressTimer = null;
+        }
+        if (TooltipsUI) TooltipsUI.isIgnoringTooltips = false;
         const isVirtual = this._isVirtualClass();
         const view = document.getElementById('seatingChartView');
         if (view) {
@@ -5379,10 +5379,6 @@ export const SeatingChartManager = {
             this._isTouchActive = true;
             this._isMousePointerActive = false;
             this._lastTouchTime = Date.now();
-            document.getElementById('seatingChartView')?.setAttribute('data-touch-active', 'true');
-            if (!this._isLocked) {
-                this._suppressTouchTooltips(0);
-            }
             if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove')) {
                 clearHoldTimer();
                 pendingSourceInfo = null;
@@ -5567,17 +5563,7 @@ export const SeatingChartManager = {
 
     _createTouchGhost(element, touch) {
         this._removeTouchGhost();
-        let x = Number(touch?.clientX);
-        let y = Number(touch?.clientY);
-        if (!Number.isFinite(x) || !Number.isFinite(y) || (x <= 0 && y <= 0)) {
-            const rect = element?.getBoundingClientRect?.();
-            if (rect && (rect.width > 0 || rect.height > 0)) {
-                x = rect.left + rect.width / 2;
-                y = rect.top + rect.height / 2;
-            } else {
-                return;
-            }
-        }
+        if (!touch || !(touch.clientX > 0 || touch.clientY > 0)) return;
         const isGroupMember = this._touchSourceInfo?.type === 'group-member' && this._touchSourceInfo.resultId;
         const memberStudent = isGroupMember
             ? (this._studentMap?.get(this._touchSourceInfo.resultId) || this._students?.find(s => s.id === this._touchSourceInfo.resultId) || false)
@@ -5588,8 +5574,8 @@ export const SeatingChartManager = {
             count,
             memberStudent
         });
-        ghost.style.left = `${x}px`;
-        ghost.style.top = `${y}px`;
+        ghost.style.left = `${touch.clientX}px`;
+        ghost.style.top = `${touch.clientY}px`;
         document.body.appendChild(ghost);
         this._touchDragEl = ghost;
     },
@@ -5705,7 +5691,7 @@ export const SeatingChartManager = {
         this._touchSourceInfo = null;
         this._isTouchActive = false;
         this._lastTouchTime = preserveTouchTimestamp ? Date.now() : 0;
-        if ((hadActiveDrag || !this._isLocked) && !this._isPinching) {
+        if (hadActiveDrag && !this._isPinching) {
             this._suppressTouchTooltips(400);
         }
         document.body.classList.remove('sc-drag-over-sidebar');

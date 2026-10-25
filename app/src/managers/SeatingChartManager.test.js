@@ -2283,6 +2283,14 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(document.querySelector('.sc-touch-ghost')).toBeNull();
                 expect(memberPill.classList.contains('dragging-member')).toBe(false);
                 vi.advanceTimersByTime(400);
+
+                // 4. Cas D : Après une édition puis verrouillage (_toggleLock -> Mode Lecture), isIgnoringTooltips est bien réinitialisé à false
+                SeatingChartManager._suppressTouchTooltips(0);
+                expect(TooltipsUI.isIgnoringTooltips).toBe(true);
+                SeatingChartManager._toggleLock();
+                expect(SeatingChartManager._isLocked).toBe(true);
+                expect(TooltipsUI.isIgnoringTooltips).toBe(false);
+
                 hapticSpy.mockRestore();
             } finally {
                 vi.useRealTimers();

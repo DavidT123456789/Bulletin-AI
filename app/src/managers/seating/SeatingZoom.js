@@ -317,7 +317,7 @@ export const SeatingZoom = {
         if (cooldownMs > 0) {
             this._tooltipSuppressTimer = setTimeout(() => {
                 this._tooltipSuppressTimer = null;
-                if (!this._isPinching && !this._touchDragEl && !(this._isTouchActive && !this._isLocked) && TooltipsUI) {
+                if (!this._isPinching && !this._touchDragEl && TooltipsUI) {
                     TooltipsUI.isIgnoringTooltips = false;
                 }
             }, cooldownMs);
