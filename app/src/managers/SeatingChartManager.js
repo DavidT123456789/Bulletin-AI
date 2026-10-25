@@ -2619,10 +2619,13 @@ export const SeatingChartManager = {
             }
         }
 
+        const gridArea = document.getElementById('scGridArea');
         const gridContainer = document.getElementById('scGridContainer');
         const expectedCells = this._getEffectiveRowCount() * this._getCols();
         const didRebuildGrid = this._isActivityMode() && gridContainer?.children.length !== expectedCells;
+        const areaW = gridArea?.clientWidth || window.innerWidth || 0;
         const isNativeDesktopSlide = !this._isCompactLayout()
+            && areaW >= 1180
             && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
             && !didRebuildGrid;
         const rBefore = isNativeDesktopSlide ? null : (board?.getBoundingClientRect?.() || null);

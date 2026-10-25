@@ -1353,7 +1353,23 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(SeatingChartManager._fitScale).toBe(1.19);
                 expect(board.style.getPropertyValue('--sc-scale')).toBe('1.19');
 
-                // 2. Smartphone étroit (< 540px) avec petite grille -> plafond strict maintenu à 1.0
+                // 2. Tablette horizontale en consultation (853px x 585px, verrouillé) -> récupère la largeur de la sidebar cachée (853 - 96 = 757)
+                Object.defineProperty(window, 'innerWidth', { value: 853, configurable: true, writable: true });
+                Object.defineProperty(gridArea, 'clientWidth', { value: 853, configurable: true });
+                Object.defineProperty(gridArea, 'clientHeight', { value: 585, configurable: true });
+                Object.defineProperty(board, 'offsetWidth', { value: 672, configurable: true });
+                Object.defineProperty(board, 'offsetHeight', { value: 272, configurable: true });
+                SeatingChartManager._isLocked = true;
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(1.13);
+
+                // En mode édition déverrouillé sur la même tablette horizontale, réserve les 260px de la sidebar ouverte (853 - 260 - 48 = 545)
+                SeatingChartManager._isLocked = false;
+                SeatingChartManager._applySmartFit(true);
+                expect(SeatingChartManager._fitScale).toBe(0.81);
+
+                // 3. Smartphone étroit (< 540px) avec petite grille -> plafond strict maintenu à 1.0
+                SeatingChartManager._isLocked = true;
                 Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true, writable: true });
                 Object.defineProperty(gridArea, 'clientWidth', { value: 390, configurable: true });
                 Object.defineProperty(board, 'offsetWidth', { value: 250, configurable: true });
