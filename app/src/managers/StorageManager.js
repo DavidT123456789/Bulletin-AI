@@ -133,6 +133,10 @@ export const StorageManager = {
                     // Multi-class support
                     if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
                     if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
+                    if (settings.classesCustomOrder !== undefined) userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
+                    if (settings.classesSortDirection === 'asc' || settings.classesSortDirection === 'desc') {
+                        userSettings.academic.classesSortDirection = settings.classesSortDirection;
+                    }
                     if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
                     if (settings.seatingActivityGrid !== undefined) userSettings.academic.seatingActivityGrid = settings.seatingActivityGrid;
 
@@ -676,6 +680,8 @@ export const StorageManager = {
             evolutionThresholds: userSettings.academic.evolutionThresholds,
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId || null,
+            classesCustomOrder: Boolean(userSettings.academic.classesCustomOrder),
+            classesSortDirection: userSettings.academic.classesSortDirection || 'asc',
             seatingGrid: userSettings.academic.seatingGrid || null,
             seatingActivityGrid: userSettings.academic.seatingActivityGrid || null,
 
@@ -1249,6 +1255,12 @@ export const StorageManager = {
                     });
                 } else {
                     userSettings.academic.classes = backup.classes;
+                    if (settings?.classesCustomOrder !== undefined) {
+                        userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
+                    }
+                    if (settings?.classesSortDirection === 'asc' || settings?.classesSortDirection === 'desc') {
+                        userSettings.academic.classesSortDirection = settings.classesSortDirection;
+                    }
                     stats.classesAdded = backup.classes.length;
                 }
 

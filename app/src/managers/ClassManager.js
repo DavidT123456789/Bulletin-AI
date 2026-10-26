@@ -7,7 +7,7 @@
 
 import { appState, userSettings } from '../state/State.js';
 import { DBService } from '../services/DBService.js';
-import { detectLevelFromName, compareClassesPedagogically } from '../utils/LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically, sortClassesByLevel } from '../utils/LevelDetector.js';
 import { Utils } from '../utils/Utils.js';
 
 let UI;
@@ -50,7 +50,8 @@ export const ClassManager = {
      */
     _findInsertionIndex(classes, newName) {
         if (!classes || classes.length === 0) return 0;
-        const index = classes.findIndex(c => compareClassesPedagogically(c.name, newName) > 0);
+        const direction = userSettings.academic?.classesSortDirection || 'asc';
+        const index = classes.findIndex(c => compareClassesPedagogically(c.name, newName, direction) > 0);
         return index === -1 ? classes.length : index;
     },
 
@@ -93,6 +94,12 @@ export const ClassManager = {
         // Utiliser la logique de tri intelligente (clustering)
         const insertIndex = this._findInsertionIndex(userSettings.academic.classes, newClass.name);
         userSettings.academic.classes.splice(insertIndex, 0, newClass);
+        if (!userSettings.academic.classesCustomOrder) {
+            userSettings.academic.classes = sortClassesByLevel(
+                userSettings.academic.classes,
+                userSettings.academic.classesSortDirection || 'asc'
+            );
+        }
 
         // Sauvegarder localement
         StorageManager?.saveAppState();
@@ -126,6 +133,12 @@ export const ClassManager = {
         // Mettre à jour
         const classToUpdate = classes[classIndex];
         Object.assign(classToUpdate, updates, { updatedAt: Date.now() });
+        if (updates.name && !userSettings.academic.classesCustomOrder) {
+            userSettings.academic.classes = sortClassesByLevel(
+                classes,
+                userSettings.academic.classesSortDirection || 'asc'
+            );
+        }
 
         // Sauvegarder localement
         StorageManager?.saveAppState();
@@ -220,6 +233,8 @@ export const ClassManager = {
         appState.filteredResults = [];
 
         userSettings.academic.classes = [];
+        userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.classesSortDirection = 'asc';
         appState.currentClassId = null;
         userSettings.academic.currentClassId = null;
 
@@ -311,8 +326,8 @@ export const ClassManager = {
 
         if (virtualMap.size === 0) return [];
 
-        return Array.from(virtualMap.values())
-            .map(entry => {
+        return sortClassesByLevel(
+            Array.from(virtualMap.values()).map(entry => {
                 const sourceGroupIds = Array.from(entry.sourceGroupIds);
                 const sourceGroupNames = sourceGroupIds
                     .map(id => classMap.get(id)?.name)
@@ -331,8 +346,9 @@ export const ClassManager = {
                     sourceGroupIds,
                     sourceGroupNames
                 };
-            })
-            .sort((a, b) => compareClassesPedagogically(a.name, b.name));
+            }),
+            userSettings.academic?.classesSortDirection || 'asc'
+        );
     },
 
     /**
@@ -399,13 +415,14 @@ export const ClassManager = {
     },
 
     /**
-     * Rétablit l'ordre officiel pédagogique (6e -> 5e -> 4e -> 3e -> Lycée)
+     * Trie les classes par niveau scolaire (croissant 6e -> 3e ou décroissant 3e -> 6e)
+     * @param {'asc'|'desc'} [direction='asc']
      */
-    sortByPedagogicalOrder() {
-        const classes = [...(userSettings.academic.classes || [])];
-        classes.sort((a, b) => compareClassesPedagogically(a.name, b.name));
-        userSettings.academic.classes = classes;
+    sortByPedagogicalOrder(direction = 'asc') {
+        const targetDirection = direction === 'desc' ? 'desc' : 'asc';
+        userSettings.academic.classes = sortClassesByLevel(userSettings.academic.classes || [], targetDirection);
         userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.classesSortDirection = targetDirection;
 
         StorageManager?.saveAppState();
         this._triggerCloudSync();

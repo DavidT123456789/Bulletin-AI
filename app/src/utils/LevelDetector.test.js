@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectLevelFromName, compareClassesPedagogically, getClassSortRank } from './LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically, getClassSortRank, sortClassesByLevel } from './LevelDetector.js';
 
 describe('LevelDetector - detectLevelFromName', () => {
     describe('Collège (6ème, 5ème, 4ème)', () => {
@@ -203,6 +203,21 @@ describe('LevelDetector - detectLevelFromName', () => {
             const classes = ['5ᵉ4', '3ᵉ4', '4ᵉ1', '4ᵉ2'];
             classes.sort(compareClassesPedagogically);
             expect(classes).toEqual(['5ᵉ4', '4ᵉ1', '4ᵉ2', '3ᵉ4']);
+        });
+
+        it('devrait trier en sens décroissant (3e -> 6e) tout en préservant l\'ordre croissant des divisions intra-niveau et les classes génériques en fin', () => {
+            const classes = ['5ᵉ2', '5ᵉ1', 'Nouvelle classe', '4ᵉ2', '4ᵉ1', '3ᵉ2', '3ᵉ1', '6ᵉ1'];
+            const sortedDesc = sortClassesByLevel(classes, 'desc');
+            expect(sortedDesc).toEqual(['3ᵉ1', '3ᵉ2', '4ᵉ1', '4ᵉ2', '5ᵉ1', '5ᵉ2', '6ᵉ1', 'Nouvelle classe']);
+
+            const sortedAsc = sortClassesByLevel(sortedDesc, 'asc');
+            expect(sortedAsc).toEqual(['6ᵉ1', '5ᵉ1', '5ᵉ2', '4ᵉ1', '4ᵉ2', '3ᵉ1', '3ᵉ2', 'Nouvelle classe']);
+        });
+
+        it('devrait inverser l\'ordre des divisions si toutes les classes appartiennent au même niveau', () => {
+            const singleLevel = ['5ᵉ1', '5ᵉ2', '5ᵉ3'];
+            expect(sortClassesByLevel(singleLevel, 'desc')).toEqual(['5ᵉ3', '5ᵉ2', '5ᵉ1']);
+            expect(sortClassesByLevel(['5ᵉ3', '5ᵉ2', '5ᵉ1'], 'asc')).toEqual(['5ᵉ1', '5ᵉ2', '5ᵉ3']);
         });
     });
 });

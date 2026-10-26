@@ -40,6 +40,8 @@ export const userSettings = {
         // Multi-class support
         classes: [],           // Array of Class objects: { id, name, year, subject, createdAt, updatedAt }
         currentClassId: null,  // Currently selected class ID (null = default/legacy mode)
+        classesCustomOrder: false,
+        classesSortDirection: 'asc',
         // Seating chart grid configuration
         seatingGrid: null,         // { rows, cols, specialLayout }
         seatingActivityGrid: null, // { rows, cols, specialLayout }

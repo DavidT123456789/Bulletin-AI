@@ -173,9 +173,11 @@ export function getClassSortRank(name) {
  * Comparateur pédagogique pour trier deux classes ou noms de classes
  * @param {string|Object} a
  * @param {string|Object} b
+ * @param {'asc'|'desc'} [direction='asc'] - Sens du tri des niveaux ('asc': 6e -> 3e, 'desc': 3e -> 6e)
+ * @param {boolean} [reverseSameRank=false] - Inverser aussi le tri intra-niveau en mode 'desc' (utile si toutes les classes ont le même niveau)
  * @returns {number}
  */
-export function compareClassesPedagogically(a, b) {
+export function compareClassesPedagogically(a, b, direction = 'asc', reverseSameRank = false) {
     const nameA = typeof a === 'string' ? a : (a?.displayName || a?.name || '');
     const nameB = typeof b === 'string' ? b : (b?.displayName || b?.name || '');
 
@@ -183,8 +185,44 @@ export function compareClassesPedagogically(a, b) {
     const rankB = getClassSortRank(nameB);
 
     if (rankA !== rankB) {
-        return rankA - rankB;
+        const isGenericA = rankA >= 500;
+        const isGenericB = rankB >= 500;
+        if (isGenericA !== isGenericB) {
+            return isGenericA ? 1 : -1;
+        }
+        return direction === 'desc' ? rankB - rankA : rankA - rankB;
     }
 
-    return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+    const nameCmp = nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+    return (direction === 'desc' && reverseSameRank) ? -nameCmp : nameCmp;
+}
+
+/**
+ * Trie une liste de classes selon le niveau scolaire (croissant 6e -> 3e ou décroissant 3e -> 6e).
+ * Conserve l'ordre naturel des divisions (ex: 3e1, 3e2, 3e3) au sein d'un même niveau lorsqu'il y a plusieurs niveaux.
+ * @param {Array<string|Object>} items
+ * @param {'asc'|'desc'} [direction='asc']
+ * @returns {Array<string|Object>} Nouvelle liste triée
+ */
+export function sortClassesByLevel(items = [], direction = 'asc') {
+    const list = [...items];
+    if (list.length <= 1) return list;
+
+    const targetDirection = direction === 'desc' ? 'desc' : 'asc';
+    let reverseSameRank = false;
+
+    if (targetDirection === 'desc') {
+        const recognizedRanks = new Set();
+        for (const item of list) {
+            const name = typeof item === 'string' ? item : (item?.displayName || item?.name || '');
+            const rank = getClassSortRank(name);
+            if (rank < 500) {
+                recognizedRanks.add(rank);
+                if (recognizedRanks.size > 1) break;
+            }
+        }
+        reverseSameRank = recognizedRanks.size <= 1;
+    }
+
+    return list.sort((a, b) => compareClassesPedagogically(a, b, targetDirection, reverseSameRank));
 }

@@ -285,6 +285,7 @@ describe('ClassUIManager - Animations verticales directionnelles de changement d
 
         userSettings.academic.classes = [];
         userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.classesSortDirection = 'asc';
         userSettings.academic.currentClassId = null;
         appState.currentClassId = null;
         appState.generatedResults = [];
@@ -352,6 +353,7 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
         document.body.innerHTML = '';
         userSettings.academic.classes = [];
         userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.classesSortDirection = 'asc';
         userSettings.academic.currentClassId = null;
         appState.currentClassId = null;
         appState.generatedResults = [];
@@ -400,6 +402,37 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
         expect(renameInput).not.toBeNull();
         expect(renameInput.classList.contains('inline-field-input')).toBe(true);
         expect(renameInput.classList.contains('custom-input')).toBe(false);
+    });
+
+    it('devrait basculer dynamiquement le bouton de tri entre (3ᵉ → 6ᵉ) et (6ᵉ → 3ᵉ)', () => {
+        const class51 = ClassManager.createClass('5 1', '2026-2027');
+        const class52 = ClassManager.createClass('5 2', '2026-2027');
+        const class41 = ClassManager.createClass('4 1', '2026-2027');
+
+        ClassUIManager.showManageClassesModal();
+        const modal = document.getElementById('classManagementModal');
+
+        // Par défaut, la liste est déjà en ordre croissant (5e1, 5e2, 4e1) : le bouton propose l'ordre inverse (3e -> 6e)
+        let sortBtn = modal.querySelector('#sortClassesPedagogicalBtn');
+        expect(sortBtn).not.toBeNull();
+        expect(sortBtn.textContent).toContain('Trier par niveau (3ᵉ → 6ᵉ)');
+
+        // Clic pour trier en sens décroissant (4e1, 5e1, 5e2)
+        sortBtn.click();
+
+        let renderedIds = [...modal.querySelectorAll('.class-management-item')].map(el => el.dataset.classId);
+        expect(renderedIds).toEqual([class41.id, class51.id, class52.id]);
+        expect(userSettings.academic.classesSortDirection).toBe('desc');
+
+        // Le menu propose désormais de revenir au tri croissant (6e -> 3e)
+        sortBtn = modal.querySelector('#sortClassesPedagogicalBtn');
+        expect(sortBtn.textContent).toContain('Trier par niveau (6ᵉ → 3ᵉ)');
+
+        sortBtn.click();
+
+        renderedIds = [...modal.querySelectorAll('.class-management-item')].map(el => el.dataset.classId);
+        expect(renderedIds).toEqual([class51.id, class52.id, class41.id]);
+        expect(userSettings.academic.classesSortDirection).toBe('asc');
     });
 });
 
