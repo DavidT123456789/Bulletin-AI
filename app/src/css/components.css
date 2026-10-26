@@ -1590,51 +1590,67 @@ textarea {
 
 
 /* ==========================================================================
-   Premium Drop Zones (Shared Styles / Single Source of Truth)
+   Premium Drop Zones (Shared Full-Bleed Studio Canvas / Single Source of Truth)
    ========================================================================== */
-.import-drop-zone {
+.import-drop-zone,
+.trombi-drop-zone {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-secondary);
-    border: 1.5px dashed var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-spring);
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
-    will-change: transform, border-color, background-color;
+    cursor: pointer;
+    border: none;
+    border-radius: 0;
+    background-color: var(--bg-secondary);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+    transition: background-color 0.2s ease, outline-color 0.2s ease;
 }
 
-[data-theme="dark"] .import-drop-zone {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: rgba(255, 255, 255, 0.12);
+[data-theme="dark"] .import-drop-zone,
+[data-theme="dark"] .trombi-drop-zone {
+    background-color: color-mix(in srgb, var(--surface-color), var(--bg-color) 55%);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.12) 1.2px, transparent 1.2px);
 }
 
-.import-drop-zone:hover {
-    border-color: var(--text-tertiary);
-    background: var(--bg-hover);
-    transform: translateY(-1.5px);
+/* Hover at rest (empty dropzone): dots intensification instead of flat grey shift */
+.import-drop-zone:not(.has-file):hover,
+.trombi-drop-zone:not(.has-image):hover {
+    transform: none;
+    border: none;
+    background-color: var(--bg-secondary);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.22) 1.3px, transparent 1.3px);
+    background-size: 18px 18px;
 }
 
-[data-theme="dark"] .import-drop-zone:hover {
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.04);
+[data-theme="dark"] .import-drop-zone:not(.has-file):hover,
+[data-theme="dark"] .trombi-drop-zone:not(.has-image):hover {
+    background-color: color-mix(in srgb, var(--surface-color), var(--bg-color) 55%);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.25) 1.3px, transparent 1.3px);
 }
 
+/* Dragover state: energetic studio focus with animated inset outline */
 .import-drop-zone.dragging,
-.import-drop-zone.dragover {
-    border-color: var(--text-primary);
-    background: var(--bg-tertiary);
-    transform: scale(1.008);
+.import-drop-zone.dragover,
+.trombi-drop-zone.dragging,
+.trombi-drop-zone.dragover {
+    transform: none;
+    border: none;
+    background-color: color-mix(in srgb, var(--bg-secondary), var(--primary-color) 7%);
+    background-image: radial-gradient(rgba(var(--primary-color-rgb), 0.2) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+    outline: 2px dashed rgba(var(--primary-color-rgb), 0.55);
+    outline-offset: -16px;
+    box-shadow: inset 0 0 32px rgba(var(--primary-color-rgb), 0.08);
 }
 
 [data-theme="dark"] .import-drop-zone.dragging,
-[data-theme="dark"] .import-drop-zone.dragover {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.07);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+[data-theme="dark"] .import-drop-zone.dragover,
+[data-theme="dark"] .trombi-drop-zone.dragging,
+[data-theme="dark"] .trombi-drop-zone.dragover {
+    background-color: color-mix(in srgb, var(--surface-color), var(--primary-color) 9%);
 }
 
 /* Shared Dropzone Content */

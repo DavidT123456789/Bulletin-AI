@@ -26,8 +26,8 @@
 .wizard-guide-panel {
     width: 235px;
     min-width: 235px;
-    background: var(--surface-color);
-    border-right: 1px solid rgba(0, 0, 0, 0.04);
+    background: color-mix(in srgb, var(--surface-color), var(--bg-secondary) 50%);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
     padding: 18px 20px;
     display: flex;
     flex-direction: column;
@@ -37,7 +37,8 @@
 }
 
 [data-theme="dark"] .wizard-guide-panel {
-    border-right-color: rgba(255, 255, 255, 0.06);
+    background: var(--surface-color);
+    border-right-color: rgba(255, 255, 255, 0.07);
 }
 
 /* Guide content sections - show/hide based on step with directional slide */
@@ -296,10 +297,6 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-[data-theme="dark"] .wizard-guide-panel {
-    background: var(--bg-secondary);
 }
 
 /* === RESPONSIVE: Compact guide toolbar on mobile === */
@@ -621,14 +618,18 @@
     justify-self: end;
 }
 
-/* === BODY === */
+/* === BODY (Studio Workspace Well) === */
 .import-wizard-body {
-    padding: var(--modal-padding-spacious);
+    padding: 0;
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden !important;
     background: var(--bg-color);
+}
+
+[data-theme="dark"] .import-wizard-body {
+    background: color-mix(in srgb, var(--surface-color), var(--bg-color) 55%);
 }
 
 /* === STEP CONTENT === */
@@ -697,31 +698,28 @@
     padding-top: 0;
 }
 
-/* === ENHANCED DROP ZONE === */
+/* === ENHANCED DROP ZONE (Full-bleed Studio Top Pane, shared base in components.css) === */
 .import-drop-zone {
     flex: 1;
     min-height: 140px;
-    margin: 4px;
+    margin: 0;
+    padding: 20px 24px;
 }
 
 /* === FILLED STATE === */
-.import-drop-zone.has-file {
-    border-style: solid;
-    border-width: 1px;
-    border-color: rgba(var(--primary-color-rgb), 0.2);
-    background: rgba(var(--primary-color-rgb), 0.02);
+.import-drop-zone.has-file,
+.import-drop-zone.has-file:hover {
+    border: none;
+    outline: none;
+    background-color: var(--bg-secondary);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
 }
 
-.drop-zone-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    z-index: 1;
-    transition: opacity 0.3s ease;
-    width: 100%;
-    /* Ensure full width for card layout */
+[data-theme="dark"] .import-drop-zone.has-file,
+[data-theme="dark"] .import-drop-zone.has-file:hover {
+    background-color: color-mix(in srgb, var(--surface-color), var(--bg-color) 55%);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.12) 1.2px, transparent 1.2px);
 }
 
 /* === FILE PREVIEW CARD === */
@@ -756,13 +754,19 @@
     gap: 16px;
     padding: 12px 20px;
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     width: 100%;
     max-width: 520px;
     margin: 0 auto;
     transition: all 0.2s ease;
     animation: premiumCardEnter 0.3s ease forwards;
+}
+
+[data-theme="dark"] .file-preview-card {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .drop-zone-filled.is-exiting .file-preview-card {
@@ -879,7 +883,7 @@
     background: rgba(var(--bg-color-rgb), 0.6);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    border-radius: var(--radius-md);
+    border-radius: 0;
 }
 
 [data-theme="dark"] .drop-zone-status {
@@ -928,104 +932,99 @@
     position: relative;
 }
 
-/* Subtle divider - Clean Line with Text */
+/* Full-bleed studio split hairline with centered pill badge */
 .import-divider-horizontal {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: auto;
-    margin: 10px 4px;
+    width: 100%;
+    height: 0;
+    margin: 0;
+    border-top: 1px solid var(--border-color);
     position: relative;
+    z-index: 12;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease;
 }
 
-.import-divider-horizontal::before {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color));
+[data-theme="dark"] .import-divider-horizontal {
+    border-top-color: rgba(255, 255, 255, 0.07);
 }
 
-.import-divider-horizontal::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, var(--border-color), transparent);
+.step-one-layout:has(.import-textarea:focus) .import-divider-horizontal {
+    border-top-color: rgba(var(--primary-color-rgb), 0.35);
 }
 
 .import-divider-horizontal span {
-    display: block;
-    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
     color: var(--text-tertiary);
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    background: transparent;
-    opacity: 0.6;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    line-height: 1.2;
+    user-select: none;
+    transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-/* Textarea container with integrated actions */
+[data-theme="dark"] .import-divider-horizontal span {
+    background: var(--bg-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.step-one-layout:has(.import-textarea:focus) .import-divider-horizontal span {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+    color: var(--text-secondary);
+}
+
+/* Full-bleed bottom data editor sheet */
 .import-input-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     position: relative;
-    border: var(--input-border-width) solid var(--border-color);
+    border: none;
     box-shadow: none;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     background: var(--surface-color);
     transform: translateZ(0);
-    transition: border-color 0.15s ease;
-    margin: 4px;
+    transition: background-color 0.18s ease;
+    margin: 0;
     z-index: 10;
 }
 
-/* Hover Effect - Clean Dynamic Color Change */
-/* Exclude hover effect when focus is active to prevent conflict */
+[data-theme="dark"] .import-input-container {
+    background: color-mix(in srgb, var(--surface-color), var(--bg-color) 25%);
+}
+
 .import-input-container:hover:not(:has(.import-textarea:focus)) {
-    border-color: rgba(var(--primary-color-rgb), 0.5);
+    border: none;
     background-image: none !important;
     outline: none !important;
-    /* Removed box-shadow on hover to prevent "double contour" illusion */
     box-shadow: none;
 }
 
-/* Focus State - Nebula Dynamic Gradient (Signature Effect) applied to container */
 .import-input-container:has(.import-textarea:focus) {
-    /* Use STRICT single source of truth for focus width */
-    border: var(--input-border-width-focus) solid transparent;
-    /* Match base background of textarea container */
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
+    border: none;
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 2%);
+    box-shadow: none;
+}
 
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-
-    /* Soft glow + inner highlight */
-    /* Exact Match to Global Components (Sharp Ring, no diffuse halo) */
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+[data-theme="dark"] .import-input-container:has(.import-textarea:focus) {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 3.5%);
 }
 
 textarea.import-textarea,
 .import-textarea {
     width: 100%;
     flex: 1;
-    min-height: 100px;
-    /* Revert padding: Standard padding */
-    padding: 16px 18px 16px 18px;
+    min-height: 150px;
+    padding: 22px 24px 18px 24px;
     font-size: 0.8rem;
     font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
@@ -1033,8 +1032,7 @@ textarea.import-textarea,
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    /* Prevents double-radius clipping artifacts */
-    border-radius: var(--radius-control);
+    border-radius: 0;
     resize: none;
     line-height: 1.6;
     letter-spacing: 0.01em;
@@ -1262,7 +1260,19 @@ textarea.import-textarea,
     display: none;
 }
 
-/* === MAPPING & PREVIEW TABLES (Mutualized Step 2 & Step 3) === */
+/* === MAPPING & PREVIEW TABLES (Mutualized Step 2 & Step 3 — Compact Framed Card on Studio Well) === */
+#modalStep2,
+#modalStep3 {
+    display: flex;
+    flex-direction: column;
+    padding: 14px 16px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
 .import-wizard-modal .import-mapping-table-container,
 .import-preview-table-container {
     --table-header-h: 44px;
@@ -1270,7 +1280,7 @@ textarea.import-textarea,
     overflow: hidden !important;
     border-radius: var(--radius-md);
     background: var(--surface-color);
-    margin: 4px;
+    margin: 0;
     flex: 0 1 auto;
     max-height: 100%;
     min-height: 0;
@@ -1311,10 +1321,28 @@ textarea.import-textarea,
     height: var(--table-header-h, 44px);
     background: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
     border-bottom: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
     box-sizing: border-box;
     pointer-events: none;
     opacity: 1 !important;
     z-index: 1;
+}
+
+/* Crisp 1px card frame overlay */
+.import-wizard-modal .import-mapping-table-container::after,
+.import-preview-table-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    pointer-events: none;
+    z-index: 20;
+}
+
+[data-theme="dark"] .import-wizard-modal .import-mapping-table-container::after,
+[data-theme="dark"] .import-preview-table-container::after {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper,
@@ -1330,20 +1358,10 @@ textarea.import-textarea,
     border-radius: var(--radius-md);
 }
 
-.import-wizard-modal .import-mapping-table-container::after,
-.import-preview-table-container::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: var(--radius-md);
-    z-index: 20;
-    pointer-events: none;
-}
-
-[data-theme="dark"] .import-wizard-modal .import-mapping-table-container::after,
-[data-theme="dark"] .import-preview-table-container::after {
-    border-color: rgba(255, 255, 255, 0.1);
+/* Allow dropdown menus to overflow when table has <= 5 rows */
+.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open),
+.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open)>.table-scroll-wrapper {
+    overflow: visible !important;
 }
 
 /* === UNIFIED FOOTER - Single source of truth === */
@@ -1476,11 +1494,6 @@ textarea.import-textarea,
 .import-preview-table th:last-child,
 .import-preview-table td:last-child {
     padding-right: 16px;
-}
-
-.import-wizard-modal .import-mapping-table tbody tr:last-child td,
-.import-preview-table tbody tr:last-child td {
-    border-bottom: none;
 }
 
 .import-wizard-modal .import-mapping-table th.col-name,
@@ -1651,18 +1664,18 @@ textarea.import-textarea,
     z-index: 30;
 }
 
-.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open),
-.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open) > .table-scroll-wrapper {
-    overflow: visible !important;
-}
-
 .import-wizard-modal .import-mapping-table th:first-child {
-    border-top-left-radius: 0;
+    border-top-left-radius: var(--radius-md);
 }
 
 .import-wizard-modal .import-mapping-table th:last-child {
-    border-top-right-radius: 0;
+    border-top-right-radius: var(--radius-md);
     border-right: none;
+}
+
+.import-wizard-modal .import-mapping-table tbody tr:last-child td,
+.import-preview-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .import-wizard-modal .import-mapping-table tbody tr:nth-child(even) td,
@@ -1703,17 +1716,7 @@ textarea.import-textarea,
     transform-origin: top right;
 }
 
-/* === STEP 3 - CONFIRMATION LAYOUT === */
-#modalStep3 {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
-    flex: 1;
-    min-height: 0;
-    height: 100%;
-}
-
+/* === STEP 3 - CONFIRMATION BUTTON === */
 /* Import Confirm Button — layout overrides for icon + badge */
 .btn-import-confirm {
     display: inline-flex;
@@ -2097,19 +2100,6 @@ textarea.import-textarea,
     box-shadow: none;
 }
 
-/* Textarea should expand in step 1 */
-.import-wizard-modal .import-input-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.import-wizard-modal .import-textarea {
-    flex: 1;
-    min-height: 150px;
-    resize: none;
-}
-
 /* ====================================================================
    MOBILE RESPONSIVE - Import Wizard
    Full-screen takeover on mobile with proper scrolling
@@ -2131,9 +2121,9 @@ textarea.import-textarea,
         font-size: 1rem;
     }
 
-    /* Body: CRITICAL - Enable scrolling on mobile */
+    /* Body: Full-bleed on mobile with natural scrolling */
     .import-wizard-body {
-        padding: 12px 16px;
+        padding: 0;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         flex: 1;
@@ -2146,14 +2136,14 @@ textarea.import-textarea,
         min-height: auto;
     }
 
-    /* Step 1 layout: Stack vertically */
+    /* Step 1 layout: Stack vertically, full-bleed split */
     .step-one-layout {
-        gap: 10px;
+        gap: 0;
     }
 
     /* Drop zone: Smaller */
     .import-drop-zone {
-        min-height: 100px;
+        min-height: 110px;
         padding: 16px;
     }
 
@@ -2174,7 +2164,7 @@ textarea.import-textarea,
 
     .import-textarea {
         min-height: 100px;
-        padding: 12px 14px 44px 14px;
+        padding: 16px 16px 44px 16px;
         font-size: 0.8rem;
     }
 
@@ -2192,10 +2182,15 @@ textarea.import-textarea,
         padding: 10px 16px;
     }
 
-    /* Mapping table: Compress */
+    /* Mapping & Preview tables: Compact frame on mobile */
+    #modalStep2,
+    #modalStep3 {
+        padding: 10px 12px;
+    }
+
     .import-wizard-modal .import-mapping-table-container,
     .import-preview-table-container {
-        margin: 4px 0;
+        margin: 0;
     }
 
     .import-wizard-modal .import-mapping-table th,
@@ -2204,6 +2199,22 @@ textarea.import-textarea,
     .import-preview-table td {
         padding: 8px 6px;
         font-size: 0.75rem;
+    }
+
+    .import-wizard-modal .import-mapping-table th:first-child,
+    .import-wizard-modal .import-mapping-table td:first-child,
+    .import-preview-table th:first-child,
+    .import-preview-table td:first-child,
+    .import-preview-table th:first-child .preview-col-header {
+        padding-left: 12px;
+    }
+
+    .import-wizard-modal .import-mapping-table th:last-child,
+    .import-wizard-modal .import-mapping-table td:last-child,
+    .import-preview-table th:last-child,
+    .import-preview-table td:last-child,
+    .import-preview-table th:last-child .preview-col-header {
+        padding-right: 12px;
     }
 
     .import-wizard-modal .import-mapping-table .mapping-select-dropdown .custom-dropdown-trigger {
@@ -2283,10 +2294,6 @@ textarea.import-textarea,
         gap: 6px;
     }
 
-    .import-wizard-body {
-        padding: 10px 12px;
-    }
-
     .import-drop-zone {
         min-height: 80px;
     }
@@ -2296,19 +2303,20 @@ textarea.import-textarea,
     }
 }
 
-/* === WARNING MESSAGE === */
+/* === WARNING MESSAGE (Compact Banner inside Step 2 Frame) === */
 .mapping-warning {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
+    padding: 9px 14px;
+    margin: 0 0 10px 0;
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     color: var(--warning-color);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 500;
+    flex-shrink: 0;
     animation: fadeIn 0.3s ease;
 }
 

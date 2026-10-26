@@ -105,56 +105,11 @@
     padding: var(--modal-padding) 0 0 0;
 }
 
-/* Trombinoscope Drop Zone: Full-bleed Studio Canvas (Option A) */
+/* Trombinoscope Drop Zone: Full-bleed Studio Canvas (shared base in components.css) */
 .trombi-drop-zone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    box-sizing: border-box;
-    cursor: pointer;
     flex: 1 1 auto;
     min-height: 0;
     height: 100%;
-    border: none;
-    border-radius: 0;
-    background-color: var(--bg-secondary);
-    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
-    transition: background-color 0.2s ease, outline-color 0.2s ease;
-}
-
-[data-theme="dark"] .trombi-drop-zone {
-    background-color: var(--bg-secondary);
-    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
-    border: none;
-}
-
-/* Hover at rest (empty dropzone): dots intensification instead of flat grey shift */
-.trombi-drop-zone:not(.has-image):hover,
-[data-theme="dark"] .trombi-drop-zone:not(.has-image):hover {
-    transform: none;
-    border: none;
-    background-color: var(--bg-secondary);
-    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.22) 1.3px, transparent 1.3px);
-    background-size: 18px 18px;
-}
-
-/* Dragover state: energetic studio focus with animated inset outline */
-.trombi-drop-zone.dragging,
-.trombi-drop-zone.dragover,
-[data-theme="dark"] .trombi-drop-zone.dragging,
-[data-theme="dark"] .trombi-drop-zone.dragover {
-    transform: none;
-    border: none;
-    background-color: color-mix(in srgb, var(--bg-secondary), var(--primary-color) 7%);
-    background-image: radial-gradient(rgba(var(--primary-color-rgb), 0.2) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
-    outline: 2px dashed rgba(var(--primary-color-rgb), 0.55);
-    outline-offset: -16px;
-    box-shadow: inset 0 0 32px rgba(var(--primary-color-rgb), 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
