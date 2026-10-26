@@ -15,6 +15,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import { Utils } from '../utils/Utils.js';
 import { TooltipsUI } from './TooltipsManager.js';
 
@@ -103,6 +104,11 @@ export const ClassUIManager = {
         this._boundResize = () => {
             if (this._isDropdownOpen) {
                 this._positionDropdown();
+                FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
+            }
+            const modalBody = document.querySelector('#classManagementModal .modal-body');
+            if (modalBody) {
+                FocusPanelManager.updateScrollAffordances(modalBody);
             }
         };
         window.addEventListener('resize', this._boundResize, { passive: true });
@@ -130,12 +136,15 @@ export const ClassUIManager = {
 
                 if (index === -1) {
                     const activeItem = items.find(el => el.classList.contains('active'));
-                    (activeItem || items[0])?.focus();
+                    const target = activeItem || items[0];
+                    target?.focus();
+                    target?.scrollIntoView?.({ block: 'nearest' });
                 } else {
                     const nextIndex = e.key === 'ArrowDown'
                         ? (index + 1) % items.length
                         : (index - 1 + items.length) % items.length;
                     items[nextIndex]?.focus();
+                    items[nextIndex]?.scrollIntoView?.({ block: 'nearest' });
                 }
             }
         });
@@ -384,6 +393,13 @@ export const ClassUIManager = {
     renderClassList() {
         if (!DOM.classDropdownList) return;
 
+        if (!DOM.classDropdownList.dataset.scrollBound) {
+            DOM.classDropdownList.dataset.scrollBound = 'true';
+            DOM.classDropdownList.addEventListener('scroll', (e) => {
+                FocusPanelManager.updateScrollAffordances(e.currentTarget);
+            }, { passive: true });
+        }
+
         const classes = ClassManager.getAllClasses();
         const currentClassId = appState.currentClassId;
 
@@ -401,6 +417,7 @@ export const ClassUIManager = {
             document.getElementById('createFirstClassBtn')?.addEventListener('click', () => {
                 this.showNewClassPrompt();
             });
+            FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
             return;
         }
 
@@ -616,6 +633,7 @@ export const ClassUIManager = {
         if (this._isDropdownOpen) {
             DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView?.({ block: 'nearest' });
         }
+        FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
     },
 
     /**
@@ -664,9 +682,12 @@ export const ClassUIManager = {
             if (activeItem) {
                 setTimeout(() => {
                     activeItem.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+                    FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
                 }, 280);
             }
         }
+
+        FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
 
         // Nettoyer les transitionDelay inline après la fin de l'animation pour préserver la réactivité du hover
         const totalDuration = 350 + count * 35;
@@ -675,6 +696,7 @@ export const ClassUIManager = {
             virtualElements.forEach(el => {
                 el.style.transitionDelay = '';
             });
+            FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
         }, totalDuration);
     },
 
@@ -1375,6 +1397,8 @@ export const ClassUIManager = {
         const moreMenu = modalEl.querySelector('#classManageMoreMenu');
         const subtitle = modalEl.querySelector('.modal-subtitle');
         const modalBody = modalEl.querySelector('.modal-body');
+        const updateModalScroll = () => FocusPanelManager.updateScrollAffordances(modalBody);
+        modalBody?.addEventListener('scroll', updateModalScroll, { passive: true });
 
         modalEl.querySelector('.close-manage-modal')?.addEventListener('click', closeModal);
         modalEl.addEventListener('click', (e) => {
@@ -1452,6 +1476,7 @@ export const ClassUIManager = {
             if (listEl) {
                 listEl.insertAdjacentHTML('afterbegin', rowHtml);
             }
+            updateModalScroll();
 
             const row = modalEl.querySelector('.creating-class-row');
             if (!row) return;
@@ -1469,6 +1494,7 @@ export const ClassUIManager = {
                     if (emptyEl && !modalEl.querySelector('.class-management-item')) {
                         emptyEl.style.display = '';
                     }
+                    updateModalScroll();
                 }, 200);
             };
 
@@ -1782,6 +1808,7 @@ export const ClassUIManager = {
 
                     row.classList.add('editing');
                     row.removeAttribute('tabindex');
+                    updateModalScroll();
 
                     row.querySelector('.cancel-delete-btn').onclick = () => {
                         row.innerHTML = originalContent;
@@ -1794,6 +1821,7 @@ export const ClassUIManager = {
                         const newDuplicateBtn = row.querySelector('.manage-duplicate-btn');
                         if (newDuplicateBtn) bindDuplicateHandler(newDuplicateBtn);
                         UI?.initTooltips?.();
+                        updateModalScroll();
                     };
 
                     row.querySelector('.confirm-delete-btn').onclick = async () => {
@@ -2017,6 +2045,7 @@ export const ClassUIManager = {
                         </div>
                     </div>
                 `;
+                updateModalScroll();
                 return;
             }
 
@@ -2143,11 +2172,13 @@ export const ClassUIManager = {
                     }, 800);
                 }
             }
+            updateModalScroll();
         };
 
         // Initial render & scroll to active class
         refreshList();
         modalEl.querySelector('.class-management-item.active-switch')?.scrollIntoView?.({ block: 'nearest' });
+        updateModalScroll();
     },
 
     /**

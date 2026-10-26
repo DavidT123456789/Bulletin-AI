@@ -980,14 +980,15 @@ export const FocusPanelManager = {
 
     /**
      * Met à jour les brumes d'indication de défilement (scrims) en haut et en bas.
-     * Mutualisé entre le Focus Panel (par défaut) et la vue principale (.main-content-wrapper).
+     * Mutualisé entre le Focus Panel (par défaut), la vue principale (.main-content-wrapper),
+     * le menu déroulant des classes (#classDropdownList) et la modale Mes classes (#classManagementModal .modal-body).
      * @param {Element|null} [scrollEl] - Conteneur scrollable
-     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-top / can-scroll-bottom
+     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-top / can-scroll-bottom (par défaut scrollEl si fourni)
      */
     updateScrollAffordances(scrollEl, containerEl) {
         const panel = !scrollEl ? document.getElementById('focusPanel') : null;
         const content = scrollEl || panel?.querySelector('.focus-main-page .focus-content');
-        const container = containerEl || panel?.querySelector('.focus-main-page');
+        const container = containerEl || scrollEl || panel?.querySelector('.focus-main-page');
         if (!content || !container) return;
 
         if (container.dataset.view === 'plan') {

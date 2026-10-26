@@ -253,24 +253,44 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* Custom sleek scrollbar for dropdown list */
-.class-dropdown-list::-webkit-scrollbar {
+/* Custom sleek scrollbar mutualisée (Menu classes & Modale Mes classes) */
+.class-dropdown-list::-webkit-scrollbar,
+#classManagementModal .modal-body::-webkit-scrollbar {
     width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
 }
 
-.class-dropdown-list::-webkit-scrollbar-track {
+.class-dropdown-list::-webkit-scrollbar-track,
+#classManagementModal .modal-body::-webkit-scrollbar-track {
     background: transparent;
-    margin-top: 6px;
-    margin-bottom: 6px;
+    margin-block: 6px;
 }
 
-.class-dropdown-list::-webkit-scrollbar-thumb {
+.class-dropdown-list::-webkit-scrollbar-thumb,
+#classManagementModal .modal-body::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: var(--radius-pill);
 }
 
-.class-dropdown-list::-webkit-scrollbar-thumb:hover {
+.class-dropdown-list::-webkit-scrollbar-thumb:hover,
+#classManagementModal .modal-body::-webkit-scrollbar-thumb:hover {
     background: var(--text-tertiary);
+}
+
+/* Brume dynamique aux extrémités (Edge Scrims mutualisés Menu & Modale Mes classes) */
+:is(.class-dropdown-list, #classManagementModal .modal-body):is(.can-scroll-top, .can-scroll-bottom) {
+    --scrim-top: #000 0px;
+    --scrim-bottom: #000 100%;
+    -webkit-mask-image: linear-gradient(to bottom, var(--scrim-top), var(--scrim-bottom));
+    mask-image: linear-gradient(to bottom, var(--scrim-top), var(--scrim-bottom));
+}
+
+:is(.class-dropdown-list, #classManagementModal .modal-body).can-scroll-top {
+    --scrim-top: transparent 0px, rgba(0, 0, 0, 0.35) 5px, rgba(0, 0, 0, 0.8) 12px, #000 20px;
+}
+
+:is(.class-dropdown-list, #classManagementModal .modal-body).can-scroll-bottom {
+    --scrim-bottom: #000 calc(100% - 20px), rgba(0, 0, 0, 0.8) calc(100% - 12px), rgba(0, 0, 0, 0.35) calc(100% - 5px), transparent 100%;
 }
 
 .class-dropdown-create-btn {
@@ -427,8 +447,7 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
     margin-bottom: 2px;
     border: 1px solid transparent;
-    scroll-margin-top: 12px;
-    scroll-margin-bottom: 12px;
+    scroll-margin-block: 20px;
 }
 
 .class-dropdown-item:last-child {
@@ -749,21 +768,41 @@
     --modal-width: 650px;
 }
 
+#classManagementModal > .modal-content,
 #classManagementModal .modal-body {
     background: var(--bg-secondary);
-    padding: 16px;
 }
 
+#classManagementModal .modal-body {
+    padding: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+[data-theme="dark"] #classManagementModal > .modal-content,
 [data-theme="dark"] #classManagementModal .modal-body {
     background: var(--bg-color);
 }
 
 /* ====================================================================
-   RESPONSIVE - DROPDOWN
+   RESPONSIVE - DROPDOWN & MODALE MES CLASSES
    ==================================================================== */
 
-/* Tablette & Mobile (<= 768px) : Cibles tactiles d'en-tête confortables */
+/* Tablette & Mobile (<= 768px) : Cibles tactiles d'en-tête confortables & masquage scrollbar */
 @media (max-width: 768px) {
+    .class-dropdown-list,
+    #classManagementModal .modal-body {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .class-dropdown-list::-webkit-scrollbar,
+    #classManagementModal .modal-body::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
     .class-virtual-filter-btn {
         height: 24px;
         padding: 0 8px;
@@ -928,8 +967,7 @@
     cursor: pointer;
     position: relative;
     outline: none;
-    scroll-margin-top: 12px;
-    scroll-margin-bottom: 12px;
+    scroll-margin-block: 20px;
 }
 
 .class-management-item:focus {
@@ -1202,25 +1240,6 @@
 
 .class-management-list:has(.dragging) .class-management-item:not(.dragging):not(.active-switch):hover {
     background: var(--surface-color);
-}
-
-/* Scrollbar iOS pour la modale */
-#classManagementModal .modal-body::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-#classManagementModal .modal-body::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#classManagementModal .modal-body::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 999px;
-}
-
-#classManagementModal .modal-body::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
 }
 
 .class-management-item.editing,

@@ -599,6 +599,54 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
             Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
         }
     });
+
+    it('devrait mettre à jour dynamiquement les brumes can-scroll-top et can-scroll-bottom dans le menu classe et la modale Mes classes', () => {
+        ClassManager.createClass('6 1');
+        ClassManager.createClass('5 1');
+        ClassManager.createClass('4 1');
+
+        // 1. Menu déroulant des classes (#classDropdownList) avec débordement
+        Object.defineProperty(DOM.classDropdownList, 'scrollHeight', { value: 600, configurable: true });
+        Object.defineProperty(DOM.classDropdownList, 'clientHeight', { value: 250, configurable: true });
+        DOM.classDropdownList.scrollTop = 0;
+
+        ClassUIManager.renderClassList();
+        expect(DOM.classDropdownList.classList.contains('can-scroll-top')).toBe(false);
+        expect(DOM.classDropdownList.classList.contains('can-scroll-bottom')).toBe(true);
+
+        // Scroll au milieu -> haut et bas actifs
+        DOM.classDropdownList.scrollTop = 120;
+        DOM.classDropdownList.dispatchEvent(new Event('scroll'));
+        expect(DOM.classDropdownList.classList.contains('can-scroll-top')).toBe(true);
+        expect(DOM.classDropdownList.classList.contains('can-scroll-bottom')).toBe(true);
+
+        // Scroll en bas -> uniquement haut actif
+        DOM.classDropdownList.scrollTop = 348;
+        DOM.classDropdownList.dispatchEvent(new Event('scroll'));
+        expect(DOM.classDropdownList.classList.contains('can-scroll-top')).toBe(true);
+        expect(DOM.classDropdownList.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // 2. Modale Mes classes (#classManagementModal .modal-body)
+        ClassUIManager.showManageClassesModal();
+        const modalBody = document.querySelector('#classManagementModal .modal-body');
+        expect(modalBody).not.toBeNull();
+
+        // Sans débordement -> aucune brume
+        Object.defineProperty(modalBody, 'scrollHeight', { value: 300, configurable: true });
+        Object.defineProperty(modalBody, 'clientHeight', { value: 300, configurable: true });
+        modalBody.scrollTop = 0;
+        modalBody.dispatchEvent(new Event('scroll'));
+        expect(modalBody.classList.contains('can-scroll-top')).toBe(false);
+        expect(modalBody.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // Avec débordement et scroll intermédiaire -> haut et bas actifs
+        Object.defineProperty(modalBody, 'scrollHeight', { value: 800, configurable: true });
+        Object.defineProperty(modalBody, 'clientHeight', { value: 350, configurable: true });
+        modalBody.scrollTop = 100;
+        modalBody.dispatchEvent(new Event('scroll'));
+        expect(modalBody.classList.contains('can-scroll-top')).toBe(true);
+        expect(modalBody.classList.contains('can-scroll-bottom')).toBe(true);
+    });
 });
 
 
