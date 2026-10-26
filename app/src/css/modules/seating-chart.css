@@ -1072,20 +1072,20 @@
 
 .sc-plan-mode-switch {
     --sc-padding: 3px;
-    --sc-inactive-w: 32px;
+    --sc-inactive-w: 28px;
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0;
-    height: 38px;
+    height: 34px;
     padding: var(--sc-padding);
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-surface-border);
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     border-radius: var(--radius-pill, 999px);
-    box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     isolation: isolate;
     pointer-events: auto;
     user-select: none;
@@ -1093,8 +1093,9 @@
 }
 
 [data-theme="dark"] .sc-plan-mode-switch {
-    background: rgba(30, 30, 30, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(36, 36, 40, 0.65);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .sc-plan-mode-switch.sc-mode-switch-hidden {
@@ -1106,10 +1107,10 @@
     top: var(--sc-padding, 3px);
     bottom: var(--sc-padding, 3px);
     left: var(--sc-padding, 3px);
-    width: calc(100% - (var(--sc-padding, 3px) * 2) - var(--sc-inactive-w, 32px));
+    width: calc(100% - (var(--sc-padding, 3px) * 2) - var(--sc-inactive-w, 28px));
     border-radius: var(--radius-pill, 999px);
     background: var(--surface-color);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     transition: left 0.44s cubic-bezier(0.22, 1.03, 0.36, 1), width 0.44s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 1;
     pointer-events: none;
@@ -1117,12 +1118,12 @@
 
 [data-theme="dark"] .sc-mode-glider {
     background: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: none;
 }
 
 .sc-plan-mode-switch[data-mode="activity"] .sc-mode-glider,
 .sc-plan-mode-switch[data-active-mode="activity"] .sc-mode-glider {
-    left: calc(var(--sc-padding, 3px) + var(--sc-inactive-w, 32px));
+    left: calc(var(--sc-padding, 3px) + var(--sc-inactive-w, 28px));
 }
 
 .sc-mode-tab {
@@ -1131,21 +1132,22 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     height: 100%;
-    padding: 0 13px;
+    padding: 0 11px;
     border: none;
     background: transparent;
     border-radius: var(--radius-pill, 999px);
     font-family: inherit;
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.8125rem;
+    font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
     white-space: nowrap;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
     transition: color 0.25s ease,
+                background 0.15s ease,
                 transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
                 padding 0.38s cubic-bezier(0.22, 1, 0.36, 1),
                 gap 0.38s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1162,7 +1164,7 @@
 }
 
 .sc-mode-tab:not(.active) {
-    width: var(--sc-inactive-w, 32px);
+    width: var(--sc-inactive-w, 28px);
     padding: 0;
     gap: 0;
 }
@@ -1174,7 +1176,7 @@
 }
 
 .sc-mode-tab iconify-icon {
-    font-size: 1.1rem;
+    font-size: 1rem;
     width: 1em;
     height: 1em;
     display: inline-flex;
@@ -1185,16 +1187,27 @@
 }
 
 .sc-mode-tab[data-plan-mode="course"] iconify-icon {
-    font-size: 1.15rem;
+    font-size: 1.04rem;
 }
 
 .sc-mode-tab.active {
     color: var(--text-primary);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .sc-mode-tab.active {
+    color: #ffffff;
 }
 
 @media (hover: hover) {
     .sc-mode-tab:not(.active):hover {
         color: var(--text-primary);
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .sc-mode-tab:not(.active):hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
     }
 }
 
@@ -1218,18 +1231,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 38px;
+    height: 34px;
     box-sizing: border-box;
-    padding: 0 15px;
+    padding: 0 13px;
     border-radius: var(--radius-pill, 999px);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     pointer-events: auto;
     cursor: pointer;
     user-select: none;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     transition: background var(--transition-fast, 0.2s),
                 border-color var(--transition-fast, 0.2s),
                 box-shadow var(--transition-fast, 0.2s),
@@ -1330,32 +1343,34 @@
 }
 
 .sc-status-pill iconify-icon {
-    font-size: 1.05rem;
+    font-size: 1rem;
     display: inline-flex;
 }
 
 .sc-status-pill.sc-status-locked {
     background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
     color: #059669;
-    border: 1px solid rgba(var(--success-rgb, 16, 185, 129), 0.25);
+    border: 1px solid rgba(var(--success-rgb, 16, 185, 129), 0.2);
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-locked {
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.2);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.18);
     color: #34d399;
-    border-color: rgba(var(--success-rgb, 16, 185, 129), 0.4);
+    border-color: rgba(var(--success-rgb, 16, 185, 129), 0.24);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .sc-status-pill.sc-status-testing {
     background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
     color: #d97706;
-    border: 1px solid rgba(var(--warning-rgb, 245, 158, 11), 0.25);
+    border: 1px solid rgba(var(--warning-rgb, 245, 158, 11), 0.2);
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-testing {
-    background: rgba(var(--warning-rgb, 245, 158, 11), 0.2);
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.18);
     color: #fbbf24;
-    border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.4);
+    border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.24);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .sc-status-pill.sc-status-empty {
@@ -1363,9 +1378,9 @@
 }
 
 .sc-status-pill.sc-status-virtual {
-    background: var(--surface-color);
+    background: rgba(255, 255, 255, 0.76);
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     cursor: default;
 }
 
@@ -1374,9 +1389,10 @@
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-virtual {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(36, 36, 40, 0.65);
     color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 /* Hover & Morphing interactions */
@@ -3565,8 +3581,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 
     .sc-plan-mode-switch {
-        --sc-padding: 2.5px;
-        --sc-inactive-w: 29px;
+        --sc-padding: 3px;
+        --sc-inactive-w: 28px;
         height: 34px !important;
         padding: var(--sc-padding);
     }
@@ -3611,7 +3627,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
         right: 12px !important;
         left: auto !important;
         height: 34px !important;
-        padding: 2px !important;
+        padding: 3px !important;
         gap: 2px;
         display: inline-flex !important;
         align-items: center !important;
@@ -3619,13 +3635,13 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn {
-        width: 30px !important;
-        height: 30px !important;
+        width: 28px !important;
+        height: 28px !important;
         flex-shrink: 0;
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn iconify-icon {
-        font-size: 1.05rem;
+        font-size: 1rem;
     }
 
     .sc-floating-status .sc-toolbar-info {
@@ -4558,7 +4574,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 /* ---------- FLOATING ACTIONS CAPSULE (TOP-RIGHT) ---------- */
-/* Zoom, Orientation toggle, and Print action capsule */
+/* Zoom, Orientation toggle, and Print action capsule — Minimalist Frosted Glass */
 .sc-floating-actions {
     position: absolute;
     top: calc(56px + 20px);
@@ -4566,16 +4582,16 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     left: auto;
     display: inline-flex;
     align-items: center;
-    height: 38px;
+    height: 34px;
     box-sizing: border-box;
     gap: 2px;
-    padding: 0 4px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-surface-border);
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
@@ -4592,15 +4608,15 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 [data-theme="dark"] .sc-floating-actions {
-    background: rgba(30, 30, 30, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: var(--shadow-sm);
+    background: rgba(36, 36, 40, 0.65);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 /* Seamless ghost icon buttons: NO contours or borders at rest */
 .sc-floating-actions .sc-action-btn {
-    width: 30px !important;
-    height: 30px !important;
+    width: 28px !important;
+    height: 28px !important;
     padding: 0 !important;
     border: none !important;
     background: transparent !important;
@@ -4619,18 +4635,18 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-floating-actions .sc-action-btn iconify-icon {
-    font-size: 1.15rem;
+    font-size: 1rem;
 }
 
 /* Soft hover wash: no harsh borders */
 @media (hover: hover) {
     .sc-floating-actions .sc-action-btn:hover {
-        background: var(--item-hover-bg, rgba(0, 0, 0, 0.05)) !important;
+        background: rgba(0, 0, 0, 0.06) !important;
         color: var(--text-primary) !important;
     }
 
     [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
         color: #ffffff !important;
     }
 }
@@ -6079,8 +6095,8 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
 }
 
 .sc-floating-search .sc-search-toggle-btn {
-    max-width: 30px;
-    width: 30px;
+    max-width: 28px;
+    width: 28px;
     opacity: 1;
     transform: scale(1);
     overflow: hidden;
@@ -6108,7 +6124,7 @@ body:has(#scSidebar.drag-over) .sc-touch-ghost {
     gap: 6px;
     max-width: 0;
     width: 0;
-    height: 30px;
+    height: 28px;
     padding: 0;
     margin: 0;
     opacity: 0;

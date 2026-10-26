@@ -103,6 +103,9 @@ export const TrombinoscopeManager = {
     _lastViewportW: 0,
     _lastViewportH: 0,
     _viewportResizeRaf: null,
+    _openPopoverZoneId: null,
+    _userToggledExcludeFilter: false,
+    _outsidePopoverHandler: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -186,7 +189,17 @@ export const TrombinoscopeManager = {
 
         // Exclude students with photos toggle
         document.getElementById('trombiExcludeWithPhotos')?.addEventListener('change', () => {
+            this._userToggledExcludeFilter = true;
+            this._closeStudentPopover();
             this._autoAssignSilent();
+        });
+
+        // Reassign in alphabetical order button
+        document.getElementById('trombiAutoAssignBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.currentTarget.classList.contains('disabled')) return;
+            this._closeStudentPopover();
+            this._autoAssignInOrder();
         });
 
         // Global mouse events for drag/resize
@@ -286,6 +299,8 @@ export const TrombinoscopeManager = {
         this._tempSliderSnapshot = null;
         this._tempDragSnapshot = null;
         this._isNewUpload = false;
+        this._userToggledExcludeFilter = false;
+        this._closeStudentPopover();
         if (this._nudgeTimer) {
             clearTimeout(this._nudgeTimer);
             this._nudgeTimer = null;
@@ -314,6 +329,11 @@ export const TrombinoscopeManager = {
         if (this._viewportResizeObserver) {
             this._viewportResizeObserver.disconnect();
             this._viewportResizeObserver = null;
+        }
+        if (this._wheelZoomHost && this._wheelZoomHandler) {
+            this._wheelZoomHost.removeEventListener('wheel', this._wheelZoomHandler);
+            this._wheelZoomHost = null;
+            this._wheelZoomHandler = null;
         }
 
         if (typeof document === 'undefined') return;
@@ -403,6 +423,7 @@ export const TrombinoscopeManager = {
 
         const previousStep = this._currentStep;
         if (previousStep === step) return;
+        this._closeStudentPopover();
         this._currentStep = step;
 
         // Switch footers immediately (synchronized with stepper UI)
@@ -432,7 +453,7 @@ export const TrombinoscopeManager = {
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
             fromContent.style.display = 'none';
             toContent.style.display = 'flex';
-            toContent.style.opacity = '1';
+            toContent.style.opacity = '';
             toContent.style.transform = '';
             if (toStep === 2) this._initStep2();
             else if (toStep === 3) this._initStep3();
@@ -492,7 +513,7 @@ export const TrombinoscopeManager = {
 
             // 3. Mount Step 2 and initialize content with true full height
             toContent.style.display = 'flex';
-            toContent.style.opacity = '1';
+            toContent.style.opacity = '';
             this._initStep2();
             this._applyZoom();
 
@@ -560,7 +581,7 @@ export const TrombinoscopeManager = {
                     }
 
                     setTimeout(() => {
-                        targetWrapper.style.opacity = '1';
+                        targetWrapper.style.opacity = '';
                         ghost.remove();
 
                         if (assignmentPanel) {
@@ -626,7 +647,7 @@ export const TrombinoscopeManager = {
 
             // 3. Mount Step 1
             toContent.style.display = 'flex';
-            toContent.style.opacity = '1';
+            toContent.style.opacity = '';
 
             // Target in Step 1
             const targetImageEl = toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
@@ -641,9 +662,17 @@ export const TrombinoscopeManager = {
             targetImageEl.style.opacity = '0';
 
             const guidePanel = toContent.querySelector('.wizard-guide-panel');
+            const removeBtn = toContent.querySelector('#trombiRemoveImageBtn');
+            const step1PageBar = toContent.querySelector('#trombiStep1PageSelectorBar');
             if (guidePanel) {
                 guidePanel.style.transform = 'translateX(-24px)';
                 guidePanel.style.opacity = '0';
+            }
+            if (removeBtn) {
+                removeBtn.style.opacity = '0';
+            }
+            if (step1PageBar && step1PageBar.style.display !== 'none') {
+                step1PageBar.style.opacity = '0';
             }
 
             requestAnimationFrame(() => {
@@ -662,14 +691,30 @@ export const TrombinoscopeManager = {
                         guidePanel.style.transform = 'translateX(0)';
                         guidePanel.style.opacity = '1';
                     }
+                    if (removeBtn) {
+                        removeBtn.style.transition = 'opacity 0.28s ease 0.08s';
+                        removeBtn.style.opacity = '1';
+                    }
+                    if (step1PageBar && step1PageBar.style.display !== 'none') {
+                        step1PageBar.style.transition = 'opacity 0.28s ease 0.08s';
+                        step1PageBar.style.opacity = '1';
+                    }
 
                     setTimeout(() => {
-                        targetImageEl.style.opacity = '1';
+                        targetImageEl.style.opacity = '';
                         ghost.remove();
                         if (guidePanel) {
                             guidePanel.style.transition = '';
                             guidePanel.style.transform = '';
                             guidePanel.style.opacity = '';
+                        }
+                        if (removeBtn) {
+                            removeBtn.style.transition = '';
+                            removeBtn.style.opacity = '';
+                        }
+                        if (step1PageBar) {
+                            step1PageBar.style.transition = '';
+                            step1PageBar.style.opacity = '';
                         }
                         this._isTransitioning = false;
                     }, 380);
@@ -719,6 +764,7 @@ export const TrombinoscopeManager = {
             setTimeout(() => {
                 toContent.style.transition = '';
                 toContent.style.transform = '';
+                toContent.style.opacity = '';
                 this._isTransitioning = false;
             }, 300);
         }, 200);
@@ -767,6 +813,19 @@ export const TrombinoscopeManager = {
     // STEP 1: IMAGE UPLOAD & CLASS RECONCILIATION
     // ========================================================================
 
+    _getSampleFallbackStudents() {
+        return [
+            { id: 'sample-bernard', nom: 'BERNARD', prenom: 'Thomas' },
+            { id: 'sample-durand', nom: 'DURAND', prenom: 'Sophie' },
+            { id: 'sample-lefevre', nom: 'LEFEVRE', prenom: 'Hugo' },
+            { id: 'sample-martin', nom: 'MARTIN', prenom: 'Lucas' },
+            { id: 'sample-moreau', nom: 'MOREAU', prenom: 'Julie' },
+            { id: 'sample-petit', nom: 'PETIT', prenom: 'Emma' },
+            { id: 'sample-robert', nom: 'ROBERT', prenom: 'Antoine' },
+            { id: 'sample-simon', nom: 'SIMON', prenom: 'Clara' }
+        ];
+    },
+
     /**
      * Identifie la classe cible et analyse la distinction entre élèves existants et nouveaux
      * @returns {{ targetClass: Object|null, existingClassStudents: Array, newStudents: Array, existingStudents: Array, isUpdate: boolean }}
@@ -776,9 +835,16 @@ export const TrombinoscopeManager = {
         const currentClass = ClassManager.getCurrentClass?.();
 
         if (!this._parsedPdfData) {
-            const existingClassStudents = currentClass
+            const filtered = appState.filteredResults || [];
+            const classScoped = currentClass
                 ? (appState.generatedResults || []).filter(r => r.classId === currentClass.id)
-                : (appState.filteredResults || []);
+                : [];
+            let existingClassStudents = filtered.length > 0
+                ? filtered
+                : classScoped;
+            if (existingClassStudents.length === 0 && typeof this._imageSrc === 'string' && this._imageSrc.includes('sample-trombinoscope.png')) {
+                existingClassStudents = this._getSampleFallbackStudents();
+            }
             return {
                 targetClass: currentClass,
                 existingClassStudents,
@@ -1175,17 +1241,21 @@ export const TrombinoscopeManager = {
         const totalPadX = Math.max(32, padX);
         const totalPadY = Math.max(32, padY);
 
-        const vpW = viewport.clientWidth || viewport.offsetWidth || 600;
-        const vpH = viewport.clientHeight || viewport.offsetHeight || 600;
+        // Use outer layout dimensions (offsetWidth/offsetHeight) first so the 100% baseline
+        // never fluctuates or oscillates when scrollbars appear/disappear in zoomed mode
+        const rawW = viewport.offsetWidth || viewport.clientWidth || 0;
+        const rawH = viewport.offsetHeight || viewport.clientHeight || 0;
+        const vpW = rawW || 600;
+        const vpH = rawH || 600;
         const availW = Math.max(100, vpW - totalPadX);
         const availH = Math.max(100, vpH - totalPadY);
         const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
-        return { availW, availH, scaleToFit };
+        return { rawW, rawH, availW, availH, scaleToFit };
     },
 
-    _applyZoom(scrollOptions = null) {
-        const viewport = document.querySelector('.trombi-viewport');
-        const wrapper = document.querySelector('.trombi-content-wrapper');
+    _applyZoom(scrollOptions = null, domRefs = null) {
+        const viewport = domRefs?.viewport ?? document.querySelector('.trombi-viewport');
+        const wrapper = domRefs?.wrapper ?? document.querySelector('.trombi-content-wrapper');
         const currentPct = Math.round(this._zoomLevel * 100);
         const isZoomed = this._zoomLevel > 1.0;
 
@@ -1231,20 +1301,20 @@ export const TrombinoscopeManager = {
         const advancedDrawer = document.getElementById('gridAdvancedControls');
         if (advancedDrawer?.classList.contains('is-open')) {
             const drawerH = advancedDrawer.offsetHeight || 68;
-            viewport.style.paddingBottom = `${16 + drawerH}px`;
-        } else {
+            const nextPadBottom = `${16 + drawerH}px`;
+            if (viewport.style.paddingBottom !== nextPadBottom) {
+                viewport.style.paddingBottom = nextPadBottom;
+            }
+        } else if (viewport.style.paddingBottom) {
             viewport.style.removeProperty('padding-bottom');
         }
 
         // Toggle is-zoomed class: scrollbars are ONLY permitted when zoomed in > 100%
         viewport.classList.toggle('is-zoomed', isZoomed);
 
-        const vpW = viewport.clientWidth || viewport.offsetWidth || 0;
-        const vpH = viewport.clientHeight || viewport.offsetHeight || 0;
-        this._lastViewportW = vpW;
-        this._lastViewportH = vpH;
-
-        const { scaleToFit } = this._getViewportFitMetrics(viewport);
+        const { rawW, rawH, scaleToFit } = this._getViewportFitMetrics(viewport);
+        this._lastViewportW = rawW;
+        this._lastViewportH = rawH;
         const baseW = this._imageNaturalWidth * scaleToFit;
         const baseH = this._imageNaturalHeight * scaleToFit;
 
@@ -1252,11 +1322,19 @@ export const TrombinoscopeManager = {
         const targetW = !isZoomed ? Math.floor(baseW) : Math.round(baseW * this._zoomLevel);
         const targetH = !isZoomed ? Math.floor(baseH) : Math.round(baseH * this._zoomLevel);
 
-        wrapper.style.aspectRatio = `${this._imageNaturalWidth} / ${this._imageNaturalHeight}`;
-        wrapper.style.width = `${targetW}px`;
-        wrapper.style.height = `${targetH}px`;
+        const prevW = parseFloat(wrapper.style.width) || 0;
+        const prevH = parseFloat(wrapper.style.height) || 0;
+        const widthChanged = prevW !== targetW;
+        const heightChanged = prevH !== targetH;
 
-        this._renderZones(targetW, targetH);
+        wrapper.style.aspectRatio = `${this._imageNaturalWidth} / ${this._imageNaturalHeight}`;
+        if (widthChanged) wrapper.style.width = `${targetW}px`;
+        if (heightChanged) wrapper.style.height = `${targetH}px`;
+
+        const overlay = document.getElementById('trombiZonesOverlay');
+        if (widthChanged || heightChanged || !overlay || overlay.children.length !== this._zones.length) {
+            this._renderZones(targetW, targetH);
+        }
 
         if (!isZoomed) {
             viewport.scrollLeft = 0;
@@ -1264,45 +1342,76 @@ export const TrombinoscopeManager = {
         } else if (scrollOptions) {
             const maxScrollX = Math.max(0, (viewport.scrollWidth || 0) - (viewport.clientWidth || 0));
             const maxScrollY = Math.max(0, (viewport.scrollHeight || 0) - (viewport.clientHeight || 0));
-            if (maxScrollX > 0) viewport.scrollLeft = Math.round(maxScrollX * (scrollOptions.ratioX ?? 0.5));
-            if (maxScrollY > 0) viewport.scrollTop = Math.round(maxScrollY * (scrollOptions.ratioY ?? 0.5));
+            if (typeof scrollOptions.clientX === 'number' && typeof scrollOptions.relX === 'number') {
+                const wRectAfter = (widthChanged || heightChanged) ? wrapper.getBoundingClientRect?.() : null;
+                if (wRectAfter && wRectAfter.width > 0 && wRectAfter.height > 0) {
+                    if (widthChanged && maxScrollX > 0) {
+                        const afterX = wRectAfter.left + scrollOptions.relX * wRectAfter.width;
+                        viewport.scrollLeft = Math.max(0, Math.min(maxScrollX, Math.round(viewport.scrollLeft + (afterX - scrollOptions.clientX))));
+                    }
+                    if (heightChanged && maxScrollY > 0) {
+                        const afterY = wRectAfter.top + scrollOptions.relY * wRectAfter.height;
+                        viewport.scrollTop = Math.max(0, Math.min(maxScrollY, Math.round(viewport.scrollTop + (afterY - scrollOptions.clientY))));
+                    }
+                }
+            } else {
+                if (maxScrollX > 0) viewport.scrollLeft = Math.round(maxScrollX * (scrollOptions.ratioX ?? 0.5));
+                if (maxScrollY > 0) viewport.scrollTop = Math.round(maxScrollY * (scrollOptions.ratioY ?? 0.5));
+            }
         }
     },
 
     _setZoomLevel(nextZoom, options = {}) {
-        const clamped = Math.min(2.5, Math.max(1.0, Math.round(nextZoom * 100) / 100));
-        const zoomChanged = clamped !== this._zoomLevel;
+        const shouldAnimate = options.animate !== false;
+        const precision = shouldAnimate ? 100 : 1000;
+        const clamped = Math.min(2.5, Math.max(1.0, Math.round(nextZoom * precision) / precision));
+        const zoomChanged = Math.abs(clamped - this._zoomLevel) >= 0.0005;
 
         const viewport = document.querySelector('.trombi-viewport');
         const wrapper = document.querySelector('.trombi-content-wrapper');
-        const rBefore = (zoomChanged && options.animate !== false && wrapper)
+        const focal = options.focalPoint;
+        const hasFocalPoint = Boolean(focal && typeof focal.clientX === 'number' && typeof focal.clientY === 'number');
+        const wRectBefore = (zoomChanged && (shouldAnimate || hasFocalPoint) && wrapper)
             ? wrapper.getBoundingClientRect?.()
             : null;
 
-        let ratioX = 0.5;
-        let ratioY = 0.5;
-        if (viewport && this._zoomLevel > 1.0) {
-            const maxScrollXBefore = Math.max(0, (viewport.scrollWidth || 0) - (viewport.clientWidth || 0));
-            const maxScrollYBefore = Math.max(0, (viewport.scrollHeight || 0) - (viewport.clientHeight || 0));
-            if (maxScrollXBefore > 0) ratioX = viewport.scrollLeft / maxScrollXBefore;
-            if (maxScrollYBefore > 0) ratioY = viewport.scrollTop / maxScrollYBefore;
-        }
-
-        if (this._zoomAnimCleanup) {
+        if (zoomChanged && this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
             this._zoomAnimCleanup = null;
         }
 
-        this._zoomLevel = clamped;
-        this._applyZoom(zoomChanged ? { ratioX, ratioY } : null);
+        let scrollOptions = null;
+        if (zoomChanged) {
+            if (hasFocalPoint && wRectBefore && wRectBefore.width > 0 && wRectBefore.height > 0) {
+                scrollOptions = {
+                    clientX: focal.clientX,
+                    clientY: focal.clientY,
+                    relX: Math.max(0, Math.min(1, (focal.clientX - wRectBefore.left) / wRectBefore.width)),
+                    relY: Math.max(0, Math.min(1, (focal.clientY - wRectBefore.top) / wRectBefore.height))
+                };
+            } else {
+                let ratioX = 0.5;
+                let ratioY = 0.5;
+                if (viewport && this._zoomLevel > 1.0) {
+                    const maxScrollXBefore = Math.max(0, (viewport.scrollWidth || 0) - (viewport.clientWidth || 0));
+                    const maxScrollYBefore = Math.max(0, (viewport.scrollHeight || 0) - (viewport.clientHeight || 0));
+                    if (maxScrollXBefore > 0) ratioX = viewport.scrollLeft / maxScrollXBefore;
+                    if (maxScrollYBefore > 0) ratioY = viewport.scrollTop / maxScrollYBefore;
+                }
+                scrollOptions = { ratioX, ratioY };
+            }
+        }
 
-        if (zoomChanged && rBefore && rBefore.width > 0) {
-            this._animateSheetFLIP(rBefore, options);
+        this._zoomLevel = clamped;
+        this._applyZoom(scrollOptions, { viewport, wrapper });
+
+        if (zoomChanged && shouldAnimate && wRectBefore && wRectBefore.width > 0) {
+            this._animateSheetFLIP(wRectBefore, options, wrapper);
         }
     },
 
-    _animateSheetFLIP(rBefore, options = {}) {
-        const wrapper = document.querySelector('.trombi-content-wrapper');
+    _animateSheetFLIP(rBefore, options = {}, wrapperEl = null) {
+        const wrapper = wrapperEl ?? document.querySelector('.trombi-content-wrapper');
         const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
         if (!wrapper || !rBefore || rBefore.width <= 0 || prefersReducedMotion) {
             return;
@@ -1390,9 +1499,12 @@ export const TrombinoscopeManager = {
             if (viewport && this._imageNaturalWidth && this._imageNaturalHeight) {
                 const { availW, scaleToFit } = this._getViewportFitMetrics(viewport);
                 const fitW = this._imageNaturalWidth * scaleToFit;
-                // Si la page est en portrait, "Pleine largeur" permet d'occuper la largeur disponible
-                if (availW > fitW * 1.1) {
-                    targetZoom = Math.min(2.5, Math.round((availW / fitW) * 100) / 100);
+                // Reserve width for the vertical scrollbar (6px custom scrollbar + 2px subpixel margin)
+                // so fitting to width never overflows horizontally when vertical scroll activates
+                const scrollbarW = Math.max(8, (viewport.offsetWidth - viewport.clientWidth) || 0);
+                const fitWidthAvailW = Math.max(100, availW - scrollbarW);
+                if (fitWidthAvailW > fitW * 1.05) {
+                    targetZoom = Math.min(2.5, Math.floor((fitWidthAvailW / fitW) * 100) / 100);
                 } else {
                     targetZoom = 1.5;
                 }
@@ -1414,10 +1526,27 @@ export const TrombinoscopeManager = {
         // Invalidate cached preview image
         this._cachedImage = null;
 
-        // Manage exclude-photos toggle visibility: hide during PDF trombinoscope import
+        // Manage exclude-photos toggle visibility and smart auto-fallback:
+        // - Hide during PDF import or when no student in the class has a photo yet
+        // - Automatically uncheck if 100% of students already have a photo so the list is never empty on open
         const excludeWrapper = document.getElementById('trombiExcludeToggleWrapper');
-        if (excludeWrapper) {
-            excludeWrapper.style.display = this._parsedPdfData ? 'none' : 'flex';
+        const excludeInput = document.getElementById('trombiExcludeWithPhotos');
+        if (this._parsedPdfData) {
+            if (excludeWrapper) excludeWrapper.style.display = 'none';
+        } else {
+            const classStudents = this._getTargetClassInfo().existingClassStudents;
+            const withPhotosCount = classStudents.filter(s => Boolean(s.studentPhoto?.data)).length;
+            const withoutPhotosCount = classStudents.length - withPhotosCount;
+            if (excludeInput && !this._userToggledExcludeFilter) {
+                if (classStudents.length > 0 && withoutPhotosCount === 0) {
+                    excludeInput.checked = false;
+                } else {
+                    excludeInput.checked = true;
+                }
+            }
+            if (excludeWrapper) {
+                excludeWrapper.style.display = withPhotosCount > 0 ? 'flex' : 'none';
+            }
         }
 
         // Setup page selector bar if PDF has multiple pages
@@ -1538,8 +1667,8 @@ export const TrombinoscopeManager = {
         if (this._viewportResizeObserver) this._viewportResizeObserver.disconnect();
 
         this._viewportResizeObserver = new ResizeObserver(() => {
-            const vpW = viewport?.clientWidth || viewport?.offsetWidth || 0;
-            const vpH = viewport?.clientHeight || viewport?.offsetHeight || 0;
+            const vpW = viewport?.offsetWidth || viewport?.clientWidth || 0;
+            const vpH = viewport?.offsetHeight || viewport?.clientHeight || 0;
             if (vpW === this._lastViewportW && vpH === this._lastViewportH) return;
             if (this._viewportResizeRaf) cancelAnimationFrame(this._viewportResizeRaf);
             this._viewportResizeRaf = window.requestAnimationFrame(() => {
@@ -1553,17 +1682,65 @@ export const TrombinoscopeManager = {
 
         // Click and drag selection / add zone on overlay/viewport
         const overlay = document.getElementById('trombiZonesOverlay');
-        
-        viewport?.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                if (e.deltaY < 0) {
-                    this._zoomIn();
-                } else {
-                    this._zoomOut();
-                }
+
+        const zoomHost = imagePanel.closest('.trombi-image-panel') || viewport;
+        if (this._wheelZoomHost && this._wheelZoomHandler) {
+            this._wheelZoomHost.removeEventListener('wheel', this._wheelZoomHandler);
+        }
+        this._wheelZoomHost = zoomHost;
+        this._wheelZoomHandler = (e) => {
+            if (!(e.ctrlKey || e.metaKey)) return;
+            e.preventDefault();
+            if (!e.deltaY) return;
+
+            let dy = e.deltaY;
+            if (e.deltaMode === 1) dy *= 16;
+            else if (e.deltaMode === 2) dy *= 400;
+            dy = Math.max(-100, Math.min(100, dy));
+
+            // Smooth exponential scaling for trackpad pinch and Ctrl+wheel without FLIP snap-back
+            const factor = Math.exp(-dy * 0.004);
+            this._setZoomLevel(this._zoomLevel * factor, {
+                animate: false,
+                focalPoint: { clientX: e.clientX, clientY: e.clientY }
+            });
+        };
+        zoomHost?.addEventListener('wheel', this._wheelZoomHandler, { passive: false });
+
+        let touchPinchStartDist = 0;
+        let touchPinchStartZoom = 1.0;
+        viewport?.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                if (e.cancelable) e.preventDefault();
+                this._selectionBox = null;
+                this._selectionBoxDragActive = false;
+                const [t1, t2] = e.touches;
+                touchPinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                touchPinchStartZoom = this._zoomLevel;
             }
         }, { passive: false });
+
+        viewport?.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && touchPinchStartDist > 10) {
+                if (e.cancelable) e.preventDefault();
+                const [t1, t2] = e.touches;
+                const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                const midX = (t1.clientX + t2.clientX) / 2;
+                const midY = (t1.clientY + t2.clientY) / 2;
+                this._setZoomLevel(touchPinchStartZoom * (dist / touchPinchStartDist), {
+                    animate: false,
+                    focalPoint: { clientX: midX, clientY: midY }
+                });
+            }
+        }, { passive: false });
+
+        const resetTouchPinch = (e) => {
+            if (!e.touches || e.touches.length < 2) {
+                touchPinchStartDist = 0;
+            }
+        };
+        viewport?.addEventListener('touchend', resetTouchPinch, { passive: true });
+        viewport?.addEventListener('touchcancel', resetTouchPinch, { passive: true });
 
         viewport?.addEventListener('mousedown', e => {
             // Start selection box only if clicking background viewport or overlay (not a zone)
@@ -1596,6 +1773,7 @@ export const TrombinoscopeManager = {
 
     _switchPdfPage(pageIndex) {
         if (!this._parsedPdfData || !this._parsedPdfData.pages[pageIndex]) return;
+        this._closeStudentPopover();
 
         // Sauvegarder les zones de la page actuelle avant de changer
         if (this._parsedPdfData.pages[this._currentPageIndex]) {
@@ -2102,10 +2280,14 @@ export const TrombinoscopeManager = {
         if (this._parsedPdfData && this._parsedPdfData.students) {
             return this._parsedPdfData.students;
         }
-        const allStudents = appState.filteredResults || [];
+        const allStudents = this._getTargetClassInfo().existingClassStudents;
         const excludeWithPhotos = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
         if (excludeWithPhotos) {
-            return allStudents.filter(s => !s.studentPhoto?.data);
+            const withoutPhotos = allStudents.filter(s => !s.studentPhoto?.data);
+            if (withoutPhotos.length === 0 && allStudents.length > 0 && !this._userToggledExcludeFilter) {
+                return allStudents;
+            }
+            return withoutPhotos;
         }
         return allStudents;
     },
@@ -2477,8 +2659,12 @@ export const TrombinoscopeManager = {
     },
 
     _removeZone(zoneId) {
+        this._closeStudentPopover();
         this._saveState();
         this._selectedZoneIds.delete(zoneId);
+        if (this._lastFocusedZoneId === zoneId) {
+            this._lastFocusedZoneId = null;
+        }
         this._zones = this._zones.filter(z => z.id !== zoneId);
         this._renderZones();
         this._renderAssignmentGrid();
@@ -2489,59 +2675,104 @@ export const TrombinoscopeManager = {
      * @param {number} zoneId 
      */
     _insertGapAndShiftDown(zoneId) {
-        this._saveState();
-        
-        // Sort zones by ID to keep order stable
         const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
         const fromIdx = sortedZones.findIndex(z => z.id === zoneId);
-        
         if (fromIdx === -1) return;
-        
+
+        // Guard: do nothing if neither this zone nor any subsequent zone has an assigned student
+        const hasAnyStudentFromHere = sortedZones.slice(fromIdx).some(z => Boolean(z.studentId));
+        if (!hasAnyStudentFromHere) return;
+
+        this._closeStudentPopover();
+        this._saveState();
+
         // Shift student IDs down
         for (let j = sortedZones.length - 1; j > fromIdx; j--) {
             sortedZones[j].studentId = sortedZones[j - 1].studentId;
         }
-        
+
         // Set the current zone to null (empty)
         sortedZones[fromIdx].studentId = null;
-        
+
+        this._clearZoneSelection();
         this._renderZones();
         this._renderAssignmentGrid();
     },
 
     /**
      * Removes the student from a given zone, shifting subsequent assignments up
+     * and pulling the next unassigned student in order into the last slot if available.
      * @param {number} zoneId 
      */
     _removeAndShiftUp(zoneId) {
-        this._saveState();
-        
-        // Sort zones by ID to keep order stable
         const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
         const fromIdx = sortedZones.findIndex(z => z.id === zoneId);
-        
         if (fromIdx === -1) return;
-        
+
+        // Guard: do nothing if neither this zone nor any subsequent zone has an assigned student
+        const hasAnyStudentFromHere = sortedZones.slice(fromIdx).some(z => Boolean(z.studentId));
+        if (!hasAnyStudentFromHere) return;
+
+        this._closeStudentPopover();
+        this._saveState();
+
+        const removedStudentId = sortedZones[fromIdx].studentId;
+        const previousTailStudentId = sortedZones[sortedZones.length - 1]?.studentId || null;
+
         // Shift student IDs up
         for (let j = fromIdx; j < sortedZones.length - 1; j++) {
             sortedZones[j].studentId = sortedZones[j + 1].studentId;
         }
-        
-        // The last zone becomes unassigned
-        sortedZones[sortedZones.length - 1].studentId = null;
-        
+
+        // Pull the next unassigned student from the ordered list if the tail had a student
+        let nextTailStudentId = null;
+        if (previousTailStudentId && sortedZones.length > 0) {
+            const orderedStudents = this._getStudentsForImport();
+            const tailIdx = orderedStudents.findIndex(s => s.id === previousTailStudentId);
+            if (tailIdx !== -1) {
+                for (let k = tailIdx + 1; k < orderedStudents.length; k++) {
+                    const candidateId = orderedStudents[k]?.id;
+                    if (!candidateId || candidateId === removedStudentId) continue;
+                    const alreadyAssigned = sortedZones.slice(0, -1).some(z => z.studentId === candidateId) ||
+                        (this._parsedPdfData?.pages?.some((p, pIdx) => pIdx !== this._currentPageIndex && (p.zones || []).some(z => z.studentId === candidateId)));
+                    if (!alreadyAssigned) {
+                        nextTailStudentId = candidateId;
+                        break;
+                    }
+                }
+            }
+        }
+
+        sortedZones[sortedZones.length - 1].studentId = nextTailStudentId;
+
+        this._clearZoneSelection();
         this._renderZones();
         this._renderAssignmentGrid();
     },
 
+    _isAutoAssignedInOrder(sortedZones = [...this._zones].sort((a, b) => a.id - b.id)) {
+        if (sortedZones.length === 0) return true;
+        let students = this._getStudentsForImport();
+        if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+            const pageOffset = this._getPageOffset();
+            students = students.slice(pageOffset, pageOffset + sortedZones.length);
+        }
+        if (students.length === 0) return true;
+        return sortedZones.every((zone, idx) => (zone.studentId || null) === (students[idx]?.id || null));
+    },
+
     _autoAssignInOrder() {
+        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
+        if (this._isAutoAssignedInOrder(sortedZones)) return;
+
+        this._closeStudentPopover();
         this._saveState();
         let students = this._getStudentsForImport();
         if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
             const pageOffset = this._getPageOffset();
-            students = students.slice(pageOffset, pageOffset + this._zones.length);
+            students = students.slice(pageOffset, pageOffset + sortedZones.length);
         }
-        this._zones.forEach((zone, idx) => {
+        sortedZones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
         });
         this._renderZones();
@@ -2566,8 +2797,41 @@ export const TrombinoscopeManager = {
         // Scale factor: displayed / natural
         const scaleX = displayedW / this._imageNaturalWidth;
         const scaleY = displayedH / this._imageNaturalHeight;
-        const students = appState.filteredResults || [];
         const pageOffset = this._getPageOffset();
+
+        const targetInfo = this._getTargetClassInfo();
+        const studentById = new Map();
+        (targetInfo.existingClassStudents || appState.filteredResults || []).forEach(s => {
+            if (s?.id) studentById.set(s.id, s);
+        });
+        (this._parsedPdfData?.students || []).forEach(s => {
+            if (s?.id) studentById.set(s.id, s);
+        });
+
+        const getZoneMetrics = (zone, idx) => {
+            const dispCx = zone.cx * scaleX;
+            const dispCy = zone.cy * scaleY;
+            const r = zone.r || this._globalRadius;
+            const diameter = r * scaleX * 2;
+            const student = zone.studentId ? studentById.get(zone.studentId) : null;
+            const label = student?.prenom ? student.prenom : `#${pageOffset + idx + 1}`;
+            const labelScale = Math.max(0.5, Math.min(1, diameter / 50));
+            return {
+                dispCx,
+                dispCy,
+                diameter,
+                label,
+                labelFontSize: Math.max(8, Math.round(12 * labelScale)),
+                labelHeight: Math.max(16, Math.round(28 * labelScale)),
+                labelPadding: Math.max(2, Math.round(8 * labelScale)),
+                deleteSize: Math.max(14, Math.round(22 * labelScale)),
+                deleteFontSize: Math.max(7, Math.round(10 * labelScale)),
+                borderWidth: diameter < 40 ? 2 : 3,
+                isSel: Boolean(this._selectedZoneIds?.has(zone.id)),
+                isFocused: this._lastFocusedZoneId === zone.id,
+                isUnassigned: !zone.studentId
+            };
+        };
 
         const existingZoneEls = overlay.querySelectorAll('.trombi-zone');
         const canUpdateInPlace = existingZoneEls.length === this._zones.length &&
@@ -2576,97 +2840,56 @@ export const TrombinoscopeManager = {
         if (canUpdateInPlace) {
             this._zones.forEach((zone, idx) => {
                 const zoneEl = existingZoneEls[idx];
-                const dispCx = zone.cx * scaleX;
-                const dispCy = zone.cy * scaleY;
-                const r = zone.r || this._globalRadius;
-                const dispR = r * scaleX;
-                const diameter = dispR * 2;
+                const m = getZoneMetrics(zone, idx);
 
-                const student = (this._parsedPdfData?.students?.find(s => s.id === zone.studentId)) ||
-                                students.find(s => s.id === zone.studentId);
-                const label = student?.prenom ? student.prenom : `#${pageOffset + idx + 1}`;
-
-                const labelScale = Math.max(0.5, Math.min(1, diameter / 50));
-                const labelFontSize = Math.max(8, Math.round(12 * labelScale));
-                const labelHeight = Math.max(16, Math.round(28 * labelScale));
-                const labelPadding = Math.max(2, Math.round(8 * labelScale));
-
-                const deleteSize = Math.max(14, Math.round(22 * labelScale));
-                const deleteFontSize = Math.max(7, Math.round(10 * labelScale));
-                const borderWidth = diameter < 40 ? 2 : 3;
-
-                zoneEl.style.left = `${dispCx}px`;
-                zoneEl.style.top = `${dispCy}px`;
-                zoneEl.style.width = `${diameter}px`;
-                zoneEl.style.height = `${diameter}px`;
-                zoneEl.style.borderWidth = `${borderWidth}px`;
-
-                const isSel = this._selectedZoneIds?.has(zone.id) || false;
-                zoneEl.classList.toggle('is-selected', isSel);
+                zoneEl.style.left = `${m.dispCx}px`;
+                zoneEl.style.top = `${m.dispCy}px`;
+                zoneEl.style.width = `${m.diameter}px`;
+                zoneEl.style.height = `${m.diameter}px`;
+                zoneEl.style.borderWidth = `${m.borderWidth}px`;
+                zoneEl.classList.toggle('is-selected', m.isSel);
+                zoneEl.classList.toggle('focused', m.isFocused);
+                zoneEl.classList.toggle('is-unassigned', m.isUnassigned);
 
                 const labelEl = zoneEl.querySelector('.zone-label');
                 if (labelEl) {
-                    if (labelEl.textContent !== label) labelEl.textContent = label;
-                    labelEl.style.fontSize = `${labelFontSize}px`;
-                    labelEl.style.height = `${labelHeight}px`;
-                    labelEl.style.minWidth = `${labelHeight}px`;
-                    labelEl.style.padding = `0 ${labelPadding}px`;
-                    labelEl.style.borderRadius = `${labelHeight / 2}px`;
+                    if (labelEl.textContent !== m.label) labelEl.textContent = m.label;
+                    labelEl.style.fontSize = `${m.labelFontSize}px`;
+                    labelEl.style.height = `${m.labelHeight}px`;
+                    labelEl.style.minWidth = `${m.labelHeight}px`;
+                    labelEl.style.padding = `0 ${m.labelPadding}px`;
+                    labelEl.style.borderRadius = `${m.labelHeight / 2}px`;
                 }
 
                 const deleteBtn = zoneEl.querySelector('.zone-delete');
                 if (deleteBtn) {
-                    deleteBtn.style.width = `${deleteSize}px`;
-                    deleteBtn.style.height = `${deleteSize}px`;
-                    deleteBtn.style.fontSize = `${deleteFontSize}px`;
+                    deleteBtn.style.width = `${m.deleteSize}px`;
+                    deleteBtn.style.height = `${m.deleteSize}px`;
+                    deleteBtn.style.fontSize = `${m.deleteFontSize}px`;
                 }
             });
             return;
         }
 
         overlay.innerHTML = this._zones.map((zone, idx) => {
-            // Convert natural pixels to displayed pixels
-            const dispCx = zone.cx * scaleX;
-            const dispCy = zone.cy * scaleY;
-            const r = zone.r || this._globalRadius;
-            const dispR = r * scaleX;
-            const diameter = dispR * 2;
-
-            // Find student name if assigned
-            const student = (this._parsedPdfData?.students?.find(s => s.id === zone.studentId)) ||
-                            students.find(s => s.id === zone.studentId);
-            const label = student?.prenom ? student.prenom : `#${pageOffset + idx + 1}`;
-
-            // Calculate label scale based on diameter (shrink when zone is small)
-            // Label full size at 50px+, starts shrinking below that
-            const labelScale = Math.max(0.5, Math.min(1, diameter / 50));
-            const labelFontSize = Math.max(8, Math.round(12 * labelScale));
-            const labelHeight = Math.max(16, Math.round(28 * labelScale));
-            const labelPadding = Math.max(2, Math.round(8 * labelScale));
-
-            // Scale delete button and border for small zones
-            const deleteSize = Math.max(14, Math.round(22 * labelScale));
-            const deleteFontSize = Math.max(7, Math.round(10 * labelScale));
-            const borderWidth = diameter < 40 ? 2 : 3;
-
-            const isSel = this._selectedZoneIds?.has(zone.id) ? 'is-selected' : '';
+            const m = getZoneMetrics(zone, idx);
             return `
-                <div class="trombi-zone ${isSel}" 
+                <div class="trombi-zone ${m.isSel ? 'is-selected' : ''} ${m.isFocused ? 'focused' : ''} ${m.isUnassigned ? 'is-unassigned' : ''}" 
                      data-zone-id="${zone.id}"
-                     style="left: ${dispCx}px; top: ${dispCy}px; 
-                            width: ${diameter}px; height: ${diameter}px;
-                            border-width: ${borderWidth}px;">
+                     style="left: ${m.dispCx}px; top: ${m.dispCy}px; 
+                            width: ${m.diameter}px; height: ${m.diameter}px;
+                            border-width: ${m.borderWidth}px;">
                     <span class="zone-label" style="
-                        font-size: ${labelFontSize}px;
-                        height: ${labelHeight}px;
-                        min-width: ${labelHeight}px;
-                        padding: 0 ${labelPadding}px;
-                        border-radius: ${labelHeight / 2}px;
-                    ">${label}</span>
+                        font-size: ${m.labelFontSize}px;
+                        height: ${m.labelHeight}px;
+                        min-width: ${m.labelHeight}px;
+                        padding: 0 ${m.labelPadding}px;
+                        border-radius: ${m.labelHeight / 2}px;
+                    ">${m.label}</span>
                     <button class="zone-delete" data-zone-id="${zone.id}" style="
-                        width: ${deleteSize}px;
-                        height: ${deleteSize}px;
-                        font-size: ${deleteFontSize}px;
+                        width: ${m.deleteSize}px;
+                        height: ${m.deleteSize}px;
+                        font-size: ${m.deleteFontSize}px;
                     ">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
@@ -2711,6 +2934,7 @@ export const TrombinoscopeManager = {
         const clickNatX = (e.clientX - rect.left) * scaleX;
         const clickNatY = (e.clientY - rect.top) * scaleY;
 
+        let wasAlreadySingleSelected = false;
         // Manage selection on click
         if (e.shiftKey && this._lastFocusedZoneId !== null) {
             // Shift + Click range selection (Windows style)
@@ -2744,6 +2968,7 @@ export const TrombinoscopeManager = {
                 el.classList.add('is-selected');
             }
         } else {
+            wasAlreadySingleSelected = this._selectedZoneIds.size === 1 && this._selectedZoneIds.has(zoneId);
             // If the zone clicked is not part of the selection, clear selection and select only it
             if (!this._selectedZoneIds.has(zoneId)) {
                 this._selectedZoneIds.clear();
@@ -2782,7 +3007,8 @@ export const TrombinoscopeManager = {
             startCx: zone.cx,
             startCy: zone.cy,
             originalPositions,
-            otherPagesOriginalPositions
+            otherPagesOriginalPositions,
+            wasAlreadySingleSelected
         };
 
         // Capture snapshot before dragging
@@ -2969,10 +3195,13 @@ export const TrombinoscopeManager = {
             if (!this._selectionBox.isActive) {
                 // Click on background overlay: clear selection
                 this._selectedZoneIds.clear();
+                this._lastFocusedZoneId = null;
                 const overlay = document.getElementById('trombiZonesOverlay');
                 overlay?.querySelectorAll('.trombi-zone').forEach(zEl => {
-                    zEl.classList.remove('is-selected');
+                    zEl.classList.remove('is-selected', 'focused');
                 });
+                const grid = document.getElementById('trombiAssignmentGrid');
+                grid?.querySelectorAll('.assignment-row.focused').forEach(r => r.classList.remove('focused'));
                 this._updateGroupedDragState();
             }
             this._selectionBox = null;
@@ -2983,7 +3212,7 @@ export const TrombinoscopeManager = {
         }
 
         if (this._dragging) {
-            const { zone, startCx, startCy } = this._dragging;
+            const { zone, startCx, startCy, wasAlreadySingleSelected } = this._dragging;
             const el = document.querySelector(`[data-zone-id="${zone.id}"]`);
             el?.classList.remove('dragging');
 
@@ -2991,6 +3220,8 @@ export const TrombinoscopeManager = {
             const hasMoved = Math.abs(zone.cx - startCx) > 0.01 || Math.abs(zone.cy - startCy) > 0.01;
             if (hasMoved && this._tempDragSnapshot) {
                 this._saveState(this._tempDragSnapshot);
+            } else if (!hasMoved && wasAlreadySingleSelected) {
+                this._clearZoneSelection();
             }
             this._tempDragSnapshot = null;
             this._dragging = null;
@@ -3021,6 +3252,20 @@ export const TrombinoscopeManager = {
      * - When zone select is focused: all 4 arrows move the zone position
      */
     _handleKeyDown(e) {
+        // Close open student popover on Escape before any modal close handler
+        if (this._openPopoverZoneId !== null) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._closeStudentPopover(true);
+                return;
+            }
+            // Let popover handle its own arrow/enter navigation
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
+                return;
+            }
+        }
+
         // Handle Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Y / Ctrl+Shift+Z (Redo)
         if (e.ctrlKey || e.metaKey) {
             const key = e.key.toLowerCase();
@@ -3211,19 +3456,16 @@ export const TrombinoscopeManager = {
     },
 
     // ========================================================================
-    // ASSIGNMENT GRID
+    // ASSIGNMENT GRID & CUSTOM STUDENT POPOVER
     // ========================================================================
 
-    _renderAssignmentGrid() {
-        const container = document.getElementById('trombiAssignmentGrid');
-        if (!container) return;
-
-        let allStudents = [];
+    _getAssignmentContext() {
         const targetInfo = this._getTargetClassInfo();
         const existingClassStudents = targetInfo.existingClassStudents;
+        const isPdfMode = !!this._parsedPdfData;
+        let allStudents = [];
 
-        if (this._parsedPdfData && this._parsedPdfData.students) {
-            // Dans le mode PDF trombinoscope, la liste de référence est celle extraite du document
+        if (isPdfMode && this._parsedPdfData.students) {
             allStudents = this._parsedPdfData.students.map(pdfS => {
                 const matched = existingClassStudents.find(es =>
                     es.id === pdfS.id ||
@@ -3244,6 +3486,388 @@ export const TrombinoscopeManager = {
             allStudents = existingClassStudents.map(s => ({ ...s, isNew: false }));
         }
 
+        const rawExcludeChecked = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
+        const withoutPhotosCount = allStudents.filter(s => !s.studentPhoto?.data).length;
+        const excludeWithPhotos = !isPdfMode && rawExcludeChecked && (withoutPhotosCount > 0 || this._userToggledExcludeFilter);
+        const pageOffset = this._getPageOffset();
+        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
+        const getDropdownStudents = (zoneStudentId) => allStudents.filter(s =>
+            s.id === zoneStudentId || !(excludeWithPhotos && s.studentPhoto?.data)
+        );
+
+        return {
+            targetInfo,
+            allStudents,
+            isPdfMode,
+            excludeWithPhotos,
+            pageOffset,
+            sortedZones,
+            getDropdownStudents
+        };
+    },
+
+    _getAssignedZoneNumber(studentId, excludeZoneId, sortedZones = [...this._zones].sort((a, b) => a.id - b.id)) {
+        if (!studentId) return null;
+        if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+            for (let pIdx = 0; pIdx < this._parsedPdfData.pages.length; pIdx++) {
+                const rawZones = (pIdx === this._currentPageIndex) ? this._zones : (this._parsedPdfData.pages[pIdx].zones || []);
+                const pageSorted = [...rawZones].sort((a, b) => a.id - b.id);
+                const zIdx = pageSorted.findIndex(z => z.studentId === studentId && !(pIdx === this._currentPageIndex && z.id === excludeZoneId));
+                if (zIdx !== -1) {
+                    return this._getPageOffset(pIdx) + zIdx + 1;
+                }
+            }
+            return null;
+        }
+        const zIdx = sortedZones.findIndex(z => z.studentId === studentId && z.id !== excludeZoneId);
+        return zIdx !== -1 ? (this._getPageOffset() + zIdx + 1) : null;
+    },
+
+    _assignStudentToZone(zoneId, studentId) {
+        const normalizedStudentId = studentId || null;
+        const zone = this._zones.find(z => z.id === zoneId);
+        if (!zone) {
+            this._closeStudentPopover();
+            return;
+        }
+        if ((zone.studentId || null) === normalizedStudentId) {
+            this._closeStudentPopover();
+            return;
+        }
+
+        this._closeStudentPopover();
+        this._saveState();
+
+        const previousStudentId = zone.studentId || null;
+
+        // If selecting a student already assigned to another zone, swap their assignments (including across PDF pages)
+        if (normalizedStudentId) {
+            const existingZone = this._zones.find(z => z.studentId === normalizedStudentId && z.id !== zoneId);
+            if (existingZone) {
+                existingZone.studentId = previousStudentId;
+            } else if (this._parsedPdfData?.pages) {
+                for (let pIdx = 0; pIdx < this._parsedPdfData.pages.length; pIdx++) {
+                    if (pIdx === this._currentPageIndex) continue;
+                    const otherPageZone = (this._parsedPdfData.pages[pIdx].zones || []).find(z => z.studentId === normalizedStudentId);
+                    if (otherPageZone) {
+                        otherPageZone.studentId = previousStudentId;
+                        break;
+                    }
+                }
+            }
+        }
+
+        zone.studentId = normalizedStudentId;
+
+        this._clearZoneSelection();
+        this._renderZones();
+        this._renderAssignmentGrid();
+    },
+
+    _closeStudentPopover(restoreFocus = false) {
+        const prevZoneId = this._openPopoverZoneId;
+        this._openPopoverZoneId = null;
+
+        if (this._outsidePopoverHandler && typeof document !== 'undefined') {
+            document.removeEventListener('mousedown', this._outsidePopoverHandler, true);
+            this._outsidePopoverHandler = null;
+        }
+
+        if (typeof document === 'undefined') return;
+
+        document.querySelectorAll('.trombi-student-popover').forEach(el => el.remove());
+        document.querySelectorAll('#trombiAssignmentGrid .assignment-row.is-dropdown-open').forEach(row => {
+            row.classList.remove('is-dropdown-open');
+        });
+        document.querySelectorAll('#trombiAssignmentGrid .assignment-combobox-btn[aria-expanded="true"]').forEach(btn => {
+            btn.setAttribute('aria-expanded', 'false');
+        });
+
+        if (prevZoneId !== null) {
+            this._clearZoneSelection();
+        }
+
+        if (restoreFocus && prevZoneId !== null) {
+            const triggerBtn = document.querySelector(`#trombiAssignmentGrid .assignment-combobox-btn[data-zone-id="${prevZoneId}"]`);
+            triggerBtn?.focus?.({ preventScroll: true });
+        }
+    },
+
+    _toggleStudentPopover(zoneId, triggerBtn) {
+        if (this._openPopoverZoneId === zoneId) {
+            this._closeStudentPopover(false);
+            triggerBtn?.blur?.();
+            return;
+        }
+        this._openStudentPopover(zoneId, triggerBtn);
+    },
+
+    _openStudentPopover(zoneId, triggerBtn) {
+        this._closeStudentPopover(false);
+
+        const zone = this._zones.find(z => z.id === zoneId);
+        const container = document.getElementById('trombiAssignmentGrid');
+        if (!zone || !container) return;
+
+        this._openPopoverZoneId = zoneId;
+        this._selectSingleZone(zoneId, false);
+
+        const row = triggerBtn?.closest('.assignment-row') || container.querySelector(`.assignment-row[data-zone-id="${zoneId}"]`);
+        row?.classList.add('is-dropdown-open');
+        triggerBtn?.setAttribute('aria-expanded', 'true');
+
+        const { targetInfo, allStudents, isPdfMode, excludeWithPhotos, pageOffset, sortedZones, getDropdownStudents } = this._getAssignmentContext();
+        const dropdownStudents = getDropdownStudents(zone.studentId);
+        const currentZoneDisplayNum = pageOffset + sortedZones.findIndex(z => z.id === zone.id) + 1;
+        const studentsWithPhotoCount = dropdownStudents.filter(s => Boolean(s.studentPhoto?.data)).length;
+        const showPhotoIndicator = !isPdfMode && studentsWithPhotoCount > 0 && studentsWithPhotoCount < dropdownStudents.length;
+
+        const host = container.closest('.trombi-assignment-panel') || container.parentElement || document.body;
+        const popover = document.createElement('div');
+        popover.className = 'trombi-student-popover';
+        popover.dataset.zoneId = String(zoneId);
+
+        const showSearch = dropdownStudents.length > 5;
+        popover.innerHTML = `
+            ${showSearch ? `
+                <div class="trombi-popover-search">
+                    <iconify-icon icon="solar:magnifer-linear" class="trombi-popover-search-icon" aria-hidden="true"></iconify-icon>
+                    <input type="text" class="trombi-popover-search-input custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                </div>
+            ` : ''}
+            <div class="trombi-popover-list" role="listbox" aria-label="Liste des élèves"></div>
+        `;
+
+        const listEl = popover.querySelector('.trombi-popover-list');
+        const searchInput = popover.querySelector('.trombi-popover-search-input');
+
+        let activeOptionIdx = -1;
+
+        const syncActiveOption = (nextIdx) => {
+            const options = listEl.querySelectorAll('.trombi-popover-option');
+            if (options.length === 0) {
+                activeOptionIdx = -1;
+                return;
+            }
+            activeOptionIdx = ((nextIdx % options.length) + options.length) % options.length;
+            options.forEach((opt, i) => {
+                const isActive = i === activeOptionIdx;
+                opt.classList.toggle('is-active', isActive);
+                if (isActive) {
+                    opt.scrollIntoView?.({ block: 'nearest' });
+                }
+            });
+        };
+
+        const renderList = (query = '') => {
+            const normQuery = Utils.normalizeName(query, '');
+            const filtered = normQuery
+                ? dropdownStudents.filter(s => Utils.normalizeName(s.nom, s.prenom).includes(normQuery))
+                : dropdownStudents;
+
+            if (filtered.length === 0) {
+                if (!normQuery && excludeWithPhotos && allStudents.length > 0) {
+                    listEl.innerHTML = `
+                        <div class="trombi-popover-empty">
+                            <span>Tous les élèves ont déjà une photo.</span>
+                            <button type="button" class="trombi-popover-empty-btn" data-action="show-all-students">
+                                Afficher tous les élèves (${allStudents.length})
+                            </button>
+                        </div>
+                    `;
+                } else if (!normQuery && allStudents.length === 0) {
+                    listEl.innerHTML = `
+                        <div class="trombi-popover-empty">
+                            <span>Aucun élève dans cette classe.</span>
+                        </div>
+                    `;
+                } else {
+                    listEl.innerHTML = `
+                        <div class="trombi-popover-empty">
+                            <span>Aucun élève trouvé</span>
+                        </div>
+                    `;
+                }
+                activeOptionIdx = -1;
+                return;
+            }
+
+            const clearOptionHtml = (!normQuery && zone.studentId)
+                ? `
+                    <button type="button" class="trombi-popover-option is-clear-option" role="option" data-student-id="">
+                        <span class="trombi-option-main">
+                            <iconify-icon icon="solar:close-circle-linear" class="trombi-option-clear-icon" aria-hidden="true"></iconify-icon>
+                            <span class="trombi-option-label">Aucun élève (vider la zone)</span>
+                        </span>
+                    </button>
+                    <div class="trombi-popover-divider" role="separator"></div>
+                `
+                : '';
+
+            const optionsHtml = filtered.map(s => {
+                const isSelected = zone.studentId === s.id;
+                const otherZoneNum = this._getAssignedZoneNumber(s.id, zone.id, sortedZones);
+                const hasPhoto = showPhotoIndicator && Boolean(s.studentPhoto?.data);
+                const isNewStudent = isPdfMode && targetInfo.isUpdate && Boolean(s.isNew);
+                const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
+
+                const badges = [];
+                if (isNewStudent) {
+                    badges.push('<span class="trombi-option-badge is-new">Nouveau</span>');
+                }
+                if (hasPhoto) {
+                    badges.push('<span class="trombi-option-badge is-has-photo" title="Possède déjà une photo"><iconify-icon icon="solar:camera-minimalistic-linear"></iconify-icon></span>');
+                }
+                if (isSelected && currentZoneDisplayNum > 0) {
+                    badges.push(`<span class="trombi-option-badge is-current" title="Assigné à cette zone #${currentZoneDisplayNum}"><iconify-icon icon="ph:check-bold"></iconify-icon>#${currentZoneDisplayNum}</span>`);
+                } else if (otherZoneNum !== null) {
+                    badges.push(`<span class="trombi-option-badge is-swap" title="Échanger avec la zone #${otherZoneNum}"><iconify-icon icon="ph:arrows-left-right"></iconify-icon>#${otherZoneNum}</span>`);
+                }
+
+                return `
+                    <button type="button" class="trombi-popover-option ${isSelected ? 'is-selected' : ''}" role="option" aria-selected="${isSelected}" data-student-id="${s.id}">
+                        <span class="trombi-option-main">
+                            <span class="trombi-option-label">${studentNameFormatted}</span>
+                        </span>
+                        ${badges.length > 0 ? `<span class="trombi-option-meta">${badges.join('')}</span>` : ''}
+                    </button>
+                `;
+            }).join('');
+
+            listEl.innerHTML = clearOptionHtml + optionsHtml;
+
+            const allOpts = Array.from(listEl.querySelectorAll('.trombi-popover-option'));
+            const selectedIdx = allOpts.findIndex(o => o.classList.contains('is-selected'));
+            if (normQuery && allOpts.length > 0) {
+                activeOptionIdx = selectedIdx !== -1 ? selectedIdx : 0;
+                allOpts[activeOptionIdx]?.classList.add('is-active');
+            } else {
+                activeOptionIdx = selectedIdx;
+            }
+        };
+
+        renderList('');
+        host.appendChild(popover);
+
+        // Position popover relative to host panel (below or above row depending on available space)
+        const anchorEl = row || triggerBtn;
+        if (anchorEl?.getBoundingClientRect && host.getBoundingClientRect) {
+            const hostRect = host.getBoundingClientRect();
+            const anchorRect = anchorEl.getBoundingClientRect();
+            const gridRect = container.getBoundingClientRect?.() || hostRect;
+            if (hostRect.height > 0 && anchorRect.height > 0) {
+                const topLimit = Math.max(hostRect.top, gridRect.top);
+                const spaceBelow = hostRect.bottom - anchorRect.bottom;
+                const spaceAbove = anchorRect.top - topLimit;
+                const openUpward = spaceBelow < 190 && spaceAbove > spaceBelow;
+                if (openUpward) {
+                    popover.classList.add('is-upward');
+                    popover.style.bottom = `${Math.max(6, Math.round(hostRect.bottom - anchorRect.top + 6))}px`;
+                    popover.style.maxHeight = `${Math.max(140, Math.min(280, Math.floor(spaceAbove - 8)))}px`;
+                } else {
+                    popover.style.top = `${Math.max(6, Math.round(anchorRect.bottom - hostRect.top + 6))}px`;
+                    popover.style.maxHeight = `${Math.max(140, Math.min(280, Math.floor(spaceBelow - 10)))}px`;
+                }
+            }
+        }
+
+        // Scroll selected student into view inside the popover list without scrolling outer containers
+        const selectedOpt = listEl.querySelector('.trombi-popover-option.is-selected');
+        if (selectedOpt && listEl.clientHeight > 0) {
+            const optTop = selectedOpt.offsetTop;
+            const optBottom = optTop + selectedOpt.offsetHeight;
+            if (optBottom > listEl.clientHeight) {
+                listEl.scrollTop = Math.max(0, optBottom - listEl.clientHeight + 8);
+            }
+        }
+
+        // Bind interactions inside popover
+        listEl.addEventListener('mouseover', (e) => {
+            const opt = e.target.closest('.trombi-popover-option');
+            if (!opt) return;
+            listEl.querySelectorAll('.trombi-popover-option.is-active').forEach(el => el.classList.remove('is-active'));
+        });
+
+        listEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const showAllBtn = e.target.closest('[data-action="show-all-students"]');
+            if (showAllBtn) {
+                const excludeInput = document.getElementById('trombiExcludeWithPhotos');
+                if (excludeInput) {
+                    excludeInput.checked = false;
+                }
+                this._userToggledExcludeFilter = true;
+                this._closeStudentPopover(false);
+                this._autoAssignSilent();
+                const refreshedBtn = document.querySelector(`#trombiAssignmentGrid .assignment-combobox-btn[data-zone-id="${zoneId}"]`);
+                if (refreshedBtn) {
+                    this._openStudentPopover(zoneId, refreshedBtn);
+                }
+                return;
+            }
+
+            const optionBtn = e.target.closest('.trombi-popover-option');
+            if (!optionBtn) return;
+            this._assignStudentToZone(zoneId, optionBtn.dataset.studentId || null);
+        });
+
+        searchInput?.addEventListener('input', (e) => {
+            renderList(e.target.value);
+        });
+
+        popover.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                syncActiveOption(activeOptionIdx + 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                syncActiveOption(activeOptionIdx <= 0 ? 0 : activeOptionIdx - 1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = listEl.querySelectorAll('.trombi-popover-option');
+                const targetOpt = options[activeOptionIdx] || options[0];
+                if (targetOpt) {
+                    this._assignStudentToZone(zoneId, targetOpt.dataset.studentId || null);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._closeStudentPopover(true);
+            }
+        });
+
+        if (searchInput) {
+            searchInput.focus?.({ preventScroll: true });
+        } else {
+            popover.setAttribute('tabindex', '-1');
+            popover.focus?.({ preventScroll: true });
+        }
+
+        this._outsidePopoverHandler = (e) => {
+            if (popover.contains(e.target) || triggerBtn?.contains(e.target)) return;
+            this._closeStudentPopover(false);
+        };
+        document.addEventListener('mousedown', this._outsidePopoverHandler, true);
+    },
+
+    _renderAssignmentGrid() {
+        const container = document.getElementById('trombiAssignmentGrid');
+        if (!container) return;
+
+        this._closeStudentPopover(false);
+
+        const {
+            targetInfo,
+            allStudents,
+            isPdfMode,
+            pageOffset,
+            sortedZones,
+            getDropdownStudents
+        } = this._getAssignmentContext();
+
         // Header summary pill if new students are detected
         const panelHeaderTitle = document.querySelector('.trombi-assignment-panel-header h4');
         if (panelHeaderTitle) {
@@ -3252,6 +3876,20 @@ export const TrombinoscopeManager = {
                 ? ` <span class="trombi-header-count-pill is-new">+${newCount} nouveau${newCount > 1 ? 'x' : ''}</span>`
                 : '';
             panelHeaderTitle.innerHTML = `Associer les élèves aux zones${newPill}`;
+        }
+
+        // Update auto-assign A->Z header button state
+        const autoAssignBtn = document.getElementById('trombiAutoAssignBtn');
+        if (autoAssignBtn) {
+            const isInOrder = this._isAutoAssignedInOrder(sortedZones);
+            autoAssignBtn.classList.toggle('disabled', isInOrder);
+            autoAssignBtn.setAttribute('aria-disabled', String(isInOrder));
+            autoAssignBtn.setAttribute(
+                'data-tooltip',
+                isInOrder
+                    ? 'Déjà assigné dans l\'ordre alphabétique (A→Z)'
+                    : 'Réassigner dans l\'ordre alphabétique (A→Z)'
+            );
         }
 
         if (this._zones.length === 0) {
@@ -3264,90 +3902,79 @@ export const TrombinoscopeManager = {
             return;
         }
 
-        const isPdfMode = !!this._parsedPdfData;
-        const excludeWithPhotos = !isPdfMode && (document.getElementById('trombiExcludeWithPhotos')?.checked ?? true);
-        const pageOffset = this._getPageOffset();
-
-        // Sort zones by ID to keep order stable
-        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
-
         container.innerHTML = `
             ${sortedZones.map((zone, index) => {
-                const dropdownStudents = allStudents.filter(s => {
-                    if (s.id === zone.studentId) return true; // Always keep currently selected student
-                    if (excludeWithPhotos && s.studentPhoto?.data) return false;
-                    return true;
-                });
-
+                const dropdownStudents = getDropdownStudents(zone.studentId);
                 const assignedStudent = allStudents.find(s => s.id === zone.studentId);
                 const assignedName = assignedStudent ? Utils.formatStudentName(assignedStudent.nom, assignedStudent.prenom) : '';
-                const tooltipAttr = assignedName ? `data-tooltip="${assignedName}" title="${assignedName}"` : 'data-tooltip="Choisir un élève..."';
                 const isAssigned = !!assignedStudent;
                 const isNew = assignedStudent?.isNew ?? false;
                 const isNewRow = isAssigned && isPdfMode && targetInfo.isUpdate && isNew;
+                const isFocused = this._lastFocusedZoneId === zone.id;
+                const zoneNumber = pageOffset + index + 1;
+                const hasStudentFromHere = sortedZones.slice(index).some(z => Boolean(z.studentId));
+                const shiftDownTooltip = hasStudentFromHere
+                    ? 'Insérer un vide ici (décaler la suite vers le bas)'
+                    : 'Aucun élève à décaler à partir de cette zone';
+                const shiftUpTooltip = !hasStudentFromHere
+                    ? 'Aucun élève à remonter à partir de cette zone'
+                    : (isAssigned
+                        ? 'Retirer cet élève et remonter les suivants'
+                        : 'Combler ce vide (remonter les élèves suivants)');
 
                 const badgeHtml = isNewRow
                     ? `<span class="trombi-student-badge is-new" data-tooltip="Nouvel élève à ajouter"><iconify-icon icon="solar:user-plus-rounded-bold"></iconify-icon>Nouveau</span>`
                     : '';
 
                 return `
-                    <div class="assignment-row ${isNewRow ? 'is-new-student' : ''}" data-zone-id="${zone.id}">
+                    <div class="assignment-row ${isNewRow ? 'is-new-student' : ''} ${!isAssigned ? 'is-unassigned' : ''} ${isFocused ? 'focused' : ''}" data-zone-id="${zone.id}">
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
                                     data-zone-id="${zone.id}" 
                                     width="80" height="80"></canvas>
                         </div>
                         <div class="assignment-id">
-                            #${pageOffset + index + 1}
+                            #${zoneNumber}
                         </div>
                         <div class="assignment-student-select">
                             <div class="assignment-select-wrapper">
                                 <div class="assignment-select-box">
-                                    <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
+                                    <select class="assignment-select" data-zone-id="${zone.id}" tabindex="-1" aria-hidden="true">
                                         <option value="">Choisir un élève...</option>
-                                        ${dropdownStudents.map(s => {
-                                            // Check if this student is assigned to ANOTHER zone (including other PDF pages)
-                                            const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
-                                                ? this._parsedPdfData.pages.some((p, pIdx) => {
-                                                    const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
-                                                    return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
-                                                })
-                                                : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
-                                            const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
-
-                                            const statusParts = [];
-                                            if (assignedToOther) {
-                                                statusParts.push('déjà sélectionné');
-                                            }
-                                            if (hasPhoto) {
-                                                statusParts.push('déjà assigné');
-                                            }
-
-                                            const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
-                                            const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
-                                            const label = `${studentNameFormatted}${statusText}`;
-
-                                            return `
-                                                <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
-                                                    ${label}
-                                                </option>
-                                            `;
-                                        }).join('')}
+                                        ${dropdownStudents.map(s => `<option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>${Utils.formatStudentName(s.nom, s.prenom)}</option>`).join('')}
                                     </select>
-                                    <iconify-icon icon="solar:alt-arrow-down-linear" class="assignment-select-chevron" aria-hidden="true"></iconify-icon>
+                                    <button type="button"
+                                            class="assignment-combobox-btn ${isAssigned ? 'is-assigned' : 'is-placeholder'}"
+                                            data-zone-id="${zone.id}"
+                                            aria-haspopup="listbox"
+                                            aria-expanded="false"
+                                            aria-label="${isAssigned ? `Zone #${zoneNumber} : ${assignedName}` : `Choisir un élève pour la zone #${zoneNumber}`}">
+                                        <span class="assignment-combobox-text">${isAssigned ? assignedName : 'Choisir un élève...'}</span>
+                                        <iconify-icon icon="solar:alt-arrow-down-linear" class="assignment-select-chevron" aria-hidden="true"></iconify-icon>
+                                    </button>
                                 </div>
                                 ${badgeHtml}
                             </div>
                         </div>
                         <div class="assignment-actions">
-                            <button type="button" class="assignment-action-btn shift-down-btn" 
+                            <button type="button" class="assignment-action-btn shift-down-btn ${!hasStudentFromHere ? 'disabled' : ''}" 
                                     data-zone-id="${zone.id}" 
-                                    data-tooltip="Insérer un vide (décaler vers le bas)">
-                                <iconify-icon icon="ph:arrow-line-down"></iconify-icon>
+                                    aria-disabled="${!hasStudentFromHere}"
+                                    aria-label="${shiftDownTooltip}"
+                                    data-tooltip="${shiftDownTooltip}">
+                                <iconify-icon icon="ph:caret-double-down"></iconify-icon>
                             </button>
-                            <button type="button" class="assignment-action-btn shift-up-btn danger" 
+                            <button type="button" class="assignment-action-btn shift-up-btn ${!hasStudentFromHere ? 'disabled' : ''}" 
                                     data-zone-id="${zone.id}" 
-                                    data-tooltip="Supprimer cet élève et décaler le reste vers le haut">
+                                    aria-disabled="${!hasStudentFromHere}"
+                                    aria-label="${shiftUpTooltip}"
+                                    data-tooltip="${shiftUpTooltip}">
+                                <iconify-icon icon="ph:caret-double-up"></iconify-icon>
+                            </button>
+                            <button type="button" class="assignment-action-btn delete-zone-btn danger" 
+                                    data-zone-id="${zone.id}" 
+                                    aria-label="Supprimer la zone #${zoneNumber}"
+                                    data-tooltip="Supprimer la zone #${zoneNumber}">
                                 <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                             </button>
                         </div>
@@ -3374,50 +4001,47 @@ export const TrombinoscopeManager = {
             }
         }
 
-        // Bind select events
+        // Bind hidden native select events (for programmatic/test compatibility)
         container.querySelectorAll('.assignment-select').forEach(select => {
             select.addEventListener('change', e => {
-                this._saveState();
-                const zoneId = parseInt(select.dataset.zoneId);
-                const studentId = e.target.value || null;
-
-                // Find the zone
-                const zone = this._zones.find(z => z.id === zoneId);
-                if (!zone) return;
-
-                // If we are selecting a student, check if they were already assigned elsewhere
-                // (Though the UI disables them, it's good safety)
-                if (studentId) {
-                    const existingZone = this._zones.find(z => z.studentId === studentId && z.id !== zoneId);
-                    if (existingZone) {
-                        existingZone.studentId = null; // Unassign from previous
-                    }
-                }
-
-                zone.studentId = studentId;
-
-                this._renderZones();
-                this._renderAssignmentGrid(); // Re-render to update other dropdowns (disabled states)
+                const zoneId = parseInt(select.dataset.zoneId, 10);
+                this._assignStudentToZone(zoneId, e.target.value || null);
             });
-
-            // Track focus/interaction for keyboard zone positioning
-            const trackZoneFocus = () => {
-                const zoneId = parseInt(select.dataset.zoneId);
-                this._lastFocusedControl = 'zone';
-                this._lastFocusedZoneId = zoneId;
-            };
-            select.addEventListener('focus', trackZoneFocus);
-            select.addEventListener('mousedown', trackZoneFocus);
-
-            // Also highlight row on focus
-            select.addEventListener('focus', () => this._highlightAssignmentRow(parseInt(select.dataset.zoneId), false));
         });
 
-        // Bind shift buttons
+        // Bind custom combobox buttons
+        container.querySelectorAll('.assignment-combobox-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const zoneId = parseInt(btn.dataset.zoneId, 10);
+                this._toggleStudentPopover(zoneId, btn);
+            });
+            btn.addEventListener('focus', () => {
+                if (!btn.matches?.(':focus-visible')) return;
+                const zoneId = parseInt(btn.dataset.zoneId, 10);
+                this._lastFocusedControl = 'zone';
+                this._lastFocusedZoneId = zoneId;
+                this._highlightZone(zoneId);
+                this._highlightAssignmentRow(zoneId, false);
+            });
+        });
+
+        // Close popover if user scrolls the assignment list
+        if (!container._hasPopoverScrollListener) {
+            container._hasPopoverScrollListener = true;
+            container.addEventListener('scroll', () => {
+                if (this._openPopoverZoneId !== null) {
+                    this._closeStudentPopover(false);
+                }
+            }, { passive: true });
+        }
+
+        // Bind shift & delete buttons
         container.querySelectorAll('.shift-down-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
-                const zoneId = parseInt(btn.dataset.zoneId);
+                if (btn.classList.contains('disabled')) return;
+                const zoneId = parseInt(btn.dataset.zoneId, 10);
                 this._insertGapAndShiftDown(zoneId);
             });
         });
@@ -3425,28 +4049,84 @@ export const TrombinoscopeManager = {
         container.querySelectorAll('.shift-up-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
-                const zoneId = parseInt(btn.dataset.zoneId);
+                if (btn.classList.contains('disabled')) return;
+                const zoneId = parseInt(btn.dataset.zoneId, 10);
                 this._removeAndShiftUp(zoneId);
             });
         });
 
-        // Add click listeners for rows to highlight zones
+        container.querySelectorAll('.delete-zone-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const zoneId = parseInt(btn.dataset.zoneId, 10);
+                this._removeZone(zoneId);
+            });
+        });
+
+        // Synchronize row hover with image zones (no sticky row selection on click)
         container.querySelectorAll('.assignment-row').forEach(row => {
             row.addEventListener('click', (e) => {
-                // Ignore if clicked on select (already handled)
-                if (e.target.closest('select')) return;
+                if (e.target.closest('select, .assignment-combobox-btn, .assignment-action-btn')) return;
+                if (this._openPopoverZoneId === null) {
+                    this._clearZoneSelection();
+                    const zoneId = parseInt(row.dataset.zoneId, 10);
+                    this._highlightZone(zoneId);
+                }
+            });
 
-                const zoneId = parseInt(row.dataset.zoneId);
+            row.addEventListener('mouseenter', () => {
+                if (this._openPopoverZoneId !== null) return;
+                if (this._selectedZoneIds.size > 0 || this._lastFocusedZoneId !== null) {
+                    this._clearZoneSelection();
+                }
+                const zoneId = parseInt(row.dataset.zoneId, 10);
                 this._highlightZone(zoneId);
-                this._highlightAssignmentRow(zoneId, false); // Keep row highlighted but don't scroll
+            });
+
+            row.addEventListener('mouseleave', () => {
+                if (this._openPopoverZoneId !== null) return;
+                const overlay = document.getElementById('trombiZonesOverlay');
+                overlay?.querySelectorAll('.trombi-zone.focused').forEach(z => z.classList.remove('focused'));
             });
         });
 
         // Initial preview render
         this._updateLivePreviews();
 
-        // Re-initialize tooltips for the new/updated select dropdowns
+        // Re-initialize tooltips for the new/updated action buttons
         UI.initTooltips?.();
+    },
+
+    _clearZoneSelection() {
+        this._selectedZoneIds.clear();
+        this._lastFocusedZoneId = null;
+        if (typeof document !== 'undefined') {
+            const overlay = document.getElementById('trombiZonesOverlay');
+            overlay?.querySelectorAll('.trombi-zone').forEach(zEl => {
+                zEl.classList.remove('is-selected', 'focused');
+            });
+            const grid = document.getElementById('trombiAssignmentGrid');
+            grid?.querySelectorAll('.assignment-row.focused').forEach(r => r.classList.remove('focused'));
+        }
+        this._updateGroupedDragState();
+    },
+
+    _selectSingleZone(zoneId, scroll = false) {
+        this._lastFocusedControl = 'zone';
+        this._lastFocusedZoneId = zoneId;
+        this._selectedZoneIds.clear();
+        this._selectedZoneIds.add(zoneId);
+
+        const overlay = document.getElementById('trombiZonesOverlay');
+        if (overlay) {
+            overlay.querySelectorAll('.trombi-zone').forEach(zEl => {
+                const isTarget = parseInt(zEl.dataset.zoneId, 10) === zoneId;
+                zEl.classList.toggle('is-selected', isTarget);
+                zEl.classList.toggle('focused', isTarget);
+            });
+        }
+        this._updateGroupedDragState();
+        this._highlightAssignmentRow(zoneId, scroll);
     },
 
     /**
@@ -3559,7 +4239,7 @@ export const TrombinoscopeManager = {
 
         const targetInfo = this._getTargetClassInfo();
 
-        let students = [...(appState.filteredResults || [])];
+        let students = [...(targetInfo.existingClassStudents || appState.filteredResults || [])];
         if (this._parsedPdfData && this._parsedPdfData.students) {
             for (const pdfStudent of this._parsedPdfData.students) {
                 if (!students.some(s => s.id === pdfStudent.id || Utils.normalizeName(s.nom, s.prenom) === Utils.normalizeName(pdfStudent.nom, pdfStudent.prenom))) {
@@ -3949,6 +4629,33 @@ export const TrombinoscopeManager = {
                     assignments.push({ studentId, photoData });
                 }
             } else {
+                const sampleFallbackById = new Map(this._getSampleFallbackStudents().map(s => [s.id, s]));
+                let materializedSampleStudents = false;
+                for (const item of assignedItems) {
+                    const sampleStudent = sampleFallbackById.get(item.zone.studentId);
+                    if (sampleStudent && !appState.generatedResults?.some(r => r.id === item.zone.studentId)) {
+                        if (!targetClass) {
+                            targetClass = (appState.currentClassId && ClassManager.getClass?.(appState.currentClassId))
+                                || ClassManager.createClass?.('Classe Démo');
+                            if (targetClass && appState.currentClassId !== targetClass.id) {
+                                await ClassManager.switchClass?.(targetClass.id);
+                            }
+                        }
+                        const newStudentResult = StudentDataManager.createPendingResult({
+                            nom: sampleStudent.nom,
+                            prenom: sampleStudent.prenom,
+                            classe: targetClass?.name || '',
+                            statuses: [],
+                            periods: {}
+                        });
+                        if (targetClass?.id) newStudentResult.classId = targetClass.id;
+                        appState.generatedResults.push(newStudentResult);
+                        item.zone.studentId = newStudentResult.id;
+                        newlyAddedStudentIds.add(newStudentResult.id);
+                        materializedSampleStudents = true;
+                    }
+                }
+
                 const img = await this._loadImage(this._imageSrc);
                 for (const item of assignedItems) {
                     const { studentId, cx, cy } = item.zone;
@@ -3968,6 +4675,13 @@ export const TrombinoscopeManager = {
                         photoData = 'data:image/jpeg;base64,mock';
                     }
                     assignments.push({ studentId, photoData });
+                }
+
+                if (materializedSampleStudents) {
+                    await StorageManager.saveAppState?.();
+                    if (targetClass) {
+                        await ClassManager._filterResultsByClass?.(targetClass.id);
+                    }
                 }
             }
 

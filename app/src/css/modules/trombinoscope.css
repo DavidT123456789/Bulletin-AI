@@ -223,46 +223,6 @@
     box-shadow: inset 0 0 32px rgba(var(--primary-color-rgb), 0.08);
 }
 
-/* Floating Sample Button - Frosted Glass Pill */
-.trombi-floating-sample-btn {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    z-index: 10;
-    margin: 0;
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    transition: all var(--transition-fast);
-}
-
-[data-theme="dark"] .trombi-floating-sample-btn {
-    background: rgba(24, 24, 27, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.trombi-floating-sample-btn:hover {
-    background: rgba(255, 255, 255, 0.9);
-    transform: scale(1.06);
-    box-shadow: var(--shadow-md);
-}
-
-[data-theme="dark"] .trombi-floating-sample-btn:hover {
-    background: rgba(35, 36, 42, 0.9);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-    transform: scale(1.06);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-}
-
 /* ═══════════════════════════════════════════════════════════════════
    Unified Dropzone with Integrated Preview
    ═══════════════════════════════════════════════════════════════════ */
@@ -290,7 +250,7 @@
     overflow: hidden;
     padding: 16px;
     box-sizing: border-box;
-    animation: trombiImageReveal 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: none;
 }
 
 .drop-zone-image {
@@ -302,56 +262,7 @@
     border-radius: var(--radius-sm, 6px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
     display: block;
-}
-
-/* Remove button shown when image is loaded - Frosted Glass Circle */
-.drop-zone-remove-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-    font-size: 1.15rem;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    z-index: 25;
-}
-
-[data-theme="dark"] .drop-zone-remove-btn {
-    background: rgba(24, 24, 27, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-    color: rgba(255, 255, 255, 0.72);
-}
-
-.drop-zone-remove-btn:hover {
-    background: rgba(231, 76, 60, 0.15);
-    border-color: var(--error-color);
-    color: var(--error-color);
-    transform: scale(1.08);
-}
-
-[data-theme="dark"] .drop-zone-remove-btn:hover {
-    background: rgba(231, 76, 60, 0.22);
-    border-color: rgba(231, 76, 60, 0.55);
-    color: #ff6b6b;
-    transform: scale(1.08);
-}
-
-.drop-zone-remove-btn:active {
-    transform: scale(0.95);
+    animation: trombiImageReveal 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Dropzone with image loaded - strictly locked static studio canvas (zero hover shift, zero background brightening) */
@@ -429,25 +340,26 @@
     border: 2px solid rgba(var(--primary-color-rgb), 0.7);
     background: rgba(var(--primary-color-rgb), 0.1);
     cursor: grab;
-    transition: border-color 0.2s ease, border-width 0.15s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, border-width 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.trombi-zone:hover {
-    border-color: var(--primary-color);
+.trombi-zone:hover,
+.trombi-zone.focused,
+.trombi-zone.is-selected,
+.trombi-zone.dragging {
+    border-color: #f39c12;
     border-width: 3px;
-    box-shadow: 0 4px 16px rgba(var(--primary-color-rgb), 0.3);
+    background: rgba(243, 156, 18, 0.2);
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.35);
+    z-index: 95;
 }
 
 .trombi-zone.dragging {
     cursor: grabbing;
-    border-color: var(--primary-color);
-    border-width: 3px;
-    box-shadow: 0 4px 20px rgba(var(--primary-color-rgb), 0.4),
-        0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 100;
 }
 
@@ -457,20 +369,15 @@
     box-shadow: 0 4px 20px rgba(var(--warning-rgb, 243, 156, 18), 0.35);
 }
 
-.trombi-zone.focused {
-    border-color: var(--primary-color);
-    border-width: 3px;
-    box-shadow: 0 4px 20px rgba(var(--primary-color-rgb), 0.4),
-        0 8px 32px rgba(0, 0, 0, 0.12);
-    z-index: 90;
+.trombi-zone.is-unassigned:not(.focused):not(.is-selected):not(.dragging) {
+    border-style: dashed;
+    border-color: var(--text-tertiary);
+    background: rgba(var(--text-secondary-rgb), 0.08);
 }
 
-.trombi-zone.is-selected {
-    border-color: #f39c12; /* Warning/orange color */
-    border-width: 3px;
-    background: rgba(243, 156, 18, 0.2);
-    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.35);
-    z-index: 95;
+.trombi-zone.is-unassigned .zone-label {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 .trombi-selection-box {
@@ -500,12 +407,22 @@
     max-width: 80%;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.trombi-zone:hover .zone-label,
+.trombi-zone.focused .zone-label,
+.trombi-zone.is-selected .zone-label,
+.trombi-zone.dragging .zone-label {
+    background: #d97706;
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(243, 156, 18, 0.45);
 }
 
 .trombi-zone .zone-delete {
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: 14.64%;
+    right: 14.64%;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -518,18 +435,18 @@
     justify-content: center;
     font-size: 10px;
     opacity: 0;
-    transform: scale(0.8);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(50%, -50%) scale(0.8);
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
 }
 
 .trombi-zone:hover .zone-delete {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(50%, -50%) scale(1);
 }
 
 .trombi-zone .zone-delete:hover {
-    transform: scale(1.1);
+    transform: translate(50%, -50%) scale(1.12);
 }
 
 .trombi-zone .zone-resize-handle {
@@ -605,13 +522,14 @@
 
 /* Assignment Panel: Fixed width or natural width, doesn't shrink */
 .trombi-assignment-panel {
+    position: relative;
     width: 365px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    padding: 16px 0 0 20px;
+    padding: 16px 0 0 16px;
     box-sizing: border-box;
     background: var(--surface-color);
     overflow: hidden;
@@ -742,7 +660,8 @@
 }
 
 .grid-reset-btn,
-.assignment-action-btn {
+.assignment-action-btn,
+.assignment-header-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -758,19 +677,22 @@
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
-.grid-reset-btn {
+.grid-reset-btn,
+.assignment-header-btn {
     color: var(--text-secondary);
 }
 
 .grid-reset-btn iconify-icon,
-.assignment-action-btn iconify-icon {
+.assignment-action-btn iconify-icon,
+.assignment-header-btn iconify-icon {
     font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#gridResetBtn iconify-icon {
+#gridResetBtn iconify-icon,
+#trombiAutoAssignBtn iconify-icon {
     transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -778,14 +700,20 @@
     transform: rotate(-45deg);
 }
 
+#trombiAutoAssignBtn:hover:not(.disabled) iconify-icon {
+    transform: rotate(45deg);
+}
+
 .grid-reset-btn:hover:not(:disabled),
-.assignment-action-btn:hover {
+.assignment-action-btn:hover:not(.disabled),
+.assignment-header-btn:hover:not(.disabled) {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 
 .grid-reset-btn:active:not(:disabled),
-.assignment-action-btn:active {
+.assignment-action-btn:active:not(.disabled),
+.assignment-header-btn:active:not(.disabled) {
     transform: scale(0.92);
 }
 
@@ -793,6 +721,12 @@
     opacity: 0.35;
     cursor: default;
     pointer-events: none;
+}
+
+.assignment-action-btn.disabled,
+.assignment-header-btn.disabled {
+    opacity: 0.32;
+    cursor: default;
 }
 
 /* Collapsible advanced grid controls - 120Hz GPU-composited drawer */
@@ -1035,28 +969,6 @@
     outline-offset: 2px;
 }
 
-/* Bouton Auto (affiché dans le header du panneau d'association) */
-.btn-auto-order {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-}
-
-.btn-auto-order:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
 /* Panneau d'association restructuré avec header, liste flex et summary sticky */
 /* .trombi-assignment-panel definition moved to .trombi-split-view section for layout logic */
 
@@ -1068,55 +980,75 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 12px;
-    padding-right: 20px;
+    padding: 0 16px 0 4px;
     flex-shrink: 0;
 }
 
 .trombi-assignment-panel h4 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.trombi-assignment-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .trombi-exclude-toggle-wrapper {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.trombi-exclude-toggle-wrapper .toggle-switch {
+    margin: 0;
 }
 
 .trombi-exclude-toggle-label {
     font-size: 0.6875rem;
     font-weight: 500;
+    line-height: 1;
     color: var(--text-secondary);
+    white-space: nowrap;
+    margin: 0;
 }
 
 /* Assignment Grid - flexible et scrollable (compact) */
 .trombi-assignment-grid {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 4px 14px 16px 0;
+    padding: 4px 14px 16px 4px;
     scroll-padding-bottom: 16px;
     box-sizing: border-box;
 }
 
 .assignment-row {
     display: grid;
-    /* Preview | Zone # | Student Select | Actions */
-    grid-template-columns: 36px 28px 1fr auto;
+    /* Preview | Zone # | Student Combobox | Actions */
+    grid-template-columns: 36px 26px minmax(0, 1fr) auto;
     gap: 6px;
     align-items: center;
     padding: 5px 8px;
     background: var(--bg-secondary);
     border-radius: var(--radius-sm, 6px);
     border: 1px solid transparent;
-    transition: background var(--transition-fast), border-color var(--transition-fast);
+    transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] .assignment-row {
+    background: var(--surface-color);
+    border-color: rgba(255, 255, 255, 0.04);
 }
 
 .assignment-row.is-new-student {
@@ -1146,27 +1078,78 @@
     color: var(--success-bright);
 }
 
+.assignment-row.is-unassigned .live-preview-canvas {
+    border-style: dashed;
+    border-color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+/* Hide row action buttons at rest on pointer devices so student names get full width */
 .assignment-actions {
-    display: flex;
-    gap: 2px;
+    display: none;
+    gap: 1px;
     align-items: center;
 }
 
-.assignment-action-btn.danger:hover {
+.assignment-row:hover:not(.is-dropdown-open) .assignment-actions,
+.assignment-row:has(:focus-visible):not(.is-dropdown-open) .assignment-actions,
+.assignment-actions:focus-within {
+    display: flex;
+}
+
+@media (hover: none) {
+    .assignment-actions {
+        display: flex;
+    }
+}
+
+.assignment-action-btn.danger:hover:not(.disabled) {
     color: var(--error-color);
     background: rgba(var(--error-rgb), 0.12);
+}
+
+[data-theme="dark"] .assignment-action-btn.danger:hover:not(.disabled) {
+    color: var(--error-bright);
+    background: rgba(var(--error-rgb), 0.18);
 }
 
 .assignment-row:hover {
     background: var(--item-hover-bg-elevated);
 }
 
-.assignment-row.focused {
-    background: rgba(var(--primary-color-rgb), 0.15) !important;
-    border: 1px solid var(--primary-color);
-    box-shadow: 0 0 0 1px var(--primary-color), var(--shadow-sm);
-    transform: scale(1.02);
+[data-theme="dark"] .assignment-row:hover {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.assignment-row.focused,
+.assignment-row.is-dropdown-open {
+    background: rgba(243, 156, 18, 0.1) !important;
+    border-color: rgba(243, 156, 18, 0.7);
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.25);
     z-index: 5;
+}
+
+[data-theme="dark"] .assignment-row.focused,
+[data-theme="dark"] .assignment-row.is-dropdown-open {
+    background: rgba(243, 156, 18, 0.14) !important;
+    border-color: #f39c12;
+}
+
+.assignment-row.focused .live-preview-canvas,
+.assignment-row.is-dropdown-open .live-preview-canvas {
+    border-color: #f39c12;
+}
+
+.assignment-row.focused .assignment-id,
+.assignment-row.is-dropdown-open .assignment-id {
+    color: #f39c12;
+}
+
+.assignment-row.focused .assignment-combobox-btn,
+.assignment-row.is-dropdown-open .assignment-combobox-btn {
+    background-color: rgba(243, 156, 18, 0.08);
+    border-color: rgba(243, 156, 18, 0.35);
 }
 
 .assignment-preview {
@@ -1181,6 +1164,14 @@
     border-radius: 50%;
     border: 2px solid var(--primary-color);
     image-rendering: -webkit-optimize-contrast;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.assignment-combobox-btn[aria-expanded="true"],
+.assignment-combobox-btn:focus-visible {
+    outline: none;
+    border-color: #f39c12;
+    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
 }
 
 /* Zone ID Number - Clean borderless index */
@@ -1216,6 +1207,7 @@
     align-items: center;
     overflow: hidden;
     width: 100%;
+    min-width: 0;
 }
 
 .assignment-select-box {
@@ -1226,54 +1218,76 @@
     align-items: center;
 }
 
-.assignment-select-chevron {
-    position: absolute;
-    right: 8px;
-    font-size: 12px;
-    color: var(--text-tertiary);
-    pointer-events: none;
-    transition: color var(--transition-fast);
-}
-
-.assignment-select-box:hover .assignment-select-chevron {
-    color: var(--text-secondary);
-}
-
+/* Hidden native <select> kept in DOM for state sync & tests */
 .assignment-select {
+    display: none !important;
+}
+
+/* Custom Combobox Trigger */
+.assignment-combobox-btn {
     width: 100%;
-    padding: 5px 24px 5px 8px;
+    min-width: 0;
+    height: 30px;
+    padding: 0 8px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm, 6px);
     background-color: var(--surface-color);
-    background-image: none !important;
     color: var(--text-primary);
     font-size: 12.5px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
     text-align: left;
-    text-align-last: left;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] .assignment-combobox-btn {
+    background-color: var(--bg-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.assignment-combobox-btn.is-placeholder .assignment-combobox-text {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+.assignment-combobox-btn:hover {
+    border-color: var(--text-quaternary);
+}
+
+[data-theme="dark"] .assignment-combobox-btn:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background-color: var(--bg-color);
+}
+
+.assignment-combobox-text {
+    flex: 1;
+    min-width: 0;
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.assignment-select:hover:not(:focus) {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+.assignment-select-chevron {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), color var(--transition-fast);
 }
 
-[data-theme="dark"] .assignment-select:hover:not(:focus) {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    background-color: var(--bg-color) !important;
+.assignment-combobox-btn:hover .assignment-select-chevron {
+    color: var(--text-secondary);
 }
 
-[data-theme="dark"] .assignment-select:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-    background-color: var(--bg-color) !important;
+.assignment-combobox-btn[aria-expanded="true"] .assignment-select-chevron {
+    transform: rotate(180deg);
+    color: #f39c12;
 }
 
 .assignment-select-wrapper {
@@ -1282,6 +1296,271 @@
     gap: 6px;
     width: 100%;
     min-width: 0;
+}
+
+/* Custom Student Picker Popover (iOS 2026 / Dark Mode) */
+.trombi-student-popover {
+    position: absolute;
+    left: 20px;
+    right: 14px;
+    z-index: 60;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: trombiPopoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .trombi-student-popover {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+@keyframes trombiPopoverIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.trombi-popover-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .trombi-popover-search {
+    background: rgba(0, 0, 0, 0.22);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.trombi-popover-search iconify-icon {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+input.trombi-popover-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+}
+
+input.trombi-popover-search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.trombi-popover-list {
+    flex: 1;
+    min-height: 0;
+    max-height: 224px;
+    overflow-y: auto;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.trombi-popover-option {
+    width: 100%;
+    padding: 6px 8px;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+    flex-shrink: 0;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.trombi-popover-option:hover,
+.trombi-popover-option.is-active {
+    background: var(--item-hover-bg);
+}
+
+.trombi-popover-option.is-selected {
+    background: rgba(243, 156, 18, 0.12);
+    color: #d97706;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .trombi-popover-option.is-selected {
+    background: rgba(243, 156, 18, 0.16);
+    color: #fbbf24;
+}
+
+.trombi-popover-option.is-clear-option {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.trombi-popover-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 3px 4px;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .trombi-popover-divider {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.trombi-popover-option.is-clear-option:hover {
+    color: var(--error-color);
+    background: rgba(var(--error-rgb), 0.08);
+}
+
+[data-theme="dark"] .trombi-popover-option.is-clear-option:hover {
+    color: var(--error-bright);
+    background: rgba(var(--error-rgb), 0.14);
+}
+
+.trombi-option-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+.trombi-option-clear-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+}
+
+.trombi-option-label {
+    flex: 1;
+    min-width: 0;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.trombi-option-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.trombi-option-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.trombi-option-badge iconify-icon {
+    font-size: 10px;
+}
+
+.trombi-option-badge.is-current {
+    background: rgba(243, 156, 18, 0.18);
+    color: #d97706;
+    border: 1px solid rgba(243, 156, 18, 0.4);
+    font-variant-numeric: tabular-nums;
+}
+
+[data-theme="dark"] .trombi-option-badge.is-current {
+    background: rgba(243, 156, 18, 0.22);
+    color: #fbbf24;
+    border-color: rgba(243, 156, 18, 0.45);
+}
+
+.trombi-option-badge.is-swap {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    font-variant-numeric: tabular-nums;
+}
+
+[data-theme="dark"] .trombi-option-badge.is-swap {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+}
+
+.trombi-option-badge.is-has-photo {
+    color: var(--text-tertiary);
+    padding: 1px 3px;
+}
+
+.trombi-option-badge.is-new {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+[data-theme="dark"] .trombi-option-badge.is-new {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success-bright);
+}
+
+.trombi-popover-empty {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.trombi-popover-empty-btn {
+    margin-top: 4px;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 11.5px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.trombi-popover-empty-btn:hover {
+    background: var(--item-hover-bg);
+    border-color: var(--text-quaternary);
 }
 
 /* Step 2 Badges */
@@ -1313,18 +1592,6 @@
     background: rgba(var(--success-rgb), 0.2);
     color: var(--success-bright);
     border-color: rgba(var(--success-rgb), 0.4);
-}
-
-.trombi-student-badge.is-existing {
-    background: var(--surface-color);
-    color: var(--text-tertiary);
-    border: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .trombi-student-badge.is-existing {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
 }
 
 /* Header summary in Step 2 */
@@ -1884,24 +2151,27 @@
     }
 }
 
-/* Floating overlay HUD bars (Multi-page navigation & Zoom controls - Frosted Glass HUD) */
+/* Floating overlay HUD bars (Multi-page navigation, Zoom controls & Remove button — Minimalist Frosted Glass) */
 .trombi-page-selector-bar,
-.trombi-zoom-controls {
+.trombi-zoom-controls,
+.drop-zone-remove-btn {
+    --hud-blur: 20px;
     position: absolute;
     top: 10px;
     height: 32px;
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    padding: 3px 4px;
+    padding: 3px;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(var(--hud-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--hud-blur)) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     z-index: 30;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .trombi-page-selector-bar {
@@ -1913,26 +2183,46 @@
     right: 10px;
 }
 
-/* Hover elevation */
-.trombi-page-selector-bar:hover,
-.trombi-zoom-controls:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-}
-
-/* Dark Mode: Translucent Frosted Glass with Optical Blur */
+/* Dark Mode: Minimalist Translucent Frosted Glass (X / iOS 2026 style, zero 3D bevel) */
 [data-theme="dark"] .trombi-page-selector-bar,
-[data-theme="dark"] .trombi-zoom-controls {
-    background: rgba(24, 24, 27, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+[data-theme="dark"] .trombi-zoom-controls,
+[data-theme="dark"] .drop-zone-remove-btn {
+    background: rgba(36, 36, 40, 0.65);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
-[data-theme="dark"] .trombi-page-selector-bar:hover,
-[data-theme="dark"] .trombi-zoom-controls:hover {
-    background: rgba(30, 31, 36, 0.88);
-    border-color: rgba(255, 255, 255, 0.22);
+/* Step 1 Remove Image Button — Circular HUD variant with calibrated 6px optical blur & flat danger hover */
+.drop-zone-remove-btn {
+    --hud-blur: 6px;
+    right: 10px;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    z-index: 25;
+}
+
+[data-theme="dark"] .drop-zone-remove-btn {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.drop-zone-remove-btn:hover {
+    background: rgba(var(--error-rgb), 0.14);
+    border-color: rgba(var(--error-rgb), 0.22);
+    color: var(--error-color);
+}
+
+[data-theme="dark"] .drop-zone-remove-btn:hover {
+    background: rgba(var(--error-rgb), 0.24);
+    border-color: rgba(var(--error-rgb), 0.32);
+    color: var(--error-bright);
+}
+
+.drop-zone-remove-btn:active {
+    transform: scale(0.94);
 }
 
 /* Multi-page Navigation Bar Buttons */
@@ -1941,23 +2231,23 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    height: 24px;
-    padding: 0 9px;
+    height: 26px;
+    padding: 0 10px;
     font-size: 0.8125rem;
     font-weight: 500;
     color: var(--text-secondary);
     background: transparent;
-    border: 1px solid transparent;
+    border: none;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
     white-space: nowrap;
     box-sizing: border-box;
 }
 
 .trombi-page-selector-bar .page-tab-btn:hover {
     color: var(--text-primary);
-    background: var(--bg-hover);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .trombi-page-selector-bar .page-tab-btn:active {
@@ -1967,10 +2257,9 @@
 .trombi-page-selector-bar .page-tab-btn.active {
     color: var(--text-primary);
     font-weight: 600;
-    background: var(--bg-secondary);
-    border-color: rgba(0, 0, 0, 0.06);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    padding: 0 10px;
+    background: var(--surface-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    padding: 0 11px;
 }
 
 /* Compact inactive tabs (collapsing mechanic like header period selector) */
@@ -1987,9 +2276,9 @@
     opacity: 0.75;
 }
 
-/* Dark Mode: Tab buttons high-contrast & refined active pill */
+/* Dark Mode: Tab buttons high-contrast & flat active pill (zero 3D rim) */
 [data-theme="dark"] .trombi-page-selector-bar .page-tab-btn {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 [data-theme="dark"] .trombi-page-selector-bar .page-tab-btn:hover {
@@ -1998,9 +2287,9 @@
 }
 
 [data-theme="dark"] .trombi-page-selector-bar .page-tab-btn.active {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.14);
+    border: none;
+    box-shadow: none;
     color: #ffffff;
 }
 
@@ -2058,9 +2347,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    min-width: 24px;
-    height: 24px;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
     padding: 0;
     border: none;
     background: transparent;
@@ -2074,7 +2363,7 @@
 }
 
 .trombi-zoom-controls .zoom-btn iconify-icon {
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .trombi-zoom-controls .zoom-btn.zoom-icon-pop iconify-icon {
@@ -2095,7 +2384,7 @@
 
 .trombi-zoom-controls .zoom-btn:hover {
     color: var(--text-primary);
-    background: var(--item-hover-bg);
+    background: rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] .trombi-zoom-controls .zoom-btn {
@@ -2104,7 +2393,7 @@
 
 [data-theme="dark"] .trombi-zoom-controls .zoom-btn:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .trombi-zoom-controls .zoom-btn:active {
@@ -2125,6 +2414,10 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     color: var(--text-primary);
+}
+
+[data-theme="dark"] .trombi-zoom-controls .zoom-value-btn {
+    color: #ffffff;
 }
 
 @media (max-width: 600px) {

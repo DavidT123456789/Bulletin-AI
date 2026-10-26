@@ -2025,4 +2025,297 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
         wrapper.dispatchEvent(ev);
         expect(wrapper.style.transform).toBe('');
     });
+
+    it('should not oscillate or overflow horizontally when clicking Pleine Largeur with the grid drawer open on the sample image', () => {
+        document.body.innerHTML = `
+            <div class="trombi-image-panel" id="trombiImageWithZones">
+                <div class="trombi-viewport" style="padding: 16px;">
+                    <div class="trombi-content-wrapper">
+                        <img id="trombiStep2Image" src="" />
+                        <div id="trombiZonesOverlay"></div>
+                    </div>
+                </div>
+                <div class="grid-advanced-controls is-open" id="gridAdvancedControls"></div>
+            </div>
+            <button id="trombiZoomOutBtn"></button>
+            <button id="trombiZoomInBtn"></button>
+            <button id="trombiZoomFitBtn"><iconify-icon icon="ph:arrows-out-simple"></iconify-icon></button>
+            <span id="trombiZoomLevel">100%</span>
+        `;
+
+        const viewport = document.querySelector('.trombi-viewport');
+        const drawer = document.getElementById('gridAdvancedControls');
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+
+        // Outer viewport layout box remains constant (885 x 520), drawer height = 68
+        Object.defineProperty(viewport, 'offsetWidth', { value: 885, configurable: true });
+        Object.defineProperty(viewport, 'offsetHeight', { value: 520, configurable: true });
+        Object.defineProperty(viewport, 'clientWidth', { value: 885, configurable: true });
+        Object.defineProperty(viewport, 'clientHeight', { value: 520, configurable: true });
+        Object.defineProperty(drawer, 'offsetHeight', { value: 68, configurable: true });
+
+        // Sample image dimensions (1024 x 558)
+        TrombinoscopeManager._imageNaturalWidth = 1024;
+        TrombinoscopeManager._imageNaturalHeight = 558;
+        TrombinoscopeManager._zoomLevel = 1.0;
+        TrombinoscopeManager._applyZoom();
+
+        // Click "Pleine largeur"
+        TrombinoscopeManager._zoomToggleFit();
+        expect(TrombinoscopeManager._zoomLevel).toBeGreaterThan(1.0);
+
+        const widthBeforeScrollbar = wrapper.style.width;
+        const heightBeforeScrollbar = wrapper.style.height;
+
+        // Width must fit inside clientWidth with a 6px vertical scrollbar and 32px horizontal padding (885 - 6 - 32 = 847)
+        expect(parseFloat(widthBeforeScrollbar)).toBeLessThanOrEqual(885 - 6 - 32);
+
+        // Simulate vertical/horizontal scrollbars appearing in zoomed mode (clientWidth/clientHeight shrink while offsetWidth/offsetHeight stay fixed)
+        Object.defineProperty(viewport, 'clientWidth', { value: 879, configurable: true });
+        Object.defineProperty(viewport, 'clientHeight', { value: 514, configurable: true });
+
+        // Re-applying zoom must produce identical dimensions (zero oscillation)
+        TrombinoscopeManager._applyZoom();
+        expect(wrapper.style.width).toBe(widthBeforeScrollbar);
+        expect(wrapper.style.height).toBe(heightBeforeScrollbar);
+        expect(TrombinoscopeManager._lastViewportW).toBe(885);
+        expect(TrombinoscopeManager._lastViewportH).toBe(520);
+    });
+
+    it('should scale smoothly without FLIP jitter or deltaY=0 oscillation during trackpad pinch (ctrl+wheel)', () => {
+        document.body.innerHTML = `
+            <div class="trombi-image-panel">
+                <div id="trombiImageWithZones"></div>
+                <div id="trombiAssignmentGrid"></div>
+            </div>
+        `;
+
+        TrombinoscopeManager._imageSrc = 'data:image/png;base64,fake';
+        TrombinoscopeManager._imageNaturalWidth = 1024;
+        TrombinoscopeManager._imageNaturalHeight = 558;
+        TrombinoscopeManager._zoomLevel = 1.0;
+        TrombinoscopeManager._initStep2();
+
+        const panel = document.querySelector('.trombi-image-panel');
+        const viewport = document.querySelector('.trombi-viewport');
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        Object.defineProperty(viewport, 'offsetWidth', { value: 885, configurable: true });
+        Object.defineProperty(viewport, 'offsetHeight', { value: 520, configurable: true });
+        wrapper.getBoundingClientRect = () => ({ left: 100, top: 80, width: 770, height: 420 });
+
+        // Simulate small trackpad pinch-out wheel event (deltaY = -5)
+        const wheelOut = new WheelEvent('wheel', { deltaY: -5, ctrlKey: true, clientX: 400, clientY: 280, cancelable: true });
+        panel.dispatchEvent(wheelOut);
+
+        expect(wheelOut.defaultPrevented).toBe(true);
+        const zoomAfterFirstPinch = TrombinoscopeManager._zoomLevel;
+        expect(zoomAfterFirstPinch).toBeGreaterThan(1.0);
+        expect(zoomAfterFirstPinch).toBeLessThan(1.1);
+        // Must NOT trigger a 360ms FLIP animation during continuous trackpad pinch
+        expect(TrombinoscopeManager._zoomAnimCleanup).toBeNull();
+
+        // Simulate horizontal trackpad packet with deltaY = 0 (must NOT zoom out!)
+        const wheelZero = new WheelEvent('wheel', { deltaY: 0, deltaX: -4, ctrlKey: true, cancelable: true });
+        panel.dispatchEvent(wheelZero);
+        expect(TrombinoscopeManager._zoomLevel).toBe(zoomAfterFirstPinch);
+    });
+
+    describe('Step 2 Assignment Panel UX, Smart Filter, Swap & Reversible Shift', () => {
+        beforeEach(() => {
+            TrombinoscopeManager._reset();
+        });
+
+        it('should auto-uncheck "Sans photo" when 100% of students already have a photo and hide toggle when 0 have a photo', () => {
+            document.body.innerHTML = `
+                <div class="trombi-image-panel">
+                    <div id="trombiImageWithZones"></div>
+                </div>
+                <div class="trombi-assignment-panel">
+                    <div class="trombi-assignment-panel-header">
+                        <h4>Associer les élèves aux zones</h4>
+                        <div class="trombi-assignment-header-actions">
+                            <div class="trombi-exclude-toggle-wrapper" id="trombiExcludeToggleWrapper">
+                                <input type="checkbox" id="trombiExcludeWithPhotos" checked>
+                            </div>
+                            <button id="trombiAutoAssignBtn"></button>
+                        </div>
+                    </div>
+                    <div id="trombiAssignmentGrid"></div>
+                </div>
+                <span id="trombiZonesInfo"></span>
+            `;
+
+            // Case 1: 100% of students already have photos -> auto-uncheck so zones are assigned
+            appState.filteredResults = [
+                { id: 's1', nom: 'ALAOUI', prenom: 'Karim', studentPhoto: { data: 'data:image/jpeg;base64,1' } },
+                { id: 's2', nom: 'BERNARD', prenom: 'Lucie', studentPhoto: { data: 'data:image/jpeg;base64,2' } }
+            ];
+            TrombinoscopeManager._imageSrc = 'data:image/png;base64,fake';
+            TrombinoscopeManager._initStep2();
+
+            const excludeToggle = document.getElementById('trombiExcludeWithPhotos');
+            const excludeWrapper = document.getElementById('trombiExcludeToggleWrapper');
+            expect(excludeWrapper.style.display).toBe('flex');
+            expect(excludeToggle.checked).toBe(false);
+            expect(TrombinoscopeManager._getStudentsForImport()).toHaveLength(2);
+
+            // Case 2: 0 students have photos -> hide toggle wrapper completely
+            appState.filteredResults = [
+                { id: 's1', nom: 'ALAOUI', prenom: 'Karim', studentPhoto: null },
+                { id: 's2', nom: 'BERNARD', prenom: 'Lucie', studentPhoto: null }
+            ];
+            TrombinoscopeManager._userToggledExcludeFilter = false;
+            TrombinoscopeManager._initStep2();
+            expect(excludeWrapper.style.display).toBe('none');
+        });
+
+        it('should provide 8 fallback sample students when testing sample-trombinoscope.png in an empty class', () => {
+            appState.filteredResults = [];
+            appState.generatedResults = [];
+            TrombinoscopeManager._imageSrc = '/images/sample-trombinoscope.png';
+
+            const targetInfo = TrombinoscopeManager._getTargetClassInfo();
+            expect(targetInfo.existingClassStudents).toHaveLength(8);
+            expect(targetInfo.existingClassStudents[0].nom).toBe('BERNARD');
+
+            const studentsForImport = TrombinoscopeManager._getStudentsForImport();
+            expect(studentsForImport).toHaveLength(8);
+        });
+
+        it('should swap students in 1 click when selecting an already-assigned student in custom popover, and support search + clear', () => {
+            document.body.innerHTML = `
+                <div id="trombiZonesOverlay">
+                    <div class="trombi-zone is-selected" data-zone-id="3"></div>
+                    <div class="trombi-zone" data-zone-id="1"></div>
+                    <div class="trombi-zone" data-zone-id="2"></div>
+                </div>
+                <img id="trombiStep2Image" />
+                <div class="trombi-assignment-panel">
+                    <div class="trombi-assignment-panel-header">
+                        <h4>Associer les élèves aux zones</h4>
+                        <div class="trombi-assignment-header-actions">
+                            <div class="trombi-exclude-toggle-wrapper" id="trombiExcludeToggleWrapper">
+                                <input type="checkbox" id="trombiExcludeWithPhotos">
+                            </div>
+                            <button id="trombiAutoAssignBtn"></button>
+                        </div>
+                    </div>
+                    <div id="trombiAssignmentGrid"></div>
+                </div>
+                <span id="trombiZonesInfo"></span>
+            `;
+
+            appState.filteredResults = [
+                { id: 's1', nom: 'ALAOUI', prenom: 'Karim' },
+                { id: 's2', nom: 'BERNARD', prenom: 'Lucie' },
+                { id: 's3', nom: 'CHABOT', prenom: 'Mehdi' },
+                { id: 's4', nom: 'DUBOIS', prenom: 'Nina' },
+                { id: 's5', nom: 'FABRE', prenom: 'Oscar' },
+                { id: 's6', nom: 'GARNIER', prenom: 'Paul' }
+            ];
+            TrombinoscopeManager._zones = [
+                { id: 1, cx: 50, cy: 50, r: 20, studentId: 's1' },
+                { id: 2, cx: 150, cy: 50, r: 20, studentId: 's2' },
+                { id: 3, cx: 250, cy: 50, r: 20, studentId: 's3' }
+            ];
+
+            TrombinoscopeManager._renderAssignmentGrid();
+
+            // Open custom popover for zone 1 -> must also select zone 1 on the photo and deselect zone 3
+            const row1Btn = document.querySelector('.assignment-row[data-zone-id="1"] .assignment-combobox-btn');
+            row1Btn.click();
+            expect(TrombinoscopeManager._selectedZoneIds.has(1)).toBe(true);
+            expect(TrombinoscopeManager._selectedZoneIds.has(3)).toBe(false);
+            expect(document.querySelector('.trombi-zone[data-zone-id="1"]').classList.contains('is-selected')).toBe(true);
+            expect(document.querySelector('.trombi-zone[data-zone-id="3"]').classList.contains('is-selected')).toBe(false);
+
+            const popover = document.querySelector('.trombi-student-popover');
+            expect(popover).not.toBeNull();
+            // Since there are 6 students (> 5), search input is rendered
+            const searchInput = popover.querySelector('.trombi-popover-search-input');
+            expect(searchInput).not.toBeNull();
+
+            // Search for "BERNARD" (currently assigned to zone #2)
+            searchInput.value = 'bernard';
+            searchInput.dispatchEvent(new Event('input'));
+
+            const options = popover.querySelectorAll('.trombi-popover-option');
+            expect(options).toHaveLength(1);
+            expect(options[0].dataset.studentId).toBe('s2');
+            expect(options[0].querySelector('.trombi-option-badge.is-swap')?.textContent).toContain('#2');
+
+            // Click to select s2 for zone 1 -> must swap s1 and s2 between zone 1 and zone 2
+            options[0].click();
+
+            expect(TrombinoscopeManager._zones.find(z => z.id === 1).studentId).toBe('s2');
+            expect(TrombinoscopeManager._zones.find(z => z.id === 2).studentId).toBe('s1');
+            expect(document.querySelector('.trombi-student-popover')).toBeNull();
+
+            // Re-open zone 1 popover and click "Aucun élève (vider la zone)"
+            document.querySelector('.assignment-row[data-zone-id="1"] .assignment-combobox-btn').click();
+            const clearOption = document.querySelector('.trombi-popover-option.is-clear-option');
+            expect(clearOption).not.toBeNull();
+            clearOption.click();
+
+            expect(TrombinoscopeManager._zones.find(z => z.id === 1).studentId).toBeNull();
+        });
+
+        it('should make Shift Down (⇊) and Shift Up (⇈) 100% reversible by pulling the next unassigned student into the tail slot, and support Auto-Assign (A→Z) and Zone Delete', () => {
+            document.body.innerHTML = `
+                <div id="trombiZonesOverlay"></div>
+                <img id="trombiStep2Image" />
+                <div class="trombi-assignment-panel">
+                    <div class="trombi-assignment-panel-header">
+                        <h4>Associer les élèves aux zones</h4>
+                        <div class="trombi-assignment-header-actions">
+                            <button id="trombiAutoAssignBtn"></button>
+                        </div>
+                    </div>
+                    <div id="trombiAssignmentGrid"></div>
+                </div>
+                <span id="trombiZonesInfo"></span>
+            `;
+
+            appState.filteredResults = [
+                { id: 's1', nom: 'ALAOUI', prenom: 'Karim' },
+                { id: 's2', nom: 'BERNARD', prenom: 'Lucie' },
+                { id: 's3', nom: 'CHABOT', prenom: 'Mehdi' }
+            ];
+            TrombinoscopeManager._zones = [
+                { id: 1, cx: 50, cy: 50, r: 20, studentId: 's1' },
+                { id: 2, cx: 150, cy: 50, r: 20, studentId: 's2' },
+                { id: 3, cx: 250, cy: 50, r: 20, studentId: 's3' }
+            ];
+
+            TrombinoscopeManager._renderAssignmentGrid();
+            const autoAssignBtn = document.getElementById('trombiAutoAssignBtn');
+            expect(autoAssignBtn.classList.contains('disabled')).toBe(true);
+
+            // 1. Shift Down on zone 2 -> inserts gap at zone 2: [s1, null, s2] (s3 pushed off tail)
+            document.querySelector('.assignment-row[data-zone-id="2"] .shift-down-btn').click();
+            expect(TrombinoscopeManager._zones.map(z => z.studentId)).toEqual(['s1', null, 's2']);
+            expect(autoAssignBtn.classList.contains('disabled')).toBe(false);
+
+            // 2. Shift Up on zone 2 -> closes gap at zone 2 and pulls s3 back into tail zone 3: [s1, s2, s3]
+            document.querySelector('.assignment-row[data-zone-id="2"] .shift-up-btn').click();
+            expect(TrombinoscopeManager._zones.map(z => z.studentId)).toEqual(['s1', 's2', 's3']);
+            expect(autoAssignBtn.classList.contains('disabled')).toBe(true);
+
+            // 3. Scramble assignments manually and click Auto-Assign A->Z
+            TrombinoscopeManager._zones[0].studentId = 's3';
+            TrombinoscopeManager._zones[2].studentId = 's1';
+            TrombinoscopeManager._renderAssignmentGrid();
+            expect(autoAssignBtn.classList.contains('disabled')).toBe(false);
+
+            TrombinoscopeManager._autoAssignInOrder();
+            expect(TrombinoscopeManager._zones.map(z => z.studentId)).toEqual(['s1', 's2', 's3']);
+            expect(autoAssignBtn.classList.contains('disabled')).toBe(true);
+
+            // 4. Delete zone 2 via row delete button -> removes zone 2 without shifting zone 3's student
+            document.querySelector('.assignment-row[data-zone-id="2"] .delete-zone-btn').click();
+            expect(TrombinoscopeManager._zones).toHaveLength(2);
+            expect(TrombinoscopeManager._zones.map(z => z.id)).toEqual([1, 3]);
+            expect(TrombinoscopeManager._zones.map(z => z.studentId)).toEqual(['s1', 's3']);
+        });
+    });
 });

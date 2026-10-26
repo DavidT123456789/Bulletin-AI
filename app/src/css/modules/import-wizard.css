@@ -889,8 +889,8 @@
 
 /* Remove Button - Elegant positioning */
 .file-remove-btn {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -898,7 +898,7 @@
     border: none;
     border-radius: 50%;
     color: var(--text-tertiary);
-    font-size: 1.15rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     z-index: 2;
@@ -907,11 +907,15 @@
 .file-remove-btn:hover {
     background: rgba(var(--error-rgb), 0.12);
     color: var(--error-color);
-    transform: scale(1.08);
+}
+
+[data-theme="dark"] .file-remove-btn:hover {
+    background: rgba(var(--error-rgb), 0.18);
+    color: var(--error-bright);
 }
 
 .file-remove-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 
 /* === DROP ZONE LOADING STATE === */
