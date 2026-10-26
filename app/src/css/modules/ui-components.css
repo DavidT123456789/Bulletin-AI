@@ -102,51 +102,55 @@
     border: none;
     margin: 0 auto;
     height: auto;
-    flex: 2;
 }
 
 .ui-stepper-step {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 6px 14px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0 14px;
     min-width: auto;
     border-radius: var(--radius-pill);
     transition: all var(--transition-spring);
     cursor: default;
     position: relative;
-    opacity: 0.35;
+    opacity: 0.36;
     will-change: background-color, box-shadow, opacity;
 }
 
 .ui-stepper-step.clickable {
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.72;
 }
 
 .ui-stepper-step.clickable:hover {
-    background: var(--item-hover-bg) !important;
+    background: var(--item-hover-bg);
     opacity: 1;
 }
 
 .ui-stepper-step.active {
     opacity: 1;
-    background: var(--primary-color) !important;
+    background: var(--primary-color);
     cursor: default;
-    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .ui-stepper-step.completed {
-    opacity: 0.9;
+    opacity: 0.88;
     color: var(--text-primary);
 }
 
 .ui-stepper-label {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 600;
+    line-height: 1;
     color: var(--text-primary);
     white-space: nowrap;
-    display: block !important;
+    display: block;
     transition: color var(--transition-fast);
 }
 
@@ -155,8 +159,8 @@
 }
 
 .ui-stepper-step.completed .ui-stepper-label {
-    color: var(--text-secondary);
-    font-weight: 500;
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .ui-stepper-separator {
@@ -168,19 +172,14 @@
     padding: 0 2px;
 }
 
-@media (max-width: 800px) {
-    .ui-stepper.compact .ui-stepper-label {
-        display: none !important;
-    }
-}
-
 @media (max-width: 600px) {
     .ui-stepper {
         gap: 2px;
     }
 
     .ui-stepper-step {
-        padding: 4px 9px !important;
+        height: 28px;
+        padding: 0 9px;
     }
 
     .ui-stepper-label {
@@ -199,7 +198,8 @@
     }
 
     .ui-stepper-step {
-        padding: 4px 7px !important;
+        height: 26px;
+        padding: 0 7px;
     }
 
     .ui-stepper-label {

@@ -18,6 +18,7 @@ import { AppreciationsManager } from './AppreciationsManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { StorageManager } from './StorageManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { DropdownManager } from './DropdownManager.js';
 
 /**
  * Import Wizard Manager
@@ -285,8 +286,12 @@ export const ImportWizardManager = {
             this._resetFile();
         });
 
-        // Step 2: Separator change - reparse with user-selected separator
-        document.getElementById('wizardSeparatorSelect')?.addEventListener('change', () => this._reparseWithSelectedSeparator());
+        // Step 2: Separator change - enhance into custom dropdown & reparse with user-selected separator
+        const separatorSelect = document.getElementById('wizardSeparatorSelect');
+        if (separatorSelect) {
+            DropdownManager.enhance(separatorSelect);
+            separatorSelect.addEventListener('change', () => this._reparseWithSelectedSeparator());
+        }
 
         // Step 2: "Détection auto" button - forces re-detection of column types
         document.getElementById('wizardAutoDetectBtn')?.addEventListener('click', () => {
@@ -296,6 +301,11 @@ export const ImportWizardManager = {
 
         // Step 3: Import button (single action)
         document.getElementById('wizardImportOnlyBtn')?.addEventListener('click', () => this._importOnly());
+
+        // Step 3: Delete departed students toggle
+        document.getElementById('wizardDeleteDepartedToggle')?.addEventListener('change', (e) => {
+            this._syncDepartedToggleState(e.target.checked);
+        });
 
         // Close on backdrop click
         modal.addEventListener('click', e => {
@@ -411,6 +421,9 @@ export const ImportWizardManager = {
      * @private
      */
     _togglePeriodDropdown(show) {
+        if (show) {
+            DropdownManager.closeAll();
+        }
         const dropdown = document.getElementById('wizardPeriodDropdown');
         const menu = document.getElementById('wizardPeriodMenu');
         if (dropdown && menu) {
@@ -487,6 +500,7 @@ export const ImportWizardManager = {
      * Close the wizard modal
      */
     close() {
+        DropdownManager.closeAll();
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             UI.closeModal(modal);
@@ -529,6 +543,7 @@ export const ImportWizardManager = {
         if (step >= 1 && step <= 3) {
             const previousStep = this.currentStep;
             if (previousStep === step) return;
+            DropdownManager.closeAll();
             this.currentStep = step;
             this._updateUI(previousStep);
         }
@@ -602,15 +617,24 @@ export const ImportWizardManager = {
      */
     _updateStepper() {
         document.querySelectorAll('#importWizardModal .ui-stepper-step').forEach(el => {
-            const step = parseInt(el.dataset.step);
+            const step = parseInt(el.dataset.step, 10);
+            const isActive = step === this.currentStep;
             el.classList.remove('active', 'completed', 'clickable');
-            if (step === this.currentStep) {
+            if (isActive) {
                 el.classList.add('active');
             } else if (step < this.currentStep) {
                 el.classList.add('completed', 'clickable');
             } else if (step === this.currentStep + 1 && this._canProceedToNextStep()) {
                 el.classList.add('clickable');
             }
+            const isClickable = el.classList.contains('clickable');
+            if (isActive) {
+                el.setAttribute('aria-current', 'step');
+            } else {
+                el.removeAttribute('aria-current');
+            }
+            el.setAttribute('aria-disabled', (!isActive && !isClickable) ? 'true' : 'false');
+            el.setAttribute('tabindex', isClickable ? '0' : '-1');
         });
     },
 
@@ -908,13 +932,10 @@ export const ImportWizardManager = {
         this.state.rawData = text;
 
         const step1NextBtn = document.getElementById('wizardStep1NextBtn');
-        const clearBtn = document.getElementById('wizardClearBtn');
-
-        // Toggle clear button visibility
-        if (clearBtn) clearBtn.style.display = text ? 'inline-flex' : 'none';
 
         if (!text) {
             this.state.lines = [];
+            this.state.hasHeader = false;
             // Disable Step 1 Next button when no data
             if (step1NextBtn) step1NextBtn.disabled = true;
 
@@ -924,9 +945,6 @@ export const ImportWizardManager = {
             if (lineCountContainer) lineCountContainer.style.display = 'none';
             if (lineCountBadge) lineCountBadge.textContent = '0';
 
-            // Clean up preview and warning UI
-            this._updateStep1Preview();
-            this._checkSingleColumnWarning();
             this._updateStepper();
             return;
         }
@@ -941,6 +959,7 @@ export const ImportWizardManager = {
         const rawLines = text.split('\n').filter(l => l.trim());
         this.state.lines = rawLines.map(l => parseLine(l, separator));
         this.state.columnCount = Math.max(...this.state.lines.map(l => l.length));
+        this.state.hasHeader = this._detectHeader(this.state.lines[0]);
 
         // Enable Step 1 Next button when we have data
         if (step1NextBtn) step1NextBtn.disabled = this.state.lines.length === 0;
@@ -960,36 +979,8 @@ export const ImportWizardManager = {
         // Build mapping table
         this._buildMappingTable();
 
-        // Step 1 Preview (Magic Pills)
-        this._updateStep1Preview();
-
-        // Warn if only 1 column detected (likely wrong separator)
-        this._checkSingleColumnWarning();
-
         // Refresh stepper clickability when data is processed
         this._updateStepper();
-    },
-
-    /**
-     * Check and show warning if only 1 column is detected
-     * @private
-     */
-    _checkSingleColumnWarning() {
-        let warningEl = document.getElementById('wizardSingleColumnWarning');
-
-        if (this.state.columnCount === 1 && this.state.lines.length > 0) {
-            if (!warningEl) {
-                warningEl = document.createElement('div');
-                warningEl.id = 'wizardSingleColumnWarning';
-                warningEl.className = 'mapping-warning';
-                const preview = document.getElementById('wizardStep1Preview');
-                preview?.insertAdjacentElement('afterend', warningEl);
-            }
-            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Une seule colonne détectée. Essayez un autre séparateur.`;
-            warningEl.style.display = 'flex';
-        } else if (warningEl) {
-            warningEl.style.display = 'none';
-        }
     },
 
     /**
@@ -1041,6 +1032,7 @@ export const ImportWizardManager = {
         } else {
             select.value = 'tab'; // Default fallback
         }
+        DropdownManager.refresh('wizardSeparatorSelect');
     },
 
     /**
@@ -1059,49 +1051,10 @@ export const ImportWizardManager = {
         const rawLines = text.split('\n').filter(l => l.trim());
         this.state.lines = rawLines.map(l => parseLine(l, separator));
         this.state.columnCount = Math.max(...this.state.lines.map(l => l.length));
+        this.state.hasHeader = this._detectHeader(this.state.lines[0]);
 
         // Rebuild mapping table with new column structure
         this._buildMappingTable();
-
-        // Update preview pills
-        this._updateStep1Preview();
-    },
-
-    /**
-     * Update Step 1 visual feedback (Mapping Pills)
-     * @private
-     */
-    _updateStep1Preview() {
-        const container = document.getElementById('wizardStep1Preview');
-        const pillsContainer = document.getElementById('wizardPreviewPills');
-        const countEl = document.getElementById('wizardPreviewCount');
-        const sepEl = document.getElementById('wizardPreviewSeparator');
-
-        if (!container || !pillsContainer || this.state.lines.length === 0) {
-            if (container) container.style.display = 'none';
-            return;
-        }
-
-        container.style.display = 'block';
-        countEl.textContent = this.state.lines.length;
-
-        const separatorNames = { '\t': 'Tabulation', '|': 'Barre (|)', ';': 'Point-virgule', ',': 'Virgule' };
-        sepEl.textContent = separatorNames[this.state.separator] || 'Autre';
-
-        // Detect header (auto-detection only now)
-        const firstLine = this.state.lines[0];
-        this.state.hasHeader = this._detectHeader(firstLine);
-
-        // Guess types for pills
-        const sampleLine = this.state.hasHeader && this.state.lines.length > 1 ? this.state.lines[1] : this.state.lines[0];
-        const types = sampleLine.map((cell, i) => this._guessTypeForPill(cell, i, this.state.lines[0]));
-
-        pillsContainer.innerHTML = types.map((t, i) => `
-            <div class="mapping-pill ${t.cssClass}">
-                <span class="mapping-pill-col">${i + 1}</span>
-                <span>${t.label}</span>
-            </div>
-        `).join('');
     },
 
     /**
@@ -1115,25 +1068,6 @@ export const ImportWizardManager = {
             const low = cell.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             return keywords.some(kw => low.includes(kw));
         }) && !line.some(cell => Utils.isNumeric(cell));
-    },
-
-    /**
-     * Guess type for pill visualization using pattern-based detection
-     * @private
-     */
-    _guessTypeForPill(sample, index, headerLine = null) {
-        // Use the same pattern-based detection as the mapping table
-        const tag = this._guessTypeTag(sample, index);
-
-        // Convert internal TAG to display label and CSS class
-        if (tag === 'NOM_PRENOM') return { label: 'Nom', cssClass: 'type-name' };
-        if (tag === 'STATUT') return { label: 'Statut', cssClass: 'type-status' };
-
-        if (tag.startsWith('MOY_')) return { label: 'Note', cssClass: 'type-grade' };
-        if (tag.startsWith('APP_')) return { label: 'Appr.', cssClass: 'type-app' };
-        if (tag.startsWith('CTX_')) return { label: 'Ctx.', cssClass: 'type-context' };
-
-        return { label: 'Ignoré', cssClass: 'type-ignored' };
     },
 
     /**
@@ -1185,7 +1119,7 @@ export const ImportWizardManager = {
             ];
 
             // Add separator for clarity
-            html += `<option disabled>──────</option>`;
+            html += `<option disabled data-divider="true">──────</option>`;
 
             html += periodOptions.map(o =>
                 `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
@@ -1220,18 +1154,12 @@ export const ImportWizardManager = {
             let initialValue = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
 
             html += `<th>
-                <select class="mapping-select" data-col-index="${i}">
+                <select id="wizardMappingSelect_${i}" class="mapping-select" data-col-index="${i}">
                     ${buildOptionsHtml(initialValue)}
                 </select>
             </th>`;
         }
         html += `</tr></thead><tbody>`;
-
-        // Collect initial column mappings for cell-level styling
-        const initialMappings = [];
-        for (let i = 0; i < cols; i++) {
-            initialMappings[i] = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
-        }
 
         // Show ALL lines (container has max-height with scroll)
         const previewLines = this.state.lines;
@@ -1240,21 +1168,8 @@ export const ImportWizardManager = {
             for (let i = 0; i < cols; i++) {
                 const fullContent = (line[i] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                 const cellContent = fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent;
-                const isNameCol = initialMappings[i] === 'NOM_PRENOM' || i === 0;
-                const needsTooltip = fullContent.length > 50 || isNameCol;
-
-                const isStatusCol = initialMappings[i] === 'STATUT';
-
-                if (isStatusCol && cellContent.trim()) {
-                    const statusValues = cellContent.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
-                    const badgesHtml = statusValues.map(status => {
-                        const badgeInfo = Utils.getStatusBadgeInfo(status);
-                        return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
-                    }).join(' ');
-                    html += `<td${needsTooltip ? ` data-tooltip="${fullContent}"` : ''}>${badgesHtml}</td>`;
-                } else {
-                    html += `<td${needsTooltip ? ` class="has-tooltip" data-tooltip="${fullContent}"` : ''}>${cellContent}</td>`;
-                }
+                const needsTooltip = fullContent.length > 50 || i === 0;
+                html += `<td data-raw="${fullContent}"${needsTooltip ? ` class="has-tooltip" data-tooltip="${fullContent}"` : ''}>${cellContent}</td>`;
             }
             html += `</tr>`;
         });
@@ -1265,14 +1180,30 @@ export const ImportWizardManager = {
         container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
         container.classList.add('horizontal-scroll');
 
-        // Bind change events to native selects with duplicate validation
+        // Clean up previous mapping dropdown instances before enhancing new ones
+        for (const key of DropdownManager.instances.keys()) {
+            if (key.startsWith('wizardMappingSelect_')) {
+                DropdownManager.instances.delete(key);
+            }
+        }
+
+        // Enhance selects into custom dropdowns and bind change events with duplicate validation
         container.querySelectorAll('.mapping-select').forEach(select => {
+            const wrapper = DropdownManager.enhance(select);
             select.addEventListener('change', () => {
+                if (wrapper) {
+                    DropdownManager.updateDisplay(wrapper, select);
+                }
                 this._applyColumnClasses();
                 this._validateMappings();
                 this._updatePreview();
             });
         });
+
+        // Close any open dropdown when scrolling the mapping table
+        container.querySelector('.table-scroll-wrapper')?.addEventListener('scroll', () => {
+            DropdownManager.closeAll();
+        }, { passive: true });
 
         // Initial column classes, validation and preview
         this._applyColumnClasses();
@@ -1304,10 +1235,14 @@ export const ImportWizardManager = {
         // Find duplicates
         const duplicates = Object.keys(valueCounts).filter(k => valueCounts[k] > 1);
 
-        // Apply visual feedback to each select
+        // Apply visual feedback to each select and its custom dropdown wrapper
         selects.forEach(select => {
             const isDuplicate = duplicates.includes(select.value);
             select.classList.toggle('mapping-duplicate', isDuplicate);
+            const wrapper = select.previousElementSibling;
+            if (wrapper?.classList.contains('custom-dropdown')) {
+                wrapper.classList.toggle('mapping-duplicate', isDuplicate);
+            }
         });
 
         // Show/hide warning message
@@ -1366,7 +1301,20 @@ export const ImportWizardManager = {
             const cells = row.querySelectorAll('td');
             cells.forEach((td, i) => {
                 td.classList.remove(...allClasses);
-                if (colClasses[i]) td.classList.add(colClasses[i]);
+                const cls = colClasses[i];
+                if (cls) td.classList.add(cls);
+
+                const raw = td.getAttribute('data-raw') || '';
+                const truncated = raw.length > 50 ? raw.substring(0, 47) + '...' : raw;
+                if (cls === 'col-status' && truncated.trim()) {
+                    const statusValues = truncated.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
+                    td.innerHTML = statusValues.map(status => {
+                        const badgeInfo = Utils.getStatusBadgeInfo(status);
+                        return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
+                    }).join(' ');
+                } else if (td.querySelector('.tag-badge--sm')) {
+                    td.innerHTML = truncated;
+                }
             });
         });
     },
@@ -1521,20 +1469,6 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Setup scroll shadow indicator on mapping table
-     * @private
-     */
-    _setupScrollShadow(container) {
-        const checkScroll = () => {
-            const hasScroll = container.scrollWidth > container.clientWidth;
-            const isScrolledToEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-            container.classList.toggle('has-scroll', hasScroll && !isScrolledToEnd);
-        };
-        checkScroll();
-        container.addEventListener('scroll', checkScroll);
-    },
-
-    /**
      * Try to detect column type from header text
      * Returns internal TAG or null if no match found
      * @private
@@ -1597,34 +1531,6 @@ export const ImportWizardManager = {
         if (!formatString) return null;
 
         return formatString.split(' | ').map(tag => tag.trim().replace(/[{}]/g, ''));
-    },
-
-    /**
-     * Map internal tag (NOM_PRENOM) to UI friendly name
-     * @private
-     */
-    _mapTagToFriendly(tag) {
-        if (tag === 'NOM_PRENOM') return 'Nom & Prénom';
-        if (tag === 'STATUT') return 'Statut';
-        if (tag.startsWith('MOY_')) return `Moy. ${tag.split('_')[1]}`;
-        if (tag.startsWith('APP_')) return `Appréciation ${tag.split('_')[1]}`;
-        if (tag.startsWith('CTX_')) return `Contexte ${tag.split('_')[1]}`;
-        if (tag.startsWith('DEV_')) return `Nb notes ${tag.split('_')[1]}`;
-        return 'Ignorer';
-    },
-
-    /**
-     * Map UI friendly name to internal tag
-     * @private
-     */
-    _mapFriendlyToTag(friendly) {
-        if (friendly === 'Nom & Prénom') return 'NOM_PRENOM';
-        if (friendly === 'Statut') return 'STATUT';
-        if (friendly.startsWith('Moy. ')) return `MOY_${friendly.split(' ')[1]}`;
-        if (friendly.startsWith('Appréciation ')) return `APP_${friendly.split(' ')[1]}`;
-        if (friendly.startsWith('Contexte ')) return `CTX_${friendly.split(' ')[1]}`;
-        if (friendly.startsWith('Nb notes ')) return `DEV_${friendly.split(' ')[2]}`; // "Nb notes S1"
-        return 'IGNORE';
     },
 
     /**
@@ -1795,13 +1701,10 @@ export const ImportWizardManager = {
             </th>`;
         }
 
-        // Trailing empty spacer column to absorb extra space and maintain alignment
-        html += '<th class="col-spacer"></th>';
-
         html += '</tr></thead><tbody>';
 
         if (allRows.length === 0) {
-            html += `<tr><td colspan="${dataColumns.length + 2}" class="preview-empty-cell" style="text-align:center;padding:32px;">Aucun élève détecté</td></tr>`;
+            html += `<tr><td colspan="${dataColumns.length + 1}" class="preview-empty-cell" style="text-align:center;padding:32px;">Aucun élève détecté</td></tr>`;
         } else {
             for (const row of allRows) {
                 const s = row.student;
@@ -1824,15 +1727,15 @@ export const ImportWizardManager = {
                     html += `<td class="${this._getColClass(col.tag)}">${this._formatCellValue(value, col.tag)}</td>`;
                 }
 
-                // Trailing empty cell for spacer column
-                html += '<td class="col-spacer"></td>';
-
                 html += '</tr>';
             }
         }
 
         html += '</tbody></table>';
         container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
+
+        // Sync departed visual state with current toggle
+        this._syncDepartedToggleState(Boolean(document.getElementById('wizardDeleteDepartedToggle')?.checked));
 
         // Bind checkbox toggles
         container.querySelectorAll('.preview-col-header input[type="checkbox"]:not(:disabled)').forEach(cb => {
@@ -1944,14 +1847,31 @@ export const ImportWizardManager = {
             }).join(' ');
         }
 
-        // Truncate long text (appreciation, context)
         const str = String(value);
-        if (str.length > 60) {
-            const escaped = str.substring(0, 57).replace(/</g, '&lt;');
-            return `<span data-tooltip="${str.replace(/"/g, '&quot;')}">${escaped}…</span>`;
+        const escaped = str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const isTextCol = tag?.startsWith('APP_') || tag?.startsWith('CTX_');
+        if (isTextCol || str.length > 25) {
+            return `<span data-tooltip="${escaped.replace(/"/g, '&quot;')}">${escaped}</span>`;
         }
 
-        return str.replace(/</g, '&lt;');
+        return `<span>${escaped}</span>`;
+    },
+
+    /**
+     * Sync Step 3 table and rule text with the "Supprimer les absents" toggle
+     * @param {boolean} isDeleting
+     * @private
+     */
+    _syncDepartedToggleState(isDeleting) {
+        const table = document.querySelector('.import-preview-table');
+        table?.classList.toggle('delete-departed', Boolean(isDeleting));
+
+        const ruleText = document.getElementById('wizardDepartedRuleText');
+        if (ruleText) {
+            ruleText.textContent = isDeleting
+                ? 'Les élèves absents du fichier seront supprimés de la classe. Seules les colonnes cochées seront importées.'
+                : 'Les élèves absents du fichier sont conservés. Seules les colonnes cochées seront importées.';
+        }
     },
 
     /**
@@ -2063,6 +1983,8 @@ export const ImportWizardManager = {
     _reset() {
         this.currentStep = 1;
         this._togglePeriodDropdown(false);
+        DropdownManager.closeAll();
+        this._updateSeparatorSelect('\t');
         this.state = {
             rawData: '',
             lines: [],
@@ -2074,6 +1996,7 @@ export const ImportWizardManager = {
             updatedStudents: [],
             departedStudents: [],
             detectedFormat: null,
+            hasHeader: false,
             _formatNotificationShown: false,
             currentSource: null
         };
@@ -2085,24 +2008,16 @@ export const ImportWizardManager = {
         // Reset departed toggle
         const departedToggle = document.getElementById('wizardDeleteDepartedToggle');
         if (departedToggle) departedToggle.checked = false;
+        this._syncDepartedToggleState(false);
         const departedAction = document.getElementById('wizardDepartedAction');
         if (departedAction) departedAction.style.display = 'none';
 
         // Clean up dynamically created warning elements
         document.getElementById('wizardMappingWarning')?.remove();
-        document.getElementById('wizardSingleColumnWarning')?.remove();
-
-        // Clean up format badge
-        const formatBadge = document.getElementById('wizardFormatBadge');
-        if (formatBadge) formatBadge.remove();
 
         // Hide line count
         const lineCount = document.getElementById('wizardStep1LineCount');
         if (lineCount) lineCount.style.display = 'none';
-
-        // Hide clear button
-        const clearBtn = document.getElementById('wizardClearBtn');
-        if (clearBtn) clearBtn.style.display = 'none';
 
         this._updateUI();
     }

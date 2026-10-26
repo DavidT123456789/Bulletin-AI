@@ -227,6 +227,35 @@ describe('TooltipsManager', () => {
             expect(result).toBe(true);
         });
 
+        it('should suppress tooltips on background elements when a dropdown menu is open, while allowing tooltips inside the open menu', () => {
+            let capturedOnShow;
+            window.tippy = vi.fn((selector, options) => {
+                capturedOnShow = options.onShow;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            const menuEl = document.createElement('div');
+            menuEl.id = 'headerMenuDropdown';
+            menuEl.className = 'header-dropdown-menu open';
+            const menuBtn = document.createElement('button');
+            menuEl.appendChild(menuBtn);
+
+            const bgBtn = document.createElement('button');
+            document.body.appendChild(menuEl);
+            document.body.appendChild(bgBtn);
+
+            // Tooltip on background element should be blocked while menu is open
+            expect(capturedOnShow({ state: { isFocused: false }, reference: bgBtn })).toBe(false);
+            // Tooltip on item inside the open menu should be allowed
+            expect(capturedOnShow({ state: { isFocused: false }, reference: menuBtn })).toBe(true);
+
+            // Once menu closes, background tooltip should be allowed again
+            menuEl.classList.remove('open');
+            expect(capturedOnShow({ state: { isFocused: false }, reference: bgBtn })).toBe(true);
+        });
+
         it('should synchronize getReferenceClientRect in onShow and use fixed Popper strategy so scaled ancestors never offset tooltips', () => {
             let capturedOptions;
             const mockTippy = vi.fn((selector, options) => {

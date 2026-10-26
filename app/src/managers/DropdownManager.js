@@ -16,6 +16,7 @@ import { HistoryManager } from './HistoryManager.js';
 export const DropdownManager = {
     /** Map des dropdowns initialisés (id -> instance data) */
     instances: new Map(),
+    _uidCounter: 0,
 
     /**
      * Initialise tous les dropdowns custom.
@@ -45,9 +46,18 @@ export const DropdownManager = {
     enhance(selectEl, options = {}) {
         if (!selectEl || selectEl.dataset.enhanced === 'true') return;
 
-        const id = selectEl.id || `dropdown-${Date.now()}`;
+        const id = selectEl.id || `dropdown-${Date.now()}-${++this._uidCounter}`;
         const wrapper = document.createElement('div');
         wrapper.className = 'custom-dropdown';
+        if (selectEl.classList.contains('mapping-select')) {
+            wrapper.classList.add('mapping-select-dropdown');
+        }
+        if (selectEl.classList.contains('import-separator-select')) {
+            wrapper.classList.add('import-separator-dropdown');
+        }
+        if (options.className) {
+            wrapper.classList.add(...options.className.split(/\s+/).filter(Boolean));
+        }
         wrapper.dataset.for = id;
 
         // Créer le trigger (bouton)
@@ -209,6 +219,13 @@ export const DropdownManager = {
 
                 menu.appendChild(group);
             } else if (child.tagName === 'OPTION') {
+                if (child.dataset.divider === 'true' || (child.disabled && /^[─—\-]+$/.test(child.textContent.trim()))) {
+                    const divider = document.createElement('div');
+                    divider.className = 'dropdown-divider';
+                    divider.setAttribute('role', 'separator');
+                    menu.appendChild(divider);
+                    return;
+                }
                 if (!child.disabled) hasVisibleOptions = true;
                 menu.appendChild(this.createOption(child, focusIndex++));
             }
@@ -324,9 +341,11 @@ export const DropdownManager = {
         // Fermer tous les autres dropdowns custom
         this.closeAll();
 
-        // Fermer aussi le menu actions (3 points) s'il est ouvert
+        // Fermer aussi le menu actions (3 points) et le sélecteur de période de l'assistant s'ils sont ouverts
         const actionsDropdown = document.querySelector('.actions-dropdown');
         actionsDropdown?.classList.remove('show');
+        document.getElementById('wizardPeriodDropdown')?.classList.remove('open');
+        document.getElementById('wizardPeriodMenu')?.classList.remove('open');
 
         if (!isOpen) {
             wrapper.classList.add('open');

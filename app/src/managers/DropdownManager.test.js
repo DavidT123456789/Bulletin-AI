@@ -78,6 +78,26 @@ describe('DropdownManager', () => {
             const result = DropdownManager.enhance(selectEl);
             expect(result).toBeUndefined();
         });
+
+        it('devrait convertir les options séparatrices en .dropdown-divider et propager les classes sémantiques', () => {
+            document.body.innerHTML = `
+                <select id="wizardMappingSelect_0" class="mapping-select">
+                    <option value="IGNORE">Ignorer</option>
+                    <option value="NOM_PRENOM" selected>Élève</option>
+                    <option disabled data-divider="true">──────</option>
+                    <option value="MOY_S1">Moy. S1</option>
+                </select>
+            `;
+            const selectEl = document.querySelector('#wizardMappingSelect_0');
+            const wrapper = DropdownManager.enhance(selectEl);
+
+            expect(wrapper.classList.contains('mapping-select-dropdown')).toBe(true);
+            const dividers = wrapper.querySelectorAll('.dropdown-divider[role="separator"]');
+            expect(dividers.length).toBe(1);
+            const options = wrapper.querySelectorAll('.custom-dropdown-option');
+            expect(options.length).toBe(3);
+            expect(wrapper.querySelector('.value-text').textContent).toBe('Élève');
+        });
     });
 
     describe('toggle() & closeAll()', () => {

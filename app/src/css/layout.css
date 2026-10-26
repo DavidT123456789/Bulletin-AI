@@ -121,10 +121,22 @@
     background: rgba(0, 0, 0, 0.36);
 }
 
-body.header-menu-open .app-layout::after,
-body:has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open) .app-layout::after {
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) .app-layout::after {
     opacity: 1;
     visibility: visible;
+}
+
+/* Neutralisation du survol et des interactions sur l'arrière-plan flouté et les contrôles inactifs de l'en-tête
+   (tout en conservant pointer-events: auto sur #main-content et .header pour la fermeture au clic extérieur et au scroll) */
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) :is(#main-content, .header) {
+    cursor: default;
+}
+
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) :is(.output-section, #crossClassResults, .student-list-table thead *, #avgWordsChip, #mobileCompactToggleBtn, #seatingChartView, #seatingChartView *, .fab-add-student, .pwa-update-banner, .selection-toolbar, .header-center),
+body:is(.header-menu-open, :has(#headerMenuDropdown.open)) .header :is(.header-left, #headerGenWrapper),
+body:has(#classDropdown.visible) .header :is(#mainPeriodSelector, .header-actions),
+body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill) {
+    pointer-events: none !important;
 }
 
 .main-content {

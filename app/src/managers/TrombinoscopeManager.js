@@ -796,8 +796,9 @@ export const TrombinoscopeManager = {
         const canGoToStep2 = Boolean(this._imageSrc || this._parsedPdfData);
         document.querySelectorAll('#trombiWizardModal .ui-stepper-step').forEach(el => {
             const stepNum = parseInt(el.dataset.step, 10);
+            const isActive = stepNum === this._currentStep;
             el.classList.remove('active', 'completed', 'clickable');
-            if (stepNum === this._currentStep) {
+            if (isActive) {
                 el.classList.add('active');
             } else if (stepNum < this._currentStep) {
                 el.classList.add('completed', 'clickable');
@@ -806,6 +807,14 @@ export const TrombinoscopeManager = {
             } else if (stepNum === 3 && this._currentStep === 2) {
                 el.classList.add('clickable');
             }
+            const isClickable = el.classList.contains('clickable');
+            if (isActive) {
+                el.setAttribute('aria-current', 'step');
+            } else {
+                el.removeAttribute('aria-current');
+            }
+            el.setAttribute('aria-disabled', (!isActive && !isClickable) ? 'true' : 'false');
+            el.setAttribute('tabindex', isClickable ? '0' : '-1');
         });
     },
 

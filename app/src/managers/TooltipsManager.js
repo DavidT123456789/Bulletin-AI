@@ -48,6 +48,13 @@ const getCommonTippyConfig = () => {
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
             if (ModalUI._isIgnoringTooltips) return false;
+            // Ne jamais afficher de tooltip en arrière-plan (ou sur le bouton déclencheur) lorsqu'un menu déroulant est ouvert
+            const openMenu = document.querySelector(
+                '#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open #headerModelDropdown, .global-actions-dropdown-menu.open, .action-dropdown-menu.open'
+            );
+            if (openMenu && !(instance.reference instanceof Node && openMenu.contains(instance.reference))) {
+                return false;
+            }
             // En mode Édition tactile du plan de classe, ne jamais afficher le tooltip d'appui long sur les étiquettes élèves
             if (
                 instance._isTouchTrigger &&

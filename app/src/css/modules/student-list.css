@@ -255,17 +255,17 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover td {
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover td {
         background: var(--item-hover-bg);
     }
 
     /* Rise contrast of grade empty indicator on hover (flat design, no scale) */
-    .student-list-table tbody tr:hover td.grade-cell .grade-empty {
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover td.grade-cell .grade-empty {
         color: var(--text-primary);
     }
 
-    .student-list-table tbody tr:hover .grade-cell .grade-evolution,
-    .student-list-table tbody tr:hover .evolution-cell .grade-evolution {
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-cell .grade-evolution,
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .evolution-cell .grade-evolution {
         opacity: 1;
     }
 }
@@ -745,7 +745,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover .student-name-cell .student-prenom {
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .student-name-cell .student-prenom {
         color: var(--text-primary);
     }
 }
@@ -1275,14 +1275,14 @@
     }
 
     /* When the parent row is hovered, appreciation preview background becomes white (or dark secondary) but has NO shadow */
-    .student-list-table tbody tr:hover .appreciation-preview {
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .appreciation-preview {
         background: var(--surface-color) !important;
         border-color: transparent !important;
         box-shadow: none !important;
         color: var(--text-primary) !important;
     }
 
-    [data-theme="dark"] .student-list-table tbody tr:hover .appreciation-preview {
+    [data-theme="dark"] .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .appreciation-preview {
         background: var(--bg-secondary) !important;
         border-color: var(--border-color) !important;
         box-shadow: none !important;
@@ -1807,6 +1807,18 @@
     opacity: 0.48;
     filter: blur(2px);
     pointer-events: none;
+}
+
+/* Neutralisation du survol en arrière-plan lorsqu'un menu d'actions du tableau (global ou ligne) est ouvert */
+body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(#main-content, .header),
+.student-list-table tbody tr:has(.action-dropdown-menu.open) {
+    cursor: default;
+}
+
+body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-left, .header-center, .header-actions, .pwa-update-banner, .fab-add-student, .selection-toolbar, .stats-container, .stats-pagination, #crossClassResults),
+.student-list-table:has(.global-actions-dropdown.open) :is(thead th:not(.action-header), thead th:not(.action-header) *, #avgWordsChip, #mobileCompactToggleBtn),
+.student-list-table:has(.action-dropdown-menu.open) :is(thead, thead *, #avgWordsChip, #mobileCompactToggleBtn, tbody tr:not(:has(.action-dropdown-menu.open)), tbody tr:has(.action-dropdown-menu.open) > td:not(.action-cell)) {
+    pointer-events: none !important;
 }
 
 /* Divider danger (spécifique au menu global) */

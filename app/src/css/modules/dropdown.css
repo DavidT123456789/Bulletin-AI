@@ -47,7 +47,6 @@
 
 .custom-dropdown.open .custom-dropdown-trigger {
     outline: none;
-    background-color: var(--bg-color);
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
 }
@@ -55,7 +54,6 @@
 /* Mode sombre : Anneau satiné sobre et moderne (Google / iOS 2026) identique aux inputs */
 [data-theme="dark"] .custom-dropdown-trigger:hover:not(.disabled) {
     border-color: rgba(255, 255, 255, 0.2) !important;
-    background-color: var(--bg-color) !important;
     background-image: none !important;
 }
 
@@ -63,7 +61,6 @@
 [data-theme="dark"] .custom-dropdown.open .custom-dropdown-trigger {
     border-color: rgba(255, 255, 255, 0.5) !important;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-    background-color: var(--bg-color) !important;
     background-image: none !important;
     animation: none !important;
 }

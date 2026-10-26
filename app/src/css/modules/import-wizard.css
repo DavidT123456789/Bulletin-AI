@@ -28,35 +28,16 @@
     min-width: 235px;
     background: var(--surface-color);
     border-right: 1px solid rgba(0, 0, 0, 0.04);
-    padding: 24px 20px;
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
     gap: 0;
+    overflow-x: hidden;
     overflow-y: auto;
 }
 
 [data-theme="dark"] .wizard-guide-panel {
     border-right-color: rgba(255, 255, 255, 0.06);
-}
-
-.guide-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 20px;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.guide-header i {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    opacity: 0.8;
 }
 
 /* Guide content sections - show/hide based on step with directional slide */
@@ -102,7 +83,7 @@
 }
 
 .guide-section {
-    padding: 14px 0;
+    padding: 11px 0;
 }
 
 .guide-section-title {
@@ -122,18 +103,6 @@
     width: 16px;
     text-align: center;
     opacity: 0.8;
-}
-
-.guide-period-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 8px;
 }
 
 .guide-text {
@@ -320,31 +289,6 @@
     font-size: 0.85rem;
 }
 
-/* Textarea clear button - positioned inside */
-.import-input-container {
-    position: relative;
-}
-
-.textarea-clear-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 4px 8px;
-    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.1);
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--danger-color, #ef4444);
-    font-size: 0.75rem;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all var(--transition-fast);
-}
-
-.textarea-clear-btn:hover {
-    opacity: 1;
-    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.2);
-}
-
 /* === MAIN CONTENT AREA === */
 .wizard-main-content {
     flex: 1;
@@ -443,43 +387,51 @@
     }
 }
 
-/* === UNIFIED HEADER === */
-.import-wizard-header-unified {
+/* === UNIFIED WIZARD HEADER (Single Source of Truth: Import & Trombinoscope) === */
+.import-wizard-header-unified,
+.trombi-wizard-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    gap: 12px;
     padding: var(--modal-header-padding);
     background: var(--modal-bg);
     border-bottom: var(--modal-header-border);
     min-height: var(--modal-header-height);
+    border-radius: var(--modal-radius) var(--modal-radius) 0 0;
     overflow: visible;
     z-index: 10;
     flex-shrink: 0;
 }
 
-.wizard-header-title {
+.wizard-header-title,
+.trombi-header-title {
     display: flex;
     align-items: center;
     justify-self: start;
     min-width: 0;
 }
 
-/* Fused context pill: Harmonized with Trombi title pill */
-.wizard-context-pill {
+/* Unboxed 2026 identity title — avoids false button affordance */
+.wizard-context-pill,
+.trombi-title-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
+    padding: 0;
+    background: transparent;
+    border: none;
     color: var(--text-primary);
     white-space: nowrap;
     user-select: none;
+    cursor: default;
+    min-width: 0;
 }
 
-.wizard-context-pill iconify-icon.wizard-context-icon {
-    font-size: 1.35rem;
+.wizard-context-pill iconify-icon.wizard-context-icon,
+.trombi-title-pill i,
+.trombi-title-pill iconify-icon {
+    font-size: 1.3rem;
     color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
@@ -487,15 +439,18 @@
     flex-shrink: 0;
 }
 
-.wizard-context-class {
-    font-size: 1rem;
-    font-weight: 700;
+.wizard-context-class,
+#trombiClassBadge {
+    font-size: 1.05rem;
+    font-weight: 650;
     color: var(--text-primary);
-    letter-spacing: -0.01em;
-    max-width: 200px;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-block;
     cursor: default;
     user-select: none;
 }
@@ -511,12 +466,13 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
+    height: 34px;
+    padding: 0 12px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-size: 0.84rem;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
@@ -524,34 +480,44 @@
     transition: all var(--transition-fast);
 }
 
+[data-theme="dark"] .wizard-period-trigger {
+    background: var(--item-idle-bg);
+    border-color: var(--border-color-strong);
+}
+
 .wizard-period-trigger:hover {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg-elevated);
     color: var(--text-primary);
-    border-color: var(--border-color);
+    border-color: var(--border-color-hover);
 }
 
 .wizard-period-trigger iconify-icon {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.wizard-period-trigger:hover iconify-icon {
+    color: var(--text-primary);
 }
 
 .wizard-period-trigger iconify-icon:last-child {
-    font-size: 0.85rem;
-    transition: transform var(--transition-fast);
-    opacity: 0.7;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
 }
 
 .wizard-period-dropdown.open .wizard-period-trigger {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg-elevated);
     color: var(--text-primary);
-    border-color: var(--border-color);
+    border-color: var(--border-color-hover);
 }
 
 .wizard-period-dropdown.open .wizard-period-trigger iconify-icon:last-child {
+    color: var(--text-primary);
     transform: rotate(180deg);
 }
 
@@ -559,16 +525,24 @@
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    min-width: 160px;
+    min-width: 164px;
     background: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
+    box-shadow: var(--dropdown-shadow);
     padding: 6px;
     display: none;
     flex-direction: column;
     gap: 2px;
     z-index: 100;
+    transform-origin: top right;
+    animation: menu-open 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+[data-theme="dark"] .wizard-period-menu {
+    background-color: var(--surface-color);
 }
 
 .wizard-period-dropdown.open .wizard-period-menu,
@@ -584,7 +558,8 @@
 .wizard-period-option {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 12px;
     border: none;
     background: transparent;
@@ -619,21 +594,29 @@
 }
 
 @media (max-width: 800px) {
-    .wizard-context-class {
-        max-width: 140px;
+    .wizard-context-class,
+    #trombiClassBadge {
+        max-width: 130px;
         font-size: 0.95rem;
     }
 
-    .wizard-period-dropdown,
-    .wizard-context-sep {
+    .wizard-period-trigger {
+        height: 30px;
+        padding: 0 10px;
+        font-size: 0.78rem;
+        gap: 4px;
+    }
+
+    .wizard-period-trigger > iconify-icon:first-child {
         display: none;
     }
 }
 
-.wizard-header-actions {
+.wizard-header-actions,
+.trombi-header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     justify-content: flex-end;
     justify-self: end;
 }
@@ -703,47 +686,6 @@
         animation: none !important;
         transform: none !important;
     }
-}
-
-.wizard-step-title {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.wizard-step-header-group {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 0 15px 0;
-    margin-bottom: 0;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.wizard-step-controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.period-indicator-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    font-size: 0.75rem;
-    font-weight: 700;
-    border-radius: var(--radius-pill);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 /* === STEP 1 LAYOUT - Equal Split === */
@@ -981,39 +923,10 @@
     }
 }
 
-/* === FOOTER CENTER LAYOUT === */
-/* Use position absolute for true centering between buttons */
-.wizard-footer-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
 /* Footer needs relative positioning for absolute child */
 .import-wizard-footer {
     position: relative;
 }
-
-/* Hide empty badge slot */
-#wizardFormatBadgeSlot:empty {
-    display: none;
-}
-
-/* Compact format badge in footer - More subtle version */
-.wizard-footer-center .format-detection-badge {
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-}
-
-
 
 /* Subtle divider - Clean Line with Text */
 .import-divider-horizontal {
@@ -1067,58 +980,6 @@
     z-index: 10;
 }
 
-/* === FLOATING ACTIONS (Glassmorphism) === */
-.step-actions-row {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    display: flex;
-    gap: 8px;
-    z-index: 20;
-}
-
-.btn-text-action {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-[data-theme="dark"] .btn-text-action {
-    background: rgba(30, 30, 30, 0.5);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-.btn-text-action:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .btn-text-action:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-}
-
-.btn-text-action i {
-    font-size: 0.75rem;
-    opacity: 0.8;
-}
-
 /* Hover Effect - Clean Dynamic Color Change */
 /* Exclude hover effect when focus is active to prevent conflict */
 .import-input-container:hover:not(:has(.import-textarea:focus)) {
@@ -1156,29 +1017,6 @@
     /* Exact Match to Global Components (Sharp Ring, no diffuse halo) */
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* === TEXT ARRIVAL ANIMATION (Premium Highlight) === */
-@keyframes textContentArrival {
-    0% {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.2), 0 0 20px rgba(var(--primary-color-rgb), 0.1);
-        transform: scale(1.005);
-    }
-
-    100% {
-        border-color: var(--border-color);
-        /* Restore original border color */
-        box-shadow: none;
-        transform: scale(1);
-    }
-}
-
-/* Class to be added via JS when text arrives */
-.import-input-container.animate-arrival {
-    animation: textContentArrival 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    /* Ensure border override during animation */
-    will-change: transform, box-shadow, border-color;
 }
 
 textarea.import-textarea,
@@ -1251,59 +1089,113 @@ textarea.import-textarea,
 
 /* Footer info pill — uses unified .modal-footer-info from modals.css */
 
-.import-wizard-modal .import-separator-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.import-wizard-modal .import-separator-select {
-    padding: 6px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: var(--surface-color);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    cursor: pointer;
-    min-width: 130px;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.import-wizard-modal .import-separator-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-    outline: none;
-}
-
-.import-wizard-modal .import-separator-select:hover:not(:focus) {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-}
-
-[data-theme="dark"] .import-wizard-modal .import-separator-select:hover:not(:focus) {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    background-color: var(--bg-color) !important;
-}
-
-[data-theme="dark"] .import-wizard-modal .import-separator-select:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-    background-color: var(--bg-color) !important;
-}
-
 /* Guide Panel Separator Styles */
 .import-separator-row-guide {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
-.import-separator-select.full-width {
-    width: 100%;
-    min-width: 0;
-    padding: 8px 12px;
+/* === WIZARD CUSTOM DROPDOWNS (Separator & Mapping Table Headers) === */
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-trigger {
+    height: 32px;
+    padding: 0 10px;
+    gap: 6px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--border-color-strong);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: none;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger,
+[data-theme="dark"] .import-wizard-modal .mapping-select-dropdown .custom-dropdown-trigger {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color-strong);
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger:hover:not(.disabled),
+.import-wizard-modal .mapping-select-dropdown:not(.mapping-duplicate) .custom-dropdown-trigger:hover:not(.disabled) {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color-hover) !important;
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger:hover:not(.disabled),
+[data-theme="dark"] .import-wizard-modal .mapping-select-dropdown:not(.mapping-duplicate) .custom-dropdown-trigger:hover:not(.disabled) {
+    background-color: var(--item-hover-bg-elevated) !important;
+    border-color: var(--border-color-hover) !important;
+}
+
+.import-wizard-modal .import-separator-dropdown.open .custom-dropdown-trigger,
+.import-wizard-modal .mapping-select-dropdown.open:not(.mapping-duplicate) .custom-dropdown-trigger {
+    background-color: var(--surface-color) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.14) !important;
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-dropdown.open .custom-dropdown-trigger,
+[data-theme="dark"] .import-wizard-modal .mapping-select-dropdown.open:not(.mapping-duplicate) .custom-dropdown-trigger {
+    background-color: var(--item-hover-bg-elevated) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-arrow,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-arrow {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger:hover .custom-dropdown-arrow,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-trigger:hover .custom-dropdown-arrow,
+.import-wizard-modal .import-separator-dropdown.open .custom-dropdown-arrow,
+.import-wizard-modal .mapping-select-dropdown.open .custom-dropdown-arrow {
+    color: var(--text-primary);
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-menu,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-menu {
+    background-color: var(--surface-color);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow);
+    padding: 5px;
+    max-height: none;
+    overflow-y: visible;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-option,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-option {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    gap: 8px;
+    border-radius: var(--dropdown-item-radius-sm);
+    margin-bottom: 1px;
+    white-space: nowrap;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-option.selected,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-option.selected {
+    font-weight: 600;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-option-check,
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-option-check {
+    width: 14px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 /* === FORMAT DETECTION BADGE - Shows detected format (MBN, Pronote, etc.) === */
@@ -1370,22 +1262,29 @@ textarea.import-textarea,
     display: none;
 }
 
-/* === MAPPING TABLE === */
-.import-wizard-modal .import-mapping-table-container {
+/* === MAPPING & PREVIEW TABLES (Mutualized Step 2 & Step 3) === */
+.import-wizard-modal .import-mapping-table-container,
+.import-preview-table-container {
+    --table-header-h: 44px;
     position: relative;
     overflow: hidden !important;
     border-radius: var(--radius-md);
-    background: var(--bg-secondary);
+    background: var(--surface-color);
     margin: 4px;
-    flex: 1;
+    flex: 0 1 auto;
+    max-height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    min-height: 200px;
     transform: translateZ(0);
     isolation: isolate;
     z-index: 0;
     padding: 0;
     animation: table-fade-in 0.4s ease-out;
+}
+
+.import-wizard-modal .import-mapping-table-container {
+    --table-header-h: 49px;
 }
 
 @keyframes table-fade-in {
@@ -1400,17 +1299,39 @@ textarea.import-textarea,
     }
 }
 
-.import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper {
-    overflow-x: auto;
-    overflow-y: auto;
-    flex: 1;
-    max-height: none;
-    border-radius: calc(var(--radius-lg) - 1px);
-    padding-right: 4px;
-    padding-bottom: 4px;
+/* Full-width header background cap — bridges the 6px vertical scrollbar gutter at top-right */
+.import-wizard-modal .import-mapping-table-container::before,
+.import-preview-table-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: var(--table-header-h, 44px);
+    background: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
+    border-bottom: 1px solid var(--border-color-strong);
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 1 !important;
+    z-index: 1;
 }
 
-.import-wizard-modal .import-mapping-table-container::after {
+.import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper,
+.import-preview-table-container>.table-scroll-wrapper {
+    position: relative;
+    z-index: 2;
+    overflow-x: auto;
+    overflow-y: auto;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    padding: 0 !important;
+    border-radius: var(--radius-md);
+}
+
+.import-wizard-modal .import-mapping-table-container::after,
+.import-preview-table-container::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -1420,7 +1341,8 @@ textarea.import-textarea,
     pointer-events: none;
 }
 
-[data-theme="dark"] .import-wizard-modal .import-mapping-table-container::after {
+[data-theme="dark"] .import-wizard-modal .import-mapping-table-container::after,
+[data-theme="dark"] .import-preview-table-container::after {
     border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -1471,50 +1393,70 @@ textarea.import-textarea,
     /* Remove padding to let scrollbar sit flush if needed */
 }
 
-/* Custom Scrollbar for the table wrapper */
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar {
+/* Custom Scrollbar for the table wrapper & guide panel */
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar,
+.wizard-guide-panel::-webkit-scrollbar {
     height: var(--scrollbar-width);
-    /* Horizontal */
     width: var(--scrollbar-width);
-    /* Vertical - Same as horizontal for consistency */
 }
 
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-track {
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-track,
+.wizard-guide-panel::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-track:vertical {
+    margin-top: var(--table-header-h, 44px);
+    margin-bottom: 6px;
+}
+
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-track:horizontal {
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+.wizard-guide-panel::-webkit-scrollbar-track:vertical {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb,
+.wizard-guide-panel::-webkit-scrollbar-thumb {
+    background-color: var(--border-color-strong);
     border-radius: var(--radius-xs);
 }
 
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-corner {
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-corner,
+.wizard-guide-panel::-webkit-scrollbar-corner {
     background: transparent;
 }
 
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb:hover,
+.wizard-guide-panel::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-secondary);
 }
 
 /* Hide default scrollbar buttons (arrows) */
-.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-button {
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-button,
+.wizard-guide-panel::-webkit-scrollbar-button {
     display: none;
 }
 
-.import-wizard-modal .import-mapping-table {
+.import-wizard-modal .import-mapping-table,
+.import-preview-table-container .import-preview-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 0.85rem;
     table-layout: auto;
-    /* Let browser optimize column widths */
-    background: var(--bg-secondary);
-    /* Fill corners to prevent gray artifacts */
+    background: var(--surface-color);
 }
 
-/* === COLUMN STYLES === */
+/* === COLUMN STYLES & WIDTHS (Single Source of Truth: Step 2 Mapping & Step 3 Preview) === */
 .import-wizard-modal .import-mapping-table th,
-.import-wizard-modal .import-mapping-table td {
+.import-wizard-modal .import-mapping-table td,
+.import-preview-table th,
+.import-preview-table td {
     padding: 10px 8px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -1522,83 +1464,149 @@ textarea.import-textarea,
     vertical-align: middle;
 }
 
-/* === COLUMN WIDTHS (Single Source of Truth) === */
+.import-wizard-modal .import-mapping-table th:first-child,
+.import-wizard-modal .import-mapping-table td:first-child,
+.import-preview-table th:first-child,
+.import-preview-table td:first-child {
+    padding-left: 16px;
+}
+
+.import-wizard-modal .import-mapping-table th:last-child,
+.import-wizard-modal .import-mapping-table td:last-child,
+.import-preview-table th:last-child,
+.import-preview-table td:last-child {
+    padding-right: 16px;
+}
+
+.import-wizard-modal .import-mapping-table tbody tr:last-child td,
+.import-preview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
 .import-wizard-modal .import-mapping-table th.col-name,
+.import-wizard-modal .import-mapping-table td.col-name,
+.import-preview-table th.col-name,
+.import-preview-table td.col-name {
+    min-width: 115px;
+    max-width: 148px;
+}
+
 .import-wizard-modal .import-mapping-table td.col-name {
-    min-width: 130px;
-    max-width: 180px;
     font-weight: 600;
 }
 
 .import-wizard-modal .import-mapping-table th.col-status,
+.import-wizard-modal .import-mapping-table td.col-status,
+.import-preview-table th.col-status,
+.import-preview-table td.col-status {
+    min-width: 72px;
+    max-width: 84px;
+    text-align: center;
+}
+
+.import-wizard-modal .import-mapping-table th.col-status,
 .import-wizard-modal .import-mapping-table td.col-status {
-    min-width: 80px;
-    max-width: 95px;
+    min-width: 92px;
+    max-width: 104px;
+}
+
+.import-wizard-modal .import-mapping-table th.col-grade,
+.import-wizard-modal .import-mapping-table td.col-grade,
+.import-preview-table th.col-grade,
+.import-preview-table td.col-grade {
+    min-width: 76px;
+    max-width: 88px;
     text-align: center;
 }
 
 .import-wizard-modal .import-mapping-table th.col-grade,
 .import-wizard-modal .import-mapping-table td.col-grade {
-    min-width: 110px;
-    max-width: 120px;
-    text-align: center;
+    min-width: 96px;
+    max-width: 108px;
+}
+
+.import-wizard-modal .import-mapping-table td.col-grade,
+.import-preview-table td.col-grade {
     color: var(--text-primary);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
 .import-wizard-modal .import-mapping-table th.col-count,
-.import-wizard-modal .import-mapping-table td.col-count {
-    min-width: 110px;
-    max-width: 120px;
+.import-wizard-modal .import-mapping-table td.col-count,
+.import-preview-table th.col-count,
+.import-preview-table td.col-count {
+    min-width: 80px;
+    max-width: 92px;
     text-align: center;
+}
+
+.import-wizard-modal .import-mapping-table th.col-count,
+.import-wizard-modal .import-mapping-table td.col-count {
+    min-width: 112px;
+    max-width: 124px;
+}
+
+.import-wizard-modal .import-mapping-table td.col-count,
+.import-preview-table td.col-count {
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
 }
 
 .import-wizard-modal .import-mapping-table th.col-appreciation,
-.import-wizard-modal .import-mapping-table td.col-appreciation {
-    min-width: 120px;
-    max-width: 220px;
+.import-wizard-modal .import-mapping-table td.col-appreciation,
+.import-preview-table th.col-appreciation,
+.import-preview-table td.col-appreciation {
+    min-width: 132px;
+    max-width: 160px;
+}
+
+.import-wizard-modal .import-mapping-table td.col-appreciation,
+.import-preview-table td.col-appreciation {
     color: var(--color-violet);
     font-style: italic;
 }
 
 .import-wizard-modal .import-mapping-table th.col-context,
-.import-wizard-modal .import-mapping-table td.col-context {
-    min-width: 120px;
-    max-width: 220px;
+.import-wizard-modal .import-mapping-table td.col-context,
+.import-preview-table th.col-context,
+.import-preview-table td.col-context {
+    min-width: 118px;
+    max-width: 146px;
+}
+
+.import-wizard-modal .import-mapping-table td.col-context,
+.import-preview-table td.col-context {
     color: var(--color-cyan-deep);
     font-style: italic;
 }
 
 .import-wizard-modal .import-mapping-table th.col-ignore,
-.import-wizard-modal .import-mapping-table td.col-ignore {
-    min-width: 80px;
-    max-width: 95px;
-    color: var(--text-tertiary);
-    opacity: 0.6;
+.import-wizard-modal .import-mapping-table td.col-ignore,
+.import-preview-table th.col-ignore,
+.import-preview-table td.col-ignore {
+    min-width: 94px;
+    max-width: 108px;
+}
+
+.import-wizard-modal .import-mapping-table td.col-ignore,
+.import-preview-table td.col-ignore {
+    color: color-mix(in srgb, var(--text-tertiary) 55%, transparent);
 }
 
 /* Truncate long content with ellipsis (only for data cells) */
-.import-wizard-modal .import-mapping-table td {
+.import-wizard-modal .import-mapping-table td,
+.import-preview-table td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Compact custom arrow for mapping selects — saves ~12px vs native arrow */
-.import-wizard-modal .import-mapping-table .mapping-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    padding-right: 18px;
-    padding-left: 6px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 4px center;
-    background-size: 10px;
-    cursor: pointer;
+/* Delegate ellipsis truncation to the inner span in Step 3 so opacity/grayscale dimming applies to '...' too */
+.import-preview-table td > span:not(.tag-badge) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* === HEADER & CLOSE BUTTON === */
@@ -1609,33 +1617,45 @@ textarea.import-textarea,
     justify-content: space-between;
     align-items: center;
     position: relative;
-    /* Ensure context for absolute elements if needed */
 }
 
-.import-wizard-modal .import-separator-row label {
-    margin: 0;
-    line-height: 1;
-}
-
-
-.import-wizard-modal .import-mapping-table th {
-    background: var(--surface-color);
+.import-wizard-modal .import-mapping-table th,
+.import-preview-table th {
+    background: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
     color: var(--text-secondary);
     font-size: 0.75rem;
+    font-style: normal;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 700;
     vertical-align: middle;
-    padding: 8px 8px;
     position: sticky;
     top: 0;
     z-index: 10;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-strong);
     box-shadow: none;
 }
 
-/* Fix sticky header corners not clipping correctly - REVERTED */
-/* Manual radius caused bleed-through on scroll. We rely on container overflow:hidden now. */
+.import-wizard-modal .import-mapping-table th {
+    height: 49px;
+    padding: 8px 8px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.import-wizard-modal .import-mapping-table th:has(.custom-dropdown.open) {
+    z-index: 30;
+}
+
+.import-wizard-modal .import-mapping-table-container:has(.custom-dropdown.open) {
+    z-index: 30;
+}
+
+.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open),
+.import-wizard-modal .import-mapping-table-container:not(:has(tbody tr:nth-child(6))):has(.custom-dropdown.open) > .table-scroll-wrapper {
+    overflow: visible !important;
+}
+
 .import-wizard-modal .import-mapping-table th:first-child {
     border-top-left-radius: 0;
 }
@@ -1645,224 +1665,42 @@ textarea.import-textarea,
     border-right: none;
 }
 
-.import-wizard-modal .import-mapping-table tr:nth-child(even) td {
-    background: rgba(var(--surface-color-rgb), 0.3);
+.import-wizard-modal .import-mapping-table tbody tr:nth-child(even) td,
+.import-preview-table tbody tr:nth-child(even) td {
+    background: var(--item-idle-bg);
 }
 
-/* Row Hover Effect - Premium Feel */
-.import-wizard-modal .import-mapping-table tr:hover td {
-    background: rgba(var(--primary-color-rgb), 0.05);
+/* Row Hover Effect — Harmonized with .student-list-table & .ui-table */
+.import-wizard-modal .import-mapping-table tbody tr:hover td,
+.import-preview-table tbody tr:hover td {
+    background: var(--item-hover-bg);
     cursor: default;
 }
 
-.import-wizard-modal .mapping-header-col {
-    margin-bottom: 10px;
-    font-size: 0.65rem;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-}
-
-/* === CUSTOM DROPDOWN SELECT (Harmonized with dropdown.css) === */
-.custom-select-wrapper {
-    position: relative;
-    width: 100%;
-    font-family: inherit;
-}
-
-/* Minimalist Trigger 2026 - Fixed & Stable */
-/* Specificity bumped (0-3-0) to override global dropdown.css without !important */
-.import-wizard-modal .custom-select-trigger,
-.import-wizard-modal .custom-dropdown .custom-dropdown-trigger {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    height: 40px;
-    font-size: 0.85rem;
+/* Mapping custom dropdowns inside table headers */
+.import-wizard-modal .import-mapping-table .mapping-select-dropdown {
+    text-transform: none;
+    letter-spacing: normal;
     font-weight: 500;
-    color: var(--text-primary);
-
-    /* Pure Glass */
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    /* Pill Shape Enforced */
-
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-
-    /* Reset Global Styles */
-    animation: none;
-    background-image: none;
-    transform: none;
-
-    user-select: none;
-    white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    text-align: left;
 }
 
-/* Dark mode overrides */
-[data-theme="dark"] .import-wizard-modal .custom-select-trigger,
-[data-theme="dark"] .import-wizard-modal .custom-dropdown .custom-dropdown-trigger {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Truncation */
-.import-wizard-modal .custom-select-trigger span,
-.import-wizard-modal .custom-dropdown-trigger span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-right: 6px;
-    flex: 1;
-    opacity: 0.9;
-}
-
-/* Hover - Higher Specificity to beat global :hover:not(.disabled) */
-.import-wizard-modal .custom-select-trigger:hover,
-.import-wizard-modal .custom-dropdown .custom-dropdown-trigger:hover {
-    background: rgba(255, 255, 255, 0.08);
-    /* Lighter Glass */
-    border-color: var(--text-secondary);
-    /* Stable Grey */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transform: none;
-    background-image: none;
-}
-
-/* Active/Open State */
-.import-wizard-modal .custom-select-trigger.active,
-.import-wizard-modal .custom-select-wrapper.open .custom-select-trigger,
-.import-wizard-modal .custom-dropdown.open .custom-dropdown-trigger {
-    border-color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
-    animation: none;
-    background-image: none;
-}
-
-/* Chevron - Static */
-.import-wizard-modal .custom-select-trigger i,
-.import-wizard-modal .custom-dropdown .custom-dropdown-arrow {
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
-    transition: color 0.2s ease;
-    flex-shrink: 0;
-    opacity: 0.7;
-    transform: none;
-}
-
-.import-wizard-modal .custom-select-trigger:hover i,
-.import-wizard-modal .custom-dropdown .custom-dropdown-trigger:hover .custom-dropdown-arrow {
-    color: var(--text-primary);
-    opacity: 1;
-}
-
-/* Open state chevron */
-.import-wizard-modal .custom-select-wrapper.open .custom-select-trigger i,
-.import-wizard-modal .custom-dropdown.open .custom-dropdown-arrow {
-    transform: none;
-    color: var(--text-primary);
-    opacity: 1;
-}
-
-/* Portal element styles - ensure they match the trigger's glass feel */
-.custom-select-options {
-    background: var(--surface-color);
-    /* Keep surface for readability, or use glass if supported */
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    /* Deep shadow for elevation */
-    z-index: 9999;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 6px;
-}
-
-@keyframes slideDownFade {
-    from {
-        opacity: 0;
-        transform: translateY(-2px);
-        /* Minimal movement */
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.custom-option {
-    padding: 8px 12px;
-    font-size: 0.85rem;
+.import-wizard-modal .import-mapping-table th.col-ignore .mapping-select-dropdown .custom-dropdown-trigger {
     color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: all 0.1s ease;
 }
 
-.custom-option:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
+.import-wizard-modal .import-mapping-table .mapping-select-dropdown .custom-dropdown-menu {
+    left: 0;
+    right: auto;
+    min-width: max(100%, 168px);
+    width: max-content;
+    transform-origin: top left;
 }
 
-.custom-option.selected {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-/* Scrollbar within dropdown */
-.custom-select-options::-webkit-scrollbar {
-    width: 4px;
-}
-
-.custom-select-options::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-/* Harmonized selects in table headers */
-.import-wizard-modal .import-mapping-table select {
-    width: 100%;
-    height: 34px;
-    padding: 0 18px 0 6px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background-color: var(--surface-color);
-    color: var(--text-primary);
-    font-size: 0.8rem;
-    cursor: pointer;
-    font-family: inherit;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    box-shadow: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 4px center;
-}
-
-[data-theme="dark"] .import-wizard-modal .import-mapping-table select {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.import-wizard-modal .import-mapping-table select:hover:not(:focus) {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-}
-
-.import-wizard-modal .import-mapping-table select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-    outline: none !important;
-}
-
-.import-wizard-modal .import-mapping-table select option {
-    background-color: var(--surface-color);
-    color: var(--text-primary);
-    padding: 12px;
+.import-wizard-modal .import-mapping-table th:last-child .mapping-select-dropdown .custom-dropdown-menu {
+    left: auto;
+    right: 0;
+    transform-origin: top right;
 }
 
 /* === STEP 3 - CONFIRMATION LAYOUT === */
@@ -1876,647 +1714,6 @@ textarea.import-textarea,
     height: 100%;
 }
 
-/* === PREVIEW GRID === */
-.import-wizard-modal .import-preview-grid {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 0;
-    justify-content: center;
-    align-items: stretch;
-    flex: 1 1 0;
-    min-height: 200px;
-    padding: 8px 0;
-    overflow: hidden;
-}
-
-.import-wizard-modal .import-preview-col {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    max-width: 320px;
-    min-width: 200px;
-    transition: border-color 0.2s ease;
-}
-
-.import-wizard-modal .import-preview-col:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.2);
-}
-
-/* Header Area */
-.import-wizard-modal .import-col-header {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    flex-shrink: 0;
-}
-
-.import-wizard-modal .import-col-header i {
-    font-size: 1rem;
-}
-
-.import-wizard-modal .import-col-count {
-    margin-left: auto;
-    padding: 3px 8px;
-    background: var(--bg-color);
-    border-radius: var(--radius-pill);
-    font-size: 0.75rem;
-    font-weight: 700;
-    min-width: 24px;
-    text-align: center;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.import-wizard-modal .import-col-count.pop {
-    transform: scale(1.2);
-}
-
-/* Color Coding — Header text + count badge only (flat, no border-top) */
-.import-wizard-modal .import-col-new .import-col-header {
-    color: var(--success-color);
-}
-
-.import-wizard-modal .import-col-new .import-col-count {
-    color: var(--success-color);
-    background: rgba(34, 197, 94, 0.1);
-}
-
-.import-wizard-modal .import-col-updated .import-col-header {
-    color: var(--info-color, #3b82f6);
-}
-
-.import-wizard-modal .import-col-updated .import-col-count {
-    color: var(--info-color, #3b82f6);
-    background: rgba(var(--info-color-rgb, 59, 130, 246), 0.1);
-}
-
-.import-wizard-modal .import-col-departed .import-col-header {
-    color: var(--warning-color);
-}
-
-.import-wizard-modal .import-col-departed .import-col-count {
-    color: var(--warning-color);
-    background: rgba(249, 115, 22, 0.1);
-}
-
-/* List Styles */
-.import-wizard-modal .import-col-list {
-    list-style: none;
-    padding: 12px;
-    margin: 0;
-    overflow-y: auto;
-    flex: 1;
-    font-size: 0.85rem;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.import-wizard-modal .import-col-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: var(--bg-color);
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    transition: background 0.15s ease;
-    flex-shrink: 0;
-}
-
-
-.import-wizard-modal .import-col-list li:hover {
-    background: rgba(var(--primary-color-rgb), 0.05);
-}
-
-/* Avatar in List */
-.import-wizard-modal .li-avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-}
-
-.import-col-new .li-avatar {
-    background: rgba(34, 197, 94, 0.1);
-    color: var(--success-color);
-}
-
-.import-col-updated .li-avatar {
-    background: rgba(var(--info-color-rgb, 59, 130, 246), 0.1);
-    color: var(--info-color, #3b82f6);
-}
-
-.import-col-departed .li-avatar {
-    background: rgba(249, 115, 22, 0.1);
-    color: var(--warning-color);
-}
-
-.import-wizard-modal .li-name {
-    font-size: 0.8rem;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.import-wizard-modal .empty-state-li {
-    text-align: center;
-    color: var(--text-tertiary);
-    font-style: italic;
-    padding: 24px 16px;
-    background: transparent !important;
-    border: 1px dashed var(--border-color) !important;
-    justify-content: center;
-    align-items: center;
-    opacity: 0.6;
-    font-size: 0.8rem;
-    flex: 1;
-    min-height: 100px;
-}
-
-/* === STRATEGY CARDS - CLEAN DESIGN === */
-.import-wizard-modal .import-strategy-row {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    margin-top: 0;
-    padding: 0;
-}
-
-.import-wizard-modal .import-strategy-option {
-    flex: 1;
-    max-width: 280px;
-    position: relative;
-    padding: 16px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    text-align: left;
-}
-
-/* Hover Effect */
-.import-wizard-modal .import-strategy-option:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-    background: rgba(var(--primary-color-rgb), 0.02);
-}
-
-/* Selected State */
-.import-wizard-modal .import-strategy-option:has(input:checked) {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.05);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* Icon Container */
-.import-wizard-modal .import-strategy-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-}
-
-.import-wizard-modal .import-strategy-option:hover .import-strategy-icon {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-.import-wizard-modal .import-strategy-option:has(input:checked) .import-strategy-icon {
-    background: var(--primary-color);
-    color: white;
-}
-
-/* Text Content */
-.import-wizard-modal .import-strategy-label {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.import-wizard-modal .import-strategy-label strong {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.import-wizard-modal .import-strategy-label small {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.3;
-}
-
-/* Checkmark indicator for selected state */
-.import-wizard-modal .import-strategy-option::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 20px;
-    height: 20px;
-    background-color: var(--primary-color);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
-    background-size: 10px 10px;
-    background-repeat: no-repeat;
-    background-position: center;
-    border-radius: 50%;
-    opacity: 0;
-    transform: scale(0);
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.import-wizard-modal .import-strategy-option:has(input:checked)::after {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* === FOOTER - NOTE: Main definition is at line ~650 === */
-/* Additional footer rules below - DO NOT add display: flex here */
-
-.import-wizard-footer #wizardBackBtn {
-    margin-right: auto;
-    /* Pushes everything else to the right */
-}
-
-.wizard-footer-right {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-    /* Ensures right alignment even if Back is hidden/missing */
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 600px) {
-    .import-wizard-modal .import-preview-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .import-wizard-modal .import-strategy-row {
-        flex-direction: column;
-    }
-
-    .wizard-footer-right {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .wizard-footer-right .btn {
-        width: 100%;
-    }
-}
-
-/* (Duplicate removed — .step-actions-row and .btn-text-action defined at ~line 882) */
-
-
-/* === ADDITIONAL PILL COLORS === */
-.mapping-pill.type-status {
-    background: rgba(var(--warning-color-rgb), 0.1);
-    border-color: rgba(var(--warning-color-rgb), 0.3);
-    color: var(--warning-color);
-}
-
-.mapping-pill.type-app {
-    background: rgba(var(--success-color-rgb), 0.1);
-    border-color: rgba(var(--success-color-rgb), 0.3);
-    color: var(--success-color);
-}
-
-/* === FORMAT TOGGLE SWITCH === */
-.format-toggle-container {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-}
-
-.format-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.format-toggle input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.format-toggle-slider {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    transition: all 0.3s ease;
-}
-
-.format-toggle-slider::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Checked state */
-.format-toggle input:checked+.format-toggle-slider {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.format-toggle input:checked+.format-toggle-slider::before {
-    transform: translateX(20px);
-}
-
-/* Hover state */
-.format-toggle:hover .format-toggle-slider {
-    border-color: var(--primary-color);
-}
-
-/* Label */
-.format-toggle-label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: color 0.2s ease;
-    min-width: 70px;
-}
-
-.format-toggle input:checked~.format-toggle-label {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-/* ====================================================================
-   PREMIUM EVOLUTION - Added Enhancements
-   ==================================================================== */
-
-/* === DROP ZONE PREMIUM HOVER === */
-/* Drop zone compact */
-.import-drop-zone-compact {
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.import-drop-zone-compact:hover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.03);
-}
-
-.import-drop-zone-compact.dragging {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.05);
-}
-
-/* === MAGIC PILLS ENHANCED === */
-.mapping-pills-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 0;
-}
-
-.mapping-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 600;
-    border: 1px solid;
-    transition: all var(--transition-fast);
-    cursor: default;
-}
-
-.mapping-pill:hover {
-    opacity: 0.85;
-}
-
-.mapping-pill-col {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    font-size: 0.7rem;
-    font-weight: 700;
-}
-
-/* Pill Type Colors */
-.mapping-pill.type-name {
-    background: rgba(var(--info-color-rgb, 59, 130, 246), 0.1);
-    border-color: rgba(var(--info-color-rgb, 59, 130, 246), 0.3);
-    color: var(--info-color, #3b82f6);
-}
-
-.mapping-pill.type-grade {
-    background: rgba(249, 115, 22, 0.1);
-    border-color: rgba(249, 115, 22, 0.3);
-    color: var(--color-orange);
-}
-
-.mapping-pill.type-context {
-    background: rgba(139, 92, 246, 0.1);
-    border-color: rgba(139, 92, 246, 0.3);
-    color: var(--color-violet);
-}
-
-.mapping-pill.type-ignored {
-    background: rgba(107, 114, 128, 0.08);
-    border-color: rgba(107, 114, 128, 0.2);
-    color: var(--text-tertiary);
-    opacity: 0.7;
-}
-
-/* === STUDENT LIST CASCADE ANIMATION === */
-.import-col-list li {
-    animation: cascade-in 0.3s ease forwards;
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-.import-col-list li:nth-child(1) {
-    animation-delay: 0.05s;
-}
-
-.import-col-list li:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.import-col-list li:nth-child(3) {
-    animation-delay: 0.15s;
-}
-
-.import-col-list li:nth-child(4) {
-    animation-delay: 0.2s;
-}
-
-.import-col-list li:nth-child(5) {
-    animation-delay: 0.25s;
-}
-
-.import-col-list li:nth-child(6) {
-    animation-delay: 0.3s;
-}
-
-.import-col-list li:nth-child(7) {
-    animation-delay: 0.35s;
-}
-
-.import-col-list li:nth-child(8) {
-    animation-delay: 0.4s;
-}
-
-@keyframes cascade-in {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Corner icons removed - redundant with main center icon */
-
-/* (Step transition handled by wizard-fade-in at base level) */
-
-/* === DROPDOWN COLOR CODING BY TYPE === */
-.custom-select-trigger[data-type="name"] {
-    border-left: 3px solid rgb(59, 130, 246);
-}
-
-.custom-select-trigger[data-type="grade"] {
-    border-left: 3px solid rgb(249, 115, 22);
-}
-
-.custom-select-trigger[data-type="status"] {
-    border-left: 3px solid rgb(245, 158, 11);
-}
-
-.custom-select-trigger[data-type="appreciation"] {
-    border-left: 3px solid rgb(16, 185, 129);
-}
-
-.custom-select-trigger[data-type="context"] {
-    border-left: 3px solid rgb(139, 92, 246);
-}
-
-.custom-select-trigger[data-type="ignored"] {
-    border-left: 3px solid rgb(107, 114, 128);
-    opacity: 0.7;
-}
-
-/* === PREVIEW COUNT ANIMATION === */
-.import-data-count .count-number {
-    display: inline-block;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    animation: count-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes count-pop {
-    0% {
-        transform: scale(0.5);
-        opacity: 0;
-    }
-
-    70% {
-        transform: scale(1.1);
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-/* === MAPPING TABLE SCROLL SHADOW === */
-.import-mapping-table-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 40px;
-    height: 100%;
-    background: linear-gradient(to left, var(--surface-color), transparent);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    z-index: 15;
-}
-
-.import-mapping-table-container.has-scroll::before {
-    opacity: 1;
-}
-
-/* === SIMPLIFIED WIZARD FOOTER === */
-/* NOTE: Main definition including display logic is at line ~650. DO NOT redefine display here. */
-
-.import-wizard-footer .wizard-footer-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-
-
-/* === PREVIEW HINT MESSAGE === */
-.mapping-preview-hint {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    margin-top: 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.mapping-preview-hint i,
-.mapping-preview-hint iconify-icon {
-    color: var(--text-secondary);
-}
-
 /* Import Confirm Button — layout overrides for icon + badge */
 .btn-import-confirm {
     display: inline-flex;
@@ -2528,176 +1725,62 @@ textarea.import-textarea,
     font-size: 1rem;
 }
 
-/* Count badge styling inside button (removed in favor of clean inline text) */
-
-/* ====================================================================
-   STEP 3 REDESIGN — Unified Data Table
-   ==================================================================== */
-
 /* === PREVIEW DATA TABLE === */
-.import-preview-table-container {
-    position: relative;
-    overflow: hidden !important;
-    border-radius: var(--radius-md);
-    background: var(--bg-secondary);
-    margin: 4px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 200px;
-    transform: translateZ(0);
-    isolation: isolate;
-    z-index: 0;
-    animation: table-fade-in 0.4s ease-out;
-}
-
-/* Inner scroll wrapper — mirrors Step 2 pattern */
-.import-preview-table-container>.table-scroll-wrapper {
-    overflow-x: auto;
-    overflow-y: auto;
-    flex: 1;
-    max-height: none;
-    border-radius: calc(var(--radius-lg) - 1px);
-    padding-right: 4px;
-    padding-bottom: 4px;
-}
-
-.import-preview-table-container::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: var(--radius-md);
-    z-index: 20;
-    pointer-events: none;
-}
-
-[data-theme="dark"] .import-preview-table-container::after {
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.import-preview-table-container .import-preview-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.85rem;
-    table-layout: auto;
-    background: var(--bg-secondary);
-}
-
 .import-preview-table thead {
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
-.import-preview-table th {
-    background: var(--surface-color);
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 8px 24px;
-    height: 50px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: none;
+.import-preview-table th,
+.import-preview-table th:first-child,
+.import-preview-table th:last-child {
+    height: 44px;
+    padding: 0;
+    box-sizing: border-box;
     white-space: nowrap;
     user-select: none;
     overflow: visible;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    vertical-align: middle;
 }
 
 .import-preview-table td {
-    padding: 10px 24px;
-    border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: middle;
 }
 
 .import-preview-table tbody tr {
     transition: background 0.15s ease;
 }
 
-.import-preview-table tbody tr:nth-child(even) td {
-    background: rgba(var(--surface-color-rgb), 0.3);
-}
-
-.import-preview-table tbody tr:hover td {
-    background: rgba(var(--primary-color-rgb), 0.05);
-}
-
-.import-preview-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* === Preview table column semantic styles (mirrors mapping table) === */
-.import-preview-table .col-name {
-    min-width: 200px;
-    max-width: 280px;
-}
-
-.import-preview-table .col-grade {
-    min-width: 90px;
-    text-align: center;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.import-preview-table .col-count {
-    min-width: 100px;
-    text-align: center;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-.import-preview-table .col-status {
-    min-width: 90px;
-    text-align: center;
-}
-
-.import-preview-table .col-appreciation {
-    min-width: 220px;
-    max-width: 400px;
-    color: var(--color-violet);
-    font-style: italic;
-}
-
-.import-preview-table .col-context {
-    min-width: 180px;
-    max-width: 300px;
-    color: var(--color-cyan-deep);
-    font-style: italic;
-}
-
-.import-preview-table .col-ignore {
-    min-width: 80px;
-    color: var(--text-tertiary);
-    opacity: 0.6;
-}
-
-.import-preview-table .col-spacer {
-    width: 99%;
-    padding: 0;
-}
-
-/* Column checkbox header */
+/* Column checkbox header — full-cell 44px hit target */
 .preview-col-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    width: 100%;
+    height: 100%;
+    padding: 0 8px;
+    box-sizing: border-box;
     cursor: pointer;
     margin: 0;
     line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.import-preview-table th:first-child .preview-col-header {
+    padding-left: 16px;
+}
+
+.import-preview-table th:last-child .preview-col-header {
+    padding-right: 16px;
+}
+
+.preview-col-header:not(.locked):hover {
+    color: var(--text-primary);
+}
+
+.import-preview-table th.col-status .preview-col-header,
+.import-preview-table th.col-grade .preview-col-header,
+.import-preview-table th.col-count .preview-col-header {
+    justify-content: center;
 }
 
 /* Hide native checkbox */
@@ -2718,47 +1801,59 @@ textarea.import-textarea,
 .preview-col-header span::before {
     content: '';
     display: block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--text-tertiary);
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid var(--border-color-strong);
     border-radius: 4px;
     background: transparent;
-    margin-right: 8px;
+    margin-right: 7px;
     flex-shrink: 0;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.preview-col-header:hover span::before {
-    border-color: var(--primary-color);
+.preview-col-header:not(.locked):hover span::before {
+    border-color: var(--border-color-hover);
 }
 
 /* Checked state — white check on primary background */
 .preview-col-header input[type="checkbox"]:checked+span::before {
-    background: var(--primary-color);
+    background-color: var(--primary-color);
     border-color: var(--primary-color);
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 6l2 2 4-4' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='white' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
     background-size: 10px;
 }
 
-/* Locked (disabled) state */
+[data-theme="dark"] .preview-col-header input[type="checkbox"]:checked+span::before {
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Locked (always included) state — keep title crisp, subtly dim only the checkbox box */
 .preview-col-header.locked {
     cursor: default;
-    opacity: 0.7;
 }
 
 .preview-col-header.locked span::before {
-    cursor: not-allowed;
+    opacity: 0.45;
+    cursor: default;
 }
 
-/* Unchecked column dim effect */
-.import-preview-table th.col-disabled {
-    opacity: 0.4;
-}
-
+/* Unchecked column dim effect — dim inner content only, keep table grid & sticky header opaque */
+.import-preview-table th.col-disabled,
 .import-preview-table td.col-disabled {
+    opacity: 1;
+}
+
+.import-preview-table th.col-disabled .preview-col-header {
+    opacity: 0.42;
+}
+
+.import-preview-table tbody tr td.col-disabled > *,
+.import-preview-table.delete-departed tbody tr td.col-disabled > * {
     opacity: 0.25;
+    filter: grayscale(0.8);
+    transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
 /* Student name cell with status dot */
@@ -2810,22 +1905,47 @@ textarea.import-textarea,
 /* Empty cell */
 .preview-empty-cell {
     color: var(--text-tertiary);
-    font-style: italic;
+    font-style: normal;
     font-size: 0.8rem;
+    opacity: 0.55;
 }
 
-/* Departed row styling — soft dim, NO strikethrough (they are preserved, not deleted) */
-.import-preview-table tbody tr.row-departed {
+/* Departed row styling — dim cell contents only to preserve row borders, zebra & hover background */
+.import-preview-table tbody tr.row-departed,
+.import-preview-table tbody tr.row-departed:hover,
+.import-preview-table.delete-departed tbody tr.row-departed {
+    opacity: 1;
+}
+
+.import-preview-table tbody tr.row-departed td > * {
     opacity: 0.62;
     transition: opacity 0.15s ease;
 }
 
-.import-preview-table tbody tr.row-departed:hover {
+.import-preview-table tbody tr.row-departed:hover td:not(.col-disabled) > * {
     opacity: 0.9;
 }
 
 .import-preview-table tbody tr.row-departed .preview-student-name {
     font-style: italic;
+}
+
+.import-preview-table.delete-departed tbody tr.row-departed td:not(.col-disabled) > * {
+    opacity: 0.45;
+}
+
+.import-preview-table.delete-departed tbody tr.row-departed:hover td:not(.col-disabled) > * {
+    opacity: 0.72;
+}
+
+.import-preview-table.delete-departed tbody tr.row-departed .preview-student-name {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+}
+
+.import-preview-table.delete-departed tbody tr.row-departed .preview-status-dot.dot-departed {
+    background: var(--danger-color);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
 
@@ -2935,12 +2055,6 @@ textarea.import-textarea,
 .toggle-switch.color-warning input:checked+.slider {
     background: var(--toggle-track-on) !important;
 }
-.toggle-switch.color-warning input:checked+.slider-legacy {
-    background: var(--warning-color);
-}
-
-
-
 
 /* Hide body bottom radius when any footer is visible (handled by unified footer) */
 .import-wizard-modal:has(.import-wizard-footer:not([style*="display: none"])) .import-wizard-body {
@@ -2967,47 +2081,7 @@ textarea.import-textarea,
    STEP 2 MAPPING IMPROVEMENTS
    ==================================================================== */
 
-
-/* === SEPARATOR DROPDOWN ENHANCEMENT === */
-.import-wizard-modal .import-separator-select {
-    padding: 6px 28px 6px 12px;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 12px;
-}
-
-
-/* ====================================================================
-   STEP 1 FOOTER
-   ==================================================================== */
-
-.wizard-step1-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-    margin-top: auto;
-    padding: 16px 0;
-}
-
-.wizard-step1-footer .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    font-weight: 500;
-}
-
-.wizard-step1-footer .btn-primary i {
-    font-size: 0.85rem;
-}
-
 /* Disabled state for Next button */
-.wizard-step1-footer .btn-primary:disabled,
 .import-wizard-footer .btn-primary:disabled {
     background: var(--bg-secondary);
     color: var(--text-tertiary);
@@ -3017,37 +2091,10 @@ textarea.import-textarea,
     box-shadow: none;
 }
 
-.wizard-step1-footer .btn-primary:disabled:hover,
 .import-wizard-footer .btn-primary:disabled:hover {
     background: var(--bg-secondary);
     transform: none;
     box-shadow: none;
-}
-
-/* === STEP 2 FOOTER === */
-.wizard-step2-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
-}
-
-.wizard-step2-footer .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.wizard-step2-footer .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    font-weight: 500;
 }
 
 /* Textarea should expand in step 1 */
@@ -3070,23 +2117,18 @@ textarea.import-textarea,
 
 @media (max-width: 600px) {
 
-    /* Header: Compact */
-    .import-wizard-header-unified {
+    /* Header: Compact (Mutualized across Import & Trombinoscope) */
+    .import-wizard-header-unified,
+    .trombi-wizard-header {
         padding: 10px 16px;
+        min-height: 52px;
         height: 56px;
+        border-radius: 0;
     }
 
-    .wizard-header-title {
+    .wizard-header-title,
+    .trombi-header-title {
         font-size: 1rem;
-    }
-
-    /* Stepper: Numbers only */
-    .import-wizard-stepper.compact .wizard-step-label {
-        display: none;
-    }
-
-    .import-wizard-stepper.compact .wizard-step {
-        padding: 4px 10px;
     }
 
     /* Body: CRITICAL - Enable scrolling on mobile */
@@ -3144,68 +2186,34 @@ textarea.import-textarea,
         flex-shrink: 0;
     }
 
-    /* Step 1 Footer: Stack buttons if needed */
-    .wizard-step1-footer {
-        padding: 12px 0;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .wizard-step1-footer .btn {
-        flex: 1;
-        min-width: 0;
-        justify-content: center;
-    }
-
-    /* Step 2 Footer */
-    .wizard-step2-footer {
-        margin-top: 12px;
-        padding-top: 12px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
     /* Buttons: Touch-friendly */
-    .import-wizard-footer .btn,
-    .wizard-step1-footer .btn,
-    .wizard-step2-footer .btn {
+    .import-wizard-footer .btn {
         min-height: 44px;
         padding: 10px 16px;
     }
 
     /* Mapping table: Compress */
-    .import-wizard-modal .import-mapping-table-container {
+    .import-wizard-modal .import-mapping-table-container,
+    .import-preview-table-container {
         margin: 4px 0;
     }
 
     .import-wizard-modal .import-mapping-table th,
-    .import-wizard-modal .import-mapping-table td {
+    .import-wizard-modal .import-mapping-table td,
+    .import-preview-table th,
+    .import-preview-table td {
         padding: 8px 6px;
         font-size: 0.75rem;
     }
 
-    .import-wizard-modal .import-mapping-table select {
+    .import-wizard-modal .import-mapping-table .mapping-select-dropdown .custom-dropdown-trigger {
         font-size: 0.75rem;
-        padding: 4px 6px;
+        padding: 0 8px;
     }
 
     /* === STEP 3: VERIFICATION - Mobile Redesign === */
 
-    /* Preview Table: Compact for mobile */
-    .import-preview-table-container {
-        min-height: 150px;
-        border-radius: var(--radius-md);
-    }
-
-    .import-preview-table th {
-        padding: 8px;
-        font-size: 0.72rem;
-    }
-
     .import-preview-table td {
-        padding: 6px 8px;
-        font-size: 0.78rem;
         max-width: 140px;
     }
 
@@ -3220,14 +2228,15 @@ textarea.import-textarea,
     }
 
 
-    .wizard-context-pill {
-        padding: 4px 10px;
+    .wizard-context-pill,
+    .trombi-title-pill {
         gap: 6px;
     }
 
-    .wizard-context-class {
+    .wizard-context-class,
+    #trombiClassBadge {
         max-width: 90px;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
     }
 
     /* Unified 2-button footer row on mobile */
@@ -3262,12 +2271,14 @@ textarea.import-textarea,
 
 /* Extra small screens (375px and below) */
 @media (max-width: 375px) {
-    .import-wizard-header-unified {
+    .import-wizard-header-unified,
+    .trombi-wizard-header {
         padding: 8px 12px;
         height: 52px;
     }
 
-    .wizard-header-title {
+    .wizard-header-title,
+    .trombi-header-title {
         font-size: 0.9rem;
         gap: 6px;
     }
@@ -3307,48 +2318,18 @@ textarea.import-textarea,
 }
 
 /* === DUPLICATE MAPPING HIGHLIGHT === */
-.mapping-select.mapping-duplicate {
+.mapping-select.mapping-duplicate,
+.import-wizard-modal .mapping-select-dropdown.mapping-duplicate .custom-dropdown-trigger {
     border-color: var(--warning-color) !important;
-    background: rgba(245, 158, 11, 0.08) !important;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
 }
 
-.mapping-select.mapping-duplicate:focus {
+.mapping-select.mapping-duplicate:focus,
+.import-wizard-modal .mapping-select-dropdown.mapping-duplicate.open .custom-dropdown-trigger,
+.import-wizard-modal .mapping-select-dropdown.mapping-duplicate .custom-dropdown-trigger:focus-visible {
     border-color: var(--warning-color) !important;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
-}
-
-/* === OPTGROUP STYLING FOR MAPPING SELECTS === */
-/* Visual separators for better UX in column type dropdowns */
-.mapping-select optgroup {
-    font-weight: 600;
-    font-style: normal;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.8em;
-    background: var(--bg-secondary);
-    padding: 8px 0 4px 0;
-}
-
-.mapping-select optgroup option {
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: normal;
-    font-size: 0.92em;
-    color: var(--text-primary);
-    padding: 6px 12px;
-    background: var(--bg-color);
-}
-
-/* Dark theme enhancements for optgroups */
-[data-theme="dark"] .mapping-select optgroup {
-    background: var(--surface-color);
-    border-top: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .mapping-select optgroup option {
-    background: var(--bg-color);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
 }
 
 /* === ADDITIONAL FILE ICON TYPES === */
