@@ -81,7 +81,14 @@ vi.mock('./AppreciationsManager.js', () => ({
 
 vi.mock('./StorageManager.js', () => ({
     StorageManager: {
-        saveAppState: vi.fn()
+        saveAppState: vi.fn(),
+        _saveQueue: Promise.resolve()
+    }
+}));
+
+vi.mock('../services/DBService.js', () => ({
+    DBService: {
+        delete: vi.fn().mockResolvedValue()
     }
 }));
 

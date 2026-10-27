@@ -1,4 +1,4 @@
-import { appState, userSettings } from '../state/State.js';
+import { appState, userSettings, runtimeState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { DBService } from '../services/DBService.js';
 import { PromptService } from '../services/PromptService.js';
@@ -306,24 +306,31 @@ export const StudentDataManager = {
 
         // Filtrer l'état
         appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
-        appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
-
-        // Supprimer immédiatement d'IndexedDB (putAll ne fait plus de clear)
-        DBService.delete('generatedResults', id);
+        if (Array.isArray(appState.filteredResults)) {
+            appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
+        }
 
         // Enregistrer le tombstone pour la synchro cloud
         try {
-            const { runtimeState } = await import('../state/State.js');
-            if (!runtimeState.data.deletedItems) {
-                runtimeState.data.deletedItems = { students: [], classes: [] };
+            if (runtimeState?.data) {
+                if (!runtimeState.data.deletedItems) {
+                    runtimeState.data.deletedItems = { students: [], classes: [] };
+                }
+                runtimeState.data.deletedItems.students.push({
+                    id: id,
+                    classId: student.classId || student.studentData?.classId,
+                    deletedAt: Date.now()
+                });
             }
-            runtimeState.data.deletedItems.students.push({
-                id: id,
-                classId: student.classId || student.studentData?.classId,
-                deletedAt: Date.now()
-            });
         } catch (e) {
             console.warn('[StudentDataManager] Erreur tombstone:', e);
+        }
+
+        // Supprimer immédiatement d'IndexedDB (putAll ne fait plus de clear)
+        try {
+            await DBService.delete('generatedResults', id);
+        } catch (e) {
+            console.warn('[StudentDataManager] Erreur suppression IndexedDB:', e);
         }
 
         return true;

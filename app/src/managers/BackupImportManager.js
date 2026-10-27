@@ -196,9 +196,7 @@ export const BackupImportManager = {
             const isMerge = mergeToggle?.checked ?? true;
 
             try {
-                if (!isMerge) {
-                    await StorageManager.savePreRestoreSnapshot();
-                }
+                await StorageManager.savePreRestoreSnapshot();
 
                 const result = await StorageManager.importBackup(fileContent, {
                     mergeData: isMerge,

@@ -15,6 +15,7 @@ vi.mock('../services/DBService.js', () => ({
         getAll: vi.fn(),
         put: vi.fn(),
         putAll: vi.fn(),
+        replaceAll: vi.fn(),
         delete: vi.fn(),
         clear: vi.fn()
     }
@@ -156,6 +157,7 @@ describe('StorageManager', () => {
 
         runtimeState.data.generatedResults = [];
         runtimeState.data.filteredResults = [];
+        runtimeState.data.deletedItems = { students: [], classes: [] };
         runtimeState._dataPurgeDetected = false;
         userSettings.academic.classes = [];
         vi.clearAllMocks();
@@ -545,6 +547,36 @@ describe('StorageManager', () => {
             const student = runtimeState.data.generatedResults.find(s => s.id === 'student_1');
             expect(student.studentData.statuses).toEqual(['DYS', 'PAP']);
         });
+
+        it('should not resurrect deleted students or classes when tombstones in deletedItems are newer than remote timestamps', async () => {
+            userSettings.academic.classes = [{ id: 'class_a', name: '3ème A' }];
+            runtimeState.data.generatedResults = [
+                { id: 'student_1', classId: 'class_a', _lastModified: 1000, studentData: { nom: 'Dupont' } }
+            ];
+            runtimeState.data.deletedItems = {
+                students: [{ id: 'student_deleted', classId: 'class_a', deletedAt: 5000 }],
+                classes: [{ id: 'class_deleted', deletedAt: 5000 }]
+            };
+
+            const remoteData = {
+                classes: [
+                    { id: 'class_a', name: '3ème A' },
+                    { id: 'class_deleted', name: 'Classe Supprimée', updatedAt: 2000 }
+                ],
+                generatedResults: [
+                    { id: 'student_1', classId: 'class_a', _lastModified: 1000, studentData: { nom: 'Dupont' } },
+                    { id: 'student_deleted', classId: 'class_a', _lastModified: 2000, studentData: { nom: 'Zombie' } }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.addedStudents).toBe(0);
+            expect(result.stats.addedClasses).toBe(0);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['student_1']);
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['class_a']);
+        });
     });
 
     describe('PreRestoreSnapshot and _checkPendingRestore', () => {
@@ -889,8 +921,7 @@ describe('StorageManager', () => {
     });
 
     describe('T-02 & T-03 — Caractérisation QuotaExceededError, _lastSaveHash et migrateData', () => {
-        // TODO(Lot 2): Retirer .fails une fois le bug corrigé
-        it.fails('T-02 (Bugs A-01 & A-03) : persiste generatedResults dans IndexedDB malgré un QuotaExceededError sur localStorage et ne verrouille pas _lastSaveHash avant la fin des écritures', async () => {
+        it('T-02 (Bugs A-01 & A-03) : persiste generatedResults dans IndexedDB malgré un QuotaExceededError sur localStorage et ne verrouille pas _lastSaveHash avant la fin des écritures', async () => {
             const { DBService } = await import('../services/DBService.js');
             DBService.putAll.mockClear();
 
@@ -920,8 +951,7 @@ describe('StorageManager', () => {
             expect(localStorage.getItem('bulletin-assistant-state')).not.toBeNull();
         });
 
-        // TODO(Lot 2): Retirer .fails une fois le bug corrigé
-        it.fails('T-03 (Bug A-04) : migrateData ne détruit pas l\'appréciation et l\'historique de T1 lorsqu\'ils sont légitimement identiques à ceux de T2', () => {
+        it('T-03 (Bug A-04) : migrateData ne détruit pas l\'appréciation et l\'historique de T1 lorsqu\'ils sont légitimement identiques à ceux de T2', () => {
             const sharedAppreciation = 'Ensemble satisfaisant.';
             const inputResults = [
                 {

@@ -844,8 +844,7 @@ export const ClassDashboardManager = {
                 timestamp: Date.now(),
                 model: appState.currentAIModel,
                 subject: appState.currentSubject,
-                dataHash: dataHash || null, // Save the signature of data used
-                statsSnapshot: this.cachedStats // Optional: save stats used for generation
+                dataHash: dataHash || null // Save the signature of data used
             };
 
             // Trigger storage save

@@ -413,24 +413,20 @@ export const SingleStudentManager = {
      * @param {string} id - Identifiant de l'élève
      */
     delete(id) {
-        UI.showCustomConfirm('L\'élève et ses données seront supprimés définitivement.', async () => {
-            const visibleIds = new Set(appState.filteredResults.map(r => r.id));
-            const student = appState.generatedResults.find(r => r.id === id);
+        const confirmFn = UI.showCustomConfirm
+            ? (msg, onConfirm, onCancel, opts) => UI.showCustomConfirm(msg, onConfirm, onCancel, opts)
+            : (msg, onConfirm, _onCancel, opts) => UI.showConfirmModal?.(opts?.title || 'Confirmation', msg, onConfirm);
+
+        confirmFn('L\'élève et ses données seront supprimés définitivement.', async () => {
+            const visibleIds = new Set((appState.filteredResults || []).map(r => r.id));
 
             if (id === appState.currentEditingId) { this.resetForm(false); }
 
-            appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
-
-            // Record tombstone for sync (prevents re-import from cloud)
-            const { runtimeState } = await import('../state/State.js');
-            if (!runtimeState.data.deletedItems) {
-                runtimeState.data.deletedItems = { students: [], classes: [] };
-            }
-            runtimeState.data.deletedItems.students.push({
-                id: id,
-                classId: student?.classId,
-                deletedAt: Date.now()
-            });
+            const deleteTask = StudentDataManager.deleteStudent(id);
+            StorageManager._saveQueue = Promise.all([
+                (StorageManager._saveQueue || Promise.resolve()).catch(() => {}),
+                deleteTask
+            ]).then(() => {});
 
             if (visibleIds.has(id)) {
                 const deletedCard = document.querySelector(`.appreciation-result[data-id="${id}"]`);
@@ -438,15 +434,16 @@ export const SingleStudentManager = {
                     deletedCard.classList.add('fade-out');
                     setTimeout(() => {
                         deletedCard.remove();
-                        UI.updateStats();
+                        UI.updateStats?.();
                     }, 300);
                 } else {
-                    AppreciationsManager.renderResults();
+                    AppreciationsManager?.renderResults?.();
                 }
             }
 
             UI.showNotification('Supprimée.', 'success');
-            StorageManager.saveAppState();
+            await deleteTask;
+            await StorageManager.saveAppState();
         }, null, { title: 'Supprimer cet élève ?', isDanger: true, compact: true });
     }
 };

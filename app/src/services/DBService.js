@@ -116,6 +116,35 @@ export const DBService = {
     },
 
     /**
+     * Remplace atomiquement tout le contenu d'un store (clear + put de tous les items)
+     * dans une unique transaction readwrite. En cas d'erreur sur un item, la transaction
+     * entière est annulée (rollback automatique IndexedDB).
+     * @param {string} storeName
+     * @param {Array<Object>} items
+     */
+    async replaceAll(storeName, items = []) {
+        await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(transaction.error || new Error('Transaction aborted'));
+
+            try {
+                store.clear();
+                items.forEach(item => store.put(item));
+            } catch (err) {
+                try {
+                    transaction.abort();
+                } catch (_) { /* transaction déjà annulée */ }
+                reject(err);
+            }
+        });
+    },
+
+    /**
      * Supprime un enregistrement d'un store par sa clé.
      * @param {string} storeName 
      * @param {string} key 

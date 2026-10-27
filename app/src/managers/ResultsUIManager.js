@@ -383,10 +383,10 @@ export const ResultsUIManager = {
                 }, 100);
             }
         }
-        UI.updateStats(); UI.updateControlButtons(); UI.updateAIButtonsState(); StorageManager.saveAppState();
-        UI.populateLoadStudentSelect();
-        UI.updateActiveFilterInfo();
-        UI.updateHeaderContext();
+        UI?.updateStats?.(); UI?.updateControlButtons?.(); UI?.updateAIButtonsState?.(); StorageManager.saveAppState();
+        UI?.populateLoadStudentSelect?.();
+        UI?.updateActiveFilterInfo?.();
+        UI?.updateHeaderContext?.();
 
         // Mettre à jour le bouton d'action Générer/Régénérer (inclut UI.initTooltips)
         this.updateGenerateButtonState(sourceResults);
@@ -960,13 +960,23 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(
+        const confirmFn = UI.showCustomConfirm
+            ? (msg, onConfirm, onCancel, opts) => UI.showCustomConfirm(msg, onConfirm, onCancel, opts)
+            : (msg, onConfirm, _onCancel, opts) => UI.showConfirmModal?.(opts?.title || 'Confirmation', msg, onConfirm);
+
+        confirmFn(
             'Cette action est irréversible et supprimera définitivement vos données.',
-            () => {
-                appState.generatedResults = appState.generatedResults.filter(r => !visibleIds.has(r.id));
-    
+            async () => {
+                const removedIds = Array.from(visibleIds);
+                const deleteTasks = removedIds.map(id => StudentDataManager.deleteStudent(id));
+                StorageManager._saveQueue = Promise.all([
+                    (StorageManager._saveQueue || Promise.resolve()).catch(() => {}),
+                    ...deleteTasks
+                ]).then(() => {});
+
                 this.renderResults();
-                StorageManager.saveAppState();
+                await Promise.all(deleteTasks);
+                await StorageManager.saveAppState();
                 UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
             },
             null,

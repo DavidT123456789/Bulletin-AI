@@ -62,8 +62,7 @@ describe('DBService (T-01 — Caractérisation IndexedDB & Intégrité des suppr
         expect(await DBService.getAll('generatedResults')).toEqual([]);
     });
 
-    // TODO(Lot 2): Retirer .fails une fois le bug corrigé
-    it.fails('T-01 (Bug A-02) : supprime effectivement les élèves dans IndexedDB lors de SingleStudentManager.delete et ResultsUIManager.clearAllResults (aucun élève zombie)', async () => {
+    it('T-01 (Bug A-02) : supprime effectivement les élèves dans IndexedDB lors de SingleStudentManager.delete et ResultsUIManager.clearAllResults (aucun élève zombie)', async () => {
         const initialStudents = [
             { id: 's1', classId: 'c1', studentData: { prenom: 'Alice', nom: 'Martin' } },
             { id: 's2', classId: 'c1', studentData: { prenom: 'Bob', nom: 'Dupont' } },
@@ -89,8 +88,7 @@ describe('DBService (T-01 — Caractérisation IndexedDB & Intégrité des suppr
         expect(afterClearAll).toEqual([]);
     });
 
-    // TODO(Lot 2): Retirer .fails une fois le bug corrigé
-    it.fails('T-01 (Bug A-05) : remplace atomiquement le store via DBService.replaceAll et annule la transaction (rollback) si un item est invalide', async () => {
+    it('T-01 (Bug A-05) : remplace atomiquement le store via DBService.replaceAll et annule la transaction (rollback) si un item est invalide', async () => {
         const existingStudents = [
             { id: 's1', studentData: { prenom: 'Alice', nom: 'Martin' } },
             { id: 's2', studentData: { prenom: 'Bob', nom: 'Dupont' } }

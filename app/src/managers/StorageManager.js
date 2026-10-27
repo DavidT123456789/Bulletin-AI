@@ -64,6 +64,7 @@ const UI_AND_NAV_KEYS = [
 
 export const StorageManager = {
     _savePromise: null,
+    _saveQueue: Promise.resolve(),
     _lastSaveHash: null,
     _lastResultsSaveHash: null,
     _lastDataHash: null,
@@ -71,12 +72,40 @@ export const StorageManager = {
     init(ui, app) {
         UI = ui;
         App = app;
+        this._savePromise = null;
+        this._saveQueue = Promise.resolve();
         this._lastSaveHash = null;
         this._lastResultsSaveHash = null;
         this._lastDataHash = null;
         try {
             Promise.resolve(DBService.open?.()).catch(() => {});
         } catch (_) {}
+    },
+
+    _safeLocalStorageSet(key, value, { notifyOnQuota = false } = {}) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            console.warn(`[StorageManager] Échec écriture localStorage (${key}):`, error);
+            if (notifyOnQuota && UI?.showNotification) {
+                UI.showNotification(
+                    'Espace de stockage local saturé. Les données élèves restent sauvegardées dans IndexedDB.',
+                    'warning'
+                );
+            }
+            return false;
+        }
+    },
+
+    _ensureStudentId(student) {
+        if (student && typeof student.id === 'string' && student.id.trim() !== '') {
+            return student;
+        }
+        return {
+            ...student,
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 11)
+        };
     },
 
     _hashString(str) {
@@ -94,11 +123,12 @@ export const StorageManager = {
     },
 
     async loadAppState({ checkPendingRestore = true } = {}) {
+        let loadFailed = false;
         try {
             try {
                 const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
                 if (lastSyncHash && (lastSyncHash.length > 64 || lastSyncHash.startsWith('{'))) {
-                    localStorage.setItem('bulletin_last_sync_hash', this._hashString(lastSyncHash));
+                    this._safeLocalStorageSet('bulletin_last_sync_hash', this._hashString(lastSyncHash));
                 }
             } catch (e) {
                 console.warn('[StorageManager] Failed to migrate old sync hash:', e);
@@ -181,6 +211,12 @@ export const StorageManager = {
 
                     // Data Settings
                     if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
+                    if (settings.deletedItems !== undefined && settings.deletedItems && typeof settings.deletedItems === 'object') {
+                        runtimeState.data.deletedItems = {
+                            students: Array.isArray(settings.deletedItems.students) ? settings.deletedItems.students : [],
+                            classes: Array.isArray(settings.deletedItems.classes) ? settings.deletedItems.classes : []
+                        };
+                    }
 
                     // Fallback thème si non défini - respecte bulletin_theme ou 'light' par défaut
                     if (!userSettings.ui.theme) {
@@ -196,7 +232,7 @@ export const StorageManager = {
                     runtimeState.data.generatedResults = migratedResults;
 
                     delete parsedState.generatedResults;
-                    localStorage.setItem(CONFIG.LS_APP_STATE_KEY, JSON.stringify(parsedState));
+                    this._safeLocalStorageSet(CONFIG.LS_APP_STATE_KEY, JSON.stringify(parsedState));
                 }
 
 
@@ -213,8 +249,12 @@ export const StorageManager = {
                 runtimeState.data.generatedResults = Utils.deduplicateResults(runtimeState.data.generatedResults);
 
                 if (runtimeState.data.generatedResults.length < originalCount) {
-                    await DBService.clear('generatedResults');
-                    await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
+                    if (typeof DBService.replaceAll === 'function') {
+                        await DBService.replaceAll('generatedResults', runtimeState.data.generatedResults);
+                    } else {
+                        await DBService.clear('generatedResults');
+                        await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
+                    }
                 } else if (this._lastMigrationChanged) {
                     await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
                 }
@@ -245,6 +285,7 @@ export const StorageManager = {
             this._updateFilteredResultsForCurrentClass();
 
         } catch (e) {
+            loadFailed = true;
             console.error("Erreur chargement données (StorageManager):", e);
             if (UI) UI.showNotification("Erreur au chargement des données.", 'error');
         }
@@ -252,8 +293,10 @@ export const StorageManager = {
         this._ensureDefaultState();
         this._ensureConfigUpgrades();
 
-        this._isFirstLoadSave = true;
-        await this.saveAppState();
+        if (!loadFailed) {
+            this._isFirstLoadSave = true;
+            await this.saveAppState();
+        }
 
         this._requestPersistentStorage();
         if (checkPendingRestore) {
@@ -346,12 +389,13 @@ export const StorageManager = {
             const snapshot = {
                 key: 'pre_restore_backup',
                 createdAt: Date.now(),
-                settings: this.getExportableSettings({ includeApiKeys: true }),
+                settings: this.getExportableSettings({ includeApiKeys: false }),
                 classes: userSettings.academic.classes || [],
+                deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
                 generatedResults: results
             };
             await DBService.put('appData', snapshot);
-            localStorage.setItem('bulletin_restore_pending', Date.now().toString());
+            this._safeLocalStorageSet('bulletin_restore_pending', Date.now().toString());
         } catch { /* best-effort */ }
     },
 
@@ -382,7 +426,7 @@ export const StorageManager = {
     async restorePreRestoreSnapshot() {
         const backup = await this.getPreRestoreSnapshot();
         if (!backup) return false;
-        const res = await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true });
+        const res = await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true, skipSnapshot: true });
         if (res?.success) {
             await this.clearPreRestoreSnapshot();
             return true;
@@ -583,49 +627,6 @@ export const StorageManager = {
                 result.wasGenerated = !!(result.appreciation && result.appreciation.trim());
             }
 
-            // MIGRATION: Fix cross-period contamination (appreciation + history + generationPeriod)
-            // Previous bug wrote S1 data into S2 fields (including generationPeriod itself).
-            // Strategy: compare appreciation text across periods — if two periods share
-            // identical plain text, the duplicate is a contamination artifact.
-            const genPeriod = result.generationPeriod;
-            if (sd.periods) {
-                const periodsWithContent = Object.entries(sd.periods)
-                    .filter(([, pData]) => pData?.appreciation?.replace(/<[^>]*>/g, '').trim())
-                    .map(([period, pData]) => ({
-                        period,
-                        plainText: pData.appreciation.replace(/<[^>]*>/g, '').trim()
-                    }));
-
-                // Detect duplicates: if two periods have identical text, one is contaminated
-                if (periodsWithContent.length >= 2) {
-                    for (let i = 0; i < periodsWithContent.length; i++) {
-                        for (let j = i + 1; j < periodsWithContent.length; j++) {
-                            if (periodsWithContent[i].plainText === periodsWithContent[j].plainText) {
-                                // Determine which is the original: the one matching generationPeriod,
-                                // or the earlier period (S1 < S2) as fallback
-                                const a = periodsWithContent[i].period;
-                                const b = periodsWithContent[j].period;
-                                const originalPeriod = (genPeriod === a || genPeriod === b)
-                                    ? genPeriod
-                                    : (a < b ? a : b);
-                                const contaminatedPeriod = originalPeriod === a ? b : a;
-
-                                // Clean the contaminated period
-                                sd.periods[contaminatedPeriod].appreciation = '';
-                                if (result.historyPerPeriod?.[contaminatedPeriod]) {
-                                    result.historyPerPeriod[contaminatedPeriod] = { versions: [], currentIndex: -1 };
-                                }
-                                // Fix generationPeriod if it was pointing to the contaminated period
-                                if (result.generationPeriod === contaminatedPeriod) {
-                                    result.generationPeriod = originalPeriod;
-                                }
-                                migrationNeeded = true;
-                            }
-                        }
-                    }
-                }
-            }
-
             // MIGRATION: historyState → historyPerPeriod (period-scoped history)
             // CRITICAL: Only use generationPeriod (immutable) — never sd.currentPeriod
             // because currentPeriod changes as the user navigates, causing S1 history
@@ -711,6 +712,7 @@ export const StorageManager = {
             activeStatFilter: runtimeState.navigation.activeStatFilter,
 
             refinementEdits: runtimeState.data.refinementEdits,
+            deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
 
             journalThreshold: userSettings.academic.journalThreshold,
         };
@@ -836,14 +838,18 @@ export const StorageManager = {
     },
 
     async saveAppState() {
-        while (this._savePromise) {
-            await this._savePromise;
-        }
-        this._savePromise = this._doSaveAppState();
+        const prevQueue = this._saveQueue || Promise.resolve();
+        const nextSave = prevQueue
+            .catch(() => {})
+            .then(() => this._doSaveAppState());
+        this._savePromise = nextSave;
+        this._saveQueue = nextSave;
         try {
-            await this._savePromise;
+            await nextSave;
         } finally {
-            this._savePromise = null;
+            if (this._savePromise === nextSave) {
+                this._savePromise = null;
+            }
         }
     },
 
@@ -865,8 +871,6 @@ export const StorageManager = {
         }
 
         const resultsChanged = this._lastResultsSaveHash !== resultsSaveHash;
-        this._lastSaveHash = currentHash;
-        this._lastResultsSaveHash = resultsSaveHash;
 
         // Use computeCurrentDataHash to check only structural/data settings changes
         const currentDataHash = this.computeCurrentDataHash();
@@ -880,10 +884,10 @@ export const StorageManager = {
             if (lastSyncHash && currentDataHash === lastSyncHash) {
                 // If we reverted back to the exact cloud version, clear local changes
                 const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
-                localStorage.setItem('bulletin_last_modified', lastSync.toString());
+                this._safeLocalStorageSet('bulletin_last_modified', lastSync.toString());
             } else if (hasChangedSinceLastSave) {
                 // If data has changed since our last save, update modified timestamp
-                localStorage.setItem('bulletin_last_modified', Date.now().toString());
+                this._safeLocalStorageSet('bulletin_last_modified', Date.now().toString());
             }
             this._lastDataHash = currentDataHash;
             if (hasChangedSinceLastSave || (lastSyncHash && currentDataHash === lastSyncHash)) {
@@ -895,15 +899,28 @@ export const StorageManager = {
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
             const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
             if (!lastSyncHash && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
-                localStorage.setItem('bulletin_last_sync_hash', currentDataHash);
+                this._safeLocalStorageSet('bulletin_last_sync_hash', currentDataHash);
             }
         }
         this._isFirstLoadSave = false;
 
-        localStorage.setItem(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
+        const lsSaved = this._safeLocalStorageSet(CONFIG.LS_APP_STATE_KEY, stringifiedSettings, { notifyOnQuota: true });
 
+        let idbSaved = true;
         if (!isFirstLoad && resultsChanged && runtimeState.data.generatedResults) {
-            await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
+            try {
+                await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
+                this._lastResultsSaveHash = resultsSaveHash;
+            } catch (error) {
+                idbSaved = false;
+                console.error('[StorageManager] Échec écriture IndexedDB:', error);
+            }
+        } else {
+            this._lastResultsSaveHash = resultsSaveHash;
+        }
+
+        if (lsSaved && idbSaved) {
+            this._lastSaveHash = currentHash;
         }
 
     },
@@ -1202,6 +1219,10 @@ export const StorageManager = {
                 throw new Error('Format de fichier invalide.');
             }
 
+            if (!options.skipSnapshot) {
+                await this.savePreRestoreSnapshot();
+            }
+
             const stats = { imported: 0, updated: 0, skipped: 0, settingsImported: false, classesAdded: 0, apiKeysImported: 0, journalEntries: 0 };
             const settings = backup.settings || backup;
             const cats = options.categories;
@@ -1272,11 +1293,12 @@ export const StorageManager = {
                 const includeJournal = !cats || cats.journal !== false;
                 const stripJournal = !includeJournal;
                 let importedResults = (backup.generatedResults || []).map(r => {
+                    const withId = this._ensureStudentId(r);
                     if (stripJournal) {
-                        const { journal, ...rest } = r;
+                        const { journal, ...rest } = withId;
                         return rest;
                     }
-                    return r;
+                    return withId;
                 });
 
                 if (includeJournal) {
@@ -1313,8 +1335,12 @@ export const StorageManager = {
                         let mergedResults = this.migrateData(existingResults);
                         mergedResults = Utils.deduplicateResults(mergedResults);
                         runtimeState.data.generatedResults = mergedResults;
-                        await DBService.clear('generatedResults');
-                        await DBService.putAll('generatedResults', mergedResults);
+                        if (typeof DBService.replaceAll === 'function') {
+                            await DBService.replaceAll('generatedResults', mergedResults);
+                        } else {
+                            await DBService.clear('generatedResults');
+                            await DBService.putAll('generatedResults', mergedResults);
+                        }
                     } else {
                         const newResults = importedResults.map(r => ({
                             ...r,
@@ -1324,8 +1350,12 @@ export const StorageManager = {
                         cleanResults = Utils.deduplicateResults(cleanResults);
                         runtimeState.data.generatedResults = cleanResults;
 
-                        await DBService.clear('generatedResults');
-                        await DBService.putAll('generatedResults', cleanResults);
+                        if (typeof DBService.replaceAll === 'function') {
+                            await DBService.replaceAll('generatedResults', cleanResults);
+                        } else {
+                            await DBService.clear('generatedResults');
+                            await DBService.putAll('generatedResults', cleanResults);
+                        }
                         stats.imported = cleanResults.length;
                     }
                 } else if (!options.mergeData) {
@@ -1391,12 +1421,52 @@ export const StorageManager = {
             throw new Error('Données distantes invalides pour la fusion');
         }
 
+        await this.savePreRestoreSnapshot();
+
         const stats = {
             addedStudents: 0,
             updatedStudents: 0,
             addedJournalEntries: 0,
             addedClasses: 0
         };
+
+        // Consolidate tombstones (deletedItems) between local and remote
+        const localDeletedStudents = Array.isArray(runtimeState.data?.deletedItems?.students)
+            ? runtimeState.data.deletedItems.students
+            : [];
+        const remoteDeletedStudents = Array.isArray(remoteData.deletedItems?.students)
+            ? remoteData.deletedItems.students
+            : (Array.isArray(remoteData.settings?.deletedItems?.students) ? remoteData.settings.deletedItems.students : []);
+        const deletedStudentsMap = new Map();
+        [...localDeletedStudents, ...remoteDeletedStudents].forEach(item => {
+            if (!item?.id) return;
+            const existing = deletedStudentsMap.get(item.id);
+            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
+                deletedStudentsMap.set(item.id, item);
+            }
+        });
+
+        const localDeletedClasses = Array.isArray(runtimeState.data?.deletedItems?.classes)
+            ? runtimeState.data.deletedItems.classes
+            : [];
+        const remoteDeletedClasses = Array.isArray(remoteData.deletedItems?.classes)
+            ? remoteData.deletedItems.classes
+            : (Array.isArray(remoteData.settings?.deletedItems?.classes) ? remoteData.settings.deletedItems.classes : []);
+        const deletedClassesMap = new Map();
+        [...localDeletedClasses, ...remoteDeletedClasses].forEach(item => {
+            if (!item?.id) return;
+            const existing = deletedClassesMap.get(item.id);
+            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
+                deletedClassesMap.set(item.id, item);
+            }
+        });
+
+        if (runtimeState.data) {
+            runtimeState.data.deletedItems = {
+                students: Array.from(deletedStudentsMap.values()),
+                classes: Array.from(deletedClassesMap.values())
+            };
+        }
 
         // 0. Fusion non-destructive des clés API et préférences IA distantes
         if (remoteData.settings && typeof remoteData.settings === 'object') {
@@ -1421,11 +1491,21 @@ export const StorageManager = {
             }
         }
 
-        // 1. Fusion des classes (union par ID)
+        // 1. Fusion des classes (union par ID, filtrée par tombstones)
         if (Array.isArray(remoteData.classes)) {
-            const localClasses = userSettings.academic.classes || [];
+            let localClasses = (userSettings.academic.classes || []).filter(lClass => {
+                const tombstone = deletedClassesMap.get(lClass.id);
+                if (!tombstone) return true;
+                const localTime = lClass.updatedAt || lClass.createdAt || 0;
+                return localTime > (tombstone.deletedAt || 0);
+            });
             const localClassIds = new Set(localClasses.map(c => c.id));
             remoteData.classes.forEach(rClass => {
+                const tombstone = deletedClassesMap.get(rClass.id);
+                const remoteClassTime = rClass.updatedAt || rClass.createdAt || 0;
+                if (tombstone && (tombstone.deletedAt || Infinity) >= remoteClassTime) {
+                    return;
+                }
                 if (!localClassIds.has(rClass.id)) {
                     localClasses.push(rClass);
                     localClassIds.add(rClass.id);
@@ -1448,12 +1528,30 @@ export const StorageManager = {
             this._resolveActiveClassAfterImport();
         }
 
-        // 2. Fusion des élèves (generatedResults)
-        const localResults = runtimeState.data.generatedResults || [];
+        // 2. Fusion des élèves (generatedResults) avec filtrage des tombstones
+        const localResults = (runtimeState.data.generatedResults || []).filter(localStudent => {
+            const studentTombstone = deletedStudentsMap.get(localStudent.id);
+            const classTombstone = localStudent.classId ? deletedClassesMap.get(localStudent.classId) : null;
+            const localTime = localStudent._lastModified || (localStudent.timestamp ? new Date(localStudent.timestamp).getTime() : 0) || 0;
+            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= localTime) return false;
+            if (classTombstone && (classTombstone.deletedAt || Infinity) >= localTime) return false;
+            return true;
+        });
         const remoteResults = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults : [];
         const localMap = new Map(localResults.map(r => [r.id, r]));
 
-        remoteResults.forEach(remoteStudent => {
+        remoteResults.forEach(rawRemoteStudent => {
+            const remoteStudent = this._ensureStudentId(rawRemoteStudent);
+            const studentTombstone = deletedStudentsMap.get(remoteStudent.id);
+            const classTombstone = remoteStudent.classId ? deletedClassesMap.get(remoteStudent.classId) : null;
+            const remoteTime = remoteStudent._lastModified || (remoteStudent.timestamp ? new Date(remoteStudent.timestamp).getTime() : 0) || 0;
+            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= remoteTime) {
+                return;
+            }
+            if (classTombstone && (classTombstone.deletedAt || Infinity) >= remoteTime) {
+                return;
+            }
+
             const localStudent = localMap.get(remoteStudent.id);
 
             if (!localStudent) {
@@ -1636,8 +1734,12 @@ export const StorageManager = {
         cleanResults = Utils.deduplicateResults(cleanResults);
         runtimeState.data.generatedResults = cleanResults;
 
-        await DBService.clear('generatedResults');
-        await DBService.putAll('generatedResults', cleanResults);
+        if (typeof DBService.replaceAll === 'function') {
+            await DBService.replaceAll('generatedResults', cleanResults);
+        } else {
+            await DBService.clear('generatedResults');
+            await DBService.putAll('generatedResults', cleanResults);
+        }
 
         // 4. Mettre à jour les filtres d'affichage si nécessaire
         this._updateFilteredResultsForCurrentClass();
