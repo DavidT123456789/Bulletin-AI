@@ -1,0 +1,801 @@
+/* ============================
+   2. CONTENT (Cards Grid)
+   ============================ */
+.focus-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--focus-header-offset) 16px 28px 16px;
+    display: flex;
+    flex-direction: column;
+    /* Espacement intermédiaire */
+    gap: 16px;
+    position: relative;
+}
+
+
+/* Common Card Style - Elevated surface harmonized with header nav buttons */
+.grades-timeline,
+.focus-context-group,
+.focus-appreciation,
+.journal-section {
+    background: var(--surface-color);
+    border-radius: var(--radius-md);
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--card-glass-border);
+    margin: 0;
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    /* Apply overflow visible to not clip inner dropdowns */
+    overflow: visible;
+    height: auto;
+    min-height: auto;
+    /* FIX: Prevent cards from shrinking in flex container */
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .grades-timeline,
+[data-theme="dark"] .focus-context-group,
+[data-theme="dark"] .focus-appreciation,
+[data-theme="dark"] .journal-section {
+    border-color: var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* FIX: If any specific card needs overflow hidden to fix corners */
+.grades-timeline {
+    overflow: hidden;
+}
+
+/* Fix header corners matching card radius - Explicit radius to prevent clipping issues */
+.grades-timeline> :first-child,
+.focus-context-group> :first-child,
+.focus-appreciation> :first-child,
+.journal-section> :first-child {
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+}
+
+/* Fix footer corners */
+.grades-timeline> :last-child,
+.focus-context-group> :last-child,
+.focus-appreciation> :last-child,
+.journal-section> :last-child {
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+/* (Dark mode overrides removed - fully reliant on CSS variables) */
+
+/* Input Specific */
+.timeline-grade-input {
+    text-align: center;
+    caret-color: var(--primary-color);
+}
+
+.timeline-grade-input:focus {
+    outline: none;
+}
+
+/* Future Periods - Subtle & Faded */
+.timeline-period.future {
+    opacity: 0.35;
+}
+
+.timeline-period.future .timeline-grade-display {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--text-tertiary);
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+
+/* Arrows - Compact Modern Style */
+.timeline-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 22px;
+    color: var(--text-tertiary);
+    opacity: 0.4;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.timeline-arrow.positive {
+    color: var(--success-color);
+    opacity: 1;
+    background: rgba(var(--success-rgb), 0.1);
+    border-radius: 50%;
+}
+
+.timeline-arrow.negative {
+    color: var(--error-color);
+    opacity: 1;
+    background: rgba(var(--error-rgb), 0.1);
+    border-radius: 50%;
+}
+
+
+/* ============================
+   4. CONTEXT CARD - Compact Header Style (matching Journal)
+   ============================ */
+.focus-context-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.inline-context-badges {
+    margin-left: 8px;
+}
+
+.focus-context-info-trigger {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+}
+
+/* === Voice Dictation Button (Mic) - iOS 2026 Style === */
+.focus-mic-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-left: 0;
+    flex-shrink: 0;
+    box-shadow: none;
+    line-height: 1;
+}
+
+[data-theme="dark"] .focus-mic-btn {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.focus-mic-btn i,
+.focus-mic-btn iconify-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    line-height: 1;
+}
+
+.focus-mic-btn svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+    flex-shrink: 0;
+    stroke-width: 1.4;
+    line-height: 1;
+}
+
+.focus-mic-btn:hover {
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .focus-mic-btn:hover {
+    background: var(--item-hover-bg);
+    border-color: transparent;
+    color: var(--text-primary);
+}
+
+.focus-mic-btn:active {
+    transform: scale(0.94);
+}
+
+.focus-mic-btn.recording {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+    animation: mic-ripple 1.4s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+}
+
+.focus-mic-btn.recording:hover {
+    background: #dc2626 !important;
+}
+
+@keyframes mic-ripple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        transform: scale(1);
+    }
+}
+
+/* Ghost-text streaming during voice dictation */
+.dictation-interim {
+    opacity: 0.6;
+    font-style: italic;
+    color: var(--text-secondary);
+    border-bottom: 1.5px dotted rgba(var(--primary-color-rgb, 99, 102, 241), 0.5);
+    transition: opacity 0.15s ease;
+}
+
+[data-theme="dark"] .dictation-interim {
+    opacity: 0.7;
+    color: rgba(255, 255, 255, 0.65);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Dark theme adjustments - keep neutral at rest */
+/* === Voice Dictation & Audio Synthesis Group === */
+.focus-audio-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.focus-audio-group .focus-mic-btn,
+.focus-audio-group .focus-speaker-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    margin: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+[data-theme="dark"] .focus-audio-group .focus-mic-btn,
+[data-theme="dark"] .focus-audio-group .focus-speaker-btn {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.focus-audio-group .focus-mic-btn iconify-icon,
+.focus-audio-group .focus-speaker-btn iconify-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    line-height: 1;
+}
+
+.focus-audio-group .focus-mic-btn svg,
+.focus-audio-group .focus-speaker-btn svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+    flex-shrink: 0;
+    stroke-width: 1.4;
+    line-height: 1;
+}
+
+.focus-audio-group .focus-mic-btn:hover,
+.focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .focus-audio-group .focus-mic-btn:hover,
+[data-theme="dark"] .focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+    background: var(--item-hover-bg);
+    border-color: transparent;
+    color: var(--text-primary);
+}
+
+.focus-audio-group .focus-mic-btn:active,
+.focus-audio-group .focus-speaker-btn:active:not(.disabled):not([disabled]) {
+    transform: scale(0.94);
+}
+
+.focus-speaker-btn.disabled,
+.focus-speaker-btn[disabled] {
+    display: none !important;
+}
+
+.focus-speaker-btn.playing {
+    background: var(--primary-color) !important;
+    color: white !important;
+    animation: speaker-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.focus-speaker-btn.playing:hover {
+    background: var(--primary-color);
+}
+
+@keyframes speaker-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.25);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(var(--primary-color-rgb), 0.15);
+    }
+}
+
+/* Thème sombre */
+[data-theme="dark"] .focus-speaker-btn {
+    background: transparent;
+}
+[data-theme="dark"] .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.period-badge {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.focus-context-textarea {
+    width: 100%;
+    min-height: 56px;
+    max-height: 200px;
+    height: auto;
+    padding: 14px 16px;
+    margin: 0;
+    background: transparent !important;
+    border: 2px solid transparent !important;
+    box-shadow: inset 0 0 0 0 rgba(var(--primary-color-rgb), 0) !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    caret-color: var(--primary-color);
+    resize: none;
+    overflow-y: hidden;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    font-family: inherit;
+    box-sizing: border-box;
+    display: block;
+}
+
+[data-theme="dark"] .focus-context-textarea {
+    caret-color: var(--text-primary);
+}
+
+.focus-context-textarea:focus {
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+[data-theme="dark"] .focus-context-textarea:focus {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.focus-context-textarea:hover:not(:disabled):not(:focus) {
+    background: transparent !important;
+    background-image: none !important;
+    border: 2px solid transparent !important;
+}
+
+[data-theme="dark"] .focus-context-textarea:hover:not(:disabled):not(:focus) {
+    background: transparent !important;
+}
+
+.focus-context-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal;
+    opacity: 0.75;
+}
+
+/* Custom Sleek Scrollbar for Context Textarea - Harmonized with App Style and rounded corners */
+.focus-context-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.focus-context-textarea::-webkit-scrollbar-track {
+    background: transparent;
+    /* Offset top/bottom to clear rounded corners */
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.focus-context-textarea::-webkit-scrollbar-thumb {
+    background: rgba(161, 161, 170, 0.4);
+    border-radius: var(--radius-pill);
+}
+
+.focus-context-textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+
+/* ============================
+   3. OPTIMIZED HISTORY & CONTEXT
+   ============================ */
+
+/* History Grades Summary (In Header) */
+.student-card-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-grades-summary {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+/* --- Badges de Notes Historiques Premium --- */
+/* Style de base (lecture) */
+.history-grade-badge {
+    font-size: 12px;
+    background: var(--surface-color);
+    /* White background for pop */
+    color: var(--text-primary);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    /* Subtle lift */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+
+.history-grade-badge span:first-child {
+    color: var(--text-tertiary);
+    /* T1 label slightly dimmer */
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/* Editable style (Current Period) - Premium themed accent */
+.history-grade-badge.editable {
+    cursor: pointer;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--text-primary);
+    padding: 3px 10px;
+    border: 1px solid rgba(var(--primary-color-rgb), 0.35);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* The T-label inside editable badges gets theme color */
+.history-grade-badge.editable span:first-child {
+    color: var(--primary-color);
+    opacity: 0.85;
+}
+
+.history-grade-badge.editable:hover {
+    background: rgba(var(--primary-color-rgb), 0.14);
+    border-color: rgba(var(--primary-color-rgb), 0.55);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.18);
+}
+
+[data-theme="dark"] .history-grade-badge.editable {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
+.read-prev-appreciation,
+.read-prev-context,
+#focusPrevAppreciationSection,
+#focusPrevContextSection {
+    border-left: 3px solid var(--primary-color) !important;
+    padding-left: 12px !important;
+    margin-top: 12px !important;
+    background: transparent !important;
+    /* Force removal of gray box */
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+/* Header des sections précédentes (Titre + Icône) */
+.read-prev-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.read-prev-header i {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Texte des sections précédentes */
+.read-prev-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    /* Slightly softer than main text */
+    line-height: 1.4;
+    font-style: italic;
+}
+
+/* Context Header with Grade Input - Compact Style (matching Journal) */
+.focus-context-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--item-idle-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .focus-context-header {
+    background: var(--item-idle-bg);
+}
+
+
+
+/* History Grade Input (Small, inside badge) */
+.history-grade-input {
+    width: 30px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+.history-grade-input:focus {
+    outline: none;
+}
+
+/* === NEW: Grades display (S1 vs S2) === */
+.grades-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.previous-grades-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    user-select: none;
+}
+
+.previous-grades-inline:empty {
+    display: none;
+}
+
+/* Twin Micro-Capsules: Past Grade & Current Grade */
+.previous-grade-chip,
+.context-grade-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px 2px 7px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .previous-grade-chip,
+[data-theme="dark"] .context-grade-group {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.previous-grade-chip {
+    cursor: default;
+    user-select: none;
+}
+
+.previous-grade-chip:hover,
+.context-grade-group:hover {
+    background: var(--item-hover-bg);
+    border-color: rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="dark"] .previous-grade-chip:hover,
+[data-theme="dark"] .context-grade-group:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.context-grade-group:focus-within {
+    background: var(--item-hover-bg);
+}
+
+.context-grade-group:focus-within label {
+    color: var(--text-primary);
+}
+
+.previous-grade-chip .period-prefix,
+.previous-grade-chip .grade-period-tag,
+.context-grade-group label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    user-select: none;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    cursor: default;
+}
+
+.context-grade-group label {
+    cursor: pointer;
+}
+
+[data-theme="dark"] .previous-grade-chip .period-prefix,
+[data-theme="dark"] .previous-grade-chip .grade-period-tag,
+[data-theme="dark"] .context-grade-group label {
+    color: var(--text-secondary);
+}
+
+.previous-grade-chip .prev-grade-value {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    min-width: unset !important;
+    width: auto !important;
+    max-width: unset !important;
+    height: auto !important;
+    font-size: 12px !important;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: none !important;
+    cursor: default;
+    user-select: none;
+}
+
+.previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {
+    color: var(--text-tertiary);
+    opacity: 0.7;
+}
+
+.context-grade-input {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 12px !important;
+    width: 30px !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    height: auto !important;
+    text-align: center;
+    padding: 0 !important;
+    margin: 0;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: color var(--transition-fast);
+}
+
+/* Neutralize global input hover/focus glowing borders from components.css */
+input.context-grade-input,
+.context-grade-input,
+.context-grade-input:hover,
+.context-grade-input:focus {
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Neutralize browser autofill styling on grade input */
+.context-grade-input:-webkit-autofill,
+.context-grade-input:-webkit-autofill:hover,
+.context-grade-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: 0 0 0px 1000px transparent inset !important;
+}
+
+[data-theme="dark"] .context-grade-input {
+    caret-color: var(--text-primary);
+}
+
+.context-grade-input:not([class*="grade-range-"]) {
+    color: var(--text-primary);
+}
+
+.context-grade-input::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast);
+}
+
+.context-grade-input:focus::placeholder {
+    opacity: 0;
+    color: transparent;
+}
+
+/* Inline evolution arrows inside focus panel context card */
+.evolution-container-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.previous-grades-inline .grade-evolution {
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    user-select: none;
+}
+
+.previous-grades-inline .grade-evolution.positive {
+    color: var(--grade-range-16-20);
+}
+
+.previous-grades-inline .grade-evolution.negative {
+    color: var(--grade-range-0-4);
+}
+
+.previous-grades-inline .grade-evolution.stable {
+    color: var(--text-tertiary);
+    opacity: 0.6;
+}
+
+.previous-grades-inline .grade-evolution.neutral {
+    color: var(--text-tertiary);
+    opacity: 0.35;
+    font-size: 13px;
+    user-select: none;
+}
+

@@ -1,23 +1,20 @@
 /**
- * @fileoverview Focus Panel Manager - Gestion du panneau de détail élève
- * Part of Liste + Focus UX Revolution
+ * @fileoverview Focus Panel Manager - Façade coordinatrice du panneau de détail élève
+ * Découpé en sous-modules thématiques (Lot 11 — Découpage God Object #1) :
+ * - FocusPanelEvents (`src/managers/focus/FocusPanelEvents.js`)
+ * - FocusPanelGrades (`src/managers/focus/FocusPanelGrades.js`)
+ * - FocusPanelGenerator (`src/managers/focus/FocusPanelGenerator.js`)
  * @module managers/FocusPanelManager
  */
 
-import { appState, userSettings } from '../state/State.js';
-import { DOM } from '../utils/DOM.js';
+import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
-import { AIService } from '../services/AIService.js';
-import { PromptService } from '../services/PromptService.js';
 import { ListViewManager } from './ListViewManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
-import { JournalManager } from './JournalManager.js';
-import { StatsUI } from './StatsUIManager.js';
-import { TooltipsUI } from './TooltipsManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelJournal } from './FocusPanelJournal.js';
 import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
@@ -27,15 +24,11 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ModalUI } from './ModalUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { FocusPanelRefinement } from './FocusPanelRefinement.js';
-import { VariationsManager } from './VariationsManager.js';
-import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
-
-
-const COPY_FEEDBACK_MS = 1500;
-const COPY_BUTTON_ICON = 'solar:copy-linear';
-const COPY_BUTTON_LABEL = 'Copier';
+import { FocusPanelEvents } from './focus/FocusPanelEvents.js';
+import { FocusPanelGrades } from './focus/FocusPanelGrades.js';
+import { FocusPanelGenerator } from './focus/FocusPanelGenerator.js';
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -78,19 +71,21 @@ export const FocusPanelManager = {
     /** Tracks whether context was modified by user input */
     _isContextEdited: false,
 
+    /** Creation mode flag */
+    isCreationMode: false,
+
     /**
      * Initialise le module avec les références nécessaires
      * @param {Object} appreciationsManager - Référence à AppreciationsManager
-     * @param {Object} listViewManager - Référence à ListViewManager (injected to avoid circular dependency)
+     * @param {Object} listViewManager - Référence à ListViewManager
      */
     init(appreciationsManager, listViewManager) {
         AppreciationsManager = appreciationsManager;
+        this.appreciationsManager = appreciationsManager;
         this.listViewManager = listViewManager;
 
-        // Initialize extracted sub-modules
         FocusPanelRefinement.init(this, UI);
 
-        // Initialize History module with callbacks
         FocusPanelHistory.init({
             onContentChange: (content) => {
                 FocusPanelStatus.updateWordCount();
@@ -100,11 +95,9 @@ export const FocusPanelManager = {
                     this._initialAppreciationHtml = textEl.innerHTML;
                     this._isAppreciationEdited = false;
                 }
-                // CRITICAL FIX: Ensure List View and source indicator update on Undo/Redo
                 if (this.currentStudentId) {
                     const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
                     if (result) {
-                        // appreciationSource already restored by _animateVersionChange before this callback
                         FocusPanelStatus.updateSourceIndicator(result);
                         this._updateListRow(result);
                     }
@@ -115,18 +108,15 @@ export const FocusPanelManager = {
             }
         });
 
-        // Initialize Journal module with callbacks
         FocusPanelJournal.init({
             getCurrentStudentId: () => this.currentStudentId,
             onStatusRefresh: () => FocusPanelStatus.refreshAppreciationStatus()
         });
 
-        // Initialize Analysis module with callbacks and references
         FocusPanelAnalysis.init({
             getCurrentStudentId: () => this.currentStudentId
         }, AppreciationsManager);
 
-        // Initialize Header module
         FocusPanelHeader.init({
             getCurrentStudentId: () => this.currentStudentId,
             setCurrentStudentId: (id) => { this.currentStudentId = id; },
@@ -134,14 +124,12 @@ export const FocusPanelManager = {
             setIsCreationMode: (val) => { this.isCreationMode = val; },
             onRefreshStatus: () => FocusPanelStatus.refreshAppreciationStatus(),
             onUpdateListRow: (r) => this._updateListRow(r),
-            onRenderTimeline: (d) => this._renderStudentDetailsTimeline(d, true), // Creation/Edit mode uses true
+            onRenderTimeline: (d) => this._renderStudentDetailsTimeline(d, true),
             onUpdateNavigation: () => FocusPanelNavigation.updateControls(),
             getHistoryEdits: () => this._newStudentHistory,
             clearHistoryEdits: () => { this._newStudentHistory = null; }
         });
 
-        // Initialize Navigation module
-        // Initialize Status module with callbacks
         FocusPanelStatus.init({
             getCurrentStudentId: () => this.currentStudentId,
             getActiveGenerations: () => this._activeGenerations,
@@ -165,826 +153,18 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Configure les event listeners du Focus Panel
-     * @private
+     * Vérifie si le panel est ouvert
+     * @returns {boolean}
      */
-    _setupEventListeners() {
-        if (this._listenersAttached) return;
-        this._listenersAttached = true;
-
-        this._initCloseGestures();
-
-        // DOM elements
+    isOpen() {
         const panel = document.getElementById('focusPanel');
-        const backdrop = document.getElementById('focusPanelBackdrop');
-        const backBtn = document.getElementById('focusBackBtn');
-        const prevBtn = document.getElementById('focusPrevBtn');
-        const nextBtn = document.getElementById('focusNextBtn');
-        const analysisPrevBtn = document.getElementById('focusAnalysisPrevBtn');
-        const analysisNextBtn = document.getElementById('focusAnalysisNextBtn');
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        const copyBtn = document.getElementById('focusCopyBtn');
-
-        // Dynamic scroll-driven morphing: progressively interpolates header into compact floating capsule
-        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
-        const focusHeader = panel?.querySelector('.focus-header');
-        if (focusContent && focusHeader) {
-            let scrollRafId = null;
-            const SCROLL_RANGE = 40; // Pixels of scroll for complete capsule transformation (completes before cards pass underneath)
-
-            const updateHeaderScrollProgress = () => {
-                scrollRafId = null;
-                if (!focusHeader || !focusContent) return;
-
-                // Retain default expanded layout in edit mode
-                if (focusHeader.classList.contains('editing')) {
-                    focusHeader.style.removeProperty('--scroll-p');
-                    focusHeader.classList.remove('scrolled');
-                } else {
-                    const scrollTop = Math.max(0, focusContent.scrollTop);
-                    const progress = Math.min(1, scrollTop / SCROLL_RANGE);
-
-                    focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
-                    focusHeader.classList.toggle('scrolled', progress > 0.01);
-                }
-
-                this.updateScrollAffordances();
-            };
-
-            focusContent.addEventListener('scroll', () => {
-                if (scrollRafId === null) {
-                    scrollRafId = requestAnimationFrame(updateHeaderScrollProgress);
-                }
-            }, { passive: true });
-
-            if (typeof ResizeObserver !== 'undefined') {
-                const resizeObserver = new ResizeObserver(() => {
-                    this.updateScrollAffordances();
-                });
-                resizeObserver.observe(focusContent);
-            }
-        }
-
-        // Set _isClosing flag on pointerdown (touch/mouse down) to defer synchronous
-        // blur events and stats updates, preventing animation stutter on mobile
-        const preCloseHandler = () => {
-            const header = document.querySelector('.focus-header');
-            const isEditing = header?.classList.contains('editing');
-            if (!isEditing || this.isCreationMode) {
-                this._isClosing = true;
-                clearTimeout(this._preCloseTimeout);
-                this._preCloseTimeout = setTimeout(() => {
-                    this._isClosing = false;
-                }, 1000);
-            }
-        };
-
-        // Close panel
-        if (backdrop) {
-            backdrop.addEventListener('pointerdown', preCloseHandler);
-            backdrop.addEventListener('click', () => this.close());
-        }
-
-        // Back button: Cancel edit mode if active, otherwise close panel
-        // Special case: In creation mode, always close the panel
-        if (backBtn) {
-            backBtn.addEventListener('pointerdown', preCloseHandler);
-            backBtn.addEventListener('click', () => {
-                const header = document.querySelector('.focus-header');
-                const isEditing = header?.classList.contains('editing');
-
-                // In creation mode: always close the panel (nothing to go back to)
-                if (this.isCreationMode) {
-                    // Clear any pending photo
-                    FocusPanelHeader.clearPendingAvatarData();
-                    // Close without saving (close() handles UI cleanup for creation mode)
-                    this.close();
-                    return;
-                }
-
-                // Existing student: toggle edit mode or close
-                if (isEditing) {
-                    // Cancel edit mode without saving
-                    FocusPanelHeader.toggleEditMode(false, true);
-                } else {
-                    // Normal close
-                    this.close();
-                }
-            });
-        }
-
-        // Navigation delegated to FocusPanelNavigation
-        if (prevBtn) prevBtn.addEventListener('click', () => {
-            FocusPanelNavigation.navigatePrev();
-            prevBtn.blur();
-            setTimeout(() => prevBtn.blur(), 50);
-        });
-        if (nextBtn) nextBtn.addEventListener('click', () => {
-            FocusPanelNavigation.navigateNext();
-            nextBtn.blur();
-            setTimeout(() => nextBtn.blur(), 50);
-        });
-        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => {
-            FocusPanelNavigation.navigatePrev();
-            analysisPrevBtn.blur();
-            setTimeout(() => analysisPrevBtn.blur(), 50);
-        });
-        if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => {
-            FocusPanelNavigation.navigateNext();
-            analysisNextBtn.blur();
-            setTimeout(() => analysisNextBtn.blur(), 50);
-        });
-
-        // Generate
-        if (generateBtn) {
-            generateBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (this._activeGenerations.has(this.currentStudentId)) {
-                    // Double-click guard: if generation started < 350ms ago, ignore accidental double-click
-                    const elapsed = Date.now() - (this._activeGenerationStartTime || 0);
-                    if (elapsed < 350) return;
-
-                    this._isCancellingGeneration = true;
-                    this._cancelGenerationForStudent(this.currentStudentId);
-                    setTimeout(() => { this._isCancellingGeneration = false; }, 300);
-                    generateBtn.blur();
-                    return;
-                }
-                this.generate();
-                generateBtn.blur(); // Remove focus after click to prevent sticky focus rings
-            });
-            // [NEW] Right-click to preview the prompt
-            generateBtn.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                if (this._activeGenerations.has(this.currentStudentId)) {
-                    return;
-                }
-                this._showPromptPreview();
-                generateBtn.blur();
-            });
-        }
-
-        // Copy
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                this.copy();
-                copyBtn.blur(); // Remove focus after click to prevent sticky focus rings when scrolling/navigating
-            });
-            // [NEW] Right-click to copy the prompt directly (symmetric with Generate button)
-            copyBtn.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                this._copyPromptToClipboard();
-                copyBtn.blur();
-            });
-        }
-
-        // Header inputs change detection delegated to FocusPanelHeader
-
-        const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes');
-        // Header listeners derived to FocusPanelHeader
-
-        // Settings Change Listener (for instant Threshold updates)
-        document.addEventListener('app-settings-changed', () => {
-            // If we are viewing a student, refresh the badge status
-            if (this.currentStudentId) {
-                FocusPanelStatus.refreshAppreciationStatus();
-            }
-        });
-
-        // Cancel button listener delegated to FocusPanelHeader
-
-        // (Toggle Details button removed - main header period selector is the source of truth)
-
-        // Analyze button/page (delegated to FocusPanelAnalysis module)
-        const analyzeBtn = document.getElementById('focusAnalyzeBtn');
-        if (analyzeBtn) analyzeBtn.addEventListener('click', () => FocusPanelAnalysis.show());
-        const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
-        if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => FocusPanelAnalysis.hide());
-        const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
-        if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => FocusPanelAnalysis.generate());
-
-        // Unified Data Change Listener (Live Model Update)
-        const handleDataChange = (e) => {
-            // Only process if Focus Panel is open and we have a valid student ID
-            if (!this.isOpen() || !this.currentStudentId) return;
-
-            // Find result object in current state
-            const currentPeriod = appState.currentPeriod;
-            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-
-            if (!result) return;
-
-            const target = e.target;
-            let changed = false;
-
-            // 1. Grade Input
-            if (target.id === 'focusCurrentGradeInput' || target.id === 'focusEditGradeInput') {
-                const val = target.value.replace(',', '.');
-                let numVal = val === '' ? null : parseFloat(val);
-                if (isNaN(numVal)) numVal = null; // Store as null if invalid
-
-                // Init structure if missing
-                if (!result.studentData.periods) result.studentData.periods = {};
-                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
-
-                result.studentData.periods[currentPeriod].grade = numVal;
-                changed = true;
-                this._isGradeEdited = true;
-            }
-
-            // 2. Context Input
-            else if (target.id === 'focusContextInput') {
-                if (!result.studentData.periods) result.studentData.periods = {};
-                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
-
-                result.studentData.periods[currentPeriod].context = target.value;
-                changed = true;
-                this._isContextEdited = true;
-            }
-
-            // 3. Status Checkboxes (Delegated from header edit container)
-            else if (target.type === 'checkbox' && target.closest('.focus-header-edit')) {
-                const allBoxes = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]'));
-                const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
-                const allCheckboxValues = allBoxes.map(cb => cb.value);
-                const baseStatuses = FocusPanelHeader._originalHeaderValues?.statuses || result.studentData.statuses || [];
-                result.studentData.statuses = FocusPanelHeader.mergeEditedStatuses(baseStatuses, checkedValues, allCheckboxValues);
-                changed = true;
-            }
-
-            if (changed) {
-                // Debounce UI updates to prevent typing lag
-                clearTimeout(this._uiUpdateTimeout);
-                this._uiUpdateTimeout = setTimeout(() => {
-                    // Refresh Status (Badge) - This dispatch event for List View update
-                    FocusPanelStatus.refreshAppreciationStatus();
-                    // Note: We deliberately update the model LIVE so ListViewManager._isResultDirty sees changes immediately
-                    // LIVE UPDATE: Update the List View row immediately to show/hide dirty indicator
-                    this._updateListRow(result);
-                }, 300);
-            }
-        };
-
-        // Attach global listeners for these inputs (delegated)
-        document.addEventListener('input', handleDataChange);
-        document.addEventListener('change', handleDataChange);
-
-
-
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (!this.isOpen() || UI.isAnyModalOpen()) return;
-            const activeEl = document.activeElement;
-            const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-
-            // [NEW] Shortcut: Ctrl + Enter to launch generation
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') return;
-                this.generate();
-                return;
-            }
-
-            if (e.key === 'Escape') {
-                const popover = document.getElementById('historyPopover');
-                if (popover) {
-                    popover.remove();
-                    const indicator = document.getElementById('focusHistoryIndicator');
-                    indicator?.classList.remove('active');
-                    return;
-                }
-                if (SpeechRecognitionManager.isRecording()) {
-                    SpeechRecognitionManager.stop();
-                    return;
-                }
-                if (this._activeGenerations.has(this.currentStudentId)) {
-                    this._isCancellingGeneration = true;
-                    this._cancelGenerationForStudent(this.currentStudentId);
-                    setTimeout(() => { this._isCancellingGeneration = false; }, 300);
-                    return;
-                }
-                this.close();
-            } else if (e.key === 'ArrowLeft' && !isEditing) {
-                e.preventDefault();
-                FocusPanelNavigation.navigatePrev();
-            } else if (e.key === 'ArrowRight' && !isEditing) {
-                e.preventDefault();
-                FocusPanelNavigation.navigateNext();
-            }
-        });
-
-        // Refinement & Appreciation (Existing logic)
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            refinementOptions.addEventListener('click', (e) => {
-                const btn = e.target.closest('[data-refine-type]');
-                if (btn && !btn.classList.contains('disabled')) {
-                    this._refineAppreciation(btn.dataset.refineType);
-                    btn.blur(); // Remove focus after click to prevent sticky focus rings
-                }
-            });
-
-            // [NEW] Right-click to preview the refinement prompt
-            refinementOptions.addEventListener('contextmenu', (e) => {
-                const btn = e.target.closest('[data-refine-type]');
-                if (btn) {
-                    e.preventDefault();
-                    this._showRefinementPreview(btn.dataset.refineType);
-                    btn.blur();
-                }
-            });
-        }
-
-        const appreciationText = document.getElementById('focusAppreciationText');
-        if (appreciationText) {
-            // Use 'input' logic to reliably detect manual edits
-            appreciationText.addEventListener('input', () => {
-                this._isAppreciationEdited = true;
-                FocusPanelStatus.updateWordCount();
-
-                const content = appreciationText.textContent?.trim() || '';
-                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                const isGenerating = FocusPanelStatus._isGenerating(this.currentStudentId);
-
-                if (result && !isGenerating) {
-                    const hasRealContent = FocusPanelStatus._hasRealContent(content);
-
-                    if (hasRealContent) {
-                        // Universal Rule: User Input = Manual Ownership
-                        // Transitions from AI, Imported, Empty, or Legacy states to 'manual'
-                        if (result.appreciationSource !== 'manual' || result.wasGenerated === true) {
-                            result.appreciationSource = 'manual';
-                            result.wasGenerated = false;
-                        }
-
-                        result.errorMessage = null;
-                        result.errorPeriod = null;
-
-                        result.appreciation = content;
-                        if (result.studentData?.periods?.[appState.currentPeriod]) {
-                            result.studentData.periods[appState.currentPeriod].appreciation = content;
-                        }
-                    } else {
-                        result.appreciation = '';
-                        if (result.studentData?.periods?.[appState.currentPeriod]) {
-                            result.studentData.periods[appState.currentPeriod].appreciation = '';
-                        }
-                    }
-
-                    // Debounce UI updates to prevent typing lag
-                    clearTimeout(this._appreciationUITimeout);
-                    this._appreciationUITimeout = setTimeout(() => {
-                        // Resync hash baseline when user pauses typing (300ms)
-                        // so dirty warning disappears in real-time without typing lag
-                        result.promptHash = PromptService.getPromptHash({
-                            ...result.studentData,
-                            id: result.id,
-                            currentPeriod: appState.currentPeriod
-                        });
-                        result.generationPeriod = appState.currentPeriod;
-                        result.generationSnapshot = null;
-
-                        FocusPanelStatus.updateSourceIndicator(result);
-                        FocusPanelStatus.updateAppreciationStatus(result);
-                        this._updateListRow(result);
-                    }, 300);
-                }
-            });
-
-            appreciationText.addEventListener('blur', () => {
-                if (!this._isAppreciationEdited) return;
-
-                const content = appreciationText.textContent?.trim() || '';
-                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-
-                if (result) {
-                    const isRealContent = FocusPanelStatus._hasRealContent(content);
-
-                    if (isRealContent) {
-                        if (content !== this._initialAppreciationText) {
-                            FocusPanelHistory.push(content, 'edit');
-                            this._initialAppreciationText = content;
-                        }
-
-                        // Resync hash baseline for manual appreciations only.
-                        // AI appreciations keep their generation hash so dirty
-                        // detection still works when context changes later.
-                        if (result.wasGenerated === false) {
-                            result.errorMessage = null;
-                            result.errorPeriod = null;
-                            result.promptHash = PromptService.getPromptHash({
-                                ...result.studentData,
-                                id: result.id,
-                                currentPeriod: appState.currentPeriod
-                            });
-                            result.generationPeriod = appState.currentPeriod;
-                            result.generationSnapshot = null;
-                        }
-
-                        this._saveContext();
-
-                        // Show "Saved" feedback for manual edits without wiping it out immediately
-                        if (result.wasGenerated === false) {
-                            FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
-                            FocusPanelStatus.updateSourceIndicator(result);
-                            this._updateListRow(result);
-                        } else {
-                            FocusPanelStatus.refreshAppreciationStatus();
-                        }
-                    } else {
-                        // Clear appreciation when content is empty/placeholder
-                        result.appreciation = '';
-                        if (result.studentData?.periods?.[appState.currentPeriod]) {
-                            result.studentData.periods[appState.currentPeriod].appreciation = '';
-                        }
-                        this._initialAppreciationText = '';
-                        FocusPanelStatus.refreshAppreciationStatus();
-                        FocusPanelStatus.updateHistoryIndicator();
-                        this._saveContext();
-                    }
-                }
-                this._isAppreciationEdited = false;
-            });
-
-            // Handle paste event to strip HTML formatting, styling, and weird margins/paddings
-            appreciationText.addEventListener('paste', (e) => {
-                e.preventDefault();
-                // Get clipboard data as plain text
-                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-                // Strip leading/trailing newlines specifically to avoid empty lines at start/end
-                const cleanText = text.replace(/^[\r\n]+|[\r\n]+$/g, '');
-
-                const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-
-                const range = selection.getRangeAt(0);
-                if (!appreciationText.contains(range.commonAncestorContainer)) return;
-
-                selection.deleteFromDocument();
-
-                const textNode = document.createTextNode(cleanText);
-                range.insertNode(textNode);
-
-                // Move cursor to after the inserted text
-                selection.collapseToEnd();
-
-                // Trigger input event to update word count and data state
-                appreciationText.dispatchEvent(new Event('input', { bubbles: true }));
-            });
-
-            appreciationText.addEventListener('keydown', (e) => {
-                if (e.ctrlKey || e.metaKey) {
-                    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); FocusPanelHistory.undo(); }
-                    else if (e.key === 'z' && e.shiftKey || e.key === 'y') { e.preventDefault(); FocusPanelHistory.redo(); }
-                }
-            });
-        }
-
-        const historyIndicator = document.getElementById('focusHistoryIndicator');
-        if (historyIndicator) {
-            historyIndicator.addEventListener('click', (e) => {
-                e.stopPropagation();
-                FocusPanelHistory.showPopover();
-            });
-        }
-
-        // History Navigation Arrows
-        const historyPrevBtn = document.getElementById('focusHistoryPrevBtn');
-        if (historyPrevBtn) {
-            historyPrevBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                FocusPanelHistory.undo();
-            });
-        }
-
-        const historyNextBtn = document.getElementById('focusHistoryNextBtn');
-        if (historyNextBtn) {
-            historyNextBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                FocusPanelHistory.redo();
-            });
-        }
-
-        // Appreciation status badge interaction (dismiss warning or regenerate)
-        const appreciationBadge = document.getElementById('focusAppreciationBadge');
-        if (appreciationBadge) {
-            appreciationBadge.addEventListener('click', () => {
-                if (!appreciationBadge.classList.contains('modified')) return;
-                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                if (!result) return;
-
-                if (result.wasGenerated === true) {
-                    // AI generated: trigger regeneration as advertised by tooltip
-                    const generateBtn = document.getElementById('focusGenerateBtn');
-                    generateBtn?.click();
-                } else {
-                    // Manual: user confirms appreciation is verified with current data
-                    result.promptHash = PromptService.getPromptHash({
-                        ...result.studentData,
-                        id: result.id,
-                        currentPeriod: appState.currentPeriod
-                    });
-                    result.generationPeriod = appState.currentPeriod;
-                    result.generationSnapshot = null;
-
-                    StorageManager.saveAppState();
-                    this._updateListRow(result);
-                    FocusPanelStatus.updateSourceIndicator(result);
-                    FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
-                }
-            });
-        }
-
-        // Note: FAB button (addStudentFab) is now handled by ImportWizardManager via the Hub
-
-        // Context textarea
-        const contextInput = document.getElementById('focusContextInput');
-        if (contextInput) {
-            contextInput.addEventListener('input', () => {
-                this._isContextEdited = true;
-                this._autoResizeTextarea(contextInput);
-                // Note: state is updated live in handleDataChange. 
-                // Saving to localStorage on every keystroke causes severe UI lag, moved to blur.
-            });
-            contextInput.addEventListener('blur', () => {
-                this._saveContext();
-                FocusPanelStatus.refreshAppreciationStatus();
-            });
-        }
-
-        // [NEW] Word Count Badge Click Listener (Quick access to Personalization)
-        // Behavior aligned with avgWordsChip in header for single source of truth
-        const wordCountBadge = document.getElementById('focusWordCount');
-        if (wordCountBadge) {
-            wordCountBadge.addEventListener('click', () => {
-                // 1. Open Personalization Modal (same as avgWordsChip)
-                const personalizationModal = document.getElementById('personalizationModal');
-                if (personalizationModal) UI.openModal(personalizationModal);
-
-                // 2. Refresh Lab data on modal open to sync with current period
-                SettingsModalListeners._updateStudentContextAndPrompt();
-
-                // 3. Use centralized highlight utility for length slider
-                UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
-            });
-        }
-
-        // Journal listeners are now handled by FocusPanelJournal module
-    },
-
-    /**
-     * Initialise les gestures natives iOS pour fermer le panneau ("Edge Swipe" et "Pull-to-Dismiss")
-     * @private
-     */
-    _initCloseGestures() {
-        const panel = document.getElementById('focusPanel');
-        if (!panel) return;
-
-        let touchStartX = null;
-        let touchStartY = null;
-        let currentX = 0;
-        let currentY = 0;
-        let isEdgeSwiping = false;
-        let isPullingDown = false;
-        let contentEl = null;
-
-        panel.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) return;
-
-            // Ignorer si on interagit avec des boutons, liens ou champs de saisie
-            if (e.target.closest('button, [role="button"], input, textarea, select, .focus-nav-btn, .close-modal-btn')) return;
-
-            // En mode édition, bloquer la gestuelle pour éviter la perte de brouillon
-            const header = document.querySelector('.focus-header');
-            if (header && header.classList.contains('editing')) return;
-
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            currentX = 0;
-            currentY = 0;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-
-            // 1. Edge Swipe: Le doigt démarre tout au bord gauche (< 30px)
-            isEdgeSwiping = touchStartX < 30;
-            isPullingDown = false;
-
-            contentEl = isAnalysisVisible
-                ? panel.querySelector('.focus-analysis-content-area')
-                : panel.querySelector('.focus-main-page .focus-content');
-
-            // 2. Pull-to-Dismiss
-            if (!isEdgeSwiping && contentEl && contentEl.scrollTop <= 0) {
-                let currentHeaderRect = null;
-                if (isAnalysisVisible) {
-                    const analysisHeader = panel.querySelector('.focus-analysis-header');
-                    currentHeaderRect = analysisHeader ? analysisHeader.getBoundingClientRect() : null;
-                } else {
-                    currentHeaderRect = header ? header.getBoundingClientRect() : null;
-                }
-
-                if (currentHeaderRect && touchStartY <= currentHeaderRect.bottom + 40) {
-                    isPullingDown = true; // Détecté
-                }
-            }
-
-            if (isEdgeSwiping || isPullingDown) {
-                const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
-                if (target) {
-                    target.style.transition = 'none';
-                    target.style.willChange = 'transform';
-                }
-            }
-        }, { passive: true });
-
-        panel.addEventListener('touchmove', (e) => {
-            if (touchStartX === null || touchStartY === null) return;
-
-            currentX = e.touches[0].clientX - touchStartX;
-            currentY = e.touches[0].clientY - touchStartY;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
-            if (!target) return;
-
-            if (isEdgeSwiping) {
-                if (currentX > 0) {
-                    if (e.cancelable) e.preventDefault();
-
-                    if (isAnalysisVisible) {
-                        target.style.transform = `translateX(${currentX}px)`;
-                    } else {
-                        const progress = Math.min(currentX / window.innerWidth, 1);
-                        target.style.transform = `translateX(${currentX}px)`;
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) backdrop.style.opacity = (1 - progress).toString();
-                    }
-                }
-            }
-            else if (isPullingDown && currentY > 0) {
-                if (currentY > Math.abs(currentX)) {
-                    if (e.cancelable) e.preventDefault();
-                    const resistance = currentY * 0.45;
-                    target.style.transform = `translateY(${resistance}px)`;
-                } else {
-                    isPullingDown = false;
-                    target.style.transition = '';
-                    target.style.transform = '';
-                }
-            }
-        }, { passive: false });
-
-        panel.addEventListener('touchend', (e) => {
-            if (touchStartX === null || touchStartY === null) return;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
-
-            if (!target) return;
-
-            if (isEdgeSwiping) {
-                const threshold = window.innerWidth * 0.3;
-                const velocity = currentX / (e.timeStamp || 1);
-
-                if (currentX > threshold || velocity > 1.5) {
-                    // => Fermeture validée
-                    this._isClosing = true;
-                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(100%)';
-
-                    if (isAnalysisVisible) {
-                        setTimeout(() => {
-                            FocusPanelAnalysis.hide();
-                            this._resetTransformations(target, null);
-                        }, 300);
-                    } else {
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) {
-                            backdrop.style.transition = 'opacity 0.3s ease';
-                            backdrop.style.opacity = '0';
-                        }
-                        setTimeout(() => {
-                            target.style.transition = 'none';
-                            this.close();
-                            this._resetTransformations(target, backdrop);
-                        }, 300);
-                    }
-                } else if (currentX > 10) {
-                    // => Rebond (Annulation après un glissement effectif)
-                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(0)';
-
-                    if (!isAnalysisVisible) {
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) {
-                            backdrop.style.transition = 'opacity 0.45s ease';
-                            backdrop.style.opacity = '1';
-                            setTimeout(() => this._resetTransformations(target, backdrop), 450);
-                        } else {
-                            setTimeout(() => this._resetTransformations(target, null), 450);
-                        }
-                    } else {
-                        setTimeout(() => this._resetTransformations(target, null), 450);
-                    }
-                } else {
-                    // Simple tap ou mouvement négligeable : réinitialisation immédiate sans délai
-                    const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
-                    this._resetTransformations(target, backdrop);
-                }
-            }
-            else if (isPullingDown) {
-                const threshold = 100; // 100px pour fermer via pull down
-                if (currentY > threshold) {
-                    // => Fermeture validée vers le bas
-                    this._isClosing = true;
-                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = `translateY(100vh)`;
-
-                    if (isAnalysisVisible) {
-                        setTimeout(() => {
-                            FocusPanelAnalysis.hide();
-                            this._resetTransformations(target, null);
-                        }, 300);
-                    } else {
-                        setTimeout(() => {
-                            target.style.transition = 'none';
-                            this.close();
-                            this._resetTransformations(target, null);
-                        }, 300);
-                    }
-                } else if (currentY > 10) {
-                    // => Rebond (Annulation après un glissement effectif)
-                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(0) translateY(0)';
-                    setTimeout(() => this._resetTransformations(target, null), 450);
-                } else {
-                    // Simple tap ou mouvement négligeable : réinitialisation immédiate sans délai
-                    this._resetTransformations(target, null);
-                }
-            }
-
-            touchStartX = null;
-            touchStartY = null;
-            currentX = 0;
-            currentY = 0;
-            isEdgeSwiping = false;
-            isPullingDown = false;
-        }, { passive: true });
-    },
-
-    /**
-     * Helper pour nettoyer les transformations en ligne après un drag
-     * @private
-     */
-    _resetTransformations(target, backdrop) {
-        if (target) {
-            target.style.transition = '';
-            target.style.transform = '';
-            target.style.willChange = '';
-        }
-        if (backdrop) {
-            backdrop.style.transition = '';
-            backdrop.style.opacity = '';
-        }
-    },
-
-    /**
-         * Auto-resize textarea based on content
-         * @param {HTMLTextAreaElement} textarea - The textarea element
-         * @private
-         */
-    _autoResizeTextarea(textarea) {
-        if (!textarea) return;
-        // Reset to 1 row to allow full shrink
-        textarea.rows = 1;
-        // Reset height to auto to get correct scrollHeight
-        textarea.style.height = 'auto';
-        
-        const maxHeight = 200;
-        const targetHeight = textarea.scrollHeight;
-        
-        if (targetHeight > maxHeight) {
-            textarea.style.height = maxHeight + 'px';
-            textarea.style.overflowY = 'auto';
-        } else {
-            // Add border offset if box-sizing is border-box to prevent rounding scroll issues
-            const computedStyle = window.getComputedStyle(textarea);
-            const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
-            const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
-            textarea.style.height = (targetHeight + borderTop + borderBottom) + 'px';
-            textarea.style.overflowY = 'hidden';
-        }
-        this.updateScrollAffordances();
+        return panel?.classList.contains('open') ?? false;
     },
 
     /**
      * Met à jour les brumes d'indication de défilement (scrims) en haut/bas et gauche/droite.
-     * Mutualisé entre le Focus Panel (par défaut), la vue principale (.main-content-wrapper),
-     * le menu déroulant des classes (#classDropdownList), la modale Mes classes (#classManagementModal .modal-body),
-     * l'assistant d'import (.import-textarea, .table-scroll-wrapper) et le Trombinoscope.
-     * @param {Element|null} [scrollEl] - Conteneur scrollable
-     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-* (par défaut scrollEl si fourni)
+     * @param {Element|null} [scrollEl]
+     * @param {Element|null} [containerEl]
      */
     updateScrollAffordances(scrollEl, containerEl) {
         const panel = !scrollEl ? document.getElementById('focusPanel') : null;
@@ -1012,9 +192,8 @@ export const FocusPanelManager = {
 
     /**
      * Attache de manière idempotente l'écouteur de scroll passif sur un conteneur
-     * et rafraîchit ses brumes d'indication immédiatement ainsi qu'au prochain frame.
-     * @param {Element|null} scrollEl - Conteneur scrollable
-     * @param {Function} [onScroll] - Callback additionnel optionnel lors du scroll
+     * @param {Element|null} scrollEl
+     * @param {Function} [onScroll]
      */
     bindScrollAffordances(scrollEl, onScroll) {
         if (!scrollEl) return;
@@ -1034,79 +213,17 @@ export const FocusPanelManager = {
         }
     },
 
-    /** Creation mode flag */
-    isCreationMode: false,
-
-
-
     /**
-     * Vérifie si le panel est ouvert
-     * @returns {boolean}
-     */
-    isOpen() {
-        const panel = document.getElementById('focusPanel');
-        return panel?.classList.contains('open') ?? false;
-    },
-
-
-
-    /**
-     * Rafraîchit les données du Focus Panel pour la période actuelle sans réinitialiser le panneau ni le scroll
+     * Rafraîchit les données du Focus Panel pour la période actuelle
      */
     refreshPeriod() {
-        if (!this.isOpen()) return;
+        const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
+        if (!openState) return;
 
         const currentPeriod = appState.currentPeriod;
 
         if (this.isCreationMode) {
-            this._renderStudentDetailsTimeline(null, true);
-
-            const gradeLabel = document.getElementById('focusCurrentGradeLabel');
-            if (gradeLabel) gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
-
-            const appreciationTitle = document.getElementById('focusAppreciationTitle');
-            if (appreciationTitle) appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(currentPeriod, false)}`;
-
-            const gradeInput = document.getElementById('focusCurrentGradeInput');
-            if (gradeInput) gradeInput.value = '';
-
-            const contextInput = document.getElementById('focusContextInput');
-            if (contextInput) contextInput.value = '';
-
-            const generateBtn = document.getElementById('focusGenerateBtn');
-            if (generateBtn) {
-                generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-            }
-
-            const prevGradesEl = document.getElementById('focusPreviousGrades');
-            if (prevGradesEl) {
-                prevGradesEl.innerHTML = '';
-                const periods = Utils.getPeriods();
-                const currentIdx = periods.indexOf(currentPeriod);
-
-                periods.forEach((p, idx) => {
-                    if (idx >= currentIdx) return;
-
-                    const chip = document.createElement('span');
-                    chip.className = 'previous-grade-chip tooltip';
-                    const periodLabel = Utils.getPeriodLabel(p, true);
-                    chip.setAttribute('data-tooltip', `${periodLabel} : Non communiqué`);
-                    const shortPeriod = Utils.getPeriodLabel(p, false);
-                    chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">NC</span>`;
-                    prevGradesEl.appendChild(chip);
-
-                    const nextPeriod = periods[idx + 1];
-                    if (nextPeriod) {
-                        const evoEl = document.createElement('span');
-                        evoEl.className = 'evolution-container-inline';
-                        if (nextPeriod === currentPeriod) {
-                            evoEl.id = 'focusCurrentEvolutionArrow';
-                        }
-                        evoEl.innerHTML = '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
-                        prevGradesEl.appendChild(evoEl);
-                    }
-                });
-            }
+            FocusPanelGrades.renderCreationModePeriod(this, currentPeriod);
             return;
         }
 
@@ -1116,14 +233,9 @@ export const FocusPanelManager = {
         if (!result) return;
 
         SpeechSynthesisManager.cancel();
-
-        // 0. Header status badges (Nouveau / Départ depend on active period)
         FocusPanelHeader.renderStatusBadges(result.studentData?.statuses || []);
-
-        // 1. Context card: Previous grades, current grade, and context input
         this._renderGradesAndContext(result, currentPeriod);
 
-        // 2. Appreciation card
         const appreciationTitle = document.getElementById('focusAppreciationTitle');
         if (appreciationTitle) {
             const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
@@ -1131,24 +243,13 @@ export const FocusPanelManager = {
         }
         this._renderAppreciationText(result);
 
-        // Reload history for the current student in the newly selected period & update indicator
         FocusPanelHistory.load(this.currentStudentId);
         FocusPanelStatus.updateHistoryIndicator();
-
-        // 3. Generate button
         this._updateGenerateButton(result);
-
-        // 4. AI indicator & Status badge
         FocusPanelStatus.updateSourceIndicator(result);
         FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-
-        // 5. Journal de bord
         FocusPanelJournal.render(result);
-
-        // 6. Navigation controls
         FocusPanelNavigation.updateControls();
-
-        // 7. Scroll affordances
         this.updateScrollAffordances();
     },
 
@@ -1161,22 +262,18 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
 
-        // If panel is already open for THIS exact student (e.g. period change)
-        if (this.isOpen() && this.currentStudentId === studentId) {
+        const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
+        if (openState && this.currentStudentId === studentId) {
             this.refreshPeriod();
             return;
         }
 
-        // CRITICAL FIX: Save context of PREVIOUS student BEFORE changing currentStudentId
-        // This prevents race conditions where user switches during generation
         if (this.currentStudentId && this.currentStudentId !== studentId) {
             SpeechRecognitionManager.abort();
             this._saveContext();
         }
 
-        // [UX Mobile] Manage History State
-        // Allows using system Back button to close panel
-        if (!this.isOpen()) {
+        if (!openState) {
             HistoryManager.pushState('focusPanel', () => {
                 this._isClosing = true;
                 this.close({ causedByHistory: true });
@@ -1186,27 +283,19 @@ export const FocusPanelManager = {
         this.currentStudentId = studentId;
         this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
 
-        // Load unified persistent history for this student
         FocusPanelHistory.load(studentId);
 
-        // Reset generate button state (only if target student is NOT being generated)
-        // If target is being generated, _renderContent will restore the loading state
         if (!this._activeGenerations.has(studentId)) {
             const generateBtn = document.getElementById('focusGenerateBtn');
             if (generateBtn) {
                 UI.hideInlineSpinner(generateBtn);
             }
-            // Reset appreciation badge state
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'none' });
         }
 
         this._renderContent(result);
-        // FocusPanelNavigation.updateControls() is handled below
-
-        // Ensure controls are updated after open
         setTimeout(() => FocusPanelNavigation.updateControls(), 0);
 
-        // Show panel
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
 
@@ -1221,24 +310,19 @@ export const FocusPanelManager = {
             focusHeader.classList.remove('scrolled');
         }
         this.updateScrollAffordances();
-
-        // Mark active row in list view for visual feedback
         this._updateActiveRow(studentId);
 
-        // Focus the panel for accessibility
         if (panel && !panel.hasAttribute('tabindex')) {
             panel.setAttribute('tabindex', '-1');
         }
         panel?.focus?.({ preventScroll: true });
         if (panel) ModalUI.activateFocusTrap?.(panel);
-
     },
 
     /**
      * Ouvre le Focus Panel en mode création (nouvel élève)
      */
     openNew() {
-        // Garantir qu'une classe active existe avant d'ajouter un élève
         let currentClass = ClassManager.getCurrentClass();
         if (!currentClass) {
             const classes = ClassManager.getAllClasses();
@@ -1257,36 +341,30 @@ export const FocusPanelManager = {
         this.currentIndex = -1;
 
         const currentPeriod = appState.currentPeriod;
+        const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
 
-        // [UX Mobile] Push history state for creation mode
-        if (!this.isOpen()) {
+        if (!openState) {
             HistoryManager.pushState('focusPanel', () => {
                 this._isClosing = true;
                 this.close({ causedByHistory: true });
             });
         }
 
-        // Create a dummy result for the new student
         const dummyResult = {
             id: null,
             nom: '',
             prenom: '',
             studentData: {
                 statuses: [],
-                periods: {}
+                periods: { [currentPeriod]: {} }
             },
             appreciation: '',
             isPending: false,
             wasGenerated: false
         };
 
-        // Initialize empty period data for current period
-        dummyResult.studentData.periods[currentPeriod] = {};
-
-        // Render the content using the standard method
         this._renderContent(dummyResult);
 
-        // Show panel
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
         if (panel) panel.classList.add('open');
@@ -1297,73 +375,49 @@ export const FocusPanelManager = {
         if (focusContent) focusContent.scrollTop = 0;
         this.updateScrollAffordances();
 
-        // Explicitly clear inputs handled by FocusPanelHeader
-
-        // Clear any stored original values to prevents "Cancel" from restoring previous student data
-        // Handled by FocusPanelHeader
-
-        // Enable Header Edit Mode (Identity + Statuses)
         FocusPanelHeader.toggleEditMode(true);
-
-        // Clear previous periods history for creation mode
         this._newStudentHistory = {};
-
-        // Render empty timeline for creation (clears previous data)
         this._renderStudentDetailsTimeline(null, true);
-
-        // Reset history state for creation mode (no student to load from)
         FocusPanelHistory.reset();
     },
 
     /**
      * Ferme le Focus Panel
-     * @param {Object} options - Options de fermeture
-     * @param {boolean} [options.causedByHistory=false] - Si true, ne tente pas de faire history.back()
+     * @param {Object} [options={}]
+     * @param {boolean} [options.causedByHistory=false]
      */
     close(options = {}) {
-        // Blur active element to dismiss keyboards and commit manual edits to history
         if (document.activeElement && document.activeElement !== document.body) {
             document.activeElement.blur();
         }
 
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
-        const wasOpen = this.isOpen();
+        const wasOpen = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
 
-        // Immediately reset any inline drag/gesture transforms so CSS transition is unblocked
         this._resetTransformations(panel, backdrop);
         const analysisPage = document.querySelector('.focus-analysis-page');
         if (analysisPage) this._resetTransformations(analysisPage, null);
 
-        // Mark as closing to defer layout/paint-heavy list and stats updates
         this._isClosing = true;
-
-        // Check if we're in creation mode BEFORE clearing state
         const wasCreationMode = this.isCreationMode;
 
-        // Exit edit mode if active (only for existing students, not creation)
         const header = document.querySelector('.focus-header');
         if (!wasCreationMode && header && header.classList.contains('editing')) {
-            FocusPanelHeader.toggleEditMode(false, true); // Cancel without saving
+            FocusPanelHeader.toggleEditMode(false, true);
         } else if (wasCreationMode && header?.classList.contains('editing')) {
-            // In creation mode: just clean up UI without triggering any save logic
             header.classList.remove('editing');
             document.querySelector('.focus-header-read')?.classList.remove('hidden');
             document.querySelector('.focus-header-edit')?.classList.remove('visible');
         }
 
-        // Stop dictation so the microphone is never left open behind a closed panel
         SpeechRecognitionManager.abort();
 
-        // Save context and identity changes before closing (NOT in creation mode)
         if (!wasCreationMode) {
             this._saveContext();
         }
 
-        // Cancel speech synthesis if active
         SpeechSynthesisManager.cancel();
-
-        // ALWAYS hide analysis page on close to reset view and inert states
         FocusPanelAnalysis.hide();
 
         if (panel) {
@@ -1377,7 +431,6 @@ export const FocusPanelManager = {
             focusHeader.classList.remove('scrolled');
         }
 
-        // Clear active row highlight and trigger closed flash animation
         if (this.currentStudentId) {
             const lastActiveRow = document.querySelector(`.student-row[data-student-id="${this.currentStudentId}"]`);
             if (lastActiveRow) {
@@ -1391,26 +444,22 @@ export const FocusPanelManager = {
                 this._closedFlashTimer = setTimeout(() => {
                     this._closedFlashTimer = null;
                     lastActiveRow.classList.remove('focus-closed-flash');
-                }, 1300); // matches CSS animation duration
+                }, 1300);
             }
         }
 
         this._clearActiveRow();
 
-        // Reset state
         this.currentStudentId = null;
         this.currentIndex = -1;
         this.isCreationMode = false;
-        // _originalHeaderValues managed by FocusPanelHeader
 
-        // [UX Mobile] History Cleanup
         if (wasOpen && !options.causedByHistory) {
             HistoryManager.handleManualClose('focusPanel');
         }
 
         if (wasOpen) {
             window.dispatchEvent(new CustomEvent('student-updated'));
-            // Defer processing of row updates and stats updates until after the close transition
             setTimeout(() => {
                 this._isClosing = false;
                 if (this._deferredRowUpdates && this._deferredRowUpdates.size > 0) {
@@ -1425,131 +474,9 @@ export const FocusPanelManager = {
         }
     },
 
-
-    /**
-     * Render the compact history timeline in the retractable menu
-     * Unified method for Read Mode (viewing) and Creation Mode (editing)
-     * @param {Object|null} studentData - Student data object (null in creation mode)
-     * @param {boolean} [isEditable=false] - Whether to render inputs for editing
-     */
-    _renderStudentDetailsTimeline(studentData, isEditable = false) {
-        const container = document.getElementById('studentDetailsTimeline');
-        if (!container) return;
-
-        container.innerHTML = '';
-        const periods = Utils.getPeriods();
-        const currentPeriod = appState.currentPeriod;
-
-        // In creation/edit mode, we might want to filter out the current period
-        // or ensure we only show previous ones if that's the desired UX.
-        // But for consistency, let's show what we have.
-        // For Creation Mode: We usually only want to input PREVIOUS periods history.
-
-        periods.forEach(periodKey => {
-            // Skip current period in creation mode (it has its own input in main view)
-            if (isEditable && periodKey === currentPeriod) return;
-
-            let grade = '-';
-            let appreciation = '';
-
-            // Data Retrieval
-            if (isEditable) {
-                // Creation Mode: Get from temporary storage
-                if (!this._newStudentHistory) this._newStudentHistory = {};
-                const savedData = this._newStudentHistory[periodKey] || {};
-                grade = savedData.grade !== undefined ? savedData.grade : '';
-                appreciation = savedData.appreciation || '';
-            } else {
-                // Read Mode: Get from student object
-                const periodData = studentData?.studentData?.periods?.[periodKey] || {};
-                grade = periodData.grade !== undefined ? periodData.grade : '-';
-                appreciation = periodData.appreciation || '';
-            }
-
-            const shortPeriod = Utils.getPeriodLabel(periodKey, false);
-
-            const item = document.createElement('div');
-            item.className = 'timeline-compact-item';
-            if (isEditable) {
-                item.classList.add('editing');
-                // Remove the forced column layout to match read-only view's row layout
-                // However, we need to ensure the content area takes full width
-
-            }
-
-            if (isEditable) {
-                // --- EDITABLE TEMPLATE ---
-                // Mirror the Read-Only Structure: Badge | Content
-                item.innerHTML = `
-                    <div class="timeline-compact-badge">${shortPeriod}</div>
-                    <div class="timeline-compact-content" style="width:100%;">
-                        <div class="timeline-compact-header" style="justify-content: space-between; margin-bottom: 8px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-weight: 600; color: var(--text-primary);">Moyenne :</span>
-                                <input type="text" class="history-grade-input-creation" data-period="${periodKey}" 
-                                    value="${Utils.escapeHtml(grade)}" 
-                                    placeholder="--" style="width:50px; text-align:center; padding:4px; border:1px solid var(--border-color); border-radius:4px; background: var(--bg-primary);">
-                            </div>
-                        </div>
-                        <textarea class="history-appreciation-input-creation" data-period="${periodKey}"
-                            placeholder="Saisissez l'appréciation pour le trimestre ${shortPeriod}..." 
-                            style="width:100%; min-height:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:0.9rem; resize:vertical; background: var(--bg-primary); line-height: 1.5;">${Utils.escapeHtml(appreciation)}</textarea>
-                    </div>
-                `;
-            } else {
-                // --- READ-ONLY TEMPLATE ---
-                item.innerHTML = `
-                    <div class="timeline-compact-badge">${shortPeriod}</div>
-                    <div class="timeline-compact-content">
-                        <div class="timeline-compact-header">
-                            <span>Moyenne : ${Utils.escapeHtml(grade)}</span>
-                        </div>
-                        ${appreciation ? `<div class="timeline-compact-appreciation">"${Utils.escapeHtml(appreciation)}"</div>` : ''}
-                    </div>
-                `;
-            }
-            container.appendChild(item);
-        });
-
-        if (isEditable) {
-            // Add listeners to save data temporarily
-            container.querySelectorAll('.history-grade-input-creation').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const period = e.target.dataset.period;
-                    const val = e.target.value.replace(',', '.');
-                    if (!this._newStudentHistory[period]) this._newStudentHistory[period] = {};
-                    this._newStudentHistory[period].grade = val;
-                });
-            });
-
-            container.querySelectorAll('.history-appreciation-input-creation').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const period = e.target.dataset.period;
-                    if (!this._newStudentHistory[period]) this._newStudentHistory[period] = {};
-                    this._newStudentHistory[period].appreciation = e.target.value;
-                });
-            });
-        }
-    },
-
-    // Header Logic delegated to FocusPanelHeader
-
-
-    /**
-     * Navigue vers l'élève précédent avec animation
-     */
-    // Navigation Logic delegated to FocusPanelNavigation module
-
-    /**
-     * Update active row highlight in list view
-     * @param {string} studentId - ID of student to mark as active
-     * @private
-     */
+    /** @private */
     _updateActiveRow(studentId) {
-        // Clear previous active
         this._clearActiveRow();
-
-        // Mark new active row
         if (studentId) {
             const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
             if (row) {
@@ -1560,17 +487,11 @@ export const FocusPanelManager = {
         }
     },
 
-    /**
-     * Clear active row highlight from all rows
-     * @private
-     */
+    /** @private */
     _clearActiveRow() {
         document.querySelectorAll('.student-row.focus-active').forEach(row => {
             row.classList.remove('focus-active');
         });
-        
-        // Defensively blur any focused elements with a slight delay
-        // to counter browser popstate focus restoration quirks.
         setTimeout(() => {
             document.querySelectorAll('.student-row:focus').forEach(row => {
                 row.blur();
@@ -1582,827 +503,14 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Cancel any pending generation for a specific student (restart behavior)
-     * @param {string} studentId - ID of student to cancel
-     * @private
-     */
-    _cancelGenerationForStudent(studentId, { restoreUI = true } = {}) {
-        if (this._activeGenerations.has(studentId)) {
-            const controller = this._activeGenerations.get(studentId);
-            controller.abort();
-            this._activeGenerations.delete(studentId);
-            this._activeGenerationStartTime = 0;
-
-            // OPTIMISTIC SYNCHRONOUS UI RESTORATION:
-            // Don't wait for network abort to unwind through async stack
-            if (restoreUI) {
-                const result = appState.generatedResults.find(r => r.id === studentId);
-                if (this.currentStudentId === studentId) {
-                    const generateBtn = document.getElementById('focusGenerateBtn');
-                    if (generateBtn) UI.hideInlineSpinner(generateBtn);
-
-                    if (result) {
-                        FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-                        this._renderAppreciationText(result);
-                        this._updateGenerateButton(result);
-                        FocusPanelStatus.updateSourceIndicator(result);
-                    }
-
-                    // Clear any generating states on refinement buttons
-                    document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
-                        b.classList.remove('is-generating');
-                    });
-                }
-
-                if (result) {
-                    this._updateListRow(result);
-                }
-                UI.updateControlButtons();
-            }
-        }
-    },
-
-    /**
-     * Affiche une prévisualisation du prompt qui serait envoyé à l'IA
-     * Triggered by right-click on Generate button
-     */
-    async _showPromptPreview() {
-        if (!this.currentStudentId) return;
-
-        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-        if (!result) return;
-
-        const currentPeriod = appState.currentPeriod;
-
-        // Helper to construct student data for prompt generation (same as generate)
-        const studentData = this._prepareStudentData(this.currentStudentId, currentPeriod, result);
-        studentData.generatedAppreciation = ''; // Explicitly clear for preview
-
-        const prompts = AppreciationsManager.getAllPrompts(studentData);
-        // We only show prompt.appreciation
-        const promptText = prompts.appreciation || '';
-
-        // Simple HTML reset/escape
-        await this._displayPromptModal(promptText, 'Prévisualisation du Prompt');
-    },
-
-    /**
-     * Copie directement le prompt dans le presse-papier (sans modal)
-     * Triggered by right-click on Copy button
-     * @private
-     */
-    async _copyPromptToClipboard() {
-        if (!this.currentStudentId) {
-            UI.showNotification('Aucun élève sélectionné', 'warning');
-            return;
-        }
-
-        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-        if (!result) return;
-
-        const currentPeriod = appState.currentPeriod;
-
-        // Use same logic as _showPromptPreview but copy directly
-        const studentData = this._prepareStudentData(this.currentStudentId, currentPeriod, result);
-        studentData.generatedAppreciation = ''; // Explicitly clear for prompt
-
-        const prompts = AppreciationsManager.getAllPrompts(studentData);
-        const promptText = prompts.appreciation || '';
-
-        if (!promptText) {
-            UI.showNotification('Impossible de générer le prompt', 'warning');
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(promptText);
-
-            this._flashCopyFeedback('copied-prompt', 'Prompt copié !');
-
-            UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
-        } catch (err) {
-            console.error('Failed to copy prompt:', err);
-            UI.showNotification('Échec de la copie du prompt', 'error');
-        }
-    },
-
-    /**
-     * Helper to prepare student data object for prompt generation
-     * Ensures consistency between Generate and Preview
-     * @param {string} studentId - Student ID
-     * @param {string} period - Target period
-     * @param {Object} result - Student result object
-     * @returns {Object} Student data object ready for AppreciationsManager
-     * @private
-     */
-    _prepareStudentData(studentId, period, result) {
-        return {
-            id: studentId, // Required for journal lookup
-            nom: result.nom,
-            prenom: result.prenom,
-            statuses: result.studentData.statuses || [],
-            periods: result.studentData.periods,
-            currentPeriod: period
-        };
-    },
-
-    /**
-     * Génère l'appréciation pour l'élève courant
-     * IMPORTANT: Captures studentId at start and verifies it hasn't changed before applying results
-     */
-    async generate() {
-        if (!this.currentStudentId || this._isCancellingGeneration) return;
-
-        // CRITICAL: Capture the student ID, period AND class at the START of generation
-        // This allows us to detect if user navigated away during async operation
-        // and ensures we save to the correct period even if user changes it
-        const generatingForStudentId = this.currentStudentId;
-        const generatingForPeriod = appState.currentPeriod;
-        const generatingForClassId = appState.currentClassId;
-
-        if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
-            return;
-        }
-
-        const result = appState.generatedResults.find(r => r.id === generatingForStudentId);
-        if (!result) return;
-
-        // If already generating for this student, cancel it
-        if (this._activeGenerations.has(generatingForStudentId)) {
-            const elapsed = Date.now() - (this._activeGenerationStartTime || 0);
-            if (elapsed < 350) return;
-
-            this._isCancellingGeneration = true;
-            this._cancelGenerationForStudent(generatingForStudentId);
-            setTimeout(() => { this._isCancellingGeneration = false; }, 300);
-            return;
-        }
-
-        this._activeGenerationStartTime = Date.now();
-
-        // Create new AbortController for this specific generation
-        const abortController = new AbortController();
-        this._activeGenerations.set(generatingForStudentId, abortController);
-        const signal = abortController.signal;
-
-        // Clear previous error for this generation attempt
-        result.errorMessage = null;
-        result.errorPeriod = null;
-
-        // Set generating skeleton on table row immediately
-        if (this.listViewManager?.setRowStatus) {
-            this.listViewManager.setRowStatus(generatingForStudentId, 'generating');
-        } else if (ListViewManager?.setRowStatus) {
-            ListViewManager.setRowStatus(generatingForStudentId, 'generating');
-        }
-
-        // Save current context before generating
-        this._saveContext();
-
-        // Get grade from focus panel
-        const gradeInput = document.getElementById('focusCurrentGradeInput');
-        const grade = gradeInput?.value.trim().replace(',', '.');
-
-        if (grade) {
-            if (!result.studentData.periods[generatingForPeriod]) {
-                result.studentData.periods[generatingForPeriod] = {};
-            }
-            result.studentData.periods[generatingForPeriod].grade = parseFloat(grade);
-        }
-
-        // Update generate button to loading
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        if (generateBtn) {
-            UI?.showInlineSpinner?.(generateBtn);
-        }
-
-        // Show pending badge and skeleton loading in appreciation area
-        FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
-        this._showAppreciationSkeleton();
-
-        try {
-            // Use existing appreciation generation logic
-            // Use centralized data preparation
-            const studentData = this._prepareStudentData(generatingForStudentId, generatingForPeriod, result);
-
-            const newResult = await AppreciationsManager.generateAppreciation(studentData, false, null, signal, 'single-student');
-
-            // Check if signal was aborted
-            if (signal.aborted) {
-                return;
-            }
-
-            // ALWAYS save the result to the correct student & period (even if user navigated away)
-            Object.assign(result, {
-                evolutions: newResult.evolutions,
-                errorMessage: newResult.errorMessage,
-                timestamp: newResult.timestamp,
-                isPending: false,
-                wasGenerated: true,
-                appreciationSource: 'ai',
-                tokenUsage: newResult.tokenUsage
-            });
-
-            if (appState.currentPeriod === generatingForPeriod) {
-                result.appreciation = newResult.appreciation;
-            }
-
-            // Also update the AI model used in studentData
-            if (newResult.studentData?.currentAIModel) {
-                result.studentData.currentAIModel = newResult.studentData.currentAIModel;
-            }
-
-            // Store hash of the prompt used for generation
-            result.promptHash = PromptService.getPromptHash({
-                ...result.studentData,
-                id: result.id,
-                currentPeriod: generatingForPeriod
-            });
-            result.generationPeriod = generatingForPeriod;
-
-            // CRITICAL FIX: Use captured period, not current one (user may have switched)
-            if (!result.studentData.periods[generatingForPeriod]) {
-                result.studentData.periods[generatingForPeriod] = {};
-            }
-            result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
-
-            const stillOnSameView =
-                this.currentStudentId === generatingForStudentId &&
-                appState.currentPeriod === generatingForPeriod &&
-                appState.currentClassId === generatingForClassId;
-
-            // Check if the result contains an error (quota exceeded, etc.)
-            if (newResult.errorMessage) {
-                if (stillOnSameView) {
-                    this._renderAppreciationText(result);
-                    UI?.showNotification?.(`Erreur : ${newResult.errorMessage}`, 'error');
-                }
-            } else if (newResult.appreciation) {
-                // Record version in history for the originating period & student
-                if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                FocusPanelHistory.load(generatingForStudentId, generatingForPeriod);
-                const hasExistingVersions = FocusPanelHistory.getVersionCount(generatingForPeriod, generatingForStudentId) > 0;
-                FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original', {
-                    studentId: generatingForStudentId,
-                    period: generatingForPeriod
-                });
-
-                if (stillOnSameView) {
-                    const appreciationEl = document.getElementById('focusAppreciationText');
-                    if (appreciationEl) {
-                        appreciationEl.classList.remove('empty');
-
-                        const targetWordCount = Utils.countWords(newResult.appreciation);
-                        FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
-
-                        const htmlHtml = Utils.cleanMarkdown(newResult.appreciation);
-                        if (typeof UI?.animateHtmlReveal === 'function') {
-                            await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
-                        } else {
-                            appreciationEl.innerHTML = htmlHtml;
-                        }
-                        this._initialAppreciationHtml = htmlHtml;
-                        this._isAppreciationEdited = false;
-                    }
-
-                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
-                    FocusPanelStatus.updateSourceIndicator(result);
-                    this._updateGenerateButton(result);
-                } else {
-                    UI?.showNotification?.(`Appréciation générée pour ${result.prenom || result.studentData?.prenom || ''}`, 'info');
-                }
-
-                // ALWAYS update the list view (regardless of current student)
-                this._updateListRow(result);
-
-                // ALWAYS persist to storage
-                StorageManager.saveAppState();
-            }
-
-        } catch (error) {
-            // If aborted, silently return (instant UI restoration & notification already performed on cancel)
-            if (signal.aborted || error.name === 'AbortError') {
-                return;
-            }
-
-            // Immediately clear active generation on error
-            if (this._activeGenerations.has(generatingForStudentId)) {
-                const currentController = this._activeGenerations.get(generatingForStudentId);
-                if (currentController && currentController.signal === signal) {
-                    this._activeGenerations.delete(generatingForStudentId);
-                }
-            }
-
-            // Persist error in the model so it appears in the table and dashboard
-            result.errorMessage = error.message;
-            result.errorPeriod = generatingForPeriod;
-
-            const stillOnSameView =
-                this.currentStudentId === generatingForStudentId &&
-                appState.currentPeriod === generatingForPeriod &&
-                appState.currentClassId === generatingForClassId;
-
-            if (stillOnSameView) {
-                UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
-                this._renderAppreciationText(result);
-            } else {
-                UI?.showNotification?.(`Échec pour ${result.prenom || result.studentData?.prenom || ''} : ${error.message}`, 'error');
-            }
-
-            this._updateListRow(result);
-            StorageManager.saveAppState();
-        } finally {
-            // Ensure we clean up the map in case of errors/exit
-            if (this._activeGenerations.has(generatingForStudentId)) {
-                const currentController = this._activeGenerations.get(generatingForStudentId);
-                if (currentController && currentController.signal === signal) {
-                    this._activeGenerations.delete(generatingForStudentId);
-                }
-            }
-
-            // Only update UI if we are truly done (no other generation took over)
-            if (!this._activeGenerations.has(generatingForStudentId)) {
-                const stillOnSameView =
-                    this.currentStudentId === generatingForStudentId &&
-                    appState.currentPeriod === generatingForPeriod &&
-                    appState.currentClassId === generatingForClassId;
-
-                if (this.currentStudentId === generatingForStudentId && generateBtn) {
-                    UI?.hideInlineSpinner?.(generateBtn);
-                }
-
-                if (stillOnSameView && result) {
-                    FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-                    this._renderAppreciationText(result);
-                    this._updateGenerateButton(result);
-                }
-
-                // ALWAYS refresh list row to ensure table matches final state
-                this._updateListRow(result);
-
-                // ALWAYS refresh header dashboard counts (error badge, validated count, smart button)
-                UI?.updateControlButtons?.();
-            }
-        }
-    },
-
-    /**
-     * Notify Focus Panel that generation started for a student from an external trigger (table/batch)
-     * @param {string} studentId
-     */
-    handleExternalGenerationStart(studentId) {
-        if (this.currentStudentId !== studentId) return;
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        if (generateBtn) UI.showInlineSpinner(generateBtn);
-        FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
-        this._showAppreciationSkeleton();
-    },
-
-    /**
-     * Notify Focus Panel that generation completed for a student from an external trigger
-     * @param {string} studentId
-     * @param {Object} result
-     * @param {boolean} [animate=true]
-     */
-    async handleExternalGenerationComplete(studentId, result, animate = true) {
-        if (this.currentStudentId !== studentId || !result) return;
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        if (generateBtn) UI.hideInlineSpinner(generateBtn);
-
-        const appreciationEl = document.getElementById('focusAppreciationText');
-        const period = appState.currentPeriod;
-        const periodApp = result.studentData?.periods?.[period]?.appreciation;
-        const effectiveApp = periodApp || ((result.generationPeriod === period) ? result.appreciation : '');
-
-        if (result.errorMessage && result.errorPeriod === period) {
-            this._renderAppreciationText(result);
-            FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-            this._updateGenerateButton(result);
-            return;
-        }
-
-        if (effectiveApp) {
-            if (appreciationEl && animate) {
-                appreciationEl.classList.remove('empty');
-                const targetWordCount = Utils.countWords(effectiveApp);
-                FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
-                const htmlHtml = Utils.cleanMarkdown(effectiveApp);
-                await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
-                this._initialAppreciationHtml = htmlHtml;
-                this._isAppreciationEdited = false;
-            } else if (appreciationEl) {
-                this._renderAppreciationText(result);
-            }
-
-            if (!result.historyPerPeriod) result.historyPerPeriod = {};
-            FocusPanelHistory.load(studentId);
-            const hasExistingVersions = FocusPanelHistory.getVersionCount() > 0;
-            FocusPanelHistory.push(effectiveApp, hasExistingVersions ? 'regenerate' : 'original');
-
-            FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
-            FocusPanelStatus.updateSourceIndicator(result);
-            this._updateGenerateButton(result);
-            try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
-        }
-    },
-
-    /**
-     * Show skeleton loading in appreciation area
-     * @private
-     */
-    _showAppreciationSkeleton() {
-        const appreciationEl = document.getElementById('focusAppreciationText');
-        if (!appreciationEl) return;
-
-        // Remove empty class to hide placeholder text during skeleton display
-        appreciationEl.classList.remove('empty');
-        // Render pure shimmering lines without redundant badge
-        appreciationEl.innerHTML = Utils.getSkeletonHTML(false, '', false, false);
-
-        // Hide stale word count and source indicator while generating
-        const wordCountEl = document.getElementById('focusWordCount');
-        if (wordCountEl) wordCountEl.innerHTML = '';
-
-        const sourceIndicator = document.getElementById('focusAiIndicator');
-        if (sourceIndicator) sourceIndicator.style.display = 'none';
-
-        // Gracefully disable refinement buttons during generation
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
-                btn.classList.add('disabled');
-            });
-        }
-
-        // Disable audio and copy controls
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) copyBtn.classList.add('disabled');
-
-        const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
-        if (speakBtn) speakBtn.classList.add('disabled');
-
-        const micBtn = document.getElementById('focusAppreciationMicBtn');
-        if (micBtn) micBtn.classList.add('disabled');
-    },
-
-    /**
-     * Update the Generate button state (Générer vs Régénérer)
-     * @param {Object} result - Student result object
-     * @private
-     */
-    _updateGenerateButton(result) {
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        if (!generateBtn) return;
-
-        // Si le bouton est en cours de chargement ou d'annulation, préserver le spinner
-        if (generateBtn.classList.contains('is-loading')) return;
-
-        // Si la dictée vocale est active sur l'appréciation, griser le bouton
-        if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
-            generateBtn.disabled = true;
-            generateBtn.classList.add('disabled');
-            const tooltipText = "Génération indisponible pendant la dictée vocale";
-            generateBtn.setAttribute('data-tooltip', tooltipText);
-            if (generateBtn._tippy) generateBtn._tippy.setContent(tooltipText);
-            return;
-        }
-
-        // Remove all state classes first
-        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
-        generateBtn.disabled = false;
-        generateBtn.classList.remove('disabled');
-
-        const currentPeriod = appState.currentPeriod;
-
-        const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
-        const hasAppreciation = periodAppreciation && periodAppreciation.trim().length > 0;
-        const wasGenerated = result?.wasGenerated === true;
-        const isCurrentPeriodGenerated = result?.generationPeriod === currentPeriod;
-
-        // Determine if this is a regeneration scenario
-        const isRegenerate = hasAppreciation && (wasGenerated && isCurrentPeriodGenerated);
-
-        // Check if data is modified (dirty state) - needs regeneration
-        const isDirty = hasAppreciation && isRegenerate && FocusPanelStatus.checkDirtyState(result);
-
-        const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
-
-        const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
-        const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
-
-        // UX LOGIC:
-        // - Primary style (btn-ai) = ACTION NEEDED → "Générer S2" first time (no appreciation)
-        // - Warning style (btn-warning) = ACTION RECOMMENDED → "Mettre à jour" when data changed
-        // - Neutral style (btn-neutral) = OPTIONAL → "Régénérer" when appreciation already exists
-        let tooltipAction = "Générer";
-        if (!hasAppreciation) {
-            // STATE 1: No appreciation yet → Bold primary style (action needed)
-            generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${shortcutKbd}`;
-            tooltipAction = "Générer";
-        } else if (isDirty) {
-            // STATE 2: Data modified since generation → Warning style (action recommended)
-            generateBtn.classList.add('btn-warning');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour ${shortcutKbd}`;
-            tooltipAction = "Mettre à jour";
-        } else {
-            // STATE 3: Appreciation exists (AI-generated, manual, or imported) → Neutral style
-            generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer ${shortcutKbd}`;
-            tooltipAction = "Régénérer";
-        }
-
-        const tooltipText = `${tooltipAction} l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>`;
-        generateBtn.setAttribute('data-tooltip', tooltipText);
-        if (generateBtn._tippy) {
-            generateBtn._tippy.setContent(tooltipText);
-        }
-    },
-
-    /**
-     * Copie l'appréciation dans le presse-papier
-     */
-    async copy() {
-        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-        if (!result) return;
-
-        // Use the main header's period as source of truth
-        const periodAppreciation = result.studentData.periods?.[appState.currentPeriod]?.appreciation;
-
-        if (!periodAppreciation || !periodAppreciation.trim()) {
-            UI.showNotification('Aucune appréciation à copier', 'warning');
-            return;
-        }
-
-        try {
-            // Strip Markdown and HTML tags for clean copy (Plain Text)
-            const cleanText = Utils.stripMarkdown(Utils.decodeHtmlEntities(periodAppreciation));
-
-            await navigator.clipboard.writeText(cleanText);
-            try { navigator?.vibrate?.(10); } catch (_) { }
-
-            this._flashCopyFeedback('copied', 'Copié !');
-        } catch (error) {
-            UI.showNotification('Erreur de copie', 'error');
-        }
-    },
-
-    /**
-     * Affiche brièvement l'état « copié » sur le bouton Copier puis le remet à zéro.
-     * L'état d'origine est constant : un second clic pendant l'animation ne peut pas le remplacer par l'état « copié ».
-     * @param {'copied'|'copied-prompt'} stateClass - Classe d'état à appliquer
-     * @param {string} label - Libellé temporaire
-     * @private
-     */
-    _flashCopyFeedback(stateClass, label) {
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (!copyBtn) return;
-
-        this._resetCopyFeedback();
-
-        copyBtn.querySelector('iconify-icon')?.setAttribute('icon', 'ph:check-bold');
-        const labelEl = copyBtn.querySelector('.btn-copy-label');
-        if (labelEl) labelEl.textContent = label;
-        copyBtn.classList.add(stateClass);
-
-        this._copyTimeoutId = setTimeout(() => this._resetCopyFeedback(), COPY_FEEDBACK_MS);
-    },
-
-    /**
-     * Remet le bouton Copier dans son état neutre (icône, libellé, classes, minuteur)
-     * @private
-     */
-    _resetCopyFeedback() {
-        if (this._copyTimeoutId) {
-            clearTimeout(this._copyTimeoutId);
-            this._copyTimeoutId = null;
-        }
-
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (!copyBtn) return;
-
-        copyBtn.classList.remove('copied', 'copied-prompt');
-        copyBtn.querySelector('iconify-icon')?.setAttribute('icon', COPY_BUTTON_ICON);
-        const labelEl = copyBtn.querySelector('.btn-copy-label');
-        if (labelEl) labelEl.textContent = COPY_BUTTON_LABEL;
-    },
-
-
-    /**
-     * Rend les notes (historiques et courante) et le contexte pour la période spécifiée
-     * @param {Object} result - Données de l'élève
-     * @param {string} currentPeriod - Période active
-     * @private
-     */
-    _renderGradesAndContext(result, currentPeriod) {
-        this._isGradeEdited = false;
-        this._isContextEdited = false;
-        const prevGradesEl = document.getElementById('focusPreviousGrades');
-        const getEvolutionHtml = (gradeA, gradeB) => {
-            if (gradeA === null || gradeA === undefined || gradeA === '' ||
-                gradeB === null || gradeB === undefined || gradeB === '') {
-                return '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
-            }
-            const valA = parseFloat(gradeA);
-            const valB = parseFloat(gradeB);
-            if (isNaN(valA) || isNaN(valB)) {
-                return '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
-            }
-
-            const diff = valB - valA;
-            const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
-            const unit = Math.abs(diff) >= 2 ? 'pts' : 'pt';
-            const evoType = Utils.getEvolutionType(diff);
-
-            let arrowIcon = 'ph:arrow-right-bold';
-            let evoClass = 'stable';
-            if (['very-positive', 'positive'].includes(evoType)) {
-                arrowIcon = 'ph:arrow-up-right-bold';
-                evoClass = 'positive';
-            } else if (['very-negative', 'negative'].includes(evoType)) {
-                arrowIcon = 'ph:arrow-down-right-bold';
-                evoClass = 'negative';
-            }
-
-            return `<span class="grade-evolution ${evoClass} tooltip" data-tooltip="${diffText} ${unit}"><iconify-icon icon="${arrowIcon}"></iconify-icon></span>`;
-        };
-
-        const getTooltipText = (period, gradeVal, evalCount, isCurrent = false) => {
-            const periodLabel = Utils.getPeriodLabel(period, true);
-            const hasGrade = (gradeVal !== undefined && gradeVal !== null && gradeVal !== '');
-            const displayGrade = hasGrade
-                ? parseFloat(gradeVal).toFixed(1).replace('.', ',')
-                : (isCurrent ? '--' : 'NC');
-            const suffix = isCurrent ? ' (Période actuelle)' : '';
-            let tooltip = `${periodLabel}${suffix} : ${hasGrade ? displayGrade : (isCurrent ? 'En attente de note' : 'Non communiqué')}`;
-            if (typeof evalCount === 'number') {
-                tooltip += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
-            }
-            return tooltip;
-        };
-
-        if (prevGradesEl) {
-            prevGradesEl.innerHTML = '';
-            const periods = Utils.getPeriods();
-            const currentIdx = periods.indexOf(currentPeriod);
-
-            periods.forEach((period, idx) => {
-                if (idx >= currentIdx) return; // Only past periods
-                const periodData = result.studentData.periods?.[period] || {};
-                const grade = periodData.grade;
-                const evalCount = periodData.evaluationCount;
-
-                // Show chip for ALL past periods (even if empty) for consistency
-                const chip = document.createElement('span');
-                chip.className = 'previous-grade-chip';
-                const hasGrade = (grade !== undefined && grade !== null && grade !== '');
-                const displayGrade = hasGrade
-                    ? parseFloat(grade).toFixed(1).replace('.', ',')
-                    : 'NC';
-
-                const gradeClass = hasGrade
-                    ? Utils.getGradeClass(parseFloat(grade))
-                    : '';
-
-                // Add tooltip showing period info and evaluation count if available
-                const tooltipText = getTooltipText(period, grade, evalCount, false);
-                chip.classList.add('tooltip');
-                chip.setAttribute('data-tooltip', tooltipText);
-
-                const shortPeriod = Utils.getPeriodLabel(period, false);
-                chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value ${gradeClass}">${displayGrade}</span>`;
-                prevGradesEl.appendChild(chip);
-
-                // Add evolution arrow between this past grade and the next grade (or current input)
-                const nextPeriod = periods[idx + 1];
-                if (nextPeriod) {
-                    let nextGrade = null;
-                    if (nextPeriod === currentPeriod) {
-                        const currentGradeVal = result.studentData.periods?.[currentPeriod]?.grade;
-                        nextGrade = (currentGradeVal !== undefined && currentGradeVal !== null && currentGradeVal !== '')
-                            ? parseFloat(currentGradeVal)
-                            : null;
-                    } else {
-                        const nextPeriodData = result.studentData.periods?.[nextPeriod] || {};
-                        nextGrade = (nextPeriodData.grade !== undefined && nextPeriodData.grade !== null && nextPeriodData.grade !== '')
-                            ? parseFloat(nextPeriodData.grade)
-                            : null;
-                    }
-
-                    const pastGradeNum = (grade !== undefined && grade !== null && grade !== '') ? parseFloat(grade) : null;
-                    const evoHtml = getEvolutionHtml(pastGradeNum, nextGrade);
-
-                    const evoEl = document.createElement('span');
-                    evoEl.className = 'evolution-container-inline';
-                    if (nextPeriod === currentPeriod) {
-                        evoEl.id = 'focusCurrentEvolutionArrow';
-                    }
-                    evoEl.innerHTML = evoHtml;
-                    prevGradesEl.appendChild(evoEl);
-                }
-            });
-        }
-
-        // Current Grade Input
-        const gradeLabel = document.getElementById('focusCurrentGradeLabel');
-        if (gradeLabel) {
-            gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
-        }
-
-        const gradeInput = document.getElementById('focusCurrentGradeInput');
-        if (gradeInput) {
-            const currentPeriodData = result.studentData.periods?.[currentPeriod] || {};
-            const currentGrade = currentPeriodData.grade;
-            const evalCount = currentPeriodData.evaluationCount;
-
-            gradeInput.value = (currentGrade !== undefined && currentGrade !== null)
-                ? parseFloat(currentGrade).toFixed(1).replace('.', ',')
-                : '';
-
-            const initialGradeClass = (currentGrade !== undefined && currentGrade !== null)
-                ? Utils.getGradeClass(currentGrade)
-                : '';
-            gradeInput.className = `context-grade-input custom-input grade-value ${initialGradeClass}`;
-
-            const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
-            if (gradeWrapper) {
-                gradeWrapper.classList.add('tooltip');
-                gradeWrapper.setAttribute('data-tooltip', getTooltipText(currentPeriod, currentGrade, evalCount, true));
-            }
-
-            // Add input listener for grade changes
-            gradeInput.oninput = () => {
-                this._isGradeEdited = true;
-                const val = gradeInput.value.replace(',', '.');
-                const grade = parseFloat(val);
-                
-                gradeInput.className = 'context-grade-input custom-input grade-value';
-                
-                let gradeToSave = null;
-                if (!isNaN(grade)) {
-                    const gradeClass = Utils.getGradeClass(grade);
-                    if (gradeClass) {
-                        gradeInput.classList.add(gradeClass);
-                    }
-                    gradeToSave = grade;
-                }
-                
-                if (this.currentStudentId) {
-                    const r = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                    if (r) {
-                        if (!r.studentData.periods[currentPeriod]) {
-                            r.studentData.periods[currentPeriod] = {};
-                        }
-                        r.studentData.periods[currentPeriod].grade = gradeToSave;
-                        FocusPanelStatus.checkIfDataModified();
-                        
-                        const arrowEl = document.getElementById('focusCurrentEvolutionArrow');
-                        if (arrowEl) {
-                            const periods = Utils.getPeriods();
-                            const currentIdx = periods.indexOf(currentPeriod);
-                            if (currentIdx > 0) {
-                                const prevPeriod = periods[currentIdx - 1];
-                                const prevGradeVal = r.studentData.periods?.[prevPeriod]?.grade;
-                                const prevGradeNum = (prevGradeVal !== undefined && prevGradeVal !== null && prevGradeVal !== '')
-                                    ? parseFloat(prevGradeVal)
-                                    : null;
-                                
-                                arrowEl.innerHTML = getEvolutionHtml(prevGradeNum, gradeToSave);
-                            }
-                        }
-
-                        if (gradeWrapper) {
-                            TooltipsUI.updateTooltip(gradeWrapper, getTooltipText(currentPeriod, gradeToSave, evalCount, true));
-                        }
-                    }
-                }
-            };
-            gradeInput.onchange = gradeInput.oninput;
-        }
-
-        // Context Textarea
-        const contextInput = document.getElementById('focusContextInput');
-        if (contextInput) {
-            const periodContext = result.studentData.periods?.[currentPeriod]?.context || '';
-            contextInput.value = periodContext;
-            this._autoResizeTextarea(contextInput);
-        }
-    },
-
-    /**
-     * Rend le contenu du Focus Panel - "Ultima" Redesign
-     * Popule les éléments HTML existants au lieu de les remplacer
+     * Rend le contenu du Focus Panel
      * @param {Object} result - Données de l'élève
      * @private
      */
     _renderContent(result) {
-        // Cancel speech synthesis when switching students
         SpeechSynthesisManager.cancel();
-
-        // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
         this._resetCopyFeedback();
 
-        // Reset Refinement Buttons loading states to prevent bleed when switching students
         const refinementOptions = document.getElementById('focusRefinementOptions');
         if (refinementOptions) {
             refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
@@ -2411,77 +519,38 @@ export const FocusPanelManager = {
         }
 
         const currentPeriod = appState.currentPeriod;
-
         this._isAppreciationEdited = false;
         this._isGradeEdited = false;
         this._isContextEdited = false;
 
-        // Exit creation mode when viewing existing student
-        // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
-
-        // === 0. HEADER: Avatar ===
-        // Avatar is now ONLY editable in edit mode (toggled by FocusPanelHeader)
-        // In read mode, avatar is display-only
         const avatarContainer = document.getElementById('focusAvatarContainer');
         if (avatarContainer) {
             avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
             avatarContainer.classList.add('focus-panel-avatar-container');
-
-            // Store result ID for later reference by edit mode
             avatarContainer.dataset.studentId = result.id || '';
-
-            // Avatar is NOT editable in read mode - just display
-            // Edit mode will enable interactivity via FocusPanelHeader.toggleEditMode()
         }
 
-        // === 1. HEADER: Student Name & Badges ===
         FocusPanelHeader.updateHeaderName(result);
-
-        // === 2. HEADER: Status Badges ===
         FocusPanelHeader.renderStatusBadges(result.studentData.statuses || []);
-
-        // === 3-6. CONTEXT CARD: Grades & Context ===
         this._renderGradesAndContext(result, currentPeriod);
 
-        // === 7. APPRECIATION CARD: Title & Text Content ===
         const appreciationTitle = document.getElementById('focusAppreciationTitle');
         if (appreciationTitle) {
             const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
             appreciationTitle.textContent = `Appréciation ${periodLabel}`;
         }
         this._renderAppreciationText(result);
-
-        // === 8. FOOTER: Generate Button State (Générer vs Régénérer) ===
         this._updateGenerateButton(result);
-
-        // === 9. Copy Button State & 10. Refinement Buttons ===
-        // Handled dynamically by FocusPanelStatus.updateWordCount() triggered in _renderAppreciationText
-        // or by Observer to ensure disabled state matches content emptiness.
-
-        // === 11. AI INDICATOR (✨) - Provenance info ===
         FocusPanelStatus.updateSourceIndicator(result);
-
-        // === 12. STATUS BADGE - Freshness state (generated, modified, pending) ===
         FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-
-        // === 13. JOURNAL DE BORD ===
         FocusPanelJournal.render(result);
-
-        // === 14. HISTORY INDICATOR ===
         FocusPanelStatus.updateHistoryIndicator();
-
-        // === 15. SCROLL AFFORDANCES ===
         this.updateScrollAffordances();
     },
 
-
-
-
-
-
     /**
-     * Renders the appreciation text area (handles skeleton vs content)
-     * @param {Object} result - Student result object
+     * Rend la zone de texte de l'appréciation
+     * @param {Object} result
      * @private
      */
     _renderAppreciationText(result) {
@@ -2491,55 +560,35 @@ export const FocusPanelManager = {
         if (!appreciationEl) return;
 
         const currentPeriod = appState.currentPeriod;
-        let hasAppreciation = false;
-
-        // Check if this student has a generation in progress
         const isGenerating = this._activeGenerations.has(result.id);
 
         if (isGenerating) {
-            // Restore loading state for this student
             this._showAppreciationSkeleton();
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
-
-            // Also restore Generate button loading state
             const generateBtn = document.getElementById('focusGenerateBtn');
-            if (generateBtn) {
-                UI.showInlineSpinner(generateBtn);
-            }
-
-            hasAppreciation = false;
+            if (generateBtn) UI.showInlineSpinner(generateBtn);
         } else if (result.errorMessage && result.errorPeriod === currentPeriod) {
-            // Error state for current period — do not overwrite textarea with error text
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
-
             if (periodAppreciation && periodAppreciation.trim()) {
                 appreciationEl.innerHTML = Utils.cleanMarkdown(periodAppreciation);
                 appreciationEl.classList.remove('empty');
                 appreciationEl.classList.add('filled');
-                hasAppreciation = true;
             } else {
                 appreciationEl.textContent = '';
                 appreciationEl.classList.add('empty');
                 appreciationEl.classList.remove('filled');
-                hasAppreciation = false;
             }
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: result.errorMessage });
         } else {
-            // Normal rendering: Get appreciation for the CURRENT period specifically
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
-
             if (periodAppreciation && periodAppreciation.trim()) {
-                // Render with Markdown support (checking for entities)
                 appreciationEl.innerHTML = Utils.cleanMarkdown(periodAppreciation);
                 appreciationEl.classList.remove('empty');
                 appreciationEl.classList.add('filled');
-                hasAppreciation = true;
             } else {
-                // Apply empty state class directly on the element for proper styling
-                appreciationEl.textContent = ''; // Clear content to show ::before placeholder
+                appreciationEl.textContent = '';
                 appreciationEl.classList.add('empty');
                 appreciationEl.classList.remove('filled');
-                hasAppreciation = false;
             }
         }
         this._initialAppreciationHtml = appreciationEl.innerHTML;
@@ -2549,15 +598,14 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Public method to save current context (called by UIManager before period switch)
-     * This ensures context/grade/appreciation edits are saved to the correct period
+     * Sauvegarde publique du contexte courant (appelée notamment par UIManager avant un changement de période)
      */
     saveCurrentContext() {
         this._saveContext();
     },
 
     /**
-     * Sauvegarde le contexte avant de quitter
+     * Sauvegarde le contexte, la note et l'appréciation édités avant de quitter
      * @private
      */
     _saveContext() {
@@ -2569,19 +617,14 @@ export const FocusPanelManager = {
         const currentPeriod = appState.currentPeriod;
         let hasChanged = false;
 
-        // Save context only if edited by user
         if (this._isContextEdited) {
             const contextInput = document.getElementById('focusContextInput');
             if (contextInput) {
                 const newContext = contextInput.value.trim();
                 const existingContext = result.studentData.periods?.[currentPeriod]?.context ?? '';
                 if (newContext !== existingContext) {
-                    if (!result.studentData.periods) {
-                        result.studentData.periods = {};
-                    }
-                    if (!result.studentData.periods[currentPeriod]) {
-                        result.studentData.periods[currentPeriod] = {};
-                    }
+                    if (!result.studentData.periods) result.studentData.periods = {};
+                    if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
                     result.studentData.periods[currentPeriod].context = newContext === '' ? undefined : newContext;
                     hasChanged = true;
                 }
@@ -2589,7 +632,6 @@ export const FocusPanelManager = {
             this._isContextEdited = false;
         }
 
-        // Save grade only if edited by user
         if (this._isGradeEdited) {
             const gradeInput = document.getElementById('focusCurrentGradeInput');
             if (gradeInput) {
@@ -2597,12 +639,8 @@ export const FocusPanelManager = {
                 const newGrade = gradeStr === '' ? null : parseFloat(gradeStr);
                 const existingGrade = result.studentData.periods?.[currentPeriod]?.grade ?? null;
                 if (newGrade !== existingGrade) {
-                    if (!result.studentData.periods) {
-                        result.studentData.periods = {};
-                    }
-                    if (!result.studentData.periods[currentPeriod]) {
-                        result.studentData.periods[currentPeriod] = {};
-                    }
+                    if (!result.studentData.periods) result.studentData.periods = {};
+                    if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
                     result.studentData.periods[currentPeriod].grade = newGrade;
                     hasChanged = true;
                 }
@@ -2610,7 +648,6 @@ export const FocusPanelManager = {
             this._isGradeEdited = false;
         }
 
-        // Save appreciation text only if edited by user
         const isGeneratingForThisStudent = this._activeGenerations.has(this.currentStudentId);
         const appreciationEl = document.getElementById('focusAppreciationText');
 
@@ -2622,9 +659,6 @@ export const FocusPanelManager = {
                 .trim();
 
             if (rawHtml && normalizedText !== '' && !isSkeleton) {
-                // PERIOD GUARD: Only save DOM content into the current period if it genuinely
-                // belongs to it. This prevents S1 appreciation (still in result.appreciation)
-                // from being written into periods['S2'] when the user merely opens/closes the panel.
                 const periodAlreadyHasContent = !!(result.studentData.periods?.[currentPeriod]?.appreciation?.trim());
                 const resultBelongsToCurrentPeriod = result.generationPeriod === currentPeriod;
 
@@ -2634,12 +668,8 @@ export const FocusPanelManager = {
                         result.copied = false;
                         result.errorMessage = null;
                         result.errorPeriod = null;
-                        if (!result.studentData.periods) {
-                            result.studentData.periods = {};
-                        }
-                        if (!result.studentData.periods[currentPeriod]) {
-                            result.studentData.periods[currentPeriod] = {};
-                        }
+                        if (!result.studentData.periods) result.studentData.periods = {};
+                        if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
                         result.studentData.periods[currentPeriod].appreciation = normalizedText;
                         result.isPending = false;
                         this._initialAppreciationHtml = rawHtml;
@@ -2647,7 +677,6 @@ export const FocusPanelManager = {
                     }
                 }
             } else if (normalizedText === '') {
-                // User explicitly cleared the appreciation
                 const existingAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation || '';
                 if (existingAppreciation !== '') {
                     result.appreciation = '';
@@ -2662,13 +691,8 @@ export const FocusPanelManager = {
         }
 
         if (hasChanged) {
-            // Persist to storage
             StorageManager.saveAppState();
-
-            // Refresh header stats (avgWordsChip) after any context/text/grade change
             UI?.updateStats?.();
-
-            // Refresh appreciation status (dirty check)
             FocusPanelStatus.refreshAppreciationStatus();
         }
     },
@@ -2681,7 +705,6 @@ export const FocusPanelManager = {
     async _updateListRow(result) {
         if (!result) return;
 
-        // Sync with appState.filteredResults
         const filteredIndex = appState.filteredResults?.findIndex(r => r.id === result.id);
         if (filteredIndex > -1) {
             appState.filteredResults[filteredIndex] = {
@@ -2701,16 +724,12 @@ export const FocusPanelManager = {
 
         try {
             let manager = this.listViewManager;
-
-            // Fallback: If injected manager is missing or invalid, try global or static import
             if (!manager || !manager.updateStudentRow) {
                 manager = ListViewManager;
             }
 
             if (manager && manager.updateStudentRow) {
                 const updated = manager.updateStudentRow(result.id);
-
-                // If the row doesn't exist (returns false), we need to full render to ADD it
                 if (!updated && AppreciationsManager) {
                     AppreciationsManager.renderResults(result.id, 'new');
                 }
@@ -2721,14 +740,34 @@ export const FocusPanelManager = {
             console.error('[FocusPanelManager] Failed to update list row:', e);
         }
 
-        // Centralized stats refresh — single source of truth for all Focus Panel mutations
-        // (generate, refine, manual edit, speech input, etc.)
         UI?.updateStats?.();
     },
 
+    // --- Délégations vers FocusPanelEvents ---
+    _setupEventListeners() { return FocusPanelEvents.setupEventListeners(this); },
+    _initCloseGestures() { return FocusPanelEvents.initCloseGestures(this); },
+    _resetTransformations(target, backdrop) { return FocusPanelEvents.resetTransformations(target, backdrop); },
 
+    // --- Délégations vers FocusPanelGrades ---
+    _autoResizeTextarea(textarea) { return FocusPanelGrades.autoResizeTextarea(this, textarea); },
+    _renderStudentDetailsTimeline(studentData, isEditable = false) { return FocusPanelGrades.renderStudentDetailsTimeline(this, studentData, isEditable); },
+    _renderGradesAndContext(result, currentPeriod) { return FocusPanelGrades.renderGradesAndContext(this, result, currentPeriod); },
 
-    // Refinement functions delegated to FocusPanelRefinement
+    // --- Délégations vers FocusPanelGenerator ---
+    _cancelGenerationForStudent(studentId, options) { return FocusPanelGenerator.cancelGenerationForStudent(this, studentId, options); },
+    _showPromptPreview() { return FocusPanelGenerator.showPromptPreview(this); },
+    _copyPromptToClipboard() { return FocusPanelGenerator.copyPromptToClipboard(this); },
+    _prepareStudentData(studentId, period, result) { return FocusPanelGenerator.prepareStudentData(studentId, period, result); },
+    generate() { return FocusPanelGenerator.generate(this); },
+    handleExternalGenerationStart(studentId) { return FocusPanelGenerator.handleExternalGenerationStart(this, studentId); },
+    handleExternalGenerationComplete(studentId, result, animate = true) { return FocusPanelGenerator.handleExternalGenerationComplete(this, studentId, result, animate); },
+    _showAppreciationSkeleton() { return FocusPanelGenerator.showAppreciationSkeleton(); },
+    _updateGenerateButton(result) { return FocusPanelGenerator.updateGenerateButton(result); },
+    copy() { return FocusPanelGenerator.copy(this); },
+    _flashCopyFeedback(stateClass, label) { return FocusPanelGenerator.flashCopyFeedback(this, stateClass, label); },
+    _resetCopyFeedback() { return FocusPanelGenerator.resetCopyFeedback(this); },
+
+    // --- Délégations vers FocusPanelRefinement ---
     _showRefinementPreview(refineType) { return FocusPanelRefinement.showPreview(refineType); },
     _displayPromptModal(promptText, title) { return FocusPanelRefinement.displayPromptModal(promptText, title); },
     _refineAppreciation(refineType) { return FocusPanelRefinement.apply(refineType); }

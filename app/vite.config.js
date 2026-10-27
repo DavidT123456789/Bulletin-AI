@@ -139,6 +139,7 @@ export default defineConfig({
           }
           if (
             normalizedId.includes('/src/managers/FocusPanel') ||
+            normalizedId.includes('/src/managers/focus/') ||
             normalizedId.includes('/src/managers/JournalManager') ||
             normalizedId.includes('/src/managers/VariationsManager')
           ) {

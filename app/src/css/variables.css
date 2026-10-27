@@ -1,7 +1,14 @@
 /* ====================================================================
    NEBULA DESIGN SYSTEM - APP VARIABLES
    ==================================================================== */
-:root {
+:root,
+[data-theme="light"] {
+    /* --- Niveau 1 : Primitives (Palette brute — ne jamais utiliser directement dans les composants) --- */
+    --palette-zinc-50: #fafafa;
+    --palette-zinc-100: #f4f4f5;
+    --palette-zinc-900: #18181b;
+    --palette-zinc-950: #09090b;
+
     /* --- Palette Nebula (Unified Blue/Purple - Light Mode) --- */
     /* Primary: Blue (Standard Tailwind Blue 500) */
     --primary-color: #3b82f6;
@@ -10,14 +17,16 @@
     --primary-bright: var(--primary-color);
     --primary-bright-rgb: var(--primary-color-rgb);
 
-    /* Accent: Purple (Tailwind Purple 600) */
-    --accent-color: #9333ea;
-    --accent-rgb: 147, 51, 234;
+    /* Accent: Purple (Tailwind Purple 600 — Niveau 3 préfixé sans collision locale) */
+    --brand-accent-color: #9333ea;
+    --brand-accent-rgb: 147, 51, 234;
+    --accent-color: var(--brand-accent-color);
+    --accent-rgb: var(--brand-accent-rgb);
 
-    /* Neutres : Palette Minérale Neutre Absolue (100% Achromatique) */
-    --bg-color: #f4f4f4;
-    --bg-color-rgb: 244, 244, 244;
-    /* Pure Neutral Satin Background (R=G=B=244) */
+    /* --- Niveau 2 : Tokens Sémantiques Adaptatifs (Light Mode) --- */
+    --bg-color: #f7f7f8;
+    --bg-color-rgb: 247, 247, 248;
+    /* Aligné avec le script anti-FOUC de app.html et ThemeManager */
     --bg-secondary: #ededed;
     /* Muted Neutral Control Surfaces */
     --bg-tertiary: #e5e5e5;
@@ -27,14 +36,19 @@
 
     --surface-color: #ffffff;
     --surface-color-rgb: 255, 255, 255;
+    --surface-1: #ffffff;
+    --surface-2: var(--palette-zinc-100);
+    --surface-elevated: rgba(255, 255, 255, 0.88);
 
+    --border-subtle: rgba(24, 24, 27, 0.06);
+    --border-default: rgba(24, 24, 27, 0.10);
     --border-color: rgba(161, 161, 170, 0.15);
     /* Zinc 400 with opacity */
     --border-color-strong: rgba(0, 0, 0, 0.1);
     --border-color-hover: rgba(0, 0, 0, 0.2);
 
     /* Texte : Zinc Neutral */
-    --text-primary: #18181b;
+    --text-primary: var(--palette-zinc-900);
     /* Zinc 900 */
     --text-secondary: #52525b;
     --text-secondary-rgb: 82, 82, 91;
@@ -286,8 +300,8 @@
     /* --- Brand Tokens --- */
     --brand-primary: var(--primary-color);
     --brand-primary-rgb: var(--primary-color-rgb);
-    --brand-purple: var(--accent-color);
-    --brand-purple-rgb: var(--accent-rgb);
+    --brand-purple: var(--brand-accent-color);
+    --brand-purple-rgb: var(--brand-accent-rgb);
 
     /* Standard UI Highlight / Drop Target (Neutral Minimalist — Independent of custom accent colors) */
     --highlight-standard-border: rgba(24, 24, 27, 0.45);
@@ -337,7 +351,15 @@
     --modal-border: 1px solid var(--border-color);
     --modal-shadow: var(--shadow-lg);
 
+    /* --- Niveau 3 : Tokens de Composants Préfixés (Sans collision) --- */
+    --seg-ctrl-padding: 3px;
+    --seating-padding: 16px;
+
     /* Layout Tokens */
+    --modal-width-sm: 480px;
+    --modal-width-md: 680px;
+    --modal-width-lg: 960px;
+    --modal-width-xl: 1180px;
     --modal-width: 900px;
     --modal-max-height: 90vh;
     --modal-padding: 16px;
@@ -398,26 +420,31 @@
     --neutral-light: rgba(161, 161, 170, 0.15);
     /* Zinc 400 tint */
 
-    --bg-color: #09090b;
+    --bg-color: var(--palette-zinc-950);
     --bg-color-rgb: 9, 9, 11;
     /* Zinc 950 */
-    --bg-secondary: #18181b;
+    --bg-secondary: var(--palette-zinc-900);
     /* Zinc 900 */
     --bg-tertiary: #27272a;
     /* Zinc 800 */
 
-    --surface-color: #18181b;
+    --surface-color: var(--palette-zinc-900);
     /* Zinc 900 */
     --surface-color-rgb: 24, 24, 27;
+    --surface-1: var(--palette-zinc-900);
+    --surface-2: #27272a;
+    --surface-elevated: rgba(24, 24, 27, 0.88);
 
     --bg-hover: #27272a;
     /* Zinc 800 */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.10);
     --border-color: rgba(255, 255, 255, 0.06);
     /* Harmonized to fix table border intensity mismatch */
     --border-color-strong: rgba(255, 255, 255, 0.12);
     --border-color-hover: rgba(255, 255, 255, 0.24);
 
-    --text-primary: #fafafa;
+    --text-primary: var(--palette-zinc-50);
     /* Zinc 50 */
     --text-secondary: #a1a1aa;
     /* Zinc 400 */
