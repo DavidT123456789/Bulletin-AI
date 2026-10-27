@@ -5,9 +5,6 @@ import { UI } from './managers/UIManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
-import { SeatingChartManager } from './managers/SeatingChartManager.js';
-import { ImportWizardManager } from './managers/ImportWizardManager.js';
-import { TrombinoscopeManager } from './managers/TrombinoscopeManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -34,8 +31,6 @@ const init = () => {
         window.AppreciationsManager = AppreciationsManager;
         window.StorageManager = StorageManager;
         window.RestoreTransitionManager = RestoreTransitionManager;
-        window.SeatingChartManager = SeatingChartManager;
-        window.TrombinoscopeManager = TrombinoscopeManager;
         window.appState = appState;
         window.DOM = DOM;
 
@@ -74,8 +69,6 @@ const init = () => {
             if (content) content.classList.add('active');
         };
 
-        window.ImportWizardManager = ImportWizardManager;
-
         window.openSettingsTab = (tabName, elementId) => {
             UI.closeAllModals();
             setTimeout(() => {
@@ -90,14 +83,18 @@ const init = () => {
 
         window.openImportWizardFromHelp = () => {
             UI.closeAllModals();
-            setTimeout(() => {
+            setTimeout(async () => {
+                const { ImportWizardManager } = await import('./managers/ImportWizardManager.js');
+                window.ImportWizardManager = ImportWizardManager;
                 ImportWizardManager.open();
             }, 200);
         };
 
         window.openTrombiWizardFromHelp = () => {
             UI.closeAllModals();
-            setTimeout(() => {
+            setTimeout(async () => {
+                const { TrombinoscopeManager } = await import('./managers/TrombinoscopeManager.js');
+                window.TrombinoscopeManager = TrombinoscopeManager;
                 TrombinoscopeManager.open();
             }, 200);
         };
@@ -222,10 +219,9 @@ function setupPWAUpdateHandler() {
             const banner = document.getElementById('pwaUpdateBanner');
             if (!banner) return;
 
-            // Populate Commit Info (Dynamic from version.json)
+            // Populate Commit Info (Dynamic from version.json, never from api.github.com)
             const populateUpdateInfo = async () => {
                 try {
-                    // Fetch latest version info (bust cache)
                     const res = await fetch('./version.json?t=' + Date.now());
                     if (res.ok) {
                         const data = await res.json();
@@ -236,12 +232,10 @@ function setupPWAUpdateHandler() {
                         const msgEl = document.getElementById('pwaCommitMsg');
                         if (msgEl && data.message) msgEl.textContent = data.message;
                     } else {
-                        // Fallback to static build constants if fetch fails
                         throw new Error('version.json fetch failed');
                     }
                 } catch (e) {
                     console.warn('[PWA] Failed to fetch dynamic version info, using static fallback:', e);
-                    // Fallback to static constants injected by Vite
                     if (typeof __COMMIT_HASH__ !== 'undefined') {
                         const hashEl = document.getElementById('pwaCommitHash');
                         if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
@@ -341,10 +335,12 @@ function setupPWAUpdateHandler() {
                     }
                 });
 
-                // Check for updates every 30 minutes
+                // Check for updates every 60 minutes only when tab is visible
                 setInterval(() => {
-                    swRegistration.update().catch(() => {});
-                }, 30 * 60 * 1000);
+                    if (document.visibilityState === 'visible') {
+                        swRegistration.update().catch(() => {});
+                    }
+                }, 60 * 60 * 1000);
 
                 // Check for updates when user returns to tab
                 document.addEventListener('visibilitychange', () => {

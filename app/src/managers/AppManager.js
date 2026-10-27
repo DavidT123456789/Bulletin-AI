@@ -19,10 +19,6 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { PwaInstallManager } from './PwaInstallManager.js';
 import { HistoryManager } from './HistoryManager.js';
-import { ImportWizardManager } from './ImportWizardManager.js';
-import { TrombinoscopeManager } from './TrombinoscopeManager.js';
-import { SeatingChartManager } from './SeatingChartManager.js';
-import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { ModelSelectionManager } from './ModelSelectionManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
@@ -118,14 +114,28 @@ export const App = {
             FocusPanelManager.init(AppreciationsManager, ListViewManager);
         });
 
-        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard)
-        await this._safeInit('ImportWizardManager', () => ImportWizardManager.init());
-        await this._safeInit('TrombinoscopeManager', () => TrombinoscopeManager.init());
-        await this._safeInit('SeatingChartManager', () => {
+        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard) chargés dynamiquement
+        await this._safeInit('ImportWizardManager', async () => {
+            const { ImportWizardManager } = await import('./ImportWizardManager.js');
+            window.ImportWizardManager = ImportWizardManager;
+            ImportWizardManager.init();
+        });
+        await this._safeInit('TrombinoscopeManager', async () => {
+            const { TrombinoscopeManager } = await import('./TrombinoscopeManager.js');
+            window.TrombinoscopeManager = TrombinoscopeManager;
+            TrombinoscopeManager.init();
+        });
+        await this._safeInit('SeatingChartManager', async () => {
+            const { SeatingChartManager } = await import('./SeatingChartManager.js');
+            window.SeatingChartManager = SeatingChartManager;
             SeatingChartManager.init();
             SeatingChartManager.restoreActiveView();
         });
-        await this._safeInit('ClassDashboardManager', () => ClassDashboardManager.init());
+        await this._safeInit('ClassDashboardManager', async () => {
+            const { ClassDashboardManager } = await import('./ClassDashboardManager.js');
+            window.ClassDashboardManager = ClassDashboardManager;
+            ClassDashboardManager.init();
+        });
 
         // 10. Transitions de restauration iOS / post-rechargement
         await this._safeInit('RestoreTransitionManager', () => {
@@ -153,12 +163,14 @@ export const App = {
 
         this.updateUIOnLoad();
         ClassUIManager.updateHeaderDisplay();
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
         if (SeatingChartManager) {
             SeatingChartManager.restoreActiveView?.();
         }
         if (FocusPanelManager?.closePanel) {
             FocusPanelManager.closePanel();
         }
+        const { ClassDashboardManager } = await import('./ClassDashboardManager.js');
         if (ClassDashboardManager?.restoreOrResetAISection) {
             try {
                 ClassDashboardManager.restoreOrResetAISection();

@@ -36,11 +36,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./src/css/landing-tailwind.css">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
 
     <script>
-        tailwind.config = {
+        window.tailwind = window.tailwind || {}; window.tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
@@ -1584,10 +1584,10 @@
                 link.href = APP_PATH;
                 document.head.appendChild(link);
 
-                const scriptLink = document.createElement('link');
-                scriptLink.rel = 'modulepreload';
-                scriptLink.href = './src/main.js';
-                document.head.appendChild(scriptLink);
+
+
+                // Modulepreload géré automatiquement par Vite dans app.html
+
             }
 
             if ('requestIdleCallback' in window) {
