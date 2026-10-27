@@ -363,7 +363,7 @@ export const FocusPanelHistory = {
 
         this._animTimeoutExit = setTimeout(() => {
             textEl.classList.remove(exitClass);
-            textEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(content));
+            textEl.innerHTML = Utils.cleanMarkdown(content);
             textEl.classList.add(enterClass);
 
             this._notifyContentChange(content);

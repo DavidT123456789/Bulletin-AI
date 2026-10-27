@@ -54,7 +54,7 @@ export const DEFAULT_EVOLUTION_THRESHOLDS = {
 };
 
 export const DEFAULT_PRIVACY_SETTINGS = {
-    anonymizeData: false
+    anonymizeData: true
 };
 
 export const DEFAULT_SEATING_STATUS_DOTS = {

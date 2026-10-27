@@ -401,15 +401,15 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(SyncService._computeSyncState()).toBe('cloud-changes');
         });
 
-        it('_getLocalData should request exportable settings with includeApiKeys: true for Cloud sync and exclude currentClassId', async () => {
+        it('_getLocalData should request exportable settings without includeApiKeys for Cloud sync and exclude currentClassId', async () => {
             const { StorageManager } = await import('../managers/StorageManager.js');
             const { userSettings } = await import('../state/State.js');
             userSettings.academic.currentClassId = 'class-3a';
-            StorageManager.getExportableSettings.mockReturnValue({ googleApiKey: 'synced-key', theme: 'dark' });
+            StorageManager.getExportableSettings.mockReturnValue({ theme: 'dark' });
             const payload = await SyncService._getLocalData();
 
-            expect(StorageManager.getExportableSettings).toHaveBeenCalledWith({ includeApiKeys: true });
-            expect(payload.settings).toEqual({ googleApiKey: 'synced-key', theme: 'dark' });
+            expect(StorageManager.getExportableSettings).toHaveBeenCalledWith();
+            expect(payload.settings).toEqual({ theme: 'dark' });
             expect(payload.currentClassId).toBeUndefined();
         });
     });

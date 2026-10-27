@@ -1764,7 +1764,7 @@ export const ImportWizardManager = {
                 html += `<td class="col-name">
                     <div class="preview-student-cell">
                         <span class="preview-status-dot dot-${row.type}"></span>
-                        <span class="preview-student-name" data-tooltip="${fullName.replace(/"/g, '&quot;')}">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                        <span class="preview-student-name" data-tooltip="${Utils.escapeHtml(fullName)}">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                     </div>
                 </td>`;
 

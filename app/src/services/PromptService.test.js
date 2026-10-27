@@ -332,8 +332,8 @@ describe('PromptService', () => {
     });
 
     describe('T-04 — Caractérisation RGPD & Anonymisation complète (Bugs B-01 & B-02)', () => {
-        // TODO(Lot 3): Retirer .fails une fois le bug corrigé
-        it.fails('T-04 (Bugs B-01 & B-02) : active anonymizeData par défaut et anonymise prénom, nom et statuts médicaux (PAI/ULIS) dans tous les prompts (génération, journal, raffinement, bilan de classe)', async () => {
+        // Lot 3: Bug corrigé (anonymizeData: true par défaut + scrubbing RGPD + neutralisation statuts Art. 9)
+        it('T-04 (Bugs B-01 & B-02) : active anonymizeData par défaut et anonymise prénom, nom et statuts médicaux (PAI/ULIS) dans tous les prompts (génération, journal, raffinement, bilan de classe)', async () => {
             const { DEFAULT_PRIVACY_SETTINGS } = await vi.importActual('../config/defaults.js');
             const { ClassDashboardManager } = await import('../managers/ClassDashboardManager.js');
 
@@ -406,6 +406,12 @@ describe('PromptService', () => {
             });
             expect(userPrompt).not.toMatch(/\bLucas\b/i);
             expect(userPrompt).not.toMatch(/\bMartin\b/i);
+
+            // 5. Statuts médico-scolaires Art. 9 RGPD (PAP, PPRE, ULIS, PAI, Geva-Sco) traduits en consignes neutres sans acronyme brut
+            const statusInstructions = PromptService.getStatusInstructions(['PAP', 'PPRE', 'ULIS', 'PAI', 'Geva-Sco'], 'T2');
+            expect(statusInstructions).toBeTruthy();
+            expect(statusInstructions).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|Geva-Sco|GevaSco)\b/i);
+            expect(PromptService.deanonymizeText('[Prénom] [NOM] progresse.', 'Lucas')).toBe('Lucas progresse.');
         });
     });
 });

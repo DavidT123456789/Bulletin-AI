@@ -225,9 +225,9 @@ export const JournalManager = {
      * @returns {Object} Tag counts { tagId: count }
      */
     countTags(studentId, period = null) {
-        const entries = period
+        const entries = Array.isArray(studentId) ? studentId : (period
             ? this.getEntriesForPeriod(studentId, period)
-            : this.getEntries(studentId);
+            : this.getEntries(studentId));
 
         const counts = {};
         entries.forEach(entry => {
@@ -383,9 +383,9 @@ export const JournalManager = {
      */
     renderTimeline(studentId, period = null, highlightEntryId = null, editingEntryId = null) {
         const targetPeriod = period || appState.currentPeriod;
-        const entries = targetPeriod
+        const entries = Array.isArray(studentId) ? studentId : (targetPeriod
             ? this.getEntriesForPeriod(studentId, targetPeriod)
-            : this.getEntries(studentId);
+            : this.getEntries(studentId));
 
         if (entries.length === 0) {
             const periodLabel = targetPeriod ? Utils.getPeriodLabel(targetPeriod, false) : '';
@@ -449,7 +449,7 @@ export const JournalManager = {
                             ${tagsHTML}
                             ${infoIcon}
                         </div>
-                        ${entry.note ? `<div class="journal-entry-note">${entry.note}</div>` : ''}
+                        ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
                     </div>
                     <div class="journal-entry-actions">
                         <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${entry.id}" aria-label="Modifier l'observation" data-tooltip="Modifier">
@@ -541,7 +541,7 @@ export const JournalManager = {
                 <div class="journal-draft-input-wrap">
                     <textarea class="journal-note-input" id="journalNoteInput" 
                         placeholder="Précision ou contexte (optionnel)..." 
-                        rows="2" maxlength="280">${noteValue}</textarea>
+                        rows="2" maxlength="280">${Utils.escapeHtml(noteValue)}</textarea>
                     <div class="journal-input-footer">
                         <span class="journal-char-count"><span id="journalCharCount">${noteValue.length}</span>/280</span>
                     </div>

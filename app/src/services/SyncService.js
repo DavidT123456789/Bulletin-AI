@@ -860,7 +860,7 @@ export const SyncService = {
                 lastSyncTimestamp: this.lastSyncTime || 0,
                 deviceId: StorageManager.getDeviceId()
             },
-            settings: StorageManager.getExportableSettings({ includeApiKeys: true }),
+            settings: StorageManager.getExportableSettings(),
             classes: userSettings.academic.classes || [],
             generatedResults: results
         };

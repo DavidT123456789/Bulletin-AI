@@ -79,7 +79,8 @@ describe('AIService', () => {
 
             expect(config.apiKey).toBe('test-google-key');
             expect(config.apiUrl).toContain('gemini-2.0-flash');
-            expect(config.apiUrl).toContain('test-google-key');
+            expect(config.apiUrl).not.toContain('test-google-key');
+            expect(config.headers['x-goog-api-key']).toBe('test-google-key');
             expect(config.headers['Content-Type']).toBe('application/json');
             expect(config.payload.contents[0].parts[0].text).toBe('Test prompt');
         });

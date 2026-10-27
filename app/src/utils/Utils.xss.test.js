@@ -10,8 +10,7 @@ describe('Utils & Managers — Protection XSS (T-05 / Bug B-04)', () => {
         expect(escaped).toBe('&lt;img src=&quot;x&quot; onerror=&#39;alert(1)&#39;&gt; &amp; &lt;/script&gt;');
     });
 
-    // TODO(Lot 4): Retirer .fails une fois le bug corrigé
-    it.fails('T-05 (Bug B-04) : neutralise les 4 vecteurs XSS dans Utils.cleanMarkdown, JournalManager.renderTimeline et StudentPhotoManager.getAvatarHTML tout en préservant le formatage <strong>', () => {
+    it('T-05 (Bug B-04) : neutralise les 4 vecteurs XSS dans Utils.cleanMarkdown, JournalManager.renderTimeline et StudentPhotoManager.getAvatarHTML tout en préservant le formatage <strong>', () => {
         const vectors = [
             '<img src=x onerror=alert(1)>',
             '"><script>alert(2)</script>',
@@ -43,7 +42,8 @@ describe('Utils & Managers — Protection XSS (T-05 / Bug B-04)', () => {
 
         const draftHtml = JournalManager.renderDraftPreview(entries[3]);
         expect(draftHtml).not.toContain('<script>');
-        expect(draftHtml).not.toContain('</textarea>');
+        expect(draftHtml).not.toContain('</textarea><script>');
+        expect(draftHtml).toContain('&lt;/textarea&gt;');
 
         // 3. StudentPhotoManager.getAvatarHTML (attribut alt et src)
         const avatarHtml = StudentPhotoManager.getAvatarHTML({

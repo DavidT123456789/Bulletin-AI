@@ -6,6 +6,7 @@
 import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { Utils } from '../utils/Utils.js';
 
 /**
  * Gestion des photos d'élèves
@@ -111,11 +112,11 @@ export const StudentPhotoManager = {
         `;
 
         // Check if student has a photo
-        const photo = result.studentPhoto;
-        if (photo?.data) {
+        const photo = result.studentPhoto || result.studentData?.photo;
+        if (typeof photo?.data === 'string' && /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/i.test(photo.data)) {
             return `
-                <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}">
-                    <img src="${photo.data}" alt="${result.prenom} ${result.nom}" class="student-avatar__img" loading="lazy">
+                <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${Utils.escapeHtml(String(result.id || ''))}">
+                    <img src="${photo.data}" alt="${Utils.escapeHtml(result.prenom || '')} ${Utils.escapeHtml(result.nom || '')}" class="student-avatar__img" loading="lazy">
                     ${checkmarkHTML}
                 </div>
             `;
@@ -123,8 +124,8 @@ export const StudentPhotoManager = {
 
         // Fallback to initials
         return `
-            <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}">
-                <span class="student-avatar__initials">${initials}</span>
+            <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${Utils.escapeHtml(String(result.id || ''))}">
+                <span class="student-avatar__initials">${Utils.escapeHtml(initials)}</span>
                 ${checkmarkHTML}
             </div>
         `;

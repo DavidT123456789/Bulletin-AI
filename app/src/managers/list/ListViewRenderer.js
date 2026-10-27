@@ -823,7 +823,7 @@ export const ListViewRenderer = {
 
             return `<div class="appreciation-preview-wrapper">
                 ${indicatorBadge}
-                <div class="appreciation-preview">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(status.appreciation))}</div>
+                <div class="appreciation-preview">${Utils.cleanMarkdown(status.appreciation)}</div>
             </div>`;
         }
 

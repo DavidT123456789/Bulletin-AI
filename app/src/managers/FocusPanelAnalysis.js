@@ -473,7 +473,7 @@ export const FocusPanelAnalysis = {
                     const updated = appState.generatedResults.find(r => r.id === id);
 
                     if (updated?.nextSteps?.length) {
-                        UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`);
+                        UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`);
                         suggestionsCard?.classList.add('has-content');
                         this._setCardBadge(suggestionsCard, 'done');
                     } else {
@@ -482,13 +482,13 @@ export const FocusPanelAnalysis = {
                     }
                 } catch (e) {
                     console.error('Échec de l\'analyse nextSteps:', e);
-                    suggestionsContent.innerHTML = `<span style="color:var(--error-color);">Erreur : ${e.message.substring(0, 80)}...</span>`;
+                    suggestionsContent.innerHTML = `<span style="color:var(--error-color);">Erreur : ${Utils.escapeHtml(e.message.substring(0, 80))}...</span>`;
                     suggestionsCard?.classList.add('has-error');
                     this._setCardBadge(suggestionsCard, 'error');
                 }
             } else {
                 // Data already exists
-                suggestionsContent.innerHTML = `<ul>${sourceResult.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                suggestionsContent.innerHTML = `<ul>${sourceResult.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`;
                 suggestionsCard?.classList.add('has-content');
                 this._setCardBadge(suggestionsCard, 'done');
             }
@@ -575,7 +575,7 @@ export const FocusPanelAnalysis = {
             return `<em>Aucun${type === 'forces' ? 'e force identifiée' : ' axe identifié'}.</em>`;
         }
 
-        return `<ul>${items.map(item => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(item))}</li>`).join('')}</ul>`;
+        return `<ul>${items.map(item => `<li>${Utils.cleanMarkdown(item)}</li>`).join('')}</ul>`;
     },
 
     /**
@@ -585,7 +585,7 @@ export const FocusPanelAnalysis = {
      */
     _showError(message) {
         const errorHtml = `<span style="color:var(--error-color); font-size: 12px; display: flex; align-items: center; gap: 4px;">
-            <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${message.substring(0, 60)}...
+            <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${Utils.escapeHtml(message.substring(0, 60))}...
         </span>`;
 
         const forcesContent = document.getElementById('analysisForcesContent');
@@ -636,7 +636,7 @@ export const FocusPanelAnalysis = {
         // Populate next steps if available
         if (result.nextSteps && result.nextSteps.length > 0) {
             if (suggestionsContent) {
-                suggestionsContent.innerHTML = `<ul>${result.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                suggestionsContent.innerHTML = `<ul>${result.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`;
                 suggestionsCard?.classList.add('has-content');
                 this._setCardBadge(suggestionsCard, badgeState);
             }

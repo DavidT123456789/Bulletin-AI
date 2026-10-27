@@ -33,6 +33,17 @@ export const FocusPanelRefinement = {
     },
 
     /**
+     * Remplace le placeholder [PRÉNOM] par le vrai prénom après raffinement IA.
+     * @param {string} text
+     * @param {string} prenom
+     * @returns {string}
+     * @private
+     */
+    _deanonymizeText(text, prenom) {
+        return PromptService.deanonymizeText(text, prenom);
+    },
+
+    /**
      * Affiche une prévisualisation du prompt de raffinement
      * @param {string} refineType - Type de raffinement
      */
@@ -46,7 +57,11 @@ export const FocusPanelRefinement = {
             return;
         }
 
-        const promptText = PromptService.getRefinementPrompt(refineType, currentText);
+        const result = appState.generatedResults?.find(r => r.id === panel?.currentStudentId);
+        const promptText = PromptService.getRefinementPrompt(refineType, currentText, {
+            prenom: result?.studentData?.prenom || result?.prenom || '',
+            nom: result?.studentData?.nom || result?.nom || ''
+        });
         await this.displayPromptModal(promptText, 'Prévisualisation du Prompt (Raffinement)');
     },
 
@@ -175,12 +190,19 @@ export const FocusPanelRefinement = {
             const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
             if (!result) return;
 
-            const response = await VariationsManager.applyRefinement(currentText, refineType, signal);
+            const studentPrenom = result.studentData?.prenom || result.prenom || '';
+            const studentNom = result.studentData?.nom || result.nom || '';
+            const textForRefinement = PromptService.scrubStudentIdentity(currentText, {
+                prenom: studentPrenom,
+                nom: studentNom
+            });
+
+            const response = await VariationsManager.applyRefinement(textForRefinement, refineType, signal);
 
             if (signal.aborted) return;
 
             if (response?.text) {
-                const refined = response.text;
+                const refined = this._deanonymizeText(response.text, studentPrenom);
 
                 result.appreciation = refined;
                 result.copied = false;
@@ -214,7 +236,7 @@ export const FocusPanelRefinement = {
 
                 FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
 
-                const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(refined));
+                const finalHtml = Utils.cleanMarkdown(refined);
                 await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
                 if (panel) {
                     panel._initialAppreciationHtml = finalHtml;

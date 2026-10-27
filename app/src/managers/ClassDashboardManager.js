@@ -9,6 +9,7 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
+import { PromptService } from '../services/PromptService.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
@@ -339,7 +340,7 @@ export const ClassDashboardManager = {
             // New Metadata for AI & Consistency
             dataHash: this._computeClassDataHash(students),
             appreciationsList: students.filter(s => s.appreciation && s.appreciation.trim().length > 0)
-                .map(s => ({ prenom: s.prenom, text: s.appreciation }))
+                .map(s => ({ prenom: s.prenom, nom: s.nom, text: s.appreciation }))
         };
     },
 
@@ -919,24 +920,57 @@ Tu devez répondre uniquement sous le format d'un objet JSON strict avec la stru
 
 Ne rajoute aucune introduction, aucun commentaire, ni de balises de code Markdown. Réponds directement par l'objet JSON brut.`;
 
-        let userPrompt = `Voici les données de la classe :
-• Effectif : ${stats.count} élèves
-• Moyenne : ${stats.average.toFixed(1)}/20 | Médiane : ${stats.median.toFixed(1)}/20
-• Min : ${stats.min.toFixed(1)} | Max : ${stats.max.toFixed(1)} | Écart-type : ${stats.stdDev.toFixed(1)}
-• Répartition : ${stats.distribution['16-20']} excellents, ${stats.distribution['12-16']} bons, ${stats.distribution['8-12']} moyens, ${stats.distribution['4-8']} fragiles, ${stats.distribution['0-4']} en difficulté`;
+        const isAnonymous = appState.anonymizeData ?? true;
+        const count = stats.count ?? stats.total ?? 0;
+        const average = stats.average ?? stats.classAverage ?? 0;
+        const median = stats.median ?? average;
+        const min = stats.min ?? stats.minGrade ?? 0;
+        const max = stats.max ?? stats.maxGrade ?? 0;
+        const stdDev = stats.stdDev ?? 0;
+        const dist = stats.distribution || {};
+        const dist16_20 = dist['16-20'] ?? dist.excellent ?? 0;
+        const dist12_16 = dist['12-16'] ?? dist.good ?? 0;
+        const dist8_12 = dist['8-12'] ?? dist.average ?? 0;
+        const dist4_8 = dist['4-8'] ?? dist.low ?? 0;
+        const dist0_4 = dist['0-4'] ?? dist.veryLow ?? 0;
+        const avgEvolution = stats.avgEvolution ?? stats.evolutionStats?.avgEvolution ?? 0;
+        const progressCount = stats.progressCount ?? stats.evolutionStats?.up ?? 0;
+        const stableCount = stats.stableCount ?? stats.evolutionStats?.stable ?? 0;
+        const regressionCount = stats.regressionCount ?? stats.evolutionStats?.down ?? 0;
+        const hasEvolutionData = stats.hasEvolutionData ?? Boolean(stats.evolutionStats || stats.topProgressions?.length);
 
-        if (stats.hasEvolutionData) {
+        let userPrompt = `Voici les données de la classe :
+• Effectif : ${count} élèves
+• Moyenne : ${Number(average).toFixed(1)}/20 | Médiane : ${Number(median).toFixed(1)}/20
+• Min : ${Number(min).toFixed(1)} | Max : ${Number(max).toFixed(1)} | Écart-type : ${Number(stdDev).toFixed(1)}
+• Répartition : ${dist16_20} excellents, ${dist12_16} bons, ${dist8_12} moyens, ${dist4_8} fragiles, ${dist0_4} en difficulté`;
+
+        if (hasEvolutionData) {
             userPrompt += `
-• Évolution : ${stats.avgEvolution >= 0 ? '+' : ''}${stats.avgEvolution.toFixed(1)} pts | ${stats.progressCount} progressions, ${stats.stableCount} stables, ${stats.regressionCount} régressions`;
-            if (stats.topProgressions.length > 0) {
-                userPrompt += `\n• Top progressions : ${stats.topProgressions.slice(0, 3).map(s => `${s.prenom} (+${s.evolution.toFixed(1)})`).join(', ')}`;
+• Évolution : ${avgEvolution >= 0 ? '+' : ''}${Number(avgEvolution).toFixed(1)} pts | ${progressCount} progressions, ${stableCount} stables, ${regressionCount} régressions`;
+            if (Array.isArray(stats.topProgressions) && stats.topProgressions.length > 0) {
+                userPrompt += `\n• Top progressions : ${stats.topProgressions.slice(0, 3).map((s, idx) => {
+                    const label = isAnonymous ? `Élève #${idx + 1}` : s.prenom;
+                    return `${label} (+${Number(s.evolution || 0).toFixed(1)})`;
+                }).join(', ')}`;
             }
         }
 
         if (stats.appreciationsList && stats.appreciationsList.length > 0) {
             userPrompt += `\n\n**APPRÉCIATIONS INDIVIDUELLES (pour contexte qualitatif) :**
 Utilise ces commentaires pour affiner l'analyse (ambiance, comportement, efforts) mais NE CITE PAS d'élèves spécifiques pour les points négatifs de comportement.
-${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
+${stats.appreciationsList.map((a, idx) => {
+    const label = isAnonymous ? `Élève #${idx + 1}` : a.prenom;
+    const scrubbedText = PromptService.scrubStudentIdentity(
+        a.text || '',
+        { prenom: a.prenom, nom: a.nom },
+        { anonymizePrenom: isAnonymous }
+    );
+    const displayText = isAnonymous
+        ? scrubbedText.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, label)
+        : scrubbedText;
+    return `• ${label} : ${displayText}`;
+}).join('\n')}`;
         }
 
         return { systemPrompt, userPrompt };
@@ -1151,9 +1185,9 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
                     <div class="synthesis-section synthesis-intro-card">
                         <div class="synthesis-intro-header">
                             <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
-                            <span>${cleanTitle || 'Synthèse'}</span>
+                            <span>${Utils.escapeHtml(cleanTitle || 'Synthèse')}</span>
                         </div>
-                        <p class="synthesis-intro-text">${paragraph}</p>
+                        <p class="synthesis-intro-text">${Utils.escapeHtml(paragraph)}</p>
                     </div>
                  `;
                 } else {
@@ -1162,11 +1196,11 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
                     <div class="synthesis-section synthesis-section--${config.color}">
                         <div class="synthesis-section-header">
                             <iconify-icon icon="${config.icon}"></iconify-icon>
-                            <span>${cleanTitle}</span>
+                            <span>${Utils.escapeHtml(cleanTitle)}</span>
                         </div>
                         <div class="synthesis-section-content">
                             <ul class="synthesis-list">
-                                ${items.map(item => `<li>${item}</li>`).join('')}
+                                ${items.map(item => `<li>${Utils.escapeHtml(item)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
@@ -1197,7 +1231,7 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
         // Flush last section
         flushSection();
 
-        return html || `<p>${text}</p>`;
+        return html || `<p>${Utils.escapeHtml(text)}</p>`;
     },
 
     /**

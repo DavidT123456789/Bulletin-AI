@@ -90,4 +90,33 @@ describe('ClassDashboardManager - Safe DOM handling', () => {
         const content = document.getElementById('aiSynthesisContent');
         expect(content.innerHTML).toBe('<p>Excellente dynamique de classe.</p>');
     });
+
+    it('devrait pseudonymiser les prénoms et nettoyer les noms dans buildAIPrompt quand anonymizeData est actif', () => {
+        appState.anonymizeData = true;
+        appState.currentPeriod = 'T2';
+
+        const { userPrompt } = ClassDashboardManager.buildAIPrompt({
+            count: 25,
+            average: 12.5,
+            median: 12.5,
+            min: 8,
+            max: 18,
+            stdDev: 2.0,
+            distribution: { '0-4': 0, '4-8': 2, '8-12': 10, '12-16': 10, '16-20': 3 },
+            hasEvolutionData: true,
+            avgEvolution: 0.8,
+            progressCount: 14,
+            stableCount: 8,
+            regressionCount: 3,
+            topProgressions: [{ prenom: 'Lucas', nom: 'Martin', evolution: 2.4 }],
+            appreciationsList: [
+                { prenom: 'Lucas', nom: 'Martin', text: 'Lucas Martin a bien progressé.' }
+            ]
+        });
+
+        expect(userPrompt).toContain('Élève #1 (+2.4)');
+        expect(userPrompt).toContain('• Élève #1 : Élève #1 a bien progressé.');
+        expect(userPrompt).not.toMatch(/\bLucas\b/i);
+        expect(userPrompt).not.toMatch(/\bMartin\b/i);
+    });
 });

@@ -108,6 +108,11 @@ export const StorageManager = {
         };
     },
 
+    _isValidLocalOllamaUrl(url) {
+        if (typeof url !== 'string' || !url.trim()) return false;
+        return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/.*)?$/i.test(url.trim());
+    },
+
     _hashString(str) {
         let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
         for (let i = 0, ch; i < str.length; i++) {
@@ -189,9 +194,9 @@ export const StorageManager = {
                     if (settings.apiKeyStatus !== undefined) runtimeState.apiStatus = settings.apiKeyStatus;
                     if (settings.validatedApiKeys !== undefined) runtimeState.validatedApiKeys = settings.validatedApiKeys;
 
-                    // Ollama Settings
+                    // Ollama Settings (restricted to local loopback addresses)
                     if (settings.ollamaEnabled !== undefined) userSettings.api.ollamaEnabled = settings.ollamaEnabled;
-                    if (settings.ollamaBaseUrl !== undefined) userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl;
+                    if (this._isValidLocalOllamaUrl(settings.ollamaBaseUrl)) userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
                     if (settings.ollamaInstalledModels !== undefined) userSettings.api.ollamaInstalledModels = settings.ollamaInstalledModels;
 
                     // Import Settings
@@ -389,7 +394,7 @@ export const StorageManager = {
             const snapshot = {
                 key: 'pre_restore_backup',
                 createdAt: Date.now(),
-                settings: this.getExportableSettings({ includeApiKeys: false }),
+                settings: this.getExportableSettings(),
                 classes: userSettings.academic.classes || [],
                 deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
                 generatedResults: results
@@ -1253,8 +1258,9 @@ export const StorageManager = {
                 stats.settingsImported = true;
             }
 
-            // Import API keys (only when explicitly selected; never overwrite an existing key with empty)
-            if (shouldImport('apiKeys') && settings) {
+            // Import API keys (only when explicitly selected; never overwrite an existing key by default or with empty)
+            const shouldImportApiKeys = Boolean(cats?.apiKeys === true || options.includeApiKeys === true);
+            if (shouldImportApiKeys && settings) {
                 API_KEY_SETTINGS_KEYS.forEach(k => {
                     const importedKey = typeof settings[k] === 'string' ? settings[k].trim() : '';
                     if (importedKey) {
@@ -1262,6 +1268,12 @@ export const StorageManager = {
                         stats.apiKeysImported++;
                     }
                 });
+            }
+
+            // Never overwrite ollamaBaseUrl by default; if explicitly requested, restrict to local loopback
+            if (options.importOllamaConfig === true && this._isValidLocalOllamaUrl(settings?.ollamaBaseUrl)) {
+                userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
+                appState.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
             }
 
             // Import classes if present

@@ -1056,8 +1056,8 @@
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
                                     Les données sensibles (identités des élèves, notes brutes) sont stockées
-                                    <strong>exclusivement dans le LocalStorage</strong> du navigateur. L'application
-                                    applique une anonymisation stricte à la volée avant tout envoi vers les API
+                                    <strong>localement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, avec sauvegarde optionnelle sur votre Google Drive privé (sans clés API). L'application
+                                    applique par défaut une pseudonymisation à la volée (masquage des noms/prénoms et traduction des statuts sensibles en consignes neutres) avant tout envoi vers les API
                                     d'inférence.
                                 </div>
                             </div>
@@ -1328,7 +1328,7 @@
             { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Formats Universels', desc: 'Compatible Excel, CSV et copier-coller depuis Pronote.', label: 'Import' },
             { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
             { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en cours, binômes ou îlots d\'activité et export PDF.', label: 'Spatial' },
-            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Anonymisation Auto', desc: 'Les noms sont retirés avant l\'envoi. Données stockées localement.', label: 'Sécurité' },
+            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Anonymisation Auto', desc: 'Prénoms, noms et statuts sensibles masqués par défaut avant l\'envoi IA. Stockage local IndexedDB.', label: 'Sécurité' },
             { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Google Gemini, Groq Cloud, ou Ollama en local.', label: 'Flexible' },
             { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
             { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },

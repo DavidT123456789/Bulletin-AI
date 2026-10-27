@@ -2517,7 +2517,7 @@
                                                 </span>
                                             </label>
                                             <span class="settings-row-desc">
-                                                Remplace le prénom réel des élèves par un pseudonyme avant envoi à l'IA. Le nom de famille n'est <strong>jamais</strong> transmis.
+                                                Active par défaut : remplace le prénom des élèves par une balise neutre dans tous les prompts (historique, observations, retouches, bilan). Le nom de famille et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont <strong>jamais</strong> transmis.
                                             </span>
                                         </div>
                                         <div class="settings-row-control">
@@ -2960,7 +2960,7 @@
                                     <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
                                 </div>
                                 <div class="help-privacy-text">
-                                    <strong>Confidentialité & RGPD :</strong> Aucun serveur tiers — vos données restent dans votre navigateur (ou votre Google Drive privé). Noms de famille et photos ne sont jamais transmis à l'IA.
+                                    <strong>Confidentialité & RGPD :</strong> Stockage local dans votre navigateur (IndexedDB, ou Google Drive privé en option sans clés API). Prénoms pseudonymisés par défaut ; noms de famille, photos et acronymes médicaux (PAI, ULIS, PAP…) ne sont jamais transmis à l'IA.
                                 </div>
                             </div>
                         </div>
@@ -3299,8 +3299,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Anonymisation stricte :</strong> Les noms de famille et les photos ne sont jamais transmis aux modèles d'IA. Seuls le prénom (ou une balise neutre), les moyennes et vos observations servent à générer l'appréciation.</li>
-                                            <li><strong>Aucun serveur intermédiaire :</strong> Vos classes sont enregistrées dans votre navigateur (et sur votre propre Google Drive si vous activez la sauvegarde cloud). Avec <em>Ollama</em>, même l'IA tourne hors-ligne.</li>
+                                            <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont masqués par défaut).</li>
+                                            <li><strong>Stockage local &amp; direct :</strong> Vos classes sont enregistrées dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Les requêtes partent directement vers le fournisseur d'IA choisi (ou restent 100 % hors-ligne avec <em>Ollama</em>).</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3407,7 +3407,7 @@
                                     </div>
                                     <div class="about-pillar-text">
                                         <h4>Stockage sans serveur tiers</h4>
-                                        <p>Données enregistrées dans votre navigateur, avec sauvegarde optionnelle sur votre propre Google Drive ou en fichier local.</p>
+                                        <p>Données enregistrées localement dans votre navigateur (IndexedDB &amp; LocalStorage), avec sauvegarde optionnelle sur votre propre Google Drive ou en fichier local (clés API isolées).</p>
                                     </div>
                                 </div>
 
@@ -3417,7 +3417,7 @@
                                     </div>
                                     <div class="about-pillar-text">
                                         <h4>Filtrage RGPD avant envoi IA</h4>
-                                        <p>Les noms de famille et les photos d'élèves sont écartés localement et ne sont jamais transmis aux modèles d'IA.</p>
+                                        <p>Prénoms pseudonymisés par défaut ; noms de famille, photos d'élèves et acronymes médico-scolaires (PAI, ULIS, PAP…) sont écartés ou traduits localement en consignes neutres avant tout appel IA.</p>
                                     </div>
                                 </div>
 

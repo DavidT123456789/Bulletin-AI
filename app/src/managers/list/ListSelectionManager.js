@@ -349,7 +349,7 @@ export const ListSelectionManager = {
         const currentPeriod = appState.currentPeriod;
 
         // Build smart summary
-        const namesPreview = students.slice(0, 5).map(s => `<strong>${s.prenom} ${s.nom}</strong>`);
+        const namesPreview = students.slice(0, 5).map(s => `<strong>${Utils.escapeHtml(s.prenom || '')} ${Utils.escapeHtml(s.nom || '')}</strong>`);
         const remaining = students.length - namesPreview.length;
         const namesList = namesPreview.join(', ') + (remaining > 0 ? ` et <strong>${remaining} autre${remaining > 1 ? 's' : ''}</strong>` : '');
 

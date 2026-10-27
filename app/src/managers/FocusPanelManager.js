@@ -1854,7 +1854,7 @@ export const FocusPanelManager = {
                         // Pass targetCount since DOM is still empty
                         FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
 
-                        const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(newResult.appreciation));
+                        const htmlHtml = Utils.cleanMarkdown(newResult.appreciation);
                         await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
                         this._initialAppreciationHtml = htmlHtml;
                         this._isAppreciationEdited = false;
@@ -1995,7 +1995,7 @@ export const FocusPanelManager = {
                 appreciationEl.classList.remove('empty');
                 const targetWordCount = Utils.countWords(effectiveApp);
                 FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
-                const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(effectiveApp));
+                const htmlHtml = Utils.cleanMarkdown(effectiveApp);
                 await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
                 this._initialAppreciationHtml = htmlHtml;
                 this._isAppreciationEdited = false;
@@ -2522,7 +2522,7 @@ export const FocusPanelManager = {
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
 
             if (periodAppreciation && periodAppreciation.trim()) {
-                appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(periodAppreciation));
+                appreciationEl.innerHTML = Utils.cleanMarkdown(periodAppreciation);
                 appreciationEl.classList.remove('empty');
                 appreciationEl.classList.add('filled');
                 hasAppreciation = true;
@@ -2539,7 +2539,7 @@ export const FocusPanelManager = {
 
             if (periodAppreciation && periodAppreciation.trim()) {
                 // Render with Markdown support (checking for entities)
-                appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(periodAppreciation));
+                appreciationEl.innerHTML = Utils.cleanMarkdown(periodAppreciation);
                 appreciationEl.classList.remove('empty');
                 appreciationEl.classList.add('filled');
                 hasAppreciation = true;

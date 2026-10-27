@@ -14,16 +14,237 @@ export const PromptService = {
     PRENOM_PLACEHOLDER: '[PRÉNOM]',
 
     /**
+     * Placeholder utilisé pour anonymiser le nom de famille dans les textes libres
+     * @constant {string}
+     */
+    NOM_PLACEHOLDER: '[NOM]',
+
+    /**
      * Cache pour les statistiques de classe calculées
      * @type {Map<string, string>}
      */
     _classStatsCache: new Map(),
+
+    /**
+     * Construit un motif regex insensible à la casse et aux accents pour un jeton nominal.
+     * @param {string} token
+     * @returns {string}
+     * @private
+     */
+    _buildAccentInsensitivePattern(token) {
+        const charMap = {
+            a: '[aàáâãäåāăą]',
+            c: '[cçćĉċč]',
+            e: '[eèéêëēĕėęě]',
+            i: '[iìíîïĩīĭįı]',
+            n: '[nñńņň]',
+            o: '[oòóôõöøōŏő]',
+            u: '[uùúûüũūŭůűų]',
+            y: '[yýÿŷ]'
+        };
+        const normalized = token.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        let pattern = '';
+        for (let i = 0; i < normalized.length; i++) {
+            const ch = normalized[i];
+            const lower = ch.toLowerCase();
+            if (charMap[lower]) {
+                pattern += charMap[lower];
+            } else if (/[\s-]/.test(ch)) {
+                pattern += '[\\s-]+';
+            } else {
+                pattern += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+        }
+        return pattern;
+    },
+
+    /**
+     * Supprime ou pseudonymise toute occurrence du prénom et du nom de l'élève dans un texte libre.
+     * Le nom de famille est systématiquement masqué ; le prénom est masqué lorsque l'anonymisation est active.
+     * @param {string} text - Texte libre (appréciation passée, observation, note du journal, contexte)
+     * @param {Object} [identity] - Identité de l'élève ({ prenom, nom })
+     * @param {Object} [options] - Options ({ anonymizePrenom })
+     * @returns {string} Texte nettoyé
+     */
+    scrubStudentIdentity(text, identity = {}, options = {}) {
+        if (!text || typeof text !== 'string') return text || '';
+
+        const isAnonymous = options.anonymizePrenom ?? (appState.anonymizeData ?? true);
+        const prenom = typeof identity?.prenom === 'string' ? identity.prenom.trim() : '';
+        const nom = typeof identity?.nom === 'string' ? identity.nom.trim() : '';
+
+        let result = text;
+
+        const replaceToken = (input, rawToken, replacement) => {
+            if (!rawToken || rawToken.length < 2) return input;
+            const pattern = this._buildAccentInsensitivePattern(rawToken);
+            const regex = new RegExp(`(?<![\\p{L}\\p{N}_])${pattern}(?![\\p{L}\\p{N}_])`, 'giu');
+            return input.replace(regex, replacement);
+        };
+
+        // 1. Combinaisons "Prénom Nom" et "Nom Prénom"
+        if (prenom.length >= 2 && nom.length >= 2) {
+            const fullNameReplacement = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
+            const pPattern = this._buildAccentInsensitivePattern(prenom);
+            const nPattern = this._buildAccentInsensitivePattern(nom);
+            const fullForward = new RegExp(`(?<![\\p{L}\\p{N}_])${pPattern}[\\s-]+${nPattern}(?![\\p{L}\\p{N}_])`, 'giu');
+            const fullBackward = new RegExp(`(?<![\\p{L}\\p{N}_])${nPattern}[\\s-]+${pPattern}(?![\\p{L}\\p{N}_])`, 'giu');
+            result = result.replace(fullForward, fullNameReplacement).replace(fullBackward, fullNameReplacement);
+        }
+
+        // 2. Nom de famille (toujours masqué, même si anonymizeData === false)
+        if (nom.length >= 2) {
+            result = replaceToken(result, nom, this.NOM_PLACEHOLDER);
+            const nomParts = nom.split(/[\s-]+/).filter(part => part.length >= 2);
+            if (nomParts.length > 1) {
+                for (const part of nomParts) {
+                    result = replaceToken(result, part, this.NOM_PLACEHOLDER);
+                }
+            }
+        }
+
+        // 3. Prénom (masqué lorsque anonymizeData est actif)
+        if (isAnonymous && prenom.length >= 2) {
+            result = replaceToken(result, prenom, this.PRENOM_PLACEHOLDER);
+            const prenomParts = prenom.split(/[\s-]+/).filter(part => part.length >= 2);
+            if (prenomParts.length > 1) {
+                for (const part of prenomParts) {
+                    result = replaceToken(result, part, this.PRENOM_PLACEHOLDER);
+                }
+            }
+        }
+
+        return result;
+    },
+
+    /**
+     * Alias de scrubStudentIdentity pour l'anonymisation de textes libres.
+     * @param {string} text
+     * @param {Object} [identity]
+     * @param {Object} [options]
+     * @returns {string}
+     */
+    anonymizeFreeText(text, identity = {}, options = {}) {
+        return this.scrubStudentIdentity(text, identity, options);
+    },
+
+    /**
+     * Réinjecte le vrai prénom à la place du placeholder [PRÉNOM] et nettoie tout [NOM] résiduel.
+     * @param {string} text
+     * @param {string} prenom
+     * @returns {string}
+     */
+    deanonymizeText(text, prenom) {
+        if (!text || typeof text !== 'string') return text;
+        let result = text;
+        if (prenom) {
+            result = result.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
+        }
+        result = result.replace(/\s*\[nom\]/gi, '');
+        return result;
+    },
+
+    /**
+     * Traduit localement les statuts élèves (notamment les statuts médico-scolaires relevant
+     * de l'Art. 9 RGPD : PAP, PPRE, ULIS, PAI, Geva-Sco, AESH) en consignes pédagogiques
+     * bienveillantes et neutres, sans jamais transmettre l'acronyme médical brut aux API externes.
+     * @param {string[]} statuses - Liste des statuts de l'élève
+     * @param {string} [currentPeriod] - Période évaluée
+     * @returns {string} Consignes pédagogiques neutralisées
+     */
+    getStatusInstructions(statuses, currentPeriod = appState.currentPeriod) {
+        if (!Array.isArray(statuses) || statuses.length === 0) return '';
+
+        const activeStatuses = typeof Utils.getActiveStatuses === 'function'
+            ? Utils.getActiveStatuses(statuses, currentPeriod)
+            : statuses;
+
+        if (!Array.isArray(activeStatuses) || activeStatuses.length === 0) return '';
+
+        const instructions = [];
+        const seen = new Set();
+
+        const addInstruction = (text) => {
+            if (text && !seen.has(text)) {
+                seen.add(text);
+                instructions.push(text);
+            }
+        };
+
+        for (const rawStatus of activeStatuses) {
+            const trimmed = String(rawStatus || '').trim();
+            if (!trimmed) continue;
+            const lower = trimmed.toLowerCase();
+
+            if (lower === 'pap' || lower.startsWith('pap ')) {
+                addInstruction("Valoriser les progrès réalisés au regard des aménagements pédagogiques mis en place, avec un ton bienveillant, sans jamais mentionner de dispositif administratif ou médical.");
+            } else if (lower === 'ppre' || lower.startsWith('ppre ')) {
+                addInstruction("Encourager les efforts sur les compétences fondamentales ciblées et donner des conseils méthodologiques accessibles, sans mentionner de programme d'accompagnement.");
+            } else if (lower === 'ulis' || lower.startsWith('ulis ')) {
+                addInstruction("Évaluer les acquis par rapport aux objectifs personnalisés de l'élève en valorisant son implication et ses progrès, sans jamais mentionner de dispositif d'inclusion scolaire ou de handicap.");
+            } else if (lower === 'pai' || lower.startsWith('pai ')) {
+                addInstruction("Tenir compte avec bienveillance du rythme de l'élève sans jamais faire allusion à sa santé ou à un protocole médical.");
+            } else if (lower === 'geva-sco' || lower === 'gevasco' || lower.startsWith('geva') || lower === 'mdph' || lower === 'pps') {
+                addInstruction("Valoriser les progrès et l'investissement de l'élève au regard de son parcours adapté, sans jamais mentionner de dossier médico-scolaire ou administratif.");
+            } else if (lower === 'aesh' || lower.startsWith('aesh ')) {
+                addInstruction("Mettre en avant l'autonomie progressive et les réussites de l'élève, sans mentionner d'accompagnement humain en classe.");
+            } else if (lower.startsWith('nouveau')) {
+                addInstruction(`Tenir compte de l'arrivée récente de l'élève en cours d'année (${trimmed}) et valoriser son adaptation.`);
+            } else if (lower.startsWith('départ') || lower.startsWith('depart')) {
+                addInstruction(`Tenir compte du départ de l'élève (${trimmed}) en dressant un bilan factuel et bienveillant de sa présence.`);
+            } else if (lower.startsWith('délégué') || lower.startsWith('delegue')) {
+                addInstruction(`Prendre en compte l'engagement citoyen de l'élève (${trimmed}) si pertinent.`);
+            } else if (/\b(pap|ppre|ulis|pai|geva[-\s]?sco|aesh|pps|mdph|segpa|dys\w*|tdah|tsa|handicap)\b/i.test(lower)) {
+                addInstruction("Adapter le propos avec bienveillance aux aménagements pédagogiques de l'élève, sans jamais mentionner de dispositif médical ou administratif.");
+            } else {
+                addInstruction(`Contexte pédagogique : ${trimmed}.`);
+            }
+        }
+
+        return instructions.join(' ');
+    },
+
+    /**
+     * Extrait la synthèse du journal de bord pour le prompt (via JournalManager ou depuis studentData.journal).
+     * @param {Object} studentData
+     * @param {string} currentPeriod
+     * @returns {string}
+     * @private
+     */
+    _extractJournalSynthesis(studentData, currentPeriod) {
+        const studentId = studentData?.id;
+        const fromManager = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        if (fromManager) return fromManager;
+
+        if (!Array.isArray(studentData?.journal) || studentData.journal.length === 0) {
+            return '';
+        }
+
+        const periodEntries = studentData.journal.filter(
+            e => e && (!e.period || e.period === currentPeriod)
+        );
+        if (periodEntries.length === 0) return '';
+
+        const notes = periodEntries
+            .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
+            .slice(-3)
+            .map(e => `"${e.note.trim()}"`)
+            .join(' | ');
+
+        return notes ? `Notes: ${notes}` : '';
+    },
 
     getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false) {
         const { nom, prenom, statuses, periods, currentPeriod } = studentData;
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
+
+        // GESTION DE LA CONFIDENTIALITÉ
+        // Si anonymisation désactivée, on utilise le prénom mais JAMAIS le nom de famille
+        // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
+        const isAnonymous = appState.anonymizeData ?? true;
+        const studentIdentity = { prenom, nom };
 
         // Détection de l'absence totale de données scolaires
         // On vérifie les notes sur TOUTES les périodes (données objectives, jamais auto-générées)
@@ -35,9 +256,14 @@ export const PromptService = {
             return !isNaN(val);
         });
 
-        const periodContext = periods?.[currentPeriod]?.context;
-        const studentId = studentData.id;
-        const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        const rawPeriodContext = periods?.[currentPeriod]?.context;
+        const periodContext = rawPeriodContext
+            ? this.scrubStudentIdentity(rawPeriodContext, studentIdentity, { anonymizePrenom: isAnonymous })
+            : '';
+        const rawJournalSynthesis = this._extractJournalSynthesis(studentData, currentPeriod);
+        const journalSynthesis = rawJournalSynthesis
+            ? this.scrubStudentIdentity(rawJournalSynthesis, studentIdentity, { anonymizePrenom: isAnonymous })
+            : '';
         const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
 
         const hasNoData = !hasGrades && !hasContext;
@@ -71,10 +297,6 @@ export const PromptService = {
             : gender === 'masculin' ? 'masculin'
                 : 'non déterminé - nommer une seule fois puis utiliser des tournures impersonnelles (ex: "Sa participation...", "Il convient de...")';
 
-        // GESTION DE LA CONFIDENTIALITÉ
-        // Si anonymisation désactivée, on utilise les vraies données
-        // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
-        const isAnonymous = appState.anonymizeData ?? true;
         const studentIdentifier = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
         const isNeutralVoice = iaConfig.voice === 'neutre';
         const promptParts = [];
@@ -165,8 +387,11 @@ export const PromptService = {
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
             // Pour la période courante, on n'inclut pas l'appréciation existante
             const isCurrentPeriod = p === currentPeriod;
+            const scrubbedApp = d.appreciation
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+                : '';
             // [FIX] Use brackets for instruction, quotes only for actual appreciation text
-            const appText = isCurrentPeriod ? '[à générer]' : `"${d.appreciation || 'N/A'}"`;
+            const appText = isCurrentPeriod ? '[à générer]' : `"${scrubbedApp || 'N/A'}"`;
             return `${p} : Moy ${g}${evalCount}${classStatsStr}, App ${appText}`;
         }).join('\n');
 
@@ -183,10 +408,9 @@ export const PromptService = {
         });
         const evolutionText = this._formatEvolutions(filteredEvolutions);
 
-        // Anonymisation : on n'envoie plus le nom complet, seulement les données scolaires
-        // On n'inclut la ligne Statuts que si l'élève a des statuts actifs sur la période
-        const activeStatuses = Utils.getActiveStatuses(statuses, currentPeriod);
-        const statusLine = activeStatuses.length > 0 ? `\nStatuts : ${activeStatuses.join(', ')}` : '';
+        // Neutralisation RGPD Art. 9 : on traduit localement les statuts en consignes pédagogiques neutres
+        const statusInstructions = this.getStatusInstructions(statuses, currentPeriod);
+        const statusLine = statusInstructions ? `\nConsignes d'accompagnement : ${statusInstructions}` : '';
 
         const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
@@ -265,7 +489,10 @@ export const PromptService = {
 
         // [FIX] Use period-specific appreciation for analysis prompts
         // The appreciation to analyze should be from the current period, not a legacy global field
-        const currentPeriodAppreciation = periods?.[currentPeriod]?.appreciation || '';
+        const rawCurrentPeriodAppreciation = periods?.[currentPeriod]?.appreciation || '';
+        const currentPeriodAppreciation = rawCurrentPeriodAppreciation
+            ? this.scrubStudentIdentity(rawCurrentPeriodAppreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+            : '';
 
         // Build periods info for analysis - use stored appreciation per period
         let periodsInfoForAnalysis = relevantPeriods.map(p => {
@@ -275,7 +502,10 @@ export const PromptService = {
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
-            return `${p} : Moy ${g}${evalCount}${classStatsStr}, App "${d.appreciation || 'N/A'}"`;
+            const scrubbedApp = d.appreciation
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+                : '';
+            return `${p} : Moy ${g}${evalCount}${classStatsStr}, App "${scrubbedApp || 'N/A'}"`;
         }).join('\n');
 
         // Analysis prompts - use the current period's appreciation as reference
@@ -284,21 +514,19 @@ export const PromptService = {
         // Build condensed student context for analysis
         const analysisContextParts = [];
 
-        // Add statuses if present
-        if (activeStatuses.length > 0) {
-            analysisContextParts.push(`Statuts : ${activeStatuses.join(', ')}`);
+        // Add neutralized status instructions if present
+        if (statusInstructions) {
+            analysisContextParts.push(`Consignes d'accompagnement : ${statusInstructions}`);
         }
 
-        // Add period context if present
-        const periodContextForAnalysis = periods?.[currentPeriod]?.context;
-        if (periodContextForAnalysis) {
-            analysisContextParts.push(`Contexte : "${periodContextForAnalysis}"`);
+        // Add scrubbed period context if present
+        if (periodContext) {
+            analysisContextParts.push(`Contexte : "${periodContext}"`);
         }
 
-        // Add journal synthesis for richer insights
-        const journalSynthesisForAnalysis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
-        if (journalSynthesisForAnalysis) {
-            analysisContextParts.push(`Observations : ${journalSynthesisForAnalysis}`);
+        // Add scrubbed journal synthesis for richer insights
+        if (journalSynthesis) {
+            analysisContextParts.push(`Observations : ${journalSynthesis}`);
         }
 
         const analysisContext = analysisContextParts.length > 0
@@ -356,14 +584,40 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
      * Generates a refinement prompt for appreciation modifications
      * @param {string} type - Type of refinement (concise, detailed, encouraging, polish, variations, formal, context)
      * @param {string} original - The original text to refine
-     * @param {Object} options - Optional configuration
-     * @param {string} options.context - Additional context to integrate
+     * @param {Object|string} [options={}] - Optional configuration ({ prenom, nom, studentData, context }) or legacy context string
      * @returns {string} The formatted prompt for AI
      */
     getRefinementPrompt(type, original, options = {}) {
-        const ctx = options.context || options || (DOM.refinementContext ? DOM.refinementContext.value.trim() : '');
+        const isOptionsObject = options && typeof options === 'object';
+        const ctx = (isOptionsObject ? options.context : options) || (DOM.refinementContext ? DOM.refinementContext.value.trim() : '');
         // Handle legacy call signature: getRefinementPrompt(type, original, contextString)
         const contextStr = typeof ctx === 'string' ? ctx : '';
+
+        const isAnonymous = appState.anonymizeData ?? true;
+        const explicitPrenom = isOptionsObject ? (options.prenom || options.studentData?.prenom || '') : '';
+        const explicitNom = isOptionsObject ? (options.nom || options.studentData?.nom || '') : '';
+
+        let sanitizedOriginal = original || '';
+        let sanitizedContext = contextStr;
+
+        if (explicitPrenom || explicitNom) {
+            const identity = { prenom: explicitPrenom, nom: explicitNom };
+            sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, identity, { anonymizePrenom: isAnonymous });
+            if (sanitizedContext) {
+                sanitizedContext = this.scrubStudentIdentity(sanitizedContext, identity, { anonymizePrenom: isAnonymous });
+            }
+        } else if (Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
+            for (const r of appState.generatedResults) {
+                const p = r?.prenom || r?.studentData?.prenom || '';
+                const n = r?.nom || r?.studentData?.nom || '';
+                if (p || n) {
+                    sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, { prenom: p, nom: n }, { anonymizePrenom: isAnonymous });
+                    if (sanitizedContext) {
+                        sanitizedContext = this.scrubStudentIdentity(sanitizedContext, { prenom: p, nom: n }, { anonymizePrenom: isAnonymous });
+                    }
+                }
+            }
+        }
 
         const wordCount = Utils.countWords(original);
         // Strict instruction: raw text only, no formatting, no commentary
@@ -373,27 +627,27 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         switch (type) {
             case 'polish':
                 // Same length, improved style
-                instruction = `Peaufine cette appréciation scolaire : corrige fautes et contradictions, améliore cohérence, fluidité et naturel. Garde le sens, nombre de mots proche.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Peaufine cette appréciation scolaire : corrige fautes et contradictions, améliore cohérence, fluidité et naturel. Garde le sens, nombre de mots proche.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'variations':
                 // Same length, different wording
-                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'detailed':
                 // +20% - Symmetric with concise (-20%)
-                instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'concise':
                 // -20% reduction
-                instruction = `Rends cette appréciation plus concise, environ ${Math.round(wordCount * 0.80)} mots. Garde l'essentiel.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Rends cette appréciation plus concise, environ ${Math.round(wordCount * 0.80)} mots. Garde l'essentiel.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'encouraging':
                 // Same length, warmer tone
-                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'default':
             default:
-                instruction = `Reformule cette appréciation.\n\n---\n${original}\n---\n\n${base}`;
+                instruction = `Reformule cette appréciation.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
         }
         return instruction;
     },
@@ -506,4 +760,3 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         }
     }
 };
-

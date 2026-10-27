@@ -85,7 +85,7 @@ export const AIService = {
             },
             google: {
                 apiKey: appState.googleApiKey, 
-                apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent?key=${appState.googleApiKey}`,
+                apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent`,
                 headers: (key) => ({ 
                     'Content-Type': 'application/json',
                     'x-goog-api-key': key || appState.googleApiKey
@@ -388,9 +388,9 @@ export const AIService = {
         if (provider === 'google') {
             const apiKey = appState.googleApiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
-            const url = `${CONFIG.GOOGLE_API_BASE}/models?key=${apiKey}`;
+            const url = `${CONFIG.GOOGLE_API_BASE}/models`;
             try {
-                const resp = await fetch(url);
+                const resp = await fetch(url, { headers: { 'x-goog-api-key': apiKey } });
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.error?.message || JSON.stringify(data));
                 return data.models || [];

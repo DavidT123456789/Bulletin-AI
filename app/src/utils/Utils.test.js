@@ -519,7 +519,7 @@ describe('Utils', () => {
 
     describe('decodeHtmlEntities', () => {
         it('devrait décoder les entités HTML', () => {
-            expect(Utils.decodeHtmlEntities('&lt;div&gt;')).toBe('<div>');
+            expect(Utils.decodeHtmlEntities('&lt;strong&gt;ok&lt;/strong&gt; &lt;div&gt;')).toBe('<strong>ok</strong> &lt;div&gt;');
             expect(Utils.decodeHtmlEntities('&amp;')).toBe('&');
         });
     });

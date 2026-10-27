@@ -787,30 +787,48 @@ describe('StorageManager', () => {
             expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
         });
 
-        it('should not overwrite existing API key with empty key during importBackup, and reset validation when key changes', async () => {
+        it('should not overwrite API keys or ollamaBaseUrl by default during importBackup, and only import non-empty API keys when categories.apiKeys is true', async () => {
             userSettings.api.googleApiKey = 'existing-google-key';
             appState.googleApiKey = 'existing-google-key';
+            userSettings.api.openaiApiKey = 'existing-openai-key';
+            appState.openaiApiKey = 'existing-openai-key';
+            userSettings.api.ollamaBaseUrl = 'http://localhost:11434';
+            appState.ollamaBaseUrl = 'http://localhost:11434';
             runtimeState.validatedApiKeys.google = true;
             runtimeState.apiStatus.google = 'valid';
-
-            const backupWithEmptyAndNewKey = JSON.stringify({
-                appVersion: '4.3.0',
-                settings: {
-                    googleApiKey: '',
-                    openaiApiKey: 'new-openai-key'
-                }
-            });
-
             runtimeState.validatedApiKeys.openai = true;
             runtimeState.apiStatus.openai = 'valid';
 
-            const res = await StorageManager.importBackup(backupWithEmptyAndNewKey, { mergeData: true, silent: true });
-            expect(res.stats.apiKeysImported).toBe(1);
+            const backupWithKeysAndExternalOllama = JSON.stringify({
+                appVersion: '4.3.0',
+                settings: {
+                    googleApiKey: '',
+                    openaiApiKey: 'new-openai-key',
+                    ollamaBaseUrl: 'https://attacker.example.com:11434'
+                }
+            });
+
+            // 1. Default importBackup (no categories.apiKeys) -> never overwrites API keys or ollamaBaseUrl
+            const defaultRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, { mergeData: true, silent: true });
+            expect(defaultRes.stats.apiKeysImported).toBe(0);
+            expect(userSettings.api.googleApiKey).toBe('existing-google-key');
+            expect(userSettings.api.openaiApiKey).toBe('existing-openai-key');
+            expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
+
+            // 2. Explicit categories.apiKeys = true -> imports non-empty key, ignores empty key, and still rejects external ollamaBaseUrl
+            const explicitRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, {
+                mergeData: true,
+                categories: { apiKeys: true },
+                importOllamaConfig: true,
+                silent: true
+            });
+            expect(explicitRes.stats.apiKeysImported).toBe(1);
             expect(userSettings.api.googleApiKey).toBe('existing-google-key');
             expect(runtimeState.validatedApiKeys.google).toBe(true);
             expect(userSettings.api.openaiApiKey).toBe('new-openai-key');
             expect(runtimeState.validatedApiKeys.openai).toBe(false);
             expect(runtimeState.apiStatus.openai).toBeNull();
+            expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
         });
     });
 

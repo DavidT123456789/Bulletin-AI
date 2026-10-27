@@ -904,11 +904,11 @@ export const Utils = {
         if (typeof text !== 'string') return text;
         // Correction typographique française : ajouter un espace avant les deux-points si absent
         // Gère : Mot:, **Mot**:, (mot):, "mot":
-        let result = text
+        let result = (() => { const ta = document.createElement('textarea'); ta.innerHTML = text; return ta.value; })()
             .replace(/([a-zA-Z0-9À-ÿ\*\)\]\"\'\»]):([A-ZÀ-Ÿ0-9])/g, '$1 : $2')   // Mot:Maj, (mot):Maj, Mot:Chiffre etc.
             .replace(/([a-zA-Z0-9À-ÿ\*\)\]\"\'\»]):\s+/g, '$1 : ');            // Mot: suivi d'espace
         // Markdown → HTML
-        return result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/###\s*(.*)/g, '<h4>$1</h4>');
+        return this.escapeHtml(result).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/###\s*(.*)/g, '<h4>$1</h4>');
     },
 
     /**
@@ -916,7 +916,7 @@ export const Utils = {
      * @param {string} text - Texte encodé
      * @returns {string} Texte décodé
      */
-    decodeHtmlEntities(text) { if (typeof text !== 'string') return text; const ta = document.createElement('textarea'); ta.innerHTML = text; return ta.value; },
+    decodeHtmlEntities(text) { if (typeof text !== 'string') return text; const ta = document.createElement('textarea'); ta.innerHTML = text; return ta.value.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;(\/?(?:strong|em|h4|br))&gt;/gi, '<$1>'); },
 
     /**
      * Traduit un message d'erreur API en français
