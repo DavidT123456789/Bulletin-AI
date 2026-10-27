@@ -1623,6 +1623,12 @@
     box-shadow: none;
 }
 
+.sc-cell.dragging .sc-cell-remove,
+.sc-cell.dragging .sc-cell-pin {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 /* Prevent native image drag, text selection & touch callout + unify grab zone */
 .sc-cell .student-avatar,
 .sc-cell .sc-cell-name,
@@ -1667,6 +1673,8 @@
 .sc-touch-ghost {
     --sc-ghost-lift: 0%;
     position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
     z-index: 10000 !important;
     pointer-events: none !important;
     display: flex !important;
@@ -1680,7 +1688,10 @@
     box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
     opacity: 1 !important;
     border: 1.5px solid var(--highlight-standard-border) !important;
+    translate: var(--sc-drag-x, -9999px) var(--sc-drag-y, -9999px) 0;
     transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 1.05)) translateY(var(--sc-ghost-lift)) !important;
+    will-change: translate, transform, opacity;
+    contain: layout style;
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     overflow: visible !important;
 }
@@ -1699,9 +1710,7 @@
 
 /* Atténuation fluide du clone au survol de la réserve pour laisser la place au réceptacle et ne pas masquer la liste */
 body.sc-drag-over-sidebar .sc-drag-clone,
-body:has(#scSidebar.drag-over) .sc-drag-clone,
-body.sc-drag-over-sidebar .sc-touch-ghost,
-body:has(#scSidebar.drag-over) .sc-touch-ghost {
+body.sc-drag-over-sidebar .sc-touch-ghost {
     opacity: 0.22 !important;
     transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 0.82)) translateY(var(--sc-ghost-lift)) !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;

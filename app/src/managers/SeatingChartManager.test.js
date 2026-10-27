@@ -2101,21 +2101,47 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 dataTransfer: { setDragImage: vi.fn() }
             };
 
-            // 1. Sans homonyme dans la classe -> Prénom seul ("Lucas")
+            // 1. Sans homonyme dans la classe -> Prénom seul ("Lucas") + canvas 1x1 synchrone + suivi GPU (translate / --sc-drag-x / --sc-drag-y)
             SeatingChartManager._setCleanDragImage(mockDragEvent, chip, 1);
+            expect(mockDragEvent.dataTransfer.setDragImage).toHaveBeenCalledTimes(1);
+            const [blankArg, offsetX, offsetY] = mockDragEvent.dataTransfer.setDragImage.mock.calls[0];
+            expect(blankArg?.tagName).toBe('CANVAS');
+            expect(blankArg?.width).toBe(1);
+            expect(blankArg?.height).toBe(1);
+            expect(blankArg?.isConnected).toBe(true);
+            expect(offsetX).toBe(0);
+            expect(offsetY).toBe(0);
+
             const dragClone = document.querySelector('.sc-drag-clone');
             expect(dragClone).not.toBeNull();
+            expect(dragClone.style.getPropertyValue('--sc-drag-x')).toBe('120px');
+            expect(dragClone.style.getPropertyValue('--sc-drag-y')).toBe('160px');
+            expect(dragClone.style.left).toBe('');
+            expect(dragClone.style.top).toBe('');
+
+            const dragOverWindow = new Event('dragover', { bubbles: true, cancelable: true });
+            dragOverWindow.clientX = 245;
+            dragOverWindow.clientY = 310;
+            window.dispatchEvent(dragOverWindow);
+            expect(dragClone.style.getPropertyValue('--sc-drag-x')).toBe('245px');
+            expect(dragClone.style.getPropertyValue('--sc-drag-y')).toBe('310px');
+
             expect(dragClone.querySelector('.sc-student-chip-name')).toBeNull();
             expect(dragClone.querySelector('.sc-chip-badge')).toBeNull();
             const cellName = dragClone.querySelector('.sc-cell-name');
             expect(cellName).not.toBeNull();
             expect(cellName.textContent).toBe('Lucas');
             expect(cellName.querySelector('.sc-cell-initial')).toBeNull();
-            SeatingChartManager._removeDragClones();
+            chip.dispatchEvent(new Event('dragend'));
+            expect(document.querySelector('.sc-drag-clone')).toBeNull();
 
             SeatingChartManager._createTouchGhost(chip, { clientX: 120, clientY: 160 });
             const touchGhost = document.querySelector('.sc-touch-ghost');
             expect(touchGhost).not.toBeNull();
+            expect(touchGhost.style.getPropertyValue('--sc-drag-x')).toBe('120px');
+            expect(touchGhost.style.getPropertyValue('--sc-drag-y')).toBe('160px');
+            expect(touchGhost.style.left).toBe('');
+            expect(touchGhost.style.top).toBe('');
             expect(touchGhost.querySelector('.sc-student-chip-name')).toBeNull();
             expect(touchGhost.querySelector('.sc-chip-badge')).toBeNull();
             expect(touchGhost.querySelector('.sc-cell-name')?.textContent).toBe('Lucas');
@@ -2129,6 +2155,53 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cellNameHomonym.textContent).toBe('Lucas M.');
             expect(cellNameHomonym.querySelector('.sc-cell-initial')?.textContent).toBe('M.');
             SeatingChartManager._removeDragClones();
+        });
+
+        it('devrait piloter le déplacement souris via pointermove 120 Hz en désarmant le drag HTML5 natif (zéro double étiquette ni latence DoDragDrop)', () => {
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._initGrid(5, 6);
+            SeatingChartManager._gridState[0][0] = 's1';
+            SeatingChartManager._render();
+
+            const originCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            const targetCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="1"]');
+            expect(originCell).not.toBeNull();
+            expect(targetCell).not.toBeNull();
+
+            const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
+            Object.assign(pointerDown, { pointerType: 'mouse', button: 0, clientX: 100, clientY: 100 });
+            originCell.dispatchEvent(pointerDown);
+
+            // Le drag HTML5 natif est désarmé pendant la pression souris et tout dragstart parasite est intercepté
+            expect(originCell.draggable).toBe(false);
+            const strayDragStart = new Event('dragstart', { bubbles: true, cancelable: true });
+            originCell.dispatchEvent(strayDragStart);
+            expect(strayDragStart.defaultPrevented).toBe(true);
+
+            const origElementsFromPoint = document.elementsFromPoint;
+            document.elementsFromPoint = vi.fn(() => [targetCell]);
+            try {
+                const pointerMove = new Event('pointermove', { bubbles: true, cancelable: true });
+                Object.assign(pointerMove, { pointerType: 'mouse', clientX: 220, clientY: 140 });
+                window.dispatchEvent(pointerMove);
+
+                const activeClone = document.querySelector('.sc-drag-clone');
+                expect(activeClone).not.toBeNull();
+                expect(activeClone.style.getPropertyValue('--sc-drag-x')).toBe('220px');
+                expect(activeClone.style.getPropertyValue('--sc-drag-y')).toBe('140px');
+                expect(originCell.classList.contains('dragging')).toBe(true);
+                expect(targetCell.classList.contains('drag-over')).toBe(true);
+
+                const pointerUp = new Event('pointerup', { bubbles: true, cancelable: true });
+                Object.assign(pointerUp, { pointerType: 'mouse', button: 0, clientX: 220, clientY: 140 });
+                window.dispatchEvent(pointerUp);
+
+                expect(document.querySelector('.sc-drag-clone')).toBeNull();
+                expect(SeatingChartManager._gridState[0][0]).toBeNull();
+                expect(SeatingChartManager._gridState[0][1]).toBe('s1');
+            } finally {
+                document.elementsFromPoint = origElementsFromPoint;
+            }
         });
 
         it('devrait harmoniser le drag tactile en un état unique sans vibration parasite ni débordement de l’appui long du mode lecture (draggable désarmé, contextmenu bloqué en édition, échelle --sc-drag-scale alignée)', () => {

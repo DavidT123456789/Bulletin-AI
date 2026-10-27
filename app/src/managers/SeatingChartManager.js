@@ -42,6 +42,10 @@ export const SeatingChartManager = {
     _gridState: [],
     _students: [],
     _dragSource: null,
+    _hoveredDragCell: null,
+    _mousePressedElement: null,
+    _mouseDragClone: null,
+    _activeMouseDragAbort: null,
     _touchDragEl: null,
     _touchSourceInfo: null,
     _touchPressedElement: null,
@@ -300,6 +304,14 @@ export const SeatingChartManager = {
         return true;
     },
 
+    _setElementDraggable(el, canDrag) {
+        if (!el) return;
+        el.draggable = canDrag;
+        el.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
+            memberEl.draggable = canDrag;
+        });
+    },
+
     _setupEventListeners() {
         const viewEl = document.getElementById('seatingChartView');
         viewEl?.addEventListener('pointerdown', (e) => {
@@ -307,12 +319,11 @@ export const SeatingChartManager = {
                 this._isTouchActive = false;
                 this._isMousePointerActive = true;
                 this._lastTouchTime = 0;
-                const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
-                if (dragTarget && !this._isLocked && !dragTarget.classList.contains('pinned')) {
-                    dragTarget.draggable = true;
-                    dragTarget.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
-                        el.draggable = true;
-                    });
+                if (e.button === 0 && !this._isLocked && !e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, button, input, textarea')) {
+                    const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
+                    if (dragTarget && !dragTarget.classList.contains('pinned')) {
+                        this._startMousePointerDrag(e, dragTarget);
+                    }
                 }
             } else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                 this._isTouchActive = true;
@@ -322,13 +333,17 @@ export const SeatingChartManager = {
                 const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                 if (dragTarget && !this._isLocked) {
                     this._touchPressedElement = dragTarget;
-                    dragTarget.draggable = false;
-                    dragTarget.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
-                        el.draggable = false;
-                    });
+                    this._setElementDraggable(dragTarget, false);
                 }
             }
         }, { capture: true, passive: true });
+
+        viewEl?.addEventListener('dragstart', (e) => {
+            if (this._mousePressedElement || this._isTouchInteractionActive()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
 
         viewEl?.addEventListener('selectstart', (e) => {
             if (!e.target?.closest?.('input, textarea')) {
@@ -339,6 +354,18 @@ export const SeatingChartManager = {
         viewEl?.addEventListener('contextmenu', (e) => {
             if (!this._isLocked || e.target.closest?.('.sc-student-chip')) {
                 e.preventDefault();
+            }
+        });
+
+        viewEl?.addEventListener('dragover', (e) => {
+            if (this._isLocked || !this._dragSource) return;
+            e.preventDefault();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'move';
+            }
+            if (this._hoveredDragCell && !this._hoveredDragCell.contains(e.target)) {
+                this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+                this._hoveredDragCell = null;
             }
         });
 
@@ -2770,14 +2797,14 @@ export const SeatingChartManager = {
             e.dataTransfer.effectAllowed = 'move';
             TooltipsUI?.hideAll?.();
             this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
-            requestAnimationFrame(() => cell.classList.add('dragging'));
+            cell.classList.add('dragging');
         });
 
         cell.addEventListener('dragend', () => {
             cell.classList.remove('dragging');
             this._dragSource = null;
+            this._removeDragClones?.();
             document.getElementById('scSidebar')?.classList.remove('drag-over');
-            document.body.classList.remove('sc-drag-over-sidebar');
         });
 
         this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
@@ -2816,10 +2843,8 @@ export const SeatingChartManager = {
                 e.dataTransfer?.setData?.('text/plain', memberId);
                 if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
                 this._setCleanMemberDragImage(e, memberStudent, memberEl);
-                requestAnimationFrame(() => {
-                    cell.querySelectorAll(`.sc-stacked-avatar[data-result-id="${memberId}"], .sc-stacked-member[data-result-id="${memberId}"]`).forEach(el => {
-                        el.classList.add('dragging-member');
-                    });
+                cell.querySelectorAll(`.sc-stacked-avatar[data-result-id="${memberId}"], .sc-stacked-member[data-result-id="${memberId}"]`).forEach(el => {
+                    el.classList.add('dragging-member');
                 });
             });
 
@@ -2827,8 +2852,8 @@ export const SeatingChartManager = {
                 e.stopPropagation();
                 cell.querySelectorAll('.dragging-member').forEach(el => el.classList.remove('dragging-member'));
                 this._dragSource = null;
+                this._removeDragClones?.();
                 document.getElementById('scSidebar')?.classList.remove('drag-over');
-                document.body.classList.remove('sc-drag-over-sidebar');
             });
         });
     },
@@ -2854,11 +2879,7 @@ export const SeatingChartManager = {
     _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
-            const canDrag = this._isNativeDraggableAllowed() && !isPinned;
-            cell.draggable = canDrag;
-            cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
-                el.draggable = canDrag;
-            });
+            this._setElementDraggable(cell, this._isNativeDraggableAllowed() && !isPinned);
             const row = parseInt(cell.dataset.row, 10);
             const col = parseInt(cell.dataset.col, 10);
             const cellIds = (!isNaN(row) && !isNaN(col)) ? this._getCellStudentIds(row, col) : [cell.dataset.resultId].filter(Boolean);
@@ -4379,23 +4400,41 @@ export const SeatingChartManager = {
         }
 
         cell.addEventListener('dragover', (e) => {
-            if (!this._isValidDropTarget(row, col)) return;
+            if (!this._isValidDropTarget(row, col)) {
+                if (this._hoveredDragCell && this._hoveredDragCell !== cell) {
+                    this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+                    this._hoveredDragCell = null;
+                }
+                return;
+            }
             
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            if (this._hoveredDragCell === cell && cell.classList.contains('drag-over')) return;
+            if (this._hoveredDragCell && this._hoveredDragCell !== cell) {
+                this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+            }
+            this._hoveredDragCell = cell;
             cell.classList.add('drag-over');
             cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col));
             cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col));
         });
 
-        cell.addEventListener('dragleave', () => {
+        cell.addEventListener('dragleave', (e) => {
+            if (e.relatedTarget && cell.contains(e.relatedTarget)) return;
             cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+            if (this._hoveredDragCell === cell) {
+                this._hoveredDragCell = null;
+            }
         });
 
         cell.addEventListener('drop', (e) => {
             if (this._isLocked) return;
             e.preventDefault();
             cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+            if (this._hoveredDragCell === cell) {
+                this._hoveredDragCell = null;
+            }
             this._handleDrop(row, col);
         });
 
@@ -4610,13 +4649,13 @@ export const SeatingChartManager = {
                 }
                 e.dataTransfer.effectAllowed = 'move';
                 this._setCleanDragImage(e, chip, isSelected ? this._selectedChipIds.length : 1);
-                requestAnimationFrame(() => chip.classList.add('dragging'));
+                chip.classList.add('dragging');
             });
 
             chip.addEventListener('dragend', () => {
                 chip.classList.remove('dragging');
                 this._dragSource = null;
-                document.body.classList.remove('sc-drag-over-sidebar');
+                this._removeDragClones?.();
             });
 
             chip.addEventListener('click', (e) => {
@@ -5231,11 +5270,7 @@ export const SeatingChartManager = {
             return;
         }
         cell.classList.toggle('pinned', Boolean(isPinned));
-        const canDrag = this._isNativeDraggableAllowed() && !isPinned;
-        cell.draggable = canDrag;
-        cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
-            el.draggable = canDrag;
-        });
+        this._setElementDraggable(cell, this._isNativeDraggableAllowed() && !isPinned);
         const pinBtn = cell.querySelector('.sc-cell-pin');
         if (pinBtn) {
             const label = isPinned ? 'Détacher' : 'Fixer';
@@ -5334,6 +5369,193 @@ export const SeatingChartManager = {
         return elapsed >= 0 && elapsed < 350;
     },
 
+    _resolveElementDragSource(element, eventTarget, fallbackSourceInfo = null) {
+        let activeSourceInfo = fallbackSourceInfo
+            ? { ...fallbackSourceInfo }
+            : (element.classList.contains('sc-student-chip')
+                ? { type: 'sidebar', resultId: element.dataset.resultId }
+                : { type: 'cell', resultId: element.dataset.resultId });
+
+        if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
+            const r = parseInt(element.dataset.row, 10);
+            const c = parseInt(element.dataset.col, 10);
+            if (!isNaN(r) && !isNaN(c)) {
+                activeSourceInfo.row = r;
+                activeSourceInfo.col = c;
+                const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.length > 0) {
+                    activeSourceInfo.resultId = cellIds[0];
+                }
+                const memberEl = cellIds.length > 1
+                    ? eventTarget?.closest?.('.sc-stacked-avatar[data-result-id], .sc-stacked-member[data-result-id]')
+                    : null;
+                if (memberEl?.dataset?.resultId && !this._selectedChipIds.includes(activeSourceInfo.resultId)) {
+                    activeSourceInfo = {
+                        type: 'group-member',
+                        resultId: memberEl.dataset.resultId,
+                        row: r,
+                        col: c
+                    };
+                }
+            }
+        }
+        if (activeSourceInfo.type !== 'group-member' && activeSourceInfo.resultId && this._selectedChipIds.includes(activeSourceInfo.resultId)) {
+            activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+        }
+        return activeSourceInfo;
+    },
+
+    _executePointerDrop(x, y, sourceInfo) {
+        if (!sourceInfo || !(x > 0 || y > 0)) return;
+        const elementsAtPoint = document.elementsFromPoint?.(x, y) || [];
+        if (this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+            if (sourceInfo.type === 'cell' || sourceInfo.type === 'multi-cell' || sourceInfo.type === 'group-member') {
+                this._dragSource = sourceInfo;
+                this._handleRemoveFromSidebarDrop();
+            }
+        } else {
+            const targetCell = this._getCellUnderPoint(x, y, elementsAtPoint);
+            if (targetCell) {
+                const targetRow = parseInt(targetCell.dataset.row, 10);
+                const targetCol = parseInt(targetCell.dataset.col, 10);
+                if (this._isValidDropTarget(targetRow, targetCol)) {
+                    this._dragSource = sourceInfo;
+                    this._handleDrop(targetRow, targetCol);
+                    this._dragSource = null;
+                }
+            }
+        }
+    },
+
+    _startMousePointerDrag(e, dragTarget) {
+        this._cleanupMouseDrag();
+        this._mousePressedElement = dragTarget;
+        this._setElementDraggable(dragTarget, false);
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const sourceInfo = this._resolveElementDragSource(dragTarget, e.target);
+        let hasDragged = false;
+
+        const onPointerMove = (ev) => {
+            if (this._isLocked || !this._mousePressedElement) {
+                finishDrag(ev, true);
+                return;
+            }
+            const cx = ev.clientX;
+            const cy = ev.clientY;
+            if (!hasDragged) {
+                if (Math.hypot(cx - startX, cy - startY) < 4) return;
+                hasDragged = true;
+                this._dragSource = sourceInfo;
+                TooltipsUI?.hideAll?.();
+                this._dismissOnboardingHint();
+
+                if (sourceInfo.type === 'group-member' && sourceInfo.resultId) {
+                    dragTarget.querySelectorAll('.is-member-hovered').forEach(el => el.classList.remove('is-member-hovered'));
+                    this._clearSelection();
+                    dragTarget.querySelectorAll(`.sc-stacked-avatar[data-result-id="${sourceInfo.resultId}"], .sc-stacked-member[data-result-id="${sourceInfo.resultId}"]`).forEach(el => {
+                        el.classList.add('dragging-member');
+                    });
+                } else {
+                    if (sourceInfo.type !== 'multi-cell') {
+                        this._clearSelection();
+                    }
+                    dragTarget.classList.add('dragging');
+                }
+
+                this._removeDragClones();
+                const isGroupMember = sourceInfo.type === 'group-member' && sourceInfo.resultId;
+                const memberStudent = isGroupMember
+                    ? (this._studentMap?.get(sourceInfo.resultId) || this._students?.find(s => s.id === sourceInfo.resultId) || false)
+                    : null;
+                const count = sourceInfo.type === 'multi-cell' ? sourceInfo.ids.length : 1;
+                const cloneSourceEl = isGroupMember
+                    ? (dragTarget.querySelector(`.sc-stacked-avatar[data-result-id="${sourceInfo.resultId}"], .sc-stacked-member[data-result-id="${sourceInfo.resultId}"]`) || dragTarget)
+                    : dragTarget;
+                const clone = this._buildFloatingDragClone(cloneSourceEl, {
+                    baseClass: 'sc-drag-clone',
+                    count,
+                    memberStudent
+                });
+                this._setFloatingClonePosition(clone, cx, cy);
+                document.body.appendChild(clone);
+                this._mouseDragClone = clone;
+            }
+
+            if (this._mouseDragClone && (cx > 0 || cy > 0)) {
+                this._setFloatingClonePosition(this._mouseDragClone, cx, cy);
+                this._highlightCellUnderTouch(cx, cy);
+                this._updateTouchAutoScroll(cx, cy);
+            }
+        };
+
+        const onKeyDown = (ev) => {
+            if (ev.key === 'Escape' && hasDragged) {
+                finishDrag(ev, true);
+            }
+        };
+
+        const finishDrag = (ev, cancelled = false) => {
+            window.removeEventListener('pointermove', onPointerMove, true);
+            window.removeEventListener('pointerup', onPointerUp, true);
+            window.removeEventListener('pointercancel', onPointerCancel, true);
+            window.removeEventListener('blur', onPointerCancel);
+            window.removeEventListener('keydown', onKeyDown, true);
+            this._activeMouseDragAbort = null;
+
+            if (hasDragged) {
+                const suppressClickOnce = (clickEv) => {
+                    clickEv.stopPropagation();
+                    clickEv.preventDefault();
+                    dragTarget.removeEventListener('click', suppressClickOnce, true);
+                };
+                dragTarget.addEventListener('click', suppressClickOnce, true);
+                setTimeout(() => dragTarget.removeEventListener('click', suppressClickOnce, true), 0);
+
+                if (!cancelled && ev) {
+                    this._executePointerDrop(ev.clientX, ev.clientY, sourceInfo);
+                }
+            }
+
+            this._cleanupMouseDrag();
+        };
+
+        const onPointerUp = (ev) => finishDrag(ev, false);
+        const onPointerCancel = (ev) => finishDrag(ev, true);
+
+        this._activeMouseDragAbort = () => finishDrag(null, true);
+        window.addEventListener('pointermove', onPointerMove, true);
+        window.addEventListener('pointerup', onPointerUp, true);
+        window.addEventListener('pointercancel', onPointerCancel, true);
+        window.addEventListener('blur', onPointerCancel, { once: true });
+        window.addEventListener('keydown', onKeyDown, true);
+    },
+
+    _cleanupMouseDrag() {
+        if (this._activeMouseDragAbort) {
+            const abort = this._activeMouseDragAbort;
+            this._activeMouseDragAbort = null;
+            abort();
+            return;
+        }
+        if (this._mousePressedElement) {
+            const el = this._mousePressedElement;
+            this._mousePressedElement = null;
+            el.classList.remove('dragging');
+            el.querySelectorAll('.dragging-member').forEach(m => m.classList.remove('dragging-member'));
+            this._setElementDraggable(el, this._isNativeDraggableAllowed() && !el.classList.contains('pinned'));
+        }
+        this._stopTouchAutoScroll();
+        this._mouseDragClone = null;
+        this._dragSource = null;
+        this._removeDragClones();
+        document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
+            c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+        });
+        document.getElementById('scSidebar')?.classList.remove('drag-over');
+    },
+
     _addTouchDrag(element, sourceInfo) {
         let startX, startY, lastTouchX, lastTouchY, hasMoved = false, hasDragged = false;
         let isScrolling = false;
@@ -5396,38 +5618,9 @@ export const SeatingChartManager = {
 
             // Disarm native HTML5 touch drag during finger interaction so only the unified touch ghost is used
             this._touchPressedElement = element;
-            element.draggable = false;
-            element.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(el => {
-                el.draggable = false;
-            });
+            this._setElementDraggable(element, false);
 
-            let activeSourceInfo = { ...sourceInfo };
-            if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
-                const r = parseInt(element.dataset.row, 10);
-                const c = parseInt(element.dataset.col, 10);
-                if (!isNaN(r) && !isNaN(c)) {
-                    activeSourceInfo.row = r;
-                    activeSourceInfo.col = c;
-                    const cellIds = this._getCellStudentIds(r, c);
-                    if (cellIds.length > 0) {
-                        activeSourceInfo.resultId = cellIds[0];
-                    }
-                    const memberEl = cellIds.length > 1
-                        ? e.target.closest?.('.sc-stacked-avatar[data-result-id], .sc-stacked-member[data-result-id]')
-                        : null;
-                    if (memberEl?.dataset?.resultId && !this._selectedChipIds.includes(activeSourceInfo.resultId)) {
-                        activeSourceInfo = {
-                            type: 'group-member',
-                            resultId: memberEl.dataset.resultId,
-                            row: r,
-                            col: c
-                        };
-                    }
-                }
-            }
-            if (activeSourceInfo.type !== 'group-member' && activeSourceInfo.resultId && this._selectedChipIds.includes(activeSourceInfo.resultId)) {
-                activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
-            }
+            const activeSourceInfo = this._resolveElementDragSource(element, e.target, sourceInfo);
             pendingSourceInfo = activeSourceInfo;
             this._touchSourceInfo = activeSourceInfo;
 
@@ -5516,8 +5709,7 @@ export const SeatingChartManager = {
             if (hasMoved && this._touchDragEl) {
                 if (e.cancelable) e.preventDefault();
                 if (touch.clientX > 0 || touch.clientY > 0) {
-                    this._touchDragEl.style.left = `${touch.clientX}px`;
-                    this._touchDragEl.style.top = `${touch.clientY}px`;
+                    this._setFloatingClonePosition(this._touchDragEl, touch.clientX, touch.clientY);
                 }
                 if (hasDragged) {
                     this._highlightCellUnderTouch(touch.clientX, touch.clientY);
@@ -5535,22 +5727,8 @@ export const SeatingChartManager = {
             this._lastTouchDragEndTime = Date.now();
             if (e.cancelable) e.preventDefault();
             const touch = e.changedTouches[0];
-            if (this._isTouchOverSidebar(touch.clientX, touch.clientY)) {
-                if (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell' || this._touchSourceInfo.type === 'group-member') {
-                    this._dragSource = this._touchSourceInfo;
-                    this._handleRemoveFromSidebarDrop();
-                }
-            } else {
-                const targetCell = this._getCellUnderPoint(touch.clientX, touch.clientY);
-                if (targetCell) {
-                    const targetRow = parseInt(targetCell.dataset.row);
-                    const targetCol = parseInt(targetCell.dataset.col);
-                    if (this._isValidDropTarget(targetRow, targetCol)) {
-                        this._dragSource = this._touchSourceInfo;
-                        this._handleDrop(targetRow, targetCol);
-                        this._dragSource = null;
-                    }
-                }
+            if (touch) {
+                this._executePointerDrop(touch.clientX, touch.clientY, this._touchSourceInfo);
             }
             this._cleanupTouch();
         });
@@ -5574,8 +5752,7 @@ export const SeatingChartManager = {
             count,
             memberStudent
         });
-        ghost.style.left = `${touch.clientX}px`;
-        ghost.style.top = `${touch.clientY}px`;
+        this._setFloatingClonePosition(ghost, touch.clientX, touch.clientY);
         document.body.appendChild(ghost);
         this._touchDragEl = ghost;
     },
@@ -5589,7 +5766,8 @@ export const SeatingChartManager = {
         this._lastTouchDragX = x;
         this._lastTouchDragY = y;
 
-        if (this._isFitted || !this._touchDragEl || this._isTouchOverSidebar(x, y)) {
+        const hasActiveFloatingClone = Boolean(this._touchDragEl || this._mouseDragClone);
+        if (this._isFitted || !hasActiveFloatingClone || this._isTouchOverSidebar(x, y)) {
             this._stopTouchAutoScroll();
             return;
         }
@@ -5628,7 +5806,7 @@ export const SeatingChartManager = {
 
         if (!this._touchAutoScrollRaf) {
             const step = () => {
-                if (!this._touchDragEl || this._isFitted || (this._touchAutoScrollVx === 0 && this._touchAutoScrollVy === 0)) {
+                if (!(this._touchDragEl || this._mouseDragClone) || this._isFitted || (this._touchAutoScrollVx === 0 && this._touchAutoScrollVy === 0)) {
                     this._touchAutoScrollRaf = null;
                     return;
                 }
@@ -5678,10 +5856,7 @@ export const SeatingChartManager = {
                 this._lastTouchTime = 0;
             }
             const canDrag = !preserveTouchTimestamp && this._isNativeDraggableAllowed() && !el.classList.contains('pinned');
-            el.draggable = canDrag;
-            el.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
-                memberEl.draggable = canDrag;
-            });
+            this._setElementDraggable(el, canDrag);
         }
         document.querySelectorAll('#seatingChartView .dragging, #seatingChartView .dragging-member').forEach(el => {
             el.classList.remove('dragging', 'dragging-member');
@@ -5695,6 +5870,7 @@ export const SeatingChartManager = {
             this._suppressTouchTooltips(400);
         }
         document.body.classList.remove('sc-drag-over-sidebar');
+        this._hoveredDragCell = null;
         document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
             c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
         });
@@ -5702,36 +5878,54 @@ export const SeatingChartManager = {
     },
 
     _highlightCellUnderTouch(x, y) {
-        document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
-            c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-        });
-        const sidebar = document.querySelector('.sc-sidebar');
-        if (sidebar) sidebar.classList.remove('drag-over');
-        document.body.classList.remove('sc-drag-over-sidebar');
+        const sidebar = document.getElementById('scSidebar') || document.querySelector('.sc-sidebar');
+        const activeSource = this._touchSourceInfo || this._dragSource;
+        const elementsAtPoint = document.elementsFromPoint?.(x, y) || [];
 
-        if (this._isTouchOverSidebar(x, y)) {
-            if (sidebar && !this._isLocked && this._touchSourceInfo && (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell' || this._touchSourceInfo.type === 'group-member')) {
-                sidebar.classList.add('drag-over');
-                document.body.classList.add('sc-drag-over-sidebar');
+        if (this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+            if (this._hoveredDragCell) {
+                this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+                this._hoveredDragCell = null;
             }
-        } else {
-            const cell = this._getCellUnderPoint(x, y);
-            if (cell) {
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                if (this._isValidDropTarget(row, col)) {
-                    cell.classList.add('drag-over');
-                    if (this._willDropJoinGroup(row, col, this._touchSourceInfo)) {
-                        cell.classList.add('drag-over-join');
-                    } else if (this._willDropOverflowGroup(row, col, this._touchSourceInfo)) {
-                        cell.classList.add('drag-over-full');
-                    }
-                }
+            const canRemove = Boolean(
+                sidebar &&
+                !this._isLocked &&
+                activeSource &&
+                (activeSource.type === 'cell' || activeSource.type === 'multi-cell' || activeSource.type === 'group-member')
+            );
+            sidebar?.classList.toggle('drag-over', canRemove);
+            document.body.classList.toggle('sc-drag-over-sidebar', canRemove);
+            return;
+        }
+
+        if (sidebar?.classList.contains('drag-over')) {
+            sidebar.classList.remove('drag-over');
+            document.body.classList.remove('sc-drag-over-sidebar');
+        }
+
+        const cell = this._getCellUnderPoint(x, y, elementsAtPoint);
+        if (cell && cell === this._hoveredDragCell && cell.classList.contains('drag-over')) {
+            return;
+        }
+
+        if (this._hoveredDragCell) {
+            this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
+            this._hoveredDragCell = null;
+        }
+
+        if (cell) {
+            const row = parseInt(cell.dataset.row, 10);
+            const col = parseInt(cell.dataset.col, 10);
+            if (this._isValidDropTarget(row, col)) {
+                this._hoveredDragCell = cell;
+                cell.classList.add('drag-over');
+                cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col, activeSource));
+                cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col, activeSource));
             }
         }
     },
 
-    _getCellUnderPoint(x, y) {
+    _getCellUnderPoint(x, y, elementsAtPoint = null) {
         if (this._touchDragEl) {
             const ghostRect = this._touchDragEl.getBoundingClientRect?.();
             if (ghostRect && ghostRect.width > 0 && ghostRect.height > 0) {
@@ -5741,7 +5935,8 @@ export const SeatingChartManager = {
                 if (cellUnderGhost) return cellUnderGhost;
             }
         }
-        return (document.elementsFromPoint?.(x, y) || []).find(el => el.classList.contains('sc-cell')) || null;
+        const hits = elementsAtPoint || document.elementsFromPoint?.(x, y) || [];
+        return hits.find(el => el.classList.contains('sc-cell')) || null;
     },
 
     // ========================================================================
@@ -5768,7 +5963,7 @@ export const SeatingChartManager = {
         const targetIds = this._getCellStudentIds(r, c);
         if (targetIds.length > 0) {
             const anyPinned = targetIds.some(id => {
-                const targetStudent = this._students.find(s => s.id === id);
+                const targetStudent = this._studentMap?.get(id) || this._students.find(s => s.id === id);
                 return Boolean(targetStudent?.[posKey]?.pinned);
             });
             if (anyPinned) return false;
@@ -5785,9 +5980,11 @@ export const SeatingChartManager = {
         return true;
     },
 
-    _isTouchOverSidebar(x, y) {
-        if (this._touchSourceInfo?.type === 'sidebar') return false;
-        return (document.elementsFromPoint?.(x, y) || []).some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
+    _isTouchOverSidebar(x, y, elementsAtPoint = null) {
+        const activeSource = this._touchSourceInfo || this._dragSource;
+        if (activeSource?.type === 'sidebar') return false;
+        const hits = elementsAtPoint || document.elementsFromPoint?.(x, y) || [];
+        return hits.some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
     },
 
     _handleRemoveFromSidebarDrop() {

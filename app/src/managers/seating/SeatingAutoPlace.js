@@ -483,6 +483,29 @@ export const SeatingAutoPlace = {
     _removeDragClones() {
         document.querySelectorAll('.sc-drag-clone').forEach(el => el.remove());
         document.body.classList.remove('sc-drag-over-sidebar');
+        this._hoveredDragCell = null;
+    },
+
+    _getBlankDragCanvas() {
+        if (!this._blankDragCanvas && typeof document !== 'undefined') {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            canvas.style.cssText = 'position:fixed;top:-100px;left:-100px;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;';
+            canvas.setAttribute('aria-hidden', 'true');
+            this._blankDragCanvas = canvas;
+        }
+        if (this._blankDragCanvas && !this._blankDragCanvas.isConnected && typeof document !== 'undefined' && document.body) {
+            document.body.appendChild(this._blankDragCanvas);
+        }
+        return this._blankDragCanvas;
+    },
+
+    _setFloatingClonePosition(clone, x, y) {
+        if (!clone) return;
+        clone.style.setProperty('--sc-drag-x', `${x}px`);
+        clone.style.setProperty('--sc-drag-y', `${y}px`);
+        clone.style.translate = `${x}px ${y}px 0px`;
     },
 
     /** Builds a unified floating card clone for both mouse (.sc-drag-clone) and touch (.sc-touch-ghost) */
@@ -557,35 +580,43 @@ export const SeatingAutoPlace = {
     },
 
     _mountMouseDragClone(e, sourceEl, clone) {
-        const blank = new Image();
-        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        e.dataTransfer?.setDragImage?.(blank, 0, 0);
+        const blank = this._getBlankDragCanvas();
+        if (blank) {
+            e.dataTransfer?.setDragImage?.(blank, 0, 0);
+        }
 
         if (this._isTouchInteractionActive?.() || !(e?.clientX > 0 || e?.clientY > 0)) {
             return;
         }
 
-        clone.style.left = `${e.clientX}px`;
-        clone.style.top = `${e.clientY}px`;
+        this._setFloatingClonePosition(clone, e.clientX, e.clientY);
         document.body.appendChild(clone);
 
-        const onDrag = (ev) => {
-            if (ev.clientX <= 0 && ev.clientY <= 0) return;
-            clone.style.left = `${ev.clientX}px`;
-            clone.style.top = `${ev.clientY}px`;
+        let lastX = e.clientX;
+        let lastY = e.clientY;
+        const onDragMove = (ev) => {
+            const cx = ev.clientX;
+            const cy = ev.clientY;
+            if (cx <= 0 && cy <= 0) return;
+            if (cx === lastX && cy === lastY) return;
+            lastX = cx;
+            lastY = cy;
+            this._setFloatingClonePosition(clone, cx, cy);
         };
 
         const onDragEnd = () => {
             clone.remove();
             document.body.classList.remove('sc-drag-over-sidebar');
-            sourceEl.removeEventListener('drag', onDrag);
+            sourceEl.removeEventListener('drag', onDragMove);
             sourceEl.removeEventListener('dragend', onDragEnd);
+            window.removeEventListener('dragover', onDragMove, true);
             window.removeEventListener('dragend', onDragEnd);
             window.removeEventListener('drop', onDragEnd);
         };
 
-        sourceEl.addEventListener('drag', onDrag);
+        sourceEl.addEventListener('drag', onDragMove);
         sourceEl.addEventListener('dragend', onDragEnd);
+        window.addEventListener('dragover', onDragMove, true);
         window.addEventListener('dragend', onDragEnd, { once: true });
         window.addEventListener('drop', onDragEnd, { once: true });
     },
