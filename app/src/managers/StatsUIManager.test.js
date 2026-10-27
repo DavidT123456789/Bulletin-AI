@@ -326,4 +326,119 @@ describe('StatsUIManager', () => {
             rafSpy.mockRestore();
         });
     });
+
+    describe('updateStats - evolution card blueprint state & histogram accessibility', () => {
+        beforeEach(async () => {
+            const { appState } = await import('../state/State.js');
+            appState.periodSystem = 'semestres';
+            appState.currentPeriod = 'S1';
+            appState.filteredResults = [];
+
+            document.body.innerHTML = `
+                <div class="stat-card evolution-card" id="evolutionCard">
+                    <div class="stat-card-header">
+                        <h4 class="stat-title" id="chartTitle">Dynamique</h4>
+                        <span class="homogeneity-badge muted tooltip" id="evolutionStatusBadge" style="display: none;"></span>
+                    </div>
+                    <div class="evolution-distribution-bar">
+                        <div id="progressChartBar" class="bar-segment progress"></div>
+                        <div id="stableChartBar" class="bar-segment stable"></div>
+                        <div id="regressionChartBar" class="bar-segment regression"></div>
+                    </div>
+                    <div class="evolution-legend">
+                        <div class="legend-item" data-filter-id="progressCount" role="button" tabindex="0">
+                            <span class="legend-count" id="classEvolutionProgressStat">0</span>
+                        </div>
+                        <div class="legend-item" data-filter-id="stableCount" role="button" tabindex="0">
+                            <span class="legend-count" id="classEvolutionStableStat">0</span>
+                        </div>
+                        <div class="legend-item" data-filter-id="regressionCount" role="button" tabindex="0">
+                            <span class="legend-count" id="classEvolutionRegressionStat">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="histogram-bars">
+                    <div class="hist-bar-group" data-range="0-4" role="button" tabindex="0"><div class="hist-bar"></div></div>
+                    <div class="hist-bar-group" data-range="4-8" role="button" tabindex="0"><div class="hist-bar"></div></div>
+                    <div class="hist-bar-group" data-range="8-12" role="button" tabindex="0"><div class="hist-bar"></div></div>
+                    <div class="hist-bar-group" data-range="12-16" role="button" tabindex="0"><div class="hist-bar"></div></div>
+                    <div class="hist-bar-group" data-range="16-20" role="button" tabindex="0"><div class="hist-bar"></div></div>
+                </div>
+            `;
+        });
+
+        it('should keep evolution legend in blueprint standby ("—") with status badge in S1', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            appState.currentPeriod = 'S1';
+            appState.filteredResults = [
+                { studentData: { periods: { S1: { grade: 12 } } } }
+            ];
+
+            await StatsUI.updateStats();
+
+            const evolutionCard = document.getElementById('evolutionCard');
+            const badge = document.getElementById('evolutionStatusBadge');
+            const progressStat = document.getElementById('classEvolutionProgressStat');
+            const progressItem = evolutionCard.querySelector('.legend-item[data-filter-id="progressCount"]');
+
+            expect(evolutionCard.classList.contains('is-empty')).toBe(true);
+            expect(badge.style.display).toBe('');
+            expect(badge.textContent).toBe('Dès le S2');
+            expect(progressStat.textContent).toBe('—');
+            expect(progressItem.getAttribute('tabindex')).toBe('-1');
+            expect(progressItem.getAttribute('aria-disabled')).toBe('true');
+        });
+
+        it('should activate evolution legend and hide status badge in S2', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            appState.currentPeriod = 'S2';
+            appState.filteredResults = [
+                { studentData: { periods: { S1: { grade: 12 }, S2: { grade: 15 } } } }
+            ];
+
+            await StatsUI.updateStats();
+
+            const evolutionCard = document.getElementById('evolutionCard');
+            const badge = document.getElementById('evolutionStatusBadge');
+            const progressItem = evolutionCard.querySelector('.legend-item[data-filter-id="progressCount"]');
+
+            expect(evolutionCard.classList.contains('is-empty')).toBe(false);
+            expect(badge.style.display).toBe('none');
+            expect(progressItem.getAttribute('tabindex')).toBe('0');
+            expect(progressItem.hasAttribute('aria-disabled')).toBe(false);
+        });
+
+        it('should mark zero-student histogram bars as aria-disabled and non-focusable', () => {
+            StatsUI.updateHistogram([0, 0, 3, 4, 1]);
+
+            const zeroBar = document.querySelector('.hist-bar-group[data-range="0-4"]');
+            const activeBar = document.querySelector('.hist-bar-group[data-range="12-16"]');
+
+            expect(zeroBar.getAttribute('data-count')).toBe('0');
+            expect(zeroBar.getAttribute('tabindex')).toBe('-1');
+            expect(zeroBar.getAttribute('aria-disabled')).toBe('true');
+
+            expect(activeBar.getAttribute('data-count')).toBe('4');
+            expect(activeBar.getAttribute('tabindex')).toBe('0');
+            expect(activeBar.hasAttribute('aria-disabled')).toBe(false);
+        });
+
+        it('should include student names and grades in histogram bar tooltip on hover', () => {
+            const results = [
+                { studentData: { name: 'BERNARD Thomas', periods: { S2: { grade: 15 } } } },
+                { studentData: { name: 'MARTIN Lucas', periods: { S2: { grade: 12.5 } } } }
+            ];
+
+            StatsUI.updateHistogram([0, 0, 0, 2, 0], results, 'S2');
+
+            const bar12_16 = document.querySelector('.hist-bar-group[data-range="12-16"]');
+            expect(bar12_16.getAttribute('data-tooltip')).toContain('2 élèves (12-16/20)');
+            expect(bar12_16.getAttribute('data-tooltip')).toContain('BERNARD Thomas (15)');
+            expect(bar12_16.getAttribute('data-tooltip')).toContain('MARTIN Lucas (12,5)');
+        });
+    });
 });

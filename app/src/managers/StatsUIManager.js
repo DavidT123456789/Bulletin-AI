@@ -328,14 +328,16 @@ export const StatsUI = {
             ? (stats.avgGrade - stats.prevAvgGrade)
             : null;
 
+        const hasEvolutionData = previousPeriod !== null;
+
         const elementsToAnimate = {
             currentAvgGradeOutput: stats.avgGrade,
             previousAvgGradeOutput: stats.prevAvgGrade,
             minAvgGradeOutput: stats.minGrade,
             maxAvgGradeOutput: stats.maxGrade,
-            classEvolutionProgressStat: stats.progress,
-            classEvolutionStableStat: stats.stable,
-            classEvolutionRegressionStat: stats.regression,
+            classEvolutionProgressStat: hasEvolutionData ? stats.progress : '—',
+            classEvolutionStableStat: hasEvolutionData ? stats.stable : '—',
+            classEvolutionRegressionStat: hasEvolutionData ? stats.regression : '—',
         };
 
         for (const [id, value] of Object.entries(elementsToAnimate)) {
@@ -407,14 +409,30 @@ export const StatsUI = {
         const evolutionChip = document.getElementById('classEvolutionChip');
         if (avgEvoEl && evolutionChip) {
             evolutionChip.classList.remove('positive', 'negative', 'stable');
+            let refEl = document.getElementById('classEvolutionRef');
+            if (!refEl) {
+                refEl = document.createElement('span');
+                refEl.id = 'classEvolutionRef';
+                refEl.className = 'evolution-ref';
+                evolutionChip.appendChild(refEl);
+            }
             if (avgEvolution === null) {
                 avgEvoEl.textContent = '--';
+                refEl.textContent = '';
+                refEl.style.display = 'none';
                 evolutionChip.classList.add('stable');
                 evolutionChip.style.display = 'none';
             } else {
                 evolutionChip.style.display = '';
+                if (previousPeriod) {
+                    refEl.textContent = `vs ${previousPeriod}`;
+                    refEl.style.display = '';
+                } else {
+                    refEl.textContent = '';
+                    refEl.style.display = 'none';
+                }
                 // startValue can contain a comma, replace it before parsing
-                const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.').replace(' pts', '')) || 0;
+                const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.')) || 0;
                 const promise = new Promise(resolve => {
                     let startTimestamp = null; const duration = 500;
                     const step = (timestamp) => {
@@ -465,7 +483,7 @@ export const StatsUI = {
         }
 
         // Update Histogram (en parallèle avec les animations)
-        this.updateHistogram(stats.distribution);
+        this.updateHistogram(stats.distribution, filtered, activePeriod);
 
         await Promise.all(animationPromises);
 
@@ -480,27 +498,66 @@ export const StatsUI = {
     /**
      * Met à jour l'histogramme de distribution des notes.
      * @param {number[]} distribution - Tableau [0-4, 4-8, 8-12, 12-16, 16-20]
+     * @param {Array} [filteredResults] - Résultats filtrés pour enrichir le tooltip avec les noms des élèves
+     * @param {string} [activePeriod] - Période active
      */
-    updateHistogram(distribution) {
+    updateHistogram(distribution, filteredResults = appState.filteredResults, activePeriod = appState.currentPeriod) {
         if (!distribution || distribution.length !== 5) return;
         const maxCount = Math.max(...distribution);
         const ranges = ['0-4', '4-8', '8-12', '12-16', '16-20'];
+        const rangeBuckets = [[], [], [], [], []];
+
+        if (Array.isArray(filteredResults) && activePeriod) {
+            filteredResults.forEach(res => {
+                const raw = res?.studentData?.periods?.[activePeriod]?.grade;
+                const grade = typeof raw === 'number' ? raw : parseFloat(String(raw ?? '').replace(',', '.'));
+                if (isNaN(grade)) return;
+                const name = res?.studentData?.name || `${res?.studentData?.nom || ''} ${res?.studentData?.prenom || ''}`.trim();
+                if (!name) return;
+                const idx = grade < 4 ? 0 : grade < 8 ? 1 : grade < 12 ? 2 : grade < 16 ? 3 : 4;
+                rangeBuckets[idx].push({ name, grade });
+            });
+        }
 
         ranges.forEach((range, index) => {
             const barGroup = document.querySelector(`.hist-bar-group[data-range="${range}"]`);
             if (barGroup) {
                 const count = distribution[index];
-                const heightPercent = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                // 68% max height leaves room for the count label above and the range label below while keeping true proportional heights (e.g. 2 is 2/3 of 3)
+                const heightPercent = maxCount > 0 ? Math.round((count / maxCount) * 68) : 0;
 
                 // Update bar height
                 const bar = barGroup.querySelector('.hist-bar');
-                if (bar) bar.style.height = `${Math.max(heightPercent, 2)}%`; // Min 2% visibility
+                if (bar) bar.style.height = `${Math.max(heightPercent, 4)}%`;
 
                 barGroup.setAttribute('data-count', count);
+                if (count === 0) {
+                    barGroup.setAttribute('tabindex', '-1');
+                    barGroup.setAttribute('aria-disabled', 'true');
+                } else {
+                    barGroup.setAttribute('tabindex', '0');
+                    barGroup.removeAttribute('aria-disabled');
+                }
 
-                // Update tooltip (Tippy.js) - Info only, filter action is implicit
+                // Update tooltip (Tippy.js) with student names when available
                 const pluriel = count > 1 ? 's' : '';
-                barGroup.setAttribute('data-tooltip', `${count} élève${pluriel} (${range}/20)`);
+                const headerText = `${count} élève${pluriel} (${range}/20)`;
+                const studentsInRange = rangeBuckets[index].sort((a, b) => b.grade - a.grade);
+
+                if (studentsInRange.length > 0) {
+                    const maxShown = 8;
+                    const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
+                    const lines = studentsInRange.slice(0, maxShown).map(s => {
+                        const gradeStr = Number.isInteger(s.grade) ? String(s.grade) : s.grade.toFixed(1).replace('.', ',');
+                        return `${escape(s.name)} (${gradeStr})`;
+                    });
+                    if (studentsInRange.length > maxShown) {
+                        lines.push(`+${studentsInRange.length - maxShown} autre${studentsInRange.length - maxShown > 1 ? 's' : ''}…`);
+                    }
+                    barGroup.setAttribute('data-tooltip', `<strong>${headerText}</strong><br>${lines.join('<br>')}`);
+                } else {
+                    barGroup.setAttribute('data-tooltip', headerText);
+                }
             }
         });
     },
@@ -587,8 +644,8 @@ export const StatsUI = {
     },
 
     /**
-     * Gère l'état vide de la carte Dynamique.
-     * Masque les compteurs inutiles quand il n'y a pas de période précédente.
+     * Gère l'état de repos ("Blueprint 2026") de la carte Dynamique.
+     * Conserve la structure Bento alignée en S1/T1 avec un badge contextuel en en-tête.
      * @param {string|null} previousPeriod - Période précédente
      * @param {number} studentCount - Nombre d'élèves affichés
      * @private
@@ -597,33 +654,48 @@ export const StatsUI = {
         const evolutionCard = document.getElementById('evolutionCard');
         if (!evolutionCard) return;
 
-        const bar = evolutionCard.querySelector('.evolution-distribution-bar');
-        const legend = evolutionCard.querySelector('.evolution-legend');
-        let emptyMsg = evolutionCard.querySelector('.evolution-empty-state');
-
         const hasEvolutionData = previousPeriod !== null;
         evolutionCard.classList.toggle('is-empty', !hasEvolutionData);
 
-        if (!hasEvolutionData) {
-            if (bar) bar.style.display = 'none';
-            if (legend) legend.style.display = 'none';
-
-            if (!emptyMsg) {
-                emptyMsg = document.createElement('p');
-                emptyMsg.className = 'evolution-empty-state';
-                const insertTarget = bar?.parentNode;
-                if (insertTarget) insertTarget.insertBefore(emptyMsg, bar);
+        evolutionCard.querySelectorAll('.evolution-legend .legend-item').forEach(item => {
+            if (hasEvolutionData) {
+                item.setAttribute('tabindex', '0');
+                item.removeAttribute('aria-disabled');
+            } else {
+                item.setAttribute('tabindex', '-1');
+                item.setAttribute('aria-disabled', 'true');
             }
+        });
 
-            const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
-            emptyMsg.innerHTML = studentCount === 0
-                ? `<iconify-icon icon="solar:chart-2-linear"></iconify-icon> Ajoutez des élèves pour voir la dynamique`
-                : `<iconify-icon icon="solar:chart-2-linear"></iconify-icon> Disponible à partir du prochain ${appState.periodSystem === 'semestres' ? 'semestre' : 'trimestre'}`;
-            emptyMsg.style.display = '';
-        } else {
-            if (bar) bar.style.display = '';
-            if (legend) legend.style.display = '';
-            if (emptyMsg) emptyMsg.style.display = 'none';
+        let statusBadge = document.getElementById('evolutionStatusBadge');
+        if (!statusBadge) {
+            const header = evolutionCard.querySelector('.stat-card-header');
+            if (header) {
+                statusBadge = document.createElement('span');
+                statusBadge.id = 'evolutionStatusBadge';
+                statusBadge.className = 'homogeneity-badge muted tooltip';
+                header.appendChild(statusBadge);
+            }
+        }
+
+        if (statusBadge) {
+            if (!hasEvolutionData) {
+                const isSemestre = appState.periodSystem === 'semestres';
+                statusBadge.textContent = studentCount === 0
+                    ? 'Aucun élève'
+                    : `Dès le ${isSemestre ? 'S2' : 'T2'}`;
+                statusBadge.setAttribute(
+                    'data-tooltip',
+                    studentCount === 0
+                        ? 'Ajoutez des élèves pour voir la dynamique'
+                        : `Disponible à partir du prochain ${isSemestre ? 'semestre' : 'trimestre'}`
+                );
+                statusBadge.style.display = '';
+            } else {
+                statusBadge.textContent = '';
+                statusBadge.removeAttribute('data-tooltip');
+                statusBadge.style.display = 'none';
+            }
         }
     }
 };

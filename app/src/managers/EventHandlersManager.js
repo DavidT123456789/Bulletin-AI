@@ -202,6 +202,10 @@ export const EventHandlersManager = {
         const statId = element.dataset.filterId || element.dataset.statId;
         const isCurrentlyActive = element.classList.contains('active-filter');
 
+        if (!isCurrentlyActive && (element.closest('#evolutionCard.is-empty') || element.dataset.count === '0')) {
+            return;
+        }
+
         // Reset visual state
         document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
 
