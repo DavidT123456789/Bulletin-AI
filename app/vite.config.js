@@ -133,6 +133,7 @@ export default defineConfig({
           }
           if (
             normalizedId.includes('/src/managers/TrombinoscopeManager') ||
+            normalizedId.includes('/src/managers/trombinoscope/') ||
             normalizedId.includes('/src/utils/PronoteTrombiParser')
           ) {
             return 'trombinoscope';
