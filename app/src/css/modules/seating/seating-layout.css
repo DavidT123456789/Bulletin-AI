@@ -1,0 +1,364 @@
+/* ====================================================================
+   SEATING CHART MODULE — Integrated View (Plan de Classe)
+   ==================================================================== */
+
+/* ────────── CELL DIMENSION TOKENS (Single Source of Truth) ────────── */
+:root {
+    --sc-cell-w: 88px;
+    --sc-cell-h: 96px;
+    --sc-drawer-transition: 0.52s var(--ease-spring, cubic-bezier(0.32, 0.72, 0, 1));
+}
+
+/* ────────── VIEW TOGGLE (Header) ────────── */
+.view-toggle {
+    display: none;
+    width: 150px;
+    flex-shrink: 0;
+    transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+.view-toggle.visible {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .view-toggle {
+        width: auto;
+    }
+}
+
+/* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */
+.main-content-wrapper[data-view="plan"] .stats-container,
+.main-content-wrapper[data-view="plan"] .output-header,
+.main-content-wrapper[data-view="plan"] #outputList,
+.main-content-wrapper[data-view="plan"] #crossClassResults,
+.main-content-wrapper[data-view="plan"] #skeletonContainer,
+.main-content-wrapper[data-view="plan"] #empty-state-card,
+.main-content-wrapper[data-view="plan"] #noResultsMessage,
+.main-content-wrapper[data-view="plan"] .fab-add-student,
+.main-content-wrapper[data-view="plan"] .stats-pagination {
+    display: none !important;
+}
+
+.main-content-wrapper[data-view="list"] #seatingChartView {
+    display: none !important;
+}
+
+/* CRITICAL: Plan view must fill the viewport and not scroll at page level */
+.main-content-wrapper[data-view="plan"] .main-content {
+    padding: 0;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content-wrapper[data-view="plan"] .output-section {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ────────── INTEGRATED VIEW CONTAINER ────────── */
+#seatingChartView {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* ────────── MASTER KEYFRAMES ────────── */
+
+/* View entrance: horizontal micro-slide from right (Liste -> Plan) */
+@keyframes scViewEnter {
+    from {
+        opacity: 0;
+        transform: translate3d(32px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* View exit: horizontal micro-slide to right (Plan -> Liste) */
+@keyframes scViewExit {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(28px, 0, 0);
+    }
+}
+
+/* Cell entrance (staggered per cell via --cell-i) */
+@keyframes scCellReveal {
+    from {
+        opacity: 0;
+        transform: scale(0.6) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Cell placed from sidebar — juicy bounce */
+@keyframes scCellPlace {
+    0%   { opacity: 0; transform: scale(0.3); }
+    50%  { opacity: 1; transform: scale(1.12); }
+    75%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+/* Cell removed — directional slide toward sidebar on the left */
+@keyframes scCellRemove {
+    0%   { opacity: 1; transform: scale(1) translateX(0); }
+    35%  { opacity: 0.85; transform: scale(0.92) translateX(-18px); }
+    100% { opacity: 0; transform: scale(0.6) translateX(-50px); }
+}
+
+/* Cell swap — FLIP trajectory from origin desk + juicy landing bounce */
+@keyframes scCellSwap {
+    0% {
+        opacity: 0.92;
+        transform: translate3d(var(--swap-dx, 0px), var(--swap-dy, 0px), 0) scale(0.86);
+        box-shadow: var(--shadow-lg), 0 0 0 2px var(--highlight-standard-border);
+        animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    52% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.12);
+        box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    76% {
+        transform: translate3d(0, 0, 0) scale(0.95);
+        box-shadow: var(--shadow-sm);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+/* Sidebar chip re-entrance (after removal from grid) — fluid spring entrance */
+@keyframes scChipReturn {
+    0% {
+        opacity: 0;
+        transform: translateX(-18px) scale(0.92);
+        background-color: var(--highlight-standard-glow, rgba(255, 255, 255, 0.08));
+    }
+    60% {
+        opacity: 1;
+        transform: translateX(4px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        background-color: transparent;
+    }
+}
+
+/* Sidebar chip stagger cascade entrance (on mass reset) */
+@keyframes scChipStaggerIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* Desk pulse (subtle on class switch) */
+@keyframes scDeskPulse {
+    0%   { opacity: 0.6; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+
+
+/* Auto-place cascade (staggered via --place-i) */
+@keyframes scAutoPlaceDrop {
+    0%   { opacity: 0; transform: scale(0) rotate(-8deg); }
+    60%  { opacity: 1; transform: scale(1.08) rotate(1deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Counter bump */
+@keyframes scCounterBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+
+/* ────────── ANIMATION CLASSES ────────── */
+
+/* View enter */
+#seatingChartView.sc-entering {
+    animation: scViewEnter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+/* View exit */
+#seatingChartView.sc-exiting {
+    animation: scViewExit 0.095s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+/* Cell stagger entrance */
+.sc-cell.sc-cell-stagger {
+    animation: scCellReveal 0.35s var(--ease-bounce) both;
+    animation-delay: calc(var(--cell-i, 0) * 25ms);
+}
+
+#seatingChartView.sc-entering .sc-cell.sc-cell-stagger,
+#seatingChartView.sc-entering .sc-student-chip.sc-chip-stagger {
+    animation: none;
+}
+
+/* Cell placed (from sidebar drop or empty-cell move) */
+.sc-cell.sc-cell-placed {
+    animation: scCellPlace 0.4s var(--ease-bounce) both;
+    z-index: 35;
+}
+
+/* Cell remove animation */
+.sc-cell.sc-cell-removing {
+    animation: scCellRemove 0.3s var(--ease-material) forwards;
+    animation-delay: calc(var(--cell-i, 0) * 15ms);
+    pointer-events: none;
+}
+
+/* Cell swap (FLIP glide + elastic landing bounce) */
+.sc-cell.sc-cell-swapped {
+    animation: scCellSwap 0.44s var(--ease-spring) both;
+    z-index: 41;
+    will-change: transform, box-shadow;
+}
+
+.sc-cell.sc-cell-swapped.sc-cell-swap-secondary {
+    z-index: 40;
+}
+
+/* Dropped cell in a drag-and-drop swap: bounces in place with the same physics as scCellPlace */
+.sc-cell.sc-cell-swapped.sc-cell-swap-dropped {
+    animation: scCellPlace 0.4s var(--ease-bounce) both;
+    z-index: 42;
+}
+
+/* Sidebar chip return (single chip drag back) */
+.sc-student-chip.sc-chip-returning {
+    animation: scChipReturn 0.35s var(--ease-bounce) both;
+}
+
+/* Sidebar chip stagger entrance on reset (smooth liquid cascade) */
+.sc-student-chip.sc-chip-stagger {
+    animation: scChipStaggerIn 0.4s var(--ease-spring) both;
+    animation-delay: calc(var(--chip-i, 0) * 10ms);
+}
+
+
+/* Desk fade-in after class switch */
+.sc-desk.sc-desk-entering {
+    animation: scDeskPulse 0.4s var(--ease-spring) 0.15s both;
+}
+
+/* Auto-place cascade */
+.sc-cell.sc-auto-placed {
+    animation: scAutoPlaceDrop 0.4s var(--ease-bounce) both;
+    animation-delay: calc(var(--place-i, 0) * 40ms);
+}
+
+/* Footer & sidebar counter bump on change */
+.sc-dynamic-value.sc-counter-bump,
+.sc-sidebar-title.sc-counter-bump .sc-dynamic-value {
+    animation: scCounterBump 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center center;
+}
+
+.sc-dynamic-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ────────── PLAN TOOLBAR (REMOVED - Replaced by Sidebar Toolbar) ────────── */
+
+.sc-toolbar-info {
+    justify-self: auto;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    box-sizing: border-box;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: default;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0 15px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--glass-surface-border);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+}
+
+.sc-toolbar-dot {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-tertiary);
+    font-weight: 700;
+    opacity: 0.45;
+    font-size: 0.9em;
+    user-select: none;
+    line-height: 1;
+}
+
+.sc-toolbar-info strong {
+    font-weight: 600;
+}
+
+
+
+/* Hide edit tools strictly gracefully */
+#seatingChartView[data-locked="true"] .sc-edit-only {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Auto-place — Gentle icon waggle when empty */
+@keyframes scIconWaggle {
+    0%, 30%, 100% {
+        transform: scale(1) rotate(0deg);
+    }
+    15% {
+        transform: scale(1.15) rotate(-10deg);
+        color: var(--primary-color);
+    }
+}
+
+
+/* ────────── BODY ────────── */
+.sc-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+}
+

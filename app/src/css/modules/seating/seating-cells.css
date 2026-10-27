@@ -1,0 +1,2682 @@
+/* ────────── GRID CELL ────────── */
+.sc-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: var(--sc-cell-w, 88px);
+    height: var(--sc-cell-h, 96px);
+    border: 1.5px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease-spring),
+                box-shadow 0.2s;
+    cursor: default;
+}
+
+/* In consultation/locked mode, empty desks are subtle ghost silhouettes without dashed borders */
+.sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.45);
+    opacity: 1;
+    pointer-events: none;
+}
+
+/* In edit mode, standard empty cells are clearly visible (inviting placement) */
+.sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    opacity: 1;
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.35);
+    background: rgba(var(--surface-color-rgb), 0.25);
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+        border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.55);
+        background: rgba(var(--surface-color-rgb), 0.4);
+    }
+}
+
+/* Empty cells become clickable when sidebar selection is active */
+#seatingChartView[data-has-selection="true"] .sc-cell.empty {
+    cursor: pointer;
+    opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
+    border-color: rgba(24, 24, 27, 0.25);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] #seatingChartView[data-has-selection="true"] .sc-cell.empty {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Receiving/Target cell state (Drag over or Selection hover) — Standard Highlight */
+.sc-cell.drag-over,
+#seatingChartView[data-has-selection="true"] .sc-cell.empty:hover {
+    border-color: var(--highlight-standard-border) !important;
+    border-style: dashed !important;
+    border-width: 2px !important;
+    background: var(--highlight-standard-bg) !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md) !important;
+    z-index: 50;
+    opacity: 1 !important;
+}
+
+.sc-cell.occupied {
+    border-style: solid;
+    border-color: transparent;
+    background: var(--surface-color);
+    cursor: grab;
+    box-shadow: var(--shadow-sm);
+    touch-action: none;
+}
+
+#seatingChartView[data-locked="true"] .sc-cell.occupied {
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .sc-cell.occupied:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        z-index: 10;
+    }
+}
+
+.sc-cell.occupied:active {
+    cursor: grabbing;
+    z-index: 20;
+}
+
+.sc-cell.sc-chip-selected {
+    border: 2px solid var(--highlight-standard-border) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-lg) !important;
+    transform: scale(1.06) translateY(-3px) !important;
+    z-index: 30 !important;
+}
+
+[data-theme="dark"] .sc-cell.sc-chip-selected {
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    background: var(--bg-tertiary) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), var(--shadow-lg) !important;
+}
+
+.sc-cell.sc-chip-selected .sc-cell-name {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.sc-cell.sc-chip-selected .student-avatar .student-avatar__img {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.sc-drag-clone.sc-drag-multi, .sc-touch-ghost.sc-drag-multi {
+    box-shadow: 4px 4px 0 var(--border-color), 8px 8px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.sc-drag-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    height: 20px;
+    min-width: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    box-shadow: 0 2px 4px var(--shadow-sm);
+    z-index: 10;
+}
+
+.sc-cell.dragging {
+    opacity: 0.35;
+    transform: scale(0.95);
+    box-shadow: none;
+}
+
+.sc-cell.dragging .sc-cell-remove,
+.sc-cell.dragging .sc-cell-pin {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Prevent native image drag, text selection & touch callout + unify grab zone */
+.sc-cell .student-avatar,
+.sc-cell .sc-cell-name,
+.sc-cell .sc-cell-status-badge,
+.sc-cell .sc-station-badge,
+.sc-cell .sc-stacked-group-tag,
+.sc-cell .sc-evolution-dot,
+.sc-student-chip .student-avatar,
+.sc-student-chip .sc-student-chip-name,
+.sc-student-chip .sc-chip-badge {
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+#seatingChartView,
+#seatingChartView .sc-cell,
+#seatingChartView .sc-student-chip,
+#seatingChartView .sc-stacked-avatar,
+#seatingChartView .sc-stacked-member {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+#seatingChartView input,
+#seatingChartView textarea {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+@media (pointer: coarse), (hover: none) {
+    #seatingChartView .sc-cell.occupied,
+    #seatingChartView .sc-student-chip,
+    #seatingChartView .sc-stacked-avatar,
+    #seatingChartView .sc-stacked-member {
+        -webkit-user-drag: none;
+    }
+}
+
+/* Unified floating drag clone (.sc-drag-clone mouse / .sc-touch-ghost touch) */
+.sc-drag-clone,
+.sc-touch-ghost {
+    --sc-ghost-lift: 0%;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    z-index: 10000 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--sc-cell-w, 88px) !important;
+    height: var(--sc-cell-h, 96px) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+    opacity: 1 !important;
+    border: 1.5px solid var(--highlight-standard-border) !important;
+    translate: var(--sc-drag-x, -9999px) var(--sc-drag-y, -9999px) 0;
+    transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 1.05)) translateY(var(--sc-ghost-lift)) !important;
+    will-change: translate, transform, opacity;
+    contain: layout style;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+    overflow: visible !important;
+}
+
+.sc-touch-ghost {
+    --sc-ghost-lift: -32%;
+    z-index: 9999 !important;
+}
+
+[data-theme="dark"] .sc-drag-clone,
+[data-theme="dark"] .sc-touch-ghost {
+    background: var(--bg-tertiary) !important;
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Atténuation fluide du clone au survol de la réserve pour laisser la place au réceptacle et ne pas masquer la liste */
+body.sc-drag-over-sidebar .sc-drag-clone,
+body.sc-drag-over-sidebar .sc-touch-ghost {
+    opacity: 0.22 !important;
+    transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 0.82)) translateY(var(--sc-ghost-lift)) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Ballistic flight token (suction toward unplaced sidebar) */
+.sc-flight-token {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 1.5px var(--highlight-standard-border) !important;
+    background: var(--surface-color) !important;
+    border-radius: var(--radius-md) !important;
+    will-change: transform, opacity;
+}
+
+[data-theme="dark"] .sc-flight-token {
+    background: var(--bg-tertiary) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 0 0 1.5px rgba(255, 255, 255, 0.7) !important;
+}
+
+.sc-cell:not(.sc-cell-stacked) .student-avatar,
+.sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
+.sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.sc-cell .student-avatar .student-avatar__img,
+.sc-drag-clone .student-avatar .student-avatar__img,
+.sc-touch-ghost .student-avatar .student-avatar__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.sc-cell-name,
+.sc-drag-clone .sc-cell-name,
+.sc-drag-clone .sc-student-chip-name,
+.sc-touch-ghost .sc-cell-name,
+.sc-touch-ghost .sc-student-chip-name {
+    font-size: 0.74rem;
+    font-weight: 560;
+    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
+    max-width: 78px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    margin-top: 5px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.sc-cell-name.is-long-name,
+.sc-drag-clone .sc-cell-name.is-long-name,
+.sc-touch-ghost .sc-cell-name.is-long-name {
+    font-size: 0.70rem;
+    margin-top: 5.5px;
+    max-width: 81px;
+    letter-spacing: -0.02em;
+    text-overflow: clip;
+}
+
+.sc-cell-name:not(.has-group-tag).is-extra-long-name,
+.sc-drag-clone .sc-cell-name:not(.has-group-tag).is-extra-long-name,
+.sc-touch-ghost .sc-cell-name.is-extra-long-name,
+.sc-cell-name-text.is-extra-long-name,
+.sc-stacked-name-text.is-extra-long-name {
+    text-overflow: clip;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent 100%);
+}
+
+.sc-cell-name.has-group-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 82px;
+}
+
+.sc-cell-initial {
+    font-weight: 450;
+    color: var(--text-tertiary);
+    margin-left: 0;
+}
+
+/* ────────── CELL ACTIONS (Remove / Pin) ────────── */
+.sc-cell-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce);
+    z-index: 5;
+}
+
+@media (hover: hover) {
+    .sc-cell.occupied:hover .sc-cell-remove {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .sc-cell-remove:hover {
+        transform: scale(1.15) !important;
+    }
+}
+
+.sc-cell-pin {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    color: var(--surface-color);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce),
+                background var(--transition-fast), color var(--transition-fast);
+    z-index: 5;
+}
+
+@media (hover: hover) {
+    .sc-cell.occupied:hover .sc-cell-pin {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .sc-cell-pin:hover {
+        transform: scale(1.15) !important;
+    }
+}
+
+/* Touch & Mobile devices: hide permanent remove and unpinned buttons to prevent accidental clicks and declutter UI */
+@media (hover: none), (max-width: 768px) {
+    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove {
+        display: none !important;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-cell.occupied:not(.pinned) .sc-cell-pin {
+        display: none !important;
+    }
+
+    /* Pinned badge remains visible as an elegant indicator */
+    #seatingChartView[data-locked="false"] .sc-cell.pinned .sc-cell-pin {
+        display: flex !important;
+        opacity: 1;
+        pointer-events: none;
+    }
+}
+
+/* Pinned — icon always visible */
+.sc-cell.pinned .sc-cell-pin {
+    opacity: 1;
+    transform: scale(1);
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Evolution dot */
+.sc-evolution-dot {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--surface-color);
+    z-index: 3;
+}
+
+.sc-evolution-dot.progress { background: var(--success-color); }
+.sc-evolution-dot.stable { background: var(--warning-color); }
+.sc-evolution-dot.regression { background: var(--error-color); }
+
+/* Cell status dot on bottom-right corner of avatar (Nouveau / Départ — preserves full 54px avatar & name alignment) */
+.sc-cell-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.sc-cell-status-badge {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0;
+    font-size: 0;
+    line-height: 0;
+    color: transparent;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    box-sizing: border-box;
+    border: 2px solid var(--surface-color);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .sc-cell-status-badge {
+    border-color: var(--bg-tertiary);
+    box-shadow: none;
+}
+
+.sc-stacked-avatar .sc-cell-status-badge {
+    width: 10px;
+    height: 10px;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    border-width: 1.5px;
+    box-shadow: none;
+}
+
+/* On the leftmost avatar in a group cluster, anchor the dot on the outer bottom-left arc so it never falls into the overlap seam between avatars */
+.sc-stacked-avatar:first-child .sc-cell-status-badge {
+    left: 0;
+    right: auto;
+}
+
+/* On middle avatars (groups of 3 or 4), anchor at bottom-center so neither neighbour overlaps it */
+.sc-stacked-avatar:not(:first-child):not(:last-child) .sc-cell-status-badge {
+    left: 50%;
+    right: auto;
+    bottom: -1px;
+    transform: translateX(-50%);
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar .sc-cell-status-badge,
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .sc-cell-status-badge {
+    width: 9px;
+    height: 9px;
+}
+
+@media (max-width: 768px) {
+    .sc-cell-status-badge {
+        width: 10px;
+        height: 10px;
+        bottom: 0;
+        right: 0;
+        border-width: 1.5px;
+        box-shadow: none;
+    }
+
+    .sc-stacked-avatar .sc-cell-status-badge {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+.sc-cell-status-badge.sc-badge-new {
+    background: var(--color-sky, #0ea5e9);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-new {
+    background: var(--color-sky, #38bdf8);
+}
+
+.sc-cell-status-badge.sc-badge-depart {
+    background: var(--color-amber, #f59e0b);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-depart {
+    background: var(--color-amber, #fbbf24);
+}
+
+.sc-cell-status-badge.sc-badge-ulis {
+    background: var(--purple-color, #9333ea);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-ulis {
+    background: var(--purple-color, #a78bfa);
+}
+
+.sc-cell-status-badge.sc-badge-device {
+    background: var(--color-rose, #f43f5e);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-device {
+    background: var(--color-rose, #fb7185);
+}
+
+.sc-cell-status-badge.sc-badge-delegate {
+    background: var(--color-emerald, #10b981);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-delegate {
+    background: var(--color-emerald, #34d399);
+}
+
+/* Neutral ghost/dashed styling for a departed student still occupying a desk */
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
+    border-style: dashed !important;
+    border-color: rgba(161, 161, 170, 0.45) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    background: rgba(39, 39, 42, 0.45) !important;
+}
+
+.sc-cell.occupied.sc-cell-departed .student-avatar,
+.sc-stacked-avatar.sc-member-departed .student-avatar {
+    filter: saturate(0.8);
+}
+
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) .student-avatar,
+.sc-stacked-avatar.sc-member-departed:not(:hover):not(.is-member-hovered) .student-avatar {
+    opacity: 0.78;
+}
+
+.sc-cell.occupied.sc-cell-departed .sc-cell-name,
+.sc-stacked-member.sc-member-departed:not(:hover):not(.is-member-hovered) .sc-stacked-name-text {
+    opacity: 0.72;
+}
+
+/* ────────── LOCKED STATE ────────── */
+
+/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
+#seatingChartView[data-locked="true"] .sc-sidebar {
+    --sc-sidebar-vis-delay: 0.52s;
+    translate: -100% 0;
+    opacity: 0;
+    visibility: hidden;
+    box-shadow: none;
+    border-right-color: transparent;
+    pointer-events: none;
+}
+
+#seatingChartView[data-locked="false"] .sc-grid-area:not([data-fitted="false"]) .sc-classroom-board {
+    translate: 130px 0;
+}
+
+#seatingChartView[data-locked="false"] .sc-grid-area[data-fitted="false"] {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+}
+
+.sc-grid-area[data-fitted="true"] {
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
+    padding-top: calc(56px + var(--content-padding-x, 24px));
+    padding-bottom: var(--content-padding-x, 24px);
+}
+
+.sc-grid-area[data-fitted="false"] {
+    overflow: auto;
+    justify-content: safe center;
+    align-items: safe center;
+    padding-top: calc(56px + var(--content-padding-x, 24px));
+    padding-bottom: var(--content-padding-x, 24px);
+}
+
+/* Unplaced indicator styling */
+.sc-unplaced-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    color: var(--error-color);
+    font-size: 0.8rem;
+}
+
+.sc-unplaced-hint iconify-icon {
+    font-size: 1.15em;
+}
+
+.sc-footer-students,
+.sc-footer-seats,
+.sc-unplaced-text {
+    font-weight: 500;
+}
+
+.sc-footer-students,
+.sc-footer-seats {
+    color: var(--text-secondary);
+}
+
+/* ────────── CHIP SELECTION ────────── */
+.sc-student-chip.sc-chip-selected {
+    background: var(--bg-secondary) !important;
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border) !important;
+}
+
+[data-theme="dark"] .sc-student-chip.sc-chip-selected {
+    background: var(--bg-tertiary) !important;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-prenom {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-nom {
+    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary)) !important;
+}
+
+.sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+
+/* Occupied cells non-draggable in locked mode */
+#seatingChartView[data-locked="true"] .sc-cell.occupied {
+    cursor: pointer;
+}
+
+#seatingChartView[data-locked="true"] .sc-cell.occupied:active {
+    cursor: pointer;
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Hide remove/pin and scope badge in locked — clean read-only view */
+.sc-classroom-board[data-locked="true"] .sc-cell-remove,
+.sc-classroom-board[data-locked="true"] .sc-cell-pin,
+.sc-classroom-board[data-locked="true"] .sc-cell-scope-badge,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-remove,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-pin,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-scope-badge {
+    display: none !important;
+}
+
+/* Edit-only toolbar groups hidden when locked — persistent group stays */
+#seatingChartView[data-locked="true"] .sc-toolbar-primary,
+#seatingChartView[data-locked="true"] .sc-toolbar-secondary,
+#seatingChartView[data-locked="true"] .sc-toolbar-divider {
+    display: none;
+}
+
+/* Hide avatar selection checkmark in seating chart context */
+#seatingChartView .avatar-selection-overlay {
+    display: none !important;
+}
+
+/* ────────── SPECIAL CELLS & TOOLS (AISLE, AESH, CONDAMNE) ────────── */
+.sc-cell.empty.sc-cell-special-aisle {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
+}
+
+.sc-classroom-board[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle,
+#seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty.sc-cell-special-aisle {
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.18);
+    opacity: 0.35;
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle:hover {
+        opacity: 1;
+        border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.45);
+        background: rgba(var(--surface-color-rgb), 0.25);
+    }
+}
+
+/* Special cells with designated role (AESH, Condamnée) — constant native intensity */
+.sc-cell.empty.sc-cell-special-aesh,
+.sc-cell.empty.sc-cell-special-blocked {
+    opacity: 0.72;
+    transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
+}
+
+#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-aesh,
+#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
+    pointer-events: none;
+}
+
+/* Edit mode: cell restores full opacity on hover so overlay tool buttons have 100% luminance */
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh:hover,
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-blocked:hover {
+        opacity: 1;
+    }
+}
+
+.sc-cell.empty.sc-cell-special-aesh {
+    border-style: solid;
+    border-color: rgba(var(--purple-rgb), 0.35);
+    background: color-mix(in srgb, var(--purple-color) 8%, var(--surface-color));
+}
+
+.sc-cell.empty.sc-cell-special-aesh .sc-special-icon {
+    color: var(--purple-color);
+    opacity: 0.95;
+}
+
+.sc-cell.empty.sc-cell-special-aesh .sc-cell-name {
+    color: var(--purple-color);
+    font-weight: 600;
+}
+
+.sc-cell.empty.sc-cell-special-blocked {
+    border-style: solid;
+    border-color: rgba(var(--error-rgb), 0.35);
+    background: color-mix(in srgb, var(--error-color) 8%, var(--surface-color));
+}
+
+.sc-cell.empty.sc-cell-special-blocked .sc-special-icon {
+    color: var(--error-color);
+    opacity: 0.95;
+}
+
+.sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+/* In consultation/locked mode, "Condamné" blends into a quiet empty desk silhouette without visual noise */
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.45);
+    opacity: 1;
+}
+
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sc-special-icon {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.sc-cell-scope-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    line-height: 1;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    margin-top: 3px;
+    letter-spacing: 0.02em;
+    user-select: none;
+    transition: all 0.2s var(--ease-material);
+}
+
+.sc-cell-scope-badge.scope-class {
+    background: rgba(var(--error-rgb), 0.1);
+    color: var(--error-color);
+    border: 1px dashed rgba(var(--error-rgb), 0.4);
+}
+
+.sc-cell-scope-badge.scope-global {
+    background: rgba(var(--error-rgb), 0.16);
+    color: var(--error-color);
+    border: 1px solid rgba(var(--error-rgb), 0.35);
+}
+
+.sc-cell-special-tools {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-material);
+    background: rgba(var(--surface-color-rgb), 0.6);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 5;
+    pointer-events: none; /* Active only on hover */
+}
+
+/* Show tools on hover, only when unlocked and no chips selected */
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+.sc-special-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s var(--ease-spring);
+    font-size: 0.85rem;
+}
+
+@media (hover: hover) {
+    .sc-special-btn:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+        transform: scale(1.15);
+    }
+
+    .sc-special-btn[data-type="aesh"]:hover {
+        background: var(--purple-color);
+        border-color: var(--purple-color);
+        color: white;
+    }
+
+    .sc-special-btn[data-type="blocked"]:hover {
+        background: var(--error-color);
+        border-color: var(--error-color);
+    }
+
+    .sc-special-btn[data-type="normal"]:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+}
+
+/* ────────── TEACHER DESK ────────── */
+.sc-desk-row {
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: opacity 0.3s var(--ease-material);
+}
+
+.sc-desk {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 22px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-color);
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 550;
+    user-select: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.2s ease,
+                color 0.2s ease,
+                transform 0.25s var(--ease-spring),
+                box-shadow 0.2s ease;
+}
+
+.sc-desk:hover {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.sc-desk:active {
+    transform: scale(0.98);
+}
+
+.sc-desk:focus-visible {
+    outline: none;
+    border-color: var(--border-color);
+    box-shadow: 0 0 0 2px var(--focus-ring, rgba(255, 255, 255, 0.2));
+}
+
+.sc-desk .sc-desk-cap {
+    font-size: 1.15em;
+}
+
+/* ────────── ONBOARDING GHOST HINT ────────── */
+
+@keyframes scBtnPulse {
+    0%   { transform: scale(1); color: var(--text-secondary); }
+    50%  { transform: scale(1.2); color: var(--primary-color); }
+    100% { transform: scale(1); color: var(--text-secondary); }
+}
+
+.sc-action-btn.sc-has-pulse iconify-icon {
+    animation: scBtnPulse 1.8s infinite var(--ease-material);
+}
+
+@keyframes scOnboardingFadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes scOnboardingFadeOut {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    to   { opacity: 0; transform: translate(-50%, -50%) scale(0.95) translateY(6px); }
+}
+
+.sc-onboarding-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    border-radius: var(--radius-xl, 16px);
+    background: rgba(var(--surface-color-rgb), 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-surface-border, rgba(255, 255, 255, 0.4));
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04);
+    pointer-events: auto;
+    cursor: default;
+    user-select: none;
+    animation: scOnboardingFadeIn 0.5s var(--ease-spring) both;
+    transition: opacity 0.3s, transform 0.3s;
+    width: min(344px, calc(100% - 32px));
+    text-align: center;
+}
+
+[data-theme="dark"] .sc-onboarding-hint {
+    background: rgba(var(--surface-color-rgb), 0.88);
+    border-color: var(--border-color-strong);
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+#seatingChartView[data-locked="true"]:not([data-virtual="true"]) .sc-onboarding-hint {
+    display: none !important;
+}
+
+.sc-onboarding-hint.sc-hint-exiting {
+    animation: scOnboardingFadeOut 0.35s var(--ease-material) forwards;
+    pointer-events: none;
+}
+
+#seatingChartView:not([data-locked="true"]):not([data-has-selection="true"]) .sc-grid-area:has(.sc-onboarding-hint:not([data-step="room"]):not(.sc-hint-exiting)):not(:has(.sc-cell.drag-over)) .sc-classroom-board > .sc-grid-container,
+#seatingChartView:not([data-locked="true"]):not([data-has-selection="true"]) .sc-grid-area:has(.sc-onboarding-hint:not([data-step="room"]):not(.sc-hint-exiting)):not(:has(.sc-cell.drag-over)) .sc-classroom-board > .sc-desk-row {
+    opacity: 0.42;
+}
+
+.sc-onboarding-hint-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.sc-hint-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.sc-hint-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.sc-onboarding-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.sc-onboarding-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md, 8px);
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    width: 100%;
+    outline: none;
+    white-space: nowrap;
+}
+
+.sc-onboarding-btn:focus-visible {
+    outline: 2px solid var(--text-secondary);
+    outline-offset: 2px;
+}
+
+.sc-onboarding-btn.primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+@media (hover: hover) {
+    .sc-onboarding-btn.primary:hover {
+        background-color: var(--primary-color);
+        background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+.sc-onboarding-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sc-onboarding-btn.secondary {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+}
+
+@media (hover: hover) {
+    .sc-onboarding-btn.secondary:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-color: var(--border-color-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    [data-theme="dark"] .sc-onboarding-btn.secondary:hover {
+        background: var(--item-hover-bg-elevated);
+        border-color: var(--border-color-hover);
+    }
+}
+
+.sc-onboarding-btn.text-only {
+    background: transparent;
+    color: var(--text-tertiary);
+    border: none;
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    margin-top: 2px;
+}
+
+@media (hover: hover) {
+    .sc-onboarding-btn.text-only:hover {
+        color: var(--text-primary);
+        background: transparent;
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+.sc-onboarding-btn iconify-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.sc-onboarding-hint[data-step="room"] {
+    width: min(432px, calc(100% - 32px));
+    gap: 14px;
+    padding: 22px 22px 20px;
+}
+
+.sc-hint-step-badge {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    padding: 3px 10px;
+    margin-bottom: 4px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.sc-room-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.sc-room-preset-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    outline: none;
+    min-width: 0;
+}
+
+[data-theme="dark"] .sc-room-preset-card {
+    background: var(--item-idle-bg);
+}
+
+@media (hover: hover) {
+    .sc-room-preset-card:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--border-color-hover);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+}
+
+.sc-room-preset-card:focus-visible {
+    outline: 2px solid var(--text-secondary);
+    outline-offset: 2px;
+}
+
+.sc-room-preset-card.active {
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--text-secondary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.sc-preset-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    margin-bottom: 2px;
+}
+
+.sc-mini-diagram {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 6px;
+    border-radius: var(--radius-xs, 4px);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+
+.sc-mini-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sc-mini-diagram i {
+    display: inline-block;
+    width: 6px;
+    height: 8px;
+    border-radius: 1.5px;
+    background: var(--text-tertiary);
+    opacity: 0.4;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.sc-room-preset-card.active .sc-mini-diagram i {
+    background: var(--text-primary);
+    opacity: 0.9;
+}
+
+.sc-mini-diagram b.aisle {
+    display: inline-block;
+    width: 4px;
+    height: 8px;
+    border-left: 1px dashed var(--border-color);
+    border-right: 1px dashed var(--border-color);
+    margin: 0 1px;
+}
+
+.sc-preset-card-title {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.sc-room-preset-card.active .sc-preset-card-title,
+.sc-room-preset-card:hover .sc-preset-card-title {
+    color: var(--text-primary);
+}
+
+.sc-preset-card-sub {
+    font-size: 0.67rem;
+    color: var(--text-tertiary);
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.sc-onboarding-btn.secondary.sc-onboarding-confirm-btn {
+    border-color: var(--text-tertiary);
+}
+
+@media (hover: hover) {
+    .sc-onboarding-btn.secondary.sc-onboarding-confirm-btn:hover {
+        border-color: var(--text-secondary);
+    }
+}
+
+.sc-onboarding-dims-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .sc-onboarding-dims-bar {
+    background: var(--item-idle-bg);
+}
+
+.sc-onboarding-dims-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+
+.sc-onboarding-dim-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.sc-onboarding-dim-label {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sc-onboarding-dim-sep {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.sc-onboarding-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sc-onboarding-stepper {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+}
+
+.sc-hint-step-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-xs, 4px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+    .sc-hint-step-btn:hover:not(:disabled) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-hint-step-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.sc-hint-dim-val {
+    min-width: 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sc-hint-capacity-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+}
+
+.sc-hint-capacity-pill iconify-icon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.sc-hint-capacity-pill.is-ok iconify-icon {
+    color: var(--success-color);
+}
+
+.sc-hint-capacity-pill.is-warning {
+    color: var(--warning-color);
+}
+
+.sc-onboarding-capacity-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--warning-color);
+    color: var(--text-primary);
+    font-size: 0.76rem;
+    font-weight: 500;
+    box-sizing: border-box;
+}
+
+.sc-onboarding-capacity-alert span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sc-onboarding-capacity-alert iconify-icon {
+    color: var(--warning-color);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.sc-onboarding-adapt-btn {
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+    .sc-onboarding-adapt-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.sc-onboarding-footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    margin-top: 2px;
+    flex-wrap: nowrap;
+}
+
+.sc-onboarding-footer-links .sc-onboarding-btn.text-only {
+    width: auto;
+    padding: 6px 6px;
+    margin-top: 0;
+    font-size: 0.78rem;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.sc-onboarding-footer-links .sc-onboarding-btn.text-only iconify-icon {
+    font-size: 0.92rem;
+    flex-shrink: 0;
+}
+
+.sc-onboarding-footer-dot {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* ────────── PRINT ────────── */
+/* ── Print header (hidden on screen, injected by JS) ── */
+.sc-print-header { display: none; }
+
+@media print {
+    @page { 
+        size: landscape;
+    }
+
+    /* ── 0. Force Desktop cell dimensions ── */
+    :root {
+        --sc-cell-w: 80px;
+        --sc-cell-h: 88px;
+    }
+
+    /* ── 1. Chirurgical hiding: only show the path to seating chart ── */
+    body > *:not(.app-layout),
+    .app-layout > *:not(.main-content-wrapper),
+    .main-content-wrapper > *:not(.main-content),
+    .main-content > *:not(.output-section),
+    .output-section > *:not(#seatingChartView) {
+        display: none !important;
+    }
+
+    /* ── 2. Reset path containers to static flow ── */
+    html, body, .app-layout, .main-content-wrapper, .main-content, .output-section {
+        display: block !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+        overflow: visible !important;
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    body * { visibility: visible !important; }
+
+    /* ── 3. Injected print header ── */
+    .sc-print-header {
+        display: flex !important;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 24px 0;
+        margin: 0 0 12px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .sc-print-warning {
+        width: 100%;
+        text-align: center;
+        font-size: 9pt;
+        color: #999;
+        margin-top: 6px;
+    }
+
+    .sc-print-date {
+        font-size: 9pt;
+        color: #888;
+        flex-shrink: 0;
+        min-width: 80px;
+    }
+
+    .sc-print-class {
+        font-size: 14pt;
+        font-weight: 700;
+        color: #111;
+        text-align: center;
+    }
+
+    .sc-print-count {
+        font-weight: 400;
+        font-size: 11pt;
+        color: #555;
+        margin-left: 10px;
+    }
+
+    .sc-print-brand {
+        font-size: 9pt;
+        color: #aaa;
+        flex-shrink: 0;
+        font-weight: 500;
+        min-width: 80px;
+        text-align: right;
+    }
+
+    /* ── 4. Hide interactive elements ── */
+    .sc-toolbar,
+    .sc-sidebar,
+    .sc-cell-remove,
+    .sc-stacked-member-remove,
+    .sc-top-left-bar,
+    .sc-status-pill,
+    .sc-floating-actions,
+    .avatar-selection-overlay,
+    .sc-floating-status,
+    .sc-onboarding-hint,
+    .header,
+    .sc-cell-pin:not(.pinned .sc-cell-pin) {
+        display: none !important;
+    }
+
+    /* ── 5. Chart layout ── */
+    #seatingChartView {
+        display: flex !important;
+        flex-direction: column;
+        width: 100%;
+        position: static !important;
+        min-height: 100vh !important;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 8mm 10mm !important;
+    }
+
+    .sc-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .sc-grid-area { 
+        padding: 0 !important;
+        margin-left: 0 !important;
+        justify-content: center; 
+        align-items: center;
+        overflow: visible !important;
+        background: transparent !important;
+        background-image: none !important;
+    }
+
+    .sc-classroom-board {
+        translate: 0 0 !important;
+        scale: 1 !important;
+        transform: none !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    /* ── 6. Grid & cells ── */
+    .sc-grid-container {
+        gap: 6px !important;
+        margin: 0 auto;
+    }
+
+    .sc-cell {
+        border: 1.5px solid #ccc;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-inside: avoid;
+    }
+
+    .sc-cell:not(.sc-cell-stacked) .student-avatar {
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .sc-cell-name {
+        margin-top: 4px !important;
+        font-size: 0.65rem !important;
+    }
+
+    .sc-cell.empty {
+        border: 1.5px dashed #999 !important;
+        background: rgba(0, 0, 0, 0.02) !important;
+        opacity: 0.8 !important;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important;
+    }
+
+    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty.sc-cell-special-blocked,
+    .sc-cell.empty.sc-cell-special-aisle {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 0 !important;
+    }
+
+    .sc-cell.empty.sc-cell-special-blocked {
+        border: 1.5px dashed #ccc !important;
+        background: rgba(0, 0, 0, 0.02) !important;
+    }
+
+    .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+    .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+        color: #777 !important;
+    }
+    
+    .sc-cell.occupied { 
+        border: 1.5px solid #555 !important; 
+        opacity: 1 !important; 
+    }
+
+    .sc-cell.occupied.sc-cell-departed {
+        border: 1.5px dashed #888 !important;
+        background: #fafafa !important;
+        opacity: 0.78 !important;
+    }
+
+    .sc-cell-status-badge {
+        border-color: #ffffff !important;
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* ── 7. Pinned indicator (discrete print marker) & Group badges ── */
+    .sc-cell.occupied .sc-station-badge,
+    .sc-stacked-group-tag {
+        color: #444 !important;
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    #seatingChartView[data-virtual="true"] .sc-cell-pin {
+        display: none !important;
+    }
+    .sc-cell.pinned .sc-cell-pin {
+        display: flex !important;
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: auto;
+        height: auto;
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #999 !important;
+        font-size: 0.5rem !important;
+        pointer-events: none;
+        opacity: 0.5;
+        padding: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+    }
+
+    /* ── 8. Teacher desk ── */
+    .sc-desk-row {
+        margin-top: 20px !important;
+    }
+
+    #seatingChartView[data-orientation="student"] .sc-desk-row {
+        margin-top: 0 !important;
+        margin-bottom: 20px !important;
+    }
+
+    .sc-desk {
+        border: 1.5px solid #555 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-inside: avoid;
+        padding: 10px 32px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        background: #fafafa !important;
+    }
+
+    /* ── 9. Kill all motion ── */
+    * { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 768px) {
+
+    /* ── Classroom Board: unified responsive card on mobile/tablet ── */
+    .sc-classroom-board {
+        padding: 12px 14px;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow-sm);
+        gap: 10px;
+        width: fit-content;
+        min-width: auto;
+        align-items: safe center;
+    }
+
+    /* ── Layout: sidebar becomes bottom tray ── */
+    .sc-body {
+        flex-direction: column-reverse; /* grid on top, sidebar tray at bottom */
+    }
+
+    .sc-sidebar {
+        position: relative;
+        width: 100%;
+        max-height: none;
+        translate: none !important;
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        border-bottom: none;
+        padding-top: 0;
+        flex-shrink: 0;
+        overflow: visible;
+        transition: max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0s linear var(--sc-sidebar-vis-delay);
+    }
+
+    /* Locked sidebar collapses vertically on mobile */
+    #seatingChartView[data-locked="true"] .sc-sidebar {
+        --sc-sidebar-vis-delay: 0.38s;
+        translate: none !important;
+        opacity: 0;
+        visibility: hidden;
+        width: 100%;
+        max-height: 0;
+        margin-left: 0;
+        margin-top: 0;
+        border-top: none;
+        overflow: hidden;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-grid-area[data-fitted="false"] {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-grid-area:not([data-fitted="false"]) .sc-classroom-board {
+        translate: 0 0;
+    }
+
+    /* ── Sidebar Toolbar: single compact pill ── */
+    #seatingChartView .sc-sidebar-toolbar {
+        margin: 10px auto 6px;
+        padding: 6px 12px;
+        gap: 8px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        background: var(--bg-secondary);
+        border-radius: var(--radius-pill);
+        border-bottom: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    #seatingChartView .sc-toolbar-label {
+        display: none;
+    }
+
+    #seatingChartView .sc-sidebar-toolbar-header {
+        gap: 0;
+        flex-shrink: 0;
+        padding: 0 6px 0 2px;
+    }
+
+    #seatingChartView .sc-sidebar-actions {
+        gap: 0;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    #seatingChartView .sc-sidebar-actions-group {
+        padding: 0;
+        gap: 4px;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    #seatingChartView .sc-action-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    #seatingChartView .sc-action-btn iconify-icon {
+        font-size: 1.15rem;
+    }
+
+    /* ── Sidebar Header: inline with horizontal layout ── */
+    .sc-sidebar-header {
+        padding: 8px 12px 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-height: none;
+    }
+
+    .sc-sidebar-title {
+        margin-bottom: 0;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        gap: 6px;
+    }
+
+    /* ── Search: compact full width on mobile tray ── */
+    .sc-search-box {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 32px;
+        gap: 6px;
+        padding: 0 28px 0 10px;
+    }
+
+    .sc-search-box input {
+        font-size: 0.78rem;
+    }
+
+    .sc-search-box input::placeholder {
+        font-size: 0.78rem;
+    }
+
+    /* ── Student List: horizontal scrollable strip ── */
+    .sc-student-list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        gap: 6px;
+        min-height: 0;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none; /* Firefox */
+        mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
+    }
+
+    .sc-student-list::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+    /* Chips: modern pill style with full readable name */
+    .sc-student-chip {
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 6px;
+        padding: 4px 10px 4px 5px;
+        min-width: auto;
+        max-width: none;
+        text-align: left;
+        border-radius: var(--radius-pill);
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        scroll-snap-align: start;
+        touch-action: pan-x;
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease,
+                    background 0.15s ease;
+    }
+
+    .sc-student-chip .student-avatar {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        font-size: 0.65rem;
+    }
+
+    .sc-student-chip-name {
+        gap: 0;
+        max-width: 110px;
+    }
+
+    .sc-student-chip-name .student-prenom {
+        font-size: 0.72rem;
+        line-height: 1.12;
+    }
+
+    .sc-student-chip-name .student-nom {
+        font-size: 0.58rem;
+        line-height: 1.12;
+    }
+
+    .sc-student-chip.sc-chip-selected {
+        border-color: var(--highlight-standard-border);
+        background: var(--highlight-standard-bg);
+        box-shadow: 0 0 0 2px var(--highlight-standard-border);
+        transform: translateY(-2px);
+    }
+
+    .sc-student-chip .sc-chip-profile-btn {
+        display: none;
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-badge {
+        display: none;
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-profile-btn {
+        display: inline-flex;
+        position: static;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        width: 26px;
+        height: 26px;
+        margin: -2px -4px -2px 2px;
+        border-radius: 50%;
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .sc-student-chip.sc-chip-selected .sc-chip-profile-btn:active {
+        transform: scale(0.92);
+    }
+
+    /* ── Grid Area: symétrie verticale entre la barre flottante haute (48px sous header) et la pilule Bas (48px en mode verrouillé, 12px au-dessus du tiroir en édition) ── */
+    .sc-grid-area,
+    .sc-grid-area[data-fitted="true"],
+    .sc-grid-area[data-fitted="false"] {
+        padding: calc(56px + 48px) 12px 12px;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    #seatingChartView[data-locked="true"] .sc-grid-area {
+        padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+    }
+
+    @media (orientation: landscape) {
+        .sc-grid-area:not([data-fitted="false"]) {
+            padding: calc(56px + 30px) 12px 12px;
+        }
+
+        #seatingChartView[data-locked="true"] .sc-grid-area:not([data-fitted="false"]) {
+            padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+        }
+    }
+
+    .sc-grid-area::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+    :root {
+        --sc-cell-w: 62px;
+        --sc-cell-h: 70px;
+    }
+
+    .sc-grid-container {
+        gap: 6px;
+    }
+
+    .sc-cell,
+    .sc-cell-special-tools,
+    .sc-drag-clone,
+    .sc-touch-ghost {
+        border-radius: 11.5px !important;
+    }
+
+    .sc-cell:not(.sc-cell-stacked) .student-avatar,
+    .sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
+    .sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 0.75rem;
+    }
+
+    .sc-cell-name,
+    .sc-drag-clone .sc-cell-name,
+    .sc-drag-clone .sc-student-chip-name,
+    .sc-touch-ghost .sc-cell-name,
+    .sc-touch-ghost .sc-student-chip-name {
+        font-size: 0.565rem;
+        max-width: 52px;
+        margin-top: 4px;
+        line-height: 1.15;
+    }
+
+    .sc-cell-name.is-long-name,
+    .sc-drag-clone .sc-cell-name.is-long-name,
+    .sc-touch-ghost .sc-cell-name.is-long-name {
+        font-size: 0.535rem;
+        margin-top: 4.5px;
+        max-width: 55px;
+        letter-spacing: -0.02em;
+        text-overflow: clip;
+    }
+
+    .sc-special-icon {
+        font-size: 1.2rem;
+        margin-bottom: 1px;
+    }
+
+    .sc-cell-scope-badge {
+        font-size: 0.48rem;
+        padding: 1.5px 4px;
+        margin-top: 2px;
+        max-width: 54px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sc-cell-pin {
+        width: 15px;
+        height: 15px;
+        top: -4px;
+        left: -4px;
+        font-size: 0.48rem;
+    }
+
+    .sc-evolution-dot {
+        bottom: 3.5px;
+        right: 3.5px;
+        width: 6px;
+        height: 6px;
+    }
+
+    .sc-toolbar {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 12px;
+    }
+
+    .view-toggle-btn span { display: none; }
+    .sc-toolbar-btn span { display: none; }
+
+    /* ── Floating elements: aligned on mobile, never overlapping ── */
+    .sc-top-left-bar,
+    #seatingChartView[data-locked="false"] .sc-top-left-bar {
+        top: calc(56px + 10px) !important;
+        left: 12px !important;
+        right: auto !important;
+        translate: none !important;
+        gap: 6px;
+        max-width: calc(100vw - 128px);
+    }
+
+    .sc-plan-mode-switch {
+        --sc-mode-padding: 3px;
+        --sc-inactive-w: 28px;
+        height: 34px !important;
+        padding: var(--sc-mode-padding);
+    }
+
+    .sc-mode-tab {
+        font-size: 0.72rem;
+        padding: 0 10px;
+        gap: 4px;
+    }
+
+    .sc-mode-tab:not(.active) {
+        padding: 0;
+        gap: 0;
+    }
+
+    .sc-mode-tab iconify-icon {
+        font-size: 1rem;
+    }
+
+    .sc-mode-tab[data-plan-mode="course"] iconify-icon {
+        font-size: 1.04rem;
+    }
+
+    .sc-status-pill {
+        position: absolute !important;
+        top: auto !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        right: auto !important;
+        transform: none !important;
+        font-size: 0.72rem;
+        height: 32px !important;
+        padding: 0 11px;
+        white-space: nowrap !important;
+        max-width: calc(100vw - 24px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    .sc-floating-actions {
+        top: calc(56px + 10px) !important;
+        right: 12px !important;
+        left: auto !important;
+        height: 34px !important;
+        padding: 3px !important;
+        gap: 2px;
+        display: inline-flex !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+    }
+
+    #seatingChartView .sc-floating-actions .sc-action-btn {
+        width: 28px !important;
+        height: 28px !important;
+        flex-shrink: 0;
+    }
+
+    #seatingChartView .sc-floating-actions .sc-action-btn iconify-icon {
+        font-size: 1rem;
+    }
+
+    .sc-floating-status .sc-toolbar-info {
+        font-size: 0.72rem;
+        height: 34px !important;
+        padding: 0 12px;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px;
+    }
+
+    .sc-floating-status .sc-toolbar-info .sc-footer-all-placed,
+    .sc-floating-status .sc-toolbar-info .sc-unplaced-hint,
+    .sc-floating-status .sc-toolbar-info .sc-footer-seats {
+        white-space: nowrap !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ── Mobile Drag-Over Desk Pop: Magnify target cell under touch so user clearly sees destination ── */
+    .sc-cell.drag-over {
+        transform: scale(1.18) !important;
+        z-index: 60 !important;
+        border-color: var(--highlight-standard-border) !important;
+        border-style: solid !important;
+        border-width: 2px !important;
+        box-shadow: 0 0 0 4px var(--highlight-standard-glow), 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+        background: var(--highlight-standard-bg) !important;
+    }
+
+    /* ── Teacher desk: less margin when sidebar is below ── */
+    .sc-desk-row {
+        margin-top: 4px;
+    }
+
+    /* ── Config Popover mobile alignment (opens upwards into board area) ── */
+    #seatingChartView .sc-config-popover {
+        top: auto;
+        bottom: calc(100% + 10px);
+        left: auto;
+        right: -15px;
+        transform-origin: bottom right;
+        transform: translateY(8px) scale(0.95);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+        z-index: 300;
+    }
+
+    #seatingChartView .sc-config-popover.open {
+        transform: translateY(0) scale(1);
+    }
+
+    #seatingChartView .sc-config-popover::before {
+        top: auto;
+        bottom: -5px;
+        left: auto;
+        right: 28px;
+        border-top: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+    }
+
+    /* ── Placement Popover mobile alignment (opens upwards into board area) ── */
+    #seatingChartView .sc-placement-popover {
+        top: auto;
+        bottom: calc(100% + 10px);
+        left: 0;
+        transform-origin: bottom left;
+        transform: translateY(8px) scale(0.95);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+        z-index: 300;
+    }
+
+    #seatingChartView .sc-placement-popover.open {
+        transform: translateY(0) scale(1);
+    }
+
+    #seatingChartView .sc-placement-popover::before {
+        top: auto;
+        bottom: -5px;
+        left: 13px;
+        border-top: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+    }
+
+    #seatingChartView .sc-popover-item {
+        padding: 9px 12px;
+        min-height: 40px;
+        font-size: 0.84rem;
+    }
+
+    #seatingChartView .sc-popover-item:active {
+        background-color: var(--item-hover-bg);
+        transform: scale(0.98);
+    }
+}
+
+/* ────────── DARK MODE ────────── */
+[data-theme="dark"] .sc-cell {
+    background: var(--bg-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .sc-cell.occupied {
+    background: var(--bg-tertiary);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .sc-desk {
+    background: var(--bg-tertiary);
+    border: none;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .sc-desk:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .sc-toolbar-info,
+[data-theme="dark"] .sc-toolbar-pill,
+[data-theme="dark"] .sc-isolated-btn {
+    background: rgba(30, 30, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sc-config-popover,
+[data-theme="dark"] .sc-config-popover::before {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .sc-stat-value,
+[data-theme="dark"] .sc-badge-pinned {
+    color: var(--primary-bright);
+}
+
+/* Dark theme empty desks: subtle visible silhouette in consultation, clear in edit */
+[data-theme="dark"] .sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] .sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+[data-theme="dark"] .sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+[data-theme="dark"] #seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border: 1.5px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+@media (hover: hover) {
+    [data-theme="dark"] #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+        border-color: rgba(255, 255, 255, 0.45);
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* ────────── EMPTY STATE ────────── */
+#seatingChartView[data-all-placed="true"] .sc-sidebar-header {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+
+#seatingChartView[data-all-placed="true"] .sc-student-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.sc-empty-sidebar {
+    padding: 56px 16px 32px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 1;
+    animation: scFadeUp 0.5s var(--ease-spring) both;
+}
+
+.sc-empty-text {
+    font-weight: 400;
+    color: var(--text-secondary);
+    max-width: 220px;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    margin-bottom: auto;
+    text-wrap: balance;
+}
+
+.sc-empty-text strong {
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Directly Engraved Checkmark (debossed channel in sidebar surface) */
+.sc-empty-success-badge,
+[data-theme="dark"] .sc-empty-success-badge {
+    position: relative;
+    width: 76px;
+    height: 76px;
+    margin-bottom: auto;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sc-empty-engraved-svg {
+    width: 72px;
+    height: 72px;
+    display: block;
+    overflow: visible;
+}
+
+.sc-empty-engraved-path {
+    stroke: #ececef;
+    filter: url(#scEngravedCheckLight);
+}
+
+[data-theme="dark"] .sc-empty-engraved-path {
+    stroke: #121215;
+    filter: url(#scEngravedCheckDark);
+}
+
+@keyframes scFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile: compact horizontal strip (declared after the base empty-state rules so it wins the cascade) */
+@media (max-width: 768px) {
+    /* Empty sidebar message adapts to horizontal layout */
+    .sc-empty-sidebar {
+        flex-direction: row !important;
+        padding: 2px 4px;
+        font-size: 0.78rem;
+        gap: 8px;
+        justify-content: center !important;
+        align-items: center !important;
+        flex: none !important;
+        height: auto !important;
+    }
+
+    .sc-empty-success-badge {
+        width: 26px !important;
+        height: 26px !important;
+        margin-bottom: 0 !important;
+        order: 1 !important;
+        border-radius: 50%;
+        background: var(--item-idle-bg) !important;
+        border: 1px solid var(--border-color-strong) !important;
+    }
+
+    .sc-empty-engraved-svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .sc-empty-engraved-path {
+        stroke: var(--text-secondary) !important;
+        stroke-width: 7 !important;
+        filter: none !important;
+    }
+
+    .sc-empty-text {
+        order: 2 !important;
+        font-size: 0.75rem !important;
+        max-width: none !important;
+        text-align: left !important;
+        margin-bottom: 0 !important;
+    }
+
+    .sc-empty-text strong {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    #seatingChartView[data-all-placed="true"] .sc-student-list {
+        flex-direction: row;
+        justify-content: safe center;
+        align-items: center;
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+        height: auto;
+    }
+
+    /* Departed students: inline in the horizontal strip, separated by a vertical hairline (each chip's "Départ" badge carries the meaning) */
+    .sc-sidebar-departed-section {
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        margin: 0 0 0 4px;
+        padding: 0 0 0 10px;
+        border-top: none;
+        border-left: 1px dashed var(--border-color);
+    }
+
+    .sc-sidebar-departed-header {
+        display: none;
+    }
+
+    .sc-sidebar-departed-list {
+        flex-direction: row;
+    }
+}
+
+/* ────────── REDUCE MOTION ────────── */
+@media (prefers-reduced-motion: reduce) {
+    .sc-cell,
+    .sc-cell.sc-cell-stagger,
+    .sc-cell.sc-cell-placed,
+    .sc-cell.sc-cell-removing,
+    .sc-cell.sc-cell-swapped,
+    .sc-cell.sc-auto-placed,
+    .sc-student-chip.sc-chip-returning,
+    .sc-desk.sc-desk-entering,
+    .sc-classroom-board.sc-orienting,
+    .sc-classroom-board.sc-orienting .sc-desk,
+    .sc-classroom-board.sc-mode-carousel-in-right,
+    .sc-classroom-board.sc-mode-carousel-in-left,
+    .sc-classroom-board.sc-mode-carousel-in-right .sc-cell,
+    .sc-classroom-board.sc-mode-carousel-in-left .sc-cell,
+    .sc-classroom-board.sc-mode-carousel-in-right .sc-desk,
+    .sc-classroom-board.sc-mode-carousel-in-left .sc-desk,
+    .sc-board-carousel-ghost,
+    .sc-action-btn.sc-orientation-btn.active iconify-icon,
+    #seatingChartView.sc-entering .sc-toolbar,
+    #seatingChartView.sc-entering .sc-body,
+    #seatingChartView.sc-exiting,
+    .sc-empty-sidebar {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+    }
+}
+
+/* ---------- SIDEBAR TOOLBAR ---------- */
+.sc-sidebar-toolbar {
+    padding: 20px var(--content-padding-x, 24px) 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 20;
+    transition: background-color var(--transition-fast);
+}
+
+.sc-sidebar-toolbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sc-toolbar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Toggle Switch */
+.sc-toggle-switch {
+    position: relative;
+    width: var(--toggle-width-small);
+    height: var(--toggle-height-small);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    outline: none;
+    padding: 0;
+}
+
+/* Checked/ON state (Edit Mode) */
+.sc-toggle-switch[aria-checked="true"] {
+    background: var(--toggle-track-on);
+    box-shadow: none;
+}
+
+.sc-toggle-knob {
+    position: absolute;
+    top: var(--toggle-inset-small);
+    left: var(--toggle-inset-small);
+    width: var(--toggle-knob-size-small);
+    height: var(--toggle-knob-size-small);
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Checked/ON state knob position */
+.sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
+    transform: translateX(var(--toggle-translate-small));
+    background: var(--toggle-knob-on);
+}
+
+[data-theme="dark"] .sc-toggle-switch {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .sc-toggle-switch[aria-checked="true"] {
+    background: var(--toggle-track-on);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+/* Sidebar Actions */
+.sc-sidebar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.sc-sidebar-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+}
+
+/* Action Buttons */
+.sc-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+@media (hover: hover) {
+    /* Harmonized hover matching the rest of the application */
+    .sc-action-btn:not(:disabled):hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    /* Reset action: subtle warning background & red text */
+    .sc-action-btn.sc-reset-btn:hover {
+        background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+        color: var(--error-color);
+    }
+}
+
+.sc-action-btn:active {
+    transform: scale(0.95);
+}
+
+.sc-action-btn iconify-icon {
+    font-size: 1.1rem;
+}
+
+.sc-action-btn.sc-print-btn {
+    background: var(--bg-secondary);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+}
+
+.sc-action-btn:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    cursor: default;
+}
+
+/* Ensure auto place button is fully active and clickable when not disabled */
+#seatingChartView .sc-auto-place-btn:not(:disabled) {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Accessibility focus rings */
+.sc-toggle-switch:focus-visible,
+.sc-action-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+

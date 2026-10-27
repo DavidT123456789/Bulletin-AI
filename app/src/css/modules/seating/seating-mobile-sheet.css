@@ -1,0 +1,1020 @@
+/* ==========================================================================
+   MOBILE ACTION SHEET (iOS / Material 3 - 2026 Gold Standard)
+   ========================================================================== */
+.sc-mobile-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sc-mobile-sheet-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.sc-mobile-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82vh;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
+    z-index: 1201;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 8px);
+}
+
+.sc-mobile-sheet.active {
+    transform: translateY(0);
+}
+
+.sc-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--text-quaternary, rgba(150, 150, 150, 0.4));
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+}
+
+.sc-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 12px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.sc-sheet-entity-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-desk-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary-light, #e0e7ff);
+    border: 1px solid rgba(var(--primary-color-rgb, 79, 70, 229), 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: var(--primary-color, #4338ca);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .sc-sheet-desk-icon {
+    background: rgba(129, 140, 248, 0.18);
+    border-color: rgba(129, 140, 248, 0.28);
+    color: #818cf8;
+}
+
+.sc-sheet-entity-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-entity-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+.sc-sheet-entity-meta {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sc-sheet-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-sheet-close-btn:active {
+    transform: scale(0.92);
+}
+
+.sc-sheet-content {
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sc-sheet-section-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin: 10px 4px 4px;
+}
+
+.sc-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sc-sheet-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-control);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    min-height: 52px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.sc-sheet-action-btn:active {
+    background: var(--item-hover-bg);
+    transform: scale(0.985);
+}
+
+.sc-sheet-action-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.sc-sheet-action-icon.sc-icon-primary {
+    background: var(--primary-light, #e0e7ff);
+    color: var(--primary-color, #4338ca);
+}
+
+.sc-sheet-action-icon.sc-icon-secondary {
+    background: var(--bg-tertiary, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
+}
+
+.sc-sheet-action-icon.sc-icon-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.sc-sheet-action-icon.sc-icon-danger {
+    background: #fee2e2;
+    color: var(--error-color, #dc2626);
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-primary {
+    background: rgba(129, 140, 248, 0.22);
+    color: #818cf8;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e4e4e7;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-warning {
+    background: rgba(251, 191, 36, 0.22);
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-danger {
+    background: rgba(248, 113, 113, 0.22);
+    color: #f87171;
+}
+
+.sc-sheet-action-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-action-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.sc-sheet-action-hint {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
+.sc-sheet-action-btn.sc-action-danger .sc-sheet-action-label {
+    color: var(--error-color);
+}
+
+/* Unplaced Student Picker inside Sheet */
+.sc-sheet-search-wrap {
+    margin-bottom: 6px;
+}
+
+.sc-sheet-search {
+    width: 100%;
+    height: 40px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    box-sizing: border-box;
+}
+
+.sc-sheet-search:focus {
+    outline: none;
+}
+
+.sc-sheet-search::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal !important;
+}
+
+.sc-sheet-picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
+}
+
+.sc-sheet-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 100%;
+    min-height: 44px;
+    text-align: left;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sc-sheet-picker-item:active {
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.1);
+    border-color: var(--primary-color);
+}
+
+.sc-sheet-picker-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sc-sheet-picker-name {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+}
+
+.sc-sheet-picker-name .student-prenom,
+.sc-sheet-picker-name .student-nom {
+    display: block;
+    margin-left: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sc-sheet-picker-name .student-prenom {
+    order: 1;
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.15;
+    color: var(--text-primary);
+}
+
+.sc-sheet-picker-name .student-nom {
+    order: 2;
+    font-weight: 500;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+}
+
+.sc-sheet-picker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--primary-color, #4f46e5);
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25);
+    transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+[data-theme="dark"] .sc-sheet-picker-badge {
+    background: #6366f1;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.sc-sheet-picker-item:active .sc-sheet-picker-badge {
+    transform: scale(0.95);
+    filter: brightness(0.92);
+}
+
+.sc-sheet-empty-unplaced {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    color: #059669;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .sc-sheet-empty-unplaced {
+    color: #34d399;
+}
+
+/* Pulsing Empty Cells when in Move / Placement mode */
+#seatingChartView[data-has-selection="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border-color: var(--primary-color);
+    border-style: dashed;
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.08);
+    animation: scCellPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes scCellPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb, 79, 70, 229), 0.3);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 10px 2px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25);
+    }
+}
+
+/* ────────── FLOATING SEARCH IN CAPSULE ────────── */
+.sc-floating-search {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.sc-floating-search .sc-search-toggle-btn {
+    max-width: 28px;
+    width: 28px;
+    opacity: 1;
+    transform: scale(1);
+    overflow: hidden;
+    transition: max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease,
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                padding 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                margin 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sc-floating-search.open .sc-search-toggle-btn {
+    max-width: 0;
+    width: 0;
+    opacity: 0;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: scale(0.4);
+    pointer-events: none;
+}
+
+.sc-floating-search-input-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 0;
+    width: 0;
+    height: 28px;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    box-sizing: border-box;
+    transform: scaleX(0.85);
+    transform-origin: right center;
+    transition: max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.28s ease,
+                padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease,
+                box-shadow 0.25s ease;
+}
+
+.sc-floating-search.open .sc-floating-search-input-box {
+    max-width: 230px;
+    width: 220px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: scaleX(1);
+    padding: 0 6px 0 10px;
+    border-color: var(--border-color);
+}
+
+@media (max-width: 600px) {
+    .sc-floating-search.open .sc-floating-search-input-box {
+        max-width: 170px;
+        width: 160px;
+        height: 28px;
+    }
+}
+
+[data-theme="dark"] .sc-floating-search-input-box {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.sc-search-field-icon {
+    font-size: 1rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.sc-floating-search-input-box:focus-within .sc-search-field-icon {
+    color: var(--text-primary);
+}
+
+.sc-floating-search-input-box input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0 4px 0 2px !important;
+    margin: 0 !important;
+    color: var(--text-primary);
+    caret-color: var(--text-primary);
+    font-size: 0.82rem;
+    font-style: normal !important;
+    line-height: 1.2;
+    font-family: inherit;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sc-floating-search-input-box input::placeholder {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-style: normal !important;
+    opacity: 0.85;
+}
+
+/* Match count badge */
+.sc-floating-search-count {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+    animation: scFadeIn 0.2s ease;
+}
+
+[data-theme="dark"] .sc-floating-search-count {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--text-secondary);
+}
+
+.sc-floating-search-count.sc-count-zero {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+[data-theme="dark"] .sc-floating-search-count.sc-count-zero {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #f87171;
+}
+
+@keyframes scFadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Clear icon button - STRICT NEUTRAL CONTRAST */
+.sc-floating-search-clear {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast), transform 0.1s ease;
+}
+
+.sc-floating-search-clear.visible {
+    display: inline-flex;
+    animation: scFadeIn 0.15s ease;
+}
+
+.sc-floating-search-clear:hover {
+    background: var(--item-hover-bg, rgba(0, 0, 0, 0.06));
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .sc-floating-search-clear:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.sc-floating-search-clear:active {
+    transform: scale(0.9);
+}
+
+/* Cross-class suggestions popover */
+.sc-floating-search-suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 260px;
+    max-width: 340px;
+    background: var(--surface-color);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 8px;
+    z-index: 300;
+    animation: scSuggestionsIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scSuggestionsIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sc-cross-suggestion-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sc-cross-hint {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px 4px;
+}
+
+.sc-cross-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sc-cross-action iconify-icon:first-child {
+    font-size: 1rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+.sc-cross-action-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sc-cross-action-class {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+}
+
+.sc-cross-action .sc-cross-arrow {
+    margin-left: 2px;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-cross-action:hover,
+.sc-cross-action:focus-visible {
+    outline: none;
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
+}
+
+.sc-cross-action:hover .sc-cross-arrow,
+.sc-cross-action:focus-visible .sc-cross-arrow {
+    transform: translateX(3px);
+    color: var(--text-primary);
+}
+
+.sc-cross-action:active {
+    background: var(--item-active-bg);
+}
+
+/* ────────── SPOTLIGHT HIGHLIGHTING (VUE PLAN) ────────── */
+#seatingChartView.sc-search-active .sc-cell {
+    transition: opacity var(--transition-base),
+                transform var(--transition-spring),
+                filter var(--transition-base),
+                box-shadow var(--transition-spring),
+                border-color var(--transition-base) !important;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-dimmed {
+    opacity: 0.18 !important;
+    filter: grayscale(50%) blur(0.2px);
+    pointer-events: none;
+    transform: scale(0.97) !important;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+    opacity: 1 !important;
+    transform: scale(1.06) translateY(-2px) translateZ(0) !important;
+    border: 2px solid var(--highlight-standard-border) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-xl) !important;
+    z-index: 25 !important;
+}
+
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+    border-color: rgba(255, 255, 255, 0.85) !important;
+    background: var(--bg-tertiary) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 14px 34px rgba(0, 0, 0, 0.65) !important;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-single {
+    animation: scSpotlightPulseLight 2s var(--ease-spring) infinite;
+}
+
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-single {
+    animation: scSpotlightPulseDark 2s var(--ease-spring) infinite;
+}
+
+@keyframes scSpotlightPulseLight {
+    0%, 100% {
+        transform: scale(1.06) translateY(-2px);
+        border-color: var(--highlight-standard-border);
+        box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-xl);
+    }
+    50% {
+        transform: scale(1.10) translateY(-3px);
+        border-color: var(--text-primary);
+        box-shadow: 0 0 0 5px var(--highlight-standard-glow), 0 16px 36px rgba(0, 0, 0, 0.16);
+    }
+}
+
+@keyframes scSpotlightPulseDark {
+    0%, 100% {
+        transform: scale(1.06) translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 14px 34px rgba(0, 0, 0, 0.65);
+    }
+    50% {
+        transform: scale(1.10) translateY(-3px);
+        border-color: #ffffff;
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.28), 0 20px 42px rgba(0, 0, 0, 0.85);
+    }
+}
+
+/* Precision spotlight inside multi-student group cards */
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-dimmed,
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-dimmed {
+    opacity: 0.42;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-match {
+    z-index: 6;
+    transform: translateY(-2px) scale(1.06);
+}
+
+/* Dimming tableau desk row during active search */
+#seatingChartView.sc-search-active .sc-desk-row {
+    opacity: 0.35;
+    transition: opacity var(--transition-base);
+}
+
+/* Sidebar chips spotlight (Edit mode) */
+#seatingChartView.sc-search-active .sc-student-chip.sc-spotlight-dimmed {
+    opacity: 0.25 !important;
+}
+
+#seatingChartView.sc-search-active .sc-student-chip.sc-spotlight-match {
+    opacity: 1 !important;
+    background: var(--bg-secondary) !important;
+    border: 1.5px solid var(--highlight-standard-border) !important;
+    box-shadow: 0 0 0 2px var(--highlight-standard-glow), var(--shadow-sm) !important;
+    transform: translateX(4px) !important;
+}
+
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-student-chip.sc-spotlight-match {
+    background: var(--bg-tertiary) !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), var(--shadow-sm) !important;
+}
+
+/* Responsive mobile safety: hide print button while search is open to prevent collision with status pill */
+@media (max-width: 480px) {
+    #seatingChartView .sc-floating-actions:has(.sc-floating-search.open) .sc-print-btn {
+        display: none !important;
+    }
+}
+
+/* ====================================================================
+   FOLDABLE CONTINUUM (Smartphone ↔ Tablet / Galaxy Z Fold Choreography)
+   ==================================================================== */
+
+@keyframes scBoardFoldOpen {
+    0% {
+        opacity: 0.76;
+        transform: perspective(900px) rotateY(-4deg) scale3d(0.84, 0.91, 1);
+    }
+    66% {
+        opacity: 1;
+        transform: perspective(900px) rotateY(0.5deg) scale3d(1.014, 1.006, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(900px) rotateY(0deg) scale3d(1, 1, 1);
+    }
+}
+
+@keyframes scBoardFoldClose {
+    0% {
+        opacity: 0.82;
+        transform: scale3d(1.08, 1.03, 1);
+    }
+    70% {
+        opacity: 1;
+        transform: scale3d(0.992, 0.996, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+@keyframes scHingeCreaseGlow {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scaleX(0.25);
+    }
+    28% {
+        opacity: 0.85;
+        transform: translateX(-50%) scaleX(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) scaleX(2.4);
+    }
+}
+
+@keyframes scCellHingeWave {
+    0% {
+        opacity: 0.72;
+        transform: translate3d(var(--fold-hinge-dx, 0px), 4px, 0) scale(0.9);
+    }
+    68% {
+        opacity: 1;
+        transform: translate3d(calc(var(--fold-hinge-dx, 0px) * -0.06), -1px, 0) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes scSidebarUnfoldDock {
+    0% {
+        opacity: 0;
+        transform: translate3d(-28px, 0, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes scSidebarFoldTray {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 24px, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes scFloatingFoldSettle {
+    0% {
+        opacity: 0.55;
+        transform: translateY(-4px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#seatingChartView.sc-unfolding-to-tablet .sc-classroom-board {
+    animation: scBoardFoldOpen 0.54s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, scale, opacity;
+}
+
+#seatingChartView.sc-folding-to-mobile .sc-classroom-board {
+    animation: scBoardFoldClose 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, scale, opacity;
+}
+
+/* Specular center-crease sweep on unfold */
+#seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 50%;
+    width: 64px;
+    pointer-events: none;
+    z-index: 60;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) 50%,
+        transparent 100%
+    );
+    animation: scHingeCreaseGlow 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-theme="dark"] #seatingChartView.sc-unfolding-to-tablet .sc-classroom-board::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.14) 50%,
+        transparent 100%
+    );
+}
+
+#seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave {
+    animation: scCellHingeWave 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--fold-cell-i, 0) * 20ms);
+    will-change: transform, opacity;
+}
+
+#seatingChartView.sc-fold-transitioning .sc-classroom-board,
+#seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+#seatingChartView.sc-fold-transitioning .sc-sidebar {
+    transition: none !important;
+}
+
+#seatingChartView.sc-fold-transitioning[data-locked="true"] .sc-sidebar {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    animation: none !important;
+}
+
+#seatingChartView.sc-unfolding-to-tablet:not([data-locked="true"]) .sc-sidebar {
+    animation: scSidebarUnfoldDock 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#seatingChartView.sc-folding-to-mobile:not([data-locked="true"]) .sc-sidebar {
+    animation: scSidebarFoldTray 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+#seatingChartView.sc-fold-transitioning .sc-floating-actions {
+    animation: scFloatingFoldSettle 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #seatingChartView.sc-fold-transitioning .sc-classroom-board,
+    #seatingChartView.sc-fold-transitioning .sc-classroom-board::after,
+    #seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave,
+    #seatingChartView.sc-fold-transitioning .sc-sidebar,
+    #seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+    #seatingChartView.sc-fold-transitioning .sc-floating-actions {
+        animation: none !important;
+    }
+}
+
+
+
+
+
