@@ -255,8 +255,8 @@ export const GoogleDriveProvider = {
      * Disconnect and clear tokens.
      */
     async disconnect() {
-        if (this._token?.access_token && typeof google !== 'undefined' && google?.accounts?.oauth2?.revoke) {
-            google.accounts.oauth2.revoke(this._token.access_token);
+        if (this._token?.access_token && window.google?.accounts?.oauth2?.revoke) {
+            window.google.accounts.oauth2.revoke(this._token.access_token);
         }
         this._token = null;
         this._fileId = null;

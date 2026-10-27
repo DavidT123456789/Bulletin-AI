@@ -1360,8 +1360,6 @@ export const StorageManager = {
         } catch (error) {
             UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');
 
-            if (saveBtn) saveBtn.disabled = false;
-            if (cancelBtn) cancelBtn.disabled = false;
             if (closeBtn) closeBtn.disabled = false;
             modalFunctions.forEach(el => el.disabled = false);
         }

@@ -768,7 +768,7 @@ export const ListViewRenderer = {
                     html += `<td class="${evoCellClass}" data-period="${nextP}">${evolutionHtml}</td>`;
                 }
             } catch (cellErr) {
-                console.error("Cell render error", p, cellErr);
+                console.error("Cell render error", allPeriods[i], cellErr);
                 html += `<td class="grade-cell error">?</td>`;
                 if (i < maxIndex) html += `<td class="evolution-cell"></td>`;
             }

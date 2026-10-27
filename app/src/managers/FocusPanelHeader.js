@@ -11,6 +11,7 @@ import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
 
