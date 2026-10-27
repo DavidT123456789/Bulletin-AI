@@ -1484,11 +1484,11 @@ input.context-grade-input,
 }
 
 .previous-grades-inline .grade-evolution.positive {
-    color: var(--success-color);
+    color: var(--grade-range-16-20);
 }
 
 .previous-grades-inline .grade-evolution.negative {
-    color: var(--error-color);
+    color: var(--grade-range-0-4);
 }
 
 .previous-grades-inline .grade-evolution.stable {

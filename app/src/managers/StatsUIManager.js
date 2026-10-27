@@ -318,11 +318,11 @@ export const StatsUI = {
 
         const animationPromises = [];
 
-        // --- Empty State: Evolution card ---
-        this._updateEvolutionCardEmptyState(previousPeriod, filtered.length);
-
         // Utilise calculateStats existant
         const stats = this.calculateStats(filtered, activePeriod, previousPeriod);
+
+        // --- Empty State & Context Badge: Evolution card ---
+        this._updateEvolutionCardEmptyState(previousPeriod, filtered.length, stats);
 
         const avgEvolution = (typeof stats.avgGrade === 'number' && typeof stats.prevAvgGrade === 'number')
             ? (stats.avgGrade - stats.prevAvgGrade)
@@ -409,27 +409,21 @@ export const StatsUI = {
         const evolutionChip = document.getElementById('classEvolutionChip');
         if (avgEvoEl && evolutionChip) {
             evolutionChip.classList.remove('positive', 'negative', 'stable');
-            let refEl = document.getElementById('classEvolutionRef');
-            if (!refEl) {
-                refEl = document.createElement('span');
-                refEl.id = 'classEvolutionRef';
-                refEl.className = 'evolution-ref';
-                evolutionChip.appendChild(refEl);
-            }
             if (avgEvolution === null) {
                 avgEvoEl.textContent = '--';
-                refEl.textContent = '';
-                refEl.style.display = 'none';
+                evolutionChip.removeAttribute('data-tooltip');
+                evolutionChip.classList.remove('tooltip');
                 evolutionChip.classList.add('stable');
                 evolutionChip.style.display = 'none';
             } else {
                 evolutionChip.style.display = '';
-                if (previousPeriod) {
-                    refEl.textContent = `vs ${previousPeriod}`;
-                    refEl.style.display = '';
+                if (previousPeriod && typeof stats.prevAvgGrade === 'number') {
+                    const prevAvgFormatted = stats.prevAvgGrade.toFixed(1).replace('.', ',');
+                    evolutionChip.classList.add('tooltip');
+                    evolutionChip.setAttribute('data-tooltip', `Moyenne ${previousPeriod} : ${prevAvgFormatted}/20`);
                 } else {
-                    refEl.textContent = '';
-                    refEl.style.display = 'none';
+                    evolutionChip.removeAttribute('data-tooltip');
+                    evolutionChip.classList.remove('tooltip');
                 }
                 // startValue can contain a comma, replace it before parsing
                 const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.')) || 0;
@@ -439,9 +433,14 @@ export const StatsUI = {
                         if (!startTimestamp) startTimestamp = timestamp;
                         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
                         const currentVal = startVal + progress * (avgEvolution - startVal);
-                        avgEvoEl.textContent = `${currentVal >= 0 ? '+' : ''}${currentVal.toFixed(1).replace('.', ',')} pts`;
+                        const unit = Math.abs(currentVal) >= 2 ? 'pts' : 'pt';
+                        avgEvoEl.textContent = `${currentVal >= 0 ? '+' : ''}${currentVal.toFixed(1).replace('.', ',')} ${unit}`;
                         if (progress < 1) window.requestAnimationFrame(step);
-                        else { avgEvoEl.textContent = `${avgEvolution >= 0 ? '+' : ''}${avgEvolution.toFixed(1).replace('.', ',')} pts`; resolve(); }
+                        else {
+                            const finalUnit = Math.abs(avgEvolution) >= 2 ? 'pts' : 'pt';
+                            avgEvoEl.textContent = `${avgEvolution >= 0 ? '+' : ''}${avgEvolution.toFixed(1).replace('.', ',')} ${finalUnit}`;
+                            resolve();
+                        }
                     };
                     window.requestAnimationFrame(step);
                 });
@@ -469,15 +468,20 @@ export const StatsUI = {
             const het = stats.heterogeneity;
             if (!het || filtered.length === 0) {
                 hetBadge.textContent = '';
+                hetBadge.removeAttribute('data-tooltip');
                 hetBadge.style.display = 'none';
                 hetBadge.className = 'homogeneity-badge';
             } else if (het.label === 'Indéterminée') {
                 hetBadge.textContent = '⩾ 2 notes requises';
+                hetBadge.removeAttribute('data-tooltip');
                 hetBadge.className = 'homogeneity-badge muted';
                 hetBadge.style.display = '';
             } else {
                 hetBadge.textContent = het.label;
-                hetBadge.className = `homogeneity-badge ${het.colorClass}`;
+                hetBadge.className = `homogeneity-badge tooltip ${het.colorClass}`;
+                if (typeof het.value === 'number') {
+                    hetBadge.setAttribute('data-tooltip', `Écart-type : ${het.value.toFixed(1).replace('.', ',')} pt`);
+                }
                 hetBadge.style.display = '';
             }
         }
@@ -644,13 +648,14 @@ export const StatsUI = {
     },
 
     /**
-     * Gère l'état de repos ("Blueprint 2026") de la carte Dynamique.
+     * Gère l'état de repos ("Blueprint 2026") et l'indicateur contextuel de la carte Dynamique.
      * Conserve la structure Bento alignée en S1/T1 avec un badge contextuel en en-tête.
      * @param {string|null} previousPeriod - Période précédente
      * @param {number} studentCount - Nombre d'élèves affichés
+     * @param {Object|null} [stats=null] - Statistiques calculées
      * @private
      */
-    _updateEvolutionCardEmptyState(previousPeriod, studentCount) {
+    _updateEvolutionCardEmptyState(previousPeriod, studentCount, stats = null) {
         const evolutionCard = document.getElementById('evolutionCard');
         if (!evolutionCard) return;
 
@@ -681,6 +686,7 @@ export const StatsUI = {
         if (statusBadge) {
             if (!hasEvolutionData) {
                 const isSemestre = appState.periodSystem === 'semestres';
+                statusBadge.className = 'homogeneity-badge muted tooltip';
                 statusBadge.textContent = studentCount === 0
                     ? 'Aucun élève'
                     : `Dès le ${isSemestre ? 'S2' : 'T2'}`;
@@ -692,9 +698,13 @@ export const StatsUI = {
                 );
                 statusBadge.style.display = '';
             } else {
-                statusBadge.textContent = '';
-                statusBadge.removeAttribute('data-tooltip');
-                statusBadge.style.display = 'none';
+                const comparedCount = stats ? (stats.progress + stats.stable + stats.regression) : 0;
+                statusBadge.className = 'homogeneity-badge plain-context tooltip';
+                statusBadge.textContent = comparedCount > 0
+                    ? `${comparedCount} élève${comparedCount > 1 ? 's' : ''} vs ${previousPeriod}`
+                    : `vs ${previousPeriod}`;
+                statusBadge.setAttribute('data-tooltip', `Comparaison des moyennes avec ${previousPeriod}`);
+                statusBadge.style.display = '';
             }
         }
     }

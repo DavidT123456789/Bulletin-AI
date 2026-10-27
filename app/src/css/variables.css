@@ -226,12 +226,17 @@
     --danger-color: var(--error-color);
     --secondary-color: var(--accent-color);
 
-    /* Grade Range Colors */
-    --grade-range-0-4: #EF4444;
-    --grade-range-4-8: #F97316;
-    --grade-range-8-12: #EAB308;
-    --grade-range-12-16: #14b8a6;
-    --grade-range-16-20: #22c55e;
+    /* Grade Range Colors (Balanced Modern 2026 Palette — Luminous & Crisp) */
+    --grade-range-0-4: #df3f38;
+    --grade-range-0-4-rgb: 223, 63, 56;
+    --grade-range-4-8: #ec6f1c;
+    --grade-range-4-8-rgb: 236, 111, 28;
+    --grade-range-8-12: #e2a312;
+    --grade-range-8-12-rgb: 226, 163, 18;
+    --grade-range-12-16: #0f9aa8;
+    --grade-range-12-16-rgb: 15, 154, 168;
+    --grade-range-16-20: #129b63;
+    --grade-range-16-20-rgb: 18, 155, 99;
 
     /* Transitions & Animations (Unified Motion System) */
     --ease-material: cubic-bezier(0.4, 0, 0.2, 1);
@@ -500,6 +505,18 @@
     --primary-hover: #60a5fa;
     --primary-bright: var(--color-blue-bright);
     --primary-bright-rgb: var(--color-blue-bright-rgb);
+
+    /* Grade Range Colors (Dark Mode — Luminous & Crisp) */
+    --grade-range-0-4: #ef5b54;
+    --grade-range-0-4-rgb: 239, 91, 84;
+    --grade-range-4-8: #f58436;
+    --grade-range-4-8-rgb: 245, 132, 54;
+    --grade-range-8-12: #f0b429;
+    --grade-range-8-12-rgb: 240, 180, 41;
+    --grade-range-12-16: #22b5c4;
+    --grade-range-12-16-rgb: 34, 181, 196;
+    --grade-range-16-20: #24b87a;
+    --grade-range-16-20-rgb: 36, 184, 122;
 
     /* --- Universal Card Style --- */
     --card-glass-bg: #18181b;

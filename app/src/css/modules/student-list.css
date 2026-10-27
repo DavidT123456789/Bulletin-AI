@@ -803,11 +803,11 @@
 }
 
 .evolution-cell .grade-evolution.positive {
-    color: var(--success-color);
+    color: var(--grade-range-16-20);
 }
 
 .evolution-cell .grade-evolution.negative {
-    color: var(--error-color);
+    color: var(--grade-range-0-4);
 }
 
 .evolution-cell .grade-evolution.stable {

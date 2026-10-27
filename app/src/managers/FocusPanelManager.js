@@ -2220,6 +2220,7 @@ export const FocusPanelManager = {
 
             const diff = valB - valA;
             const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
+            const unit = Math.abs(diff) >= 2 ? 'pts' : 'pt';
             const evoType = Utils.getEvolutionType(diff);
 
             let arrowIcon = 'ph:arrow-right-bold';
@@ -2227,12 +2228,12 @@ export const FocusPanelManager = {
             if (['very-positive', 'positive'].includes(evoType)) {
                 arrowIcon = 'ph:arrow-up-right-bold';
                 evoClass = 'positive';
-            } else if (diff < 0) {
+            } else if (['very-negative', 'negative'].includes(evoType)) {
                 arrowIcon = 'ph:arrow-down-right-bold';
                 evoClass = 'negative';
             }
 
-            return `<span class="grade-evolution ${evoClass} tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="${arrowIcon}"></iconify-icon></span>`;
+            return `<span class="grade-evolution ${evoClass} tooltip" data-tooltip="${diffText} ${unit}"><iconify-icon icon="${arrowIcon}"></iconify-icon></span>`;
         };
 
         const getTooltipText = (period, gradeVal, evalCount, isCurrent = false) => {

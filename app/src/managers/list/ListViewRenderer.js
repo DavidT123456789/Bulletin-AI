@@ -741,14 +741,15 @@ export const ListViewRenderer = {
                             if (grade !== null && nextGrade !== null) {
                                 const diff = nextGrade - grade;
                                 const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
+                                const unit = Math.abs(diff) >= 2 ? 'pts' : 'pt';
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-up-right-bold"></iconify-icon></span>`;
-                                } else if (diff < 0) {
-                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-down-right-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} ${unit}"><iconify-icon icon="ph:arrow-up-right-bold"></iconify-icon></span>`;
+                                } else if (['very-negative', 'negative'].includes(evoType)) {
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} ${unit}"><iconify-icon icon="ph:arrow-down-right-bold"></iconify-icon></span>`;
                                 } else {
-                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} ${unit}"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>`;
                                 }
                             }
                         }

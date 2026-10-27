@@ -391,14 +391,23 @@ describe('StatsUIManager', () => {
             expect(progressItem.getAttribute('aria-disabled')).toBe('true');
         });
 
-        it('should activate evolution legend and hide status badge in S2', async () => {
+        it('should activate evolution legend and show comparison period badge in S2', async () => {
             const { appState } = await import('../state/State.js');
             const { Utils } = await import('../utils/Utils.js');
+            const { DOM } = await import('../utils/DOM.js');
             Utils.getPeriods.mockReturnValue(['S1', 'S2']);
             appState.currentPeriod = 'S2';
             appState.filteredResults = [
                 { studentData: { periods: { S1: { grade: 12 }, S2: { grade: 15 } } } }
             ];
+
+            const evoChip = document.createElement('div');
+            evoChip.id = 'classEvolutionChip';
+            const evoStat = document.createElement('span');
+            evoStat.id = 'classEvolutionAverageStat';
+            evoChip.appendChild(evoStat);
+            document.body.appendChild(evoChip);
+            DOM.classEvolutionAverageStat = evoStat;
 
             await StatsUI.updateStats();
 
@@ -407,9 +416,13 @@ describe('StatsUIManager', () => {
             const progressItem = evolutionCard.querySelector('.legend-item[data-filter-id="progressCount"]');
 
             expect(evolutionCard.classList.contains('is-empty')).toBe(false);
-            expect(badge.style.display).toBe('none');
+            expect(badge.style.display).toBe('');
+            expect(badge.textContent).toBe('1 élève vs S1');
+            expect(badge.classList.contains('plain-context')).toBe(true);
             expect(progressItem.getAttribute('tabindex')).toBe('0');
             expect(progressItem.hasAttribute('aria-disabled')).toBe(false);
+            expect(evoChip.getAttribute('data-tooltip')).toBe('Moyenne S1 : 12,0/20');
+            expect(evoChip.querySelector('#classEvolutionRef')).toBeNull();
         });
 
         it('should mark zero-student histogram bars as aria-disabled and non-focusable', () => {
