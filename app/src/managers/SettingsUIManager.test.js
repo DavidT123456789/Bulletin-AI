@@ -532,4 +532,16 @@ describe('SettingsUIManager', () => {
             expect(document.getElementById('missingKeyText').textContent).toContain('quota temporairement atteint');
         });
     });
+
+    describe('T-08 — Effacement d\'une consigne de style existante (Bug C-02)', () => {
+        // TODO(Lot 5): Retirer .fails une fois le bug corrigé
+        it.fails('T-08 (Bug C-02) : vider DOM.iaStyleInstructions.value = "" et appeler saveSettings() écrase l\'ancienne consigne avec ""', () => {
+            appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Ancienne consigne personnalisée à effacer';
+            DOM.iaStyleInstructions.value = '';
+
+            SettingsUIManager.saveSettings();
+
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('');
+        });
+    });
 });

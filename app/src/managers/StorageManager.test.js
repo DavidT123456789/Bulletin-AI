@@ -887,4 +887,81 @@ describe('StorageManager', () => {
             expect(runtimeState._dataPurgeDetected).toBe(false);
         });
     });
+
+    describe('T-02 & T-03 — Caractérisation QuotaExceededError, _lastSaveHash et migrateData', () => {
+        // TODO(Lot 2): Retirer .fails une fois le bug corrigé
+        it.fails('T-02 (Bugs A-01 & A-03) : persiste generatedResults dans IndexedDB malgré un QuotaExceededError sur localStorage et ne verrouille pas _lastSaveHash avant la fin des écritures', async () => {
+            const { DBService } = await import('../services/DBService.js');
+            DBService.putAll.mockClear();
+
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'MARTIN', prenom: 'Lucas', classId: 'c1', studentData: { periods: { T1: { appreciation: 'Bon travail.' } } } }
+            ];
+
+            localStorage.setItem.mockImplementation((key, value) => {
+                if (key === 'bulletin-assistant-state') {
+                    throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+                }
+                mockLocalStorage[key] = value;
+            });
+
+            // 1er appel : localStorage.setItem lève QuotaExceededError
+            await StorageManager.saveAppState();
+
+            // Même si localStorage échoue pour les settings, la sauvegarde IndexedDB des élèves doit aboutir
+            expect(DBService.putAll).toHaveBeenCalledTimes(1);
+
+            // Restauration de localStorage.setItem : un 2e appel avec le même état ne doit pas être court-circuité par _lastSaveHash
+            localStorage.setItem.mockImplementation((key, value) => {
+                mockLocalStorage[key] = value;
+            });
+            await StorageManager.saveAppState();
+
+            expect(localStorage.getItem('bulletin-assistant-state')).not.toBeNull();
+        });
+
+        // TODO(Lot 2): Retirer .fails une fois le bug corrigé
+        it.fails('T-03 (Bug A-04) : migrateData ne détruit pas l\'appréciation et l\'historique de T1 lorsqu\'ils sont légitimement identiques à ceux de T2', () => {
+            const sharedAppreciation = 'Ensemble satisfaisant.';
+            const inputResults = [
+                {
+                    id: 'student-same-text',
+                    generationPeriod: 'T2',
+                    appreciation: sharedAppreciation,
+                    studentData: {
+                        prenom: 'Emma',
+                        nom: 'Dupont',
+                        currentPeriod: 'T2',
+                        periods: {
+                            T1: {
+                                grade: 13,
+                                appreciation: sharedAppreciation
+                            },
+                            T2: {
+                                grade: 13,
+                                appreciation: sharedAppreciation
+                            }
+                        }
+                    },
+                    historyPerPeriod: {
+                        T1: {
+                            versions: [{ content: sharedAppreciation, timestamp: '2026-01-10T10:00:00.000Z', type: 'initial' }],
+                            currentIndex: 0
+                        },
+                        T2: {
+                            versions: [{ content: sharedAppreciation, timestamp: '2026-03-15T10:00:00.000Z', type: 'initial' }],
+                            currentIndex: 0
+                        }
+                    }
+                }
+            ];
+
+            const migrated = StorageManager.migrateData(inputResults);
+
+            expect(migrated[0].studentData.periods.T1.appreciation).toBe(sharedAppreciation);
+            expect(migrated[0].historyPerPeriod.T1.versions).toHaveLength(1);
+            expect(migrated[0].historyPerPeriod.T1.versions[0].content).toBe(sharedAppreciation);
+            expect(migrated[0].studentData.periods.T2.appreciation).toBe(sharedAppreciation);
+        });
+    });
 });

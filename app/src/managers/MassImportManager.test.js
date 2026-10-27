@@ -297,4 +297,61 @@ describe('MassImportManager', () => {
             expect(appState.generatedResults[0].isPending).toBe(false);
         });
     });
+
+    describe('T-07 — Concurrence lors d\'un changement de classe/période en plein lot (Bug C-01)', () => {
+        // TODO(Lot 5): Retirer .fails une fois le bug corrigé
+        it.fails('T-07 (Bug C-01) : processMassImport conserve le contexte de classe et de période initial si l\'utilisateur change de classe (6e-A -> 3e-B) et de période (T1 -> T2) pendant le lot', async () => {
+            appState.currentClassId = '6e-A';
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [
+                {
+                    id: 's1',
+                    classId: '6e-A',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    studentData: { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 14, appreciation: '' }, T2: { grade: 12, appreciation: '' } } },
+                    historyPerPeriod: {}
+                },
+                {
+                    id: 's2',
+                    classId: '6e-A',
+                    nom: 'DUPONT',
+                    prenom: 'Emma',
+                    studentData: { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 16, appreciation: '' }, T2: { grade: 15, appreciation: '' } } },
+                    historyPerPeriod: {}
+                }
+            ];
+
+            const students = [
+                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 14 } }, statuses: [] },
+                { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 16 } }, statuses: [] }
+            ];
+
+            let callIndex = 0;
+            mockAm.generateAppreciation.mockImplementation(async (sd) => {
+                callIndex++;
+                if (callIndex === 2) {
+                    // Pendant la génération du 2e élève, l'utilisateur change de classe et de période dans l'UI
+                    appState.currentClassId = '3e-B';
+                    appState.currentPeriod = 'T2';
+                }
+                return {
+                    id: `gen-${callIndex}`,
+                    classId: appState.currentClassId,
+                    appreciation: `Appréciation T1 pour ${sd.prenom}`,
+                    studentData: { ...sd, periods: { T1: { grade: sd.periods.T1.grade, appreciation: `Appréciation T1 pour ${sd.prenom}` } } },
+                    evolutions: []
+                };
+            });
+
+            await MassImportManager.processMassImport(students, 0);
+
+            // Aucun doublon ne doit avoir été créé par unshift dans 3e-B : il doit toujours y avoir exactement 2 élèves
+            expect(appState.generatedResults).toHaveLength(2);
+            const emma = appState.generatedResults.find(r => r.id === 's2');
+            expect(emma.classId).toBe('6e-A');
+            expect(emma.studentData.periods.T1.appreciation).toBe('Appréciation T1 pour Emma');
+            expect(emma.studentData.periods.T2.appreciation).toBe('');
+        });
+    });
 });

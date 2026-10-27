@@ -2318,4 +2318,49 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
             expect(TrombinoscopeManager._zones.map(z => z.studentId)).toEqual(['s1', 's3']);
         });
     });
+
+    describe('T-08 — Non-empilement des écouteurs DOM dans _initStep2 (Bug E-03)', () => {
+        // TODO(Lot 6): Retirer .fails une fois le bug corrigé
+        it.fails('T-08 (Bug E-03) : appeler _initStep2() 3 fois de suite (Étape 1 -> 2 -> 3 -> 2) n\'empile pas les écouteurs sur #toggleGridToolsBtn et #trombiUndoBtn', () => {
+            document.body.innerHTML = `
+                <div id="staticStep2Toolbar">
+                    <div class="grid-advanced-controls" id="gridAdvancedControls"></div>
+                    <button type="button" id="toggleGridToolsBtn" aria-expanded="false"></button>
+                    <button type="button" id="trombiUndoBtn"></button>
+                </div>
+                <div id="trombiImageWithZones" class="trombi-image-panel"></div>
+                <div id="trombiAssignmentGrid"></div>
+            `;
+
+            TrombinoscopeManager._imageSrc = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+            TrombinoscopeManager._imageNaturalWidth = 400;
+            TrombinoscopeManager._imageNaturalHeight = 300;
+            TrombinoscopeManager._parsedPdfData = {
+                numPages: 1,
+                pages: [{ studentsCount: 2, zones: [{ id: 1, cx: 50, cy: 50, r: 20 }], originalZones: [{ id: 1, cx: 50, cy: 50, r: 20 }] }],
+                students: [{ id: 's1', nom: 'DUPONT', prenom: 'Alice' }]
+            };
+            TrombinoscopeManager._currentPageIndex = 0;
+
+            const undoSpy = vi.spyOn(TrombinoscopeManager, '_undo').mockImplementation(() => {});
+
+            // Simuler 3 passages par l'étape 2 (Étape 1 -> 2 -> 3 -> 2 -> 3 -> 2)
+            TrombinoscopeManager._initStep2();
+            TrombinoscopeManager._initStep2();
+            TrombinoscopeManager._initStep2();
+
+            const toggleBtn = document.getElementById('toggleGridToolsBtn');
+            const advancedDrawer = document.getElementById('gridAdvancedControls');
+            const undoBtn = document.getElementById('trombiUndoBtn');
+
+            toggleBtn.click();
+            expect(advancedDrawer.classList.contains('is-open')).toBe(true);
+
+            undoBtn.disabled = false;
+            undoBtn.click();
+            expect(undoSpy).toHaveBeenCalledTimes(1);
+
+            undoSpy.mockRestore();
+        });
+    });
 });

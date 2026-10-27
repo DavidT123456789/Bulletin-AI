@@ -330,4 +330,82 @@ describe('PromptService', () => {
             expect(hash1).toBe(hash2);
         });
     });
+
+    describe('T-04 — Caractérisation RGPD & Anonymisation complète (Bugs B-01 & B-02)', () => {
+        // TODO(Lot 3): Retirer .fails une fois le bug corrigé
+        it.fails('T-04 (Bugs B-01 & B-02) : active anonymizeData par défaut et anonymise prénom, nom et statuts médicaux (PAI/ULIS) dans tous les prompts (génération, journal, raffinement, bilan de classe)', async () => {
+            const { DEFAULT_PRIVACY_SETTINGS } = await vi.importActual('../config/defaults.js');
+            const { ClassDashboardManager } = await import('../managers/ClassDashboardManager.js');
+
+            // 1. Privacy-by-default (RGPD Art. 25) : anonymizeData doit être true par défaut
+            expect(DEFAULT_PRIVACY_SETTINGS.anonymizeData).toBe(true);
+
+            // 2. Avec anonymizeData = true, aucune donnée nominative ("Lucas", "Martin") ni statut médical ("PAI", "ULIS")
+            // ne doit fuiter dans les prompts d'appréciation, d'analyse ou de pistes
+            appState.anonymizeData = true;
+            Utils.getPeriods.mockReturnValue(['T1', 'T2', 'T3']);
+            Utils.getPeriodLabel.mockReturnValue('Trimestre');
+
+            const studentData = {
+                prenom: 'Lucas',
+                nom: 'Martin',
+                gender: 'M',
+                statuses: ['PAI', 'ULIS', 'PAP'],
+                currentPeriod: 'T2',
+                periods: {
+                    T1: {
+                        grade: 11,
+                        appreciation: 'Lucas a fourni des efforts réguliers au premier trimestre.'
+                    },
+                    T2: {
+                        grade: 13.5,
+                        appreciation: 'Lucas progresse bien.',
+                        context: 'Lucas participe davantage à l\'oral avec Martin.'
+                    }
+                },
+                journal: [
+                    { id: 'j1', date: '2026-10-05', tags: ['participation'], note: 'Intervention pertinente de Lucas en classe' },
+                    { id: 'j2', date: '2026-10-12', tags: ['participation'], note: 'Devoir supplémentaire rendu par Lucas Martin' }
+                ]
+            };
+
+            const prompts = PromptService.getAllPrompts(studentData);
+            for (const promptText of [prompts.appreciation, prompts.sw, prompts.ns]) {
+                expect(promptText).not.toMatch(/\bLucas\b/i);
+                expect(promptText).not.toMatch(/\bMartin\b/i);
+                expect(promptText).not.toMatch(/\bPAI\b/);
+                expect(promptText).not.toMatch(/\bULIS\b/);
+            }
+
+            // 3. Raffinement : le texte envoyé à getRefinementPrompt doit également être anonymisé
+            const refinementPrompt = PromptService.getRefinementPrompt(
+                'concise',
+                'Lucas Martin a montré un investissement exemplaire tout au long du trimestre.',
+                { prenom: 'Lucas', nom: 'Martin', context: 'Insister sur les progrès de Lucas' }
+            );
+            expect(refinementPrompt).not.toMatch(/\bLucas\b/i);
+            expect(refinementPrompt).not.toMatch(/\bMartin\b/i);
+
+            // 4. Bilan de classe : ClassDashboardManager.buildAIPrompt ne doit envoyer aucun prénom réel
+            const { userPrompt } = ClassDashboardManager.buildAIPrompt({
+                total: 25,
+                withGradesCount: 25,
+                withAppreciationCount: 25,
+                classAverage: 12.4,
+                minGrade: 7,
+                maxGrade: 18,
+                stdDev: 2.1,
+                distribution: { veryLow: 1, low: 4, average: 10, good: 7, excellent: 3 },
+                evolutionStats: { up: 12, stable: 8, down: 5, avgEvolution: 0.6 },
+                topProgressions: [{ prenom: 'Lucas', nom: 'Martin', evolution: 2.5 }],
+                topRegressions: [{ prenom: 'Martin', nom: 'Dupont', evolution: -2.0 }],
+                appreciationsList: [
+                    { prenom: 'Lucas', nom: 'Martin', grade: 13.5, text: 'Lucas progresse bien.' }
+                ],
+                recurringKeywords: [{ word: 'sérieux', count: 10 }]
+            });
+            expect(userPrompt).not.toMatch(/\bLucas\b/i);
+            expect(userPrompt).not.toMatch(/\bMartin\b/i);
+        });
+    });
 });

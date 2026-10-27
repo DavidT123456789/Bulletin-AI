@@ -1,24 +1,17 @@
-import { appState, massImportMappingState, currentImportPreviewData, setMassImportMappingState, setCurrentImportPreviewData, UIState } from '../state/State.js';
-import { CONFIG, CONSTS, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, DEFAULT_EVOLUTION_THRESHOLDS } from '../config/Config.js';
+import { appState, UIState } from '../state/State.js';
+import { CONFIG, CONSTS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
-import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
-// New extracted managers
-import { FileImportManager } from './FileImportManager.js';
 import { WelcomeManager } from './WelcomeManager.js';
 import { ApiValidationManager } from './ApiValidationManager.js';
-
-import { VariationsManager } from './VariationsManager.js';
 import { EventListenersManager } from './EventListenersManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
 import { PreviewManager } from './PreviewManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
-import { EventHandlersManager } from './EventHandlersManager.js';
-import { FormUI } from './FormUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
@@ -369,110 +362,8 @@ export const App = {
         SettingsUIManager.updatePersonalizationState();
     },
 
-    // --- Refinement Logic (partiellement ici car partage d'état refinementEdits) ---
+    // --- Méthodes de délégation simples ---
 
-    // --- Refinement Logic (partiellement ici car partage d'état refinementEdits) ---
-    // Legacy Refinement logic removed
-
-
-    // --- Navigation Modales ---
-
-    _navigateModalView(direction, mode) {
-        const visibleResults = appState.filteredResults;
-        if (visibleResults.length === 0) return;
-
-        let currentId;
-        let modalBody;
-        if (mode === 'details') {
-            const content = DOM.studentDetailsModal.querySelector('.modal-content');
-            currentId = content.dataset.currentId;
-            modalBody = DOM.studentDetailsModal.querySelector('.modal-body');
-        } else {
-            const content = DOM.refinementModal.querySelector('.modal-content');
-            currentId = content.dataset.currentId;
-            modalBody = DOM.refinementModal.querySelector('.modal-body');
-        }
-
-        const currentIndex = visibleResults.findIndex(r => r.id === currentId);
-        if (currentIndex === -1) return;
-
-        let newIndex = currentIndex + direction;
-        if (newIndex < 0) newIndex = visibleResults.length - 1;
-        if (newIndex >= visibleResults.length) newIndex = 0;
-
-        const nextResult = visibleResults[newIndex];
-
-        // iOS 2025 Premium Slide Animation with smooth height transition
-        if (modalBody) {
-            const outClass = direction > 0 ? 'content-slide-out-left' : 'content-slide-out-right';
-            const inClass = direction > 0 ? 'content-slide-in-right' : 'content-slide-in-left';
-
-            // Lock current height for smooth transition
-            const currentHeight = modalBody.offsetHeight;
-            modalBody.style.height = `${currentHeight}px`;
-
-            modalBody.classList.add(outClass);
-
-            setTimeout(() => {
-                modalBody.classList.remove(outClass);
-
-                // Update content
-                if (mode === 'details') AppreciationsManager.showAppreciationDetails(nextResult.id, true);
-                else AppreciationsManager.refineAppreciation(nextResult.id, true);
-
-                // Calculate new height and animate
-                requestAnimationFrame(() => {
-                    modalBody.style.height = 'auto';
-                    const newHeight = modalBody.offsetHeight;
-                    modalBody.style.height = `${currentHeight}px`;
-
-                    requestAnimationFrame(() => {
-                        modalBody.style.height = `${newHeight}px`;
-
-                        // Clear explicit height after transition
-                        setTimeout(() => {
-                            modalBody.style.height = '';
-                        }, 450);
-                    });
-                });
-
-                // Animate in
-                modalBody.classList.add(inClass);
-                setTimeout(() => modalBody.classList.remove(inClass), 400);
-            }, 350);
-        } else {
-            // Fallback without animation
-            if (mode === 'details') AppreciationsManager.showAppreciationDetails(nextResult.id, true);
-            else AppreciationsManager.refineAppreciation(nextResult.id, true);
-        }
-    },
-
-    // --- Méthodes de délégation simples (pour compatibilité si appelées ailleurs) ---
-
-
-
-    // Preview
-    getPreviewStudentData() { return PreviewManager.getPreviewStudentData(); },
-    displayPreviewStudentData(r) { PreviewManager.displayPreviewStudentData(r); },
-    resetSettingsPreview() { PreviewManager.resetSettingsPreview(); },
     populatePreviewStudentSelect() { PreviewManager.populatePreviewStudentSelect(); },
-
-    // Settings
-    saveSettings() { SettingsUIManager.saveSettings(); },
-    resetPersonalStyle() { SettingsUIManager.resetPersonalStyle(); },
-    handlePersonalizationToggleChange(e) {
-        appState.useSubjectPersonalization = e.target.checked;
-        SettingsUIManager.updatePersonalizationState();
-    },
-    // handleUseVocabLibraryToggleChange supprimé - fonctionnalité vocabulaire dépréciée
-
-    // Event Handlers (Legacy delegation) - REMOVED
-
-    // Others
-    validateApiKey(p) { ApiValidationManager.validateApiKey(p); },
     handleImportSettingsBtnClick() { document.getElementById('importSettingsInput')?.click(); },
-    handleImportFileBtnClick() { FileImportManager.handleImportFileBtnClick(); },
-    updateImportPreview() { FileImportManager.updateImportPreview(); },
-
-    // Appreciations (Legacy) - REMOVED
 };

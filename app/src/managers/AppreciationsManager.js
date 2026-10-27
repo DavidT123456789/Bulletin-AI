@@ -6,20 +6,15 @@ import { Utils } from '../utils/Utils.js';
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
 import { AppreciationService } from '../services/AppreciationService.js';
-// RefinementManager removed - Focus Panel handles all refinement inline
 import { ExportManager } from './ExportManager.js';
 import { SingleStudentManager } from './SingleStudentManager.js';
 import { StatsService } from '../services/StatsService.js';
 import { PromptService } from '../services/PromptService.js';
-// ... imports ...
 import { StudentDataManager } from './StudentDataManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
-
 import { MassImportManager } from './MassImportManager.js';
 import { FileImportManager } from './FileImportManager.js';
 import { ListViewManager } from './ListViewManager.js';
-
-import { TooltipsUI } from './TooltipsManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 
@@ -30,15 +25,12 @@ export const AppreciationsManager = {
     init(appInstance, uiManager) {
         App = appInstance;
         UI = uiManager;
-        // RefinementManager removed - Focus Panel handles all refinement inline
         ExportManager.init(appInstance);
         SingleStudentManager.init(appInstance, this);
         ResultsUIManager.init(this, UI);
 
         MassImportManager.init(this, appInstance, UI);
     },
-
-    // ... existing code ...
 
     renderResults(highlightId = null, highlightType = 'new') {
         return ResultsUIManager.renderResults(highlightId, highlightType);
@@ -51,16 +43,6 @@ export const AppreciationsManager = {
     clearAllResults() {
         return ResultsUIManager.clearAllResults();
     },
-
-    clearVisibleAppreciations() {
-        return ResultsUIManager.clearVisibleAppreciations();
-    },
-
-    clearVisibleJournals() {
-        return ResultsUIManager.clearVisibleJournals();
-    },
-
-    // ... existing code ...
 
     saveFormState() {
         // Currently a no-op - form state is saved on generation
@@ -196,20 +178,6 @@ export const AppreciationsManager = {
         return true;
     },
 
-    /**
-     * Vérifie si un résultat a un historique
-     * @param {string} id
-     * @returns {boolean}
-     */
-    hasHistory(id) {
-        const result = appState.generatedResults.find(r => r.id === id);
-        if (!result) return false;
-        const state = this._getPerPeriodState(result);
-        return HistoryUtils.hasMultipleVersions(state);
-    },
-
-
-
     analyserEvolution(periodsData) {
         return StatsService.analyserEvolution(periodsData);
     },
@@ -281,16 +249,8 @@ export const AppreciationsManager = {
         return text.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
     },
 
-    _validateSingleStudentForm() {
-        return SingleStudentManager.validateForm();
-    },
-
     async generateSingleAppreciation() {
         return SingleStudentManager.generateAppreciation();
-    },
-
-    async updateSingleAppreciation() {
-        return SingleStudentManager.updateAppreciation();
     },
 
     _prepareStudentListForImport(lines, formatMap, importMode) {
@@ -301,16 +261,8 @@ export const AppreciationsManager = {
         return MassImportManager.processMassImport(studentsToProcess, ignoredCount);
     },
 
-    switchToCreationMode() {
-        SingleStudentManager.switchToCreationMode();
-    },
-
     resetForm(forNext = false) {
         SingleStudentManager.resetForm(forNext);
-    },
-
-    _getSingleStudentFormData() {
-        return SingleStudentManager.getFormData();
     },
 
     editAppreciation(id) {
@@ -329,60 +281,12 @@ export const AppreciationsManager = {
         ExportManager.copyAppreciation(id, buttonEl);
     },
 
-    copyRefinementText(type) {
-        ExportManager.copyRefinementText(type);
-    },
-
     copyAllResults() {
         ExportManager.copyAllResults();
     },
 
     parseStrengthsWeaknesses(text) {
-        // ... implementation existing ...
-        if (!text) return '';
-        const analysis = { strength: { title: null, items: [] }, weakness: { title: null, items: [] } };
-        let currentSectionKey = null;
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-
-        lines.forEach(line => {
-            const trimmedLine = line.trim();
-            const isStrengthTitle = /^(?:###\s*|\*\*)?\s*(points (forts|positifs)|atouts|réussites|force)/i.test(trimmedLine);
-            const isWeaknessTitle = /^(?:###\s*|\*\*)?\s*(points (faibles|négatifs)|axes d'amélioration|vigilance|faiblesse)/i.test(trimmedLine);
-
-            if (isStrengthTitle) {
-                currentSectionKey = 'strength';
-                analysis.strength.title = trimmedLine.replace(/###\s*/, '').replace(/\*\*/g, '');
-            } else if (isWeaknessTitle) {
-                currentSectionKey = 'weakness';
-                analysis.weakness.title = trimmedLine.replace(/###\s*/, '').replace(/\*\*/g, '');
-            } else if (currentSectionKey && /^(\* |- |\d+\.)/.test(trimmedLine)) {
-                analysis[currentSectionKey].items.push(trimmedLine.replace(/^(\* |- |\d+\.\s*)/, '').trim());
-            } else if (currentSectionKey && analysis[currentSectionKey].items.length > 0) {
-                const lastItemIndex = analysis[currentSectionKey].items.length - 1;
-                analysis[currentSectionKey].items[lastItemIndex] += ' ' + trimmedLine;
-            }
-        });
-
-        let html = '';
-        const sections = [
-            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-linear"></iconify-icon>' },
-            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-linear"></iconify-icon>' }
-        ];
-
-        sections.forEach(sectionInfo => {
-            const sectionData = analysis[sectionInfo.key];
-            if (sectionData.title || sectionData.items.length > 0) {
-                html += `<h4 class="${sectionInfo.class}">${sectionInfo.icon} ${Utils.cleanMarkdown(sectionData.title || (sectionInfo.key === 'strength' ? 'Points Forts' : 'Points Faibles'))}</h4>`;
-                const listClass = sectionInfo.key === 'strength' ? 'strengths-list' : 'weaknesses-list';
-                if (sectionData.items.length > 0) {
-                    html += `<ul class="${listClass}">${sectionData.items.map(item => `<li>${Utils.cleanMarkdown(item)}</li>`).join('')}</ul>`;
-                } else {
-                    const fallbackText = sectionInfo.key === 'weakness' ? "Aucun point faible notable." : "Aucun point fort notable.";
-                    html += `<ul class="${listClass}"><li>${fallbackText}</li></ul>`;
-                }
-            }
-        });
-        return html || `<p>${Utils.cleanMarkdown(text.replace(/\n/g, '<br>'))}</p>`;
+        return AppreciationService.parseStrengthsWeaknesses(text);
     },
 
     async generateStrengthsWeaknesses(id, silent = false) {

@@ -17,7 +17,6 @@ const DEBUG = false;
  */
 const PROVIDERS = {
     google: () => import('./providers/GoogleDriveProvider.js').then(m => m.GoogleDriveProvider),
-    dropbox: () => import('./providers/DropboxProvider.js').then(m => m.DropboxProvider),
 };
 
 /**
@@ -72,7 +71,7 @@ export const SyncService = {
         const savedProvider = localStorage.getItem('bulletin_sync_provider');
         this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync')) || null;
         this._isOnline = navigator.onLine;
-        this._wasConfigured = !!savedProvider;
+        this._wasConfigured = Boolean(savedProvider && PROVIDERS[savedProvider]);
 
         // Start network and token monitoring
         this._startMonitoring();
@@ -328,7 +327,7 @@ export const SyncService = {
                 reconnectBtn.style.display = 'flex';
                 reconnectBtn.classList.toggle('has-warning', needsSync);
                 const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-                const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
+                const label = { google: 'Google Drive' }[providerName] || 'Cloud';
                 const spanEl = reconnectBtn.querySelector('span');
                 if (spanEl) spanEl.textContent = `Reconnecter ${label}`;
             } else {
@@ -534,7 +533,7 @@ export const SyncService = {
             return false;
         }
 
-        const displayLabel = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
+        const displayLabel = { google: 'Google Drive' }[providerName] || 'Cloud';
 
         try {
             const connected = await this.connect(providerName, { silent: false, showChecking: true });
@@ -765,7 +764,7 @@ export const SyncService = {
             timestamp = this.remoteSyncTime;
         }
 
-        const providerLabel = this.currentProviderName === 'dropbox' ? 'Dropbox' : 'Google Drive';
+        const providerLabel = this.currentProviderName === 'google' ? 'Google Drive' : 'Cloud';
 
         if (typeof studentCount === 'number' && studentCount > 0) {
             localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
