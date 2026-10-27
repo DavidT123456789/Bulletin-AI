@@ -58,6 +58,8 @@ export const App = {
                 ApiValidationManager.validateApiKeyUI(provider, input, error, btn, onSuccess)
             );
             if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
+            const aboutVersionEl = document.querySelector('.about-version');
+            if (aboutVersionEl) aboutVersionEl.textContent = `v${APP_VERSION}`;
             WelcomeManager.handleFirstVisit();
             document.querySelectorAll('#actions-irreversibles-container details').forEach(d => d.removeAttribute('open'));
         });
@@ -215,8 +217,6 @@ export const App = {
         if (UIState?.settingsBeforeEdit && Object.keys(UIState.settingsBeforeEdit).length > 0) {
             SettingsUIManager.createSnapshot?.();
         }
-
-        if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
     },
 
     /**

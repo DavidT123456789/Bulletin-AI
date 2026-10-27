@@ -12,6 +12,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
 
 export const FocusPanelHeader = {
     // Callbacks to main manager
@@ -32,16 +33,7 @@ export const FocusPanelHeader = {
 
 
     // Definitions
-    _statusDescriptions: {
-        'Nouveau': 'Élève arrivé récemment dans la classe',
-        'Départ': 'Élève qui quitte la classe prochainement',
-        'PPRE': 'Programme Personnalisé de Réussite Éducative',
-        'PAP': 'Plan d\'Accompagnement Personnalisé',
-        'PAI': 'Projet d\'Accueil Individualisé',
-        'AESH': 'Accompagnant d\'Élève en Situation de Handicap',
-        'ULIS': 'Unité Localisée pour l\'Inclusion Scolaire',
-        'Délégué': 'Délégué de classe'
-    },
+    _statusDescriptions: STATUS_DESCRIPTIONS,
 
     _statusMatchesCheckbox(status, checkboxValue) {
         const sLower = String(status || '').trim().toLowerCase();
@@ -591,9 +583,7 @@ export const FocusPanelHeader = {
 
         Utils.getActiveStatuses(statuses || [], appState.currentPeriod).forEach(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
-            const lower = String(s || '').toLowerCase();
-            const baseKey = Object.keys(this._statusDescriptions).find(k => lower.startsWith(k.toLowerCase()));
-            const tooltip = this._statusDescriptions[s] || (baseKey ? this._statusDescriptions[baseKey] : s);
+            const tooltip = getStatusDescription(s);
             const html = `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
                           data-tooltip="${tooltip}" 
                           role="button" 
@@ -601,7 +591,7 @@ export const FocusPanelHeader = {
 
             // "Nouveau" and "Départ" are general/administrative, they stay in main header
             // Everything else moves to the Contexte card where it belongs logically
-            if (lower.includes('nouveau') || lower.includes('départ') || lower.includes('depart')) {
+            if (resolveStudentStatus(s)?.category === 'movement') {
                 headerHtml += html;
             } else {
                 contextHtml += html;

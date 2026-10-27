@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
+import pkg from './package.json' with { type: 'json' };
 
 const getGitInfo = () => {
   try {
@@ -95,6 +96,9 @@ export default defineConfig({
     strictPort: false
   },
   define: {
+    __APP_VERSION__: JSON.stringify(`${pkg.version} Beta`),
+    __RAW_VERSION__: JSON.stringify(pkg.version),
+    __STORAGE_SCHEMA_VERSION__: JSON.stringify(2),
     __COMMIT_HASH__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 7) || gitInfo.hash),
     __COMMIT_MESSAGE__: JSON.stringify(process.env.COMMIT_MESSAGE || gitInfo.message),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString())

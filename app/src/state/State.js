@@ -2,7 +2,7 @@
  * @fileoverview État centralisé de l'application Bulletin AI.
  * 
  * Structure réorganisée en catégories :
- * - userSettings : Paramètres persistés en localStorage
+ * - userSettings : Paramètres persistés en localStorage / IndexedDB v2
  * - runtimeState : État de session (non persisté directement)
  * - UIState : État transient de l'UI
  * 
@@ -10,14 +10,17 @@
  */
 
 import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { bus, EVENTS } from '../core/EventBus.js';
+
+export { bus, EVENTS };
 
 // ============================================================================
-// PARAMÈTRES UTILISATEUR (persistés en localStorage)
+// PARAMÈTRES UTILISATEUR (persistés en localStorage / IndexedDB)
 // ============================================================================
 
 /**
  * Paramètres utilisateur persistés.
- * Ces valeurs sont sauvegardées dans localStorage via StorageManager.
+ * Ces valeurs sont sauvegardées via StorageManager.
  */
 export const userSettings = {
     /** Préférences d'interface */
@@ -236,9 +239,9 @@ const propertyMap = {
 };
 
 /**
- * appState plat avec Proxy pour la rétrocompatibilité.
+ * appState plat avec Proxy pour la rétrocompatibilité et la notification réactive via EventBus.
  * Permet à tous les fichiers existants de continuer à utiliser appState.propriété
- * sans modification de leur code.
+ * tout en émettant des événements découplés sur `bus`.
  */
 export const appState = new Proxy({}, {
     get(target, prop) {
@@ -266,21 +269,31 @@ export const appState = new Proxy({}, {
     },
 
     set(target, prop, value) {
+        const propName = String(prop);
+
         // Propriété spéciale pour apiStatus
         if (prop === 'apiKeyStatus') {
+            const previousValue = { ...runtimeState.apiStatus };
             Object.assign(runtimeState.apiStatus, value);
+            bus.emit(EVENTS.STATE_CHANGED, { prop: propName, value: runtimeState.apiStatus, previousValue });
+            bus.emit(`${EVENTS.STATE_CHANGED}:${propName}`, { value: runtimeState.apiStatus, previousValue });
             return true;
         }
 
         const categoryGetter = propertyMap[prop];
         if (categoryGetter) {
             const category = categoryGetter();
+            const previousValue = category[prop];
             category[prop] = value;
             if (prop === 'periodSystem') {
                 const validPeriods = value === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
                 if (!validPeriods.includes(runtimeState.navigation.currentPeriod)) {
                     runtimeState.navigation.currentPeriod = validPeriods[0];
                 }
+            }
+            if (previousValue !== value || (typeof value === 'object' && value !== null)) {
+                bus.emit(EVENTS.STATE_CHANGED, { prop: propName, value, previousValue });
+                bus.emit(`${EVENTS.STATE_CHANGED}:${propName}`, { value, previousValue });
             }
             return true;
         }
@@ -289,14 +302,19 @@ export const appState = new Proxy({}, {
         for (const settings of [userSettings, runtimeState]) {
             for (const cat of Object.values(settings)) {
                 if (typeof cat === 'object' && cat !== null && prop in cat) {
+                    const previousValue = cat[prop];
                     cat[prop] = value;
+                    if (previousValue !== value || (typeof value === 'object' && value !== null)) {
+                        bus.emit(EVENTS.STATE_CHANGED, { prop: propName, value, previousValue });
+                        bus.emit(`${EVENTS.STATE_CHANGED}:${propName}`, { value, previousValue });
+                    }
                     return true;
                 }
             }
         }
 
         // Propriété non trouvée - log en développement
-        console.warn(`[State] Propriété inconnue: ${String(prop)}`);
+        console.warn(`[State] Propriété inconnue: ${propName}`);
         return false;
     },
 

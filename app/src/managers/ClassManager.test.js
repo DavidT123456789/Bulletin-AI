@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ClassManager } from './ClassManager';
-import { appState, userSettings } from '../state/State';
+import { appState, userSettings, runtimeState } from '../state/State';
+import { bus, EVENTS } from '../core/EventBus';
+import { DBService } from '../services/DBService';
 
 describe('ClassManager - isDemoClass and Demo Handling', () => {
     beforeEach(() => {
@@ -145,5 +147,72 @@ describe('ClassManager - Virtual Classes (Classes complètes)', () => {
         expect(ClassManager.getStudentsForClass('virtual_31').map(s => s.id)).toEqual(['s1', 's2']);
         // Classe reconstituée 3 2 -> student3
         expect(ClassManager.getStudentsForClass('virtual_32').map(s => s.id)).toEqual(['s3']);
+    });
+});
+
+describe('ClassManager - Lot 10 (Persistance IndexedDB v2, Tombstones & EventBus)', () => {
+    beforeEach(() => {
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        appState.currentClassId = null;
+        appState.generatedResults = [];
+        appState.filteredResults = [];
+        runtimeState.data.deletedItems = { students: [], classes: [] };
+        vi.restoreAllMocks();
+    });
+
+    it('émet les événements EventBus (class:created, class:updated, class:switched, class:deleted) et persiste dans le store classes', async () => {
+        const createdSpy = vi.fn();
+        const updatedSpy = vi.fn();
+        const switchedSpy = vi.fn();
+        const deletedSpy = vi.fn();
+
+        const putSpy = vi.spyOn(DBService, 'put').mockResolvedValue(true);
+        const deleteSpy = vi.spyOn(DBService, 'delete').mockResolvedValue(true);
+        const replaceAllSpy = vi.spyOn(DBService, 'replaceAll').mockResolvedValue(true);
+        vi.spyOn(DBService, 'getAll').mockImplementation(async () => appState.generatedResults);
+
+        const unsubs = [
+            bus.on(EVENTS.CLASS_CREATED, createdSpy),
+            bus.on(EVENTS.CLASS_UPDATED, updatedSpy),
+            bus.on(EVENTS.CLASS_SWITCHED, switchedSpy),
+            bus.on(EVENTS.CLASS_DELETED, deletedSpy)
+        ];
+
+        try {
+            const c1 = ClassManager.createClass('4ème A');
+            const c2 = ClassManager.createClass('4ème B');
+
+            expect(createdSpy).toHaveBeenCalledTimes(2);
+            expect(putSpy).toHaveBeenCalledWith('classes', expect.objectContaining({ id: c1.id, name: '4ème A' }));
+
+            ClassManager.updateClass(c1.id, { name: '4ème A Euro' });
+            expect(updatedSpy).toHaveBeenCalledWith(expect.objectContaining({
+                classObj: expect.objectContaining({ id: c1.id, name: '4ème A Euro' })
+            }));
+
+            await ClassManager.switchClass(c1.id);
+            expect(switchedSpy).toHaveBeenCalledWith(expect.objectContaining({ classId: c1.id }));
+
+            appState.generatedResults = [
+                { id: 's-c1', classId: c1.id, studentData: { prenom: 'Alice' } },
+                { id: 's-c2', classId: c2.id, studentData: { prenom: 'Bob' } }
+            ];
+
+            await ClassManager.deleteClass(c1.id);
+
+            expect(deleteSpy).toHaveBeenCalledWith('classes', c1.id);
+            expect(replaceAllSpy).toHaveBeenCalledWith('generatedResults', [
+                expect.objectContaining({ id: 's-c2', classId: c2.id })
+            ]);
+            expect(deletedSpy).toHaveBeenCalledWith(expect.objectContaining({ classId: c1.id }));
+
+            // Vérifie l'enregistrement du tombstone de classe pour la synchronisation Cloud / multi-onglets
+            expect(runtimeState.data.deletedItems.classes).toEqual([
+                expect.objectContaining({ id: c1.id, deletedAt: expect.any(Number) })
+            ]);
+        } finally {
+            unsubs.forEach(fn => fn());
+        }
     });
 });

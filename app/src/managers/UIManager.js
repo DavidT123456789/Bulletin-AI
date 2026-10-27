@@ -15,7 +15,8 @@
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG, hasValidApiKey } from '../config/providers.js';
-import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
+import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS } from '../config/Config.js';
+import { getMovementStatusLabels, getSelectableStatusLabels } from '../config/academicConstants.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { Utils } from '../utils/Utils.js';
@@ -689,8 +690,8 @@ export const UI = {
             const isCurrent = (i === currentPeriodIndex);
 
             if (isCurrent) {
-                const movementOptions = [`Nouveau ${p}`, `Départ ${p}`];
-                const statusOptions = ["PPRE", "PAP", "ULIS", "Délégué"];
+                const movementOptions = getMovementStatusLabels(p);
+                const statusOptions = getSelectableStatusLabels({ includeMovement: false });
 
                 const createPills = (options) => options.map(opt => `
                     <input type="checkbox" id="statut-${opt.replace(' ', '-')}" name="statuses" value="${opt}">

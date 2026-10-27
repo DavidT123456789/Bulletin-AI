@@ -14,6 +14,7 @@ import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { ClassManager } from './ClassManager.js';
+import { getPreviousPeriod, computeGradeDistributionMap } from '../config/academicConstants.js';
 
 /**
  * Class Dashboard Manager
@@ -236,14 +237,7 @@ export const ClassDashboardManager = {
      * @returns {string|null}
      */
     getPreviousPeriod(period) {
-        const periods = ['T1', 'T2', 'T3', 'S1', 'S2'];
-        const idx = periods.indexOf(period);
-        if (idx <= 0) return null;
-        // Handle T1 -> nothing, T2 -> T1, T3 -> T2, S2 -> S1
-        if (period === 'T2') return 'T1';
-        if (period === 'T3') return 'T2';
-        if (period === 'S2') return 'S1';
-        return null;
+        return getPreviousPeriod(period);
     },
 
     /**
@@ -277,20 +271,7 @@ export const ClassDashboardManager = {
         const successRate = n > 0 ? (aboveTenCount / n) * 100 : 0;
 
         // Distribution by range
-        const distribution = {
-            '0-4': 0,
-            '4-8': 0,
-            '8-12': 0,
-            '12-16': 0,
-            '16-20': 0
-        };
-        grades.forEach(g => {
-            if (g < 4) distribution['0-4']++;
-            else if (g < 8) distribution['4-8']++;
-            else if (g < 12) distribution['8-12']++;
-            else if (g < 16) distribution['12-16']++;
-            else distribution['16-20']++;
-        });
+        const distribution = computeGradeDistributionMap(grades);
 
         // Evolution analysis (only students with previous grades)
         const withEvolution = students.filter(s => s.evolution !== null);

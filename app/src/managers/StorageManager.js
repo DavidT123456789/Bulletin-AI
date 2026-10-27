@@ -35,6 +35,7 @@ import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAU
 import { API_KEY_PROVIDER_IDS } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 let UI;
 let App;
@@ -63,12 +64,20 @@ const UI_AND_NAV_KEYS = [
 ];
 
 export const StorageManager = {
+    TAB_SYNC_CHANNEL_NAME: 'bulletin_ai_state_sync',
+    _tabId: `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    _broadcastChannel: null,
+    _boundOnStorageEvent: null,
+    _isReloadingFromTabSync: false,
+    _lastSavedTimestamp: 0,
     _savePromise: null,
     _saveQueue: Promise.resolve(),
     _lastSaveHash: null,
     _lastResultsSaveHash: null,
+    _lastClassesSaveHash: null,
     _lastDataHash: null,
     _isFirstLoadSave: false,
+
     init(ui, app) {
         UI = ui;
         App = app;
@@ -76,10 +85,125 @@ export const StorageManager = {
         this._saveQueue = Promise.resolve();
         this._lastSaveHash = null;
         this._lastResultsSaveHash = null;
+        this._lastClassesSaveHash = null;
         this._lastDataHash = null;
+        this._isReloadingFromTabSync = false;
+        this._initTabSync();
         try {
             Promise.resolve(DBService.open?.()).catch(() => {});
         } catch (_) {}
+    },
+
+    /**
+     * Initialise la synchronisation inter-onglets via BroadcastChannel
+     * avec repli sur window.addEventListener('storage').
+     */
+    _initTabSync() {
+        this.closeTabSync();
+
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                const channel = new BroadcastChannel(this.TAB_SYNC_CHANNEL_NAME);
+                channel.onmessage = (event) => {
+                    this._handleTabSyncMessage(event?.data);
+                };
+                if (typeof channel.unref === 'function') {
+                    channel.unref();
+                }
+                this._broadcastChannel = channel;
+            } catch (_) {
+                this._broadcastChannel = null;
+            }
+        }
+
+        if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+            this._boundOnStorageEvent = (event) => this._handleStorageEvent(event);
+            window.addEventListener('storage', this._boundOnStorageEvent);
+        }
+    },
+
+    /**
+     * Ferme proprement le canal BroadcastChannel et retire l'écouteur storage.
+     */
+    closeTabSync() {
+        if (this._broadcastChannel) {
+            try {
+                this._broadcastChannel.onmessage = null;
+                this._broadcastChannel.close();
+            } catch (_) { /* ignore */ }
+            this._broadcastChannel = null;
+        }
+        if (this._boundOnStorageEvent && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+            window.removeEventListener('storage', this._boundOnStorageEvent);
+            this._boundOnStorageEvent = null;
+        }
+    },
+
+    /**
+     * Traite une notification de mise à jour d'état reçue d'un autre onglet.
+     * @param {Object} data
+     */
+    async _handleTabSyncMessage(data) {
+        if (!data || data.type !== 'STATE_UPDATED') return;
+        const senderTabId = data.sourceTabId || data.tabId || null;
+        if (senderTabId && senderTabId === this._tabId) return;
+        if (this._isReloadingFromTabSync) return;
+        if (data.saveHash && this._lastSaveHash && data.saveHash === this._lastSaveHash) return;
+        if (data.timestamp && this._lastSavedTimestamp && data.timestamp < this._lastSavedTimestamp) return;
+
+        this._isReloadingFromTabSync = true;
+        try {
+            if (data.timestamp) {
+                this._lastSavedTimestamp = data.timestamp;
+            }
+            await this.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+            if (App?.updateUIOnLoad) {
+                App.updateUIOnLoad();
+            }
+            window.SyncService?.refreshLocalIndicator?.();
+            bus.emit(EVENTS.TAB_SYNC_RECEIVED, {
+                type: 'STATE_UPDATED',
+                timestamp: data.timestamp || Date.now(),
+                sourceTabId: senderTabId,
+                tabId: senderTabId,
+                deviceId: data.deviceId || null,
+                dataHash: data.dataHash || null
+            });
+        } finally {
+            this._isReloadingFromTabSync = false;
+        }
+    },
+
+    /**
+     * Fallback via l'événement DOM 'storage' lorsque BroadcastChannel est indisponible.
+     * @param {StorageEvent} event
+     */
+    async _handleStorageEvent(event) {
+        if (!event || event.key !== CONFIG.LS_APP_STATE_KEY || !event.newValue) return;
+        if (this._isReloadingFromTabSync) return;
+
+        try {
+            const parsed = JSON.parse(event.newValue);
+            const remoteUpdatedAt = parsed?.updatedAt || 0;
+            if (remoteUpdatedAt && this._lastSavedTimestamp && remoteUpdatedAt <= this._lastSavedTimestamp) {
+                return;
+            }
+            const resultsSaveHash = this._computeResultsSaveHash(runtimeState.data.generatedResults);
+            const candidateSaveHash = `${this._hashString(event.newValue)}:${resultsSaveHash}`;
+            if (this._lastSaveHash && candidateSaveHash === this._lastSaveHash) {
+                return;
+            }
+
+            await this._handleTabSyncMessage({
+                type: 'STATE_UPDATED',
+                timestamp: remoteUpdatedAt || Date.now(),
+                sourceTabId: parsed?.sourceTabId || 'storage_event',
+                deviceId: parsed?.deviceId || null,
+                saveHash: candidateSaveHash
+            });
+        } catch (_) {
+            /* ignore malformed storage payload */
+        }
     },
 
     _safeLocalStorageSet(key, value, { notifyOnQuota = false } = {}) {
@@ -127,7 +251,95 @@ export const StorageManager = {
         return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
     },
 
-    async loadAppState({ checkPendingRestore = true } = {}) {
+    /**
+     * Applique un objet settings (issu de localStorage ou d'IndexedDB appData)
+     * sur userSettings et runtimeState.
+     * @private
+     * @param {Object} settings
+     */
+    _applyLoadedSettings(settings) {
+        if (!settings || typeof settings !== 'object') return;
+
+        // UI Settings
+        if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
+        if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
+        if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
+        if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
+        if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
+            userSettings.ui.seatingStatusDots = {
+                ...DEFAULT_SEATING_STATUS_DOTS,
+                ...settings.seatingStatusDots
+            };
+        }
+
+        // Academic Settings
+        if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
+        if (settings.useSubjectPersonalization !== undefined) userSettings.academic.useSubjectPersonalization = settings.useSubjectPersonalization;
+        if (settings.evolutionThresholds !== undefined) userSettings.academic.evolutionThresholds = settings.evolutionThresholds;
+        if (settings.subjects !== undefined) userSettings.academic.subjects = settings.subjects;
+        // Multi-class support
+        if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
+        if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
+        if (settings.classesCustomOrder !== undefined) userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
+        if (settings.classesSortDirection === 'asc' || settings.classesSortDirection === 'desc') {
+            userSettings.academic.classesSortDirection = settings.classesSortDirection;
+        }
+        if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
+        if (settings.seatingActivityGrid !== undefined) userSettings.academic.seatingActivityGrid = settings.seatingActivityGrid;
+
+        // Journal threshold
+        if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
+
+        if (settings.currentAIModel !== undefined) {
+            let model = settings.currentAIModel;
+            if (model === 'groq-llama-3.3-70b') model = 'groq-gpt-oss-120b';
+            else if (model === 'groq-llama-3.1-8b' || model === 'groq-gemma-2-9b') model = 'groq-gpt-oss-20b';
+            userSettings.api.currentAIModel = model;
+        }
+        if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
+        if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
+        if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;
+        if (settings.groqApiKey !== undefined) userSettings.api.groqApiKey = settings.groqApiKey;
+        if (settings.openrouterApiKey !== undefined) userSettings.api.openrouterApiKey = settings.openrouterApiKey;
+        if (settings.anthropicApiKey !== undefined) userSettings.api.anthropicApiKey = settings.anthropicApiKey;
+        if (settings.mistralApiKey !== undefined) userSettings.api.mistralApiKey = settings.mistralApiKey;
+        if (settings.apiKeyStatus !== undefined) runtimeState.apiStatus = settings.apiKeyStatus;
+        if (settings.validatedApiKeys !== undefined) runtimeState.validatedApiKeys = settings.validatedApiKeys;
+
+        // Ollama Settings (restricted to local loopback addresses)
+        if (settings.ollamaEnabled !== undefined) userSettings.api.ollamaEnabled = settings.ollamaEnabled;
+        if (this._isValidLocalOllamaUrl(settings.ollamaBaseUrl)) userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
+        if (settings.ollamaInstalledModels !== undefined) userSettings.api.ollamaInstalledModels = settings.ollamaInstalledModels;
+
+        // Import Settings
+        if (settings.massImportFormats !== undefined) userSettings.import.massImportFormats = settings.massImportFormats;
+
+        // Privacy Settings
+        if (settings.privacy !== undefined) userSettings.privacy = settings.privacy;
+        if (settings.anonymizeData !== undefined && !settings.privacy) userSettings.privacy = { anonymizeData: settings.anonymizeData };
+
+        // Navigation State
+        if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
+        if (settings.currentSubject !== undefined) runtimeState.navigation.currentSubject = settings.currentSubject;
+        if (settings.currentInputMode !== undefined) runtimeState.navigation.currentInputMode = settings.currentInputMode;
+        if (settings.activeStatFilter !== undefined) runtimeState.navigation.activeStatFilter = settings.activeStatFilter;
+
+        // Data Settings
+        if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
+        if (settings.deletedItems !== undefined && settings.deletedItems && typeof settings.deletedItems === 'object') {
+            runtimeState.data.deletedItems = {
+                students: Array.isArray(settings.deletedItems.students) ? settings.deletedItems.students : [],
+                classes: Array.isArray(settings.deletedItems.classes) ? settings.deletedItems.classes : []
+            };
+        }
+
+        // Fallback thème si non défini - respecte bulletin_theme ou 'light' par défaut
+        if (!userSettings.ui.theme) {
+            userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
+        }
+    },
+
+    async loadAppState({ checkPendingRestore = true, fromTabSync = false } = {}) {
         let loadFailed = false;
         try {
             try {
@@ -141,92 +353,13 @@ export const StorageManager = {
             }
 
             const savedState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY);
+            let hasLoadedSettingsFromLS = false;
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
 
                 if (parsedState.settings) {
-                    // Charger les settings dans les nouvelles structures
-                    const settings = parsedState.settings;
-
-                    // UI Settings
-                    if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
-                    if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
-                    if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
-                    if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
-                    if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
-                        userSettings.ui.seatingStatusDots = {
-                            ...DEFAULT_SEATING_STATUS_DOTS,
-                            ...settings.seatingStatusDots
-                        };
-                    }
-
-                    // Academic Settings
-                    if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
-                    if (settings.useSubjectPersonalization !== undefined) userSettings.academic.useSubjectPersonalization = settings.useSubjectPersonalization;
-                    if (settings.evolutionThresholds !== undefined) userSettings.academic.evolutionThresholds = settings.evolutionThresholds;
-                    if (settings.subjects !== undefined) userSettings.academic.subjects = settings.subjects;
-                    // Multi-class support
-                    if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
-                    if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
-                    if (settings.classesCustomOrder !== undefined) userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
-                    if (settings.classesSortDirection === 'asc' || settings.classesSortDirection === 'desc') {
-                        userSettings.academic.classesSortDirection = settings.classesSortDirection;
-                    }
-                    if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
-                    if (settings.seatingActivityGrid !== undefined) userSettings.academic.seatingActivityGrid = settings.seatingActivityGrid;
-
-                    // Journal threshold
-                    if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
-
-                    if (settings.currentAIModel !== undefined) {
-                        let model = settings.currentAIModel;
-                        if (model === 'groq-llama-3.3-70b') model = 'groq-gpt-oss-120b';
-                        else if (model === 'groq-llama-3.1-8b' || model === 'groq-gemma-2-9b') model = 'groq-gpt-oss-20b';
-                        userSettings.api.currentAIModel = model;
-                    }
-                    if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
-                    if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
-                    if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;
-                    if (settings.groqApiKey !== undefined) userSettings.api.groqApiKey = settings.groqApiKey;
-                    if (settings.openrouterApiKey !== undefined) userSettings.api.openrouterApiKey = settings.openrouterApiKey;
-                    if (settings.anthropicApiKey !== undefined) userSettings.api.anthropicApiKey = settings.anthropicApiKey;
-                    if (settings.mistralApiKey !== undefined) userSettings.api.mistralApiKey = settings.mistralApiKey;
-                    if (settings.apiKeyStatus !== undefined) runtimeState.apiStatus = settings.apiKeyStatus;
-                    if (settings.validatedApiKeys !== undefined) runtimeState.validatedApiKeys = settings.validatedApiKeys;
-
-                    // Ollama Settings (restricted to local loopback addresses)
-                    if (settings.ollamaEnabled !== undefined) userSettings.api.ollamaEnabled = settings.ollamaEnabled;
-                    if (this._isValidLocalOllamaUrl(settings.ollamaBaseUrl)) userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
-                    if (settings.ollamaInstalledModels !== undefined) userSettings.api.ollamaInstalledModels = settings.ollamaInstalledModels;
-
-                    // Import Settings
-                    if (settings.massImportFormats !== undefined) userSettings.import.massImportFormats = settings.massImportFormats;
-
-                    // Privacy Settings
-                    if (settings.privacy !== undefined) userSettings.privacy = settings.privacy;
-                    // Fallback for flat structure if ever needed (unlikely for new feature)
-                    if (settings.anonymizeData !== undefined && !settings.privacy) userSettings.privacy = { anonymizeData: settings.anonymizeData };
-
-                    // Navigation State
-                    if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
-                    if (settings.currentSubject !== undefined) runtimeState.navigation.currentSubject = settings.currentSubject;
-
-                    if (settings.currentInputMode !== undefined) runtimeState.navigation.currentInputMode = settings.currentInputMode;
-                    if (settings.activeStatFilter !== undefined) runtimeState.navigation.activeStatFilter = settings.activeStatFilter;
-
-                    // Data Settings
-                    if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
-                    if (settings.deletedItems !== undefined && settings.deletedItems && typeof settings.deletedItems === 'object') {
-                        runtimeState.data.deletedItems = {
-                            students: Array.isArray(settings.deletedItems.students) ? settings.deletedItems.students : [],
-                            classes: Array.isArray(settings.deletedItems.classes) ? settings.deletedItems.classes : []
-                        };
-                    }
-
-                    // Fallback thème si non défini - respecte bulletin_theme ou 'light' par défaut
-                    if (!userSettings.ui.theme) {
-                        userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
-                    }
+                    this._applyLoadedSettings(parsedState.settings);
+                    hasLoadedSettingsFromLS = true;
                 }
 
                 // MIGRATION: LocalStorage -> IndexedDB
@@ -239,13 +372,12 @@ export const StorageManager = {
                     delete parsedState.generatedResults;
                     this._safeLocalStorageSet(CONFIG.LS_APP_STATE_KEY, JSON.stringify(parsedState));
                 }
-
-
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
                 userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
             }
 
+            // 1. Chargement des élèves depuis le store 'generatedResults' (toujours en premier)
             const dbResults = await DBService.getAll('generatedResults');
             if (dbResults && dbResults.length > 0) {
                 runtimeState.data.generatedResults = dbResults;
@@ -265,6 +397,46 @@ export const StorageManager = {
                 }
             } else if (!runtimeState.data.generatedResults || runtimeState.data.generatedResults.length === 0) {
                 runtimeState.data.generatedResults = [];
+            }
+
+            // 2. Chargement / Migration transparente v2 des stores 'classes' et 'appData'
+            try {
+                if (!hasLoadedSettingsFromLS && typeof DBService.get === 'function') {
+                    const dbSettingsRecord = await DBService.get('appData', 'userSettings');
+                    if (dbSettingsRecord?.value && typeof dbSettingsRecord.value === 'object') {
+                        this._applyLoadedSettings(dbSettingsRecord.value.settings || dbSettingsRecord.value);
+                    }
+                }
+
+                if (typeof DBService.get === 'function') {
+                    const dbDeletedRecord = await DBService.get('appData', 'deletedItems');
+                    if (dbDeletedRecord?.value && typeof dbDeletedRecord.value === 'object') {
+                        const hasLocalDeleted = (runtimeState.data?.deletedItems?.students?.length || 0) > 0 ||
+                            (runtimeState.data?.deletedItems?.classes?.length || 0) > 0;
+                        if (fromTabSync || !hasLocalDeleted) {
+                            runtimeState.data.deletedItems = {
+                                students: Array.isArray(dbDeletedRecord.value.students) ? dbDeletedRecord.value.students : [],
+                                classes: Array.isArray(dbDeletedRecord.value.classes) ? dbDeletedRecord.value.classes : []
+                            };
+                        }
+                    }
+                }
+
+                if (typeof DBService.getAll === 'function') {
+                    const dbClasses = await DBService.getAll('classes');
+                    const validDbClasses = Array.isArray(dbClasses)
+                        ? dbClasses.filter(c => c && typeof c.id === 'string' && typeof c.name === 'string')
+                        : [];
+                    if (validDbClasses.length > 0 && (fromTabSync || !userSettings.academic.classes || userSettings.academic.classes.length === 0)) {
+                        userSettings.academic.classes = validDbClasses;
+                    } else if (!fromTabSync && userSettings.academic.classes?.length > 0 && validDbClasses.length === 0 && typeof DBService.replaceAll === 'function') {
+                        // Migration ascendante transparente v1 -> v2 : persiste les classes existantes dans le store 'classes'
+                        await DBService.replaceAll('classes', userSettings.academic.classes);
+                        this._lastClassesSaveHash = this._hashString(JSON.stringify(userSettings.academic.classes));
+                    }
+                }
+            } catch (_) {
+                /* tolérance aux mocks partiels de DBService dans certains tests */
             }
 
             // Purge detection: classes or previous sync student count exist, but IndexedDB was evicted
@@ -299,12 +471,27 @@ export const StorageManager = {
         this._ensureConfigUpgrades();
 
         if (!loadFailed) {
-            this._isFirstLoadSave = true;
-            await this.saveAppState();
+            if (fromTabSync) {
+                const settings = this._buildSettingsSnapshot();
+                const stringifiedSettings = JSON.stringify({ version: APP_VERSION, settings });
+                const resultsSaveHash = this._computeResultsSaveHash(runtimeState.data.generatedResults);
+                this._lastResultsSaveHash = resultsSaveHash;
+                this._lastClassesSaveHash = this._hashString(JSON.stringify(userSettings.academic.classes || []));
+                this._lastDataHash = this.computeCurrentDataHash();
+                this._lastSaveHash = `${this._hashString(stringifiedSettings)}:${resultsSaveHash}`;
+            } else {
+                this._isFirstLoadSave = true;
+                await this.saveAppState();
+            }
+            bus.emit(EVENTS.STATE_LOADED, {
+                fromTabSync,
+                studentCount: (runtimeState.data.generatedResults || []).length,
+                classCount: (userSettings.academic.classes || []).length
+            });
         }
 
         this._requestPersistentStorage();
-        if (checkPendingRestore) {
+        if (checkPendingRestore && !fromTabSync) {
             this._checkPendingRestore();
         }
     },
@@ -861,12 +1048,15 @@ export const StorageManager = {
     async _doSaveAppState() {
         if (this._lastSaveHash === null) {
             this._lastResultsSaveHash = null;
+            this._lastClassesSaveHash = null;
         }
 
         const settings = this._buildSettingsSnapshot();
         const lsData = { version: APP_VERSION, settings: settings };
         const stringifiedSettings = JSON.stringify(lsData);
         const resultsSaveHash = this._computeResultsSaveHash(runtimeState.data.generatedResults);
+        const classesList = Array.isArray(userSettings.academic.classes) ? userSettings.academic.classes : [];
+        const classesSaveHash = this._hashString(JSON.stringify(classesList));
         const currentHash = `${this._hashString(stringifiedSettings)}:${resultsSaveHash}`;
 
         // Optimization: prevent writing to disk if state hasn't changed at all
@@ -876,6 +1066,7 @@ export const StorageManager = {
         }
 
         const resultsChanged = this._lastResultsSaveHash !== resultsSaveHash;
+        const classesChanged = this._lastClassesSaveHash !== classesSaveHash;
 
         // Use computeCurrentDataHash to check only structural/data settings changes
         const currentDataHash = this.computeCurrentDataHash();
@@ -924,8 +1115,48 @@ export const StorageManager = {
             this._lastResultsSaveHash = resultsSaveHash;
         }
 
+        // Persistance v2 des stores 'classes' et 'appData' ('userSettings', 'deletedItems')
+        if (!isFirstLoad) {
+            try {
+                if (classesChanged && typeof DBService.replaceAll === 'function') {
+                    await DBService.replaceAll('classes', classesList);
+                    this._lastClassesSaveHash = classesSaveHash;
+                }
+                if (typeof DBService.put === 'function') {
+                    const nowTs = Date.now();
+                    await DBService.put('appData', { key: 'userSettings', value: settings, updatedAt: nowTs });
+                    await DBService.put('appData', {
+                        key: 'deletedItems',
+                        value: runtimeState.data?.deletedItems || { students: [], classes: [] },
+                        updatedAt: nowTs
+                    });
+                }
+            } catch (_) {
+                /* tolérance aux mocks partiels de DBService dans certains tests */
+            }
+        } else {
+            this._lastClassesSaveHash = classesSaveHash;
+        }
+
         if (lsSaved && idbSaved) {
+            const now = Date.now();
             this._lastSaveHash = currentHash;
+            this._lastSavedTimestamp = now;
+
+            if (!isFirstLoad && !this._isReloadingFromTabSync) {
+                const syncPayload = {
+                    type: 'STATE_UPDATED',
+                    timestamp: now,
+                    dataHash: currentDataHash,
+                    saveHash: currentHash,
+                    deviceId: this.getDeviceId(),
+                    sourceTabId: this._tabId
+                };
+                bus.emit(EVENTS.STATE_SAVED, syncPayload);
+                try {
+                    this._broadcastChannel?.postMessage(syncPayload);
+                } catch (_) { /* ignore closed channel */ }
+            }
         }
 
     },
@@ -1091,6 +1322,10 @@ export const StorageManager = {
 
         try {
             await DBService.clear('generatedResults');
+            try {
+                await DBService.clear?.('classes');
+                await DBService.clear?.('appData');
+            } catch (_) { /* ignore if mocked */ }
             localStorage.removeItem(CONFIG.LS_APP_STATE_KEY);
 
             const keysToRemove = [];

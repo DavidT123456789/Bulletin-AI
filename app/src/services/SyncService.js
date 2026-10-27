@@ -8,6 +8,7 @@
 import { userSettings, runtimeState } from '../state/State.js';
 import { StorageManager } from '../managers/StorageManager.js';
 import { APP_VERSION } from '../config/Config.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /** @type {boolean} Enable debug logs (set to false for production) */
 const DEBUG = false;
@@ -56,6 +57,9 @@ export const SyncService = {
 
     /** @type {'connected'|'expired'|'syncing'|'local'|'disconnected'} Last UI indicator state */
     _indicatorState: 'local',
+
+    /** @type {Function|null} Unsubscribe handler for EventBus tab sync */
+    _tabSyncUnsubscribe: null,
 
 
 
@@ -106,6 +110,13 @@ export const SyncService = {
         // Listen for online/offline events
         window.addEventListener('online', () => this._handleNetworkChange(true));
         window.addEventListener('offline', () => this._handleNetworkChange(false));
+
+        // Listen for multi-tab state sync events via EventBus to refresh cloud indicator
+        if (!this._tabSyncUnsubscribe) {
+            this._tabSyncUnsubscribe = bus.on(EVENTS.TAB_SYNC_RECEIVED, () => {
+                this.refreshLocalIndicator();
+            });
+        }
 
         // Background token check removed to prevent "popups" and interruptions
         // The user will be prompted to reconnect only when they interact (Save/Load).
@@ -494,6 +505,7 @@ export const SyncService = {
      */
     _updateUIConnected(providerName) {
         document.dispatchEvent(new CustomEvent('sync-status-changed', { detail: { providerName, connected: true } }));
+        bus.emit(EVENTS.SYNC_CONNECTED, { providerName, connected: true });
         setTimeout(async () => {
             if (providerName === 'google') {
                 try {
@@ -615,6 +627,7 @@ export const SyncService = {
         this._wasConfigured = false;
         localStorage.removeItem('bulletin_sync_provider');
         this._updateCloudIndicator('disconnected');
+        bus.emit(EVENTS.SYNC_DISCONNECTED, {});
     },
 
     /**
@@ -862,7 +875,8 @@ export const SyncService = {
             },
             settings: StorageManager.getExportableSettings(),
             classes: userSettings.academic.classes || [],
-            generatedResults: results
+            generatedResults: results,
+            deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] }
         };
     },
 
@@ -874,6 +888,7 @@ export const SyncService = {
     _setStatus(status) {
         this.status = status;
         this._statusListeners.forEach(fn => fn(status));
+        bus.emit(EVENTS.SYNC_STATUS_CHANGED, { status, providerName: this.currentProviderName });
     },
 
     /**

@@ -2,6 +2,7 @@
 import { appState, userSettings } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { DOMHelper } from './DOMHelper.js';
+import { resolveStudentStatus, getPeriodsForSystem, getGradeCssClass } from '../config/academicConstants.js';
 
 /**
  * @typedef {Object} StudentPeriodData
@@ -32,21 +33,9 @@ export const Utils = {
      * @returns {{className: string, label: string}} Informations pour le rendu
      */
     getStatusBadgeInfo(status) {
-        const lower = String(status || '').trim().toLowerCase();
-        if (lower.includes('nouveau')) {
-            return { className: 'tag-badge tag-badge--new', label: status };
-        }
-        if (lower.includes('départ') || lower.includes('depart')) {
-            return { className: 'tag-badge tag-badge--depart', label: status };
-        }
-        if (lower === 'ulis') {
-            return { className: 'tag-badge tag-badge--ulis', label: status };
-        }
-        if (['pap', 'ppre', 'pai', 'aesh'].includes(lower)) {
-            return { className: 'tag-badge tag-badge--device', label: status };
-        }
-        if (lower.includes('délégué') || lower.includes('delegue')) {
-            return { className: 'tag-badge tag-badge--delegate', label: status };
+        const meta = resolveStudentStatus(status);
+        if (meta?.badgeClass) {
+            return { className: meta.badgeClass, label: status };
         }
         return { className: 'tag-badge', label: status };
     },
@@ -59,10 +48,8 @@ export const Utils = {
      */
     _parseMovementStatus(status) {
         const raw = String(status || '').trim();
-        const lower = raw.toLowerCase();
-        let kind = null;
-        if (lower.startsWith('nouveau')) kind = 'new';
-        else if (lower.startsWith('départ') || lower.startsWith('depart')) kind = 'depart';
+        const meta = resolveStudentStatus(raw);
+        const kind = meta?.category === 'movement' ? meta.movementKind : null;
         if (!kind) return null;
 
         const periodToken = raw.split(/\s+/)[1];
@@ -948,7 +935,7 @@ export const Utils = {
      * Retourne la liste des périodes selon le système actuel
      * @returns {string[]} ['T1', 'T2', 'T3'] ou ['S1', 'S2']
      */
-    getPeriods() { return appState.periodSystem === 'trimestres' ? ['T1', 'T2', 'T3'] : ['S1', 'S2']; },
+    getPeriods() { return getPeriodsForSystem(appState.periodSystem === 'trimestres' ? 'trimestres' : 'semestres'); },
 
     /**
      * Met à jour l'appréciation d'une période avec timestamp automatique.
@@ -1121,12 +1108,7 @@ export const Utils = {
      * @returns {string} Classe CSS ('grade-range-0-4', 'grade-range-4-8', etc.)
      */
     getGradeClass(grade) {
-        if (typeof grade !== 'number' || isNaN(grade)) return '';
-        if (grade < 4) return 'grade-range-0-4';
-        if (grade < 8) return 'grade-range-4-8';
-        if (grade < 12) return 'grade-range-8-12';
-        if (grade < 16) return 'grade-range-12-16';
-        return 'grade-range-16-20';
+        return getGradeCssClass(grade);
     },
 
     /**

@@ -15,6 +15,7 @@ import { Utils } from '../utils/Utils.js';
 import { StatsService } from '../services/StatsService.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { UI } from './UIManager.js';
+import { GRADE_BRACKET_IDS, GRADE_BRACKET_CLASSES, getGradeBracketIndex } from '../config/academicConstants.js';
 
 /**
  * Module de gestion des statistiques de l'interface utilisateur.
@@ -361,8 +362,7 @@ export const StatsUI = {
         if (avgGradeEl) {
             // Remove all possible grade range classes
             avgGradeEl.classList.remove(
-                'grade-range-0-4', 'grade-range-4-8', 'grade-range-8-12',
-                'grade-range-12-16', 'grade-range-16-20',
+                ...GRADE_BRACKET_CLASSES,
                 'grade-high', 'grade-average', 'grade-low' // Legacy classes cleanup
             );
             if (typeof stats.avgGrade === 'number' && !isNaN(stats.avgGrade)) {
@@ -508,7 +508,7 @@ export const StatsUI = {
     updateHistogram(distribution, filteredResults = appState.filteredResults, activePeriod = appState.currentPeriod) {
         if (!distribution || distribution.length !== 5) return;
         const maxCount = Math.max(...distribution);
-        const ranges = ['0-4', '4-8', '8-12', '12-16', '16-20'];
+        const ranges = GRADE_BRACKET_IDS;
         const rangeBuckets = [[], [], [], [], []];
 
         if (Array.isArray(filteredResults) && activePeriod) {
@@ -518,7 +518,7 @@ export const StatsUI = {
                 if (isNaN(grade)) return;
                 const name = res?.studentData?.name || `${res?.studentData?.nom || ''} ${res?.studentData?.prenom || ''}`.trim();
                 if (!name) return;
-                const idx = grade < 4 ? 0 : grade < 8 ? 1 : grade < 12 ? 2 : grade < 16 ? 3 : 4;
+                const idx = getGradeBracketIndex(grade);
                 rangeBuckets[idx].push({ name, grade });
             });
         }

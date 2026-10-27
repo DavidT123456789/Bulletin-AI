@@ -1,5 +1,10 @@
 import { appState } from '../state/State.js';
 import { DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../config/Config.js';
+import {
+    resolveStudentStatus,
+    GDPR_SENSITIVE_STATUS_PATTERN,
+    DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION
+} from '../config/academicConstants.js';
 import { Utils } from '../utils/Utils.js';
 import { DOM } from '../utils/DOM.js';
 import { StatsService } from './StatsService.js';
@@ -176,26 +181,14 @@ export const PromptService = {
             if (!trimmed) continue;
             const lower = trimmed.toLowerCase();
 
-            if (lower === 'pap' || lower.startsWith('pap ')) {
-                addInstruction("Valoriser les progrès réalisés au regard des aménagements pédagogiques mis en place, avec un ton bienveillant, sans jamais mentionner de dispositif administratif ou médical.");
-            } else if (lower === 'ppre' || lower.startsWith('ppre ')) {
-                addInstruction("Encourager les efforts sur les compétences fondamentales ciblées et donner des conseils méthodologiques accessibles, sans mentionner de programme d'accompagnement.");
-            } else if (lower === 'ulis' || lower.startsWith('ulis ')) {
-                addInstruction("Évaluer les acquis par rapport aux objectifs personnalisés de l'élève en valorisant son implication et ses progrès, sans jamais mentionner de dispositif d'inclusion scolaire ou de handicap.");
-            } else if (lower === 'pai' || lower.startsWith('pai ')) {
-                addInstruction("Tenir compte avec bienveillance du rythme de l'élève sans jamais faire allusion à sa santé ou à un protocole médical.");
-            } else if (lower === 'geva-sco' || lower === 'gevasco' || lower.startsWith('geva') || lower === 'mdph' || lower === 'pps') {
-                addInstruction("Valoriser les progrès et l'investissement de l'élève au regard de son parcours adapté, sans jamais mentionner de dossier médico-scolaire ou administratif.");
-            } else if (lower === 'aesh' || lower.startsWith('aesh ')) {
-                addInstruction("Mettre en avant l'autonomie progressive et les réussites de l'élève, sans mentionner d'accompagnement humain en classe.");
-            } else if (lower.startsWith('nouveau')) {
-                addInstruction(`Tenir compte de l'arrivée récente de l'élève en cours d'année (${trimmed}) et valoriser son adaptation.`);
-            } else if (lower.startsWith('départ') || lower.startsWith('depart')) {
-                addInstruction(`Tenir compte du départ de l'élève (${trimmed}) en dressant un bilan factuel et bienveillant de sa présence.`);
-            } else if (lower.startsWith('délégué') || lower.startsWith('delegue')) {
-                addInstruction(`Prendre en compte l'engagement citoyen de l'élève (${trimmed}) si pertinent.`);
-            } else if (/\b(pap|ppre|ulis|pai|geva[-\s]?sco|aesh|pps|mdph|segpa|dys\w*|tdah|tsa|handicap)\b/i.test(lower)) {
-                addInstruction("Adapter le propos avec bienveillance aux aménagements pédagogiques de l'élève, sans jamais mentionner de dispositif médical ou administratif.");
+            const statusMeta = resolveStudentStatus(trimmed);
+            if (statusMeta) {
+                const instruction = typeof statusMeta.formatPromptInstruction === 'function'
+                    ? statusMeta.formatPromptInstruction(trimmed)
+                    : statusMeta.promptInstruction;
+                addInstruction(instruction);
+            } else if (GDPR_SENSITIVE_STATUS_PATTERN.test(lower)) {
+                addInstruction(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION);
             } else {
                 addInstruction(`Contexte pédagogique : ${trimmed}.`);
             }

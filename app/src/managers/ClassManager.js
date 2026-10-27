@@ -5,8 +5,9 @@
  * @module managers/ClassManager
  */
 
-import { appState, userSettings } from '../state/State.js';
+import { appState, userSettings, runtimeState } from '../state/State.js';
 import { DBService } from '../services/DBService.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 import { detectLevelFromName, compareClassesPedagogically, sortClassesByLevel } from '../utils/LevelDetector.js';
 import { Utils } from '../utils/Utils.js';
 
@@ -101,8 +102,15 @@ export const ClassManager = {
             );
         }
 
+        try {
+            Promise.resolve(DBService.put?.('classes', newClass)).catch(() => {});
+        } catch (_) {}
+
         // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        bus.emit(EVENTS.CLASS_CREATED, { classObj: newClass });
+        bus.emit(EVENTS.CLASSES_UPDATED, { classes: userSettings.academic.classes });
 
         // Synchroniser vers le cloud
         this._triggerCloudSync();
@@ -140,8 +148,15 @@ export const ClassManager = {
             );
         }
 
+        try {
+            Promise.resolve(DBService.put?.('classes', classToUpdate)).catch(() => {});
+        } catch (_) {}
+
         // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        bus.emit(EVENTS.CLASS_UPDATED, { classObj: classToUpdate });
+        bus.emit(EVENTS.CLASSES_UPDATED, { classes: userSettings.academic.classes });
 
         // Synchroniser vers le cloud
         this._triggerCloudSync();
@@ -171,10 +186,29 @@ export const ClassManager = {
 
         const deletedClass = classes[classIndex];
 
+        // Enregistrer le tombstone de la classe pour éviter toute résurrection lors d'une synchro Cloud
+        if (runtimeState?.data) {
+            if (!runtimeState.data.deletedItems) {
+                runtimeState.data.deletedItems = { students: [], classes: [] };
+            }
+            if (!Array.isArray(runtimeState.data.deletedItems.classes)) {
+                runtimeState.data.deletedItems.classes = [];
+            }
+            runtimeState.data.deletedItems.classes.push({
+                id: classId,
+                deletedAt: Date.now()
+            });
+        }
+
         // Supprimer les données des élèves si demandé
         if (deleteData) {
             await this._deleteClassData(classId);
         }
+
+        // Supprimer la classe du store IndexedDB v2
+        try {
+            await DBService.delete?.('classes', classId);
+        } catch (_) {}
 
         // Supprimer la classe du state
         classes.splice(classIndex, 1);
@@ -193,6 +227,9 @@ export const ClassManager = {
 
         // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        bus.emit(EVENTS.CLASS_DELETED, { classId, deletedClass });
+        bus.emit(EVENTS.CLASSES_UPDATED, { classes: userSettings.academic.classes });
 
         // Synchroniser immédiatement vers le cloud pour propager la suppression
         this._triggerCloudSync();
@@ -229,6 +266,9 @@ export const ClassManager = {
      */
     async resetAllClasses() {
         await DBService.clear('generatedResults');
+        try {
+            await DBService.clear?.('classes');
+        } catch (_) {}
         appState.generatedResults = [];
         appState.filteredResults = [];
 
@@ -354,7 +394,6 @@ export const ClassManager = {
     /**
      * Change la classe courante
      * @param {string} classId - ID de la nouvelle classe courante
-     * @param {boolean} [refreshUI=true] - Rafraîchir l'interface
      */
     async switchClass(classId) {
         const isVirtual = this.isVirtualClass(classId);
@@ -385,6 +424,8 @@ export const ClassManager = {
 
         // Sauvegarder
         StorageManager?.saveAppState();
+
+        bus.emit(EVENTS.CLASS_SWITCHED, { classId, targetClass });
     },
 
     /**
@@ -411,6 +452,7 @@ export const ClassManager = {
         userSettings.academic.classesCustomOrder = true;
 
         StorageManager?.saveAppState();
+        bus.emit(EVENTS.CLASSES_UPDATED, { classes: userSettings.academic.classes });
         this._triggerCloudSync();
     },
 
@@ -425,6 +467,7 @@ export const ClassManager = {
         userSettings.academic.classesSortDirection = targetDirection;
 
         StorageManager?.saveAppState();
+        bus.emit(EVENTS.CLASSES_UPDATED, { classes: userSettings.academic.classes });
         this._triggerCloudSync();
     },
 
@@ -610,7 +653,6 @@ export const ClassManager = {
 
         // Dupliquer les élèves depuis la mémoire (plus rapide, cohérent avec le reste du code)
         const sourceStudents = (appState.generatedResults || []).filter(r => r.classId === classId);
-        let studentCount = 0;
 
         if (sourceStudents.length > 0) {
             const duplicatedStudents = sourceStudents.map(student => ({
@@ -625,12 +667,14 @@ export const ClassManager = {
 
                 // Commit en mémoire seulement si DB OK
                 appState.generatedResults = [...appState.generatedResults, ...duplicatedStudents];
-                studentCount = duplicatedStudents.length;
             } catch (error) {
                 // Rollback: supprimer la classe créée
                 const classes = userSettings.academic.classes || [];
                 const idx = classes.findIndex(c => c.id === duplicatedClass.id);
                 if (idx !== -1) classes.splice(idx, 1);
+                try {
+                    await DBService.delete?.('classes', duplicatedClass.id);
+                } catch (_) {}
                 StorageManager?.saveAppState();
                 throw error;
             }
@@ -668,10 +712,8 @@ export const ClassManager = {
         const allResults = await DBService.getAll('generatedResults') || [];
         const studentsToDelete = allResults.filter(r => r.classId === classId);
         const resultsToKeep = allResults.filter(r => r.classId !== classId);
-        const deletedCount = studentsToDelete.length;
 
         // Record tombstones for sync BEFORE deletion (prevents re-import from cloud)
-        const { runtimeState } = await import('../state/State.js');
         if (!runtimeState.data.deletedItems) {
             runtimeState.data.deletedItems = { students: [], classes: [] };
         }
@@ -685,9 +727,12 @@ export const ClassManager = {
         });
 
         try {
-            // Clear then re-insert (putAll is non-destructive upsert)
-            await DBService.clear('generatedResults');
-            await DBService.putAll('generatedResults', resultsToKeep);
+            if (typeof DBService.replaceAll === 'function') {
+                await DBService.replaceAll('generatedResults', resultsToKeep);
+            } else {
+                await DBService.clear('generatedResults');
+                await DBService.putAll('generatedResults', resultsToKeep);
+            }
 
             // CRITICAL: Synchroniser la mémoire pour éviter les données orphelines
             appState.generatedResults = resultsToKeep;
@@ -700,13 +745,11 @@ export const ClassManager = {
                 appState.filteredResults = [];
             }
 
-
         } catch (error) {
             console.error('[ClassManager] _deleteClassData failed, data may be corrupted:', error);
             // Attempt recovery - try to restore from backup
             try {
                 await DBService.putAll('generatedResults', allResults);
-
             } catch (recoveryError) {
                 console.error('[ClassManager] Recovery FAILED - data may be lost:', recoveryError);
             }
@@ -714,13 +757,12 @@ export const ClassManager = {
         }
     },
 
-
     /**
- * Filtre les résultats par classe et met à jour le state
- * Utilise les données en mémoire (appState.generatedResults) plutôt que de
- * recharger depuis IndexedDB pour préserver les modifications non-sauvegardées
- * @private
- */
+     * Filtre les résultats par classe et met à jour le state
+     * Utilise les données en mémoire (appState.generatedResults) plutôt que de
+     * recharger depuis IndexedDB pour préserver les modifications non-sauvegardées
+     * @private
+     */
     async _filterResultsByClass(classId) {
         appState.filteredResults = this.getStudentsForClass(classId);
     }

@@ -5,8 +5,7 @@
 
 import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
-import { OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue, getApiModelName } from '../config/models.js';
-import { hasValidApiKey } from '../config/providers.js';
+import { AI_PROVIDERS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
 
 /**
  * Extrait le délai d'attente (en secondes) d'un message d'erreur de rate-limit (429/quota).
@@ -111,7 +110,7 @@ export const AIService = {
                 apiKey: appState.openaiApiKey, apiUrl: `${CONFIG.OPENAI_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }),
                 payload: (p, m, sys) => ({
-                    model: m.replace('openai-', ''),
+                    model: getApiModelName(m),
                     messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }]
                 }),
             },
@@ -148,7 +147,7 @@ export const AIService = {
                 headers: () => ({ 'Content-Type': 'application/json' }),
                 payload: (p, m, sys) => {
                     const body = {
-                        model: m.replace('ollama-', ''),
+                        model: getApiModelName(m),
                         prompt: p,
                         stream: false,
                         options: {
@@ -175,7 +174,7 @@ export const AIService = {
                 }),
                 payload: (p, m, sys) => {
                     const body = {
-                        model: m.replace('anthropic-', ''),
+                        model: getApiModelName(m),
                         messages: [{ role: 'user', content: p }],
                         max_tokens: MAX_RESPONSE_TOKENS
                     };
@@ -193,7 +192,7 @@ export const AIService = {
                     'Authorization': `Bearer ${key}`
                 }),
                 payload: (p, m, sys) => ({
-                    model: m.replace('mistral-direct-', 'mistral-'),
+                    model: getApiModelName(m),
                     messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
                     max_tokens: MAX_RESPONSE_TOKENS
                 }),
@@ -263,12 +262,7 @@ export const AIService = {
      * @returns {number} Timeout en ms
      */
     _getModelTimeout(model) {
-        const m = model || '';
-        if (m.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS;
-        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3') || m.includes('gpt-oss');
-        if (isReasoningModel) return 40000;
-        if (m.includes('pro') || m.includes('opus')) return 30000;
-        return 22000;
+        return getModelTimeout(model, CONFIG.API_CALL_TIMEOUT_OLLAMA_MS, 22000);
     },
 
     /**
@@ -462,7 +456,7 @@ export const AIService = {
         if (provider === 'ollama') {
             if (!appState.ollamaEnabled) return false;
             // Vérifier si ce modèle spécifique est installé
-            const modelName = model.replace('ollama-', '');
+            const modelName = getApiModelName(model);
             const installed = appState.ollamaInstalledModels || [];
             // Si on n'a pas la liste des modèles, on assume qu'il est disponible
             if (installed.length === 0) return true;

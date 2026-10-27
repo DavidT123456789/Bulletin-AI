@@ -7,8 +7,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { appState } from '../state/State.js';
-import { MODEL_SELECTOR_CONFIG, MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
-import { PROVIDER_CONFIG } from '../config/providers.js';
+import { MODEL_SELECTOR_CONFIG, MODEL_SHORT_NAMES, PROVIDER_CONFIG, getProviderForModel } from '../config/aiRegistry.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { UI } from './UIManager.js';

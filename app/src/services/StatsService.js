@@ -1,5 +1,6 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { computeGradeDistributionArray } from '../config/academicConstants.js';
 
 export const StatsService = {
     /**
@@ -58,19 +59,7 @@ export const StatsService = {
      * @returns {number[]} Tableau de 5 entiers représentant les tranches [0-4, 4-8, 8-12, 12-16, 16-20]
      */
     getGradeDistribution(grades) {
-        const distribution = [0, 0, 0, 0, 0];
-        if (!grades) return distribution;
-
-        const cleanGrades = grades.filter(g => typeof g === 'number' && !isNaN(g));
-
-        cleanGrades.forEach(g => {
-            if (g < 4) distribution[0]++;
-            else if (g < 8) distribution[1]++;
-            else if (g < 12) distribution[2]++;
-            else if (g < 16) distribution[3]++;
-            else distribution[4]++;
-        });
-        return distribution;
+        return computeGradeDistributionArray(grades);
     },
 
     analyserEvolution(periodsData) {

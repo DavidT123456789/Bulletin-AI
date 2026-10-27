@@ -11,11 +11,15 @@ import { appState, userSettings, runtimeState } from '../state/State.js';
 vi.mock('../services/DBService.js', () => ({
     DBService: {
         open: vi.fn(),
+        close: vi.fn(),
         get: vi.fn(),
         getAll: vi.fn(),
+        getByIndex: vi.fn(),
         put: vi.fn(),
         putAll: vi.fn(),
         replaceAll: vi.fn(),
+        saveAtomicSnapshot: vi.fn(),
+        replaceAllAtomic: vi.fn(),
         delete: vi.fn(),
         clear: vi.fn()
     }
@@ -164,6 +168,7 @@ describe('StorageManager', () => {
     });
 
     afterEach(() => {
+        StorageManager.closeTabSync();
         vi.unstubAllGlobals();
     });
 
@@ -1010,6 +1015,132 @@ describe('StorageManager', () => {
             expect(migrated[0].historyPerPeriod.T1.versions).toHaveLength(1);
             expect(migrated[0].historyPerPeriod.T1.versions[0].content).toBe(sharedAppreciation);
             expect(migrated[0].studentData.periods.T2.appreciation).toBe(sharedAppreciation);
+        });
+    });
+
+    describe('Lot 10 — BulletinAssistantDB v2, EventBus & Synchronisation multi-onglets', () => {
+        it('persiste les classes et appData (userSettings, deletedItems) dans IndexedDB v2 et émet STATE_SAVED sur EventBus', async () => {
+            const { bus, EVENTS } = await import('../core/EventBus.js');
+            const savedSpy = vi.fn();
+            const unsub = bus.on(EVENTS.STATE_SAVED, savedSpy);
+
+            try {
+                userSettings.academic.classes = [{ id: 'c1', name: '3ème A' }];
+                runtimeState.data.deletedItems = {
+                    students: [{ id: 'del-s1', deletedAt: 1700000000000 }],
+                    classes: [{ id: 'del-c1', deletedAt: 1700000000000 }]
+                };
+                runtimeState.data.generatedResults = [{ id: 's1', classId: 'c1' }];
+
+                await StorageManager.saveAppState();
+
+                expect(DBService.replaceAll).toHaveBeenCalledWith('classes', [{ id: 'c1', name: '3ème A' }]);
+                expect(DBService.put).toHaveBeenCalledWith(
+                    'appData',
+                    expect.objectContaining({ key: 'userSettings', value: expect.any(Object) })
+                );
+                expect(DBService.put).toHaveBeenCalledWith(
+                    'appData',
+                    expect.objectContaining({
+                        key: 'deletedItems',
+                        value: runtimeState.data.deletedItems
+                    })
+                );
+                expect(savedSpy).toHaveBeenCalledTimes(1);
+            } finally {
+                unsub();
+            }
+        });
+
+        it('restaure les réglages, classes et tombstones depuis IndexedDB v2 si localStorage a été vidé', async () => {
+            // localStorage est vide, mais IndexedDB v2 contient tout
+            DBService.getAll.mockImplementation(async (storeName) => {
+                if (storeName === 'generatedResults') return [{ id: 's1', classId: 'c-idb', studentData: { prenom: 'Léo' } }];
+                if (storeName === 'classes') return [{ id: 'c-idb', name: '4ème IDB' }];
+                return [];
+            });
+            DBService.get.mockImplementation(async (storeName, key) => {
+                if (storeName === 'appData' && key === 'userSettings') {
+                    return {
+                        key: 'userSettings',
+                        value: {
+                            settings: { theme: 'light', currentPeriod: 'T3', currentClassId: 'c-idb' },
+                            classes: [{ id: 'c-idb', name: '4ème IDB' }]
+                        }
+                    };
+                }
+                if (storeName === 'appData' && key === 'deletedItems') {
+                    return {
+                        key: 'deletedItems',
+                        value: { students: [{ id: 'ghost-1', deletedAt: 123456 }], classes: [] }
+                    };
+                }
+                return undefined;
+            });
+
+            await StorageManager.loadAppState();
+
+            expect(userSettings.ui.theme).toBe('light');
+            expect(runtimeState.navigation.currentPeriod).toBe('T3');
+            expect(userSettings.academic.classes).toEqual([{ id: 'c-idb', name: '4ème IDB' }]);
+            expect(runtimeState.data.deletedItems.students).toEqual([{ id: 'ghost-1', deletedAt: 123456 }]);
+        });
+
+        it('synchronise automatiquement l\'état entre onglets via BroadcastChannel sans boucle infinie et notifie EventBus', async () => {
+            const { bus, EVENTS } = await import('../core/EventBus.js');
+            const { App } = await import('./AppManager.js');
+            const tabSyncSpy = vi.fn();
+            const unsub = bus.on(EVENTS.TAB_SYNC_RECEIVED, tabSyncSpy);
+
+            try {
+                const loadSpy = vi.spyOn(StorageManager, 'loadAppState').mockResolvedValue();
+
+                // 1. Un message provenant du même onglet doit être ignoré
+                await StorageManager._handleTabSyncMessage({
+                    type: 'STATE_UPDATED',
+                    tabId: StorageManager._tabId,
+                    timestamp: Date.now()
+                });
+                expect(loadSpy).not.toHaveBeenCalled();
+
+                // 2. Un message provenant d'un autre onglet doit recharger l'état, rafraîchir l'UI et émettre TAB_SYNC_RECEIVED
+                await StorageManager._handleTabSyncMessage({
+                    type: 'STATE_UPDATED',
+                    tabId: 'remote_tab_999',
+                    timestamp: Date.now() + 1000
+                });
+
+                expect(loadSpy).toHaveBeenCalledTimes(1);
+                expect(App.updateUIOnLoad).toHaveBeenCalled();
+                expect(tabSyncSpy).toHaveBeenCalledWith(expect.objectContaining({
+                    type: 'STATE_UPDATED',
+                    tabId: 'remote_tab_999'
+                }));
+
+                loadSpy.mockRestore();
+            } finally {
+                unsub();
+            }
+        });
+
+        it('assure le fallback de synchronisation multi-onglets via l\'événement window storage', async () => {
+            const syncSpy = vi.spyOn(StorageManager, '_handleTabSyncMessage').mockResolvedValue();
+
+            await StorageManager._handleStorageEvent({
+                key: 'bulletin-assistant-state',
+                newValue: JSON.stringify({
+                    settings: { theme: 'light' },
+                    sourceTabId: 'fallback_tab_42',
+                    updatedAt: Date.now() + 2000
+                })
+            });
+
+            expect(syncSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'STATE_UPDATED',
+                sourceTabId: 'fallback_tab_42'
+            }));
+
+            syncSpy.mockRestore();
         });
     });
 });

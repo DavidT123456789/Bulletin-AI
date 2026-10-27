@@ -20,6 +20,7 @@ import { SeatingAnimations } from './seating/SeatingAnimations.js';
 import { SeatingZoom } from './seating/SeatingZoom.js';
 import { SeatingAutoPlace } from './seating/SeatingAutoPlace.js';
 import { SeatingSearch } from './seating/SeatingSearch.js';
+import { STUDENT_STATUS_REGISTRY, resolveStudentStatus } from '../config/academicConstants.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -4759,17 +4760,10 @@ export const SeatingChartManager = {
         if (!studentResult) return [];
         const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
         if (!Array.isArray(statuses) || statuses.length === 0) return [];
-        const deviceMap = {
-            ulis: 'ULIS',
-            pap: 'PAP',
-            ppre: 'PPRE',
-            pai: 'PAI',
-            aesh: 'AESH'
-        };
         const found = [];
         for (const raw of statuses) {
-            const key = String(raw || '').trim().toLowerCase();
-            const canonical = deviceMap[key];
+            const meta = resolveStudentStatus(raw);
+            const canonical = meta?.isDevice ? meta.id : null;
             if (canonical && !found.includes(canonical)) {
                 found.push(canonical);
             }
@@ -4786,8 +4780,7 @@ export const SeatingChartManager = {
         const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
         if (!Array.isArray(statuses) || statuses.length === 0) return false;
         return statuses.some(s => {
-            const lower = String(s || '').trim().toLowerCase();
-            return lower.includes('délégué') || lower.includes('delegue');
+            return resolveStudentStatus(s)?.id === STUDENT_STATUS_REGISTRY.DELEGUE.id;
         });
     },
 

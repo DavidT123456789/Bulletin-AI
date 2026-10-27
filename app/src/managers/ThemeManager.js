@@ -1,4 +1,5 @@
 import { appState, UIState } from '../state/State.js';
+import { CONFIG } from '../config/constants.js';
 import { StorageManager } from './StorageManager.js';
 
 export const ColorUtils = {
@@ -145,7 +146,7 @@ export const ThemeManager = {
             let storedTheme = localStorage.getItem('bulletin_theme') || '';
             let storedAccent = '';
 
-            const rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
+            const rawState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY) ||
                              localStorage.getItem('bulletin_app_state') ||
                              localStorage.getItem('appreciationGeneratorState');
             if (rawState) {

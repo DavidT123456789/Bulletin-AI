@@ -1,4 +1,5 @@
 import { appState } from '../state/State.js';
+import { AI_PROVIDERS, getProviderForModel } from '../config/aiRegistry.js';
 import { getSampleImportData } from '../data/SampleData.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
@@ -200,18 +201,12 @@ export const AppreciationsManager = {
 
         if (!UI.checkAPIKeyPresence(true)) {
             const model = appState.currentAIModel || '';
-            const isOllama = model.startsWith('ollama');
-            let providerName = '';
-            if (model.startsWith('mistral')) providerName = ' Mistral';
-            else if (model.startsWith('gemini') && !model.endsWith('-free')) providerName = ' Google';
-            else if (model.startsWith('openai')) providerName = ' OpenAI';
-            else if (model.startsWith('anthropic')) providerName = ' Anthropic';
-            else if (model.endsWith('-free') || !isOllama) providerName = ' OpenRouter';
-
-            const errorMsg = isOllama
-                ? "Ollama non activé. Activez-le dans les paramètres."
-                : `Clé API${providerName} manquante. Veuillez la configurer dans les paramètres.`;
-            throw new Error(errorMsg);
+            const providerId = getProviderForModel(model);
+            if (providerId === 'ollama') {
+                throw new Error("Ollama non activé. Activez-le dans les paramètres.");
+            }
+            const providerLabel = AI_PROVIDERS[providerId]?.shortLabel ? ` ${AI_PROVIDERS[providerId].shortLabel}` : '';
+            throw new Error(`Clé API${providerLabel} manquante. Veuillez la configurer dans les paramètres.`);
         }
 
         const normalizedStudentData = {

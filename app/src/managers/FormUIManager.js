@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 
@@ -124,7 +124,7 @@ export const FormUI = {
         if (DOM.openrouterApiKey) DOM.openrouterApiKey.value = appState.openrouterApiKey;
         if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
-        if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
+
 
         // Synchroniser les pastilles de statut du plan de classe
         const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
