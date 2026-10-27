@@ -15,6 +15,8 @@ import { StorageManager } from './StorageManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { ListViewManager } from './ListViewManager.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
+import { getSampleTrombiStudents } from '../data/SampleData.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -823,16 +825,7 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     _getSampleFallbackStudents() {
-        return [
-            { id: 'sample-bernard', nom: 'BERNARD', prenom: 'Thomas' },
-            { id: 'sample-durand', nom: 'DURAND', prenom: 'Sophie' },
-            { id: 'sample-lefevre', nom: 'LEFEVRE', prenom: 'Hugo' },
-            { id: 'sample-martin', nom: 'MARTIN', prenom: 'Lucas' },
-            { id: 'sample-moreau', nom: 'MOREAU', prenom: 'Julie' },
-            { id: 'sample-petit', nom: 'PETIT', prenom: 'Emma' },
-            { id: 'sample-robert', nom: 'ROBERT', prenom: 'Antoine' },
-            { id: 'sample-simon', nom: 'SIMON', prenom: 'Clara' }
-        ];
+        return getSampleTrombiStudents();
     },
 
     /**
@@ -3698,6 +3691,7 @@ export const TrombinoscopeManager = {
                     `;
                 }
                 activeOptionIdx = -1;
+                FocusPanelManager.updateScrollAffordances(listEl);
                 return;
             }
 
@@ -3753,6 +3747,7 @@ export const TrombinoscopeManager = {
             } else {
                 activeOptionIdx = selectedIdx;
             }
+            FocusPanelManager.updateScrollAffordances(listEl);
         };
 
         renderList('');
@@ -3789,6 +3784,7 @@ export const TrombinoscopeManager = {
                 listEl.scrollTop = Math.max(0, optBottom - listEl.clientHeight + 8);
             }
         }
+        FocusPanelManager.bindScrollAffordances(listEl);
 
         // Bind interactions inside popover
         listEl.addEventListener('mouseover', (e) => {
@@ -3908,6 +3904,7 @@ export const TrombinoscopeManager = {
                     <p>Cliquez sur l'image pour ajouter des zones</p>
                 </div>
             `;
+            FocusPanelManager.updateScrollAffordances(container);
             return;
         }
 
@@ -4035,15 +4032,12 @@ export const TrombinoscopeManager = {
             });
         });
 
-        // Close popover if user scrolls the assignment list
-        if (!container._hasPopoverScrollListener) {
-            container._hasPopoverScrollListener = true;
-            container.addEventListener('scroll', () => {
-                if (this._openPopoverZoneId !== null) {
-                    this._closeStudentPopover(false);
-                }
-            }, { passive: true });
-        }
+        // Close popover and update edge scrims when scrolling the assignment list
+        FocusPanelManager.bindScrollAffordances(container, () => {
+            if (this._openPopoverZoneId !== null) {
+                this._closeStudentPopover(false);
+            }
+        });
 
         // Bind shift & delete buttons
         container.querySelectorAll('.shift-down-btn').forEach(btn => {
@@ -4459,6 +4453,7 @@ export const TrombinoscopeManager = {
             }
         }
 
+        FocusPanelManager.bindScrollAffordances(list);
         updateFooterAndDimming();
     },
 

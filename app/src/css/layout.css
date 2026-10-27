@@ -197,9 +197,9 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
     /* Fixed height across all breakpoints for consistency */
     height: 56px;
     /* Transparence "légère" et effet dépoli (Frosted Glass) */
-    background: rgba(var(--surface-color-rgb), 0.65);
-    backdrop-filter: blur(16px) saturate(120%);
-    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    background: rgba(var(--surface-color-rgb), 0.8);
+    backdrop-filter: blur(var(--glass-base-blur));
+    -webkit-backdrop-filter: blur(var(--glass-base-blur));
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
@@ -678,15 +678,12 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
 .menu-btn.has-update,
 .menu-btn.has-cloud-reminder,
 .menu-btn.cloud-syncing {
-    --dot-target-bg: var(--primary-color);
+    --dot-target-bg: var(--color-sky-deep);
 }
 
-/* Specific styling for cloud backup reminder (accent color matching save invitation) */
-.menu-btn.has-cloud-reminder:not(.has-update):not(.cloud-syncing) {
-    --dot-target-bg: var(--primary-color);
-}
-
-[data-theme="dark"] .menu-btn.has-cloud-reminder:not(.has-update):not(.cloud-syncing) {
+[data-theme="dark"] .menu-btn.has-update,
+[data-theme="dark"] .menu-btn.has-cloud-reminder,
+[data-theme="dark"] .menu-btn.cloud-syncing {
     --dot-target-bg: var(--color-sky-bright);
 }
 
@@ -836,7 +833,7 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
     }
 
     50% {
-        background-color: var(--primary-color);
+        background-color: var(--dot-target-bg);
         transform: scale(1.35);
         opacity: 1;
     }
@@ -1578,7 +1575,6 @@ button > .icon-spin-wrapper {
         grid-template-columns: 1fr;
     }
 
-    .main-content-wrapper::before,
     .main-content-wrapper::after {
         right: 0;
     }

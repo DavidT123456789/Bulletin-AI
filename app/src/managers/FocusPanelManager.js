@@ -979,11 +979,12 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Met à jour les brumes d'indication de défilement (scrims) en haut et en bas.
+     * Met à jour les brumes d'indication de défilement (scrims) en haut/bas et gauche/droite.
      * Mutualisé entre le Focus Panel (par défaut), la vue principale (.main-content-wrapper),
-     * le menu déroulant des classes (#classDropdownList) et la modale Mes classes (#classManagementModal .modal-body).
+     * le menu déroulant des classes (#classDropdownList), la modale Mes classes (#classManagementModal .modal-body),
+     * l'assistant d'import (.import-textarea, .table-scroll-wrapper) et le Trombinoscope.
      * @param {Element|null} [scrollEl] - Conteneur scrollable
-     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-top / can-scroll-bottom (par défaut scrollEl si fourni)
+     * @param {Element|null} [containerEl] - Conteneur porteur des classes can-scroll-* (par défaut scrollEl si fourni)
      */
     updateScrollAffordances(scrollEl, containerEl) {
         const panel = !scrollEl ? document.getElementById('focusPanel') : null;
@@ -992,7 +993,7 @@ export const FocusPanelManager = {
         if (!content || !container) return;
 
         if (container.dataset.view === 'plan') {
-            container.classList.remove('can-scroll-top', 'can-scroll-bottom');
+            container.classList.remove('can-scroll-top', 'can-scroll-bottom', 'can-scroll-left', 'can-scroll-right');
             return;
         }
 
@@ -1001,6 +1002,36 @@ export const FocusPanelManager = {
 
         container.classList.toggle('can-scroll-top', scrollTop > 4);
         container.classList.toggle('can-scroll-bottom', maxScroll > 4 && (maxScroll - scrollTop) > 4);
+
+        const scrollLeft = Math.max(0, content.scrollLeft);
+        const maxScrollX = Math.max(0, content.scrollWidth - content.clientWidth);
+
+        container.classList.toggle('can-scroll-left', scrollLeft > 4);
+        container.classList.toggle('can-scroll-right', maxScrollX > 4 && (maxScrollX - scrollLeft) > 4);
+    },
+
+    /**
+     * Attache de manière idempotente l'écouteur de scroll passif sur un conteneur
+     * et rafraîchit ses brumes d'indication immédiatement ainsi qu'au prochain frame.
+     * @param {Element|null} scrollEl - Conteneur scrollable
+     * @param {Function} [onScroll] - Callback additionnel optionnel lors du scroll
+     */
+    bindScrollAffordances(scrollEl, onScroll) {
+        if (!scrollEl) return;
+        if (onScroll) {
+            scrollEl._scrollAffordanceCallback = onScroll;
+        }
+        if (!scrollEl._hasScrollAffordanceListener) {
+            scrollEl._hasScrollAffordanceListener = true;
+            scrollEl.addEventListener('scroll', () => {
+                scrollEl._scrollAffordanceCallback?.();
+                this.updateScrollAffordances(scrollEl);
+            }, { passive: true });
+        }
+        this.updateScrollAffordances(scrollEl);
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateScrollAffordances(scrollEl));
+        }
     },
 
     /** Creation mode flag */
@@ -1071,7 +1102,7 @@ export const FocusPanelManager = {
                         if (nextPeriod === currentPeriod) {
                             evoEl.id = 'focusCurrentEvolutionArrow';
                         }
-                        evoEl.innerHTML = '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
+                        evoEl.innerHTML = '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
                         prevGradesEl.appendChild(evoEl);
                     }
                 });
@@ -2179,12 +2210,12 @@ export const FocusPanelManager = {
         const getEvolutionHtml = (gradeA, gradeB) => {
             if (gradeA === null || gradeA === undefined || gradeA === '' ||
                 gradeB === null || gradeB === undefined || gradeB === '') {
-                return '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
+                return '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
             }
             const valA = parseFloat(gradeA);
             const valB = parseFloat(gradeB);
             if (isNaN(valA) || isNaN(valB)) {
-                return '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
+                return '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
             }
 
             const diff = valB - valA;
@@ -2194,10 +2225,10 @@ export const FocusPanelManager = {
             let arrowIcon = 'ph:arrow-right-bold';
             let evoClass = 'stable';
             if (['very-positive', 'positive'].includes(evoType)) {
-                arrowIcon = 'ph:trend-up-bold';
+                arrowIcon = 'ph:arrow-up-right-bold';
                 evoClass = 'positive';
             } else if (diff < 0) {
-                arrowIcon = 'ph:trend-down-bold';
+                arrowIcon = 'ph:arrow-down-right-bold';
                 evoClass = 'negative';
             }
 

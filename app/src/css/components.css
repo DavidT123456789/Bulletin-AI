@@ -1618,16 +1618,11 @@ textarea {
 /* Hover at rest (empty dropzone): dots intensification instead of flat grey shift */
 .import-drop-zone:not(.has-file):hover,
 .trombi-drop-zone:not(.has-image):hover {
-    transform: none;
-    border: none;
-    background-color: var(--bg-secondary);
     background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.22) 1.3px, transparent 1.3px);
-    background-size: 18px 18px;
 }
 
 [data-theme="dark"] .import-drop-zone:not(.has-file):hover,
 [data-theme="dark"] .trombi-drop-zone:not(.has-image):hover {
-    background-color: color-mix(in srgb, var(--surface-color), var(--bg-color) 55%);
     background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.25) 1.3px, transparent 1.3px);
 }
 
@@ -1636,11 +1631,8 @@ textarea {
 .import-drop-zone.dragover,
 .trombi-drop-zone.dragging,
 .trombi-drop-zone.dragover {
-    transform: none;
-    border: none;
     background-color: color-mix(in srgb, var(--bg-secondary), var(--primary-color) 7%);
     background-image: radial-gradient(rgba(var(--primary-color-rgb), 0.2) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
     outline: 2px dashed rgba(var(--primary-color-rgb), 0.55);
     outline-offset: -16px;
     box-shadow: inset 0 0 32px rgba(var(--primary-color-rgb), 0.08);

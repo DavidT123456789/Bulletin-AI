@@ -191,5 +191,47 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         ListViewRenderer.updateRowContent(row1, results[0]);
         expect(row1.classList.contains('selected')).toBe(false);
     });
+
+    it('should distinguish past periods from current period in headers and grade cells', () => {
+        const periods = ['S1', 'S2'];
+        const results = [
+            {
+                id: 's1',
+                nom: 'BERNARD',
+                prenom: 'Thomas',
+                studentData: {
+                    periods: {
+                        S1: { grade: 15.0 },
+                        S2: { grade: 15.2 }
+                    }
+                }
+            },
+            {
+                id: 's2',
+                nom: 'PETIT',
+                prenom: 'Emma',
+                studentData: {
+                    periods: {}
+                }
+            }
+        ];
+
+        appState.currentPeriod = 'S2';
+        ListViewRenderer.renderFresh(container, results, periods, 1);
+
+        const row1 = container.querySelector('.student-row[data-student-id="s1"]');
+        const row1S1Val = row1.querySelector('.grade-cell[data-period="S1"] .grade-value');
+        const row1S2Val = row1.querySelector('.grade-cell[data-period="S2"] .grade-value');
+        expect(row1S1Val.classList.contains('past-period-grade')).toBe(true);
+        expect(row1S2Val.classList.contains('current-period-grade')).toBe(true);
+
+        const row2 = container.querySelector('.student-row[data-student-id="s2"]');
+        const row2S1Empty = row2.querySelector('.grade-cell[data-period="S1"] .grade-empty');
+        const row2S2Empty = row2.querySelector('.grade-cell[data-period="S2"] .grade-empty');
+        expect(row2S1Empty.classList.contains('past-period-grade')).toBe(true);
+        expect(row2S1Empty.textContent).toBe('NC');
+        expect(row2S2Empty.classList.contains('current-period-grade')).toBe(true);
+        expect(row2S2Empty.textContent).toBe('--');
+    });
 });
 

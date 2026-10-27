@@ -379,86 +379,67 @@
 }
 
 /* Couleurs sémantiques - Alignées sur l'histogramme */
-/* Supporte à la fois les bulles (cartes) et les valeurs (liste) */
-.grade-bubble.grade-range-0-4,
-.grade-value.grade-range-0-4 {
-    background: color-mix(in srgb, var(--grade-range-0-4) 12%, var(--surface-color));
-    border: 0.75px solid color-mix(in srgb, var(--grade-range-0-4) 12%, transparent);
-    color: var(--grade-range-0-4);
-    transition: all var(--transition-fast);
+.grade-range-0-4 { --grade-accent: var(--grade-range-0-4); }
+.grade-range-4-8 { --grade-accent: var(--grade-range-4-8); }
+.grade-range-8-12 { --grade-accent: var(--grade-range-8-12); }
+.grade-range-12-16 { --grade-accent: var(--grade-range-12-16); }
+.grade-range-16-20 { --grade-accent: var(--grade-range-16-20); }
+
+.grade-bubble[class*="grade-range-"],
+.grade-value[class*="grade-range-"] {
+    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #09090b);
+    background: color-mix(in srgb, var(--grade-accent) 12%, var(--surface-color));
+    border: none;
+    color: var(--grade-ink);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
-.grade-bubble.grade-range-4-8,
-.grade-value.grade-range-4-8 {
-    background: color-mix(in srgb, var(--grade-range-4-8) 12%, var(--surface-color));
-    border: 0.75px solid color-mix(in srgb, var(--grade-range-4-8) 12%, transparent);
-    color: var(--grade-range-4-8);
-    transition: all var(--transition-fast);
+[data-theme="dark"] .grade-bubble[class*="grade-range-"],
+[data-theme="dark"] .grade-value[class*="grade-range-"] {
+    --grade-ink: var(--grade-accent);
 }
 
-.grade-bubble.grade-range-8-12,
-.grade-value.grade-range-8-12 {
-    background: color-mix(in srgb, var(--grade-range-8-12) 12%, var(--surface-color));
-    border: 0.75px solid color-mix(in srgb, var(--grade-range-8-12) 12%, transparent);
-    color: var(--grade-range-8-12);
-    transition: all var(--transition-fast);
+/* Hiérarchie temporelle en Vue Liste : Passé (Archive adoucie) vs Période en cours (Focus premier plan) */
+.grade-value.past-period-grade[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 7%, var(--surface-color));
+    color: var(--grade-ink);
+    font-weight: 500;
+    opacity: 0.78;
 }
 
-.grade-bubble.grade-range-12-16,
-.grade-value.grade-range-12-16 {
-    background: color-mix(in srgb, var(--grade-range-12-16) 12%, var(--surface-color));
-    border: 0.75px solid color-mix(in srgb, var(--grade-range-12-16) 12%, transparent);
-    color: var(--grade-range-12-16);
-    transition: all var(--transition-fast);
+[data-theme="dark"] .grade-value.past-period-grade[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 5%, var(--surface-color));
+    color: color-mix(in srgb, var(--grade-accent) 78%, var(--text-secondary));
+    opacity: 0.68;
 }
 
-.grade-bubble.grade-range-16-20,
-.grade-value.grade-range-16-20 {
-    background: color-mix(in srgb, var(--grade-range-16-20) 12%, var(--surface-color));
-    border: 0.75px solid color-mix(in srgb, var(--grade-range-16-20) 12%, transparent);
-    color: var(--grade-range-16-20);
-    transition: all var(--transition-fast);
+.grade-value.current-period-grade[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
+    color: var(--grade-ink);
+    font-weight: 600;
+    opacity: 1;
 }
 
-/* Contour plus prononcé (35% d'opacité) au survol de la ligne ou de la note */
+[data-theme="dark"] .grade-value.current-period-grade[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
+}
+
+/* Densification tonale au survol de la ligne : la période passée s'éveille au niveau de contraste de la période active (en conservant sa graisse 500) */
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover .grade-value,
-    .nebula-card:hover .grade-value,
-    .nebula-card:hover .grade-bubble,
-    .card-content-wrapper:hover .grade-value,
-    .card-content-wrapper:hover .grade-bubble,
-    .student-name-container:hover .grade-value,
-    .student-name-container:hover .grade-bubble,
-    .grade-bubble:hover,
-    .grade-value:hover {
-        border-color: color-mix(in srgb, currentColor 35%, transparent) !important;
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-value.current-period-grade[class*="grade-range-"] {
+        background: color-mix(in srgb, var(--grade-accent) 18%, var(--surface-color));
+    }
+
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-value.past-period-grade[class*="grade-range-"] {
+        opacity: 1;
+        color: var(--grade-ink);
+        background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
     }
 }
 
 /* Note actuelle avec couleur sémantique pleine (Cartes seulement) */
-/* Pour la liste, on garde le style par défaut (fond clair, texte coloré) pour lisibilité */
-.grade-bubble.current-period-grade.grade-range-0-4 {
-    background: var(--grade-range-0-4);
-    color: white;
-}
-
-.grade-bubble.current-period-grade.grade-range-4-8 {
-    background: var(--grade-range-4-8);
-    color: white;
-}
-
-.grade-bubble.current-period-grade.grade-range-8-12 {
-    background: var(--grade-range-8-12);
-    color: white;
-}
-
-.grade-bubble.current-period-grade.grade-range-12-16 {
-    background: var(--grade-range-12-16);
-    color: white;
-}
-
-.grade-bubble.current-period-grade.grade-range-16-20 {
-    background: var(--grade-range-16-20);
+.grade-bubble.current-period-grade[class*="grade-range-"] {
+    background: var(--grade-accent);
     color: white;
 }
 
@@ -993,123 +974,6 @@
 
 [data-theme="dark"] .tag-badge.status-badge-clickable:active {
     filter: brightness(1.25);
-}
-
-/* Table Alignment Fixes */
-.student-list-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-}
-
-.student-list-table th,
-.student-list-table td {
-    vertical-align: middle;
-    padding: 14px 16px;
-    /* Marges internes aérées et cohérentes */
-}
-
-.student-list-table th {
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* Alignement spécifique des colonnes */
-
-/* 1. Colonne Toggle & Nom : Gauche */
-.student-list-table th:nth-child(1),
-/* Toggle header/cell is 1st if using nth-child blindly usually toggle is separate or part of name? let's check HTML structure */
-.student-list-table td.toggle-cell,
-.student-list-table th:nth-child(2),
-/* Name Header */
-.student-list-table td.student-name-cell {
-    text-align: left;
-}
-
-/* 2. Colonnes Notes (T1, T2...), Statut, Action : Centre */
-.student-list-table th.grade-header,
-.student-list-table td.grade-cell,
-.student-list-table th:last-child,
-/* Action */
-.student-list-table td.action-cell,
-.student-list-table th:nth-last-child(2),
-/* Statut */
-.student-list-table td.status-cell {
-    text-align: center;
-}
-
-.student-list-table td.grade-cell {
-    position: relative;
-    height: 48px;
-    /* Hauteur fixe pour alignement vertical */
-}
-
-/* On force la valeur (12,5) à être au centre absolu de la cellule */
-.grade-value {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    min-width: 48px;
-    width: 48px !important;
-    max-width: 48px;
-    height: 28px !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: var(--font-sm) !important;
-    line-height: 1 !important;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color var(--transition-fast);
-}
-
-/* Ajustement normal pour la cellule de note */
-.student-list-table td.grade-cell {
-    padding: 14px 4px !important;
-}
-
-/* La flèche d'évolution est maintenant AVANT la note (inline) */
-/* NEW CONCEPT: Grade is centered, arrow is absolute LEFT of the grade */
-.grade-content-wrapper {
-    display: inline-flex;
-    align-items: center;
-    position: relative;
-    /* This wrapper will be centered by the td's text-align: center */
-}
-
-/* Evolution column in tables - triable column */
-.student-list-table .evolution-header,
-.student-list-table .evolution-cell {
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
-    padding: 14px 2px !important;
-    text-align: center;
-}
-
-.student-list-table td.evolution-cell .grade-evolution {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-/* Colors for .grade-evolution.positive/.negative/.stable are in list-focus.css */
-
-.student-name-cell {
-    /* Maintenir le nom aligné à gauche */
-    text-align: left;
-    padding-left: var(--space-2);
-}
-
-/* Style de la ligne parente quand ouverte */
-.student-row.expanded {
-    background-color: var(--bg-secondary);
-    border-bottom-color: transparent;
-    /* Seamless look with details */
 }
 
 /* ====================================================================

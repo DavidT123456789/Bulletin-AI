@@ -195,9 +195,9 @@
     --icon-btn-muted: rgba(161, 161, 170, 0.7);
 
     /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
-    --item-idle-bg: rgba(0, 0, 0, 0.025);
-    --item-hover-bg: rgba(0, 0, 0, 0.04);
-    --item-active-bg: rgba(0, 0, 0, 0.06);
+    --item-idle-bg: rgba(0, 0, 0, 0.02);
+    --item-hover-bg: rgba(0, 0, 0, 0.03);
+    --item-active-bg: rgba(0, 0, 0, 0.05);
     --item-hover-bg-elevated: var(--bg-tertiary);
 
     --purple-color: #9333ea;
@@ -517,7 +517,7 @@
 
     /* Universal Interactive Item Hover (Neutral) */
     --item-idle-bg: rgba(255, 255, 255, 0.03);
-    --item-hover-bg: rgba(255, 255, 255, 0.07);
+    --item-hover-bg: rgba(255, 255, 255, 0.055);
     --item-active-bg: rgba(255, 255, 255, 0.09);
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
 

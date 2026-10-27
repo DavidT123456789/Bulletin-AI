@@ -38,7 +38,6 @@
 
 .student-list-table thead {
     background: var(--item-idle-bg);
-    border-bottom: 1px solid var(--border-color);
 }
 
 /* Coins arrondis sur le thead pour correspondre au conteneur */
@@ -61,6 +60,8 @@
 
 .student-list-table th {
     padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-clip: padding-box;
     text-align: center;
     vertical-align: middle;
     font-weight: 600;
@@ -138,13 +139,9 @@
         opacity: 1;
     }
 
-    .sortable-header:hover {
-        color: var(--text-primary);
-    }
-
+    .sortable-header:hover,
     .sortable-header.active-sort:hover {
         color: var(--text-primary);
-        background-color: var(--item-hover-bg) !important;
     }
 
     .appreciation-toggle-header:hover .appreciation-toggle-btn {
@@ -170,11 +167,6 @@
 .sortable-header.active-sort:focus {
     color: var(--text-primary);
     outline: none;
-}
-
-/* Disable active-sort hover effect when hovering search button */
-.name-header-with-search.active-sort:has(.inline-search-trigger-btn:hover) {
-    background-color: transparent !important;
 }
 
 /* Header Content Alignment Wrapper - Ensures perfect centering */
@@ -242,8 +234,9 @@
 .student-list-table td {
     padding: 14px 16px;
     border-bottom: 1px solid var(--border-color);
+    background-clip: padding-box;
     vertical-align: middle;
-    transition: background var(--transition-fast);
+    transition: background-color var(--transition-fast);
 }
 
 .student-list-table tbody tr:last-child td {
@@ -256,7 +249,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover td {
-        background: var(--item-hover-bg);
+        background-color: var(--item-hover-bg);
     }
 
     /* Rise contrast of grade empty indicator on hover (flat design, no scale) */
@@ -264,47 +257,8 @@
         color: var(--text-primary);
     }
 
-    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-cell .grade-evolution,
     .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .evolution-cell .grade-evolution {
         opacity: 1;
-    }
-}
-
-/* === POLISH: Show Actions on Hover (Desktop) === */
-.student-list-table tbody tr .btn-action-menu {
-    opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Show when row hovered (Desktop ONLY) */
-@media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover .btn-action-menu,
-    .student-list-table tbody tr:focus-within .btn-action-menu,
-    .student-list-table tbody tr .btn-action-menu:focus,
-    .student-list-table tbody tr .action-dropdown.open .btn-action-menu,
-    .student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
-        opacity: 1;
-        transform: scale(1);
-        background: white;
-        /* Pop out effect */
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    [data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu,
-    [data-theme="dark"] .student-list-table tbody tr .action-dropdown.open .btn-action-menu,
-    [data-theme="dark"] .student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
-        background: var(--surface-color);
-    }
-}
-
-/* Always visible on touch devices */
-@media (hover: none) {
-    .student-list-table tbody tr .btn-action-menu {
-        opacity: 0.6;
-        transform: scale(1);
-        background: transparent;
-        box-shadow: none;
     }
 }
 
@@ -504,17 +458,13 @@
     z-index: 150 !important;
 }
 
-.student-list-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
 /* Empty search results row in table */
 .student-list-table tbody tr.empty-state-row {
     cursor: default;
 }
 
 .student-list-table tbody tr.empty-state-row:hover td {
-    background: transparent;
+    background-color: transparent;
 }
 
 .student-list-table tbody tr.empty-state-row td {
@@ -752,6 +702,8 @@
 
 /* Grade columns */
 .grade-cell {
+    position: relative;
+    height: 48px;
     text-align: center;
     font-variant-numeric: tabular-nums;
     width: 54px;
@@ -760,14 +712,44 @@
     padding: 14px 4px !important;
 }
 
-.grade-cell .grade-value {
+.grade-content-wrapper {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+}
+
+.grade-value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    min-width: 48px;
+    width: 48px !important;
+    max-width: 48px;
+    height: 28px !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: var(--font-sm) !important;
+    line-height: 1 !important;
+}
+
+.grade-cell .grade-value.past-period-grade {
+    font-weight: 500;
+}
+
+.grade-cell .grade-value.current-period-grade {
     font-weight: 600;
 }
 
 .grade-cell .grade-empty {
     color: var(--text-tertiary);
-    transition: color var(--transition-fast), transform var(--transition-fast);
+    transition: color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
     display: inline-block;
+}
+
+.grade-cell .grade-empty.past-period-grade {
+    opacity: 0.55;
+    font-size: 12px;
 }
 
 /* Grade header - compact width for T1/T2/T3 labels */
@@ -778,7 +760,7 @@
     padding: 14px 4px !important;
 }
 
-/* Evolution header - direct hover effect (pseudo-element doesn't work with border-collapse) */
+/* Evolution header */
 .evolution-header {
     width: 36px;
     min-width: 36px;
@@ -786,19 +768,11 @@
     padding: 14px 2px !important;
 }
 
-.evolution-header:hover {
-    background-color: var(--item-hover-bg) !important;
-}
-
-/* Disable pseudo-element on evolution-header */
-.evolution-header::after {
-    display: none;
-}
-
 /* Evolution header icon styling */
 .evolution-header .evolution-icon {
     font-size: 14px;
     color: inherit;
+    opacity: 0.85;
 }
 
 /* Evolution cell styling */
@@ -811,10 +785,8 @@
     vertical-align: middle;
 }
 
-.grade-cell .grade-evolution,
 .evolution-cell .grade-evolution {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
     cursor: help;
     transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
     display: inline-flex;
@@ -822,34 +794,22 @@
     justify-content: center;
     height: 28px; /* Matches the 28px height of the grade pills */
     vertical-align: middle;
-    opacity: 0.95;
-    -webkit-text-stroke: 0.6px currentColor;
+    opacity: 0.85;
 }
 
-.grade-cell .grade-evolution.positive iconify-icon,
-.evolution-cell .grade-evolution.positive iconify-icon,
-.grade-cell .grade-evolution.negative iconify-icon,
-.evolution-cell .grade-evolution.negative iconify-icon {
-    transform: rotate(0deg);
-}
-
-.grade-cell .grade-evolution:hover,
 .evolution-cell .grade-evolution:hover {
     opacity: 1;
     transform: scale(1.15);
 }
 
-.grade-cell .grade-evolution.positive,
 .evolution-cell .grade-evolution.positive {
     color: var(--success-color);
 }
 
-.grade-cell .grade-evolution.negative,
 .evolution-cell .grade-evolution.negative {
     color: var(--error-color);
 }
 
-.grade-cell .grade-evolution.stable,
 .evolution-cell .grade-evolution.stable {
     color: var(--text-tertiary);
     opacity: 0.6;
@@ -1190,36 +1150,27 @@
 }
 
 /* === FULL VIEW STATE (Expanded Content) === */
-/* 2. Transform the preview bubble into full content */
 .student-list-table.appreciation-full-view .appreciation-preview {
     white-space: pre-wrap;
     word-break: break-word;
     max-height: none;
     overflow: visible;
     text-overflow: clip;
-
-    /* Card-like styling for full view */
-    background: rgba(0, 0, 0, 0.03);
-    padding: 12px 16px;
-    /* Equal horizontal padding for centered text in card */
-    border-radius: var(--radius-md);
+    background: transparent;
+    padding: 6px 8px;
     line-height: 1.6;
-    /* Move margin logic to wrapper for expanded view */
     margin: 0;
-    border: 1px solid rgba(0, 0, 0, 0.02);
-    /* Enforce left align even in full view to prevent centering issues */
+    border: none;
     text-align: left !important;
 
     /* Micro-fade animation to mask white-space switch */
     animation: appreciation-expand-reveal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
-/* Wrapper manages structural margin in full view to prevent badge floating */
+/* Wrapper manages structural margin in full view */
 .student-list-table.appreciation-full-view .appreciation-preview-wrapper {
-    margin: 4px 0;
+    margin: 2px 0;
 }
-
-
 
 /* Keyframe: subtle fade masks the layout change */
 @keyframes appreciation-expand-reveal {
@@ -1232,65 +1183,17 @@
     }
 }
 
-[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-}
-
-
 /* Wrapper for preview and status indicator */
 .appreciation-preview-wrapper {
     position: relative;
     display: block;
     width: 100%;
     max-width: 100%;
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     cursor: pointer;
     vertical-align: middle;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    /* Subtle zoom only when hovering the appreciation preview directly */
-    .appreciation-preview-wrapper:hover {
-        transform: scale(1.02);
-        z-index: 5;
-    }
-
-    /* Hover effects apply to the preview INSIDE the wrapper (Direct Hover) */
-    .appreciation-preview-wrapper:hover .appreciation-preview,
-    .appreciation-preview:hover {
-        background: var(--surface-color) !important;
-        border-color: transparent !important;
-        box-shadow: var(--shadow-md) !important;
-        color: var(--text-primary) !important;
-    }
-
-    [data-theme="dark"] .appreciation-preview-wrapper:hover .appreciation-preview,
-    [data-theme="dark"] .appreciation-preview:hover {
-        background: var(--bg-secondary) !important; /* Keep it dark */
-        border-color: rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
-        color: var(--text-primary) !important;
-    }
-
-    /* When the parent row is hovered, appreciation preview background becomes white (or dark secondary) but has NO shadow */
-    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .appreciation-preview {
-        background: var(--surface-color) !important;
-        border-color: transparent !important;
-        box-shadow: none !important;
-        color: var(--text-primary) !important;
-    }
-
-    [data-theme="dark"] .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .appreciation-preview {
-        background: var(--bg-secondary) !important;
-        border-color: var(--border-color) !important;
-        box-shadow: none !important;
-        color: var(--text-primary) !important;
-    }
-}
-
-/* Appreciation Preview - Truncated inline display */
+/* Appreciation Preview - Editorial inline display (no box at rest or hover) */
 .appreciation-preview {
     white-space: nowrap;
     overflow: hidden;
@@ -1298,64 +1201,35 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--text-secondary);
-    padding: 6px 12px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.02);
-    border: 1px solid transparent; /* Layout stability */
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     display: block;
-
-    /* iOS Spring transitions synced with row animation */
     transition:
-        padding 0.35s var(--ease-spring),
-        background var(--transition-fast),
+        padding 0.25s var(--ease-spring),
         color var(--transition-fast),
         line-height 0.35s var(--ease-spring),
-        border-radius 0.35s var(--ease-spring),
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
         opacity var(--transition-fast);
-
     opacity: 1;
+}
+
+/* Reserve clean inline space when a dirty/error indicator icon is present */
+.appreciation-preview-wrapper:has(.dirty-indicator) .appreciation-preview {
+    padding-left: 24px;
 }
 
 /* Expanded state during generation - smooth transition */
 .appreciation-preview.expanded {
     white-space: pre-wrap;
     max-height: 300px;
-    /* Allow multi-line */
-}
-
-[data-theme="dark"] .appreciation-preview {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: transparent;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    /* Harmonization: Apply hover effect to expanded view with enhanced zoom on wrapper */
-    .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover {
-        transform: scale(1.05); /* Wrapper zooms, carrying the badge with it! */
-        z-index: 5;
-    }
-
-    /* Direct hover styling for full/expanded view card */
-    .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
-    .student-list-table.appreciation-full-view .appreciation-preview:hover {
-        background: var(--surface-color) !important;
-        border-color: transparent !important;
-        box-shadow: var(--shadow-md) !important;
-        color: var(--text-primary) !important;
-        transform: none;
-    }
-
-    [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
-    [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview:hover {
-        background: var(--bg-secondary) !important; /* Keep it dark */
-        border-color: rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
-        color: var(--text-primary) !important;
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .appreciation-preview {
+        color: var(--text-primary);
     }
 }
 
@@ -1558,10 +1432,20 @@
     opacity: 0;
 }
 
-/* Reveal on row hover or when menu is open */
+/* Reveal on row hover, keyboard focus, or when menu is open */
 .student-list-table tbody tr:hover .btn-action-menu,
-.action-dropdown.open .btn-action-menu {
+.student-list-table tbody tr:focus-within .btn-action-menu,
+.student-list-table tbody tr .btn-action-menu:focus,
+.action-dropdown.open .btn-action-menu,
+.action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
     opacity: 1;
+}
+
+/* Always visible on touch devices */
+@media (hover: none) {
+    .student-list-table tbody tr .btn-action-menu {
+        opacity: 0.6;
+    }
 }
 
 .action-dropdown.open .btn-action-menu {
@@ -2260,7 +2144,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         margin-right: 12px;
     }
 
-    .grade-cell .grade-evolution,
     .evolution-cell .grade-evolution {
         margin: 0 6px;
     }
@@ -2321,31 +2204,22 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        background: rgba(0, 0, 0, 0.02);
-        padding: 7px 12px;
-        border-radius: var(--radius-md);
-        border: 1px solid rgba(0, 0, 0, 0.02);
+        background: transparent;
+        padding: 4px 2px 2px;
+        border: none;
         font-size: 13px;
         line-height: 1.5;
-        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
-                    background-color var(--transition-fast),
-                    border-color var(--transition-fast);
+        transition: color var(--transition-fast);
     }
 
-    .student-list-view .appreciation-preview:active {
-        background: var(--item-active-bg) !important;
-        transform: scale(0.99);
+    .student-list-view .appreciation-preview-wrapper:has(.dirty-indicator) .appreciation-preview {
+        padding-left: 22px;
     }
 
     .student-list-view .student-list-table.appreciation-full-view .appreciation-preview {
         white-space: pre-wrap;
         max-height: 1000px;
         overflow: visible;
-    }
-
-    [data-theme="dark"] .appreciation-preview {
-        background: rgba(255, 255, 255, 0.03);
-        border-color: rgba(255, 255, 255, 0.02);
     }
 
     .student-list-table.appreciation-full-view .appreciation-cell:not(:has(> .status-badge)) {

@@ -555,39 +555,11 @@
     transition: all var(--transition-fast);
 }
 
-.preview-history-table .grade-bubble.grade-range-0-4,
-.preview-history-table .grade-pill.grade-range-0-4 {
-    background: color-mix(in srgb, var(--grade-range-0-4) 14%, var(--surface-color));
-    border-color: color-mix(in srgb, var(--grade-range-0-4) 28%, transparent);
-    color: var(--grade-range-0-4);
-}
-
-.preview-history-table .grade-bubble.grade-range-4-8,
-.preview-history-table .grade-pill.grade-range-4-8 {
-    background: color-mix(in srgb, var(--grade-range-4-8) 14%, var(--surface-color));
-    border-color: color-mix(in srgb, var(--grade-range-4-8) 28%, transparent);
-    color: var(--grade-range-4-8);
-}
-
-.preview-history-table .grade-bubble.grade-range-8-12,
-.preview-history-table .grade-pill.grade-range-8-12 {
-    background: color-mix(in srgb, var(--grade-range-8-12) 14%, var(--surface-color));
-    border-color: color-mix(in srgb, var(--grade-range-8-12) 28%, transparent);
-    color: var(--grade-range-8-12);
-}
-
-.preview-history-table .grade-bubble.grade-range-12-16,
-.preview-history-table .grade-pill.grade-range-12-16 {
-    background: color-mix(in srgb, var(--grade-range-12-16) 14%, var(--surface-color));
-    border-color: color-mix(in srgb, var(--grade-range-12-16) 28%, transparent);
-    color: var(--grade-range-12-16);
-}
-
-.preview-history-table .grade-bubble.grade-range-16-20,
-.preview-history-table .grade-pill.grade-range-16-20 {
-    background: color-mix(in srgb, var(--grade-range-16-20) 14%, var(--surface-color));
-    border-color: color-mix(in srgb, var(--grade-range-16-20) 28%, transparent);
-    color: var(--grade-range-16-20);
+.preview-history-table .grade-bubble[class*="grade-range-"],
+.preview-history-table .grade-pill[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
+    border-color: color-mix(in srgb, var(--grade-accent) 28%, transparent);
+    color: var(--grade-accent);
 }
 
 /* --- Unified Data Card & Navigation Capsule --- */

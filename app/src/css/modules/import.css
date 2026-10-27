@@ -807,7 +807,7 @@
 }
 
 .welcome-start-card[data-value="trimestres"]:hover:not(.active) {
-    border-color: rgba(var(--brand-primary-rgb), 0.3);
+    border-color: rgba(var(--color-blue-rgb), 0.3);
 }
 
 .welcome-start-card[data-value="semestres"]:hover:not(.active) {
@@ -820,9 +820,9 @@
 }
 
 .welcome-start-card.active[data-value="trimestres"] {
-    border-color: rgba(var(--brand-primary-rgb), 0.55);
-    background-color: color-mix(in srgb, var(--brand-primary) 3.5%, var(--surface-color));
-    box-shadow: 0 8px 22px -6px rgba(var(--brand-primary-rgb), 0.14), 0 2px 6px -1px rgba(var(--brand-primary-rgb), 0.06);
+    border-color: rgba(var(--color-blue-rgb), 0.55);
+    background-color: color-mix(in srgb, var(--color-blue) 3.5%, var(--surface-color));
+    box-shadow: 0 8px 22px -6px rgba(var(--color-blue-rgb), 0.14), 0 2px 6px -1px rgba(var(--color-blue-rgb), 0.06);
 }
 
 .welcome-start-card.active[data-value="semestres"] {
@@ -832,8 +832,8 @@
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
-    border-color: rgba(var(--brand-primary-rgb), 0.6);
-    background-color: rgba(var(--brand-primary-rgb), 0.09);
+    border-color: rgba(var(--color-blue-rgb), 0.6);
+    background-color: rgba(var(--color-blue-rgb), 0.09);
     box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
 }
 
@@ -849,8 +849,8 @@
 
 .welcome-start-card:focus-visible {
     outline: none;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(var(--color-blue-rgb), 0.15);
 }
 
 .welcome-start-card.active[data-value="semestres"]:focus-visible {
@@ -909,7 +909,7 @@
 }
 
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
-    background-color: rgba(var(--brand-primary-rgb), 0.08);
+    background-color: rgba(var(--color-blue-rgb), 0.08);
 }
 
 .welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
@@ -917,7 +917,7 @@
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
-    background-color: rgba(var(--brand-primary-rgb), 0.14);
+    background-color: rgba(var(--color-blue-rgb), 0.14);
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
@@ -975,9 +975,9 @@
 }
 
 .welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
-    color: var(--brand-primary);
-    border-color: rgba(var(--brand-primary-rgb), 0.16);
-    box-shadow: 0 2px 5px rgba(var(--brand-primary-rgb), 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
+    color: var(--color-blue);
+    border-color: rgba(var(--color-blue-rgb), 0.16);
+    box-shadow: 0 2px 5px rgba(var(--color-blue-rgb), 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .welcome-start-card.active[data-value="semestres"] .welcome-period-pill {
@@ -987,9 +987,9 @@
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
-    background-color: rgba(var(--brand-primary-rgb), 0.22);
+    background-color: rgba(var(--color-blue-rgb), 0.22);
     color: var(--color-blue-bright);
-    border-color: rgba(var(--brand-primary-rgb), 0.28);
+    border-color: rgba(var(--color-blue-rgb), 0.28);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 

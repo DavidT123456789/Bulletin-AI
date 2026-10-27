@@ -277,19 +277,17 @@
     background: var(--text-tertiary);
 }
 
-/* Brume dynamique aux extrémités (Edge Scrims mutualisés Menu & Modale Mes classes) */
-:is(.class-dropdown-list, #classManagementModal .modal-body):is(.can-scroll-top, .can-scroll-bottom) {
-    --scrim-top: #000 0px;
-    --scrim-bottom: #000 100%;
-    -webkit-mask-image: linear-gradient(to bottom, var(--scrim-top), var(--scrim-bottom));
-    mask-image: linear-gradient(to bottom, var(--scrim-top), var(--scrim-bottom));
+/* Brume dynamique verticale aux extrémités (Edge Scrims mutualisés Menu, Modale Mes classes & Trombinoscope) */
+:is(.class-dropdown-list, #classManagementModal .modal-body, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list):is(.can-scroll-top, .can-scroll-bottom) {
+    -webkit-mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
+    mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body).can-scroll-top {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list).can-scroll-top {
     --scrim-top: transparent 0px, rgba(0, 0, 0, 0.35) 5px, rgba(0, 0, 0, 0.8) 12px, #000 20px;
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body).can-scroll-bottom {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list).can-scroll-bottom {
     --scrim-bottom: #000 calc(100% - 20px), rgba(0, 0, 0, 0.8) calc(100% - 12px), rgba(0, 0, 0, 0.35) calc(100% - 5px), transparent 100%;
 }
 

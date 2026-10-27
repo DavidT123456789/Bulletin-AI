@@ -19,6 +19,7 @@ import { MassImportManager } from './MassImportManager.js';
 import { StorageManager } from './StorageManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { DropdownManager } from './DropdownManager.js';
+import { getSampleImportData } from '../data/SampleData.js';
 
 /**
  * Import Wizard Manager
@@ -263,17 +264,23 @@ export const ImportWizardManager = {
         });
 
         // Step 1: Textarea
-        document.getElementById('wizardDataTextarea')?.addEventListener('input',
-            Utils.debounce(() => {
-                // Determine if this is a manual paste/edit
-                const currentText = document.getElementById('wizardDataTextarea')?.value;
-                if (currentText && !this.state.currentSource) {
+        const dataTextarea = document.getElementById('wizardDataTextarea');
+        if (dataTextarea) {
+            FocusPanelManager.bindScrollAffordances(dataTextarea);
+            const debouncedProcess = Utils.debounce(() => {
+                const currentText = dataTextarea.value;
+                if (currentText && (!this.state.currentSource || this.state.currentSource === 'sample')) {
                     this._setDropZone('text');
                 } else if (!currentText) {
                     this._resetFile();
                 }
                 this._processData();
-            }, 300));
+            }, 300);
+            dataTextarea.addEventListener('input', () => {
+                FocusPanelManager.updateScrollAffordances(dataTextarea);
+                debouncedProcess();
+            });
+        }
 
         // Step 1: Sample data (button in guide panel)
         document.getElementById('guideSampleBtn')?.addEventListener('click', () => this._loadSample());
@@ -451,7 +458,13 @@ export const ImportWizardManager = {
         // 1. Refresh header badge and dropdown options
         this._updateHeaderPeriodBadge(newPeriod);
 
-        // 2. Reprocess raw data to automatically adjust guessed tags & mapping table to the new period
+        // 2. If sample data is active, reload sample data for the new period
+        if (this.state.currentSource === 'sample') {
+            this._loadSample(newPeriod);
+            return;
+        }
+
+        // 3. Reprocess raw data to automatically adjust guessed tags & mapping table to the new period
         if (this.state.rawData) {
             this._processData();
 
@@ -605,9 +618,13 @@ export const ImportWizardManager = {
         // Update guide panel content based on current step
         this._updateGuidePanel(previousStep);
 
-        // Update preview if on step 3
+        // Update preview if on step 3, or refresh horizontal scroll affordances on steps 1 & 2
         if (this.currentStep === 3) {
             this._updatePreview();
+        } else if (this.currentStep === 2) {
+            FocusPanelManager.bindScrollAffordances(document.querySelector('#wizardMappingContainer .table-scroll-wrapper'));
+        } else {
+            FocusPanelManager.bindScrollAffordances(document.getElementById('wizardDataTextarea'));
         }
     },
 
@@ -848,7 +865,11 @@ export const ImportWizardManager = {
     _resetFile() {
         // Clear textarea
         const textarea = document.getElementById('wizardDataTextarea');
-        if (textarea) textarea.value = '';
+        if (textarea) {
+            textarea.value = '';
+            textarea.scrollLeft = 0;
+            textarea.scrollTop = 0;
+        }
 
         // Reset UI
         this._resetFileUI();
@@ -859,23 +880,25 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Load sample data from shared source
+     * Load sample data from shared source for the active period
+     * @param {string} [periodCode] - Optional target period override
      */
-    _loadSample() {
-        import('../data/SampleData.js').then(({ getSampleImportData }) => {
-            const sample = getSampleImportData();
+    _loadSample(periodCode = null) {
+        const activePeriod = periodCode || appState.currentPeriod || 'S1';
+        const sample = getSampleImportData(activePeriod);
 
-            // Set UI state first
-            this._setDropZone('sample');
+        // Set UI state first
+        this._setDropZone('sample');
 
-            const textarea = document.getElementById('wizardDataTextarea');
-            if (textarea) {
-                textarea.value = sample;
-                this._animateTextUpdate();
-            }
+        const textarea = document.getElementById('wizardDataTextarea');
+        if (textarea) {
+            textarea.value = sample;
+            textarea.scrollLeft = 0;
+            textarea.scrollTop = 0;
+            this._animateTextUpdate();
+        }
 
-            this._processData();
-        });
+        this._processData();
     },
 
     /**
@@ -898,7 +921,8 @@ export const ImportWizardManager = {
      * Process data from textarea
      */
     _processData() {
-        let text = document.getElementById('wizardDataTextarea')?.value?.trim() || '';
+        const textareaEl = document.getElementById('wizardDataTextarea');
+        let text = textareaEl?.value?.trim() || '';
 
         // Reset detected format
         this.state.detectedFormat = null;
@@ -907,8 +931,7 @@ export const ImportWizardManager = {
         const pdfResult = text ? autoConvertPdf(text) : null;
         if (pdfResult) {
             text = pdfResult.data;
-            const textarea = document.getElementById('wizardDataTextarea');
-            if (textarea) textarea.value = text;
+            if (textareaEl) textareaEl.value = text;
             // No notification - badge in footer provides visual feedback
             // Store detected format for badge AND for format-aware column detection
             this.state.detectedFormat = {
@@ -920,14 +943,14 @@ export const ImportWizardManager = {
         // Auto-détection et conversion du format vertical multi-lignes
         else if (text && detectVerticalFormat(text)) {
             text = convertVerticalToTabular(text);
-            const textarea = document.getElementById('wizardDataTextarea');
-            if (textarea) textarea.value = text;
+            if (textareaEl) textareaEl.value = text;
             // No notification - badge provides feedback
             this.state.detectedFormat = { type: 'vertical', name: 'Format vertical Pronote' };
         }
 
         // Update format badge visibility
         this._updateFormatBadge();
+        FocusPanelManager.bindScrollAffordances(textareaEl);
 
         this.state.rawData = text;
 
@@ -1096,6 +1119,9 @@ export const ImportWizardManager = {
         const cols = this.state.columnCount;
 
         const currentPeriod = appState.currentPeriod || 'S1';
+        const periods = Utils.getPeriods();
+        const currentPeriodIndex = periods.indexOf(currentPeriod);
+        const previousPeriods = currentPeriodIndex > 0 ? periods.slice(0, currentPeriodIndex) : [];
 
         const buildOptionsHtml = (selectedValue) => {
             let html = '';
@@ -1125,11 +1151,24 @@ export const ImportWizardManager = {
                 `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
             ).join('');
 
+            // Previous periods options (for multi-period imports in S2, T2, T3)
+            for (const prevP of previousPeriods) {
+                html += `<option disabled data-divider="true">──────</option>`;
+                const prevOptions = [
+                    { v: `MOY_${prevP}`, t: `Moy. ${prevP}` },
+                    { v: `APP_${prevP}`, t: `Appréciation ${prevP}` }
+                ];
+                html += prevOptions.map(o =>
+                    `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
+                ).join('');
+            }
+
             return html;
         };
 
         // Try to load saved format (only if not forcing auto and column count matches)
-        const savedFormat = forceAuto ? null : this._loadSavedFormat();
+        const isSample = this.state.currentSource === 'sample';
+        const savedFormat = (forceAuto || isSample) ? null : this._loadSavedFormat();
         const useSavedFormat = savedFormat && Object.keys(savedFormat).length === cols;
 
         // UX: Show feedback when saved format is applied (only once per wizard session)
@@ -1167,8 +1206,11 @@ export const ImportWizardManager = {
             html += `<tr>`;
             for (let i = 0; i < cols; i++) {
                 const fullContent = (line[i] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const cellContent = fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent;
-                const needsTooltip = fullContent.length > 50 || i === 0;
+                const isEmpty = !fullContent.trim();
+                const cellContent = isEmpty
+                    ? '<span class="preview-empty-cell">—</span>'
+                    : (fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent);
+                const needsTooltip = !isEmpty && (fullContent.length > 50 || i === 0);
                 html += `<td data-raw="${fullContent}"${needsTooltip ? ` class="has-tooltip" data-tooltip="${fullContent}"` : ''}>${cellContent}</td>`;
             }
             html += `</tr>`;
@@ -1200,10 +1242,11 @@ export const ImportWizardManager = {
             });
         });
 
-        // Close any open dropdown when scrolling the mapping table
-        container.querySelector('.table-scroll-wrapper')?.addEventListener('scroll', () => {
-            DropdownManager.closeAll();
-        }, { passive: true });
+        // Close any open dropdown and update edge scrims when scrolling the mapping table
+        FocusPanelManager.bindScrollAffordances(
+            container.querySelector('.table-scroll-wrapper'),
+            () => DropdownManager.closeAll()
+        );
 
         // Initial column classes, validation and preview
         this._applyColumnClasses();
@@ -1306,17 +1349,21 @@ export const ImportWizardManager = {
 
                 const raw = td.getAttribute('data-raw') || '';
                 const truncated = raw.length > 50 ? raw.substring(0, 47) + '...' : raw;
-                if (cls === 'col-status' && truncated.trim()) {
+                if (!truncated.trim()) {
+                    td.innerHTML = '<span class="preview-empty-cell">—</span>';
+                } else if (cls === 'col-status') {
                     const statusValues = truncated.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
                     td.innerHTML = statusValues.map(status => {
                         const badgeInfo = Utils.getStatusBadgeInfo(status);
                         return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
                     }).join(' ');
-                } else if (td.querySelector('.tag-badge--sm')) {
+                } else if (td.querySelector('.tag-badge--sm, .preview-empty-cell')) {
                     td.innerHTML = truncated;
                 }
             });
         });
+
+        FocusPanelManager.updateScrollAffordances(table.closest('.table-scroll-wrapper'));
     },
 
     /**
@@ -1733,6 +1780,7 @@ export const ImportWizardManager = {
 
         html += '</tbody></table>';
         container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
+        FocusPanelManager.bindScrollAffordances(container.querySelector('.table-scroll-wrapper'));
 
         // Sync departed visual state with current toggle
         this._syncDepartedToggleState(Boolean(document.getElementById('wizardDeleteDepartedToggle')?.checked));
@@ -1820,7 +1868,8 @@ export const ImportWizardManager = {
      */
     _extractCellValue(student, tag, currentPeriod) {
         if (tag === 'STATUT') return student.statuses?.join(', ') || '';
-        const periodData = student.periods?.[currentPeriod];
+        const targetPeriod = tag.includes('_') ? tag.split('_')[1] : currentPeriod;
+        const periodData = student.periods?.[targetPeriod];
         if (!periodData) return '';
 
         if (tag.startsWith('MOY_')) return periodData.grade ?? '';
@@ -1896,9 +1945,9 @@ export const ImportWizardManager = {
      * @private
      */
     async _performImport() {
-        this._saveFormat();
-
-        const currentPeriod = appState.currentPeriod || 'T1';
+        if (this.state.currentSource !== 'sample') {
+            this._saveFormat();
+        }
 
         // Read enabled columns from checkboxes
         const enabledTags = new Set();
@@ -1918,12 +1967,12 @@ export const ImportWizardManager = {
             }
 
             // Strip period-specific fields if unchecked
-            const period = filtered.periods?.[currentPeriod];
-            if (period) {
-                if (!this._isTagEnabled(enabledTags, 'MOY_')) period.grade = undefined;
-                if (!this._isTagEnabled(enabledTags, 'DEV_')) period.evaluationCount = undefined;
-                if (!this._isTagEnabled(enabledTags, 'APP_')) period.appreciation = '';
-                if (!this._isTagEnabled(enabledTags, 'CTX_')) period.context = '';
+            for (const [p, period] of Object.entries(filtered.periods || {})) {
+                if (!period) continue;
+                if (!enabledTags.has(`MOY_${p}`)) period.grade = undefined;
+                if (!enabledTags.has(`DEV_${p}`)) period.evaluationCount = undefined;
+                if (!enabledTags.has(`APP_${p}`)) period.appreciation = '';
+                if (!enabledTags.has(`CTX_${p}`)) period.context = '';
             }
 
             return filtered;
@@ -1965,16 +2014,6 @@ export const ImportWizardManager = {
         } finally {
             this.close();
         }
-    },
-
-    /**
-     * Check if any tag with the given prefix is enabled
-     */
-    _isTagEnabled(enabledTags, prefix) {
-        for (const tag of enabledTags) {
-            if (tag.startsWith(prefix)) return true;
-        }
-        return false;
     },
 
     /**

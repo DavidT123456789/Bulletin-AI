@@ -18,6 +18,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { getDemoClassData } from '../data/SampleData.js';
 
 let validateApiKeyCallback = null;
 let welcomeModalAbortController = null;
@@ -515,7 +516,7 @@ export const WelcomeManager = {
             return;
         }
 
-        const { getDemoClassData } = await import('../data/SampleData.js');
+        // SampleData imported statically
         const { className, students } = getDemoClassData(periodSystem);
 
         const newClass = ClassManager.createClass(className);

@@ -654,7 +654,7 @@
 [data-theme="dark"] .synthesis-section.synthesis-intro-card {
     background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.12) 0%, rgba(var(--brand-purple-rgb), 0.06) 100%);
     border-color: rgba(var(--brand-primary-rgb), 0.25);
-    border-left-color: var(--brand-primary);
+    border-left-color: var(--primary-bright);
 }
 
 .synthesis-intro-header {
@@ -674,6 +674,13 @@
 
 .synthesis-intro-header span {
     color: var(--brand-primary) !important;
+}
+
+[data-theme="dark"] .synthesis-intro-header,
+[data-theme="dark"] .synthesis-intro-header iconify-icon,
+[data-theme="dark"] .synthesis-intro-header i,
+[data-theme="dark"] .synthesis-intro-header span {
+    color: var(--primary-bright) !important;
 }
 
 .synthesis-intro-text {

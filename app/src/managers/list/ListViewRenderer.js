@@ -710,7 +710,8 @@ export const ListViewRenderer = {
                     }
                 }
 
-                const isPastPeriod = (i < currentIndex);
+                const isPastPeriod = (i < activeIndex);
+                const periodStateClass = isPastPeriod ? 'past-period-grade' : 'current-period-grade';
                 const emptyGradeText = isPastPeriod ? 'NC' : '--';
                 const emptyTooltipAttr = isPastPeriod && !tooltipAttr
                     ? ' class="tooltip" data-tooltip="Non communiqué"'
@@ -721,8 +722,8 @@ export const ListViewRenderer = {
                     <td class="${cellClass}" data-period="${p}">
                         <div class="grade-content-wrapper"${grade !== null ? tooltipAttr : emptyTooltipAttr}>
                         ${grade !== null
-                        ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
-                        : `<span class="grade-empty">${emptyGradeText}</span>`
+                        ? `<span class="grade-value ${gradeClass} ${periodStateClass}">${grade.toFixed(1).replace('.', ',')}</span>`
+                        : `<span class="grade-empty ${periodStateClass}">${emptyGradeText}</span>`
                     }
                         </div>
                     </td>
@@ -743,9 +744,9 @@ export const ListViewRenderer = {
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-up-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-up-right-bold"></iconify-icon></span>`;
                                 } else if (diff < 0) {
-                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-down-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-down-right-bold"></iconify-icon></span>`;
                                 } else {
                                     evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>`;
                                 }

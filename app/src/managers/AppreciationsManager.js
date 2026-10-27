@@ -1,5 +1,5 @@
 import { appState } from '../state/State.js';
-import { CONFIG, CONSTS, DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES, DEFAULT_MASS_IMPORT_FORMATS } from '../config/Config.js';
+import { getSampleImportData } from '../data/SampleData.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 
@@ -526,25 +526,22 @@ export const AppreciationsManager = {
      * Stores sample data and triggers import wizard when ready.
      */
     loadSampleData() {
-        // Import sample data from shared source
-        import('../data/SampleData.js').then(({ getSampleImportData }) => {
-            const sampleDataText = getSampleImportData();
+        const sampleDataText = getSampleImportData(appState.currentPeriod);
 
-            // Store in sessionStorage for later use
-            sessionStorage.setItem('pendingSampleData', sampleDataText);
+        // Store in sessionStorage for later use
+        sessionStorage.setItem('pendingSampleData', sampleDataText);
 
-            // If massData textarea exists (main app view), fill it directly
-            if (DOM.massData) {
-                DOM.massData.value = sampleDataText;
-                DOM.massData.dispatchEvent(new Event('input'));
-                sessionStorage.removeItem('pendingSampleData');
-                // Trigger import wizard
-                setTimeout(() => {
-                    FileImportManager.handleMassImportTrigger();
-                }, 100);
-            }
-            // Otherwise data stays in sessionStorage until welcome modal closes
-        });
+        // If massData textarea exists (main app view), fill it directly
+        if (DOM.massData) {
+            DOM.massData.value = sampleDataText;
+            DOM.massData.dispatchEvent(new Event('input'));
+            sessionStorage.removeItem('pendingSampleData');
+            // Trigger import wizard
+            setTimeout(() => {
+                FileImportManager.handleMassImportTrigger();
+            }, 100);
+        }
+        // Otherwise data stays in sessionStorage until welcome modal closes
     }
 };
 

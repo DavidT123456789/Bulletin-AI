@@ -259,23 +259,28 @@ export const MassImportManager = {
                     existingResult.studentData.periods = {};
                 }
 
-                const importedPeriodData = studentData.periods?.[currentPeriod];
-                const importedAppreciation = importedPeriodData?.appreciation ?? '';
+                for (const [periodKey, importedPData] of Object.entries(studentData.periods || {})) {
+                    if (!importedPData) continue;
+                    const existingPData = existingResult.studentData.periods[periodKey] || {};
+                    const hasImportedGrade = importedPData.grade !== null && importedPData.grade !== undefined;
+                    const hasImportedEval = importedPData.evaluationCount !== null && importedPData.evaluationCount !== undefined;
+                    existingResult.studentData.periods[periodKey] = {
+                        ...existingPData,
+                        grade: hasImportedGrade ? importedPData.grade : (existingPData.grade ?? null),
+                        evaluationCount: hasImportedEval ? importedPData.evaluationCount : (existingPData.evaluationCount ?? null),
+                        appreciation: importedPData.appreciation || existingPData.appreciation || '',
+                        context: importedPData.context || existingPData.context || ''
+                    };
+                }
 
-                // Conserver l'appréciation existante si l'importée est vide
-                const existingPeriodData = existingResult.studentData.periods[currentPeriod] || {};
-                const finalAppreciation = importedAppreciation || existingPeriodData.appreciation || '';
-
-                // On met à jour l'objet période sans écraser l'appréciation existante par du vide
-                existingResult.studentData.periods[currentPeriod] = {
-                    ...importedPeriodData,
-                    appreciation: finalAppreciation
-                };
+                const importedAppreciation = studentData.periods?.[currentPeriod]?.appreciation ?? '';
+                const finalAppreciation = existingResult.studentData.periods[currentPeriod]?.appreciation || '';
 
                 existingResult.studentData.statuses = studentData.statuses || existingResult.studentData.statuses;
 
                 // Synchronisation du champ d'appréciation racine
                 existingResult.appreciation = finalAppreciation;
+                existingResult.isPending = !finalAppreciation;
 
                 // An imported appreciation is NOT AI-generated — reset the flag
                 // so the AI icon is not shown for data that came from a PDF/manual import
