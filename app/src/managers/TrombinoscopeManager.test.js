@@ -2320,8 +2320,7 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
     });
 
     describe('T-08 — Non-empilement des écouteurs DOM dans _initStep2 (Bug E-03)', () => {
-        // TODO(Lot 6): Retirer .fails une fois le bug corrigé
-        it.fails('T-08 (Bug E-03) : appeler _initStep2() 3 fois de suite (Étape 1 -> 2 -> 3 -> 2) n\'empile pas les écouteurs sur #toggleGridToolsBtn et #trombiUndoBtn', () => {
+        it('T-08 (Bug E-03) : appeler _initStep2() 3 fois de suite (Étape 1 -> 2 -> 3 -> 2) n\'empile pas les écouteurs sur #toggleGridToolsBtn et #trombiUndoBtn', () => {
             document.body.innerHTML = `
                 <div id="staticStep2Toolbar">
                     <div class="grid-advanced-controls" id="gridAdvancedControls"></div>
@@ -2361,6 +2360,33 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
             expect(undoSpy).toHaveBeenCalledTimes(1);
 
             undoSpy.mockRestore();
+        });
+
+        it('utilise toBlob/createObjectURL pour _canvasToImageUrl et révoque les ObjectURLs lors de _reset()', async () => {
+            const origCreate = URL.createObjectURL;
+            const origRevoke = URL.revokeObjectURL;
+            const createUrlSpy = vi.fn(() => 'blob:mock-trombi-page');
+            const revokeUrlSpy = vi.fn();
+            URL.createObjectURL = createUrlSpy;
+            URL.revokeObjectURL = revokeUrlSpy;
+
+            try {
+                const fakeCanvas = {
+                    toBlob: vi.fn((cb) => cb(new Blob(['fake-img'], { type: 'image/jpeg' }))),
+                    toDataURL: vi.fn(() => 'data:image/jpeg;base64,FALLBACK')
+                };
+
+                const url = await TrombinoscopeManager._canvasToImageUrl(fakeCanvas, 0.92);
+                expect(url).toBe('blob:mock-trombi-page');
+                expect(fakeCanvas.toBlob).toHaveBeenCalledTimes(1);
+                expect(fakeCanvas.toDataURL).not.toHaveBeenCalled();
+
+                TrombinoscopeManager._reset();
+                expect(revokeUrlSpy).toHaveBeenCalledWith('blob:mock-trombi-page');
+            } finally {
+                URL.createObjectURL = origCreate;
+                URL.revokeObjectURL = origRevoke;
+            }
         });
     });
 });

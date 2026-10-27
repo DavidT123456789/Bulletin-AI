@@ -26,10 +26,11 @@ export const FocusPanelRefinement = {
      * Initialize with parent references
      * @param {Object} focusPanelManager - FocusPanelManager reference
      * @param {Object} uiManager - UI reference
+     * @param {Object} [maybeUiManager] - Optional 3rd arg for backward-compatible test signature
      */
-    init(focusPanelManager, uiManager) {
+    init(focusPanelManager, uiManager, maybeUiManager = null) {
         panel = focusPanelManager;
-        UI = uiManager;
+        UI = maybeUiManager || uiManager;
     },
 
     /**
@@ -48,16 +49,27 @@ export const FocusPanelRefinement = {
      * @param {string} refineType - Type de raffinement
      */
     async showPreview(refineType) {
-        const appreciationText = document.getElementById('focusAppreciationText');
-        if (!appreciationText) return;
+        if (panel?._isAppreciationEdited && typeof panel?.saveCurrentContext === 'function') {
+            panel.saveCurrentContext();
+        }
 
-        const currentText = appreciationText.textContent?.trim();
+        const refineStudentId = panel?.currentStudentId;
+        const refinePeriod = appState.currentPeriod;
+        const result = appState.generatedResults?.find(r => r.id === refineStudentId);
+        const appreciationText = document.getElementById('focusAppreciationText');
+
+        const stateText = (
+            result?.studentData?.periods?.[refinePeriod]?.appreciation ??
+            (result?.generationPeriod === refinePeriod ? result?.appreciation : '') ??
+            ''
+        ).trim();
+        const currentText = stateText || appreciationText?.textContent?.trim() || '';
+
         if (!currentText || currentText.includes('Aucune appréciation')) {
-            UI.showNotification('Générez d\'abord une appréciation', 'info');
+            UI?.showNotification?.('Générez d\'abord une appréciation', 'info');
             return;
         }
 
-        const result = appState.generatedResults?.find(r => r.id === panel?.currentStudentId);
         const promptText = PromptService.getRefinementPrompt(refineType, currentText, {
             prenom: result?.studentData?.prenom || result?.prenom || '',
             nom: result?.studentData?.nom || result?.nom || ''
@@ -155,29 +167,39 @@ export const FocusPanelRefinement = {
      * @param {string} refineType - Type of refinement (concise, detailed, encouraging, variations, polish)
      */
     async apply(refineType) {
-        const appreciationText = document.getElementById('focusAppreciationText');
-        if (!appreciationText) return;
+        if (panel?._isAppreciationEdited && typeof panel?.saveCurrentContext === 'function') {
+            panel.saveCurrentContext();
+        }
 
-        const currentText = appreciationText.textContent?.trim();
+        const refineStudentId = panel?.currentStudentId;
+        const refinePeriod = appState.currentPeriod;
+        const refineClassId = appState.currentClassId;
+
+        const result = appState.generatedResults?.find(r => r.id === refineStudentId);
+        const appreciationText = document.getElementById('focusAppreciationText');
+
+        const stateText = (
+            result?.studentData?.periods?.[refinePeriod]?.appreciation ??
+            (result?.generationPeriod === refinePeriod ? result?.appreciation : '') ??
+            ''
+        ).trim();
+        const currentText = stateText || appreciationText?.textContent?.trim() || '';
+
         if (!currentText || currentText.includes('Aucune appréciation')) {
-            UI.showNotification('Générez d\'abord une appréciation', 'info');
+            UI?.showNotification?.('Générez d\'abord une appréciation', 'info');
             return;
         }
 
-        FocusPanelHistory.push(currentText);
+        FocusPanelHistory.push(currentText, 'edit', { studentId: refineStudentId, period: refinePeriod });
 
         const btn = document.querySelector(`[data-refine-type="${refineType}"]`);
-        if (!btn) return;
-
-        btn.classList.add('is-generating');
+        btn?.classList.add('is-generating');
         FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
 
-        const refineStudentId = panel.currentStudentId;
-
-        panel._cancelGenerationForStudent(refineStudentId, { notify: false, restoreUI: false });
+        panel?._cancelGenerationForStudent?.(refineStudentId, { notify: false, restoreUI: false });
 
         const abortController = new AbortController();
-        panel._activeGenerations.set(refineStudentId, abortController);
+        panel?._activeGenerations?.set(refineStudentId, abortController);
         const signal = abortController.signal;
 
         if (panel?.listViewManager?.setRowStatus) {
@@ -187,7 +209,6 @@ export const FocusPanelRefinement = {
         }
 
         try {
-            const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
             if (!result) return;
 
             const studentPrenom = result.studentData?.prenom || result.prenom || '';
@@ -204,13 +225,18 @@ export const FocusPanelRefinement = {
             if (response?.text) {
                 const refined = this._deanonymizeText(response.text, studentPrenom);
 
-                result.appreciation = refined;
                 result.copied = false;
                 result.wasGenerated = true;
                 result.appreciationSource = 'ai';
-                const currentPeriod = appState.currentPeriod;
-                if (result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod].appreciation = refined;
+                if (!result.studentData) result.studentData = {};
+                if (!result.studentData.periods) result.studentData.periods = {};
+                if (!result.studentData.periods[refinePeriod]) {
+                    result.studentData.periods[refinePeriod] = {};
+                }
+                result.studentData.periods[refinePeriod].appreciation = refined;
+
+                if (appState.currentPeriod === refinePeriod) {
+                    result.appreciation = refined;
                 }
 
                 if (response.modelUsed) {
@@ -227,63 +253,79 @@ export const FocusPanelRefinement = {
                 result.promptHash = PromptService.getPromptHash({
                     ...result.studentData,
                     id: result.id,
-                    currentPeriod: currentPeriod
+                    currentPeriod: refinePeriod
                 });
-                result.generationPeriod = currentPeriod;
+                result.generationPeriod = refinePeriod;
 
-                const currentWordCount = Utils.countWords(appreciationText.textContent || '');
-                const targetWordCount = Utils.countWords(refined);
+                FocusPanelHistory.push(refined, refineType, { studentId: refineStudentId, period: refinePeriod });
 
-                FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
+                const stillOnSameContext =
+                    panel?.currentStudentId === refineStudentId &&
+                    appState.currentPeriod === refinePeriod &&
+                    appState.currentClassId === refineClassId;
 
-                const finalHtml = Utils.cleanMarkdown(refined);
-                await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
-                if (panel) {
-                    panel._initialAppreciationHtml = finalHtml;
-                    panel._isAppreciationEdited = false;
+                if (stillOnSameContext && appreciationText) {
+                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
+                    const targetWordCount = Utils.countWords(refined);
+
+                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
+
+                    const finalHtml = Utils.cleanMarkdown(refined);
+                    if (typeof UI?.animateHtmlReveal === 'function') {
+                        await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
+                    } else {
+                        appreciationText.innerHTML = finalHtml;
+                    }
+                    if (panel) {
+                        panel._initialAppreciationHtml = finalHtml;
+                        panel._isAppreciationEdited = false;
+                    }
+
+                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
+                    FocusPanelStatus.updateSourceIndicator(result);
                 }
 
                 // CRITICAL FIX: Delete the active generation ONLY after animation finishes,
                 // so that _saveContext() triggered during animation does not save the span tags.
-                panel._activeGenerations.delete(refineStudentId);
-
-                FocusPanelHistory.push(refined, refineType);
-
-                FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
-                FocusPanelStatus.updateSourceIndicator(result);
+                panel?._activeGenerations?.delete(refineStudentId);
 
                 // Update list row and persist
                 panel?._updateListRow?.(result);
                 StorageManager.saveAppState();
-                UI.updateStats();
+                UI?.updateStats?.();
             }
         } catch (error) {
             const isAborted = error.name === 'AbortError'
                 || signal.aborted
                 || error.message?.includes('annulé');
 
+            const stillOnSameContext =
+                panel?.currentStudentId === refineStudentId &&
+                appState.currentPeriod === refinePeriod &&
+                appState.currentClassId === refineClassId;
+
             if (isAborted) {
-                FocusPanelStatus.refreshAppreciationStatus();
-                // We must delete the active generation since we return early
-                panel._activeGenerations.delete(refineStudentId);
-                btn.classList.remove('is-generating');
-                const result = appState.generatedResults.find(r => r.id === refineStudentId);
+                if (stillOnSameContext) {
+                    FocusPanelStatus.refreshAppreciationStatus();
+                }
+                panel?._activeGenerations?.delete(refineStudentId);
+                btn?.classList.remove('is-generating');
                 if (result) panel?._updateListRow?.(result);
                 return;
             }
 
-            UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
-            const result = appState.generatedResults.find(r => r.id === refineStudentId);
-            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: error.message || 'Erreur lors du raffinement' });
-            panel._activeGenerations.delete(refineStudentId);
-            btn.classList.remove('is-generating');
+            UI?.showNotification?.(error.message || 'Erreur lors du raffinement', 'error');
+            if (stillOnSameContext) {
+                FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: error.message || 'Erreur lors du raffinement' });
+            }
+            panel?._activeGenerations?.delete(refineStudentId);
+            btn?.classList.remove('is-generating');
             if (result) {
                 panel?._updateListRow?.(result);
                 StorageManager.saveAppState();
             }
         } finally {
-            // Delete is now handled in success path (after animation) and error paths
-            btn.classList.remove('is-generating');
+            btn?.classList.remove('is-generating');
         }
     }
 };

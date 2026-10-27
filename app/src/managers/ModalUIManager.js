@@ -40,11 +40,142 @@ export const ModalUI = {
     /** @private Handler pour le focus trap (WCAG) */
     _focusTrapHandler: null,
 
+    /** @private Conteneur actuellement piégé par le Focus Trap */
+    _focusTrapContainer: null,
+
+    /** @private Écouteur délégué pour les dialogues autonomes (#importHubBackdrop, #trombiWizardModal, #focusPanel) */
+    _standaloneTrapInitialized: false,
+
     /** @private */
     _isIgnoringTooltips: false,
 
     /** @private Map pour stocker les timeouts d'animation par modale */
     _animTimeouts: new WeakMap(),
+
+    /**
+     * Retourne les éléments focalisables visibles à l'intérieur d'un conteneur.
+     * @param {HTMLElement|null} container
+     * @returns {HTMLElement[]}
+     * @private
+     */
+    _getFocusableElements(container) {
+        if (!container) return [];
+        const candidates = Array.from(container.querySelectorAll(
+            'button, [href], input, select, textarea, [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
+        )).filter(el =>
+            !el.disabled &&
+            el.getAttribute('aria-hidden') !== 'true' &&
+            !el.closest('[inert], [style*="display: none"], [style*="display:none"]')
+        );
+        const visibleCandidates = candidates.filter(el => el.offsetParent !== null);
+        return visibleCandidates.length > 0 ? visibleCandidates : candidates;
+    },
+
+    /**
+     * Active le Focus Trap clavier WCAG (Tab / Shift+Tab) sur une modale ou un dialogue autonome.
+     * @param {HTMLElement|string|null} containerOrId - Élément conteneur ou son ID
+     */
+    activateFocusTrap(containerOrId) {
+        const container = typeof containerOrId === 'string'
+            ? document.getElementById(containerOrId)
+            : containerOrId;
+        if (!container || typeof document === 'undefined') return;
+
+        if (this._focusTrapHandler) {
+            document.removeEventListener('keydown', this._focusTrapHandler);
+        }
+        this._focusTrapContainer = container;
+        this._focusTrapHandler = (e) => {
+            const activeTrapTarget = this.activeModal ||
+                this._focusTrapContainer ||
+                document.querySelector('#trombiWizardModal.visible, #importHubBackdrop.active, #focusPanel.open');
+            if (!activeTrapTarget) return;
+
+            if (e.key === 'Escape') {
+                const hub = document.getElementById('importHubBackdrop');
+                if (hub && hub.classList.contains('active') && activeTrapTarget === hub) {
+                    e.preventDefault();
+                    hub.classList.remove('active');
+                    if (document.body) document.body.style.overflow = '';
+                    HistoryManager.handleManualClose?.('importHub');
+                    this.deactivateFocusTrap(hub);
+                }
+                return;
+            }
+
+            if (e.key !== 'Tab') return;
+            const focusableElements = this._getFocusableElements(activeTrapTarget);
+            if (focusableElements.length === 0) return;
+
+            const firstEl = focusableElements[0];
+            const lastEl = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey && (document.activeElement === firstEl || !activeTrapTarget.contains(document.activeElement))) {
+                lastEl.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && (document.activeElement === lastEl || !activeTrapTarget.contains(document.activeElement))) {
+                firstEl.focus();
+                e.preventDefault();
+            }
+        };
+        document.addEventListener('keydown', this._focusTrapHandler);
+    },
+
+    /**
+     * Désactive le Focus Trap clavier WCAG.
+     * @param {HTMLElement|string|null} [containerOrId=null] - Conteneur optionnel à vérifier avant retrait
+     */
+    deactivateFocusTrap(containerOrId = null) {
+        const container = typeof containerOrId === 'string'
+            ? document.getElementById(containerOrId)
+            : containerOrId;
+        if (container && this._focusTrapContainer && this._focusTrapContainer !== container) {
+            return;
+        }
+        if (this._focusTrapHandler && typeof document !== 'undefined') {
+            document.removeEventListener('keydown', this._focusTrapHandler);
+            this._focusTrapHandler = null;
+        }
+        this._focusTrapContainer = null;
+    },
+
+    /**
+     * Garantit que les dialogues autonomes ouverts via classes CSS (#importHubBackdrop.active,
+     * #trombiWizardModal.visible, #focusPanel.open) bénéficient du Focus Trap et de Escape.
+     * @private
+     */
+    _ensureStandaloneFocusTrap() {
+        if (this._standaloneTrapInitialized || typeof document === 'undefined') return;
+        this._standaloneTrapInitialized = true;
+        document.addEventListener('keydown', (e) => {
+            if (this._focusTrapHandler) return;
+            const standaloneTarget = document.querySelector('#trombiWizardModal.visible, #importHubBackdrop.active, #focusPanel.open');
+            if (!standaloneTarget) return;
+
+            if (e.key === 'Escape' && standaloneTarget.id === 'importHubBackdrop') {
+                e.preventDefault();
+                standaloneTarget.classList.remove('active');
+                if (document.body) document.body.style.overflow = '';
+                HistoryManager.handleManualClose?.('importHub');
+                return;
+            }
+
+            if (e.key !== 'Tab') return;
+            const focusableElements = this._getFocusableElements(standaloneTarget);
+            if (focusableElements.length === 0) return;
+
+            const firstEl = focusableElements[0];
+            const lastEl = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey && (document.activeElement === firstEl || !standaloneTarget.contains(document.activeElement))) {
+                lastEl.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && (document.activeElement === lastEl || !standaloneTarget.contains(document.activeElement))) {
+                firstEl.focus();
+                e.preventDefault();
+            }
+        });
+    },
 
     /** @private */
     _isOverlayModal(modal, options = {}) {
@@ -134,27 +265,8 @@ export const ModalUI = {
 
         this._isIgnoringTooltips = true;
 
-        // Configuration du Focus Trap
-        if (this._focusTrapHandler) document.removeEventListener('keydown', this._focusTrapHandler);
-        this._focusTrapHandler = (e) => {
-            if (e.key !== 'Tab') return;
-            const focusableElements = Array.from(modal.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            )).filter(el => !el.disabled && el.offsetParent !== null);
-            
-            if (focusableElements.length === 0) return;
-            const firstEl = focusableElements[0];
-            const lastEl = focusableElements[focusableElements.length - 1];
-
-            if (e.shiftKey && document.activeElement === firstEl) {
-                lastEl.focus();
-                e.preventDefault();
-            } else if (!e.shiftKey && document.activeElement === lastEl) {
-                firstEl.focus();
-                e.preventDefault();
-            }
-        };
-        document.addEventListener('keydown', this._focusTrapHandler);
+        // Configuration du Focus Trap WCAG partagé
+        this.activateFocusTrap(modal);
 
         // Focus sur le premier élément focalisable après l'animation (en évitant le bouton de fermeture si possible)
         setTimeout(() => {
@@ -265,9 +377,13 @@ export const ModalUI = {
                 this.openModal(this.activeModal, { isRestoringStacked: true });
             } else {
                 this.stackedModal = null;
-                if (this._focusTrapHandler) {
-                    document.removeEventListener('keydown', this._focusTrapHandler);
-                    this._focusTrapHandler = null;
+                const underlyingStandalone = typeof document !== 'undefined'
+                    ? document.querySelector('#trombiWizardModal.visible, #importHubBackdrop.active, #focusPanel.open')
+                    : null;
+                if (underlyingStandalone) {
+                    this.activateFocusTrap(underlyingStandalone);
+                } else {
+                    this.deactivateFocusTrap();
                 }
                 document.body.classList.remove('modal-open');
 
@@ -1360,3 +1476,5 @@ export const ModalUI = {
         });
     }
 };
+
+ModalUI._ensureStandaloneFocusTrap();

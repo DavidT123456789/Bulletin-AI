@@ -1,7 +1,7 @@
 import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
-import { RateLimiter } from '../utils/RateLimiter.js';
+import { AIService, parseRetryDelay } from '../services/AIService.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { StudentDataManager } from './StudentDataManager.js';
@@ -25,6 +25,9 @@ export const MassImportManager = {
     massImportAbortController: null,
 
     async processMassImport(studentsToProcess, ignoredCount) {
+        const batchClassId = appState.currentClassId;
+        const batchPeriod = appState.currentPeriod;
+
         this.massImportAbortController = new AbortController();
         appState.importJustCompleted = false;
         appState.activeMassAction = 'generate';
@@ -33,7 +36,7 @@ export const MassImportManager = {
         DOM.resultsDiv.innerHTML = '';
 
         // Créer les cartes pré-remplies avec skeleton sur l'appréciation
-        const pendingCards = this._createPendingCards(studentsToProcess);
+        const pendingCards = this._createPendingCards(studentsToProcess, batchClassId);
 
         const failedImports = [];
         let wasAborted = false;
@@ -63,31 +66,24 @@ export const MassImportManager = {
                 // Marquer la rangée courante comme "en cours de génération"
                 const resultId = pendingCards[index];
 
-                ListViewManager.setRowStatus(resultId, 'generating');
+                if ((appState.currentClassId ?? null) === (batchClassId ?? null)) {
+                    ListViewManager.setRowStatus(resultId, 'generating');
+                }
 
                 let newResultObject;
                 let hasError = false;
+                const studentDataForGeneration = {
+                    ...studentData,
+                    classId: studentData.classId ?? batchClassId,
+                    currentPeriod: studentData.currentPeriod || batchPeriod
+                };
 
                 try {
-                    // Rate limiting RÉACTIF : on attend seulement si l'API a demandé un délai
-                    const waitTime = RateLimiter.getWaitTime(appState.currentAIModel);
-                    if (waitTime > 0) {
-                        UI.updateOutputProgress(
-                            index,
-                            studentsToProcess.length,
-                            `⏱️ Pause API (${RateLimiter.formatTime(waitTime)})`
-                        );
-                        await RateLimiter.waitIfNeeded(appState.currentAIModel, null, this.massImportAbortController.signal);
-                    }
-
-                    newResultObject = await Am.generateAppreciation(studentData, false, null, this.massImportAbortController.signal);
+                    newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, this.massImportAbortController.signal);
 
                     // Calculer et afficher le temps de génération
                     const generationTime = ((performance.now() - generationStartTime) / 1000).toFixed(1);
                     UI.updateOutputProgress(index + 1, studentsToProcess.length, `${studentName} (${generationTime}s)`);
-
-                    // Marquer la requête réussie pour l'auto-tuning (peut réduire le délai)
-                    RateLimiter.markSuccess(appState.currentAIModel);
 
                 } catch (e) {
                     // Vérifier si c'est une annulation (AbortError, signal aborted, ou message spécifique)
@@ -97,33 +93,35 @@ export const MassImportManager = {
 
                     if (isAborted) {
                         wasAborted = true;
-                        ListViewManager.setRowStatus(resultId, 'pending'); // Revert skeleton
+                        if ((appState.currentClassId ?? null) === (batchClassId ?? null)) {
+                            ListViewManager.setRowStatus(resultId, 'pending'); // Revert skeleton
+                        }
                         break;
                     }
 
                     console.error(`Erreur pour ${studentData.nom || ''}:`, e);
                     const msg = Utils.translateErrorMessage(e.message);
-                    newResultObject = Am.createResultObject(studentData.nom, studentData.prenom, '', [], studentData, {}, {}, `Erreur IA : ${msg}.`);
+                    newResultObject = Am.createResultObject(studentData.nom, studentData.prenom, '', [], studentDataForGeneration, {}, {}, `Erreur IA : ${msg}.`);
                     failedImports.push(studentData);
                     hasError = true;
 
                     // Retry intelligent en cas d'erreur quota/rate limit
                     if (e.message?.includes('429') || e.message?.toLowerCase().includes('quota')) {
-                        // Marquer l'erreur 429 pour l'auto-tuning (augmente le délai)
-                        RateLimiter.markError429(appState.currentAIModel, e.message);
-
-                        const retryAfter = RateLimiter.extractRetryAfter(e.message);
-                        const waitTime = retryAfter || 5000;
+                        const retrySec = typeof parseRetryDelay === 'function' ? parseRetryDelay(e.message) : null;
+                        const waitTime = retrySec ? retrySec * 1000 : 5000;
+                        const waitLabel = `${Math.ceil(waitTime / 1000)}s`;
 
                         // Absorb into progress bar instead of spawning a separate toast
                         UI.updateOutputProgress(
                             index,
                             studentsToProcess.length,
-                            `⏱️ Limite API – reprise dans ${RateLimiter.formatTime(waitTime)}`
+                            `⏱️ Limite API – reprise dans ${waitLabel}`
                         );
 
                         try {
-                            await RateLimiter.sleep(waitTime, this.massImportAbortController.signal);
+                            if (AIService?.sleep) {
+                                await AIService.sleep(waitTime, this.massImportAbortController.signal);
+                            }
                         } catch (sleepError) {
                             if (sleepError.name === 'AbortError') {
                                 wasAborted = true;
@@ -133,21 +131,47 @@ export const MassImportManager = {
                     }
                 }
 
+                if (newResultObject) {
+                    newResultObject.classId = batchClassId;
+                    if (newResultObject.studentData) {
+                        newResultObject.studentData.currentPeriod = batchPeriod;
+                    }
+                }
+
                 const studentKey = Utils.normalizeName(studentData.nom, studentData.prenom);
-                // CORRECTIF: Chercher seulement dans la classe courante
+                // CORRECTIF: Chercher dans la classe initiale du lot (batchClassId)
                 const existingResultIndex = appState.generatedResults.findIndex(r =>
-                    Utils.normalizeName(r.nom, r.prenom) === studentKey &&
-                    r.classId === appState.currentClassId
+                    (studentData.existingId && r.id === studentData.existingId) ||
+                    (Utils.normalizeName(r.nom, r.prenom) === studentKey &&
+                        (r.classId ?? null) === (batchClassId ?? null))
                 );
 
                 if (existingResultIndex > -1) {
                     const existingResult = appState.generatedResults[existingResultIndex];
-                    // Keep the ID from the existing state to ensure we update the correct row
+                    // Keep the ID and classId from the batch state to ensure we update the correct row
                     newResultObject.id = existingResult.id;
+                    existingResult.classId = batchClassId;
 
-                    Object.assign(existingResult.studentData.periods, newResultObject.studentData.periods);
+                    if (!existingResult.studentData.periods) {
+                        existingResult.studentData.periods = {};
+                    }
+                    if (newResultObject.studentData?.periods) {
+                        for (const [pKey, pVal] of Object.entries(newResultObject.studentData.periods)) {
+                            existingResult.studentData.periods[pKey] = {
+                                ...(existingResult.studentData.periods[pKey] || {}),
+                                ...pVal
+                            };
+                        }
+                    }
+                    if (!hasError && newResultObject.appreciation) {
+                        existingResult.studentData.periods[batchPeriod] = {
+                            ...(existingResult.studentData.periods[batchPeriod] || {}),
+                            appreciation: newResultObject.appreciation
+                        };
+                    }
+
                     existingResult.appreciation = newResultObject.appreciation;
-                    existingResult.studentData.currentPeriod = newResultObject.studentData.currentPeriod;
+                    existingResult.studentData.currentPeriod = batchPeriod;
                     existingResult.studentData.subject = newResultObject.studentData.subject;
 
                     existingResult.studentData.statuses = newResultObject.studentData.statuses;
@@ -185,8 +209,8 @@ export const MassImportManager = {
                     appState.generatedResults.unshift(newResultObject);
                 }
 
-                // Mettre à jour la ligne avec l'animation Typewriter
-                if (newResultObject) {
+                // Mettre à jour la ligne avec l'animation Typewriter uniquement si la vue n'a pas changé
+                if (newResultObject && (appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
                     await ListViewManager.updateRow(resultId, newResultObject, true);
                 }
             }
@@ -238,6 +262,8 @@ export const MassImportManager = {
      * @param {number} ignoredCount - Nombre de lignes ignorées
      */
     async importStudentsOnly(studentsToProcess, ignoredCount) {
+        const batchClassId = appState.currentClassId;
+        const batchPeriod = appState.currentPeriod;
 
         let newCount = 0;
         let updatedCount = 0;
@@ -246,15 +272,14 @@ export const MassImportManager = {
 
         for (const studentData of studentsToProcess) {
             const normalizedKey = Utils.normalizeName(studentData.nom, studentData.prenom);
-            const currentClassId = appState.currentClassId;
 
             const existingResult = appState.generatedResults.find(r =>
                 Utils.normalizeName(r.nom, r.prenom) === normalizedKey &&
-                r.classId === currentClassId
+                r.classId === batchClassId
             );
 
             if (existingResult) {
-                const currentPeriod = appState.currentPeriod;
+                const currentPeriod = batchPeriod;
                 if (!existingResult.studentData.periods) {
                     existingResult.studentData.periods = {};
                 }
@@ -437,19 +462,22 @@ export const MassImportManager = {
      * @param {Array} students - Liste des élèves à traiter
      * @returns {Array} - Liste des IDs des résultats (existants ou créés)
      */
-    _createPendingCards(students) {
+    _createPendingCards(students, targetClassId = appState.currentClassId) {
         const resultIds = [];
 
         for (const studentData of students) {
-            // CRITICAL FIX: If student has existingId (from generateAllPending), use existing result
-            if (studentData.existingId) {
-                const existingResult = appState.generatedResults.find(r => r.id === studentData.existingId);
-                if (existingResult) {
-                    // Mark as pending for skeleton animation
-                    existingResult.isPending = true;
-                    resultIds.push(existingResult.id);
-                    continue;
-                }
+            const studentKey = Utils.normalizeName(studentData.nom, studentData.prenom);
+            // CRITICAL FIX: If student has existingId or already exists in targetClassId, reuse existing result
+            const existingResult = appState.generatedResults.find(r =>
+                (studentData.existingId && r.id === studentData.existingId) ||
+                (Utils.normalizeName(r.nom, r.prenom) === studentKey &&
+                    (r.classId ?? null) === (targetClassId ?? null))
+            );
+            if (existingResult) {
+                // Mark as pending for skeleton animation
+                existingResult.isPending = true;
+                resultIds.push(existingResult.id);
+                continue;
             }
 
             // No existing result - create new one
@@ -464,8 +492,9 @@ export const MassImportManager = {
                 null
             );
 
-            // Marquer comme en attente
+            // Marquer comme en attente et affecter à la classe cible du lot
             tempResult.isPending = true;
+            tempResult.classId = targetClassId;
 
             // CRITICAL: Restore preserved data if available
             if (studentData._preservedData) {

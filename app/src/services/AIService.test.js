@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AIService, parseRetryDelay } from './AIService.js';
+import { AIService, parseRetryDelay, sleep } from './AIService.js';
 
 // Mock state module
 vi.mock('../state/State.js', () => ({
@@ -166,7 +166,54 @@ describe('AIService', () => {
             abortController.abort();
 
             await expect(AIService.callAI('Test prompt', { signal: abortController.signal }))
-                .rejects.toThrow();
+                .rejects.toMatchObject({ name: 'AbortError' });
+        });
+
+        it('should preserve AbortError name when externalSignal aborts in-flight fetch', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.googleApiKey = 'test-key';
+
+            const abortController = new AbortController();
+            globalThis.fetch = vi.fn().mockImplementation((_url, { signal }) => {
+                return new Promise((_resolve, reject) => {
+                    signal.addEventListener('abort', () => {
+                        reject(new DOMException('The operation was aborted.', 'AbortError'));
+                    });
+                });
+            });
+
+            const callPromise = AIService.callAI('Test prompt', { signal: abortController.signal });
+            abortController.abort();
+
+            await expect(callPromise).rejects.toMatchObject({ name: 'AbortError' });
+        });
+
+        it('should strip both closed and unclosed <think> blocks from reasoning models', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.openaiApiKey = 'test-key';
+            appState.currentAIModel = 'openai-gpt-3.5-turbo';
+
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    choices: [{
+                        message: { content: '<think>Internal chain of thought</think>Appréciation finale.<think>Truncated reasoning at token limit' }
+                    }],
+                    usage: { prompt_tokens: 10, completion_tokens: 20 }
+                })
+            });
+
+            const result = await AIService.callAI('Test prompt');
+            expect(result.text).toBe('Appréciation finale.');
+        });
+    });
+
+    describe('sleep()', () => {
+        it('should resolve after delay and abort cleanly with AbortError when signal fires', async () => {
+            const controller = new AbortController();
+            const sleepPromise = sleep(5000, controller.signal);
+            controller.abort();
+            await expect(sleepPromise).rejects.toMatchObject({ name: 'AbortError' });
         });
     });
 

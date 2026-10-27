@@ -620,6 +620,8 @@ export const ClassDashboardManager = {
                 // Update in-memory cache
                 this.cachedSynthesisHTML = savedAnalysis.content;
                 this.originalSynthesisHTML = savedAnalysis.originalContent || savedAnalysis.content;
+                this.cachedSynthesisRawText = savedAnalysis.rawText || '';
+                this.originalSynthesisRawText = savedAnalysis.originalRawText || savedAnalysis.rawText || '';
                 this.cachedSynthesisClassId = currentClassId;
                 this.cachedSynthesisPeriod = currentPeriod;
                 this.cachedSynthesisDataHash = savedAnalysis.dataHash || null;
@@ -779,6 +781,11 @@ export const ClassDashboardManager = {
             generateBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Génération...';
         }
 
+        const targetClassId = appState.currentClassId;
+        const targetPeriod = appState.currentPeriod;
+        const targetModel = appState.currentAIModel;
+        const targetSubject = appState.currentSubject;
+
         try {
             const stats = this.cachedStats;
             const { systemPrompt, userPrompt } = this.buildAIPrompt(stats);
@@ -789,30 +796,46 @@ export const ClassDashboardManager = {
             const formattedText = this._formatSynthesisText(response.text);
             const synthesisHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
-            // Cache the synthesis for persistence across modal open/close
-            this.cachedSynthesisHTML = synthesisHTML;
-            this.originalSynthesisHTML = synthesisHTML; // Save as original when first generated
-            this.cachedSynthesisClassId = appState.currentClassId;
-            this.cachedSynthesisDataHash = stats.dataHash; // Update hash
-            this.cachedSynthesisPeriod = appState.currentPeriod;
-            this.cachedSynthesisModel = appState.currentAIModel;
-            this.cachedSynthesisSubject = appState.currentSubject;
+            const stillOnSameContext = appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod;
 
-            // PERSISTENCE: Save to Class Object in Storage
-            this._saveSynthesisToStorage(synthesisHTML, stats.dataHash);
+            // PERSISTENCE: Save to Class Object in Storage for the target class/period
+            this._saveSynthesisToStorage(synthesisHTML, stats.dataHash, {
+                classId: targetClassId,
+                period: targetPeriod,
+                model: targetModel,
+                subject: targetSubject,
+                originalContent: synthesisHTML,
+                rawText: response.text,
+                originalRawText: response.text
+            });
 
-            // Apply to UI with progressive reveal animation!
-            await this._applySynthesisToUI(synthesisHTML, true);
+            if (stillOnSameContext) {
+                // Cache the synthesis for persistence across modal open/close
+                this.cachedSynthesisHTML = synthesisHTML;
+                this.originalSynthesisHTML = synthesisHTML; // Save as original when first generated
+                this.cachedSynthesisRawText = response.text;
+                this.originalSynthesisRawText = response.text;
+                this.cachedSynthesisClassId = targetClassId;
+                this.cachedSynthesisDataHash = stats.dataHash; // Update hash
+                this.cachedSynthesisPeriod = targetPeriod;
+                this.cachedSynthesisModel = targetModel;
+                this.cachedSynthesisSubject = targetSubject;
+
+                // Apply to UI with progressive reveal animation!
+                await this._applySynthesisToUI(synthesisHTML, true);
+            }
 
         } catch (error) {
-            content.innerHTML = `
-                <div class="ai-placeholder">
-                    <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
-                    <p class="ai-placeholder-text">Erreur lors de la génération : ${Utils.escapeHtml(error.message)}</p>
-                </div>
-            `;
+            if (appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod) {
+                content.innerHTML = `
+                    <div class="ai-placeholder">
+                        <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
+                        <p class="ai-placeholder-text">Erreur lors de la génération : ${Utils.escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
         } finally {
-            if (generateBtn) {
+            if (generateBtn && appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod) {
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
             }
@@ -823,9 +846,9 @@ export const ClassDashboardManager = {
      * Helper to save synthesis to the persistent Class object
      * @private
      */
-    _saveSynthesisToStorage(htmlContent, dataHash) {
-        const currentClassId = appState.currentClassId;
-        const currentPeriod = appState.currentPeriod;
+    _saveSynthesisToStorage(htmlContent, dataHash, options = {}) {
+        const currentClassId = options.classId !== undefined ? options.classId : appState.currentClassId;
+        const currentPeriod = options.period || appState.currentPeriod;
 
         if (!currentClassId) return; // Legacy mode (no class ID) might not support persistence
 
@@ -838,13 +861,17 @@ export const ClassDashboardManager = {
                 classObj.analyses = {};
             }
 
+            const existingAnalysis = classObj.analyses[currentPeriod] || {};
+
             // Save analysis for this period
             classObj.analyses[currentPeriod] = {
                 content: htmlContent,
-                originalContent: this.originalSynthesisHTML || htmlContent, // Save original
+                originalContent: options.originalContent || existingAnalysis.originalContent || this.originalSynthesisHTML || htmlContent, // Save original
+                rawText: options.rawText !== undefined ? options.rawText : (this.cachedSynthesisRawText || existingAnalysis.rawText || ''),
+                originalRawText: options.originalRawText !== undefined ? options.originalRawText : (this.originalSynthesisRawText || existingAnalysis.originalRawText || ''),
                 timestamp: Date.now(),
-                model: appState.currentAIModel,
-                subject: appState.currentSubject,
+                model: options.model || appState.currentAIModel,
+                subject: options.subject || appState.currentSubject,
                 dataHash: dataHash || null // Save the signature of data used
             };
 
@@ -985,11 +1012,19 @@ ${stats.appreciationsList.map((a, idx) => {
         const type = button.dataset.refineType;
         const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
 
-        // Find the text of current synthesis (either original or previous refinement)
+        // Find the text of current synthesis (prefer in-memory raw text or strip HTML from cachedSynthesisHTML)
         const currentTextElement = contentDiv?.querySelector('.ai-synthesis-text');
-        if (!currentTextElement || !this.cachedSynthesisHTML) return;
+        if (!this.cachedSynthesisHTML && !currentTextElement) return;
 
-        const currentContentText = currentTextElement.innerText;
+        const currentContentText = this.cachedSynthesisRawText ||
+            currentTextElement?.innerText ||
+            currentTextElement?.textContent ||
+            '';
+        if (!currentContentText) return;
+
+        const targetClassId = this.cachedSynthesisClassId ?? appState.currentClassId;
+        const targetPeriod = this.cachedSynthesisPeriod || appState.currentPeriod;
+        const targetDataHash = this.cachedSynthesisDataHash;
 
         UI.showInlineSpinner(button);
         button.disabled = true;
@@ -1009,14 +1044,22 @@ ${stats.appreciationsList.map((a, idx) => {
             const formattedText = this._formatSynthesisText(resp.text);
             const refinedHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
-            await UI.animateHtmlReveal(contentDiv, refinedHTML);
+            const stillOnSameContext = appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod;
 
-            // Update cache and save
-            this.cachedSynthesisHTML = refinedHTML;
-            this._saveSynthesisToStorage(refinedHTML, this.cachedSynthesisDataHash);
+            this._saveSynthesisToStorage(refinedHTML, targetDataHash, {
+                classId: targetClassId,
+                period: targetPeriod,
+                rawText: resp.text
+            });
 
-            // Update revert button visibility
-            this._updateRevertButtonState();
+            if (stillOnSameContext) {
+                if (contentDiv) {
+                    await UI.animateHtmlReveal(contentDiv, refinedHTML);
+                }
+                this.cachedSynthesisHTML = refinedHTML;
+                this.cachedSynthesisRawText = resp.text;
+                this._updateRevertButtonState();
+            }
         } catch (e) {
             UI.showNotification("Erreur d'affinage : " + e.message, 'error');
         } finally {
@@ -1035,10 +1078,13 @@ ${stats.appreciationsList.map((a, idx) => {
 
         // Apply back original HTML
         this.cachedSynthesisHTML = this.originalSynthesisHTML;
+        this.cachedSynthesisRawText = this.originalSynthesisRawText || '';
         await UI.animateHtmlReveal(contentDiv, this.originalSynthesisHTML);
 
         // Save back to storage
-        this._saveSynthesisToStorage(this.originalSynthesisHTML, this.cachedSynthesisDataHash);
+        this._saveSynthesisToStorage(this.originalSynthesisHTML, this.cachedSynthesisDataHash, {
+            rawText: this.originalSynthesisRawText || ''
+        });
 
         // Update revert button visibility
         this._updateRevertButtonState();

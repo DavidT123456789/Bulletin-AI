@@ -198,22 +198,29 @@ export const FocusPanelJournal = {
      * @private
      */
     _setupDraftListeners(container) {
+        if (!container) return;
+        if (this._draftListenersAbortController) {
+            this._draftListenersAbortController.abort();
+        }
+        this._draftListenersAbortController = new AbortController();
+        const { signal } = this._draftListenersAbortController;
+
         const draftCancel = container.querySelector('#journalDraftCancelBtn');
         const draftCancelFooter = container.querySelector('#journalDraftCancelFooterBtn');
         const draftSave = container.querySelector('#journalDraftSaveBtn');
         const draftInput = container.querySelector('#journalNoteInput');
 
-        if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false));
-        if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false));
+        if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false), { signal });
+        if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false), { signal });
 
         if (draftSave) {
             draftSave.addEventListener('click', (e) => {
                 e.preventDefault();
                 this._saveEntry();
-            });
+            }, { signal });
             draftSave.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
-            });
+            }, { signal });
         }
 
         if (draftInput) {
@@ -221,7 +228,7 @@ export const FocusPanelJournal = {
                 const charCount = container.querySelector('#journalCharCount');
                 if (charCount) charCount.textContent = draftInput.value.length;
                 this._updateSaveButton();
-            });
+            }, { signal });
             draftInput.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                     e.preventDefault();
@@ -231,7 +238,7 @@ export const FocusPanelJournal = {
                     e.preventDefault();
                     this.toggleQuickAdd(false);
                 }
-            });
+            }, { signal });
         }
 
         // Voice dictation mic button
@@ -241,7 +248,7 @@ export const FocusPanelJournal = {
         }
 
         this._updatePillDirectStates();
-        this._setupDraftPillButtons(container);
+        this._setupDraftPillButtons(container, signal);
     },
 
     /**
@@ -850,9 +857,11 @@ export const FocusPanelJournal = {
      * @param {HTMLElement} container - The content container
      * @private
      */
-    _setupDraftPillButtons(container) {
+    _setupDraftPillButtons(container, signal) {
         const pillsContainer = container.querySelector('#journalDraftPills');
         if (!pillsContainer) return;
+
+        const listenerOpts = signal ? { signal } : undefined;
 
         // Handle pill dropdown triggers
         pillsContainer.querySelectorAll('.journal-pill-btn:not(.journal-pill-direct)').forEach(trigger => {
@@ -883,7 +892,7 @@ export const FocusPanelJournal = {
                     };
                     setTimeout(() => document.addEventListener('click', closeHandler), 0);
                 }
-            });
+            }, listenerOpts);
         });
 
         // Handle dropdown option clicks
@@ -894,7 +903,7 @@ export const FocusPanelJournal = {
                 this.handleTagSelection(tagId, option);
                 // Close dropdown after selection
                 option.closest('.journal-pill-dropdown')?.classList.remove('open');
-            });
+            }, listenerOpts);
         });
 
         // Handle direct pill buttons (Difficulté, Remarque)
@@ -903,7 +912,7 @@ export const FocusPanelJournal = {
                 e.stopPropagation();
                 const tagId = btn.dataset.tagId;
                 this.handleTagSelection(tagId, btn);
-            });
+            }, listenerOpts);
         });
     },
 

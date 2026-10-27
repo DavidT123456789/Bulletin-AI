@@ -195,6 +195,8 @@ export const AppreciationsManager = {
     },
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
+        const targetClassId = studentData?.classId ?? appState.currentClassId;
+        const targetPeriod = studentData?.currentPeriod || appState.currentPeriod;
 
         if (!UI.checkAPIKeyPresence(true)) {
             const model = appState.currentAIModel || '';
@@ -212,7 +214,13 @@ export const AppreciationsManager = {
             throw new Error(errorMsg);
         }
 
-        prompts = this.getAllPrompts({ ...studentData, generatedAppreciation: '' }, overrideConfig);
+        const normalizedStudentData = {
+            ...studentData,
+            classId: targetClassId,
+            currentPeriod: targetPeriod
+        };
+
+        prompts = this.getAllPrompts({ ...normalizedStudentData, generatedAppreciation: '' }, overrideConfig);
         const userPrompt = prompts.appreciationUser || prompts.appreciation;
         const systemPrompt = prompts.appreciationSystem || null;
         const aiResp = await AIService.callAIWithFallback(userPrompt, { signal, context, studentName: studentData.prenom, systemPrompt });
@@ -228,8 +236,10 @@ export const AppreciationsManager = {
             return { appreciation, prompt: userPrompt, usage: aiResp.usage, generationTimeMs: aiResp.generationTimeMs };
         }
 
-        const evolutions = this.analyserEvolution(studentData.periods);
-        const result = this.createResultObject(studentData.nom, studentData.prenom, appreciation, evolutions, studentData, prompts, tokenUsage, null, modelUsed);
+        const evolutions = this.analyserEvolution(normalizedStudentData.periods);
+        const result = this.createResultObject(studentData.nom, studentData.prenom, appreciation, evolutions, normalizedStudentData, prompts, tokenUsage, null, modelUsed);
+        result.classId = targetClassId;
+        result.generationPeriod = targetPeriod;
         result.copied = false; // Ensure initialized as false
         return result;
     },
@@ -345,6 +355,9 @@ export const AppreciationsManager = {
         const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
         if (resultIndex === -1) return;
 
+        const targetClassId = appState.currentClassId;
+        const targetPeriod = appState.currentPeriod;
+
         if (button) UI.showInlineSpinner(button);
 
         // Afficher le skeleton dans la ligne et synchroniser le volet s'il est ouvert
@@ -358,6 +371,8 @@ export const AppreciationsManager = {
             // Mise à jour de certaines données si nécessaire
             const updatedStudentData = { ...originalResult.studentData };
             updatedStudentData.id = id; // Include ID for journal lookup
+            updatedStudentData.classId = originalResult.classId ?? targetClassId;
+            updatedStudentData.currentPeriod = targetPeriod;
             updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
             updatedStudentData.currentAIModel = appState.currentAIModel;
 
@@ -379,8 +394,10 @@ export const AppreciationsManager = {
             }
 
             // Mettre à jour la ligne avec animation typewriter et le volet s'il est ouvert
-            await ListViewManager.updateRow(id, updatedResult, true);
-            await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+            if ((appState.currentClassId ?? null) === (targetClassId ?? null) && appState.currentPeriod === targetPeriod) {
+                await ListViewManager.updateRow(id, updatedResult, true);
+                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+            }
             try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
 
         } catch (e) {
@@ -391,7 +408,7 @@ export const AppreciationsManager = {
                 originalResult.prenom,
                 originalResult.appreciation || '', // Garder l'appréciation existante
                 originalResult.evolutions,
-                originalResult.studentData,
+                { ...originalResult.studentData, currentPeriod: targetPeriod },
                 originalResult.studentData.prompts || {},
                 originalResult.tokenUsage || {},
                 `Nouvelle Erreur : ${msg}.`
@@ -411,8 +428,10 @@ export const AppreciationsManager = {
             }
 
             // Afficher l'erreur via updateRow et synchroniser le volet
-            ListViewManager.updateRow(id, updatedResult, false);
-            await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, false);
+            if ((appState.currentClassId ?? null) === (targetClassId ?? null) && appState.currentPeriod === targetPeriod) {
+                ListViewManager.updateRow(id, updatedResult, false);
+                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, false);
+            }
 
             UI.showNotification(`Échec pour ${originalResult.prenom} : ${msg}`, 'error');
         } finally {

@@ -34,6 +34,36 @@ export function parseRetryDelay(errorMessage) {
     return Math.max(1, Math.ceil(val));
 }
 
+/**
+ * Pause interruptible par AbortSignal.
+ * @param {number} ms - Durée en millisecondes
+ * @param {AbortSignal|null} [signal=null] - Signal d'annulation
+ * @returns {Promise<void>}
+ */
+export function sleep(ms, signal = null) {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            return reject(new DOMException("Opération annulée par l'utilisateur.", 'AbortError'));
+        }
+
+        let abortHandler = null;
+        const timeoutId = setTimeout(() => {
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
+            resolve();
+        }, ms);
+
+        if (signal) {
+            abortHandler = () => {
+                clearTimeout(timeoutId);
+                reject(new DOMException("Opération annulée par l'utilisateur.", 'AbortError'));
+            };
+            signal.addEventListener('abort', abortHandler, { once: true });
+        }
+    });
+}
+
 // Mode debug : activé uniquement en développement (vite définit import.meta.env.DEV)
 
 
@@ -65,6 +95,8 @@ export function parseRetryDelay(errorMessage) {
 const MAX_RESPONSE_TOKENS = 1024;
 
 export const AIService = {
+    sleep,
+
     /**
      * Génère la configuration API pour un provider donné
      * @private
@@ -258,19 +290,26 @@ export const AIService = {
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+            let onExternalAbort = null;
 
             if (externalSignal) {
                 if (externalSignal.aborted) {
                     clearTimeout(timeoutId);
-                    return Promise.reject(new DOMException("Operation was aborted by the user.", "AbortError"));
+                    return Promise.reject(new DOMException("Opération annulée par l'utilisateur.", "AbortError"));
                 }
-                externalSignal.addEventListener('abort', () => {
+                onExternalAbort = () => {
                     clearTimeout(timeoutId);
                     controller.abort(externalSignal.reason);
-                });
+                };
+                externalSignal.addEventListener('abort', onExternalAbort, { once: true });
             }
 
-            const cleanup = () => clearTimeout(timeoutId);
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                if (externalSignal && onExternalAbort) {
+                    externalSignal.removeEventListener('abort', onExternalAbort);
+                }
+            };
             const startTime = Date.now();
 
             try {
@@ -293,10 +332,13 @@ export const AIService = {
 
                     // Si erreur transitoire (surcharge 503, rate limit 429) et qu'il reste 1 tentative
                     if (isTransient && attempt <= maxRetries && !externalSignal?.aborted) {
-                        const backoffDelay = 1200 + Math.round(Math.random() * 800); // 1.2s - 2.0s avec jitter
+                        const retrySec = status === 429 ? parseRetryDelay(String(errorDetails)) : null;
+                        const backoffDelay = retrySec
+                            ? Math.min(retrySec * 1000, 15000)
+                            : 1200 + Math.round(Math.random() * 800);
                         console.info(`[AI Retry] ⏳ Réessai pour ${selectedModel} (HTTP ${status}) dans ${backoffDelay}ms...`);
-                        await new Promise(r => setTimeout(r, backoffDelay));
                         cleanup();
+                        await sleep(backoffDelay, externalSignal);
                         continue;
                     }
 
@@ -327,8 +369,8 @@ export const AIService = {
                     text = res.choices[0].message.content; // OpenAI / OpenRouter / Mistral
                 }
 
-                // Nettoyage des balises de raisonnement (DeepSeek R1, Ollama thinking)
-                text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                // Nettoyage des balises de raisonnement (DeepSeek R1, Qwen, Ollama thinking), y compris non fermées en fin de flux
+                text = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
 
                 if (!text || text.trim().length === 0) {
                     throw new Error("Réponse vide de l'API. Le modèle n'a pas généré de texte.");
@@ -357,16 +399,15 @@ export const AIService = {
                     generationTimeMs
                 };
             } catch (error) {
-                const generationTimeMs = Date.now() - startTime;
                 if (error.name === 'AbortError') {
                     if (externalSignal?.aborted) {
-                        throw new Error("Import annulé par l'utilisateur.");
+                        throw new DOMException("Opération annulée par l'utilisateur.", "AbortError");
                     }
                     console.warn(`[AI Request] ⏱️ Timeout (${timeoutMs}ms) sur ${selectedModel} [Tentative ${attempt}/${maxRetries + 1}]`);
                     if (attempt <= maxRetries && !externalSignal?.aborted) {
                         console.info(`[AI Retry] ⏳ Réessai après timeout pour ${selectedModel}...`);
-                        await new Promise(r => setTimeout(r, 1000));
                         cleanup();
+                        await sleep(1000, externalSignal);
                         continue;
                     }
                     throw new Error(`La requête a expiré (timeout ${timeoutMs / 1000}s).`);

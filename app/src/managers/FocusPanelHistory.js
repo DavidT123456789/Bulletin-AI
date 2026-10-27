@@ -15,19 +15,28 @@ import { Utils } from '../utils/Utils.js';
  */
 export const FocusPanelHistory = {
     _currentResultId: null,
+    _panel: null,
     _callbacks: { onContentChange: null, onHistoryChange: null },
 
-    init(callbacks = {}) {
-        this._callbacks = { ...this._callbacks, ...callbacks };
+    init(callbacksOrPanel = {}, maybeCallbacks = null) {
+        if (callbacksOrPanel && typeof callbacksOrPanel === 'object' && ('currentStudentId' in callbacksOrPanel || '_getCurrentStudent' in callbacksOrPanel)) {
+            this._panel = callbacksOrPanel;
+            if (maybeCallbacks && typeof maybeCallbacks === 'object') {
+                this._callbacks = { ...this._callbacks, ...maybeCallbacks };
+            }
+        } else {
+            this._callbacks = { ...this._callbacks, ...callbacksOrPanel };
+        }
     },
 
-    _getResult() {
-        if (!this._currentResultId) return null;
-        return appState.generatedResults.find(r => r.id === this._currentResultId);
+    _getResult(studentId = null) {
+        const targetId = studentId || this._currentResultId || this._panel?.currentStudentId;
+        if (!targetId) return null;
+        return appState.generatedResults.find(r => r.id === targetId);
     },
 
     /**
-     * Get period-scoped history state for the current period.
+     * Get period-scoped history state for the current (or specified) period.
      *
      * Architecture:
      * - History lives in result.historyPerPeriod[period] (one state per period)
@@ -35,14 +44,17 @@ export const FocusPanelHistory = {
      * - History entries are ONLY created through push() (generation, edit, refinement)
      * - No auto-seeding: this avoids cross-period contamination
      *
+     * @param {boolean} [createIfMissing=false]
+     * @param {string|null} [targetPeriod=null]
+     * @param {string|null} [targetStudentId=null]
      * @returns {Object|null}
      * @private
      */
-    _getState(createIfMissing = false) {
-        const result = this._getResult();
+    _getState(createIfMissing = false, targetPeriod = null, targetStudentId = null) {
+        const result = this._getResult(targetStudentId);
         if (!result) return null;
 
-        const currentPeriod = appState.currentPeriod;
+        const currentPeriod = targetPeriod || appState.currentPeriod;
 
         // 1. Migrate legacy historyState → historyPerPeriod
         if (result.historyState?.versions?.length > 0) {
@@ -78,14 +90,14 @@ export const FocusPanelHistory = {
         StorageManager.saveAppState();
     },
 
-    load(resultId) {
+    load(resultId, targetPeriod = null) {
         this._currentResultId = resultId;
-        const result = this._getResult();
-        const currentPeriod = appState.currentPeriod;
+        const result = this._getResult(resultId);
+        const currentPeriod = targetPeriod || appState.currentPeriod;
         if (result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim()) {
-            this._getState(true);
+            this._getState(true, currentPeriod, resultId);
         } else {
-            this._getState(false);
+            this._getState(false, currentPeriod, resultId);
         }
         this._notifyHistoryChange();
     },
@@ -95,15 +107,19 @@ export const FocusPanelHistory = {
         this._notifyHistoryChange();
     },
 
-    push(content, source = 'edit') {
+    push(content, source = 'edit', options = {}) {
         if (!content || typeof content !== 'string') return;
         const cleanContent = content.trim();
         if (!cleanContent) return;
         if (cleanContent.includes('Aucune appréciation')) return;
 
-        const state = this._getState(true);
+        const targetPeriod = typeof options === 'string' ? options : (options?.period || null);
+        const targetStudentId = typeof options === 'object' ? (options?.studentId || null) : null;
+
+        const state = this._getState(true, targetPeriod, targetStudentId);
         // Capture all metadata from the result so the version carries full context
-        const result = this._getResult();
+        const result = this._getResult(targetStudentId);
+        if (!state || !result) return;
         const appreciationSource = result?.appreciationSource ?? null;
         const aiModel = result?.studentData?.currentAIModel ?? null;
         const tokenUsage = result?.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
@@ -167,8 +183,8 @@ export const FocusPanelHistory = {
         return HistoryUtils.getModificationCount(this._getState());
     },
 
-    getVersionCount() {
-        const state = this._getState();
+    getVersionCount(targetPeriod = null, targetStudentId = null) {
+        const state = this._getState(false, targetPeriod, targetStudentId);
         return state ? state.versions.length : 0;
     },
 

@@ -112,14 +112,9 @@ export const SettingsUIManager = {
         if (DOM.iaToneSlider) styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
         if (DOM.iaToneToggle) styleData.iaConfig.enableTone = DOM.iaToneToggle.checked;
 
-        // [FIX] Preserve existing styleInstructions if DOM field is empty but state has value
-        // This prevents data loss when field wasn't properly populated due to loading issues
-        const domValue = DOM.iaStyleInstructions?.value;
-        const existingValue = styleData.iaConfig.styleInstructions || '';
-        if (domValue || !existingValue) {
-            styleData.iaConfig.styleInstructions = domValue ?? '';
+        if (DOM.iaStyleInstructions) {
+            styleData.iaConfig.styleInstructions = DOM.iaStyleInstructions.value.trim();
         }
-        // else: keep the existing value to prevent accidental data loss
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
         if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
         if (DOM.iaDiscipline) styleData.iaConfig.discipline = DOM.iaDiscipline.value.trim();
@@ -170,9 +165,11 @@ export const SettingsUIManager = {
             detail: { settings: appState }
         }));
 
-        appState.evolutionThresholds.positive = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
+        const parsedPos = parseFloat(DOM.settingsEvolutionThresholdPositive?.value);
+        appState.evolutionThresholds.positive = !isNaN(parsedPos) ? parsedPos : (appState.evolutionThresholds.positive ?? 0.5);
         appState.evolutionThresholds.veryPositive = appState.evolutionThresholds.positive * 4;
-        appState.evolutionThresholds.negative = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
+        const parsedNeg = parseFloat(DOM.settingsEvolutionThresholdNegative?.value);
+        appState.evolutionThresholds.negative = !isNaN(parsedNeg) ? parsedNeg : (appState.evolutionThresholds.negative ?? -0.5);
         appState.evolutionThresholds.veryNegative = appState.evolutionThresholds.negative * 4;
 
         StorageManager.saveAppState();

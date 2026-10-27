@@ -109,8 +109,7 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         appState.filteredResults = [studentA, studentB];
     });
 
-    // TODO(Lot 5): Retirer .fails une fois le bug corrigé
-    it.fails('T-06 (Bug C-01a) : FocusPanelRefinement.apply enregistre le texte raffiné dans la période d\'origine (T1 de A) sans écraser T2 ni le DOM de l\'élève B après navigation', async () => {
+    it('T-06 (Bug C-01a) : FocusPanelRefinement.apply enregistre le texte raffiné dans la période d\'origine (T1 de A) sans écraser T2 ni le DOM de l\'élève B après navigation', async () => {
         let resolveRefinement;
         VariationsManager.applyRefinement.mockReturnValue(
             new Promise((resolve) => {
@@ -154,8 +153,7 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         expect(textEl.textContent).toBe('Appréciation initiale B (T2)');
     });
 
-    // TODO(Lot 5): Retirer .fails une fois le bug corrigé
-    it.fails('T-06 (Bug C-01b) : FocusPanelManager.generate n\'écrase ni l\'historique de T2 ni le DOM de T2 si l\'utilisateur change de période (T1 -> T2) sur le même élève pendant la génération', async () => {
+    it('T-06 (Bug C-01b) : FocusPanelManager.generate n\'écrase ni l\'historique de T2 ni le DOM de T2 si l\'utilisateur change de période (T1 -> T2) sur le même élève pendant la génération', async () => {
         let resolveGeneration;
         const mockAm = {
             generateAppreciation: vi.fn().mockReturnValue(

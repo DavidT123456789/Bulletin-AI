@@ -1230,6 +1230,7 @@ export const FocusPanelManager = {
             panel.setAttribute('tabindex', '-1');
         }
         panel?.focus?.({ preventScroll: true });
+        if (panel) ModalUI.activateFocusTrap?.(panel);
 
     },
 
@@ -1290,6 +1291,7 @@ export const FocusPanelManager = {
         const backdrop = document.getElementById('focusPanelBackdrop');
         if (panel) panel.classList.add('open');
         if (backdrop) backdrop.classList.add('visible');
+        if (panel) ModalUI.activateFocusTrap?.(panel);
 
         const focusContent = panel?.querySelector('.focus-main-page .focus-content');
         if (focusContent) focusContent.scrollTop = 0;
@@ -1364,7 +1366,10 @@ export const FocusPanelManager = {
         // ALWAYS hide analysis page on close to reset view and inert states
         FocusPanelAnalysis.hide();
 
-        if (panel) panel.classList.remove('open');
+        if (panel) {
+            panel.classList.remove('open');
+            ModalUI.deactivateFocusTrap?.(panel);
+        }
         if (backdrop) backdrop.classList.remove('visible');
         const focusHeader = panel?.querySelector('.focus-header');
         if (focusHeader) {
@@ -1708,11 +1713,12 @@ export const FocusPanelManager = {
     async generate() {
         if (!this.currentStudentId || this._isCancellingGeneration) return;
 
-        // CRITICAL: Capture the student ID AND period at the START of generation
+        // CRITICAL: Capture the student ID, period AND class at the START of generation
         // This allows us to detect if user navigated away during async operation
         // and ensures we save to the correct period even if user changes it
         const generatingForStudentId = this.currentStudentId;
         const generatingForPeriod = appState.currentPeriod;
+        const generatingForClassId = appState.currentClassId;
 
         if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
             return;
@@ -1767,14 +1773,12 @@ export const FocusPanelManager = {
         // Update generate button to loading
         const generateBtn = document.getElementById('focusGenerateBtn');
         if (generateBtn) {
-            UI.showInlineSpinner(generateBtn);
+            UI?.showInlineSpinner?.(generateBtn);
         }
 
         // Show pending badge and skeleton loading in appreciation area
         FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
         this._showAppreciationSkeleton();
-
-        const appreciationEl = document.getElementById('focusAppreciationText');
 
         try {
             // Use existing appreciation generation logic
@@ -1788,17 +1792,8 @@ export const FocusPanelManager = {
                 return;
             }
 
-            // Generation complete
-            // Note: We do NOT delete from _activeGenerations here anymore.
-            // We wait for the finally block or UI completion to ensure 'isGenerating' remains true
-            // during the typewriter effect (preventing false "manual edit" detection)
-
-            // ALWAYS save the result to the correct student (even if user navigated away)
-            // This ensures the appreciation is there when they come back
-
-            // Update existing result - include tokenUsage for AI indicator
+            // ALWAYS save the result to the correct student & period (even if user navigated away)
             Object.assign(result, {
-                appreciation: newResult.appreciation,
                 evolutions: newResult.evolutions,
                 errorMessage: newResult.errorMessage,
                 timestamp: newResult.timestamp,
@@ -1808,14 +1803,16 @@ export const FocusPanelManager = {
                 tokenUsage: newResult.tokenUsage
             });
 
+            if (appState.currentPeriod === generatingForPeriod) {
+                result.appreciation = newResult.appreciation;
+            }
+
             // Also update the AI model used in studentData
             if (newResult.studentData?.currentAIModel) {
                 result.studentData.currentAIModel = newResult.studentData.currentAIModel;
             }
 
-            // NEW APPROACH: Store hash of the prompt used for generation
-            // This captures ALL data that affects AI output (grade, context, journal, settings, etc.)
-            // Much simpler and more robust than tracking individual fields
+            // Store hash of the prompt used for generation
             result.promptHash = PromptService.getPromptHash({
                 ...result.studentData,
                 id: result.id,
@@ -1829,54 +1826,50 @@ export const FocusPanelManager = {
             }
             result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
 
+            const stillOnSameView =
+                this.currentStudentId === generatingForStudentId &&
+                appState.currentPeriod === generatingForPeriod &&
+                appState.currentClassId === generatingForClassId;
+
             // Check if the result contains an error (quota exceeded, etc.)
             if (newResult.errorMessage) {
-                // Only update UI if still on the same student
-                if (this.currentStudentId === generatingForStudentId) {
-                    // Render appreciation text area normally (will show empty/previous) and update badge/tooltip
+                if (stillOnSameView) {
                     this._renderAppreciationText(result);
-                    UI.showNotification(`Erreur : ${newResult.errorMessage}`, 'error');
+                    UI?.showNotification?.(`Erreur : ${newResult.errorMessage}`, 'error');
                 }
             } else if (newResult.appreciation) {
-                // Check if user is still viewing the same student for UI updates
-                const stillOnSameStudent = this.currentStudentId === generatingForStudentId;
+                // Record version in history for the originating period & student
+                if (!result.historyPerPeriod) result.historyPerPeriod = {};
+                FocusPanelHistory.load(generatingForStudentId, generatingForPeriod);
+                const hasExistingVersions = FocusPanelHistory.getVersionCount(generatingForPeriod, generatingForStudentId) > 0;
+                FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original', {
+                    studentId: generatingForStudentId,
+                    period: generatingForPeriod
+                });
 
-                if (stillOnSameStudent) {
+                if (stillOnSameView) {
                     const appreciationEl = document.getElementById('focusAppreciationText');
                     if (appreciationEl) {
-                        // Clear skeleton and show text with typewriter effect
                         appreciationEl.classList.remove('empty');
 
-                        // Calculate target word count BEFORE typewriter changes DOM
                         const targetWordCount = Utils.countWords(newResult.appreciation);
-
-                        // Start word count animation IN PARALLEL with typewriter
-                        // Pass targetCount since DOM is still empty
                         FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
 
                         const htmlHtml = Utils.cleanMarkdown(newResult.appreciation);
-                        await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+                        if (typeof UI?.animateHtmlReveal === 'function') {
+                            await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+                        } else {
+                            appreciationEl.innerHTML = htmlHtml;
+                        }
                         this._initialAppreciationHtml = htmlHtml;
                         this._isAppreciationEdited = false;
                     }
 
-                    // Préserver l'historique lors d'une régénération et enregistrer la nouvelle version
-                    if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                    FocusPanelHistory.load(generatingForStudentId);
-                    const hasExistingVersions = FocusPanelHistory.getVersionCount() > 0;
-                    FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original');
-
-                    // Show done badge
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
-
-                    // Update AI indicator with new metadata
                     FocusPanelStatus.updateSourceIndicator(result);
-
-                    // Update button to "Régénérer" state
                     this._updateGenerateButton(result);
                 } else {
-                    // User navigated away — this is their only feedback
-                    UI.showNotification(`Appréciation générée pour ${result.prenom}`, 'info');
+                    UI?.showNotification?.(`Appréciation générée pour ${result.prenom || result.studentData?.prenom || ''}`, 'info');
                 }
 
                 // ALWAYS update the list view (regardless of current student)
@@ -1904,53 +1897,51 @@ export const FocusPanelManager = {
             result.errorMessage = error.message;
             result.errorPeriod = generatingForPeriod;
 
-            // Only show error in panel if still on the same student
-            if (this.currentStudentId === generatingForStudentId) {
-                UI.showNotification(`Erreur : ${error.message}`, 'error');
+            const stillOnSameView =
+                this.currentStudentId === generatingForStudentId &&
+                appState.currentPeriod === generatingForPeriod &&
+                appState.currentClassId === generatingForClassId;
 
-                // Render normal text (empty or manual) and show error status badge with tooltip
+            if (stillOnSameView) {
+                UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
                 this._renderAppreciationText(result);
             } else {
-                UI.showNotification(`Échec pour ${result.prenom} : ${error.message}`, 'error');
+                UI?.showNotification?.(`Échec pour ${result.prenom || result.studentData?.prenom || ''} : ${error.message}`, 'error');
             }
 
-            // Update list row to show error badge / indicator
             this._updateListRow(result);
             StorageManager.saveAppState();
         } finally {
             // Ensure we clean up the map in case of errors/exit
             if (this._activeGenerations.has(generatingForStudentId)) {
-                // Determine if it was OUR controller or a newer one (race condition check)
                 const currentController = this._activeGenerations.get(generatingForStudentId);
-                // Only delete if it matches our signal (avoid deleting a restart)
                 if (currentController && currentController.signal === signal) {
                     this._activeGenerations.delete(generatingForStudentId);
                 }
             }
 
             // Only update UI if we are truly done (no other generation took over)
-            // This prevents hiding spinner/resetting UI if user clicked "Générer" again (restart)
             if (!this._activeGenerations.has(generatingForStudentId)) {
+                const stillOnSameView =
+                    this.currentStudentId === generatingForStudentId &&
+                    appState.currentPeriod === generatingForPeriod &&
+                    appState.currentClassId === generatingForClassId;
 
-                // Only touch UI if still on the same student
-                if (this.currentStudentId === generatingForStudentId) {
-                    if (generateBtn) UI.hideInlineSpinner(generateBtn);
+                if (this.currentStudentId === generatingForStudentId && generateBtn) {
+                    UI?.hideInlineSpinner?.(generateBtn);
+                }
 
-                    // Reset Card UI to sync with model (e.g. if aborted)
-                    // This ensures badge and appreciation text are restored to valid state
-                    if (result) {
-                        FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-                        this._renderAppreciationText(result);
-                        this._updateGenerateButton(result);
-                    }
+                if (stillOnSameView && result) {
+                    FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+                    this._renderAppreciationText(result);
+                    this._updateGenerateButton(result);
                 }
 
                 // ALWAYS refresh list row to ensure table matches final state
                 this._updateListRow(result);
 
                 // ALWAYS refresh header dashboard counts (error badge, validated count, smart button)
-                // regardless of which student is currently viewed
-                UI.updateControlButtons();
+                UI?.updateControlButtons?.();
             }
         }
     },
@@ -2624,11 +2615,13 @@ export const FocusPanelManager = {
         const appreciationEl = document.getElementById('focusAppreciationText');
 
         if (this._isAppreciationEdited && appreciationEl && !isGeneratingForThisStudent) {
-            const content = appreciationEl.innerHTML;
-            const isSkeleton = content.includes('appreciation-skeleton');
-            const textContent = appreciationEl.textContent.trim();
+            const rawHtml = appreciationEl.innerHTML;
+            const isSkeleton = rawHtml.includes('appreciation-skeleton');
+            const normalizedText = (appreciationEl.innerText || appreciationEl.textContent || '')
+                .replace(/\u00A0/g, ' ')
+                .trim();
 
-            if (content && textContent !== '' && !isSkeleton) {
+            if (rawHtml && normalizedText !== '' && !isSkeleton) {
                 // PERIOD GUARD: Only save DOM content into the current period if it genuinely
                 // belongs to it. This prevents S1 appreciation (still in result.appreciation)
                 // from being written into periods['S2'] when the user merely opens/closes the panel.
@@ -2636,8 +2629,8 @@ export const FocusPanelManager = {
                 const resultBelongsToCurrentPeriod = result.generationPeriod === currentPeriod;
 
                 if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
-                    if (content !== this._initialAppreciationHtml) {
-                        result.appreciation = content;
+                    if (rawHtml !== this._initialAppreciationHtml) {
+                        result.appreciation = normalizedText;
                         result.copied = false;
                         result.errorMessage = null;
                         result.errorPeriod = null;
@@ -2647,13 +2640,13 @@ export const FocusPanelManager = {
                         if (!result.studentData.periods[currentPeriod]) {
                             result.studentData.periods[currentPeriod] = {};
                         }
-                        result.studentData.periods[currentPeriod].appreciation = content;
+                        result.studentData.periods[currentPeriod].appreciation = normalizedText;
                         result.isPending = false;
-                        this._initialAppreciationHtml = content;
+                        this._initialAppreciationHtml = rawHtml;
                         hasChanged = true;
                     }
                 }
-            } else if (textContent === '') {
+            } else if (normalizedText === '') {
                 // User explicitly cleared the appreciation
                 const existingAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation || '';
                 if (existingAppreciation !== '') {

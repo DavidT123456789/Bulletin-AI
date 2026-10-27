@@ -730,6 +730,33 @@ describe('ModalUIManager', () => {
             expect(ModalUI.isAnyModalOpen()).toBe(false);
         });
 
+        it('should trap Tab / Shift+Tab focus and support Escape on standalone dialogs (#trombiWizardModal, #importHubBackdrop, #focusPanel)', () => {
+            const hub = document.createElement('div');
+            hub.id = 'importHubBackdrop';
+            hub.className = 'active';
+            hub.innerHTML = '<button id="hubBtn1">Option 1</button><button id="hubBtn2">Option 2</button>';
+            document.body.appendChild(hub);
+
+            ModalUI.activateFocusTrap(hub);
+            const btn1 = document.getElementById('hubBtn1');
+            const btn2 = document.getElementById('hubBtn2');
+
+            btn2.focus();
+            expect(document.activeElement).toBe(btn2);
+
+            const tabForward = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            document.dispatchEvent(tabForward);
+            expect(document.activeElement).toBe(btn1);
+
+            const tabBackward = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+            document.dispatchEvent(tabBackward);
+            expect(document.activeElement).toBe(btn2);
+
+            const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            document.dispatchEvent(escEvent);
+            expect(hub.classList.contains('active')).toBe(false);
+        });
+
         it('should immediately move focus off background .main-content on openModal while preserving lastFocusedElement', () => {
             const mainContent = document.createElement('main');
             mainContent.className = 'main-content';

@@ -16,6 +16,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ModalUI } from './ModalUIManager.js';
 import { getSampleTrombiStudents } from '../data/SampleData.js';
 
 /**
@@ -118,10 +119,16 @@ export const TrombinoscopeManager = {
     },
 
     _setupEventListeners() {
+        if (this._initAbortController) {
+            this._initAbortController.abort();
+        }
+        this._initAbortController = new AbortController();
+        const { signal } = this._initAbortController;
+
         // Close buttons
-        document.getElementById('closeTrombiWizardBtn')?.addEventListener('click', () => this.close());
-        document.getElementById('trombiWizardBackdrop')?.addEventListener('click', () => this.close());
-        document.getElementById('trombiStep1CancelBtn')?.addEventListener('click', () => this.close());
+        document.getElementById('closeTrombiWizardBtn')?.addEventListener('click', () => this.close(), { signal });
+        document.getElementById('trombiWizardBackdrop')?.addEventListener('click', () => this.close(), { signal });
+        document.getElementById('trombiStep1CancelBtn')?.addEventListener('click', () => this.close(), { signal });
 
         // File input
         const dropZone = document.getElementById('trombiDropZone');
@@ -130,10 +137,10 @@ export const TrombinoscopeManager = {
         dropZone?.addEventListener('click', () => {
             if (dropZone.classList.contains('has-image')) return;
             fileInput?.click();
-        });
-        document.getElementById('trombiStep1PageSelectorBar')?.addEventListener('click', (e) => e.stopPropagation());
-        dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        }, { signal });
+        document.getElementById('trombiStep1PageSelectorBar')?.addEventListener('click', (e) => e.stopPropagation(), { signal });
+        dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); }, { signal });
+        dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragover'), { signal });
         dropZone?.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
@@ -141,31 +148,31 @@ export const TrombinoscopeManager = {
             if (file) {
                 this._loadFile(file);
             }
-        });
+        }, { signal });
 
         fileInput?.addEventListener('change', e => {
             const file = e.target.files?.[0];
             if (file) this._loadFile(file);
-        });
+        }, { signal });
 
         // Sample button
         document.getElementById('trombiSampleBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._loadImageFromUrl('/images/sample-trombinoscope.png');
-        });
+        }, { signal });
 
         // Remove image button (× in corner)
         document.getElementById('trombiRemoveImageBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._removeImage();
-        });
+        }, { signal });
 
         // Navigation buttons
-        document.getElementById('trombiStep1NextBtn')?.addEventListener('click', () => this._goToStep(2));
-        document.getElementById('trombiStep2PrevBtn')?.addEventListener('click', () => this._goToStep(1));
-        document.getElementById('trombiStep2NextBtn')?.addEventListener('click', () => this._goToStep(3));
-        document.getElementById('trombiStep3PrevBtn')?.addEventListener('click', () => this._goToStep(2));
-        document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._handleImport());
+        document.getElementById('trombiStep1NextBtn')?.addEventListener('click', () => this._goToStep(2), { signal });
+        document.getElementById('trombiStep2PrevBtn')?.addEventListener('click', () => this._goToStep(1), { signal });
+        document.getElementById('trombiStep2NextBtn')?.addEventListener('click', () => this._goToStep(3), { signal });
+        document.getElementById('trombiStep3PrevBtn')?.addEventListener('click', () => this._goToStep(2), { signal });
+        document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._handleImport(), { signal });
 
         // STEPPER NAVIGATION - Clickable steps
         document.querySelectorAll('#trombiWizardModal .ui-stepper-step[role="button"]').forEach(stepEl => {
@@ -180,13 +187,13 @@ export const TrombinoscopeManager = {
                         this._goToStep(3);
                     }
                 }
-            });
+            }, { signal });
             stepEl.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     stepEl.click();
                 }
-            });
+            }, { signal });
         });
 
         // Exclude students with photos toggle
@@ -194,7 +201,7 @@ export const TrombinoscopeManager = {
             this._userToggledExcludeFilter = true;
             this._closeStudentPopover();
             this._autoAssignSilent();
-        });
+        }, { signal });
 
         // Reassign in alphabetical order button
         document.getElementById('trombiAutoAssignBtn')?.addEventListener('click', (e) => {
@@ -202,21 +209,29 @@ export const TrombinoscopeManager = {
             if (e.currentTarget.classList.contains('disabled')) return;
             this._closeStudentPopover();
             this._autoAssignInOrder();
-        });
+        }, { signal });
+    },
+
+    _bindDocumentListeners() {
+        if (this._documentListenersAbortController) {
+            this._documentListenersAbortController.abort();
+        }
+        this._documentListenersAbortController = new AbortController();
+        const { signal } = this._documentListenersAbortController;
 
         // Global mouse events for drag/resize
-        document.addEventListener('mousemove', e => this._handleMouseMove(e));
-        document.addEventListener('mouseup', () => this._handleMouseUp());
+        document.addEventListener('mousemove', e => this._handleMouseMove(e), { signal });
+        document.addEventListener('mouseup', () => this._handleMouseUp(), { signal });
 
-        // Keyboard navigation for gap sliders and zone positioning
-        document.addEventListener('keydown', e => this._handleKeyDown(e));
+        // Keyboard navigation for gap sliders, zone positioning and Escape
+        document.addEventListener('keydown', e => this._handleKeyDown(e), { signal });
 
         // Global paste event for image
         document.addEventListener('paste', e => {
             const modal = document.getElementById('trombiWizardModal');
             if (!modal || !modal.classList.contains('visible') || this._currentStep !== 1) return;
 
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items || [];
             for (const item of items) {
                 if (item.type.indexOf('image') !== -1) {
                     const file = item.getAsFile();
@@ -224,7 +239,14 @@ export const TrombinoscopeManager = {
                     break;
                 }
             }
-        });
+        }, { signal });
+    },
+
+    _unbindDocumentListeners() {
+        if (this._documentListenersAbortController) {
+            this._documentListenersAbortController.abort();
+            this._documentListenersAbortController = null;
+        }
     },
 
     // ========================================================================
@@ -237,6 +259,7 @@ export const TrombinoscopeManager = {
             this._closeTimer = null;
         }
         this._reset();
+        this._bindDocumentListeners();
         const modal = document.getElementById('trombiWizardModal');
         if (modal) {
             this._lastFocusedElement = document.activeElement;
@@ -248,6 +271,7 @@ export const TrombinoscopeManager = {
             if (!modal.contains(document.activeElement)) {
                 modal.focus?.({ preventScroll: true });
             }
+            ModalUI.activateFocusTrap?.(modal);
         }
 
         // Update class badge in header
@@ -261,6 +285,9 @@ export const TrombinoscopeManager = {
     close() {
         const modal = document.getElementById('trombiWizardModal');
         if (!modal || !modal.classList.contains('visible')) return;
+
+        ModalUI.deactivateFocusTrap?.(modal);
+        this._unbindDocumentListeners();
 
         // Add closing animation
         modal.classList.add('closing');
@@ -336,6 +363,20 @@ export const TrombinoscopeManager = {
             this._wheelZoomHost.removeEventListener('wheel', this._wheelZoomHandler);
             this._wheelZoomHost = null;
             this._wheelZoomHandler = null;
+        }
+        if (this._step2AbortController) {
+            this._step2AbortController.abort();
+            this._step2AbortController = null;
+        }
+        if (this._controlPanelAbortController) {
+            this._controlPanelAbortController.abort();
+            this._controlPanelAbortController = null;
+        }
+        if (this._objectUrls) {
+            this._objectUrls.forEach(url => {
+                try { URL.revokeObjectURL?.(url); } catch (_) { /* ignore */ }
+            });
+            this._objectUrls.clear();
         }
 
         if (typeof document === 'undefined') return;
@@ -974,6 +1015,57 @@ export const TrombinoscopeManager = {
         reader.readAsDataURL(file);
     },
 
+    async _canvasToImageUrl(canvas, quality = 0.9) {
+        if (!canvas) return '';
+        const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
+        const hasNativeOrMockToBlob = typeof canvas.toBlob === 'function' &&
+            (!isJsdom || Object.prototype.hasOwnProperty.call(canvas, 'toBlob'));
+
+        if (hasNativeOrMockToBlob && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+            const blob = await new Promise(resolve => {
+                try {
+                    canvas.toBlob(resolve, 'image/jpeg', quality);
+                } catch (_) {
+                    resolve(null);
+                }
+            });
+            if (blob) {
+                const objectUrl = URL.createObjectURL(blob);
+                if (!this._objectUrls) this._objectUrls = new Set();
+                this._objectUrls.add(objectUrl);
+                return objectUrl;
+            }
+        }
+        return typeof canvas.toDataURL === 'function' ? canvas.toDataURL('image/jpeg', quality) : '';
+    },
+
+    async _canvasToDataUrlAsync(canvas, quality = 0.85) {
+        if (!canvas) return '';
+        const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
+        const hasNativeOrMockToBlob = typeof canvas.toBlob === 'function' &&
+            (!isJsdom || Object.prototype.hasOwnProperty.call(canvas, 'toBlob'));
+
+        if (hasNativeOrMockToBlob && typeof FileReader !== 'undefined') {
+            const blob = await new Promise(resolve => {
+                try {
+                    canvas.toBlob(resolve, 'image/jpeg', quality);
+                } catch (_) {
+                    resolve(null);
+                }
+            });
+            if (blob) {
+                const dataUrl = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+                    reader.onerror = () => resolve('');
+                    reader.readAsDataURL(blob);
+                });
+                if (dataUrl) return dataUrl;
+            }
+        }
+        return typeof canvas.toDataURL === 'function' ? canvas.toDataURL('image/jpeg', quality) : '';
+    },
+
     async _loadPdf(file) {
         const footerInfo = document.getElementById('trombiImageInfo');
         if (footerInfo) {
@@ -1014,7 +1106,8 @@ export const TrombinoscopeManager = {
 
             this._parsedPdfData = parsed;
             this._updateExistingPhotos = null;
-            this._imageSrc = firstPage.canvas.toDataURL('image/jpeg', 0.9);
+            firstPage.imageUrl = firstPage.imageUrl || await this._canvasToImageUrl(firstPage.canvas, 0.9);
+            this._imageSrc = firstPage.imageUrl;
             this._imageNaturalWidth = firstPage.width;
             this._imageNaturalHeight = firstPage.height;
             this._isNewUpload = true;
@@ -1114,7 +1207,10 @@ export const TrombinoscopeManager = {
         const isNext = pageIndex > this._currentPageIndex;
         this._currentPageIndex = pageIndex;
         const page = this._parsedPdfData.pages[pageIndex];
-        this._imageSrc = page.canvas.toDataURL('image/jpeg', 0.9);
+        if (!page.imageUrl && page.canvas) {
+            page.imageUrl = typeof page.canvas.toDataURL === 'function' ? page.canvas.toDataURL('image/jpeg', 0.9) : '';
+        }
+        this._imageSrc = page.imageUrl || '';
         this._imageNaturalWidth = page.width;
         this._imageNaturalHeight = page.height;
 
@@ -1525,6 +1621,12 @@ export const TrombinoscopeManager = {
         const imagePanel = document.getElementById('trombiImageWithZones');
         if (!imagePanel) return;
 
+        if (this._step2AbortController) {
+            this._step2AbortController.abort();
+        }
+        this._step2AbortController = new AbortController();
+        const { signal: step2Signal } = this._step2AbortController;
+
         // Invalidate cached preview image
         this._cachedImage = null;
 
@@ -1574,7 +1676,7 @@ export const TrombinoscopeManager = {
                         if (targetIdx !== this._currentPageIndex) {
                             this._switchPdfPage(targetIdx);
                         }
-                    });
+                    }, { signal: step2Signal });
                 });
             } else {
                 pageBar.style.display = 'none';
@@ -1625,19 +1727,19 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiZoomInBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._zoomIn();
-        });
+        }, { signal: step2Signal });
         document.getElementById('trombiZoomOutBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._zoomOut();
-        });
+        }, { signal: step2Signal });
         document.getElementById('trombiZoomResetBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._zoomReset();
-        });
+        }, { signal: step2Signal });
         document.getElementById('trombiZoomFitBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._zoomToggleFit();
-        });
+        }, { signal: step2Signal });
 
         const img = document.getElementById('trombiStep2Image');
         const handleImageReady = () => {
@@ -1707,7 +1809,7 @@ export const TrombinoscopeManager = {
                 focalPoint: { clientX: e.clientX, clientY: e.clientY }
             });
         };
-        zoomHost?.addEventListener('wheel', this._wheelZoomHandler, { passive: false });
+        zoomHost?.addEventListener('wheel', this._wheelZoomHandler, { passive: false, signal: step2Signal });
 
         let touchPinchStartDist = 0;
         let touchPinchStartZoom = 1.0;
@@ -1720,7 +1822,7 @@ export const TrombinoscopeManager = {
                 touchPinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
                 touchPinchStartZoom = this._zoomLevel;
             }
-        }, { passive: false });
+        }, { passive: false, signal: step2Signal });
 
         viewport?.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2 && touchPinchStartDist > 10) {
@@ -1734,15 +1836,15 @@ export const TrombinoscopeManager = {
                     focalPoint: { clientX: midX, clientY: midY }
                 });
             }
-        }, { passive: false });
+        }, { passive: false, signal: step2Signal });
 
         const resetTouchPinch = (e) => {
             if (!e.touches || e.touches.length < 2) {
                 touchPinchStartDist = 0;
             }
         };
-        viewport?.addEventListener('touchend', resetTouchPinch, { passive: true });
-        viewport?.addEventListener('touchcancel', resetTouchPinch, { passive: true });
+        viewport?.addEventListener('touchend', resetTouchPinch, { passive: true, signal: step2Signal });
+        viewport?.addEventListener('touchcancel', resetTouchPinch, { passive: true, signal: step2Signal });
 
         viewport?.addEventListener('mousedown', e => {
             // Start selection box only if clicking background viewport or overlay (not a zone)
@@ -1756,7 +1858,7 @@ export const TrombinoscopeManager = {
                 };
                 this._selectionBoxDragActive = false;
             }
-        });
+        }, { signal: step2Signal });
 
         overlay?.addEventListener('click', e => {
             if (e.target === overlay) {
@@ -1765,7 +1867,7 @@ export const TrombinoscopeManager = {
                 }
                 this._addZoneAtClick(e);
             }
-        });
+        }, { signal: step2Signal });
 
         // Render student assignment grid
         this._renderAssignmentGrid();
@@ -1787,7 +1889,10 @@ export const TrombinoscopeManager = {
         const page = this._parsedPdfData.pages[pageIndex];
 
         this._cachedImage = null; // Invalidate cached preview image for new page
-        this._imageSrc = page.canvas.toDataURL('image/jpeg', 0.9);
+        if (!page.imageUrl && page.canvas) {
+            page.imageUrl = typeof page.canvas.toDataURL === 'function' ? page.canvas.toDataURL('image/jpeg', 0.9) : '';
+        }
+        this._imageSrc = page.imageUrl || '';
         this._imageNaturalWidth = page.width;
         this._imageNaturalHeight = page.height;
 
@@ -1825,8 +1930,17 @@ export const TrombinoscopeManager = {
     },
 
     _setupControlPanel() {
+        if (this._controlPanelAbortController) {
+            this._controlPanelAbortController.abort();
+        }
+        this._controlPanelAbortController = new AbortController();
+        const { signal } = this._controlPanelAbortController;
+
         const container = document.querySelector('.trombi-image-panel');
-        if (!container || container.querySelector('.grid-control-panel')) return;
+        const hasExistingControls = Boolean(
+            container?.querySelector('.grid-control-panel') || document.getElementById('toggleGridToolsBtn')
+        );
+        if (!container && !hasExistingControls) return;
 
         const isPdf = !!this._parsedPdfData;
         const hasDetectedStudents = Boolean(this._parsedPdfData?.students?.length > 0);
@@ -1848,101 +1962,103 @@ export const TrombinoscopeManager = {
         const isAdvancedOpen = !hasDetectedStudents;
         const resetLabel = hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille';
 
-        const gridControlsHtml = `
-            <div class="grid-advanced-controls ${isAdvancedOpen ? 'is-open' : ''}" id="gridAdvancedControls">
-                <div class="grid-advanced-controls-inner">
-                    <div class="control-row-group">
-                        <div class="control-row">
-                            <label for="colsSlider">Colonnes</label>
-                            <div class="slider-group">
-                                <div class="slider-track">
-                                    <input type="range" class="control-slider" id="colsSlider" 
-                                           min="1" max="12" value="${this._gridCols}">
+        if (!hasExistingControls && container) {
+            const gridControlsHtml = `
+                <div class="grid-advanced-controls ${isAdvancedOpen ? 'is-open' : ''}" id="gridAdvancedControls">
+                    <div class="grid-advanced-controls-inner">
+                        <div class="control-row-group">
+                            <div class="control-row">
+                                <label for="colsSlider">Colonnes</label>
+                                <div class="slider-group">
+                                    <div class="slider-track">
+                                        <input type="range" class="control-slider" id="colsSlider" 
+                                               min="1" max="12" value="${this._gridCols}">
+                                    </div>
+                                    <span class="slider-value" id="colsValue">${this._gridCols}</span>
                                 </div>
-                                <span class="slider-value" id="colsValue">${this._gridCols}</span>
+                            </div>
+                            <div class="control-row">
+                                <label for="rowsSlider">Lignes</label>
+                                <div class="slider-group">
+                                    <div class="slider-track">
+                                        <input type="range" class="control-slider" id="rowsSlider" 
+                                               min="1" max="12" value="${this._gridRows}">
+                                    </div>
+                                    <span class="slider-value" id="rowsValue">${this._gridRows}</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="control-row">
-                            <label for="rowsSlider">Lignes</label>
-                            <div class="slider-group">
-                                <div class="slider-track">
-                                    <input type="range" class="control-slider" id="rowsSlider" 
-                                           min="1" max="12" value="${this._gridRows}">
+                        <div class="control-row-group">
+                            <div class="control-row">
+                                <label for="gapHSlider">Écart H</label>
+                                <div class="slider-group">
+                                    <div class="slider-track">
+                                        <input type="range" class="control-slider" id="gapHSlider" 
+                                               min="-50" max="50" step="0.5" value="0">
+                                    </div>
+                                    <span class="slider-value" id="gapHValue">0</span>
                                 </div>
-                                <span class="slider-value" id="rowsValue">${this._gridRows}</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="control-row-group">
-                        <div class="control-row">
-                            <label for="gapHSlider">Écart H</label>
-                            <div class="slider-group">
-                                <div class="slider-track">
-                                    <input type="range" class="control-slider" id="gapHSlider" 
-                                           min="-50" max="50" step="0.5" value="0">
+                            <div class="control-row">
+                                <label for="gapVSlider">Écart V</label>
+                                <div class="slider-group">
+                                    <div class="slider-track">
+                                        <input type="range" class="control-slider" id="gapVSlider" 
+                                               min="-50" max="50" step="0.5" value="0">
+                                    </div>
+                                    <span class="slider-value" id="gapVValue">0</span>
                                 </div>
-                                <span class="slider-value" id="gapHValue">0</span>
-                            </div>
-                        </div>
-                        <div class="control-row">
-                            <label for="gapVSlider">Écart V</label>
-                            <div class="slider-group">
-                                <div class="slider-track">
-                                    <input type="range" class="control-slider" id="gapVSlider" 
-                                           min="-50" max="50" step="0.5" value="0">
-                                </div>
-                                <span class="slider-value" id="gapVValue">0</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        const panelHtml = `
-            <div class="grid-control-panel">
-                ${gridControlsHtml}
-                <div class="grid-main-controls" role="toolbar" aria-label="Outils d'ajustement de la grille">
-                    <div class="control-row control-row-size">
-                        <label for="sizeSlider">Taille</label>
-                        <div class="slider-group">
-                            <div class="slider-track">
-                                <input type="range" class="control-slider" id="sizeSlider" 
-                                       min="5" max="100" value="60">
+            const panelHtml = `
+                <div class="grid-control-panel">
+                    ${gridControlsHtml}
+                    <div class="grid-main-controls" role="toolbar" aria-label="Outils d'ajustement de la grille">
+                        <div class="control-row control-row-size">
+                            <label for="sizeSlider">Taille</label>
+                            <div class="slider-group">
+                                <div class="slider-track">
+                                    <input type="range" class="control-slider" id="sizeSlider" 
+                                           min="5" max="100" value="60">
+                                </div>
+                                <span class="slider-value" id="sizeValue">60%</span>
                             </div>
-                            <span class="slider-value" id="sizeValue">60%</span>
+                        </div>
+                        <span class="grid-toolbar-divider" aria-hidden="true"></span>
+                        <div class="grid-toolbar-center">
+                            <label class="sync-toggle-label" for="groupedDragToggle">
+                                <span class="toggle-text">Groupé</span>
+                                <span class="toggle-switch small">
+                                    <input type="checkbox" id="groupedDragToggle" checked>
+                                    <span class="slider"></span>
+                                </span>
+                            </label>
+                            <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" aria-expanded="${isAdvancedOpen}" data-tooltip="Afficher ou masquer les réglages avancés de grille et d'espacement">
+                                <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon>
+                                <span>Grille</span>
+                                <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
+                            </button>
+                        </div>
+                        <div class="grid-control-actions">
+                            <button type="button" class="grid-reset-btn" id="trombiUndoBtn" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler (Ctrl+Z)" disabled>
+                                <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
+                            </button>
+                            <button type="button" class="grid-reset-btn" id="trombiRedoBtn" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir (Ctrl+Y)" disabled>
+                                <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
+                            </button>
+                            <button type="button" class="grid-reset-btn" id="gridResetBtn" aria-label="${resetLabel}" data-tooltip="${resetLabel}">
+                                <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                            </button>
                         </div>
                     </div>
-                    <span class="grid-toolbar-divider" aria-hidden="true"></span>
-                    <div class="grid-toolbar-center">
-                        <label class="sync-toggle-label" for="groupedDragToggle">
-                            <span class="toggle-text">Groupé</span>
-                            <span class="toggle-switch small">
-                                <input type="checkbox" id="groupedDragToggle" checked>
-                                <span class="slider"></span>
-                            </span>
-                        </label>
-                        <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" aria-expanded="${isAdvancedOpen}" data-tooltip="Afficher ou masquer les réglages avancés de grille et d'espacement">
-                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon>
-                            <span>Grille</span>
-                            <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
-                        </button>
-                    </div>
-                    <div class="grid-control-actions">
-                        <button type="button" class="grid-reset-btn" id="trombiUndoBtn" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler (Ctrl+Z)" disabled>
-                            <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
-                        </button>
-                        <button type="button" class="grid-reset-btn" id="trombiRedoBtn" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir (Ctrl+Y)" disabled>
-                            <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
-                        </button>
-                        <button type="button" class="grid-reset-btn" id="gridResetBtn" aria-label="${resetLabel}" data-tooltip="${resetLabel}">
-                            <iconify-icon icon="solar:restart-linear"></iconify-icon>
-                        </button>
-                    </div>
                 </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', panelHtml);
+            `;
+            container.insertAdjacentHTML('beforeend', panelHtml);
+        }
 
         // Bind slider events - instant grid update
         const colsSlider = document.getElementById('colsSlider');
@@ -1959,61 +2075,61 @@ export const TrombinoscopeManager = {
 
         colsSlider?.addEventListener('input', e => {
             this._gridCols = parseInt(e.target.value);
-            colsValue.textContent = this._gridCols;
+            if (colsValue) colsValue.textContent = this._gridCols;
             this._createGridSilent(this._gridCols, this._gridRows);
-        });
+        }, { signal });
 
         rowsSlider?.addEventListener('input', e => {
             this._gridRows = parseInt(e.target.value);
-            rowsValue.textContent = this._gridRows;
+            if (rowsValue) rowsValue.textContent = this._gridRows;
             this._createGridSilent(this._gridCols, this._gridRows);
-        });
+        }, { signal });
 
         sizeSlider?.addEventListener('input', e => {
             const percent = parseInt(e.target.value);
-            sizeValue.textContent = percent + '%';
+            if (sizeValue) sizeValue.textContent = percent + '%';
             this._updateSizeFromPercent(percent);
-        });
+        }, { signal });
 
         // Track focus on size slider for keyboard navigation
         sizeSlider?.addEventListener('focus', () => {
             this._lastFocusedControl = 'size';
-        });
+        }, { signal });
         sizeSlider?.addEventListener('mousedown', () => {
             this._lastFocusedControl = 'size';
-        });
+        }, { signal });
 
         gapHSlider?.addEventListener('input', e => {
             this._gapH = parseFloat(e.target.value);
-            gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
+            if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
             this._applyGaps();
-        });
+        }, { signal });
 
         gapVSlider?.addEventListener('input', e => {
             this._gapV = parseFloat(e.target.value);
-            gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
+            if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
             this._applyGaps();
-        });
+        }, { signal });
 
         // Track focus on gap sliders for keyboard navigation
         gapHSlider?.addEventListener('focus', () => {
             this._lastFocusedControl = 'gaps';
-        });
+        }, { signal });
         gapVSlider?.addEventListener('focus', () => {
             this._lastFocusedControl = 'gaps';
-        });
+        }, { signal });
         // Also track mousedown for touch-like interactions
         gapHSlider?.addEventListener('mousedown', () => {
             this._lastFocusedControl = 'gaps';
-        });
+        }, { signal });
         gapVSlider?.addEventListener('mousedown', () => {
             this._lastFocusedControl = 'gaps';
-        });
+        }, { signal });
 
         groupedToggle?.addEventListener('change', e => {
             this._groupedDrag = e.target.checked;
             this._restoreGroupedDrag = false;
-        });
+        }, { signal });
 
         const toggleBtn = document.getElementById('toggleGridToolsBtn');
         const advancedDrawer = document.getElementById('gridAdvancedControls');
@@ -2036,7 +2152,7 @@ export const TrombinoscopeManager = {
             if (rBefore && rBefore.width > 0) {
                 this._animateSheetFLIP(rBefore);
             }
-        });
+        }, { signal });
 
         // Bind Undo slider drag listeners
         const bindSliderUndo = (slider) => {
@@ -2044,8 +2160,8 @@ export const TrombinoscopeManager = {
             const handleStart = () => {
                 this._tempSliderSnapshot = this._getCurrentStateSnapshot();
             };
-            slider.addEventListener('mousedown', handleStart);
-            slider.addEventListener('touchstart', handleStart);
+            slider.addEventListener('mousedown', handleStart, { signal });
+            slider.addEventListener('touchstart', handleStart, { signal });
             slider.addEventListener('change', () => {
                 if (this._tempSliderSnapshot) {
                     const hasChanged = this._gridCols !== this._tempSliderSnapshot.gridCols ||
@@ -2058,7 +2174,7 @@ export const TrombinoscopeManager = {
                     }
                     this._tempSliderSnapshot = null;
                 }
-            });
+            }, { signal });
         };
 
         bindSliderUndo(colsSlider);
@@ -2069,11 +2185,11 @@ export const TrombinoscopeManager = {
 
         document.getElementById('trombiUndoBtn')?.addEventListener('click', () => {
             this._undo();
-        });
+        }, { signal });
 
         document.getElementById('trombiRedoBtn')?.addEventListener('click', () => {
             this._redo();
-        });
+        }, { signal });
 
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
             this._saveState();
@@ -2093,8 +2209,8 @@ export const TrombinoscopeManager = {
                 }
                 this._gapH = 0;
                 this._gapV = 0;
-                if (gapHSlider) { gapHSlider.value = 0; gapHValue.textContent = '0'; }
-                if (gapVSlider) { gapVSlider.value = 0; gapVValue.textContent = '0'; }
+                if (gapHSlider) { gapHSlider.value = 0; if (gapHValue) gapHValue.textContent = '0'; }
+                if (gapVSlider) { gapVSlider.value = 0; if (gapVValue) gapVValue.textContent = '0'; }
                 this._renderZones();
                 this._renderAssignmentGrid();
                 this._updateSizeSliderValue();
@@ -2103,7 +2219,7 @@ export const TrombinoscopeManager = {
 
             this._zones = [];
             this._createDefaultGrid();
-        });
+        }, { signal });
 
         // Only create initial grid if we don't have any zones yet and no PDF data
         if (this._zones.length === 0 && !this._parsedPdfData) {
@@ -3266,6 +3382,16 @@ export const TrombinoscopeManager = {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
                 return;
             }
+        }
+
+        // Close modal on Escape when no overlay confirmation modal is open
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('trombiWizardModal');
+            if (modal?.classList.contains('visible') && !ModalUI.activeModal) {
+                e.preventDefault();
+                this.close();
+            }
+            return;
         }
 
         // Handle Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Y / Ctrl+Shift+Z (Redo)
@@ -4622,10 +4748,10 @@ export const TrombinoscopeManager = {
                     const sh = Math.min(diameter, page.height - sy);
 
                     let photoData;
-                    if (ctx && typeof canvas.toDataURL === 'function') {
+                    if (ctx && (typeof canvas.toDataURL === 'function' || typeof canvas.toBlob === 'function')) {
                         ctx.clearRect(0, 0, targetSize, targetSize);
                         ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
-                        photoData = canvas.toDataURL('image/jpeg', 0.85);
+                        photoData = await this._canvasToDataUrlAsync(canvas, 0.85);
                     } else {
                         const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === item.originalStudentId);
                         photoData = matchedPdfStudent?.photoData || 'data:image/jpeg;base64,mock';
@@ -4671,10 +4797,10 @@ export const TrombinoscopeManager = {
                     const sh = Math.min(diameter, this._imageNaturalHeight - sy);
 
                     let photoData;
-                    if (ctx && typeof canvas.toDataURL === 'function') {
+                    if (ctx && (typeof canvas.toDataURL === 'function' || typeof canvas.toBlob === 'function')) {
                         ctx.clearRect(0, 0, targetSize, targetSize);
                         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
-                        photoData = canvas.toDataURL('image/jpeg', 0.85);
+                        photoData = await this._canvasToDataUrlAsync(canvas, 0.85);
                     } else {
                         photoData = 'data:image/jpeg;base64,mock';
                     }

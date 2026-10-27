@@ -430,6 +430,9 @@ export const ListSelectionManager = {
     async bulkRegenerate(ids) {
         const { FocusPanelManager } = await import('../FocusPanelManager.js').catch(() => ({ FocusPanelManager: null }));
 
+        const batchClassId = appState.currentClassId;
+        const batchPeriod = appState.currentPeriod;
+
         // 1. Initialize AbortController for global cancellation (Cancel button in header)
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();
@@ -463,8 +466,10 @@ export const ListSelectionManager = {
             UI.showHeaderProgress(i + 1, total, studentName);
 
             // Set current row status to "Generating" and sync focus panel if open
-            this.callbacks.setRowStatus(id, 'generating');
-            FocusPanelManager?.handleExternalGenerationStart?.(id);
+            if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                this.callbacks.setRowStatus(id, 'generating');
+                FocusPanelManager?.handleExternalGenerationStart?.(id);
+            }
 
             try {
                 // Reset history for regeneration (fresh start)
@@ -474,11 +479,15 @@ export const ListSelectionManager = {
                 // Prepare Data
                 const updatedStudentData = { ...originalResult.studentData };
                 updatedStudentData.id = id;
+                updatedStudentData.classId = originalResult.classId ?? batchClassId;
+                updatedStudentData.currentPeriod = batchPeriod;
                 updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                 updatedStudentData.currentAIModel = appState.currentAIModel;
 
                 // Call AI Service directly (passing signal for cancellation)
                 const newResult = await AppreciationsManager.generateAppreciation(updatedStudentData, false, null, signal, 'single-student');
+                newResult.classId = originalResult.classId ?? batchClassId;
+                newResult.generationPeriod = batchPeriod;
 
                 // Update State (promptHash auto-computed by updateResult)
                 const updatedResult = StudentDataManager.updateResult(
@@ -492,9 +501,11 @@ export const ListSelectionManager = {
                     appState.filteredResults[filteredIndex] = updatedResult;
                 }
 
-                // Update UI Row and Focus Panel
-                this.callbacks.updateStudentRow(id);
-                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+                // Update UI Row and Focus Panel only if still on the same class/period
+                if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                    this.callbacks.updateStudentRow(id);
+                    await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+                }
                 successCount++;
 
             } catch (e) {
@@ -512,11 +523,12 @@ export const ListSelectionManager = {
                     originalResult.prenom,
                     originalResult.appreciation || '', // Keep existing if any
                     originalResult.evolutions,
-                    originalResult.studentData,
+                    { ...originalResult.studentData, currentPeriod: batchPeriod },
                     originalResult.studentData.prompts || {},
                     originalResult.tokenUsage || {},
                     `Erreur IA : ${msg}.`
                 );
+                errorResult.classId = originalResult.classId ?? batchClassId;
 
                 const updatedErrorResult = StudentDataManager.updateResult(appState.generatedResults[resultIndex], errorResult);
 
@@ -526,8 +538,10 @@ export const ListSelectionManager = {
                     appState.filteredResults[filteredIndex] = updatedErrorResult;
                 }
 
-                this.callbacks.updateStudentRow(id);
-                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedErrorResult, false);
+                if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                    this.callbacks.updateStudentRow(id);
+                    await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedErrorResult, false);
+                }
             }
         }
 

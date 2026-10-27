@@ -46,19 +46,6 @@ vi.mock('../utils/Utils.js', async (importOriginal) => ({
     }
 }));
 
-vi.mock('../utils/RateLimiter.js', () => ({
-    RateLimiter: {
-        estimateTime: vi.fn(() => ({ totalMinutes: '2', delayMs: 1000 })),
-        getWaitTime: vi.fn(() => 0),
-        waitIfNeeded: vi.fn(() => Promise.resolve()),
-        markSuccess: vi.fn(),
-        markError429: vi.fn(),
-        extractRetryAfter: vi.fn(() => null),
-        formatTime: vi.fn((ms) => `${ms / 1000}s`),
-        sleep: vi.fn(() => Promise.resolve())
-    }
-}));
-
 // Mock managers
 const mockAm = {
     generateAppreciation: vi.fn(),
@@ -299,8 +286,7 @@ describe('MassImportManager', () => {
     });
 
     describe('T-07 — Concurrence lors d\'un changement de classe/période en plein lot (Bug C-01)', () => {
-        // TODO(Lot 5): Retirer .fails une fois le bug corrigé
-        it.fails('T-07 (Bug C-01) : processMassImport conserve le contexte de classe et de période initial si l\'utilisateur change de classe (6e-A -> 3e-B) et de période (T1 -> T2) pendant le lot', async () => {
+        it('T-07 (Bug C-01) : processMassImport conserve le contexte de classe et de période initial si l\'utilisateur change de classe (6e-A -> 3e-B) et de période (T1 -> T2) pendant le lot', async () => {
             appState.currentClassId = '6e-A';
             appState.currentPeriod = 'T1';
             appState.generatedResults = [
