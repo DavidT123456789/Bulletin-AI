@@ -2211,7 +2211,12 @@
    ==================================================================== */
 .modal-content-restore,
 .modal-content-save {
-    max-width: 500px;
+    max-width: 540px;
+}
+
+.modal-content-restore .modal-alert-actions,
+.modal-content-save .modal-alert-actions {
+    margin-top: 0;
 }
 
 .modal-alert-header-icon {
@@ -2261,7 +2266,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin: 16px 0 14px;
+    margin: 4px 0;
 }
 
 @media (max-width: 520px) {
@@ -2310,8 +2315,7 @@
     font-size: 0.9em;
 }
 
-.restore-comparison-card.cloud .restore-card-badge,
-.save-summary-card .restore-card-badge {
+.restore-comparison-card.cloud .restore-card-badge {
     background: var(--primary-color);
     color: white;
 }
@@ -2349,16 +2353,6 @@
     margin-top: 2px;
 }
 
-.restore-card-date {
-    font-size: 0.78rem;
-    color: var(--text-tertiary, var(--text-secondary));
-    margin-top: auto;
-    padding-top: 6px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
 .restore-safety-notice {
     display: flex;
     align-items: flex-start;
@@ -2383,14 +2377,22 @@
     color: var(--text-primary);
 }
 
+.restore-safety-notice.in-sync {
+    align-items: center;
+}
+
+.restore-safety-notice.in-sync iconify-icon {
+    margin-top: 0;
+}
+
 .restore-safety-notice.warning {
-    border-color: rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+    background: rgba(245, 158, 11, 0.05);
 }
 
 [data-theme="dark"] .restore-safety-notice.warning {
-    border-color: rgba(245, 158, 11, 0.45);
-    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.28);
+    background: rgba(245, 158, 11, 0.06);
 }
 
 .restore-safety-notice.warning iconify-icon {
@@ -2435,6 +2437,10 @@
     flex-shrink: 0;
 }
 
+.restore-impact-box:not(.warning) .restore-impact-header iconify-icon {
+    color: var(--text-secondary);
+}
+
 .restore-impact-list {
     margin: 0;
     padding: 0 0 0 22px;
@@ -2477,36 +2483,6 @@
     font-size: 0.92rem;
     color: var(--success-color, #10b981);
     flex-shrink: 0;
-}
-
-.save-summary-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px 18px;
-    border-radius: var(--radius-md, 14px);
-    border: 1.5px solid rgba(var(--primary-color-rgb, 59, 130, 246), 0.35);
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.04);
-    margin: 16px 0 14px;
-    transition: all var(--transition-fast);
-}
-
-[data-theme="dark"] .save-summary-card {
-    border-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.45);
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.08);
-}
-
-.save-summary-header {
-    display: flex;
-    align-items: center;
-}
-
-.save-summary-card .restore-card-date iconify-icon {
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .save-summary-card .restore-card-date iconify-icon {
-    color: var(--primary-bright);
 }
 
 .pre-restore-snapshot-row {

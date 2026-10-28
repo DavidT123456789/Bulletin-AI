@@ -8,10 +8,10 @@
     width: var(--sc-cell-w, 88px);
     height: var(--sc-cell-h, 96px);
     border: 1.5px dashed var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--sc-cell-radius, var(--radius-md));
     background: var(--bg-secondary);
-    transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease-spring),
-                box-shadow 0.2s;
+    transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease,
+                transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
     cursor: default;
 }
 
@@ -216,7 +216,7 @@
     justify-content: center !important;
     width: var(--sc-cell-w, 88px) !important;
     height: var(--sc-cell-h, 96px) !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--sc-cell-radius, var(--radius-md)) !important;
     background: var(--surface-color) !important;
     box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
     opacity: 1 !important;
@@ -253,7 +253,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-flight-token {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 1.5px var(--highlight-standard-border) !important;
     background: var(--surface-color) !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--sc-cell-radius, var(--radius-md)) !important;
     will-change: transform, opacity;
 }
 
@@ -594,9 +594,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
-    --sc-sidebar-vis-delay: 0.52s;
+    --sc-sidebar-vis-delay: 0.48s;
     translate: -100% 0;
-    opacity: 0;
     visibility: hidden;
     box-shadow: none;
     border-right-color: transparent;
@@ -848,7 +847,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     opacity: 0;
     transition: opacity 0.2s var(--ease-material);
     background: rgba(var(--surface-color-rgb), 0.6);
-    border-radius: var(--radius-md);
+    border-radius: var(--sc-cell-radius, var(--radius-md));
     z-index: 5;
     pointer-events: none; /* Active only on hover */
 }
@@ -1766,8 +1765,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     /* ── Classroom Board: unified responsive card on mobile/tablet ── */
     .sc-classroom-board {
-        padding: 12px 14px;
-        border-radius: var(--radius-xl);
+        padding: var(--sc-board-padding, 10px);
+        border-radius: calc(var(--sc-cell-radius, 12px) + var(--sc-board-padding, 10px) + var(--sc-grid-padding, 4px));
         border: 1px solid var(--border-color);
         background: var(--bg-secondary);
         box-shadow: var(--shadow-sm);
@@ -2030,6 +2029,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     :root {
         --sc-cell-w: 62px;
         --sc-cell-h: 70px;
+        --sc-cell-radius: 12px;
+        --sc-board-padding: 10px;
     }
 
     .sc-grid-container {
@@ -2040,7 +2041,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-cell-special-tools,
     .sc-drag-clone,
     .sc-touch-ghost {
-        border-radius: 11.5px !important;
+        border-radius: var(--sc-cell-radius, 12px) !important;
     }
 
     .sc-cell:not(.sc-cell-stacked) .student-avatar,
@@ -2510,6 +2511,12 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* ────────── REDUCE MOTION ────────── */
 @media (prefers-reduced-motion: reduce) {
+    :root,
+    #seatingChartView,
+    #seatingChartView[data-locked="true"] .sc-sidebar {
+        --sc-drawer-transition: 0.01ms linear;
+        --sc-sidebar-vis-delay: 0s;
+    }
     .sc-cell,
     .sc-cell.sc-cell-stagger,
     .sc-cell.sc-cell-placed,

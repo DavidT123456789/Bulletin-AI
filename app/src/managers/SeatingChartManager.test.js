@@ -1507,7 +1507,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // _animateFLIPTransition applique d'abord scale(1.25, 1.25) puis déclenche la transition vers scale(1, 1)
             SeatingChartManager._animateFLIPTransition(rBefore, { lockToggle: true });
             expect(board.style.transformOrigin).toBe('50% 50%');
-            expect(board.style.transition).toContain('transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)');
+            expect(board.style.transition).toContain('transform var(--sc-drawer-transition)');
 
             spy.mockRestore();
         });
@@ -3620,13 +3620,39 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._isLocked).toBe(false);
             expect(sidebar.inert).toBe(false);
             expect(board.classList.contains('sc-lock-sliding')).toBe(true);
-            expect(board.style.transition).toContain('transform 0.52s cubic-bezier(0.32, 0.72, 0, 1)');
+            expect(board.style.transition).toContain('transform var(--sc-drawer-transition)');
 
             const endEvent = new Event('transitionend');
             Object.defineProperty(endEvent, 'propertyName', { value: 'transform' });
             board.dispatchEvent(endEvent);
 
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
+        });
+
+        it('devrait capturer rBefore avant _zoomAnimCleanup lors d’une inversion à mi-course (_toggleLock / _toggleZoom)', () => {
+            const board = document.getElementById('scClassroomBoard');
+            const gridArea = document.getElementById('scGridArea');
+            Object.defineProperty(gridArea, 'clientWidth', { value: 960, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 500, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 350, configurable: true });
+
+            board.style.transform = 'translate3d(-65px, 0px, 0) scale(1, 1)';
+            let transformDuringFirstMeasure = null;
+            SeatingChartManager._zoomAnimCleanup = () => {
+                board.style.removeProperty('transform');
+                SeatingChartManager._zoomAnimCleanup = null;
+            };
+            vi.spyOn(board, 'getBoundingClientRect').mockImplementation(() => {
+                if (transformDuringFirstMeasure === null) {
+                    transformDuringFirstMeasure = board.style.transform;
+                    return { left: 165, top: 80, width: 600, height: 400 };
+                }
+                return { left: 230, top: 80, width: 600, height: 400 };
+            });
+
+            SeatingChartManager._toggleLock();
+            expect(transformDuringFirstMeasure).toBe('translate3d(-65px, 0px, 0) scale(1, 1)');
         });
 
         it('devrait conserver data-tooltip (ancré sur la photo .sc-stacked-avatar correspondante) sur la pilule .sc-stacked-member en mode Édition comme en mode Lecture', () => {

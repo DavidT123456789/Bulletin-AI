@@ -145,12 +145,11 @@ export const SeatingZoom = {
         TooltipsUI?.hideAll?.();
         this._stopPanInertia?.();
 
+        const rBefore = board.getBoundingClientRect?.() || null;
         if (this._zoomAnimCleanup) {
             this._zoomAnimCleanup();
             this._zoomAnimCleanup = null;
         }
-
-        const rBefore = board.getBoundingClientRect?.() || null;
         board.style.transition = 'none';
 
         if (this._isFitted) {
@@ -257,8 +256,8 @@ export const SeatingZoom = {
         }
 
         const isPureTranslationSettle = sameScale && Math.abs(scaleX - 1) < 0.015;
-        board.style.transition = isPureTranslationSettle
-            ? 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1)'
+        board.style.transition = (isLockToggle || isPureTranslationSettle)
+            ? 'transform var(--sc-drawer-transition)'
             : 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
         board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 

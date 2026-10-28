@@ -342,10 +342,6 @@ export const SeatingState = {
             );
             return;
         }
-        if (this._zoomAnimCleanup) {
-            this._zoomAnimCleanup();
-            this._zoomAnimCleanup = null;
-        }
         const view = document.getElementById('seatingChartView');
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
@@ -364,9 +360,6 @@ export const SeatingState = {
             this._wasLockedBeforeEdit = Boolean(currentClass?.[lockKey]);
             this._hasChangesSinceUnlock = false;
         }
-
-        // Freeze child cell transitions before flipping data-locked so the GPU slides a static texture at 120Hz
-        board?.classList.add('sc-lock-sliding');
 
         this._clearSelection();
         this._closeMobileSheet();
@@ -412,6 +405,12 @@ export const SeatingState = {
             && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
             && !didRebuildGrid;
         const rBefore = isNativeDesktopSlide ? null : (board?.getBoundingClientRect?.() || null);
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+        // Freeze child cell transitions before flipping data-locked so the GPU slides a static texture at 120Hz
+        board?.classList.add('sc-lock-sliding');
 
         if (!isNativeDesktopSlide && board) {
             board.style.transition = 'none';

@@ -3,7 +3,9 @@
     position: relative;
 }
 
-.sc-action-btn.sc-auto-place-btn.active {
+.sc-action-btn.sc-auto-place-btn.active,
+.sc-action-btn.sc-config-trigger.active,
+.sc-action-btn.sc-orientation-btn.active {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
@@ -120,11 +122,6 @@
 /* ---------- CONFIG POPOVER (Restored) ---------- */
 .sc-config-wrapper {
     position: relative;
-}
-
-.sc-action-btn.sc-config-trigger.active {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
 }
 
 .sc-config-popover {
@@ -452,7 +449,11 @@
 /* In Edit mode: hide orientation & print in floating capsule (already accessible in sidebar) */
 #seatingChartView[data-locked="false"] .sc-floating-actions .sc-orientation-btn,
 #seatingChartView[data-locked="false"] .sc-floating-actions .sc-print-btn {
-    display: none !important;
+    width: 0 !important;
+    margin-left: -2px !important;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.75);
 }
 
 [data-theme="dark"] .sc-floating-actions {
@@ -477,9 +478,13 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
     transition: background var(--transition-fast),
                 color var(--transition-fast),
-                transform 0.15s ease;
+                transform 0.15s ease,
+                width var(--sc-drawer-transition),
+                margin-left var(--sc-drawer-transition),
+                opacity 0.25s ease;
 }
 
 .sc-floating-actions .sc-action-btn iconify-icon {
@@ -586,13 +591,14 @@
     transform: scale(0.88) !important;
 }
 
-.sc-action-btn.sc-orientation-btn.active,
-#seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active,
+#seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-primary) !important;
+}
+
 [data-theme="dark"] #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
-    background: var(--primary-color) !important;
+    background: rgba(255, 255, 255, 0.14) !important;
     color: #ffffff !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb, 79, 70, 229), 0.4);
 }
 
 .sc-action-btn.sc-orientation-btn iconify-icon {
@@ -639,24 +645,32 @@
 .sc-classroom-board[data-plan-mode="course"] {
     --sc-cell-w: 88px;
     --sc-cell-h: 96px;
+    --sc-cell-radius: var(--radius-md);
 }
 
 #seatingChartView[data-plan-mode="activity"],
-.sc-classroom-board[data-plan-mode="activity"] {
+.sc-classroom-board[data-plan-mode="activity"],
+body:has(#seatingChartView[data-plan-mode="activity"]) .sc-drag-clone,
+body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     --sc-cell-w: 118px;
     --sc-cell-h: 114px;
+    --sc-cell-radius: 18px;
 }
 
 @media (max-width: 768px) {
     .sc-classroom-board[data-plan-mode="course"] {
         --sc-cell-w: 62px;
         --sc-cell-h: 70px;
+        --sc-cell-radius: 12px;
     }
 
     #seatingChartView[data-plan-mode="activity"],
-    .sc-classroom-board[data-plan-mode="activity"] {
+    .sc-classroom-board[data-plan-mode="activity"],
+body:has(#seatingChartView[data-plan-mode="activity"]) .sc-drag-clone,
+body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
         --sc-cell-w: 84px;
         --sc-cell-h: 86px;
+        --sc-cell-radius: 14px;
     }
 }
 
@@ -806,17 +820,17 @@
 
 .sc-station-badge {
     position: absolute;
-    top: 6px;
+    top: 7px;
     bottom: auto;
-    left: 6px;
+    left: 7px;
     right: auto;
     width: auto;
     height: auto;
     font-size: 0.53rem;
     font-weight: 700;
     line-height: 1;
-    padding: 1.5px 4.5px;
-    border-radius: 6px;
+    padding: 1.5px 5px;
+    border-radius: var(--radius-pill);
     color: var(--text-tertiary);
     background: rgba(var(--text-secondary-rgb, 113, 113, 122), 0.1);
     pointer-events: none;
@@ -903,7 +917,7 @@
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
     top: 15px;
-    left: 6px;
+    left: 7px;
     right: auto;
 }
 
@@ -1375,18 +1389,18 @@
     }
 
     .sc-station-badge {
-        top: 4.5px;
-        left: 4.5px;
+        top: 5px;
+        left: 5px;
         font-size: 0.47rem;
-        padding: 1px 3.5px;
-        border-radius: 4.5px;
+        padding: 1px 4px;
+        border-radius: var(--radius-pill);
     }
 
     .sc-cell.sc-cell-stacked.pinned .sc-station-badge,
     .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied.pinned .sc-station-badge,
     #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.pinned .sc-station-badge {
         top: 12px;
-        left: 4.5px;
+        left: 5px;
     }
 
     .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),

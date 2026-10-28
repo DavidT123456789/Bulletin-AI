@@ -13,12 +13,10 @@
     box-shadow: var(--shadow-sm);
     --sc-sidebar-vis-delay: 0s;
     translate: 0 0;
-    opacity: 1;
     visibility: visible;
     will-change: translate;
     contain: layout style;
     transition: translate var(--sc-drawer-transition),
-                opacity var(--sc-drawer-transition),
                 visibility 0s linear var(--sc-sidebar-vis-delay),
                 border-color var(--transition-fast),
                 box-shadow var(--sc-drawer-transition),
@@ -563,8 +561,8 @@
 .sc-classroom-board {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: 16px 20px;
+    border-radius: calc(var(--sc-cell-radius, var(--radius-md)) + var(--sc-board-padding, 12px) + var(--sc-grid-padding, 4px));
+    padding: var(--sc-board-padding, 12px);
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
@@ -1106,7 +1104,7 @@
 .sc-grid-container {
     display: grid;
     gap: 8px;
-    padding: 4px;
+    padding: var(--sc-grid-padding, 4px);
     transition: grid-template-columns 0.35s var(--ease-spring),
                 grid-template-rows 0.35s var(--ease-spring),
                 opacity 0.3s var(--ease-material);

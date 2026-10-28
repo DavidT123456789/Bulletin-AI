@@ -81,14 +81,18 @@ describe('CloudActionsManager', () => {
     });
 
     describe('save()', () => {
-        it('should save directly without any confirmation modal in the nominal local-changes case', async () => {
+        it('should show the save confirmation modal and save when confirmed in the nominal local-changes case', async () => {
             const onProgress = vi.fn();
             const onBeforePrompt = vi.fn();
 
             const result = await CloudActionsManager.save({ onProgress, onBeforePrompt });
 
             expect(result).toBe(true);
-            expect(UI.showSaveConfirmationModal).not.toHaveBeenCalled();
+            expect(UI.showSaveConfirmationModal).toHaveBeenCalledWith(expect.objectContaining({
+                localStudentCount: 2,
+                localClassCount: 1,
+                isInSync: false
+            }));
             expect(UI.showConflictResolutionModal).not.toHaveBeenCalled();
             expect(SyncServiceMock.saveToCloud).toHaveBeenCalledTimes(1);
             expect(onBeforePrompt).toHaveBeenCalled();
@@ -229,7 +233,7 @@ describe('CloudActionsManager', () => {
             expect(StorageManager.savePreRestoreSnapshot).toHaveBeenCalled();
             expect(SyncServiceMock.loadFromCloud).toHaveBeenCalledWith(summary().remoteData);
             expect(UI.showUndoNotification).toHaveBeenCalledWith(
-                '3 élèves restaurés depuis Google Drive.',
+                'Votre espace de travail a été restauré.',
                 expect.any(Function),
                 expect.objectContaining({ title: 'Restauration réussie', type: 'success' })
             );
@@ -241,11 +245,12 @@ describe('CloudActionsManager', () => {
         });
 
         it('should not offer Undo when no safety snapshot could be created (empty local data)', async () => {
+            runtimeState.data.generatedResults = [];
             StorageManager.savePreRestoreSnapshot.mockResolvedValueOnce(false);
 
             expect(await CloudActionsManager.restore()).toBe(true);
             expect(UI.showUndoNotification).not.toHaveBeenCalled();
-            expect(UI.showNotification).toHaveBeenCalledWith('3 élèves restaurés depuis Google Drive.', 'success', 5000, { title: 'Restauration réussie' });
+            expect(UI.showNotification).toHaveBeenCalledWith('3 élèves récupérés depuis Google Drive.', 'success', 5000, { title: 'Restauration réussie' });
         });
 
         it('should warn and stop when no valid Cloud backup exists', async () => {

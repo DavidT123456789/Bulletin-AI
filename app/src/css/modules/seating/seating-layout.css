@@ -6,7 +6,10 @@
 :root {
     --sc-cell-w: 88px;
     --sc-cell-h: 96px;
-    --sc-drawer-transition: 0.52s var(--ease-spring, cubic-bezier(0.32, 0.72, 0, 1));
+    --sc-cell-radius: var(--radius-md);
+    --sc-board-padding: 12px;
+    --sc-grid-padding: 4px;
+    --sc-drawer-transition: 0.48s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* ────────── VIEW TOGGLE (Header) ────────── */

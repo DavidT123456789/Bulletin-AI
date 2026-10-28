@@ -186,17 +186,15 @@ export const CloudActionsManager = {
                 const remoteStudentCount = SyncService.getLastSyncStudentCount();
                 const hasShrinkage = Boolean(remoteStudentCount && studentCount < remoteStudentCount);
                 const isAlreadySynced = syncState === 'in-sync' && Boolean(SyncService.lastSyncTime || SyncService.remoteSyncTime);
-                if (hasShrinkage || isAlreadySynced) {
-                    const confirmed = await UI.showSaveConfirmationModal({
-                        localStudentCount: studentCount,
-                        localClassCount: classCount,
-                        remoteStudentCount,
-                        lastSyncTime: SyncService.lastSyncTime || SyncService.remoteSyncTime,
-                        providerName: this._providerName(SyncService),
-                        isInSync: isAlreadySynced && !hasShrinkage
-                    });
-                    if (!confirmed) return 'cancelled';
-                }
+                const confirmed = await UI.showSaveConfirmationModal({
+                    localStudentCount: studentCount,
+                    localClassCount: classCount,
+                    remoteStudentCount,
+                    lastSyncTime: SyncService.lastSyncTime || SyncService.remoteSyncTime,
+                    providerName: this._providerName(SyncService),
+                    isInSync: isAlreadySynced && !hasShrinkage
+                });
+                if (!confirmed) return 'cancelled';
             }
 
             return await this._executeSave(SyncService, mode === 'merge', onProgress);
@@ -294,6 +292,7 @@ export const CloudActionsManager = {
         const progressToast = UI.showNotification(`Restauration depuis ${providerLabel}…`, 'loading', 0);
 
         try {
+            const wasEmptyLocal = (runtimeState.data.generatedResults?.length || 0) === 0;
             const hasSnapshot = await StorageManager.savePreRestoreSnapshot();
             const result = await SyncService.loadFromCloud(summary.remoteData);
             progressToast?.dismiss?.();
@@ -307,7 +306,9 @@ export const CloudActionsManager = {
             await RestoreTransitionManager.rehydrateAndTransition();
 
             const count = result.count ?? summary.studentCount;
-            const message = `${plural(count, 'élève')} restauré${count > 1 ? 's' : ''} depuis ${providerLabel}.`;
+            const message = wasEmptyLocal && count > 0
+                ? `${plural(count, 'élève')} récupéré${count > 1 ? 's' : ''} depuis ${providerLabel}.`
+                : 'Votre espace de travail a été restauré.';
             if (hasSnapshot) {
                 UI.showUndoNotification(message, () => this.undoRestore(), {
                     title: 'Restauration réussie',

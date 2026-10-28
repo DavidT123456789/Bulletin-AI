@@ -510,7 +510,7 @@ describe('ModalUIManager', () => {
             expect(result).toBe(true);
         });
 
-        it('should hide redundant volume counts when remote and local volumes are identical', async () => {
+        it('should omit the redundant third line when remote and local volumes are identical', async () => {
             const promise = ModalUI.showRestoreConfirmationModal({
                 remoteDate: 1726000000000,
                 remoteStudentCount: 28,
@@ -522,9 +522,8 @@ describe('ModalUIManager', () => {
 
             const modal = document.getElementById('restoreConfirmationModal');
             expect(modal).not.toBeNull();
-            // Should NOT duplicate redundant "28 élèves" counters
-            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat').textContent).toBe('Sauvegarde en ligne');
-            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat').textContent).toBe('À jour');
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat')).toBeNull();
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat')).toBeNull();
             expect(modal.textContent).toContain('Session alignée');
 
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
@@ -532,13 +531,13 @@ describe('ModalUIManager', () => {
             await promise;
         });
 
-        it('should show unified impact box and list local changes without accordion button when syncState is local-changes', async () => {
-            // Mock local changes with seating chart change
+        it('should show unified impact box and list local changes without false appreciation counts when syncState is local-changes', async () => {
+            // Mock local changes with seating chart change (and student._lastModified updated by seat move)
             window.appState = {
                 classes: [{ id: 'c1', name: '6A', seatingUpdatedAt: Date.now() }]
             };
             window.runtimeState = {
-                data: { generatedResults: [] }
+                data: { generatedResults: [{ id: 's1', _lastModified: Date.now(), studentData: { periods: {} } }] }
             };
 
             const promise = ModalUI.showRestoreConfirmationModal({
@@ -551,15 +550,11 @@ describe('ModalUIManager', () => {
             });
 
             const modal = document.getElementById('restoreConfirmationModal');
-            expect(modal.querySelector('.restore-impact-box.warning')).not.toBeNull();
-            expect(modal.textContent).toContain('Sera remplacé sur cet appareil');
-
-            // No unnecessary accordion button
-            expect(document.getElementById('modalAlertDetailsBtn')).toBeNull();
-
-            // Directly lists seating chart change and safety assurance
             const impactBox = modal.querySelector('.restore-impact-box.warning');
+            expect(impactBox).not.toBeNull();
+            expect(impactBox.textContent).toContain('Sera remplacé sur cet appareil');
             expect(impactBox.textContent).toContain('Plan de classe réorganisé');
+            expect(impactBox.textContent).not.toContain('appréciations ou notes éditées');
             expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
 
             // Two-line date display: relative stat and exact timestamp
@@ -582,6 +577,31 @@ describe('ModalUIManager', () => {
 
             delete window.appState;
             delete window.runtimeState;
+        });
+
+        it('should display seconds as a tie-breaker when cloud and local timestamps fall in the same minute', async () => {
+            const now = Date.now();
+            const cloudTime = now - (4 * 60 + 45) * 1000; // Il y a 4 min 45 s
+            const localTime = now - (4 * 60 + 10) * 1000; // Il y a 4 min 10 s
+
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: cloudTime,
+                localDate: localTime,
+                remoteStudentCount: 28,
+                localStudentCount: 28,
+                syncState: 'local-changes',
+                lastSyncTime: cloudTime
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            const cloudMainStat = modal.querySelector('.restore-comparison-card.cloud .restore-card-main-stat').textContent.trim();
+            const localMainStat = modal.querySelector('.restore-comparison-card.local .restore-card-main-stat').textContent.trim();
+            expect(cloudMainStat).toBe('Il y a 4 min 45 s');
+            expect(localMainStat).toBe('Il y a 4 min 10 s');
+            expect(cloudMainStat).not.toBe(localMainStat);
+
+            document.getElementById('restoreConfirmCancelBtn').click();
+            await promise;
         });
 
         it('should warn about missing local students instead of showing Session alignée when localStudentCount is 0 and remoteStudentCount > 0', async () => {
@@ -610,10 +630,11 @@ describe('ModalUIManager', () => {
     });
 
     describe('showSaveConfirmationModal', () => {
-        it('should render save summary details and resolve true on confirm', async () => {
+        it('should render comparison cards, local changes list, and resolve true on confirm', async () => {
             const promise = ModalUI.showSaveConfirmationModal({
                 localStudentCount: 305,
                 localClassCount: 13,
+                remoteStudentCount: 300,
                 providerName: 'google',
                 providerLabel: 'Google Drive',
                 lastSyncTime: Date.now() - 3600000 // 1 hour ago
@@ -625,6 +646,8 @@ describe('ModalUIManager', () => {
             expect(modal.textContent).toContain('305 élèves');
             expect(modal.textContent).toContain('13 classes');
             expect(modal.textContent).toContain('Google Drive');
+            expect(modal.textContent).toContain('Session locale');
+            expect(modal.textContent).toContain('Modifications à enregistrer');
             expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
 
             const okBtn = document.getElementById('saveConfirmOkBtn');
@@ -659,7 +682,8 @@ describe('ModalUIManager', () => {
         it('should safely coerce null counts without printing null élève', async () => {
             const promise = ModalUI.showSaveConfirmationModal({
                 localStudentCount: null,
-                localClassCount: null
+                localClassCount: null,
+                remoteStudentCount: 10
             });
 
             const modal = document.getElementById('saveConfirmationModal');
@@ -726,7 +750,7 @@ describe('ModalUIManager', () => {
             expect(await promise).toBe(false);
         });
 
-        it('should display the aligned session notice and message when isInSync is true', async () => {
+        it('should display the aligned session notice when isInSync is true', async () => {
             const promise = ModalUI.showSaveConfirmationModal({
                 localStudentCount: 25,
                 localClassCount: 1,
@@ -734,8 +758,9 @@ describe('ModalUIManager', () => {
             });
 
             const modal = document.getElementById('saveConfirmationModal');
-            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Aucune modification détectée');
-            expect(modal.querySelector('.restore-safety-notice.in-sync')).not.toBeNull();
+            const notice = modal.querySelector('.restore-safety-notice.in-sync');
+            expect(notice).not.toBeNull();
+            expect(notice.textContent).toContain('Vos données locales sont déjà synchronisées');
 
             document.getElementById('saveConfirmCancelBtn').click();
             expect(await promise).toBe(false);

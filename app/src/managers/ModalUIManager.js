@@ -737,9 +737,7 @@ export const ModalUI = {
             let modal = document.getElementById(modalId);
             if (modal) modal.remove();
 
-            const remoteDateStr = remoteDate
-                ? new Date(remoteDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                : 'récemment';
+            const remoteDateStr = this._formatDateParts(remoteDate)?.absolute || 'récemment';
 
             const isConflict = syncState !== 'cloud-changes';
 
@@ -867,44 +865,14 @@ export const ModalUI = {
     },
 
     /**
-     * Formate un timestamp sous forme relative + absolue (ex: "Il y a 1h (24 sept., 16:33)").
-     * @param {number|string|Date} timestamp
-     * @returns {string|null}
-     * @private
-     */
-    _formatRelativeDate(timestamp) {
-        if (!timestamp) return null;
-        const d = new Date(timestamp);
-        if (isNaN(d.getTime())) return null;
-
-        const dateStr = d.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        const diffMs = Date.now() - d.getTime();
-        const diffMin = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMin / 60);
-        const diffDays = Math.floor(diffHours / 24);
-
-        let rel = '';
-        if (diffMin < 2) rel = 'À l\'instant';
-        else if (diffMin < 60) rel = `Il y a ${diffMin} min`;
-        else if (diffHours < 24) rel = `Il y a ${diffHours}h`;
-        else if (diffDays === 1) rel = 'Hier';
-        else rel = `Il y a ${diffDays} jrs`;
-
-        return rel ? `${rel} (${dateStr})` : dateStr;
-    },
-
-    /**
      * Décompose un timestamp en parties temporelles relatives et absolues prévues.
      * @param {number|string|Date} timestamp
+     * @param {Object} [options]
+     * @param {boolean} [options.precise=false] - Affiche les secondes pour départager deux dates proches
      * @returns {{ relative: string, absolute: string }|null}
      * @private
      */
-    _formatDateParts(timestamp) {
+    _formatDateParts(timestamp, { precise = false } = {}) {
         if (!timestamp) return null;
         const d = new Date(timestamp);
         if (isNaN(d.getTime())) return null;
@@ -915,21 +883,36 @@ export const ModalUI = {
         });
         const timeStr = d.toLocaleTimeString('fr-FR', {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            ...(precise ? { second: '2-digit' } : {})
         });
         const absolute = `${dateStr} à ${timeStr}`;
 
-        const diffMs = Date.now() - d.getTime();
-        const diffMin = Math.floor(diffMs / 60000);
+        const diffMs = Math.max(0, Date.now() - d.getTime());
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
         const diffHours = Math.floor(diffMin / 60);
         const diffDays = Math.floor(diffHours / 24);
 
         let relative = '';
-        if (diffMin < 2) relative = 'À l\'instant';
-        else if (diffMin < 60) relative = `Il y a ${diffMin} min`;
-        else if (diffHours < 24) relative = `Il y a ${diffHours}h`;
-        else if (diffDays === 1) relative = 'Hier';
-        else relative = `Il y a ${diffDays} jrs`;
+        if (precise && diffMin < 60) {
+            const remSec = diffSec % 60;
+            if (diffMin === 0) {
+                relative = diffSec <= 1 ? 'À l\'instant' : `Il y a ${diffSec} s`;
+            } else {
+                relative = remSec > 0 ? `Il y a ${diffMin} min ${remSec} s` : `Il y a ${diffMin} min`;
+            }
+        } else if (diffMin < 1) {
+            relative = 'À l\'instant';
+        } else if (diffMin < 60) {
+            relative = `Il y a ${diffMin} min`;
+        } else if (diffHours < 24) {
+            relative = `Il y a ${diffHours}h`;
+        } else if (diffDays === 1) {
+            relative = 'Hier';
+        } else {
+            relative = `Il y a ${diffDays} jrs`;
+        }
 
         return { relative, absolute };
     },
@@ -956,9 +939,13 @@ export const ModalUI = {
             items.push({ icon: 'solar:chair-bold', text: 'Plan de classe réorganisé' });
         }
 
-        // 2. Appréciations / résultats élèves
+        // 2. Appréciations / résultats élèves (distingue les éditions de bulletins des simples déplacements de plan de classe)
         const students = window.runtimeState?.data?.generatedResults || [];
-        const modifiedStudents = students.filter(s => s._lastModified && s._lastModified > lastSync).length;
+        const modifiedStudents = students.filter(s => {
+            const periods = s.studentData?.periods ? Object.values(s.studentData.periods) : [];
+            const hasPeriodEdit = periods.some(p => p?._lastModified && p._lastModified > lastSync);
+            return hasPeriodEdit || (!seatingChanged && s._lastModified && s._lastModified > lastSync);
+        }).length;
         if (modifiedStudents > 0) {
             items.push({
                 icon: 'solar:document-text-bold',
@@ -966,7 +953,15 @@ export const ModalUI = {
             });
         }
 
-        // 3. Différence d'effectif (si élèves ajoutés ou supprimés)
+        // 3. Journal de bord
+        const journalChanged = students.some(s =>
+            Array.isArray(s.journal) && s.journal.some(e => e?._lastModified && e._lastModified > lastSync)
+        );
+        if (journalChanged) {
+            items.push({ icon: 'solar:notebook-bold', text: 'Journal de bord mis à jour' });
+        }
+
+        // 4. Différence d'effectif (si élèves ajoutés ou supprimés)
         const rCount = options.remoteStudentCount ?? null;
         const lCount = options.localStudentCount ?? students.length;
         if (typeof rCount === 'number' && rCount > 0 && rCount !== lCount) {
@@ -978,12 +973,129 @@ export const ModalUI = {
             });
         }
 
-        // Fallback si modifications détectées mais aucun timestamp individuel spécifique
+        // Fallback si modifications détectées mais aucun timestamp individuel spécifique (ex. tables, contraintes, réglages IA)
         if (items.length === 0) {
             items.push({ icon: 'solar:pen-new-square-bold', text: 'Modifications récentes de la session locale' });
         }
 
         return items;
+    },
+
+    /**
+     * Génère la grille comparative à 2 cartes (Cloud vs Session locale) partagée par Sauvegarder et Restaurer.
+     * @param {Object} params
+     * @returns {string}
+     * @private
+     */
+    _renderCloudComparisonGrid({
+        remoteDate = null,
+        localDate = null,
+        rStudentCount = null,
+        rClassCount = null,
+        lStudentCount = 0,
+        lClassCount = 0,
+        isVolumeIdentical = true,
+        isMissingLocalStudents = false,
+        hasLocalChanges = false,
+        isInSync = false,
+        resolvedProviderLabel = 'Google Drive',
+        resolvedProviderIcon = 'logos:google-drive'
+    }) {
+        const localTimestamp = localDate || parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null;
+        let cloudDateParts = this._formatDateParts(remoteDate);
+        let localDateParts = this._formatDateParts(localTimestamp);
+
+        if (!isInSync && cloudDateParts && localDateParts && (
+            cloudDateParts.relative === localDateParts.relative ||
+            cloudDateParts.absolute === localDateParts.absolute
+        )) {
+            cloudDateParts = this._formatDateParts(remoteDate, { precise: true });
+            localDateParts = this._formatDateParts(localTimestamp, { precise: true });
+        }
+
+        const cloudSubStatHtml = (isVolumeIdentical || rStudentCount === null)
+            ? ''
+            : `<div class="restore-card-sub-stat">${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}${rClassCount !== null ? ` · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}` : ''}</div>`;
+
+        const localSubStatHtml = isVolumeIdentical
+            ? ''
+            : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
+
+        const localMainStatText = hasLocalChanges
+            ? (localDateParts ? localDateParts.relative : 'À l\'instant')
+            : isMissingLocalStudents
+                ? 'Données manquantes'
+                : isInSync
+                    ? 'Session à jour'
+                    : (localDateParts ? localDateParts.relative : 'Session locale');
+
+        const localExactDateText = hasLocalChanges
+            ? (localDateParts ? localDateParts.absolute : 'Modifié récemment')
+            : isMissingLocalStudents
+                ? 'Aucun élève sur cet appareil'
+                : isInSync
+                    ? 'Parfaitement synchronisée'
+                    : (localDateParts ? localDateParts.absolute : 'Écart avec le Cloud');
+
+        return `
+                    <div class="restore-comparison-grid">
+                        <!-- Carte Cloud -->
+                        <div class="restore-comparison-card cloud">
+                            <div class="restore-card-badge">
+                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
+                                <span>${resolvedProviderLabel}</span>
+                            </div>
+                            <div class="restore-card-main-stat">
+                                ${cloudDateParts ? cloudDateParts.relative : 'Date inconnue'}
+                            </div>
+                            ${cloudDateParts ? `<div class="restore-card-exact-date">${cloudDateParts.absolute}</div>` : ''}
+                            ${cloudSubStatHtml}
+                        </div>
+
+                        <!-- Carte Locale -->
+                        <div class="restore-comparison-card local">
+                            <div class="restore-card-badge">
+                                <iconify-icon icon="solar:laptop-linear"></iconify-icon>
+                                <span>Session locale</span>
+                            </div>
+                            <div class="restore-card-main-stat">
+                                ${localMainStatText}
+                            </div>
+                            <div class="restore-card-exact-date">
+                                ${localExactDateText}
+                            </div>
+                            ${localSubStatHtml}
+                        </div>
+                    </div>`;
+    },
+
+    /**
+     * Génère l'encart de synthèse des modifications (`.restore-impact-box`) partagé par Sauvegarder et Restaurer.
+     * @param {Object} params
+     * @returns {string}
+     * @private
+     */
+    _renderImpactBox({ isWarning = false, icon, title, items = [], footerText = null }) {
+        return `
+                    <div class="restore-impact-box${isWarning ? ' warning' : ''}">
+                        <div class="restore-impact-header">
+                            <iconify-icon icon="${icon}"></iconify-icon>
+                            <span>${title}</span>
+                        </div>
+                        <ul class="restore-impact-list">
+                            ${items.map(item => `
+                                <li>
+                                    <iconify-icon icon="${item.icon}"></iconify-icon>
+                                    <span>${item.text}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                        ${footerText ? `
+                        <div class="restore-impact-footer">
+                            <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                            <span>${footerText}</span>
+                        </div>` : ''}
+                    </div>`;
     },
 
     /**
@@ -1037,35 +1149,21 @@ export const ModalUI = {
             const hasLocalChanges = !isMissingLocalStudents && (resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict');
             const isInSync = !hasLocalChanges && isVolumeIdentical && resolvedSyncState !== 'cloud-changes';
 
-            const cloudDateParts = this._formatDateParts(remoteDate);
-            const localTimestamp = localDate || parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null;
-            const localDateParts = this._formatDateParts(localTimestamp);
-
             const diffItems = hasLocalChanges ? this._getLocalDiffDetails(options) : [];
-
-            const cloudSubStatHtml = isVolumeIdentical
-                ? `<div class="restore-card-sub-stat">Sauvegarde en ligne</div>`
-                : `<div class="restore-card-sub-stat">${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}</div>`;
-
-            const localSubStatHtml = isVolumeIdentical
-                ? `<div class="restore-card-sub-stat">${hasLocalChanges ? 'Modifications récentes' : 'À jour'}</div>`
-                : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
-
-            const localMainStatText = hasLocalChanges
-                ? (localDateParts ? localDateParts.relative : 'À l\'instant')
-                : isMissingLocalStudents
-                    ? 'Données manquantes'
-                    : isInSync
-                        ? 'Session à jour'
-                        : (localDateParts ? localDateParts.relative : 'Session locale');
-
-            const localExactDateText = hasLocalChanges
-                ? (localDateParts ? localDateParts.absolute : 'Modifié récemment')
-                : isMissingLocalStudents
-                    ? 'Aucun élève sur cet appareil'
-                    : isInSync
-                        ? 'Parfaitement synchronisée'
-                        : (localDateParts ? localDateParts.absolute : 'Écart avec le Cloud');
+            const comparisonGridHtml = this._renderCloudComparisonGrid({
+                remoteDate,
+                localDate,
+                rStudentCount,
+                rClassCount,
+                lStudentCount,
+                lClassCount,
+                isVolumeIdentical,
+                isMissingLocalStudents,
+                hasLocalChanges,
+                isInSync,
+                resolvedProviderLabel,
+                resolvedProviderIcon
+            });
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -1086,60 +1184,19 @@ export const ModalUI = {
                             : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.'}
                     </div>
 
-                    <div class="restore-comparison-grid">
-                        <!-- Carte Cloud -->
-                        <div class="restore-comparison-card cloud">
-                            <div class="restore-card-badge">
-                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
-                                <span>${resolvedProviderLabel}</span>
-                            </div>
-                            <div class="restore-card-main-stat">
-                                ${cloudDateParts ? cloudDateParts.relative : 'Date inconnue'}
-                            </div>
-                            ${cloudDateParts ? `<div class="restore-card-exact-date">${cloudDateParts.absolute}</div>` : ''}
-                            ${cloudSubStatHtml}
-                        </div>
+                    ${comparisonGridHtml}
 
-                        <!-- Carte Locale -->
-                        <div class="restore-comparison-card local">
-                            <div class="restore-card-badge">
-                                <iconify-icon icon="solar:laptop-linear"></iconify-icon>
-                                <span>Session locale</span>
-                            </div>
-                            <div class="restore-card-main-stat">
-                                ${localMainStatText}
-                            </div>
-                            <div class="restore-card-exact-date">
-                                ${localExactDateText}
-                            </div>
-                            ${localSubStatHtml}
-                        </div>
-                    </div>
-
-                    ${hasLocalChanges ? `
-                    <div class="restore-impact-box warning">
-                        <div class="restore-impact-header">
-                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
-                            <span>Sera remplacé sur cet appareil :</span>
-                        </div>
-                        <ul class="restore-impact-list">
-                            ${diffItems.map(item => `
-                                <li>
-                                    <iconify-icon icon="${item.icon}"></iconify-icon>
-                                    <span>${item.text}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                        <div class="restore-impact-footer">
-                            <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                            <span>Une copie de secours de votre session sera créée automatiquement.</span>
-                        </div>
-                    </div>
-                    ` : isInSync ? `
+                    ${hasLocalChanges ? this._renderImpactBox({
+                        isWarning: true,
+                        icon: 'solar:danger-triangle-bold',
+                        title: 'Sera remplacé sur cet appareil :',
+                        items: diffItems,
+                        footerText: 'Une copie de secours de votre session sera créée automatiquement.'
+                    }) : isInSync ? `
                     <div class="restore-safety-notice in-sync">
                         <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                         <div>
-                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées avec le Cloud.
+                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées.
                         </div>
                     </div>
                     ` : `
@@ -1175,13 +1232,14 @@ export const ModalUI = {
 
     /**
      * Modale de confirmation de sauvegarde vers le Cloud.
-     * Affichée en cas de régression du nombre d'élèves (focus sur Annuler) ou lorsque la session est déjà alignée.
+     * Partage la même grille comparative à 2 cartes (Cloud vs Session locale) que la restauration.
      * 
      * @param {Object} options
      * @param {number} [options.localStudentCount=0]
      * @param {number} [options.localClassCount=0]
      * @param {number|null} [options.remoteStudentCount=null]
      * @param {number|string|null} [options.lastSyncTime=null]
+     * @param {number|string|null} [options.localDate=null]
      * @param {string} [options.providerName='google']
      * @param {string} [options.providerLabel='Google Drive']
      * @param {string} [options.providerIcon='logos:google-drive']
@@ -1195,6 +1253,7 @@ export const ModalUI = {
                 localClassCount = 0,
                 remoteStudentCount = null,
                 lastSyncTime = null,
+                localDate = null,
                 providerName = 'google',
                 providerLabel = null,
                 providerIcon = null,
@@ -1211,14 +1270,30 @@ export const ModalUI = {
 
             const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
             const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+            const rStudentCount = typeof remoteStudentCount === 'number' && remoteStudentCount > 0 ? remoteStudentCount : null;
 
-            const formattedLastSync = this._formatRelativeDate(lastSyncTime);
-            const subtitleDetail = formattedLastSync ? `Dernière sauvegarde : ${formattedLastSync}` : 'Prêt à synchroniser';
+            const hasDataShrinkageWarning = rStudentCount !== null && lStudentCount < rStudentCount;
+            const isVolumeIdentical = rStudentCount === null || rStudentCount === lStudentCount;
+            const hasLocalChanges = !isInSync;
 
-            const hasDataShrinkageWarning =
-                typeof remoteStudentCount === 'number' &&
-                remoteStudentCount > 0 &&
-                lStudentCount < remoteStudentCount;
+            const diffItems = (!hasDataShrinkageWarning && hasLocalChanges)
+                ? this._getLocalDiffDetails({ lastSyncTime, remoteStudentCount: rStudentCount, localStudentCount: lStudentCount })
+                : [];
+
+            const comparisonGridHtml = this._renderCloudComparisonGrid({
+                remoteDate: lastSyncTime,
+                localDate,
+                rStudentCount,
+                rClassCount: null,
+                lStudentCount,
+                lClassCount,
+                isVolumeIdentical,
+                isMissingLocalStudents: false,
+                hasLocalChanges,
+                isInSync,
+                resolvedProviderLabel,
+                resolvedProviderIcon
+            });
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -1234,42 +1309,33 @@ export const ModalUI = {
                         <span>Sauvegarder vers le Cloud</span>
                     </h3>
                     <div class="modal-alert-message">
-                        ${isInSync && !hasDataShrinkageWarning
-                            ? 'Aucune modification détectée depuis la dernière sauvegarde. Voulez-vous renvoyer vos données quand même ?'
-                            : 'Votre session actuelle va remplacer la sauvegarde de votre espace personnel.'}
+                        ${hasLocalChanges
+                            ? 'Vérifiez les dates avant de mettre à jour votre sauvegarde en ligne.'
+                            : 'Sécurisez votre espace de travail sur votre sauvegarde en ligne.'}
                     </div>
 
-                    <div class="save-summary-card">
-                        <div class="save-summary-header">
-                            <div class="restore-card-badge">
-                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
-                                <span>${resolvedProviderLabel}</span>
-                            </div>
-                        </div>
-                        <div class="restore-card-main-stat">
-                            ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
-                        </div>
-                        <div class="restore-card-date">
-                            <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
-                            <span>${subtitleDetail}</span>
-                        </div>
-                    </div>
+                    ${comparisonGridHtml}
 
                     ${hasDataShrinkageWarning ? `
                     <div class="restore-safety-notice warning">
                         <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                         <div>
-                            <strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${remoteStudentCount} élèves</strong>. Cette action va la remplacer par votre session actuelle (${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}).
+                            <strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${rStudentCount} élèves</strong>. Cette action va la remplacer par votre session actuelle (${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}).
                         </div>
                     </div>
                     ` : isInSync ? `
                     <div class="restore-safety-notice in-sync">
                         <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                         <div>
-                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées avec le Cloud.
+                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées.
                         </div>
                     </div>
-                    ` : ''}
+                    ` : this._renderImpactBox({
+                        isWarning: false,
+                        icon: 'solar:cloud-upload-bold',
+                        title: 'Modifications à enregistrer :',
+                        items: diffItems
+                    })}
                 </div>
 
                 <div class="modal-alert-actions">
