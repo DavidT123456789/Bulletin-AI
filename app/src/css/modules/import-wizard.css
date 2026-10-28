@@ -1170,7 +1170,7 @@ textarea.import-textarea,
     border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
     box-shadow: var(--dropdown-shadow);
-    padding: 5px;
+    padding: 6px;
     max-height: none;
     overflow-y: visible;
 }

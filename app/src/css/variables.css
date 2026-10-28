@@ -378,10 +378,10 @@
 
 
     /* --- Dropdown System Tokens (Core Foundation) --- */
-    --dropdown-radius: var(--radius-md);         /* 16px - Concentric outer shell (8px item + 6px padding) */
+    --dropdown-radius: var(--radius-md);            /* 16px - Concentric outer shell (10px item + 6px padding) */
     --dropdown-radius-sm: var(--radius-md);      /* 16px - Selects/Context menus */
-    --dropdown-item-radius: var(--radius-sm);    /* 8px - Unified soft-rectangle item style (Google 2026) */
-    --dropdown-item-radius-sm: var(--radius-sm); /* 8px - Compact item style */
+    --dropdown-item-radius: var(--radius-control);    /* 10px - Concentric inner item radius (16px - 6px) */
+    --dropdown-item-radius-sm: var(--radius-control); /* 10px - Compact item style */
     --dropdown-bg: var(--surface-color);
     --dropdown-bg-glass: var(--glass-overlay-bg);
     --dropdown-border: 1px solid var(--border-color);

@@ -562,6 +562,10 @@
     top: calc(100% + 4px);
     left: 0;
     min-width: 165px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     background: var(--dropdown-bg);
     border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
@@ -590,8 +594,9 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: none;
+    border-radius: var(--dropdown-item-radius);
     background: transparent;
     color: var(--text-secondary);
     font-size: 13px;
@@ -604,14 +609,6 @@
 .journal-pill-menu .journal-dropdown-option:hover {
     background: color-mix(in srgb, var(--tag-color) 12%, transparent);
     color: var(--tag-color);
-}
-
-.journal-pill-menu .journal-dropdown-option:first-child {
-    border-radius: var(--dropdown-radius-sm) var(--dropdown-radius-sm) 0 0;
-}
-
-.journal-pill-menu .journal-dropdown-option:last-child {
-    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
 }
 
 .journal-pill-menu .journal-dropdown-option iconify-icon {

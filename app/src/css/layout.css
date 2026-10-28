@@ -1168,11 +1168,11 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
-.cloud-save-menu-item:has(.hint-warning) > iconify-icon {
+.cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {
     color: var(--warning-color);
 }
 
-[data-theme="dark"] .cloud-save-menu-item:has(.hint-warning) > iconify-icon {
+[data-theme="dark"] .cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {
     color: var(--warning-bright);
 }
 

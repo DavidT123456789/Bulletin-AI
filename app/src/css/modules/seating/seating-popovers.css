@@ -59,7 +59,7 @@
     padding: 8px 10px;
     border: none;
     background: transparent;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius);
     color: var(--text-primary);
     font-size: 0.84rem;
     font-weight: 500;

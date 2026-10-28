@@ -276,6 +276,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
             expect(saveBtn.classList.contains('disabled')).toBe(false);
             expect(saveBtn.dataset.cloudMode).toBe('reconnect');
+            expect(saveBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('logos:google-drive');
             expect(saveBtn.querySelector('.cloud-save-label').textContent).toBe('Reconnecter');
             expect(loadBtn.style.display).toBe('none');
             expect(saveHint.style.display).toBe('block');
@@ -283,7 +284,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(saveHint.classList.contains('hint-warning')).toBe(true);
         });
 
-        it('should apply has-cloud-warning when session is expired and local changes exist', () => {
+        it('should apply has-cloud-warning and keep logos:google-drive icon when session is expired and local changes exist', () => {
             SyncService._wasConfigured = true;
             SyncService.currentProviderName = 'google';
             SyncService.lastSyncTime = 1000;
@@ -297,6 +298,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
             expect(saveBtn.classList.contains('cloud-action-recommended')).toBe(false);
+            expect(saveBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('logos:google-drive');
             expect(saveHint.textContent).toBe('Non sauvegardé');
             expect(saveHint.classList.contains('hint-warning')).toBe(true);
         });

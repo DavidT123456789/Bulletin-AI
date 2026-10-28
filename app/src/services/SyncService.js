@@ -287,7 +287,7 @@ export const SyncService = {
                 tooltip: 'Envoyer vos données vers le Cloud'
             },
             expired: {
-                icon: needsSync ? 'solar:cloud-warning-linear' : 'logos:google-drive',
+                icon: 'logos:google-drive',
                 label: 'Reconnecter',
                 tooltip: 'Session expirée : cliquez pour actualiser l\'état Cloud'
             },

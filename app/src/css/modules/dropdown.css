@@ -434,7 +434,7 @@
 /* Dropdown de tri : menu compact */
 .custom-dropdown[data-for="sortSelect"] .custom-dropdown-menu {
     min-width: 140px;
-    padding: 4px;
+    padding: 6px;
 }
 
 /* Dropdown de tri : options sans coche, plus compactes */
