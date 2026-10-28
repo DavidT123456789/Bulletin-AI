@@ -36,6 +36,7 @@ import { API_KEY_PROVIDER_IDS } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
+import { ClassManager } from './ClassManager.js';
 
 let UI;
 let App;
@@ -55,7 +56,6 @@ const UI_AND_NAV_KEYS = [
     'currentSubject',
     'currentInputMode',
     'activeStatFilter',
-    'refinementEdits',
     'apiKeyStatus',
     'validatedApiKeys',
     'ollamaBaseUrl',
@@ -256,15 +256,17 @@ export const StorageManager = {
      * sur userSettings et runtimeState.
      * @private
      * @param {Object} settings
+     * @param {Object} [options]
+     * @param {boolean} [options.skipNavigation=false] - Conserver la navigation propre à l'onglet
+     *   (classe active, vue, période, matière, mode de saisie, filtre) lors d'une synchro inter-onglets
      */
-    _applyLoadedSettings(settings) {
+    _applyLoadedSettings(settings, { skipNavigation = false } = {}) {
         if (!settings || typeof settings !== 'object') return;
 
         // UI Settings
         if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
         if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
         if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
-        if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
         if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
             userSettings.ui.seatingStatusDots = {
                 ...DEFAULT_SEATING_STATUS_DOTS,
@@ -279,7 +281,6 @@ export const StorageManager = {
         if (settings.subjects !== undefined) userSettings.academic.subjects = settings.subjects;
         // Multi-class support
         if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
-        if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
         if (settings.classesCustomOrder !== undefined) userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
         if (settings.classesSortDirection === 'asc' || settings.classesSortDirection === 'desc') {
             userSettings.academic.classesSortDirection = settings.classesSortDirection;
@@ -318,14 +319,17 @@ export const StorageManager = {
         if (settings.privacy !== undefined) userSettings.privacy = settings.privacy;
         if (settings.anonymizeData !== undefined && !settings.privacy) userSettings.privacy = { anonymizeData: settings.anonymizeData };
 
-        // Navigation State
-        if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
-        if (settings.currentSubject !== undefined) runtimeState.navigation.currentSubject = settings.currentSubject;
-        if (settings.currentInputMode !== undefined) runtimeState.navigation.currentInputMode = settings.currentInputMode;
-        if (settings.activeStatFilter !== undefined) runtimeState.navigation.activeStatFilter = settings.activeStatFilter;
+        // Navigation State (propre à chaque onglet : ignorée lors d'une synchro inter-onglets)
+        if (!skipNavigation) {
+            if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
+            if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
+            if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
+            if (settings.currentSubject !== undefined) runtimeState.navigation.currentSubject = settings.currentSubject;
+            if (settings.currentInputMode !== undefined) runtimeState.navigation.currentInputMode = settings.currentInputMode;
+            if (settings.activeStatFilter !== undefined) runtimeState.navigation.activeStatFilter = settings.activeStatFilter;
+        }
 
         // Data Settings
-        if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
         if (settings.deletedItems !== undefined && settings.deletedItems && typeof settings.deletedItems === 'object') {
             runtimeState.data.deletedItems = {
                 students: Array.isArray(settings.deletedItems.students) ? settings.deletedItems.students : [],
@@ -358,7 +362,7 @@ export const StorageManager = {
                 const parsedState = JSON.parse(savedState);
 
                 if (parsedState.settings) {
-                    this._applyLoadedSettings(parsedState.settings);
+                    this._applyLoadedSettings(parsedState.settings, { skipNavigation: fromTabSync });
                     hasLoadedSettingsFromLS = true;
                 }
 
@@ -404,7 +408,7 @@ export const StorageManager = {
                 if (!hasLoadedSettingsFromLS && typeof DBService.get === 'function') {
                     const dbSettingsRecord = await DBService.get('appData', 'userSettings');
                     if (dbSettingsRecord?.value && typeof dbSettingsRecord.value === 'object') {
-                        this._applyLoadedSettings(dbSettingsRecord.value.settings || dbSettingsRecord.value);
+                        this._applyLoadedSettings(dbSettingsRecord.value.settings || dbSettingsRecord.value, { skipNavigation: fromTabSync });
                     }
                 }
 
@@ -459,6 +463,7 @@ export const StorageManager = {
                 runtimeState._dataPurgeDetected = false;
             }
 
+            this._ensureValidActiveClass();
             this._updateFilteredResultsForCurrentClass();
 
         } catch (e) {
@@ -506,43 +511,26 @@ export const StorageManager = {
     },
 
     /**
-     * Vérifie si un objet classe correspond à la classe d'exemple/démo.
+     * Garantit que la classe active existe toujours (classe physique ou virtuelle reconstituée).
+     * À appeler une fois `classes` ET `generatedResults` à jour (les classes virtuelles dérivent des élèves).
+     * - Conserve la classe active si elle existe (sauf démo quand `preferRealClass` et qu'une vraie classe existe).
+     * - Sinon, sélectionne la première classe réelle, à défaut la première classe de la liste.
      * @private
-     * @param {Object|null|undefined} cls
-     * @returns {boolean}
+     * @param {Object} [options]
+     * @param {boolean} [options.preferRealClass=false] - Quitter la « Classe exemple » au profit d'une vraie classe (après import)
      */
-    _isDemoClassObj(cls) {
-        return Boolean(cls && (cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple'));
-    },
-
-    /**
-     * Résout la classe active après un import ou une fusion de classes sans dépendre
-     * d'un `currentClassId` externe issu d'une sauvegarde :
-     * - Conserve la classe locale active si elle existe toujours dans la liste (et n'est pas
-     *   la classe démo alors que de vraies classes sont disponibles).
-     * - Sinon, sélectionne la première classe réelle (ou la première classe de la liste).
-     * @private
-     */
-    _resolveActiveClassAfterImport() {
-        const classes = userSettings.academic.classes || [];
-        if (classes.length === 0) {
-            userSettings.academic.currentClassId = null;
-            appState.currentClassId = null;
-            return;
-        }
-
+    _ensureValidActiveClass({ preferRealClass = false } = {}) {
+        const classes = ClassManager.getAllClasses();
         const currentId = userSettings.academic.currentClassId;
-        const currentCls = classes.find(c => c.id === currentId);
-        const hasRealClass = classes.some(c => !this._isDemoClassObj(c));
+        const realClass = classes.find(c => !ClassManager.isDemoClass(c.id));
+        const currentExists = Boolean(ClassManager.getClassById(currentId));
+        const leaveDemo = preferRealClass && Boolean(realClass) && ClassManager.isDemoClass(currentId);
 
-        if (currentCls && (!this._isDemoClassObj(currentCls) || !hasRealClass)) {
-            appState.currentClassId = currentId;
-            return;
-        }
-
-        const defaultCls = classes.find(c => !this._isDemoClassObj(c)) || classes[0];
-        userSettings.academic.currentClassId = defaultCls.id;
-        appState.currentClassId = defaultCls.id;
+        const nextId = currentExists && !leaveDemo
+            ? currentId
+            : ((realClass || classes[0])?.id ?? null);
+        userSettings.academic.currentClassId = nextId;
+        appState.currentClassId = nextId;
     },
 
     /**
@@ -550,27 +538,10 @@ export const StorageManager = {
      * @private
      */
     _updateFilteredResultsForCurrentClass() {
-        const currentClassId = userSettings.academic.currentClassId;
-        const allResults = runtimeState.data.generatedResults || [];
-        if (currentClassId) {
-            if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
-                const normOrigin = currentClassId.replace('virtual_', '');
-                runtimeState.data.filteredResults = allResults.filter(
-                    r => {
-                        const origin = r.studentData?.classe || r.classe || r.originClass || '';
-                        return origin && Utils.normalizeClassName(origin) === normOrigin;
-                    }
-                );
-            } else {
-                runtimeState.data.filteredResults = allResults.filter(
-                    r => r.classId === currentClassId
-                );
-            }
-        } else {
-            runtimeState.data.filteredResults = allResults.filter(
-                r => !r.classId
-            );
-        }
+        runtimeState.data.filteredResults = ClassManager.getStudentsForClass(
+            userSettings.academic.currentClassId,
+            runtimeState.data.generatedResults || []
+        );
     },
 
     async savePreRestoreSnapshot() {
@@ -709,9 +680,6 @@ export const StorageManager = {
         // Nettoyer les anciennes propriétés obsolètes
         if (!userSettings.import.massImportFormats) {
             userSettings.import.massImportFormats = { trimestres: {}, semestres: {} };
-        }
-        if (!runtimeState.data.refinementEdits) {
-            runtimeState.data.refinementEdits = {};
         }
 
         if (!subjects[runtimeState.navigation.currentSubject]) {
@@ -903,7 +871,6 @@ export const StorageManager = {
             currentInputMode: runtimeState.navigation.currentInputMode,
             activeStatFilter: runtimeState.navigation.activeStatFilter,
 
-            refinementEdits: runtimeState.data.refinementEdits,
             deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
 
             journalThreshold: userSettings.academic.journalThreshold,
@@ -1000,8 +967,9 @@ export const StorageManager = {
     },
 
     /**
-     * Retourne un snapshot des paramètres utilisateur expurgé des états de navigation transitoires
-     * et de la configuration matérielle locale (Ollama). Les clés API sont exclues par défaut
+     * Retourne un snapshot des paramètres utilisateur expurgé des états de navigation transitoires,
+     * de la configuration matérielle locale (Ollama), des classes et des tombstones (transportés à la
+     * racine des exports via `classes` et `deletedItems`). Les clés API sont exclues par défaut
      * (exports JSON) mais peuvent être incluses pour la synchronisation Cloud privée.
      * @param {Object} [options]
      * @param {boolean} [options.includeApiKeys=false] - Inclure les clés API dans le snapshot
@@ -1015,12 +983,13 @@ export const StorageManager = {
             'ollamaEnabled',
             'ollamaBaseUrl',
             'ollamaInstalledModels',
+            'classes',
+            'deletedItems',
             'currentClassId',
             'currentPeriod',
             'currentSubject',
             'currentInputMode',
-            'activeStatFilter',
-            'refinementEdits'
+            'activeStatFilter'
         ];
         if (!includeApiKeys) {
             keysToRemove.push(...API_KEY_SETTINGS_KEYS);
@@ -1405,8 +1374,9 @@ export const StorageManager = {
                 deviceId: this.getDeviceId()
             },
             settings: this.getExportableSettings(),
-            // Classes
+            // Classes & Tombstones
             classes: userSettings.academic.classes || [],
+            deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
             // Student data with per-item timestamps
             generatedResults: (runtimeState.data.generatedResults || []).map(result => ({
                 ...result,
@@ -1445,6 +1415,381 @@ export const StorageManager = {
     },
 
     /**
+     * Persiste la liste complète des résultats élèves dans IndexedDB.
+     * @private
+     * @param {Array<Object>} results
+     */
+    async _persistGeneratedResults(results) {
+        if (typeof DBService.replaceAll === 'function') {
+            await DBService.replaceAll('generatedResults', results);
+        } else {
+            await DBService.clear('generatedResults');
+            await DBService.putAll('generatedResults', results);
+        }
+    },
+
+    /**
+     * Consolide les tombstones (deletedItems) locaux et entrants (racine ou fallback legacy settings.deletedItems).
+     * @private
+     * @param {Object} incomingData - Payload entrant (backup JSON ou données Cloud)
+     * @param {Object} [options]
+     * @param {boolean} [options.applyToState=true] - Mettre à jour runtimeState.data.deletedItems
+     * @returns {{ deletedStudentsMap: Map<string, Object>, deletedClassesMap: Map<string, Object> }}
+     */
+    _consolidateTombstones(incomingData, { applyToState = true } = {}) {
+        const localDeletedStudents = Array.isArray(runtimeState.data?.deletedItems?.students)
+            ? runtimeState.data.deletedItems.students
+            : [];
+        const incomingDeletedStudents = Array.isArray(incomingData?.deletedItems?.students)
+            ? incomingData.deletedItems.students
+            : (Array.isArray(incomingData?.settings?.deletedItems?.students) ? incomingData.settings.deletedItems.students : []);
+        const deletedStudentsMap = new Map();
+        [...localDeletedStudents, ...incomingDeletedStudents].forEach(item => {
+            if (!item?.id) return;
+            const existing = deletedStudentsMap.get(item.id);
+            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
+                deletedStudentsMap.set(item.id, item);
+            }
+        });
+
+        const localDeletedClasses = Array.isArray(runtimeState.data?.deletedItems?.classes)
+            ? runtimeState.data.deletedItems.classes
+            : [];
+        const incomingDeletedClasses = Array.isArray(incomingData?.deletedItems?.classes)
+            ? incomingData.deletedItems.classes
+            : (Array.isArray(incomingData?.settings?.deletedItems?.classes) ? incomingData.settings.deletedItems.classes : []);
+        const deletedClassesMap = new Map();
+        [...localDeletedClasses, ...incomingDeletedClasses].forEach(item => {
+            if (!item?.id) return;
+            const existing = deletedClassesMap.get(item.id);
+            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
+                deletedClassesMap.set(item.id, item);
+            }
+        });
+
+        if (applyToState && runtimeState.data) {
+            runtimeState.data.deletedItems = {
+                students: Array.from(deletedStudentsMap.values()),
+                classes: Array.from(deletedClassesMap.values())
+            };
+        }
+
+        return { deletedStudentsMap, deletedClassesMap };
+    },
+
+    /**
+     * Fusionne la liste des classes entrantes avec les classes locales :
+     * - Filtre selon les tombstones `deletedClassesMap`
+     * - Écarte la « Classe exemple » locale d'accueil uniquement si l'appareil local ne contient
+     *   que cette classe d'exemple par défaut et que les données entrantes apportent d'autres classes
+     * - Fusionne les horodatages de plan de classe et les synthèses IA `analyses[period]` par `timestamp`
+     * @private
+     * @param {Array<Object>} incomingClasses
+     * @param {Map<string, Object>} deletedClassesMap
+     * @returns {{ addedClasses: number, evictedDemoClassIds: Set<string> }}
+     */
+    _mergeClassesList(incomingClasses, deletedClassesMap) {
+        const currentLocalClasses = userSettings.academic.classes || [];
+        const safeIncoming = Array.isArray(incomingClasses) ? incomingClasses : [];
+        const incomingClassIds = new Set(safeIncoming.map(c => c?.id).filter(Boolean));
+        const localHasOnlyDemo = currentLocalClasses.length > 0 && currentLocalClasses.every(c => ClassManager.isDemoClass(c.id));
+        const evictedDemoClassIds = new Set();
+
+        if (localHasOnlyDemo && incomingClassIds.size > 0) {
+            currentLocalClasses.forEach(c => {
+                if (c?.id && ClassManager.isDemoClass(c.id) && !incomingClassIds.has(c.id)) {
+                    evictedDemoClassIds.add(c.id);
+                }
+            });
+        }
+
+        const localClasses = currentLocalClasses.filter(lClass => {
+            if (!lClass?.id || evictedDemoClassIds.has(lClass.id)) return false;
+            const tombstone = deletedClassesMap.get(lClass.id);
+            if (!tombstone) return true;
+            const localTime = lClass.updatedAt || lClass.createdAt || 0;
+            return localTime > (tombstone.deletedAt || 0);
+        });
+
+        const localClassIds = new Set(localClasses.map(c => c.id));
+        let addedClasses = 0;
+
+        safeIncoming.forEach(rClass => {
+            if (!rClass?.id) return;
+            const tombstone = deletedClassesMap.get(rClass.id);
+            const remoteClassTime = rClass.updatedAt || rClass.createdAt || 0;
+            if (tombstone && (tombstone.deletedAt || Infinity) >= remoteClassTime) {
+                return;
+            }
+            if (!localClassIds.has(rClass.id)) {
+                localClasses.push(rClass);
+                localClassIds.add(rClass.id);
+                addedClasses++;
+            } else {
+                const localC = localClasses.find(c => c.id === rClass.id);
+                if (!localC) return;
+
+                if (rClass.seatingUpdatedAt && (!localC.seatingUpdatedAt || rClass.seatingUpdatedAt > localC.seatingUpdatedAt)) {
+                    localC.seatingUpdatedAt = rClass.seatingUpdatedAt;
+                    if (rClass.seatingLocked !== undefined) localC.seatingLocked = rClass.seatingLocked;
+                    if (rClass.seatingSpecialLayout !== undefined) localC.seatingSpecialLayout = rClass.seatingSpecialLayout;
+                }
+                if (rClass.seatingActivityUpdatedAt && (!localC.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt > localC.seatingActivityUpdatedAt)) {
+                    localC.seatingActivityUpdatedAt = rClass.seatingActivityUpdatedAt;
+                    if (rClass.seatingActivityLocked !== undefined) localC.seatingActivityLocked = rClass.seatingActivityLocked;
+                    if (rClass.seatingActivitySpecialLayout !== undefined) localC.seatingActivitySpecialLayout = rClass.seatingActivitySpecialLayout;
+                }
+                if (rClass.analyses && typeof rClass.analyses === 'object') {
+                    if (!localC.analyses || typeof localC.analyses !== 'object') {
+                        localC.analyses = {};
+                    }
+                    for (const [period, rAnalysis] of Object.entries(rClass.analyses)) {
+                        if (!rAnalysis || typeof rAnalysis !== 'object') continue;
+                        const lAnalysis = localC.analyses[period];
+                        if (!lAnalysis || (rAnalysis.timestamp || 0) > (lAnalysis.timestamp || 0)) {
+                            localC.analyses[period] = { ...rAnalysis };
+                        }
+                    }
+                }
+            }
+        });
+
+        userSettings.academic.classes = localClasses;
+        return { addedClasses, evictedDemoClassIds };
+    },
+
+    /**
+     * Fusion granulaire non-destructive des dossiers élèves (utilisée par `mergeRemoteData` et `importBackup({ mergeData: true })`).
+     * @private
+     * @param {Array<Object>} incomingResults
+     * @param {Object} [options]
+     * @param {Map<string, Object>} [options.deletedStudentsMap]
+     * @param {Map<string, Object>} [options.deletedClassesMap]
+     * @param {Set<string>} [options.evictedDemoClassIds]
+     * @param {Array<Object>} [options.incomingClasses]
+     * @returns {Promise<{ addedStudents: number, updatedStudents: number, skippedStudents: number, addedJournalEntries: number }>}
+     */
+    async _mergeStudentRecords(
+        incomingResults,
+        {
+            deletedStudentsMap = new Map(),
+            deletedClassesMap = new Map(),
+            evictedDemoClassIds = new Set(),
+            incomingClasses = []
+        } = {}
+    ) {
+        let addedStudents = 0;
+        let updatedStudents = 0;
+        let skippedStudents = 0;
+        let addedJournalEntries = 0;
+
+        const localResults = (runtimeState.data.generatedResults || []).filter(localStudent => {
+            if (localStudent.classId && evictedDemoClassIds.has(localStudent.classId)) return false;
+            const studentTombstone = deletedStudentsMap.get(localStudent.id);
+            const classTombstone = localStudent.classId ? deletedClassesMap.get(localStudent.classId) : null;
+            const localTime = localStudent._lastModified || (localStudent.timestamp ? new Date(localStudent.timestamp).getTime() : 0) || 0;
+            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= localTime) return false;
+            if (classTombstone && (classTombstone.deletedAt || Infinity) >= localTime) return false;
+            return true;
+        });
+
+        const safeIncoming = Array.isArray(incomingResults) ? incomingResults : [];
+        const localMap = new Map(localResults.map(r => [r.id, r]));
+
+        safeIncoming.forEach(rawRemoteStudent => {
+            const remoteStudent = this._ensureStudentId(rawRemoteStudent);
+            const studentTombstone = deletedStudentsMap.get(remoteStudent.id);
+            const classTombstone = remoteStudent.classId ? deletedClassesMap.get(remoteStudent.classId) : null;
+            const remoteTime = remoteStudent._lastModified || (remoteStudent.timestamp ? new Date(remoteStudent.timestamp).getTime() : 0) || 0;
+            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= remoteTime) {
+                return;
+            }
+            if (classTombstone && (classTombstone.deletedAt || Infinity) >= remoteTime) {
+                return;
+            }
+
+            const localStudent = localMap.get(remoteStudent.id);
+
+            if (!localStudent) {
+                localResults.push({
+                    ...remoteStudent,
+                    _lastModified: remoteStudent._lastModified || Date.now()
+                });
+                addedStudents++;
+            } else {
+                let hasStudentUpdates = false;
+                const localTime = localStudent._lastModified || (localStudent.timestamp ? new Date(localStudent.timestamp).getTime() : 0) || 0;
+                const isRemoteRecordNewer = remoteTime > localTime;
+
+                // Champs de fiche : complétés si absents en local, remplacés si la fiche entrante est plus récente
+                const adoptField = (target, source, field) => {
+                    if (!source[field]) return;
+                    if (target[field] && (!isRemoteRecordNewer || Utils.isEqual(target[field], source[field]))) return;
+                    target[field] = source[field];
+                    hasStudentUpdates = true;
+                };
+                ['nom', 'prenom', 'classe', 'classId', 'strengthsWeaknesses', 'nextSteps'].forEach(field => adoptField(localStudent, remoteStudent, field));
+                if (remoteStudent.wasGenerated && !localStudent.wasGenerated) {
+                    localStudent.wasGenerated = true;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.studentData) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    ['nom', 'prenom', 'classe'].forEach(field => adoptField(localStudent.studentData, remoteStudent.studentData, field));
+                }
+
+                // Adopte l'historique de la période et rafraîchit le cache racine `appreciation` (même règle que Utils.setPeriodAppreciation)
+                const adoptRemotePeriodExtras = (period, appreciation) => {
+                    if (remoteStudent.historyPerPeriod?.[period]) {
+                        if (!localStudent.historyPerPeriod) localStudent.historyPerPeriod = {};
+                        localStudent.historyPerPeriod[period] = remoteStudent.historyPerPeriod[period];
+                    }
+                    if (appreciation && localStudent.studentData?.currentPeriod === period) {
+                        localStudent.appreciation = appreciation;
+                    }
+                };
+
+                // A. Fusion additive du Journal de bord (aucune note perdue)
+                const localJournal = Array.isArray(localStudent.journal) ? localStudent.journal : [];
+                const remoteJournal = Array.isArray(remoteStudent.journal) ? remoteStudent.journal : [];
+
+                if (remoteJournal.length > 0) {
+                    const localEntryKeys = new Set(localJournal.map(e => e.id || `${e.date}_${(e.note || '').slice(0, 20)}`));
+                    remoteJournal.forEach(remoteEntry => {
+                        const entryKey = remoteEntry.id || `${remoteEntry.date}_${(remoteEntry.note || '').slice(0, 20)}`;
+                        if (!localEntryKeys.has(entryKey)) {
+                            localJournal.push(remoteEntry);
+                            localEntryKeys.add(entryKey);
+                            addedJournalEntries++;
+                            hasStudentUpdates = true;
+                        } else {
+                            const localEntry = localJournal.find(e => (e.id && e.id === remoteEntry.id) || `${e.date}_${(e.note || '').slice(0, 20)}` === entryKey);
+                            if (localEntry && remoteEntry._lastModified && (!localEntry._lastModified || remoteEntry._lastModified > localEntry._lastModified)) {
+                                Object.assign(localEntry, remoteEntry);
+                                hasStudentUpdates = true;
+                            }
+                        }
+                    });
+                    localJournal.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+                    localStudent.journal = localJournal;
+                }
+
+                // B. Fusion des photos d'élèves
+                if (remoteStudent.studentPhoto?.data) {
+                    const localPhotoTime = localStudent.studentPhoto?.uploadedAt ? new Date(localStudent.studentPhoto.uploadedAt).getTime() : 0;
+                    const remotePhotoTime = remoteStudent.studentPhoto.uploadedAt ? new Date(remoteStudent.studentPhoto.uploadedAt).getTime() : 0;
+                    if (!localStudent.studentPhoto?.data || remotePhotoTime > localPhotoTime) {
+                        localStudent.studentPhoto = remoteStudent.studentPhoto;
+                        hasStudentUpdates = true;
+                    }
+                }
+
+                // C. Fusion des périodes (notes, appréciations, contexte et historique de période)
+                if (remoteStudent.studentData?.periods) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    if (!localStudent.studentData.periods) localStudent.studentData.periods = {};
+
+                    const localPeriods = localStudent.studentData.periods;
+                    const remotePeriods = remoteStudent.studentData.periods;
+
+                    for (const period of Object.keys(remotePeriods)) {
+                        const rPeriodData = remotePeriods[period];
+                        const lPeriodData = localPeriods[period];
+
+                        if (!lPeriodData) {
+                            localPeriods[period] = { ...rPeriodData };
+                            adoptRemotePeriodExtras(period, rPeriodData?.appreciation);
+                            hasStudentUpdates = true;
+                        } else {
+                            const hasPeriodTimestamps = Boolean(rPeriodData._lastModified || lPeriodData._lastModified);
+                            const rTime = hasPeriodTimestamps ? (rPeriodData._lastModified || 0) : remoteTime;
+                            const lTime = hasPeriodTimestamps ? (lPeriodData._lastModified || 0) : localTime;
+
+                            const rApp = (rPeriodData.appreciation || '').trim();
+                            const lApp = (lPeriodData.appreciation || '').trim();
+
+                            if (rApp && (!lApp || rTime > lTime)) {
+                                lPeriodData.appreciation = rPeriodData.appreciation;
+                                lPeriodData._lastModified = rPeriodData._lastModified || rTime || Date.now();
+                                adoptRemotePeriodExtras(period, rPeriodData.appreciation);
+                                hasStudentUpdates = true;
+                            }
+
+                            if (rPeriodData.grade !== undefined && rPeriodData.grade !== null) {
+                                if (lPeriodData.grade === undefined || lPeriodData.grade === null || rTime > lTime) {
+                                    lPeriodData.grade = rPeriodData.grade;
+                                    hasStudentUpdates = true;
+                                }
+                            }
+
+                            if (rPeriodData.context && (!lPeriodData.context || rTime > lTime)) {
+                                lPeriodData.context = rPeriodData.context;
+                                hasStudentUpdates = true;
+                            }
+                        }
+                    }
+                }
+
+                // D. Fusion des statuts (tags)
+                const lStatuses = Array.isArray(localStudent.studentData?.statuses) ? localStudent.studentData.statuses : [];
+                const rStatuses = Array.isArray(remoteStudent.studentData?.statuses) ? remoteStudent.studentData.statuses : [];
+                if (rStatuses.length > 0) {
+                    const combined = Array.from(new Set([...lStatuses, ...rStatuses]));
+                    if (combined.length !== lStatuses.length) {
+                        if (!localStudent.studentData) localStudent.studentData = {};
+                        localStudent.studentData.statuses = combined;
+                        hasStudentUpdates = true;
+                    }
+                }
+
+                // E. Fusion du placement du plan de classe (seatingPosition & seatingActivityPosition)
+                if (remoteStudent.seatingPosition) {
+                    const localClasses = userSettings.academic.classes || [];
+                    const rClass = Array.isArray(incomingClasses) ? incomingClasses.find(c => c.id === remoteStudent.classId) : null;
+                    const lClass = localClasses.find(c => c.id === localStudent.classId);
+                    const isRemoteSeatingNewer = rClass?.seatingUpdatedAt && (!lClass?.seatingUpdatedAt || rClass.seatingUpdatedAt >= lClass.seatingUpdatedAt);
+                    if (!localStudent.seatingPosition || isRemoteSeatingNewer) {
+                        const lPos = localStudent.seatingPosition;
+                        const rPos = remoteStudent.seatingPosition;
+                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false)) {
+                            localStudent.seatingPosition = { ...rPos };
+                            hasStudentUpdates = true;
+                        }
+                    }
+                }
+                if (remoteStudent.seatingActivityPosition) {
+                    const localClasses = userSettings.academic.classes || [];
+                    const rClass = Array.isArray(incomingClasses) ? incomingClasses.find(c => c.id === remoteStudent.classId) : null;
+                    const lClass = localClasses.find(c => c.id === localStudent.classId);
+                    const isRemoteActNewer = rClass?.seatingActivityUpdatedAt && (!lClass?.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt >= lClass.seatingActivityUpdatedAt);
+                    if (!localStudent.seatingActivityPosition || isRemoteActNewer) {
+                        const lPos = localStudent.seatingActivityPosition;
+                        const rPos = remoteStudent.seatingActivityPosition;
+                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false) || (lPos.order ?? 0) !== (rPos.order ?? 0)) {
+                            localStudent.seatingActivityPosition = { ...rPos };
+                            hasStudentUpdates = true;
+                        }
+                    }
+                }
+
+                if (hasStudentUpdates) {
+                    localStudent._lastModified = Date.now();
+                    updatedStudents++;
+                } else {
+                    skippedStudents++;
+                }
+            }
+        });
+
+        let cleanResults = this.migrateData(localResults);
+        cleanResults = Utils.deduplicateResults(cleanResults);
+        runtimeState.data.generatedResults = cleanResults;
+        await this._persistGeneratedResults(cleanResults);
+
+        return { addedStudents, updatedStudents, skippedStudents, addedJournalEntries };
+    },
+
+    /**
      * Import a backup file with merge support.
      * @param {string} fileContent - JSON content
      * @param {Object} options - { mergeData: boolean }
@@ -1466,6 +1811,19 @@ export const StorageManager = {
             const cats = options.categories;
             const shouldImport = (cat) => !cats || cats[cat] === true;
 
+            // Consolidate or restore tombstones (deletedItems)
+            let deletedStudentsMap = new Map();
+            let deletedClassesMap = new Map();
+            if (options.mergeData) {
+                ({ deletedStudentsMap, deletedClassesMap } = this._consolidateTombstones(backup));
+            } else if (runtimeState.data && (shouldImport('classes') || shouldImport('students'))) {
+                const incomingDeleted = backup.deletedItems || backup.settings?.deletedItems;
+                runtimeState.data.deletedItems = {
+                    students: Array.isArray(incomingDeleted?.students) ? incomingDeleted.students : [],
+                    classes: Array.isArray(incomingDeleted?.classes) ? incomingDeleted.classes : []
+                };
+            }
+
             // Import settings
             if (shouldImport('settings') && settings.subjects) {
                 Object.assign(appState, {
@@ -1479,7 +1837,6 @@ export const StorageManager = {
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
-                    refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,
                     seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid,
@@ -1510,16 +1867,13 @@ export const StorageManager = {
             }
 
             // Import classes if present
-            if (shouldImport('classes') && backup.classes && Array.isArray(backup.classes)) {
+            let evictedDemoClassIds = new Set();
+            if (shouldImport('classes') && (Array.isArray(backup.classes) || (options.mergeData && deletedClassesMap.size > 0))) {
                 if (options.mergeData) {
-                    const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
-                    backup.classes.forEach(importedClass => {
-                        if (!existingIds.has(importedClass.id)) {
-                            userSettings.academic.classes.push(importedClass);
-                            stats.classesAdded++;
-                        }
-                    });
-                } else {
+                    const mergeClassRes = this._mergeClassesList(backup.classes || [], deletedClassesMap);
+                    stats.classesAdded = mergeClassRes.addedClasses;
+                    evictedDemoClassIds = mergeClassRes.evictedDemoClassIds;
+                } else if (Array.isArray(backup.classes)) {
                     userSettings.academic.classes = backup.classes;
                     if (settings?.classesCustomOrder !== undefined) {
                         userSettings.academic.classesCustomOrder = Boolean(settings.classesCustomOrder);
@@ -1529,15 +1883,13 @@ export const StorageManager = {
                     }
                     stats.classesAdded = backup.classes.length;
                 }
-
-                this._resolveActiveClassAfterImport();
             }
 
             // Import student data
             if (shouldImport('students')) {
                 const includeJournal = !cats || cats.journal !== false;
                 const stripJournal = !includeJournal;
-                let importedResults = (backup.generatedResults || []).map(r => {
+                const importedResults = (backup.generatedResults || []).map(r => {
                     const withId = this._ensureStudentId(r);
                     if (stripJournal) {
                         const { journal, ...rest } = withId;
@@ -1550,68 +1902,45 @@ export const StorageManager = {
                     stats.journalEntries = importedResults.reduce((n, r) => n + (r.journal?.length || 0), 0);
                 }
 
-                if (importedResults.length > 0) {
-                    const existingResults = appState.generatedResults || [];
-
-                    if (options.mergeData) {
-                        const existingMap = new Map(existingResults.map(r => [r.id, r]));
-
-                        importedResults.forEach(imported => {
-                            const existing = existingMap.get(imported.id);
-                            if (!existing) {
-                                existingResults.push({
-                                    ...imported,
-                                    _lastModified: imported._lastModified || Date.now()
-                                });
-                                stats.imported++;
-                            } else {
-                                const importedTime = imported._lastModified || 0;
-                                const existingTime = existing._lastModified || 0;
-
-                                if (importedTime > existingTime) {
-                                    Object.assign(existing, imported);
-                                    stats.updated++;
-                                } else {
-                                    stats.skipped++;
-                                }
-                            }
+                if (options.mergeData) {
+                    const hasLocalOrIncoming = importedResults.length > 0 ||
+                        (runtimeState.data.generatedResults?.length || 0) > 0 ||
+                        deletedStudentsMap.size > 0 ||
+                        deletedClassesMap.size > 0;
+                    if (hasLocalOrIncoming) {
+                        const mergeRes = await this._mergeStudentRecords(importedResults, {
+                            deletedStudentsMap,
+                            deletedClassesMap,
+                            evictedDemoClassIds,
+                            incomingClasses: backup.classes || []
                         });
-
-                        let mergedResults = this.migrateData(existingResults);
-                        mergedResults = Utils.deduplicateResults(mergedResults);
-                        runtimeState.data.generatedResults = mergedResults;
-                        if (typeof DBService.replaceAll === 'function') {
-                            await DBService.replaceAll('generatedResults', mergedResults);
-                        } else {
-                            await DBService.clear('generatedResults');
-                            await DBService.putAll('generatedResults', mergedResults);
-                        }
-                    } else {
-                        const newResults = importedResults.map(r => ({
-                            ...r,
-                            _lastModified: r._lastModified || Date.now()
-                        }));
-                        let cleanResults = this.migrateData(newResults);
-                        cleanResults = Utils.deduplicateResults(cleanResults);
-                        runtimeState.data.generatedResults = cleanResults;
-
-                        if (typeof DBService.replaceAll === 'function') {
-                            await DBService.replaceAll('generatedResults', cleanResults);
-                        } else {
-                            await DBService.clear('generatedResults');
-                            await DBService.putAll('generatedResults', cleanResults);
-                        }
-                        stats.imported = cleanResults.length;
+                        stats.imported = mergeRes.addedStudents;
+                        stats.updated = mergeRes.updatedStudents;
+                        stats.skipped = mergeRes.skippedStudents;
                     }
-                } else if (!options.mergeData) {
+                } else if (importedResults.length > 0) {
+                    const newResults = importedResults.map(r => ({
+                        ...r,
+                        _lastModified: r._lastModified || Date.now()
+                    }));
+                    let cleanResults = this.migrateData(newResults);
+                    cleanResults = Utils.deduplicateResults(cleanResults);
+                    runtimeState.data.generatedResults = cleanResults;
+                    await this._persistGeneratedResults(cleanResults);
+                    stats.imported = cleanResults.length;
+                } else {
                     runtimeState.data.generatedResults = [];
                     await DBService.clear('generatedResults');
                 }
+            } else if (evictedDemoClassIds.size > 0) {
+                // Classes importées sans les élèves : retirer quand même les élèves fictifs de la « Classe exemple » écartée
+                await this._mergeStudentRecords([], { evictedDemoClassIds });
             }
 
             if (runtimeState.data.generatedResults?.length > 0) {
                 runtimeState._dataPurgeDetected = false;
             }
+            this._ensureValidActiveClass({ preferRealClass: true });
             this._updateFilteredResultsForCurrentClass();
             this._ensureDefaultState();
             this._ensureConfigUpgrades();
@@ -1675,43 +2004,7 @@ export const StorageManager = {
             addedClasses: 0
         };
 
-        // Consolidate tombstones (deletedItems) between local and remote
-        const localDeletedStudents = Array.isArray(runtimeState.data?.deletedItems?.students)
-            ? runtimeState.data.deletedItems.students
-            : [];
-        const remoteDeletedStudents = Array.isArray(remoteData.deletedItems?.students)
-            ? remoteData.deletedItems.students
-            : (Array.isArray(remoteData.settings?.deletedItems?.students) ? remoteData.settings.deletedItems.students : []);
-        const deletedStudentsMap = new Map();
-        [...localDeletedStudents, ...remoteDeletedStudents].forEach(item => {
-            if (!item?.id) return;
-            const existing = deletedStudentsMap.get(item.id);
-            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
-                deletedStudentsMap.set(item.id, item);
-            }
-        });
-
-        const localDeletedClasses = Array.isArray(runtimeState.data?.deletedItems?.classes)
-            ? runtimeState.data.deletedItems.classes
-            : [];
-        const remoteDeletedClasses = Array.isArray(remoteData.deletedItems?.classes)
-            ? remoteData.deletedItems.classes
-            : (Array.isArray(remoteData.settings?.deletedItems?.classes) ? remoteData.settings.deletedItems.classes : []);
-        const deletedClassesMap = new Map();
-        [...localDeletedClasses, ...remoteDeletedClasses].forEach(item => {
-            if (!item?.id) return;
-            const existing = deletedClassesMap.get(item.id);
-            if (!existing || (item.deletedAt || 0) > (existing.deletedAt || 0)) {
-                deletedClassesMap.set(item.id, item);
-            }
-        });
-
-        if (runtimeState.data) {
-            runtimeState.data.deletedItems = {
-                students: Array.from(deletedStudentsMap.values()),
-                classes: Array.from(deletedClassesMap.values())
-            };
-        }
+        const { deletedStudentsMap, deletedClassesMap } = this._consolidateTombstones(remoteData);
 
         // 0. Fusion non-destructive des clés API et préférences IA distantes
         if (remoteData.settings && typeof remoteData.settings === 'object') {
@@ -1736,260 +2029,30 @@ export const StorageManager = {
             }
         }
 
-        // 1. Fusion des classes (union par ID, filtrée par tombstones)
-        if (Array.isArray(remoteData.classes)) {
-            let localClasses = (userSettings.academic.classes || []).filter(lClass => {
-                const tombstone = deletedClassesMap.get(lClass.id);
-                if (!tombstone) return true;
-                const localTime = lClass.updatedAt || lClass.createdAt || 0;
-                return localTime > (tombstone.deletedAt || 0);
-            });
-            const localClassIds = new Set(localClasses.map(c => c.id));
-            remoteData.classes.forEach(rClass => {
-                const tombstone = deletedClassesMap.get(rClass.id);
-                const remoteClassTime = rClass.updatedAt || rClass.createdAt || 0;
-                if (tombstone && (tombstone.deletedAt || Infinity) >= remoteClassTime) {
-                    return;
-                }
-                if (!localClassIds.has(rClass.id)) {
-                    localClasses.push(rClass);
-                    localClassIds.add(rClass.id);
-                    stats.addedClasses++;
-                } else {
-                    const localC = localClasses.find(c => c.id === rClass.id);
-                    if (localC && rClass.seatingUpdatedAt && (!localC.seatingUpdatedAt || rClass.seatingUpdatedAt > localC.seatingUpdatedAt)) {
-                        localC.seatingUpdatedAt = rClass.seatingUpdatedAt;
-                        if (rClass.seatingLocked !== undefined) localC.seatingLocked = rClass.seatingLocked;
-                        if (rClass.seatingSpecialLayout !== undefined) localC.seatingSpecialLayout = rClass.seatingSpecialLayout;
-                    }
-                    if (localC && rClass.seatingActivityUpdatedAt && (!localC.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt > localC.seatingActivityUpdatedAt)) {
-                        localC.seatingActivityUpdatedAt = rClass.seatingActivityUpdatedAt;
-                        if (rClass.seatingActivityLocked !== undefined) localC.seatingActivityLocked = rClass.seatingActivityLocked;
-                        if (rClass.seatingActivitySpecialLayout !== undefined) localC.seatingActivitySpecialLayout = rClass.seatingActivitySpecialLayout;
-                    }
-                }
-            });
-            userSettings.academic.classes = localClasses;
-            this._resolveActiveClassAfterImport();
+        // 1. Fusion des classes (union par ID, filtrée par tombstones, synthèses IA & plan de classe)
+        let evictedDemoClassIds = new Set();
+        if (Array.isArray(remoteData.classes) || deletedClassesMap.size > 0) {
+            const mergeClassRes = this._mergeClassesList(remoteData.classes || [], deletedClassesMap);
+            stats.addedClasses = mergeClassRes.addedClasses;
+            evictedDemoClassIds = mergeClassRes.evictedDemoClassIds;
         }
 
-        // 2. Fusion des élèves (generatedResults) avec filtrage des tombstones
-        const localResults = (runtimeState.data.generatedResults || []).filter(localStudent => {
-            const studentTombstone = deletedStudentsMap.get(localStudent.id);
-            const classTombstone = localStudent.classId ? deletedClassesMap.get(localStudent.classId) : null;
-            const localTime = localStudent._lastModified || (localStudent.timestamp ? new Date(localStudent.timestamp).getTime() : 0) || 0;
-            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= localTime) return false;
-            if (classTombstone && (classTombstone.deletedAt || Infinity) >= localTime) return false;
-            return true;
+        // 2. Fusion granulaire des élèves (generatedResults) avec filtrage des tombstones
+        const mergeStudentRes = await this._mergeStudentRecords(remoteData.generatedResults || [], {
+            deletedStudentsMap,
+            deletedClassesMap,
+            evictedDemoClassIds,
+            incomingClasses: remoteData.classes || []
         });
-        const remoteResults = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults : [];
-        const localMap = new Map(localResults.map(r => [r.id, r]));
+        stats.addedStudents = mergeStudentRes.addedStudents;
+        stats.updatedStudents = mergeStudentRes.updatedStudents;
+        stats.addedJournalEntries = mergeStudentRes.addedJournalEntries;
 
-        remoteResults.forEach(rawRemoteStudent => {
-            const remoteStudent = this._ensureStudentId(rawRemoteStudent);
-            const studentTombstone = deletedStudentsMap.get(remoteStudent.id);
-            const classTombstone = remoteStudent.classId ? deletedClassesMap.get(remoteStudent.classId) : null;
-            const remoteTime = remoteStudent._lastModified || (remoteStudent.timestamp ? new Date(remoteStudent.timestamp).getTime() : 0) || 0;
-            if (studentTombstone && (studentTombstone.deletedAt || Infinity) >= remoteTime) {
-                return;
-            }
-            if (classTombstone && (classTombstone.deletedAt || Infinity) >= remoteTime) {
-                return;
-            }
-
-            const localStudent = localMap.get(remoteStudent.id);
-
-            if (!localStudent) {
-                // Élève présent uniquement sur le Cloud -> on l'ajoute en local
-                localResults.push({
-                    ...remoteStudent,
-                    _lastModified: remoteStudent._lastModified || Date.now()
-                });
-                stats.addedStudents++;
-            } else {
-                // Élève présent sur les deux supports -> fusion fine des champs
-                let hasStudentUpdates = false;
-
-                // Compléter les champs d'identification de base manquants en local
-                if (remoteStudent.nom && !localStudent.nom) {
-                    localStudent.nom = remoteStudent.nom;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.prenom && !localStudent.prenom) {
-                    localStudent.prenom = remoteStudent.prenom;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.classe && !localStudent.classe) {
-                    localStudent.classe = remoteStudent.classe;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.classId && !localStudent.classId) {
-                    localStudent.classId = remoteStudent.classId;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.studentData?.nom && !localStudent.studentData?.nom) {
-                    if (!localStudent.studentData) localStudent.studentData = {};
-                    localStudent.studentData.nom = remoteStudent.studentData.nom;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.studentData?.prenom && !localStudent.studentData?.prenom) {
-                    if (!localStudent.studentData) localStudent.studentData = {};
-                    localStudent.studentData.prenom = remoteStudent.studentData.prenom;
-                    hasStudentUpdates = true;
-                }
-                if (remoteStudent.studentData?.classe && !localStudent.studentData?.classe) {
-                    if (!localStudent.studentData) localStudent.studentData = {};
-                    localStudent.studentData.classe = remoteStudent.studentData.classe;
-                    hasStudentUpdates = true;
-                }
-
-                // A. Fusion additive du Journal de bord (aucune note perdue)
-                const localJournal = Array.isArray(localStudent.journal) ? localStudent.journal : [];
-                const remoteJournal = Array.isArray(remoteStudent.journal) ? remoteStudent.journal : [];
-
-                if (remoteJournal.length > 0) {
-                    const localEntryKeys = new Set(localJournal.map(e => e.id || `${e.date}_${(e.note || '').slice(0, 20)}`));
-                    remoteJournal.forEach(remoteEntry => {
-                        const entryKey = remoteEntry.id || `${remoteEntry.date}_${(remoteEntry.note || '').slice(0, 20)}`;
-                        if (!localEntryKeys.has(entryKey)) {
-                            localJournal.push(remoteEntry);
-                            localEntryKeys.add(entryKey);
-                            stats.addedJournalEntries++;
-                            hasStudentUpdates = true;
-                        } else {
-                            const localEntry = localJournal.find(e => (e.id && e.id === remoteEntry.id) || `${e.date}_${(e.note || '').slice(0, 20)}` === entryKey);
-                            if (localEntry && remoteEntry._lastModified && (!localEntry._lastModified || remoteEntry._lastModified > localEntry._lastModified)) {
-                                Object.assign(localEntry, remoteEntry);
-                                hasStudentUpdates = true;
-                            }
-                        }
-                    });
-                    localJournal.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
-                    localStudent.journal = localJournal;
-                }
-
-                // B. Fusion des photos d'élèves
-                if (remoteStudent.studentPhoto?.data) {
-                    const localPhotoTime = localStudent.studentPhoto?.uploadedAt ? new Date(localStudent.studentPhoto.uploadedAt).getTime() : 0;
-                    const remotePhotoTime = remoteStudent.studentPhoto.uploadedAt ? new Date(remoteStudent.studentPhoto.uploadedAt).getTime() : 0;
-                    if (!localStudent.studentPhoto?.data || remotePhotoTime > localPhotoTime) {
-                        localStudent.studentPhoto = remoteStudent.studentPhoto;
-                        hasStudentUpdates = true;
-                    }
-                }
-
-                // C. Fusion des périodes (notes, appréciations, contexte)
-                if (remoteStudent.studentData?.periods) {
-                    if (!localStudent.studentData) localStudent.studentData = {};
-                    if (!localStudent.studentData.periods) localStudent.studentData.periods = {};
-
-                    const localPeriods = localStudent.studentData.periods;
-                    const remotePeriods = remoteStudent.studentData.periods;
-
-                    for (const period of Object.keys(remotePeriods)) {
-                        const rPeriodData = remotePeriods[period];
-                        const lPeriodData = localPeriods[period];
-
-                        if (!lPeriodData) {
-                            localPeriods[period] = { ...rPeriodData };
-                            hasStudentUpdates = true;
-                        } else {
-                            const rTime = rPeriodData._lastModified || 0;
-                            const lTime = lPeriodData._lastModified || 0;
-
-                            const rApp = (rPeriodData.appreciation || '').trim();
-                            const lApp = (lPeriodData.appreciation || '').trim();
-
-                            if (rApp && !lApp) {
-                                lPeriodData.appreciation = rPeriodData.appreciation;
-                                lPeriodData._lastModified = rTime || Date.now();
-                                hasStudentUpdates = true;
-                            } else if (rApp && lApp && rTime > lTime) {
-                                lPeriodData.appreciation = rPeriodData.appreciation;
-                                lPeriodData._lastModified = rTime;
-                                hasStudentUpdates = true;
-                            }
-
-                            if (rPeriodData.grade !== undefined && rPeriodData.grade !== null) {
-                                if (lPeriodData.grade === undefined || lPeriodData.grade === null || rTime > lTime) {
-                                    lPeriodData.grade = rPeriodData.grade;
-                                    hasStudentUpdates = true;
-                                }
-                            }
-
-                            if (rPeriodData.context && (!lPeriodData.context || rTime > lTime)) {
-                                lPeriodData.context = rPeriodData.context;
-                                hasStudentUpdates = true;
-                            }
-                        }
-                    }
-                }
-
-                // D. Fusion des statuts (tags)
-                const lStatuses = Array.isArray(localStudent.studentData?.statuses) ? localStudent.studentData.statuses : [];
-                const rStatuses = Array.isArray(remoteStudent.studentData?.statuses) ? remoteStudent.studentData.statuses : [];
-                if (rStatuses.length > 0) {
-                    const combined = Array.from(new Set([...lStatuses, ...rStatuses]));
-                    if (combined.length !== lStatuses.length) {
-                        if (!localStudent.studentData) localStudent.studentData = {};
-                        localStudent.studentData.statuses = combined;
-                        hasStudentUpdates = true;
-                    }
-                }
-
-                // E. Fusion du placement du plan de classe (seatingPosition & seatingActivityPosition)
-                if (remoteStudent.seatingPosition) {
-                    const localClasses = userSettings.academic.classes || [];
-                    const rClass = Array.isArray(remoteData.classes) ? remoteData.classes.find(c => c.id === remoteStudent.classId) : null;
-                    const lClass = localClasses.find(c => c.id === localStudent.classId);
-                    const isRemoteSeatingNewer = rClass?.seatingUpdatedAt && (!lClass?.seatingUpdatedAt || rClass.seatingUpdatedAt >= lClass.seatingUpdatedAt);
-                    if (!localStudent.seatingPosition || isRemoteSeatingNewer) {
-                        const lPos = localStudent.seatingPosition;
-                        const rPos = remoteStudent.seatingPosition;
-                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false)) {
-                            localStudent.seatingPosition = { ...rPos };
-                            hasStudentUpdates = true;
-                        }
-                    }
-                }
-                if (remoteStudent.seatingActivityPosition) {
-                    const localClasses = userSettings.academic.classes || [];
-                    const rClass = Array.isArray(remoteData.classes) ? remoteData.classes.find(c => c.id === remoteStudent.classId) : null;
-                    const lClass = localClasses.find(c => c.id === localStudent.classId);
-                    const isRemoteActNewer = rClass?.seatingActivityUpdatedAt && (!lClass?.seatingActivityUpdatedAt || rClass.seatingActivityUpdatedAt >= lClass.seatingActivityUpdatedAt);
-                    if (!localStudent.seatingActivityPosition || isRemoteActNewer) {
-                        const lPos = localStudent.seatingActivityPosition;
-                        const rPos = remoteStudent.seatingActivityPosition;
-                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false) || (lPos.order ?? 0) !== (rPos.order ?? 0)) {
-                            localStudent.seatingActivityPosition = { ...rPos };
-                            hasStudentUpdates = true;
-                        }
-                    }
-                }
-
-                if (hasStudentUpdates) {
-                    localStudent._lastModified = Date.now();
-                    stats.updatedStudents++;
-                }
-            }
-        });
-
-        // 3. Nettoyer et dédupliquer
-        let cleanResults = this.migrateData(localResults);
-        cleanResults = Utils.deduplicateResults(cleanResults);
-        runtimeState.data.generatedResults = cleanResults;
-
-        if (typeof DBService.replaceAll === 'function') {
-            await DBService.replaceAll('generatedResults', cleanResults);
-        } else {
-            await DBService.clear('generatedResults');
-            await DBService.putAll('generatedResults', cleanResults);
-        }
-
-        // 4. Mettre à jour les filtres d'affichage si nécessaire
+        // 3. Mettre à jour la classe active et les filtres d'affichage (après fusion des élèves : classes virtuelles)
+        this._ensureValidActiveClass({ preferRealClass: true });
         this._updateFilteredResultsForCurrentClass();
 
-        // 5. Sauvegarde de l'état
+        // 4. Sauvegarde de l'état
         if (runtimeState.data.generatedResults?.length > 0) {
             runtimeState._dataPurgeDetected = false;
         }
@@ -2021,7 +2084,6 @@ export const StorageManager = {
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
-                    refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,
                     seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid

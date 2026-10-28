@@ -222,6 +222,7 @@ export const SeatingDragDrop = {
 
         const setHighlight = (memberId, active) => {
             if (!memberId) return;
+            if (active && (this._dragSource || this._touchSourceInfo || this._mousePressedElement)) return;
             cell.querySelectorAll(`.sc-stacked-avatar[data-result-id="${memberId}"], .sc-stacked-member[data-result-id="${memberId}"]`).forEach(el => {
                 el.classList.toggle('is-member-hovered', active);
             });
@@ -557,6 +558,8 @@ export const SeatingDragDrop = {
         const startY = e.clientY;
         const sourceInfo = this._resolveElementDragSource(dragTarget, e.target);
         let hasDragged = false;
+        let lastX = startX;
+        let lastY = startY;
 
         const onPointerMove = (ev) => {
             if (this._isLocked || !this._mousePressedElement) {
@@ -569,23 +572,9 @@ export const SeatingDragDrop = {
                 if (Math.hypot(cx - startX, cy - startY) < 4) return;
                 hasDragged = true;
                 this._dragSource = sourceInfo;
-                TooltipsUI?.hideAll?.();
+                this._suppressTouchTooltips(0);
                 this._dismissOnboardingHint();
 
-                if (sourceInfo.type === 'group-member' && sourceInfo.resultId) {
-                    dragTarget.querySelectorAll('.is-member-hovered').forEach(el => el.classList.remove('is-member-hovered'));
-                    this._clearSelection();
-                    dragTarget.querySelectorAll(`.sc-stacked-avatar[data-result-id="${sourceInfo.resultId}"], .sc-stacked-member[data-result-id="${sourceInfo.resultId}"]`).forEach(el => {
-                        el.classList.add('dragging-member');
-                    });
-                } else {
-                    if (sourceInfo.type !== 'multi-cell') {
-                        this._clearSelection();
-                    }
-                    dragTarget.classList.add('dragging');
-                }
-
-                this._removeDragClones();
                 const isGroupMember = sourceInfo.type === 'group-member' && sourceInfo.resultId;
                 const memberStudent = isGroupMember
                     ? (this._studentMap?.get(sourceInfo.resultId) || this._students?.find(s => s.id === sourceInfo.resultId) || false)
@@ -599,15 +588,43 @@ export const SeatingDragDrop = {
                     count,
                     memberStudent
                 });
+
+                this._removeDragClones();
+                document.getElementById('seatingChartView')?.setAttribute('data-dragging', 'true');
+
+                if (isGroupMember) {
+                    dragTarget.querySelectorAll('.is-member-hovered').forEach(el => el.classList.remove('is-member-hovered'));
+                    this._clearSelection();
+                    dragTarget.querySelectorAll(`.sc-stacked-avatar[data-result-id="${sourceInfo.resultId}"], .sc-stacked-member[data-result-id="${sourceInfo.resultId}"]`).forEach(el => {
+                        el.classList.add('dragging-member');
+                    });
+                } else {
+                    if (sourceInfo.type !== 'multi-cell') {
+                        this._clearSelection();
+                    }
+                    dragTarget.classList.add('dragging');
+                }
+
                 this._setFloatingClonePosition(clone, cx, cy);
                 document.body.appendChild(clone);
                 this._mouseDragClone = clone;
+                lastX = cx;
+                lastY = cy;
+                if (cx > 0 || cy > 0) {
+                    this._highlightCellUnderTouch(cx, cy);
+                    this._updateTouchAutoScroll(cx, cy);
+                }
+                return;
             }
 
+            if (cx === lastX && cy === lastY) return;
+            lastX = cx;
+            lastY = cy;
+
             if (this._mouseDragClone && (cx > 0 || cy > 0)) {
-                this._setFloatingClonePosition(this._mouseDragClone, cx, cy);
                 this._highlightCellUnderTouch(cx, cy);
                 this._updateTouchAutoScroll(cx, cy);
+                this._setFloatingClonePosition(this._mouseDragClone, cx, cy);
             }
         };
 
@@ -646,7 +663,7 @@ export const SeatingDragDrop = {
         const onPointerCancel = (ev) => finishDrag(ev, true);
 
         this._activeMouseDragAbort = () => finishDrag(null, true);
-        window.addEventListener('pointermove', onPointerMove, true);
+        window.addEventListener('pointermove', onPointerMove, { capture: true, passive: true });
         window.addEventListener('pointerup', onPointerUp, true);
         window.addEventListener('pointercancel', onPointerCancel, true);
         window.addEventListener('blur', onPointerCancel, { once: true });
@@ -660,6 +677,7 @@ export const SeatingDragDrop = {
             abort();
             return;
         }
+        const hadActiveDrag = Boolean(this._mouseDragClone || this._dragSource);
         if (this._mousePressedElement) {
             const el = this._mousePressedElement;
             this._mousePressedElement = null;
@@ -670,7 +688,11 @@ export const SeatingDragDrop = {
         this._stopTouchAutoScroll();
         this._mouseDragClone = null;
         this._dragSource = null;
+        this._dragGridAreaRect = null;
         this._removeDragClones();
+        if (hadActiveDrag) {
+            this._suppressTouchTooltips(150);
+        }
         document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
             c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
         });
@@ -678,7 +700,7 @@ export const SeatingDragDrop = {
     },
 
     _addTouchDrag(element, sourceInfo) {
-        let startX, startY, lastTouchX, lastTouchY, hasMoved = false, hasDragged = false;
+        let startX, startY, lastTouchX, lastTouchY, lastMoveX = -1, lastMoveY = -1, hasMoved = false, hasDragged = false;
         let isScrolling = false;
         let longPressTimer = null;
         let pendingSourceInfo = null;
@@ -702,6 +724,9 @@ export const SeatingDragDrop = {
             hasMoved = true;
             this._touchSourceInfo = pendingSourceInfo;
             this._touchDraggedElement = element;
+            this._suppressTouchTooltips(0);
+            this._createTouchGhost(element, touchPoint);
+            document.getElementById('seatingChartView')?.setAttribute('data-dragging', 'true');
             if (pendingSourceInfo.type === 'group-member' && pendingSourceInfo.resultId) {
                 element.querySelectorAll(`.sc-stacked-avatar[data-result-id="${pendingSourceInfo.resultId}"], .sc-stacked-member[data-result-id="${pendingSourceInfo.resultId}"]`).forEach(el => {
                     el.classList.add('dragging-member');
@@ -709,11 +734,9 @@ export const SeatingDragDrop = {
             } else {
                 element.classList.add('dragging');
             }
-            this._suppressTouchTooltips(0);
             if (pendingSourceInfo.resultId && !this._selectedChipIds.includes(pendingSourceInfo.resultId)) {
                 this._clearSelection();
             }
-            this._createTouchGhost(element, touchPoint);
             this._highlightCellUnderTouch(touchPoint.clientX, touchPoint.clientY);
             return true;
         };
@@ -733,6 +756,8 @@ export const SeatingDragDrop = {
             startY = touch.clientY;
             lastTouchX = startX;
             lastTouchY = startY;
+            lastMoveX = -1;
+            lastMoveY = -1;
             hasMoved = false;
             hasDragged = false;
             isScrolling = false;
@@ -829,12 +854,15 @@ export const SeatingDragDrop = {
 
             if (hasMoved && this._touchDragEl) {
                 if (e.cancelable) e.preventDefault();
-                if (touch.clientX > 0 || touch.clientY > 0) {
-                    this._setFloatingClonePosition(this._touchDragEl, touch.clientX, touch.clientY);
-                }
+                if (touch.clientX === lastMoveX && touch.clientY === lastMoveY) return;
+                lastMoveX = touch.clientX;
+                lastMoveY = touch.clientY;
                 if (hasDragged) {
                     this._highlightCellUnderTouch(touch.clientX, touch.clientY);
                     this._updateTouchAutoScroll(touch.clientX, touch.clientY);
+                }
+                if (touch.clientX > 0 || touch.clientY > 0) {
+                    this._setFloatingClonePosition(this._touchDragEl, touch.clientX, touch.clientY);
                 }
             }
         }, { passive: false });
@@ -881,6 +909,8 @@ export const SeatingDragDrop = {
     _removeTouchGhost() {
         this._touchDragEl?.remove();
         this._touchDragEl = null;
+        this._touchGhostOffsetX = null;
+        this._touchGhostOffsetY = null;
     },
 
     _updateTouchAutoScroll(x, y) {
@@ -888,7 +918,7 @@ export const SeatingDragDrop = {
         this._lastTouchDragY = y;
 
         const hasActiveFloatingClone = Boolean(this._touchDragEl || this._mouseDragClone);
-        if (this._isFitted || !hasActiveFloatingClone || this._isTouchOverSidebar(x, y)) {
+        if (this._isFitted || !hasActiveFloatingClone || this._isDragOverSidebar) {
             this._stopTouchAutoScroll();
             return;
         }
@@ -896,8 +926,12 @@ export const SeatingDragDrop = {
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea) return;
 
-        const rect = gridArea.getBoundingClientRect?.();
-        if (!rect || rect.width <= 0 || rect.height <= 0) return;
+        let rect = this._dragGridAreaRect;
+        if (!rect || rect.width <= 0 || rect.height <= 0) {
+            rect = gridArea.getBoundingClientRect?.();
+            if (!rect || rect.width <= 0 || rect.height <= 0) return;
+            this._dragGridAreaRect = rect;
+        }
 
         const edgeThreshold = 48;
         const maxSpeed = 9;
@@ -985,13 +1019,17 @@ export const SeatingDragDrop = {
         this._stopTouchAutoScroll();
         this._removeTouchGhost();
         this._touchSourceInfo = null;
+        this._dragGridAreaRect = null;
+        this._isDragOverSidebar = false;
         this._isTouchActive = false;
         this._lastTouchTime = preserveTouchTimestamp ? Date.now() : 0;
         if (hadActiveDrag && !this._isPinching) {
             this._suppressTouchTooltips(400);
         }
         document.body.classList.remove('sc-drag-over-sidebar');
+        document.getElementById('seatingChartView')?.removeAttribute('data-dragging');
         this._hoveredDragCell = null;
+        this._lastEvaluatedDragCell = undefined;
         document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
             c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
         });
@@ -1001,9 +1039,16 @@ export const SeatingDragDrop = {
     _highlightCellUnderTouch(x, y) {
         const sidebar = document.getElementById('scSidebar') || document.querySelector('.sc-sidebar');
         const activeSource = this._touchSourceInfo || this._dragSource;
-        const elementsAtPoint = document.elementsFromPoint?.(x, y) || [];
+        const canCheckSidebar = activeSource?.type !== 'sidebar';
+        const elementsAtPoint = (canCheckSidebar || !this._touchDragEl)
+            ? (document.elementsFromPoint?.(x, y) || [])
+            : null;
 
-        if (this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+        if (canCheckSidebar && this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+            this._isDragOverSidebar = true;
+            this._touchGhostOffsetX = null;
+            this._touchGhostOffsetY = null;
+            this._lastEvaluatedDragCell = undefined;
             if (this._hoveredDragCell) {
                 this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
                 this._hoveredDragCell = null;
@@ -1019,15 +1064,21 @@ export const SeatingDragDrop = {
             return;
         }
 
-        if (sidebar?.classList.contains('drag-over')) {
-            sidebar.classList.remove('drag-over');
+        if (this._isDragOverSidebar || sidebar?.classList.contains('drag-over')) {
+            this._isDragOverSidebar = false;
+            this._touchGhostOffsetX = null;
+            this._touchGhostOffsetY = null;
+            sidebar?.classList.remove('drag-over');
             document.body.classList.remove('sc-drag-over-sidebar');
         }
 
         const cell = this._getCellUnderPoint(x, y, elementsAtPoint);
-        if (cell && cell === this._hoveredDragCell && cell.classList.contains('drag-over')) {
-            return;
+        if (cell === this._lastEvaluatedDragCell) {
+            if (!cell || !this._hoveredDragCell || cell.classList.contains('drag-over')) {
+                return;
+            }
         }
+        this._lastEvaluatedDragCell = cell;
 
         if (this._hoveredDragCell) {
             this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
@@ -1048,10 +1099,22 @@ export const SeatingDragDrop = {
 
     _getCellUnderPoint(x, y, elementsAtPoint = null) {
         if (this._touchDragEl) {
-            const ghostRect = this._touchDragEl.getBoundingClientRect?.();
-            if (ghostRect && ghostRect.width > 0 && ghostRect.height > 0) {
-                const centerX = ghostRect.left + ghostRect.width / 2;
-                const centerY = ghostRect.top + ghostRect.height / 2;
+            let offsetX = this._touchGhostOffsetX;
+            let offsetY = this._touchGhostOffsetY;
+            if (offsetX === null || offsetX === undefined || offsetY === null || offsetY === undefined) {
+                const ghostRect = this._touchDragEl.getBoundingClientRect?.();
+                if (ghostRect && ghostRect.width > 0 && ghostRect.height > 0) {
+                    const anchorX = this._touchDragEl._dragX ?? x;
+                    const anchorY = this._touchDragEl._dragY ?? y;
+                    offsetX = (ghostRect.left + ghostRect.width / 2) - anchorX;
+                    offsetY = (ghostRect.top + ghostRect.height / 2) - anchorY;
+                    this._touchGhostOffsetX = offsetX;
+                    this._touchGhostOffsetY = offsetY;
+                }
+            }
+            if (offsetX !== null && offsetX !== undefined && offsetY !== null && offsetY !== undefined) {
+                const centerX = x + offsetX;
+                const centerY = y + offsetY;
                 const cellUnderGhost = (document.elementsFromPoint?.(centerX, centerY) || []).find(el => el.classList.contains('sc-cell'));
                 if (cellUnderGhost) return cellUnderGhost;
             }

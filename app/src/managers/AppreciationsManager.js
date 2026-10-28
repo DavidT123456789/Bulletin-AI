@@ -302,6 +302,7 @@ export const AppreciationsManager = {
             result.studentData.prompts.sw = prompts.sw;
             const resp = await AIService.callAIWithFallback(prompts.sw, { context: 'single-student', studentName: result.prenom });
             result.strengthsWeaknesses = resp.text;
+            result._lastModified = Date.now();
             // Ensure tokenUsage exists before setting properties
             if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.sw = resp.usage;
@@ -333,6 +334,7 @@ export const AppreciationsManager = {
             });
 
             result.nextSteps = steps.slice(0, 3).filter(Boolean);
+            result._lastModified = Date.now();
             // Ensure tokenUsage exists before setting properties
             if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.ns = resp.usage;

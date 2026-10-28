@@ -33,7 +33,7 @@
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
         border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.55);
         background: rgba(var(--surface-color-rgb), 0.4);
     }
@@ -54,7 +54,7 @@
 
 /* Receiving/Target cell state (Drag over or Selection hover) — Standard Highlight */
 .sc-cell.drag-over,
-#seatingChartView[data-has-selection="true"] .sc-cell.empty:hover {
+#seatingChartView[data-has-selection="true"]:not([data-dragging="true"]) .sc-cell.empty:hover {
     border-color: var(--highlight-standard-border) !important;
     border-style: dashed !important;
     border-width: 2px !important;
@@ -79,7 +79,7 @@
 }
 
 @media (hover: hover) {
-    .sc-cell.occupied:hover {
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover {
         box-shadow: var(--shadow-md);
         transform: translateY(-2px);
         z-index: 10;
@@ -189,6 +189,30 @@
     }
 }
 
+/* Non-inherited custom properties so 120 fps clone coordinate updates never invalidate child styles */
+@property --sc-drag-x {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: -9999px;
+}
+
+@property --sc-drag-y {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: -9999px;
+}
+
+@property --sc-drag-scale {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
+}
+
+#seatingChartView[data-dragging="true"],
+#seatingChartView[data-dragging="true"] * {
+    cursor: grabbing !important;
+}
+
 /* Unified floating drag clone (.sc-drag-clone mouse / .sc-touch-ghost touch) */
 .sc-drag-clone,
 .sc-touch-ghost {
@@ -212,7 +236,7 @@
     translate: var(--sc-drag-x, -9999px) var(--sc-drag-y, -9999px) 0;
     transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 1.05)) translateY(var(--sc-ghost-lift)) !important;
     will-change: translate, transform, opacity;
-    contain: layout style;
+    contain: layout style size;
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     overflow: visible !important;
 }
@@ -342,7 +366,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    .sc-cell.occupied:hover .sc-cell-remove {
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover .sc-cell-remove {
         opacity: 1;
         transform: scale(1);
     }
@@ -375,7 +399,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    .sc-cell.occupied:hover .sc-cell-pin {
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover .sc-cell-pin {
         opacity: 1;
         transform: scale(1);
     }
@@ -716,7 +740,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle:hover {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-aisle:hover {
         opacity: 1;
         border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.45);
         background: rgba(var(--surface-color-rgb), 0.25);
@@ -737,8 +761,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* Edit mode: cell restores full opacity on hover so overlay tool buttons have 100% luminance */
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh:hover,
-    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-blocked:hover {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-aesh:hover,
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-blocked:hover {
         opacity: 1;
     }
 }
@@ -845,7 +869,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* Show tools on hover, only when unlocked and no chips selected */
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
         opacity: 1;
         pointer-events: auto;
     }

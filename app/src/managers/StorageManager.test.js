@@ -26,8 +26,8 @@ vi.mock('../services/DBService.js', () => ({
 }));
 
 // Mock state module with new structure
-vi.mock('../state/State.js', () => ({
-    userSettings: {
+vi.mock('../state/State.js', () => {
+    const userSettings = {
         ui: { theme: 'dark', activeView: 'list' },
         academic: {
             periodSystem: 'trimestres',
@@ -51,8 +51,8 @@ vi.mock('../state/State.js', () => ({
         import: {
             massImportFormats: { trimestres: {}, semestres: {} },
         },
-    },
-    runtimeState: {
+    };
+    const runtimeState = {
         session: { sessionCost: 0 },
         navigation: {
             currentPeriod: 'T1',
@@ -74,12 +74,11 @@ vi.mock('../state/State.js', () => ({
         data: {
             generatedResults: [],
             filteredResults: [],
-            refinementEdits: {},
             variationHistory: {},
         },
-    },
-    // Backwards compatible appState mock
-    appState: {
+    };
+    // Backwards compatible appState mock (generatedResults aliasé sur runtimeState comme le Proxy réel)
+    const appState = {
         theme: 'dark',
         useSubjectPersonalization: true,
         periodSystem: 'trimestres',
@@ -93,14 +92,15 @@ vi.mock('../state/State.js', () => ({
         openaiApiKey: '',
         googleApiKey: '',
         openrouterApiKey: '',
-        generatedResults: [],
-        refinementEdits: {},
+        get generatedResults() { return runtimeState.data.generatedResults; },
+        set generatedResults(value) { runtimeState.data.generatedResults = value; },
         activeStatFilter: null,
         currentInputMode: 'single',
         activeView: 'list',
         currentClassId: null
-    }
-}));
+    };
+    return { userSettings, runtimeState, appState };
+});
 
 // Mock config module
 vi.mock('../config/Config.js', () => ({
@@ -731,6 +731,276 @@ describe('StorageManager', () => {
             expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s2']);
         });
 
+        it('should keep an active virtual class after import, resolved once students are imported', async () => {
+            const classes = [
+                { id: 'g1', name: '3 TECHNOLOGIE G1' },
+                { id: 'g2', name: '3 TECHNOLOGIE G2' }
+            ];
+            const students = [
+                { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'g1', studentData: { classe: '3 1', periods: {} } },
+                { id: 's2', nom: 'Martin', prenom: 'Bob', classId: 'g2', studentData: { classe: '3 1', periods: {} } },
+                { id: 's3', nom: 'Durand', prenom: 'David', classId: 'g2', studentData: { classe: '3 2', periods: {} } }
+            ];
+            userSettings.academic.classes = [];
+            runtimeState.data.generatedResults = [];
+            userSettings.academic.currentClassId = 'virtual_31';
+
+            await StorageManager.importBackup(
+                JSON.stringify({ appVersion: '4.3.0', classes, generatedResults: students }),
+                { mergeData: false, silent: true }
+            );
+
+            expect(userSettings.academic.currentClassId).toBe('virtual_31');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s1', 's2']);
+        });
+
+        it('should export classes and deletedItems only at the root level, never inside settings', () => {
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            runtimeState.data.deletedItems = {
+                students: [{ id: 's-del', deletedAt: 1234 }],
+                classes: [{ id: 'c-del', deletedAt: 5678 }]
+            };
+            const settings = StorageManager.getExportableSettings({ includeApiKeys: true });
+            expect(settings.classes).toBeUndefined();
+            expect(settings.deletedItems).toBeUndefined();
+            expect(settings.currentClassId).toBeUndefined();
+
+            const downloadSpy = vi.spyOn(StorageManager, '_downloadFile').mockImplementation(() => {});
+            StorageManager.exportToJson();
+            expect(downloadSpy).toHaveBeenCalledTimes(1);
+            const exportedPayload = JSON.parse(downloadSpy.mock.calls[0][0]);
+            expect(exportedPayload.deletedItems).toEqual({
+                students: [{ id: 's-del', deletedAt: 1234 }],
+                classes: [{ id: 'c-del', deletedAt: 5678 }]
+            });
+            expect(exportedPayload.settings.deletedItems).toBeUndefined();
+            downloadSpy.mockRestore();
+        });
+
+        it('should perform granular per-period, journal, class analyses, and tombstone merge during importBackup({ mergeData: true })', async () => {
+            userSettings.academic.classes = [
+                {
+                    id: 'c1',
+                    name: '3A',
+                    analyses: {
+                        T1: { content: '<p>Synthèse T1 récente locale</p>', timestamp: 3000 },
+                        T2: { content: '<p>Synthèse T2 ancienne locale</p>', timestamp: 1000 }
+                    }
+                },
+                { id: 'c-deleted-in-backup', name: 'Ancienne classe', updatedAt: 1000 }
+            ];
+            runtimeState.data.generatedResults = [
+                {
+                    id: 's1',
+                    nom: 'Dupont',
+                    prenom: 'Alise',
+                    classId: 'c1',
+                    _lastModified: 2000,
+                    strengthsWeaknesses: 'Ancien bilan',
+                    journal: [{ id: 'j-local', date: '2026-10-01', note: 'Observation locale' }],
+                    studentData: {
+                        nom: 'Dupont',
+                        prenom: 'Alise',
+                        statuses: ['DYS'],
+                        periods: {
+                            T1: { grade: 15, appreciation: 'T1 locale récente', _lastModified: 3000 },
+                            T2: { grade: 11, appreciation: 'T2 locale ancienne', _lastModified: 1000 }
+                        }
+                    }
+                },
+                {
+                    id: 's-deleted',
+                    nom: 'Fantome',
+                    prenom: 'Paul',
+                    classId: 'c1',
+                    _lastModified: 1000,
+                    studentData: { periods: {} }
+                }
+            ];
+
+            const backupContent = JSON.stringify({
+                appVersion: '4.3.0',
+                deletedItems: {
+                    students: [{ id: 's-deleted', deletedAt: 5000 }],
+                    classes: [{ id: 'c-deleted-in-backup', deletedAt: 5000 }]
+                },
+                classes: [
+                    {
+                        id: 'c1',
+                        name: '3A',
+                        analyses: {
+                            T1: { content: '<p>Synthèse T1 ancienne backup</p>', timestamp: 1000 },
+                            T2: { content: '<p>Synthèse T2 récente backup</p>', timestamp: 4000 },
+                            T3: { content: '<p>Synthèse T3 nouvelle backup</p>', timestamp: 2000 }
+                        }
+                    }
+                ],
+                generatedResults: [
+                    {
+                        id: 's1',
+                        nom: 'Dupont',
+                        prenom: 'Alice',
+                        classId: 'c1',
+                        _lastModified: 4000,
+                        strengthsWeaknesses: 'Nouveau bilan forces/faiblesses',
+                        nextSteps: 'Nouvelles pistes de progrès',
+                        historyPerPeriod: {
+                            T2: { versions: [{ content: 'T2 backup récente', timestamp: 4000 }], currentIndex: 0 }
+                        },
+                        journal: [{ id: 'j-backup', date: '2026-10-05', note: 'Observation backup' }],
+                        studentData: {
+                            nom: 'Dupont',
+                            prenom: 'Alice',
+                            statuses: ['PAP'],
+                            periods: {
+                                T1: { grade: 12, appreciation: 'T1 backup ancienne', _lastModified: 1000 },
+                                T2: { grade: 14, appreciation: 'T2 backup récente', _lastModified: 4000 }
+                            }
+                        }
+                    }
+                ]
+            });
+
+            await StorageManager.importBackup(backupContent, { mergeData: true, silent: true });
+
+            // Tombstones applied to both classes and students
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['c1']);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['s1']);
+
+            // Class AI syntheses merged per period by timestamp
+            const mergedClass = userSettings.academic.classes[0];
+            expect(mergedClass.analyses.T1.content).toBe('<p>Synthèse T1 récente locale</p>');
+            expect(mergedClass.analyses.T2.content).toBe('<p>Synthèse T2 récente backup</p>');
+            expect(mergedClass.analyses.T3.content).toBe('<p>Synthèse T3 nouvelle backup</p>');
+
+            // Student periods, journal, statuses, and top-level fields merged granularly without losing T1 local or T2 backup
+            const mergedStudent = runtimeState.data.generatedResults[0];
+            expect(mergedStudent.prenom).toBe('Alice');
+            expect(mergedStudent.studentData.prenom).toBe('Alice');
+            expect(mergedStudent.strengthsWeaknesses).toBe('Nouveau bilan forces/faiblesses');
+            expect(mergedStudent.nextSteps).toBe('Nouvelles pistes de progrès');
+            expect(mergedStudent.studentData.periods.T1.appreciation).toBe('T1 locale récente');
+            expect(mergedStudent.studentData.periods.T1.grade).toBe(15);
+            expect(mergedStudent.studentData.periods.T2.appreciation).toBe('T2 backup récente');
+            expect(mergedStudent.studentData.periods.T2.grade).toBe(14);
+            expect(mergedStudent.historyPerPeriod.T2.versions[0].content).toBe('T2 backup récente');
+            expect(mergedStudent.journal.map(j => j.id).sort()).toEqual(['j-backup', 'j-local']);
+            expect(mergedStudent.studentData.statuses).toEqual(['DYS', 'PAP']);
+        });
+
+        it('should keep local record fields when local record is newer, and not flag identical array fields as updates', async () => {
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            runtimeState.data.generatedResults = [
+                {
+                    id: 's1',
+                    nom: 'Dupont',
+                    prenom: 'Alice',
+                    classId: 'c1',
+                    _lastModified: 5000,
+                    strengthsWeaknesses: 'Bilan local récent',
+                    nextSteps: ['Piste A', 'Piste B'],
+                    studentData: { periods: {} }
+                }
+            ];
+
+            const result = await StorageManager.mergeRemoteData({
+                classes: [{ id: 'c1', name: '3A' }],
+                generatedResults: [
+                    {
+                        id: 's1',
+                        nom: 'Dupont',
+                        prenom: 'Alise',
+                        classId: 'c1',
+                        _lastModified: 1000,
+                        strengthsWeaknesses: 'Bilan distant ancien',
+                        nextSteps: ['Piste A', 'Piste B'],
+                        studentData: { periods: {} }
+                    }
+                ]
+            });
+
+            const student = runtimeState.data.generatedResults[0];
+            expect(student.prenom).toBe('Alice');
+            expect(student.strengthsWeaknesses).toBe('Bilan local récent');
+            expect(result.stats.updatedStudents).toBe(0);
+            expect(student._lastModified).toBe(5000);
+
+            // Remote newer with identical nextSteps content -> no spurious update
+            const sameContent = await StorageManager.mergeRemoteData({
+                generatedResults: [
+                    { ...student, _lastModified: 9000, nextSteps: ['Piste A', 'Piste B'], studentData: { periods: {} } }
+                ]
+            });
+            expect(sameContent.stats.updatedStudents).toBe(0);
+        });
+
+        it('should evict virgin first-visit Classe exemple when merging real classes, while preserving intentional Classe exemple', async () => {
+            // 1. Fresh device (only default Classe exemple) + Cloud/backup with real classes only -> evicts virgin demo class & students
+            userSettings.academic.classes = [{ id: 'demo-fresh', name: 'Classe exemple', isDemo: true }];
+            runtimeState.data.generatedResults = [
+                { id: 'demo-s1', nom: 'Martin', prenom: 'Léo', classId: 'demo-fresh', studentData: { periods: {} } }
+            ];
+
+            await StorageManager.mergeRemoteData({
+                classes: [{ id: 'c1', name: '3A' }],
+                generatedResults: [{ id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } }]
+            });
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['c1']);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['s1']);
+
+            // 2. Fresh device (only default Classe exemple) + Cloud/backup where user kept their own Classe exemple alongside real classes -> replaces virgin demo without duplicate
+            userSettings.academic.classes = [{ id: 'demo-fresh-2', name: 'Classe exemple', isDemo: true }];
+            runtimeState.data.generatedResults = [
+                { id: 'demo-s2', nom: 'Martin', prenom: 'Léo', classId: 'demo-fresh-2', studentData: { periods: {} } }
+            ];
+
+            await StorageManager.mergeRemoteData({
+                classes: [
+                    { id: 'demo-kept', name: 'Classe exemple', isDemo: true },
+                    { id: 'c1', name: '3A' }
+                ],
+                generatedResults: [
+                    { id: 's-exp', nom: 'Test', prenom: 'Sandbox', classId: 'demo-kept', studentData: { periods: {} } },
+                    { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } }
+                ]
+            });
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['demo-kept', 'c1']);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['s-exp', 's1']);
+
+            // 3. Existing workspace (user already has real classes + Classe exemple locally) + imports another class -> keeps local Classe exemple
+            await StorageManager.importBackup(
+                JSON.stringify({
+                    appVersion: '4.3.0',
+                    classes: [{ id: 'c2', name: '4B' }],
+                    generatedResults: [{ id: 's2', nom: 'Bernard', prenom: 'Emma', classId: 'c2', studentData: { periods: {} } }]
+                }),
+                { mergeData: true, silent: true }
+            );
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['demo-kept', 'c1', 'c2']);
+        });
+
+        it('should remove demo students when importing classes only (students category unchecked) evicts the virgin Classe exemple', async () => {
+            userSettings.academic.classes = [{ id: 'demo-fresh', name: 'Classe exemple', isDemo: true }];
+            runtimeState.data.generatedResults = [
+                { id: 'demo-s1', nom: 'Martin', prenom: 'Léo', classId: 'demo-fresh', studentData: { periods: {} } }
+            ];
+
+            await StorageManager.importBackup(
+                JSON.stringify({
+                    appVersion: '4.3.0',
+                    classes: [{ id: 'c1', name: '3A' }],
+                    generatedResults: [{ id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } }]
+                }),
+                { mergeData: true, silent: true, categories: { classes: true, students: false } }
+            );
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['c1']);
+            expect(runtimeState.data.generatedResults).toEqual([]);
+        });
+
         it('should exclude API keys and Ollama settings by default in getExportableSettings, and include API keys when includeApiKeys is true', () => {
             userSettings.api.googleApiKey = 'AIzaSyTestKey123';
             userSettings.api.openaiApiKey = 'sk-proj-test';
@@ -1019,6 +1289,69 @@ describe('StorageManager', () => {
     });
 
     describe('Lot 10 — BulletinAssistantDB v2, EventBus & Synchronisation multi-onglets', () => {
+        it('conserve la navigation propre à l\'onglet lors d\'une synchro inter-onglets et se rabat si la classe a été supprimée', async () => {
+            const students = [
+                { id: 's1', classId: 'c1', studentData: { periods: {} } },
+                { id: 's2', classId: 'c2', studentData: { periods: {} } }
+            ];
+            DBService.getAll.mockImplementation(async (storeName) => (storeName === 'generatedResults' ? students : []));
+            DBService.get.mockResolvedValue(undefined);
+
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }, { id: 'c2', name: '4B' }];
+            userSettings.academic.currentClassId = 'c1';
+            userSettings.ui.activeView = 'list';
+            runtimeState.navigation.currentPeriod = 'T1';
+
+            // L'autre onglet a écrit sa propre navigation (4B, T3, plan) et un thème modifié
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: {
+                    theme: 'light',
+                    classes: [{ id: 'c1', name: '3A' }, { id: 'c2', name: '4B' }],
+                    currentClassId: 'c2',
+                    currentPeriod: 'T3',
+                    activeView: 'plan'
+                }
+            });
+
+            await StorageManager.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+
+            expect(userSettings.ui.theme).toBe('light');
+            expect(userSettings.academic.currentClassId).toBe('c1');
+            expect(runtimeState.navigation.currentPeriod).toBe('T1');
+            expect(userSettings.ui.activeView).toBe('list');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s1']);
+
+            // La classe active (3A) a été supprimée dans l'autre onglet -> rabat sur la première classe restante
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { classes: [{ id: 'c2', name: '4B' }], currentClassId: 'c2' }
+            });
+
+            await StorageManager.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+
+            expect(userSettings.academic.currentClassId).toBe('c2');
+            expect(appState.currentClassId).toBe('c2');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s2']);
+        });
+
+        it('corrige dès le démarrage à froid une classe active obsolète avant le premier rendu', async () => {
+            const students = [{ id: 's2', classId: 'c2', studentData: { periods: {} } }];
+            DBService.getAll.mockImplementation(async (storeName) => (storeName === 'generatedResults' ? students : []));
+            DBService.get.mockResolvedValue(undefined);
+
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { classes: [{ id: 'c2', name: '4B' }], currentClassId: 'deleted-class' }
+            });
+
+            await StorageManager.loadAppState({ checkPendingRestore: false });
+
+            expect(userSettings.academic.currentClassId).toBe('c2');
+            expect(appState.currentClassId).toBe('c2');
+            expect(runtimeState.data.filteredResults.map(r => r.id)).toEqual(['s2']);
+        });
+
         it('persiste les classes et appData (userSettings, deletedItems) dans IndexedDB v2 et émet STATE_SAVED sur EventBus', async () => {
             const { bus, EVENTS } = await import('../core/EventBus.js');
             const savedSpy = vi.fn();

@@ -232,13 +232,13 @@
 }
 
 @media (hover: hover) {
-    .sc-student-chip:hover {
+    #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover {
         background: var(--bg-secondary);
         box-shadow: var(--shadow-sm);
         transform: translateY(-1px);
     }
 
-    [data-theme="dark"] .sc-student-chip:hover {
+    [data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover {
         background: var(--bg-tertiary);
     }
 }
@@ -359,18 +359,18 @@
 }
 
 @media (hover: hover) and (min-width: 769px) {
-    .sc-student-chip:hover .sc-chip-profile-btn {
+    #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover .sc-chip-profile-btn {
         opacity: 1;
         pointer-events: auto;
         transform: translateY(-50%) scale(1);
     }
 
-    .sc-student-chip:hover .sc-chip-badge {
+    #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover .sc-chip-badge {
         opacity: 0;
         pointer-events: none;
     }
 
-    .sc-student-chip:hover .sc-student-chip-name {
+    #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover .sc-student-chip-name {
         padding-right: 26px;
     }
 }

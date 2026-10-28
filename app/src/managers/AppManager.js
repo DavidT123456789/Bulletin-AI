@@ -156,7 +156,7 @@ export const App = {
 
         const allClasses = ClassManager?.getAllClasses?.() || [];
         const currentClassId = appState.currentClassId;
-        const currentClassExists = allClasses.some(c => c.id === currentClassId);
+        const currentClassExists = Boolean(ClassManager.getClassById(currentClassId));
         if ((!currentClassId || !currentClassExists) && allClasses.length > 0) {
             await ClassManager.switchClass(allClasses[0].id);
         } else if (currentClassId) {
@@ -164,7 +164,6 @@ export const App = {
         }
 
         this.updateUIOnLoad();
-        ClassUIManager.updateHeaderDisplay();
         const { SeatingChartManager } = await import('./SeatingChartManager.js');
         if (SeatingChartManager) {
             SeatingChartManager.restoreActiveView?.();
@@ -192,6 +191,7 @@ export const App = {
         UI.updateGenerateButtonState();
         AppreciationsManager.renderResults();
         AppreciationsManager.resetForm(false);
+        ClassUIManager.updateHeaderDisplay();
         UI.updateHeaderPremiumLook();
         UI.updateStatsTooltips();
 

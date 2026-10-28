@@ -2180,6 +2180,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             const origElementsFromPoint = document.elementsFromPoint;
             document.elementsFromPoint = vi.fn(() => [targetCell]);
+            const validTargetSpy = vi.spyOn(SeatingChartManager, '_isValidDropTarget');
             try {
                 const pointerMove = new Event('pointermove', { bubbles: true, cancelable: true });
                 Object.assign(pointerMove, { pointerType: 'mouse', clientX: 220, clientY: 140 });
@@ -2189,17 +2190,34 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(activeClone).not.toBeNull();
                 expect(activeClone.style.getPropertyValue('--sc-drag-x')).toBe('220px');
                 expect(activeClone.style.getPropertyValue('--sc-drag-y')).toBe('140px');
+                expect(activeClone.hasAttribute('data-row')).toBe(false);
+                expect(activeClone.hasAttribute('data-col')).toBe(false);
+                expect(activeClone.hasAttribute('data-result-id')).toBe(false);
+                expect(activeClone.hasAttribute('data-tooltip')).toBe(false);
+                expect(document.getElementById('seatingChartView')?.getAttribute('data-dragging')).toBe('true');
+                expect(TooltipsUI.isIgnoringTooltips).toBe(true);
                 expect(originCell.classList.contains('dragging')).toBe(true);
                 expect(targetCell.classList.contains('drag-over')).toBe(true);
+                expect(validTargetSpy).toHaveBeenCalledTimes(1);
+
+                // Subsequent 120 fps frame over the same cell: updates clone coordinates without re-evaluating _isValidDropTarget
+                const pointerMoveSameCell = new Event('pointermove', { bubbles: true, cancelable: true });
+                Object.assign(pointerMoveSameCell, { pointerType: 'mouse', clientX: 224, clientY: 142 });
+                window.dispatchEvent(pointerMoveSameCell);
+                expect(activeClone.style.getPropertyValue('--sc-drag-x')).toBe('224px');
+                expect(activeClone.style.getPropertyValue('--sc-drag-y')).toBe('142px');
+                expect(validTargetSpy).toHaveBeenCalledTimes(1);
 
                 const pointerUp = new Event('pointerup', { bubbles: true, cancelable: true });
-                Object.assign(pointerUp, { pointerType: 'mouse', button: 0, clientX: 220, clientY: 140 });
+                Object.assign(pointerUp, { pointerType: 'mouse', button: 0, clientX: 224, clientY: 142 });
                 window.dispatchEvent(pointerUp);
 
                 expect(document.querySelector('.sc-drag-clone')).toBeNull();
+                expect(document.getElementById('seatingChartView')?.hasAttribute('data-dragging')).toBe(false);
                 expect(SeatingChartManager._gridState[0][0]).toBeNull();
                 expect(SeatingChartManager._gridState[0][1]).toBe('s1');
             } finally {
+                validTargetSpy.mockRestore();
                 document.elementsFromPoint = origElementsFromPoint;
             }
         });

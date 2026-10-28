@@ -483,7 +483,10 @@ export const SeatingAutoPlace = {
     _removeDragClones() {
         document.querySelectorAll('.sc-drag-clone').forEach(el => el.remove());
         document.body.classList.remove('sc-drag-over-sidebar');
+        document.getElementById('seatingChartView')?.removeAttribute('data-dragging');
         this._hoveredDragCell = null;
+        this._lastEvaluatedDragCell = undefined;
+        this._isDragOverSidebar = false;
     },
 
     _getBlankDragCanvas() {
@@ -503,6 +506,8 @@ export const SeatingAutoPlace = {
 
     _setFloatingClonePosition(clone, x, y) {
         if (!clone) return;
+        clone._dragX = x;
+        clone._dragY = y;
         clone.style.setProperty('--sc-drag-x', `${x}px`);
         clone.style.setProperty('--sc-drag-y', `${y}px`);
         clone.style.translate = `${x}px ${y}px 0px`;
@@ -510,6 +515,12 @@ export const SeatingAutoPlace = {
 
     /** Builds a unified floating card clone for both mouse (.sc-drag-clone) and touch (.sc-touch-ghost) */
     _buildFloatingDragClone(sourceEl, { baseClass = 'sc-drag-clone', count = 1, memberStudent = null } = {}) {
+        const sampleCell = sourceEl?.classList?.contains('sc-cell')
+            ? sourceEl
+            : document.querySelector('#scGridContainer .sc-cell');
+        const cellW = sampleCell?.offsetWidth || 0;
+        const cellH = sampleCell?.offsetHeight || 0;
+
         let clone;
         if (memberStudent !== null) {
             clone = document.createElement('div');
@@ -533,7 +544,21 @@ export const SeatingAutoPlace = {
                 clone.classList.add('has-status-badge');
             }
             clone.classList.remove('sc-chip-selected', 'dragging');
+            clone.removeAttribute('id');
+            clone.removeAttribute('data-row');
+            clone.removeAttribute('data-col');
+            clone.removeAttribute('data-result-id');
+            clone.removeAttribute('data-tooltip');
+            clone.removeAttribute('data-tooltip-anchor');
+            clone.removeAttribute('draggable');
             clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
+            clone.querySelectorAll('[id], [data-result-id], [data-tooltip], [data-tooltip-anchor], [draggable]').forEach(el => {
+                el.removeAttribute('id');
+                el.removeAttribute('data-result-id');
+                el.removeAttribute('data-tooltip');
+                el.removeAttribute('data-tooltip-anchor');
+                el.removeAttribute('draggable');
+            });
 
             if (sourceEl.classList.contains('sc-student-chip')) {
                 const chipNameEl = clone.querySelector('.sc-student-chip-name');
@@ -551,12 +576,9 @@ export const SeatingAutoPlace = {
             }
         }
 
-        const sampleCell = sourceEl?.classList?.contains('sc-cell')
-            ? sourceEl
-            : document.querySelector('#scGridContainer .sc-cell');
-        if (sampleCell && sampleCell.offsetWidth > 0 && sampleCell.offsetHeight > 0) {
-            clone.style.setProperty('--sc-cell-w', `${sampleCell.offsetWidth}px`);
-            clone.style.setProperty('--sc-cell-h', `${sampleCell.offsetHeight}px`);
+        if (cellW > 0 && cellH > 0) {
+            clone.style.setProperty('--sc-cell-w', `${cellW}px`);
+            clone.style.setProperty('--sc-cell-h', `${cellH}px`);
         } else if (this._isActivityMode() && sourceEl?.classList?.contains('sc-cell')) {
             clone.style.setProperty('--sc-cell-w', '118px');
             clone.style.setProperty('--sc-cell-h', '114px');
@@ -589,6 +611,7 @@ export const SeatingAutoPlace = {
             return;
         }
 
+        document.getElementById('seatingChartView')?.setAttribute('data-dragging', 'true');
         this._setFloatingClonePosition(clone, e.clientX, e.clientY);
         document.body.appendChild(clone);
 
@@ -607,6 +630,7 @@ export const SeatingAutoPlace = {
         const onDragEnd = () => {
             clone.remove();
             document.body.classList.remove('sc-drag-over-sidebar');
+            document.getElementById('seatingChartView')?.removeAttribute('data-dragging');
             sourceEl.removeEventListener('drag', onDragMove);
             sourceEl.removeEventListener('dragend', onDragEnd);
             window.removeEventListener('dragover', onDragMove, true);

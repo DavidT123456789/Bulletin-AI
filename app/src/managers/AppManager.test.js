@@ -23,6 +23,7 @@ vi.mock('./StorageManager.js', () => ({
 vi.mock('./ClassManager.js', () => ({
     ClassManager: {
         getAllClasses: vi.fn().mockReturnValue([{ id: 'c1', name: '3A' }]),
+        getClassById: vi.fn(id => (id === 'c1' ? { id: 'c1', name: '3A' } : null)),
         switchClass: vi.fn().mockResolvedValue(true),
         _filterResultsByClass: vi.fn().mockResolvedValue(true),
         getCurrentClass: vi.fn().mockReturnValue({ id: 'c1', name: '3A' })

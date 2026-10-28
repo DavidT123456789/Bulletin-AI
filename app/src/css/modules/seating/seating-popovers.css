@@ -908,14 +908,14 @@
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"] .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
-    .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
-    #seatingChartView[data-plan-mode="activity"][data-locked="false"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
+    #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"][data-locked="false"]:not([data-dragging="true"]) .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
         opacity: 0;
     }
 
     /* Attenuate global station remove button while hovering an individual member pill to prevent visual competition */
-    #seatingChartView[data-locked="false"] .sc-cell.sc-cell-stacked:has(.sc-stacked-member:hover) .sc-cell-remove:not(:hover) {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:has(.sc-stacked-member:hover) .sc-cell-remove:not(:hover) {
         opacity: 0.28;
         transform: scale(0.88);
     }
@@ -1039,8 +1039,8 @@
 }
 
 @media (hover: hover) {
-    .sc-cell.sc-cell-stacked:hover,
-    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:hover,
+    #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
         transform: translateY(-2px);
         border-color: transparent;
         box-shadow: var(--shadow-md);
@@ -1048,8 +1048,8 @@
     }
 }
 
-[data-theme="dark"] .sc-cell.sc-cell-stacked:hover,
-[data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
+[data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:hover,
+[data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
     border-color: rgba(255, 255, 255, 0.18);
 }
 
@@ -1107,7 +1107,7 @@
 }
 
 @media (hover: hover) {
-    .sc-stacked-avatar:hover,
+    #seatingChartView:not([data-dragging="true"]) .sc-stacked-avatar:hover,
     .sc-stacked-avatar.is-member-hovered {
         transform: scale(1.16) translateY(-2px);
         z-index: 10 !important;
@@ -1151,11 +1151,11 @@
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"] .sc-stacked-member:hover::before {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-stacked-member:hover::before {
         right: -13px;
     }
 
-    .sc-stacked-member:hover::before,
+    #seatingChartView:not([data-dragging="true"]) .sc-stacked-member:hover::before,
     .sc-stacked-member.is-member-hovered::before {
         background: var(--item-hover-bg);
     }
@@ -1340,7 +1340,7 @@
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"] .sc-stacked-member:hover .sc-stacked-member-remove {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-stacked-member:hover .sc-stacked-member-remove {
         opacity: 1;
         pointer-events: auto;
     }

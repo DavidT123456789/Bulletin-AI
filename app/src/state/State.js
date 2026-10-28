@@ -144,7 +144,6 @@ export const runtimeState = {
     data: {
         generatedResults: [],
         filteredResults: [],
-        refinementEdits: {},
         variationHistory: {},
         /** Tombstones for deleted items (for sync conflict resolution) */
         deletedItems: {
@@ -234,7 +233,6 @@ const propertyMap = {
     // runtimeState.data
     generatedResults: () => runtimeState.data,
     filteredResults: () => runtimeState.data,
-    refinementEdits: () => runtimeState.data,
     variationHistory: () => runtimeState.data,
 };
 
