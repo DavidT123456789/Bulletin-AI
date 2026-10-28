@@ -202,6 +202,10 @@
     transform: translateY(0);
 }
 
+.modal-alert-details-content p + p {
+    margin-top: 8px;
+}
+
 /* Hard Confirm Modal Specifics */
 .hard-confirm-input-wrapper {
     margin-top: 12px;
@@ -2222,6 +2226,24 @@
     transition: all var(--transition-fast);
 }
 
+.modal-alert-title.has-header-icon {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-alert-header-icon.warning {
+    background: rgba(var(--warning-rgb), 0.1);
+    border: 1px solid rgba(var(--warning-rgb), 0.2);
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .modal-alert-header-icon.warning {
+    background: rgba(var(--warning-rgb), 0.15);
+    border-color: rgba(var(--warning-rgb), 0.28);
+    color: var(--warning-bright);
+}
+
 .modal-alert-header-icon.cloud {
     background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.08);
     border: 1px solid rgba(var(--primary-color-rgb, 59, 130, 246), 0.16);
@@ -2284,7 +2306,12 @@
     width: fit-content;
 }
 
-.restore-comparison-card.cloud .restore-card-badge {
+.restore-card-badge iconify-icon {
+    font-size: 0.9em;
+}
+
+.restore-comparison-card.cloud .restore-card-badge,
+.save-summary-card .restore-card-badge {
     background: var(--primary-color);
     color: white;
 }
@@ -2472,6 +2499,14 @@
 .save-summary-header {
     display: flex;
     align-items: center;
+}
+
+.save-summary-card .restore-card-date iconify-icon {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .save-summary-card .restore-card-date iconify-icon {
+    color: var(--primary-bright);
 }
 
 .pre-restore-snapshot-row {

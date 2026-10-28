@@ -232,190 +232,65 @@ export const SeatingAutoPlace = {
             return;
         }
 
-        // Cas : Dispersion aléatoire sur l'ensemble de la salle (idéal examen / devoir surveillé)
-        if (mode === 'random-disperse') {
-            const movableStudents = [];
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (isCellPinned(r, c)) continue;
-                    const ids = this._getCellStudentIds(r, c);
-                    ids.forEach(id => {
-                        const student = this._students.find(s => s.id === id) || resultsMap.get(id);
-                        if (student && !movableStudents.some(m => m.id === student.id)) {
-                            movableStudents.push(student);
-                        }
-                    });
-                }
-            }
-            unplaced.forEach(s => {
-                if (!movableStudents.some(m => m.id === s.id)) {
-                    movableStudents.push(s);
-                }
-            });
-
-            if (movableStudents.length === 0) {
-                UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
-                return;
-            }
-
-            const candidateSpots = [];
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
-                    candidateSpots.push({ r, c });
-                }
-            }
-
-            if (candidateSpots.length === 0) {
-                UI.showNotification('Aucune place disponible dans la salle.', 'warning');
-                return;
-            }
-
-            this._snapshotGrid();
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (!isCellPinned(r, c)) {
-                        this._gridState[r][c] = null;
-                    }
-                }
-            }
-
-            for (let i = candidateSpots.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [candidateSpots[i], candidateSpots[j]] = [candidateSpots[j], candidateSpots[i]];
-            }
-
-            for (let i = movableStudents.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [movableStudents[i], movableStudents[j]] = [movableStudents[j], movableStudents[i]];
-            }
-
-            const k = Math.min(candidateSpots.length, movableStudents.length);
-            const placedCells = [];
-
-            for (let i = 0; i < k; i++) {
-                const spot = candidateSpots[i];
-                const student = movableStudents[i];
-                this._gridState[spot.r][spot.c] = student.id;
-                placedCells.push({ row: spot.r, col: spot.c, index: i });
-            }
-
-            this._dismissOnboardingHint();
-            this._savePositionsToState();
-            this._render();
-            animatePlacedCells(placedCells);
-
-            this._scrollToDesk();
-
-            const remaining = movableStudents.length - k;
-            if (remaining > 0) {
-                UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
-            }
-            return;
-        }
-
-        // Cas 1 : Tous les élèves sont déjà placés sur la grille -> réorganiser les élèves non-épinglés
-        if (unplaced.length === 0 && placedIds.size > 0) {
-            const movable = [];
-            const occupiedSpots = [];
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const ids = this._getCellStudentIds(r, c);
-                    if (ids.length > 0 && !isCellPinned(r, c)) {
-                        occupiedSpots.push({ r, c });
-                        ids.forEach(id => {
-                            const student = this._students.find(s => s.id === id) || resultsMap.get(id);
-                            if (student) movable.push(student);
-                        });
-                    }
-                }
-            }
-
-            if (movable.length === 0) {
-                UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
-                return;
-            }
-            if (movable.length < 2 && mode === 'random') {
-                UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
-                return;
-            }
-
-            this._snapshotGrid();
-
-            const ordered = [...movable];
-            if (mode === 'alpha-desc') {
-                ordered.sort((a, b) => `${b.nom} ${b.prenom}`.localeCompare(`${a.nom} ${a.prenom}`, 'fr', { sensitivity: 'base' }));
-            } else if (mode === 'random') {
-                for (let i = ordered.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
-                }
-            } else {
-                ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
-            }
-
-            occupiedSpots.forEach(spot => {
-                this._gridState[spot.r][spot.c] = null;
-            });
-
-            let targetSpots = occupiedSpots;
-            if (targetSpots.length < ordered.length) {
-                targetSpots = [];
-                for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < cols; c++) {
-                        if (!this._isSpecialSpot(r, c) && this._getCellStudentIds(r, c).length === 0) {
-                            targetSpots.push({ r, c });
-                        }
-                    }
-                }
-            }
-
-            const placedCells = [];
-            const k = Math.min(targetSpots.length, ordered.length);
-            for (let i = 0; i < k; i++) {
-                const spot = targetSpots[i];
-                const student = ordered[i];
-                this._gridState[spot.r][spot.c] = student.id;
-                placedCells.push({ row: spot.r, col: spot.c, index: i });
-            }
-
-            this._savePositionsToState();
-            this._render();
-            animatePlacedCells(placedCells);
-
-            const remaining = ordered.length - k;
-            if (remaining > 0) {
-                UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
-            }
-
-            return;
-        }
-
-        // Cas 2 : Il y a des élèves non placés -> les placer dans les places libres
-        if (unplaced.length === 0) {
-            UI.showNotification('Tous les élèves sont déjà placés.', 'info');
-            return;
-        }
-        this._snapshotGrid();
-
-        const availableSpots = [];
+        // Placement en mode Cours : Alphabétique (A-Z), Inversé (Z-A), Mélanger (regroupé) ou Disperser (toute la salle)
+        const movableStudents = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (this._getCellStudentIds(r, c).length === 0 && !this._isSpecialSpot(r, c)) {
-                    availableSpots.push({ r, c });
+                if (isCellPinned(r, c)) continue;
+                const ids = this._getCellStudentIds(r, c);
+                ids.forEach(id => {
+                    const student = this._students.find(s => s.id === id) || resultsMap.get(id);
+                    if (student && !this._isStudentDeparted(student) && !movableStudents.some(m => m.id === student.id)) {
+                        movableStudents.push(student);
+                    }
+                });
+            }
+        }
+        unplaced.forEach(s => {
+            if (!movableStudents.some(m => m.id === s.id)) {
+                movableStudents.push(s);
+            }
+        });
+
+        if (movableStudents.length === 0) {
+            if (placedIds.size > 0) {
+                UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
+            }
+            return;
+        }
+        if (movableStudents.length < 2 && unplaced.length === 0 && mode === 'random') {
+            UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
+            return;
+        }
+
+        // Places disponibles en partant du 1er rang face au Tableau (r = rows - 1 -> 0, de gauche à droite)
+        const candidateSpots = [];
+        for (let r = rows - 1; r >= 0; r--) {
+            for (let c = 0; c < cols; c++) {
+                if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
+                candidateSpots.push({ r, c });
+            }
+        }
+
+        if (candidateSpots.length === 0) {
+            UI.showNotification('Aucune place disponible dans la salle.', 'warning');
+            return;
+        }
+
+        this._snapshotGrid();
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!isCellPinned(r, c)) {
+                    this._gridState[r][c] = null;
                 }
             }
         }
 
-        const k = Math.min(availableSpots.length, unplaced.length);
-        if (k === 0) return;
-
-        const ordered = [...unplaced];
+        const ordered = [...movableStudents];
         if (mode === 'alpha-desc') {
             ordered.sort((a, b) => `${b.nom} ${b.prenom}`.localeCompare(`${a.nom} ${a.prenom}`, 'fr', { sensitivity: 'base' }));
-        } else if (mode === 'random') {
+        } else if (mode === 'random' || mode === 'random-disperse') {
             for (let i = ordered.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
@@ -424,31 +299,32 @@ export const SeatingAutoPlace = {
             ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
         }
 
-        const spotsToFill = this._isActivityMode() ? availableSpots.slice(0, k) : availableSpots.slice(-k);
-        let placed = 0;
+        if (mode === 'random-disperse') {
+            for (let i = candidateSpots.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidateSpots[i], candidateSpots[j]] = [candidateSpots[j], candidateSpots[i]];
+            }
+        }
+
+        const k = Math.min(candidateSpots.length, ordered.length);
         const placedCells = [];
 
         for (let i = 0; i < k; i++) {
-            const spot = spotsToFill[i];
+            const spot = candidateSpots[i];
             const student = ordered[i];
-
             this._gridState[spot.r][spot.c] = student.id;
-            placedCells.push({ row: spot.r, col: spot.c, index: placed });
-            placed++;
+            placedCells.push({ row: spot.r, col: spot.c, index: i });
         }
 
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
         animatePlacedCells(placedCells);
+        this._scrollToDesk();
 
-        if (!this._isActivityMode()) {
-            this._scrollToDesk();
-        }
-
-        const remaining = unplaced.length - placed;
+        const remaining = ordered.length - k;
         if (remaining > 0) {
-            UI.showNotification(`${placed} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
+            UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
         }
     },
 

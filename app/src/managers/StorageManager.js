@@ -23,10 +23,6 @@
  *    - Rôle : Identifiant unique de l'appareil généré au premier démarrage.
  *    - Cycle de vie : Persisté indéfiniment pour la résolution de conflits de synchro, supprimé au factory reset.
  * 
- * 6. bulletin_restore_pending :
- *    - Rôle : Flag d'annulation de restauration en cours de validité (durée max 1h).
- *    - Cycle de vie : Temporaire, supprimé dès confirmation de restauration réussie.
- * 
  * @module managers/StorageManager
  */
 
@@ -156,7 +152,7 @@ export const StorageManager = {
             if (data.timestamp) {
                 this._lastSavedTimestamp = data.timestamp;
             }
-            await this.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+            await this.loadAppState({ fromTabSync: true });
             if (App?.updateUIOnLoad) {
                 App.updateUIOnLoad();
             }
@@ -343,7 +339,7 @@ export const StorageManager = {
         }
     },
 
-    async loadAppState({ checkPendingRestore = true, fromTabSync = false } = {}) {
+    async loadAppState({ fromTabSync = false } = {}) {
         let loadFailed = false;
         try {
             try {
@@ -496,9 +492,6 @@ export const StorageManager = {
         }
 
         this._requestPersistentStorage();
-        if (checkPendingRestore && !fromTabSync) {
-            this._checkPendingRestore();
-        }
     },
 
     async _requestPersistentStorage() {
@@ -544,10 +537,14 @@ export const StorageManager = {
         );
     },
 
+    /**
+     * Crée une copie de secours locale avant une restauration ou une fusion.
+     * @returns {Promise<boolean>} true si une copie a été enregistrée
+     */
     async savePreRestoreSnapshot() {
         try {
             const results = runtimeState.data.generatedResults || [];
-            if (results.length === 0) return;
+            if (results.length === 0) return false;
 
             const snapshot = {
                 key: 'pre_restore_backup',
@@ -558,8 +555,10 @@ export const StorageManager = {
                 generatedResults: results
             };
             await DBService.put('appData', snapshot);
-            this._safeLocalStorageSet('bulletin_restore_pending', Date.now().toString());
-        } catch { /* best-effort */ }
+            return true;
+        } catch {
+            return false;
+        }
     },
 
     async getPreRestoreSnapshot() {
@@ -582,7 +581,6 @@ export const StorageManager = {
     async clearPreRestoreSnapshot() {
         try {
             await DBService.delete('appData', 'pre_restore_backup');
-            localStorage.removeItem('bulletin_restore_pending');
         } catch { /* best-effort */ }
     },
 
@@ -595,47 +593,6 @@ export const StorageManager = {
             return true;
         }
         return false;
-    },
-
-    async _checkPendingRestore() {
-        const flag = localStorage.getItem('bulletin_restore_pending');
-        if (!flag) return;
-        localStorage.removeItem('bulletin_restore_pending');
-
-        const elapsed = Date.now() - parseInt(flag);
-        if (elapsed > 3600000) return;
-
-        try {
-            const backup = await DBService.get('appData', 'pre_restore_backup');
-            if (!backup?.generatedResults?.length) return;
-
-            const count = backup.generatedResults.length;
-            setTimeout(() => {
-                if (UI?.showUndoNotification) {
-                    UI.showUndoNotification(
-                        `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis le Cloud`,
-                        async () => {
-                            const restored = await this.restorePreRestoreSnapshot();
-                            if (restored) {
-                                UI?.showNotification('État précédent restauré.', 'success');
-                                const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
-                                RestoreTransitionManager.rehydrateAndTransition({
-                                    title: 'Restauration de la copie',
-                                    successTitle: 'État précédent restauré.',
-                                    subtitle: 'Restauration de votre état antérieur...',
-                                    count
-                                }).catch(() => {});
-                            }
-                        },
-                        {
-                            title: 'Restauration réussie',
-                            duration: 7000,
-                            type: 'success'
-                        }
-                    );
-                }
-            }, 800);
-        } catch { /* snapshot unavailable */ }
     },
 
     _ensureDefaultState() {

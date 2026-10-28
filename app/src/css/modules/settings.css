@@ -2344,6 +2344,15 @@ label.settings-row-title {
     color: var(--success-color, #10b981);
 }
 
+.data-badge-warning {
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
+    color: var(--warning-color, #f59e0b);
+}
+
+[data-theme="dark"] .data-badge-warning {
+    color: var(--warning-bright, #fbbf24);
+}
+
 .data-badge-neutral {
     background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
     color: var(--primary-color, #3b82f6);

@@ -150,11 +150,28 @@ export const SyncService = {
 
     /**
      * Refresh the full sync status (local hash comparison + remote metadata fetch).
+     * Concurrent callers share the in-flight check so that none acts on a stale state.
      * @param {Object} [options]
-     * @param {boolean} [options.showChecking=false] - Whether to display a checking spinner in the menu
+     * @param {boolean} [options.showChecking=false] - Display a checking spinner in the menu when no state is known yet
      * @returns {Promise<string>} Current sync state
      */
-    async refreshStatus(options = {}) {
+    refreshStatus(options = {}) {
+        if (!this._statusCheck) {
+            this._statusCheck = this._refreshStatus(options).finally(() => {
+                this._statusCheck = null;
+            });
+        } else if (options.showChecking && this.isConnected()) {
+            this._showCheckingHint();
+        }
+        return this._statusCheck;
+    },
+
+    /**
+     * @param {Object} options - See refreshStatus()
+     * @returns {Promise<string>}
+     * @private
+     */
+    async _refreshStatus(options) {
         const { showChecking = false } = options;
         const savedProvider = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
         if (!savedProvider || !this._isOnline) {
@@ -162,64 +179,48 @@ export const SyncService = {
             return 'local';
         }
 
-        if (this._isChecking) return this._lastSyncState || 'local';
-        this._isChecking = true;
+        // Always re-read lastSyncTime from localStorage
+        this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync') || '0') || null;
 
-        try {
-            // Always re-read lastSyncTime from localStorage
-            this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync') || '0') || null;
-
-            // Auto-reconnect silently if not connected but configured and online
-            if (!this.isConnected() && this._isOnline) {
-                try {
-                    await this.connect(savedProvider, { silent: true, skipStatusCheck: true });
-                } catch {
-                    /* Silent connect failure */
-                }
-            }
-
-            if (!this.isConnected()) {
-                this._updateCloudIndicator(this._isOnline ? 'expired' : 'local');
-                return this._isOnline ? 'expired' : 'local';
-            }
-
-            // Show subtle checking spinner only when connected and about to query remote metadata
-            const saveHint = document.getElementById('cloudSaveHint');
-            const loadHint = document.getElementById('cloudLoadHint');
-            if (showChecking && saveHint) {
-                saveHint.style.display = 'inline-flex';
-                saveHint.className = 'cloud-btn-hint hint-syncing';
-                saveHint.innerHTML = '<span class="cloud-hint-spinner"></span><span>Vérification…</span>';
-                if (loadHint) {
-                    loadHint.style.display = 'none';
-                    loadHint.textContent = '';
-                }
-            }
-
-            // Check remote with timeout protection (4s)
+        // Auto-reconnect silently if not connected but configured and online
+        if (!this.isConnected() && this._isOnline) {
             try {
-                const metaPromise = this._provider?.getMetadata?.() || Promise.resolve(null);
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
-                const meta = await Promise.race([metaPromise, timeoutPromise]);
-
-                if (meta && meta.lastModified) {
-                    this.remoteSyncTime = new Date(meta.lastModified).getTime();
-                }
-                this._updateCloudIndicator('connected');
-            } catch (e) {
-                console.warn('[SyncService] Failed to check remote status:', e);
-                if (this._provider?.needsReconnect?.() || e?.isAuthError || !this.isConnected()) {
-                    this._updateCloudIndicator('expired');
-                    return 'expired';
-                } else {
-                    this._updateCloudIndicator('connected');
-                }
+                await this.connect(savedProvider, { silent: true, skipStatusCheck: true });
+            } catch {
+                /* Silent connect failure */
             }
-
-            return this._lastSyncState || 'in-sync';
-        } finally {
-            this._isChecking = false;
         }
+
+        if (!this.isConnected()) {
+            this._updateCloudIndicator(this._isOnline ? 'expired' : 'local');
+            return this._isOnline ? 'expired' : 'local';
+        }
+
+        if (showChecking) {
+            this._showCheckingHint();
+        }
+
+        // Check remote with timeout protection (4s)
+        try {
+            const metaPromise = this._provider?.getMetadata?.() || Promise.resolve(null);
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+            const meta = await Promise.race([metaPromise, timeoutPromise]);
+
+            if (meta && meta.lastModified) {
+                this.remoteSyncTime = new Date(meta.lastModified).getTime();
+            }
+            this._updateCloudIndicator('connected');
+        } catch (e) {
+            console.warn('[SyncService] Failed to check remote status:', e);
+            if (this._provider?.needsReconnect?.() || e?.isAuthError || !this.isConnected()) {
+                this._updateCloudIndicator('expired');
+                return 'expired';
+            } else {
+                this._updateCloudIndicator('connected');
+            }
+        }
+
+        return this._lastSyncState || 'in-sync';
     },
 
     /**
@@ -248,29 +249,26 @@ export const SyncService = {
         this._indicatorState = state;
         const saveBtn = document.getElementById('cloudSaveMenuBtn');
         const loadBtn = document.getElementById('cloudLoadMenuBtn');
-        const reconnectBtn = document.getElementById('cloudReconnectBtn');
         const connectBtn = document.getElementById('cloudConnectBtn');
         const separator = document.getElementById('cloudSeparator');
         if (!saveBtn) return;
 
-        // Reset all sync state classes
-        const syncClasses = ['disabled', 'cloud-action-recommended'];
-        syncClasses.forEach(c => saveBtn.classList.remove(c));
-        if (loadBtn) syncClasses.forEach(c => loadBtn.classList.remove(c));
-
         const saveHint = document.getElementById('cloudSaveHint');
         const loadHint = document.getElementById('cloudLoadHint');
-        if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; saveHint.className = 'cloud-btn-hint'; }
-        if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; loadHint.className = 'cloud-btn-hint'; }
+        const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
+
+        // Reset sync state classes and hints
+        saveBtn.classList.remove('cloud-action-recommended');
+        loadBtn?.classList.remove('cloud-action-recommended');
+        this._setHint(saveHint, null);
+        this._setHint(loadHint, null);
 
         // --- First-time user: show only the Connect button ---
         if (!this._wasConfigured && (state === 'disconnected' || state === 'local')) {
             saveBtn.style.display = 'none';
             if (loadBtn) loadBtn.style.display = 'none';
-            if (reconnectBtn) reconnectBtn.style.display = 'none';
             if (separator) separator.style.display = 'block';
             if (connectBtn) connectBtn.style.display = 'flex';
-            const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
             menuBtn?.classList.remove('has-cloud-warning', 'has-cloud-reminder', 'has-cloud-conflict');
             return;
         }
@@ -285,31 +283,37 @@ export const SyncService = {
         const config = {
             connected: {
                 icon: 'solar:cloud-upload-linear',
-                label: 'Sauvegarder'
+                label: 'Sauvegarder',
+                tooltip: 'Envoyer vos données vers le Cloud'
             },
             expired: {
-                icon: needsSync ? 'solar:cloud-warning-linear' : 'solar:cloud-upload-linear',
-                label: 'Sauvegarder'
+                icon: needsSync ? 'solar:cloud-warning-linear' : 'logos:google-drive',
+                label: 'Reconnecter',
+                tooltip: 'Session expirée : cliquez pour actualiser l\'état Cloud'
             },
             syncing: {
                 icon: 'ph:spinner-gap-bold',
                 label: 'Sauvegarder',
-                spin: true
+                spin: true,
+                tooltip: 'Synchronisation en cours…'
             },
             local: {
                 icon: 'solar:cloud-upload-linear',
-                label: 'Sauvegarder'
+                label: 'Sauvegarder',
+                tooltip: 'Mode hors-ligne'
             }
         };
 
         const currentConfig = config[state] || config.local;
 
-        // --- Configured user: hide Connect, show Save/Load ---
+        // --- Configured user: hide Connect, show Save/Load (or single Reconnect item when expired) ---
         if (connectBtn) connectBtn.style.display = 'none';
         if (separator) separator.style.display = 'block';
 
         saveBtn.style.display = 'flex';
-        if (loadBtn) loadBtn.style.display = 'flex';
+        saveBtn.dataset.cloudMode = state === 'expired' ? 'reconnect' : 'save';
+        saveBtn.setAttribute('data-tooltip', currentConfig.tooltip);
+        if (loadBtn) loadBtn.style.display = state === 'expired' ? 'none' : 'flex';
 
         // Update icon
         const iconEl = saveBtn.querySelector('iconify-icon');
@@ -326,42 +330,24 @@ export const SyncService = {
             labelEl.style.color = '';
         }
 
-        // Disable Save/Load when not actively connected
-        if (state !== 'connected' && state !== 'syncing') {
-            saveBtn.classList.add('disabled');
-            if (loadBtn) loadBtn.classList.add('disabled');
-        }
-
-        // Reconnect button (only when session is expired, not when merely offline)
-        if (reconnectBtn) {
-            if (state === 'expired') {
-                reconnectBtn.style.display = 'flex';
-                reconnectBtn.classList.toggle('has-warning', needsSync);
-                const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-                const label = { google: 'Google Drive' }[providerName] || 'Cloud';
-                const spanEl = reconnectBtn.querySelector('span');
-                if (spanEl) spanEl.textContent = `Reconnecter ${label}`;
-            } else {
-                reconnectBtn.style.display = 'none';
-                reconnectBtn.classList.remove('has-warning');
-            }
-        }
+        // Only offline disables Save/Load: an expired session reconnects on click
+        const isOffline = state === 'local';
+        [saveBtn, loadBtn].forEach(btn => {
+            if (!btn) return;
+            btn.classList.toggle('disabled', isOffline);
+            btn.setAttribute('aria-disabled', String(isOffline));
+        });
 
         // --- Sync state hints ---
         if (isConnectedOrExpired) {
-            this._applySyncStateUI(syncState, saveBtn, loadBtn, state === 'connected');
-        } else if (state === 'syncing' && saveHint) {
-            saveHint.style.display = 'block';
-            saveHint.textContent = 'Envoi en cours...';
-            saveHint.className = 'cloud-btn-hint hint-syncing';
-        } else if (state === 'local' && saveHint) {
-            saveHint.style.display = 'block';
-            saveHint.textContent = 'Mode hors-ligne';
-            saveHint.className = 'cloud-btn-hint';
+            this._applySyncStateUI(syncState, saveBtn, loadBtn, saveHint, loadHint, state === 'expired');
+        } else if (state === 'syncing') {
+            this._setHint(saveHint, 'Envoi en cours…', 'hint-syncing');
+        } else if (state === 'local') {
+            this._setHint(saveHint, 'Mode hors-ligne');
         }
 
         // Update menu reminder dot based on syncState (animate only when an action is needed)
-        const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
         if (menuBtn) {
             const isWarning = state === 'expired' && needsSync;
             const needsReminder = state === 'connected' && needsSync;
@@ -373,8 +359,38 @@ export const SyncService = {
         }
     },
 
-    /** @type {boolean} Guard against concurrent refreshStatus calls */
-    _isChecking: false,
+    /**
+     * Show (or hide when text is null) a cloud menu hint with an optional state variant.
+     * @param {HTMLElement|null} hintEl
+     * @param {string|null} text
+     * @param {'hint-in-sync'|'hint-syncing'|'hint-warning'|null} [variant=null]
+     * @private
+     */
+    _setHint(hintEl, text, variant = null) {
+        if (!hintEl) return;
+        hintEl.textContent = text || '';
+        hintEl.style.display = text ? 'block' : 'none';
+        hintEl.className = variant ? `cloud-btn-hint ${variant}` : 'cloud-btn-hint';
+    },
+
+    /**
+     * Display the transient checking spinner in the menu while querying remote metadata.
+     * @private
+     */
+    _showCheckingHint() {
+        const saveHint = document.getElementById('cloudSaveHint');
+        const loadHint = document.getElementById('cloudLoadHint');
+        if (!saveHint) return;
+        document.getElementById('cloudSaveMenuBtn')?.classList.remove('cloud-action-recommended');
+        document.getElementById('cloudLoadMenuBtn')?.classList.remove('cloud-action-recommended');
+        saveHint.style.display = 'inline-flex';
+        saveHint.className = 'cloud-btn-hint hint-syncing';
+        saveHint.innerHTML = '<span class="cloud-hint-spinner"></span><span>Vérification…</span>';
+        this._setHint(loadHint, null);
+    },
+
+    /** @type {Promise<string>|null} In-flight refreshStatus check shared by concurrent callers */
+    _statusCheck: null,
 
     /** @type {string|null} Last computed sync state for use in confirmation dialogs */
     _lastSyncState: null,
@@ -422,74 +438,52 @@ export const SyncService = {
     },
 
     /**
-     * Apply sync state to UI elements (unified header status + button classes).
+     * Apply sync state hints and recommended-action accents to the Save/Load menu items.
+     * Expects hints and accents to have been reset by the caller.
      * @param {'in-sync'|'local-changes'|'cloud-changes'|'conflict'} syncState
      * @param {HTMLElement|null} saveBtn
      * @param {HTMLElement|null} loadBtn
-     * @param {boolean} [isInteractive=true] - Whether Save/Load buttons are currently enabled
+     * @param {HTMLElement|null} saveHint
+     * @param {HTMLElement|null} loadHint
+     * @param {boolean} [isExpired=false] - Whether the OAuth session is currently expired
      * @private
      */
-    _applySyncStateUI(syncState, saveBtn, loadBtn, isInteractive = true) {
-        const saveHint = document.getElementById('cloudSaveHint');
-        const loadHint = document.getElementById('cloudLoadHint');
-
-        saveBtn?.classList.remove('cloud-action-recommended');
-        loadBtn?.classList.remove('cloud-action-recommended');
-
-        if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; saveHint.className = 'cloud-btn-hint'; }
-        if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; loadHint.className = 'cloud-btn-hint'; }
-
-        if (loadBtn) loadBtn.setAttribute('data-tooltip', 'Récupérer vos données depuis le Cloud');
-
+    _applySyncStateUI(syncState, saveBtn, loadBtn, saveHint, loadHint, isExpired = false) {
         switch (syncState) {
-            case 'in-sync': {
-                const hasPreviousSync = isInteractive || Boolean(this.lastSyncTime || localStorage.getItem('bulletin_last_sync') || localStorage.getItem('bulletin_last_sync_hash'));
-                if (saveHint && hasPreviousSync) {
-                    saveHint.style.display = 'block';
-                    saveHint.textContent = '✓ À jour';
-                    saveHint.classList.add('hint-in-sync');
+            case 'in-sync':
+                if (isExpired) {
+                    this._setHint(saveHint, 'Session expirée', 'hint-warning');
+                } else {
+                    this._setHint(saveHint, '✓ À jour', 'hint-in-sync');
                 }
                 break;
-            }
 
             case 'local-changes':
-                if (saveHint) {
-                    saveHint.style.display = 'block';
-                    saveHint.textContent = 'Modifications locales';
-                }
-                if (isInteractive) saveBtn?.classList.add('cloud-action-recommended');
+                this._setHint(saveHint, 'Non sauvegardé', isExpired ? 'hint-warning' : null);
+                if (!isExpired) saveBtn?.classList.add('cloud-action-recommended');
                 break;
 
             case 'cloud-changes':
-                if (loadHint) {
-                    loadHint.style.display = 'block';
-                    loadHint.textContent = 'Version Cloud plus récente';
-                }
-                if (isInteractive) loadBtn?.classList.add('cloud-action-recommended');
+                if (isExpired) this._setHint(saveHint, 'Session expirée', 'hint-warning');
+                this._setHint(loadHint, 'Cloud plus récent', isExpired ? 'hint-warning' : null);
+                if (!isExpired) loadBtn?.classList.add('cloud-action-recommended');
                 break;
 
             case 'conflict':
-                if (saveHint) {
-                    saveHint.style.display = 'block';
-                    saveHint.textContent = 'Modifications locales';
-                    saveHint.classList.add('hint-conflict');
-                }
-                if (loadHint) {
-                    loadHint.style.display = 'block';
-                    loadHint.textContent = 'Version distante';
-                    loadHint.classList.add('hint-conflict');
-                }
+                this._setHint(saveHint, 'Non sauvegardé', 'hint-warning');
+                this._setHint(loadHint, 'Cloud plus récent', 'hint-warning');
                 break;
         }
     },
 
     /**
-     * Get user info (display name, email, photo) from active provider.
+     * Get user info (display name, email, photo) from active provider or local cache.
      * @returns {Promise<Object|null>}
      */
     async getUserInfo() {
         if (this._provider?.getUserInfo) {
-            return await this._provider.getUserInfo();
+            const info = await this._provider.getUserInfo();
+            if (info) return info;
         }
         const cached = localStorage.getItem('bulletin_google_user');
         if (cached) {
@@ -531,36 +525,6 @@ export const SyncService = {
         }, 100);
     },
 
-    /**
-     * Attempt to reconnect with user interaction (shows popup).
-     * @param {Object} options
-     * @param {boolean} [options.skipIndicator=false] - If true, don't update cloud indicator (caller handles UI)
-     */
-    async reconnect(options = {}) {
-        const { skipIndicator = false } = options;
-        const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-
-        if (!providerName) {
-            window.UI?.showNotification('Aucun fournisseur Cloud configuré', 'warning');
-            return false;
-        }
-
-        const displayLabel = { google: 'Google Drive' }[providerName] || 'Cloud';
-
-        try {
-            const connected = await this.connect(providerName, { silent: false, showChecking: true });
-            if (connected) {
-                window.UI?.showNotification(`Reconnecté à ${displayLabel}`, 'success');
-                return true;
-            }
-        } catch (e) {
-            console.error('[SyncService] Reconnection failed:', e);
-            window.UI?.showNotification('Erreur de reconnexion', 'error');
-        }
-        if (!skipIndicator) this._updateCloudIndicator('expired');
-        return false;
-    },
-
 
     // =========================================================================
     // PROVIDER MANAGEMENT
@@ -569,7 +533,7 @@ export const SyncService = {
     /**
      * Connect to a cloud provider.
      * @param {string} providerName - 'google' or 'dropbox'
-     * @param {Object} [options] - { silent: boolean, skipStatusCheck: boolean, showChecking: boolean }
+     * @param {Object} [options] - { silent: boolean, skipStatusCheck: boolean }
      * @returns {Promise<boolean>} Success status
      */
     async connect(providerName, options = {}) {
@@ -599,11 +563,7 @@ export const SyncService = {
 
             // Check remote status immediately unless caller is already inside refreshStatus
             if (!options.skipStatusCheck) {
-                if (options.showChecking) {
-                    await this.refreshStatus({ showChecking: true });
-                } else {
-                    this.checkRemoteStatus();
-                }
+                this.checkRemoteStatus();
             }
 
             return true;
@@ -640,6 +600,17 @@ export const SyncService = {
             return this._provider.isConnected();
         }
         return true;
+    },
+
+    /**
+     * Return the high-level connection state for UI consumers.
+     * @returns {'connected'|'expired'|'local'|'disconnected'}
+     */
+    getConnectionState() {
+        if (this.isConnected()) return 'connected';
+        const isConfigured = Boolean(this._wasConfigured || this.currentProviderName || localStorage.getItem('bulletin_sync_provider'));
+        if (!isConfigured) return 'disconnected';
+        return (this._isOnline && navigator.onLine !== false) ? 'expired' : 'local';
     },
 
     /**

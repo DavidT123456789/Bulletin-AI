@@ -152,7 +152,7 @@ export const App = {
      * Prevents screen flash and reloads all views gracefully.
      */
     async rehydrateAll() {
-        await StorageManager.loadAppState({ checkPendingRestore: false });
+        await StorageManager.loadAppState();
 
         const allClasses = ClassManager?.getAllClasses?.() || [];
         const currentClassId = appState.currentClassId;

@@ -86,7 +86,7 @@ describe('AppManager — rehydrateAll', () => {
     it('devrait préserver la vue active (plan) et appeler restoreActiveView sans onClassChange', async () => {
         await App.rehydrateAll();
 
-        expect(StorageManager.loadAppState).toHaveBeenCalledWith({ checkPendingRestore: false });
+        expect(StorageManager.loadAppState).toHaveBeenCalled();
         expect(ClassManager._filterResultsByClass).toHaveBeenCalledWith('c1');
         expect(ClassUIManager.updateHeaderDisplay).toHaveBeenCalled();
         expect(SeatingChartManager.restoreActiveView).toHaveBeenCalled();

@@ -385,22 +385,44 @@ describe('ModalUIManager', () => {
     });
 
     describe('showConflictResolutionModal', () => {
-        it('should render modal with details and resolve with selected choice', async () => {
+        it('should render a true conflict with merge recommended and focused, and resolve with selected choice', async () => {
             const promise = ModalUI.showConflictResolutionModal({
                 remoteDate: 1726000000000,
-                localStudentCount: 25
+                syncState: 'conflict'
             });
 
             const modal = document.getElementById('conflictResolutionModal');
             expect(modal).not.toBeNull();
-            expect(modal.textContent).toContain('25 élèves');
+            expect(modal.textContent).toContain('Conflit de synchronisation');
+            expect(modal.textContent).toContain('modifications non sauvegardées');
 
             const mergeBtn = document.getElementById('conflictChoiceMerge');
-            expect(mergeBtn).not.toBeNull();
+            expect(mergeBtn.classList.contains('recommended')).toBe(true);
+            expect(document.activeElement).toBe(mergeBtn);
             mergeBtn.click();
 
             const result = await promise;
             expect(result).toBe('merge');
+        });
+
+        it('should not claim local changes nor offer merge when only the Cloud is newer', async () => {
+            const promise = ModalUI.showConflictResolutionModal({
+                remoteDate: 1726000000000,
+                syncState: 'cloud-changes'
+            });
+
+            const modal = document.getElementById('conflictResolutionModal');
+            expect(modal.textContent).toContain('Version Cloud plus récente');
+            expect(modal.textContent).toContain('aucune modification non sauvegardée');
+            expect(document.getElementById('conflictChoiceMerge')).toBeNull();
+
+            const restoreBtn = document.getElementById('conflictChoiceRestore');
+            expect(restoreBtn.classList.contains('recommended')).toBe(true);
+            expect(document.activeElement).toBe(restoreBtn);
+            expect(document.getElementById('conflictChoiceOverwrite')).not.toBeNull();
+
+            restoreBtn.click();
+            expect(await promise).toBe('restore');
         });
 
         it('should resolve with overwrite when overwrite button is clicked', async () => {
@@ -549,9 +571,14 @@ describe('ModalUIManager', () => {
             expect(okBtn.querySelector('iconify-icon')).toBeNull();
             expect(okBtn.textContent.trim()).toBe('Restaurer');
 
+            // Destructive restore: safe default focus and no blind Enter confirmation
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            expect(document.activeElement).toBe(cancelBtn);
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            expect(document.getElementById('restoreConfirmationModal')).not.toBeNull();
+
             cancelBtn.click();
-            await promise;
+            expect(await promise).toBe(false);
 
             delete window.appState;
             delete window.runtimeState;
@@ -682,28 +709,36 @@ describe('ModalUIManager', () => {
             await promise;
         });
 
-        it('should adapt alert message when syncState is in-sync vs local-changes', async () => {
-            const inSyncPromise = ModalUI.showSaveConfirmationModal({
-                localStudentCount: 28,
+        it('should focus Cancel and ignore the Enter shortcut when data shrinkage is detected', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 20,
                 localClassCount: 1,
-                syncState: 'in-sync'
+                remoteStudentCount: 305
             });
 
-            const inSyncModal = document.getElementById('saveConfirmationModal');
-            expect(inSyncModal.querySelector('.modal-alert-message').textContent).toContain('déjà synchronisé');
-            document.getElementById('saveConfirmCancelBtn').click();
-            await inSyncPromise;
+            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
+            expect(document.activeElement).toBe(cancelBtn);
 
-            const localChangesPromise = ModalUI.showSaveConfirmationModal({
-                localStudentCount: 28,
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            expect(document.getElementById('saveConfirmationModal')).not.toBeNull();
+
+            cancelBtn.click();
+            expect(await promise).toBe(false);
+        });
+
+        it('should display the aligned session notice and message when isInSync is true', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 25,
                 localClassCount: 1,
-                syncState: 'local-changes'
+                isInSync: true
             });
 
-            const localChangesModal = document.getElementById('saveConfirmationModal');
-            expect(localChangesModal.querySelector('.modal-alert-message').textContent).toContain('modifications locales');
+            const modal = document.getElementById('saveConfirmationModal');
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Aucune modification détectée');
+            expect(modal.querySelector('.restore-safety-notice.in-sync')).not.toBeNull();
+
             document.getElementById('saveConfirmCancelBtn').click();
-            await localChangesPromise;
+            expect(await promise).toBe(false);
         });
     });
 

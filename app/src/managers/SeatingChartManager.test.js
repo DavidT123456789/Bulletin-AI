@@ -227,39 +227,64 @@ describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sid
         SeatingChartManager._initGrid(3, 3);
     });
 
-    it('devrait placer les élèves dans l\'ordre alphabétique A-Z par défaut', () => {
+    it('devrait placer les élèves dans l\'ordre alphabétique A-Z par défaut en partant du rang le plus proche du tableau', () => {
         SeatingChartManager._autoPlace('alpha-asc');
 
-        const placedIds = [];
-        for (let r = 0; r < 3; r++) {
+        const placedIdsFromBoard = [];
+        for (let r = 2; r >= 0; r--) {
             for (let c = 0; c < 3; c++) {
                 if (SeatingChartManager._gridState[r][c]) {
-                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                    placedIdsFromBoard.push(SeatingChartManager._gridState[r][c]);
                 }
             }
         }
 
-        // 4 élèves placés
-        expect(placedIds.length).toBe(4);
-        // Ordre alphabétique croissant : Bernard (s3), Dupont (s1), Martin (s2), Zidane (s4)
-        expect(placedIds).toEqual(['s3', 's1', 's2', 's4']);
+        // 4 élèves placés : 1er rang (r=2) complet [s3, s1, s2], puis 2e rang (r=1, c=0) [s4]
+        expect(placedIdsFromBoard.length).toBe(4);
+        expect(placedIdsFromBoard).toEqual(['s3', 's1', 's2', 's4']);
+        expect(SeatingChartManager._gridState[2]).toEqual(['s3', 's1', 's2']);
+        expect(SeatingChartManager._gridState[1]).toEqual(['s4', null, null]);
+        expect(SeatingChartManager._gridState[0]).toEqual([null, null, null]);
     });
 
-    it('devrait placer les élèves dans l\'ordre alphabétique inversé Z-A', () => {
+    it('devrait placer les élèves dans l\'ordre alphabétique inversé Z-A en partant du rang le plus proche du tableau', () => {
         SeatingChartManager._autoPlace('alpha-desc');
 
-        const placedIds = [];
-        for (let r = 0; r < 3; r++) {
+        const placedIdsFromBoard = [];
+        for (let r = 2; r >= 0; r--) {
             for (let c = 0; c < 3; c++) {
                 if (SeatingChartManager._gridState[r][c]) {
-                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                    placedIdsFromBoard.push(SeatingChartManager._gridState[r][c]);
                 }
             }
         }
 
-        expect(placedIds.length).toBe(4);
-        // Ordre alphabétique décroissant : Zidane (s4), Martin (s2), Dupont (s1), Bernard (s3)
-        expect(placedIds).toEqual(['s4', 's2', 's1', 's3']);
+        expect(placedIdsFromBoard.length).toBe(4);
+        // Ordre alphabétique décroissant : Zidane (s4), Martin (s2), Dupont (s1) au 1er rang (r=2), Bernard (s3) au 2e rang (r=1, c=0)
+        expect(placedIdsFromBoard).toEqual(['s4', 's2', 's1', 's3']);
+        expect(SeatingChartManager._gridState[2]).toEqual(['s4', 's2', 's1']);
+        expect(SeatingChartManager._gridState[1]).toEqual(['s3', null, null]);
+    });
+
+    it('devrait regrouper les élèves au plus près du tableau lors d\'un tri A-Z, Z-A ou Mélanger après une dispersion, tout en respectant les épingles', () => {
+        // 1. Disperser dans toute la salle ou placer manuellement au fond avec des trous
+        SeatingChartManager._gridState[0][0] = 's4';
+        SeatingChartManager._gridState[0][2] = 's2';
+        SeatingChartManager._gridState[1][1] = 's1';
+        SeatingChartManager._gridState[2][2] = 's3';
+        SeatingChartManager._savePositionsToState();
+
+        // Épingler s2 (Martin) au fond à droite (0, 2)
+        const student2 = appState.generatedResults.find(s => s.id === 's2');
+        student2.seatingPosition = { row: 0, col: 2, pinned: true };
+
+        // 2. Cliquer sur Alphabétique (A-Z) : s2 reste épinglé en (0, 2), et les 3 autres (Bernard s3, Dupont s1, Zidane s4) se rangent au 1er rang (r=2)
+        SeatingChartManager._autoPlace('alpha-asc');
+
+        expect(SeatingChartManager._gridState[0][2]).toBe('s2');
+        expect(SeatingChartManager._gridState[0][0]).toBeNull();
+        expect(SeatingChartManager._gridState[1][1]).toBeNull();
+        expect(SeatingChartManager._gridState[2]).toEqual(['s3', 's1', 's4']);
     });
 
     it('devrait placer tous les élèves au hasard en mode random', () => {

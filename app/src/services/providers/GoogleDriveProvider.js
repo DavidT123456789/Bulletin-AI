@@ -209,10 +209,6 @@ export const GoogleDriveProvider = {
      * @returns {Promise<{displayName: string, email: string, photo: string}|null>}
      */
     async getUserInfo() {
-        if (!this.isConnected()) {
-            return null;
-        }
-
         const cached = localStorage.getItem('bulletin_google_user');
         if (cached) {
             try {
@@ -220,6 +216,10 @@ export const GoogleDriveProvider = {
             } catch {
                 localStorage.removeItem('bulletin_google_user');
             }
+        }
+
+        if (!this.isConnected()) {
+            return null;
         }
 
         try {

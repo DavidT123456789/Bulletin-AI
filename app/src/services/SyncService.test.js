@@ -166,12 +166,25 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(await GoogleDriveProvider.getUserInfo()).toBeNull();
         });
 
-        it('should return cached user from localStorage', async () => {
+        it('should return cached user from localStorage even when provider is instantiated with an expired session', async () => {
             const userProfile = { displayName: 'Professeur Test', email: 'prof@ac-paris.fr', photo: 'https://photo.jpg' };
             localStorage.setItem('bulletin_google_user', JSON.stringify(userProfile));
+            SyncService._provider = GoogleDriveProvider;
+            GoogleDriveProvider._token = null;
 
-            const res = await SyncService.getUserInfo();
-            expect(res).toEqual(userProfile);
+            expect(await GoogleDriveProvider.getUserInfo()).toEqual(userProfile);
+            expect(await SyncService.getUserInfo()).toEqual(userProfile);
+        });
+
+        it('getConnectionState() should distinguish connected, expired, local (offline) and disconnected', () => {
+            expect(SyncService.getConnectionState()).toBe('disconnected');
+
+            SyncService._wasConfigured = true;
+            SyncService._isOnline = true;
+            expect(SyncService.getConnectionState()).toBe('expired');
+
+            SyncService._isOnline = false;
+            expect(SyncService.getConnectionState()).toBe('local');
         });
 
         it('GoogleDriveProvider.disconnect() should clear bulletin_google_user from localStorage', async () => {
@@ -232,23 +245,23 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
     });
 
     describe('SyncService._updateCloudIndicator() & Header Menu Button State', () => {
-        let menuBtn, saveBtn, reconnectBtn;
+        let menuBtn, saveBtn, loadBtn;
 
         beforeEach(() => {
             document.body.innerHTML = `
                 <button id="headerMenuBtn"></button>
                 <button id="cloudSaveMenuBtn"><iconify-icon></iconify-icon><span class="cloud-save-label"></span><span id="cloudSaveHint"></span></button>
                 <button id="cloudLoadMenuBtn"><span id="cloudLoadHint"></span></button>
-                <button id="cloudReconnectBtn"><span></span></button>
                 <button id="cloudConnectBtn"></button>
                 <div id="cloudSeparator"></div>
             `;
             menuBtn = document.getElementById('headerMenuBtn');
             saveBtn = document.getElementById('cloudSaveMenuBtn');
-            reconnectBtn = document.getElementById('cloudReconnectBtn');
+            loadBtn = document.getElementById('cloudLoadMenuBtn');
+            SyncService.remoteSyncTime = null;
         });
 
-        it('should NOT apply has-cloud-warning when session is expired and data is in-sync', () => {
+        it('should show single "Reconnecter" item (hiding Restore) with "Session expirée" hint when session is expired and data is in-sync', () => {
             SyncService._wasConfigured = true;
             SyncService.currentProviderName = 'google';
             SyncService.lastSyncTime = 1000;
@@ -261,10 +274,13 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             const saveHint = document.getElementById('cloudSaveHint');
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
-            expect(reconnectBtn.style.display).toBe('flex');
-            expect(reconnectBtn.classList.contains('has-warning')).toBe(false);
+            expect(saveBtn.classList.contains('disabled')).toBe(false);
+            expect(saveBtn.dataset.cloudMode).toBe('reconnect');
+            expect(saveBtn.querySelector('.cloud-save-label').textContent).toBe('Reconnecter');
+            expect(loadBtn.style.display).toBe('none');
             expect(saveHint.style.display).toBe('block');
-            expect(saveHint.textContent).toBe('✓ À jour');
+            expect(saveHint.textContent).toBe('Session expirée');
+            expect(saveHint.classList.contains('hint-warning')).toBe(true);
         });
 
         it('should apply has-cloud-warning when session is expired and local changes exist', () => {
@@ -280,10 +296,9 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             const saveHint = document.getElementById('cloudSaveHint');
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
-            expect(reconnectBtn.style.display).toBe('flex');
-            expect(reconnectBtn.classList.contains('has-warning')).toBe(true);
-            expect(saveHint.style.display).toBe('block');
-            expect(saveHint.textContent).toBe('Modifications locales');
+            expect(saveBtn.classList.contains('cloud-action-recommended')).toBe(false);
+            expect(saveHint.textContent).toBe('Non sauvegardé');
+            expect(saveHint.classList.contains('hint-warning')).toBe(true);
         });
 
         it('should dynamically toggle has-cloud-warning via refreshLocalIndicator when data changes or reverts while expired', () => {
@@ -303,16 +318,14 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             localStorage.setItem('bulletin_last_modified', '2000');
             SyncService.refreshLocalIndicator();
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
-            expect(reconnectBtn.classList.contains('has-warning')).toBe(true);
 
             // Simulate reverting local data back to synced state
             localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
             SyncService.refreshLocalIndicator();
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
-            expect(reconnectBtn.classList.contains('has-warning')).toBe(false);
         });
 
-        it('should not apply has-cloud-warning or show reconnect button when offline (local state with configured provider)', () => {
+        it('should disable Save/Restore (with aria-disabled) only when offline with a configured provider', () => {
             SyncService._wasConfigured = true;
             SyncService.currentProviderName = 'google';
 
@@ -320,10 +333,44 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
 
             const saveHint = document.getElementById('cloudSaveHint');
             expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
-            expect(reconnectBtn.style.display).toBe('none');
             expect(saveBtn.classList.contains('disabled')).toBe(true);
+            expect(loadBtn.classList.contains('disabled')).toBe(true);
+            expect(saveBtn.getAttribute('aria-disabled')).toBe('true');
             expect(saveHint.style.display).toBe('block');
             expect(saveHint.textContent).toBe('Mode hors-ligne');
+        });
+
+        it('should show actionable "Non sauvegardé" hint and accent Save when connected with local changes', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '2000');
+
+            SyncService._updateCloudIndicator('connected');
+
+            expect(document.getElementById('cloudSaveHint').textContent).toBe('Non sauvegardé');
+            expect(saveBtn.classList.contains('cloud-action-recommended')).toBe(true);
+            expect(document.getElementById('cloudLoadHint').style.display).toBe('none');
+        });
+
+        it('should show amber hints on both items when connected in conflict', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            SyncService.remoteSyncTime = 100000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '2000');
+
+            SyncService._updateCloudIndicator('connected');
+
+            const saveHint = document.getElementById('cloudSaveHint');
+            const loadHint = document.getElementById('cloudLoadHint');
+            expect(saveHint.textContent).toBe('Non sauvegardé');
+            expect(loadHint.textContent).toBe('Cloud plus récent');
+            expect(saveHint.classList.contains('hint-warning')).toBe(true);
+            expect(loadHint.classList.contains('hint-warning')).toBe(true);
+            expect(menuBtn.classList.contains('has-cloud-conflict')).toBe(true);
         });
 
         it('should return local immediately in refreshStatus when offline', async () => {
@@ -337,6 +384,48 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(res).toBe('local');
             expect(connectSpy).not.toHaveBeenCalled();
             expect(document.getElementById('cloudSaveHint').textContent).toBe('Mode hors-ligne');
+        });
+
+        it('should share a single in-flight remote check between concurrent refreshStatus callers', async () => {
+            SyncService._wasConfigured = true;
+            SyncService._isOnline = true;
+            SyncService.currentProviderName = 'google';
+            let resolveMeta;
+            const getMetadata = vi.fn(() => new Promise((resolve) => { resolveMeta = resolve; }));
+            SyncService._provider = { isConnected: () => true, getMetadata };
+
+            const first = SyncService.refreshStatus({ showChecking: true });
+            const second = SyncService.refreshStatus();
+            expect(second).toBe(first);
+
+            resolveMeta({ lastModified: new Date(5000).toISOString() });
+            await Promise.all([first, second]);
+
+            expect(getMetadata).toHaveBeenCalledTimes(1);
+            expect(SyncService._statusCheck).toBeNull();
+        });
+
+        it('should display the "Vérification…" spinner in refreshStatus when showChecking is true (including on concurrent calls)', async () => {
+            SyncService._wasConfigured = true;
+            SyncService._isOnline = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            let resolveMeta;
+            SyncService._provider = { isConnected: () => true, getMetadata: () => new Promise((resolve) => { resolveMeta = resolve; }) };
+            const saveHint = document.getElementById('cloudSaveHint');
+            saveHint.textContent = 'Non sauvegardé';
+
+            // 1. Background refresh without showChecking, followed by menu open with showChecking: true
+            const bgPending = SyncService.refreshStatus();
+            await Promise.resolve();
+            expect(saveHint.textContent).toBe('Non sauvegardé');
+
+            const menuPending = SyncService.refreshStatus({ showChecking: true });
+            expect(saveHint.textContent).toBe('Vérification…');
+            expect(saveHint.querySelector('.cloud-hint-spinner')).not.toBeNull();
+            resolveMeta(null);
+            await Promise.all([bgPending, menuPending]);
+            expect(saveHint.textContent).toBe('✓ À jour');
         });
 
         it('should trigger refreshStatus when coming back online if provider was not initialized while offline', () => {

@@ -732,9 +732,9 @@ describe('UIManager', () => {
             const { ModalUI } = await import('./ModalUIManager.js');
             const spy = vi.spyOn(ModalUI, 'showConflictResolutionModal').mockResolvedValue('merge');
 
-            const res = await UI.showConflictResolutionModal({ localStudentCount: 5 });
+            const res = await UI.showConflictResolutionModal({ syncState: 'conflict' });
 
-            expect(spy).toHaveBeenCalledWith({ localStudentCount: 5 });
+            expect(spy).toHaveBeenCalledWith({ syncState: 'conflict' });
             expect(res).toBe('merge');
         });
     });

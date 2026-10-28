@@ -201,7 +201,8 @@ export const BackupImportManager = {
                 const result = await StorageManager.importBackup(fileContent, {
                     mergeData: isMerge,
                     categories: selectedCategories,
-                    silent: true
+                    silent: true,
+                    skipSnapshot: true
                 });
                 const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
                 await RestoreTransitionManager.rehydrateAndTransition();

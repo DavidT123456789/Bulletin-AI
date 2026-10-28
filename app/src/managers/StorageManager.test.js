@@ -584,7 +584,7 @@ describe('StorageManager', () => {
         });
     });
 
-    describe('PreRestoreSnapshot and _checkPendingRestore', () => {
+    describe('PreRestoreSnapshot', () => {
         beforeEach(() => {
             vi.clearAllMocks();
         });
@@ -593,13 +593,12 @@ describe('StorageManager', () => {
             runtimeState.data.generatedResults = [{ id: 's1' }];
             userSettings.academic.classes = [{ id: 'c1' }];
 
-            await StorageManager.savePreRestoreSnapshot();
+            expect(await StorageManager.savePreRestoreSnapshot()).toBe(true);
 
             expect(DBService.put).toHaveBeenCalledWith('appData', expect.objectContaining({
                 key: 'pre_restore_backup',
                 generatedResults: [{ id: 's1' }]
             }));
-            expect(localStorage.setItem).toHaveBeenCalledWith('bulletin_restore_pending', expect.any(String));
         });
 
         it('should return snapshot if within 24h and clear if expired', async () => {
@@ -625,42 +624,10 @@ describe('StorageManager', () => {
             expect(DBService.delete).toHaveBeenCalledWith('appData', 'pre_restore_backup');
         });
 
-        it('should clear snapshot and pending flag', async () => {
+        it('should clear snapshot from IndexedDB', async () => {
             await StorageManager.clearPreRestoreSnapshot();
 
             expect(DBService.delete).toHaveBeenCalledWith('appData', 'pre_restore_backup');
-            expect(localStorage.removeItem).toHaveBeenCalledWith('bulletin_restore_pending');
-        });
-
-        it('should trigger UI.showUndoNotification on _checkPendingRestore when flag is set', async () => {
-            vi.useFakeTimers();
-            const { UI } = await import('./UIManager.js');
-            mockLocalStorage['bulletin_restore_pending'] = Date.now().toString();
-
-            const snapshot = {
-                key: 'pre_restore_backup',
-                createdAt: Date.now(),
-                generatedResults: [{ id: 's1' }, { id: 's2' }]
-            };
-            DBService.get.mockResolvedValue(snapshot);
-
-            await StorageManager._checkPendingRestore();
-            vi.advanceTimersByTime(1000);
-
-            expect(UI.showUndoNotification).toHaveBeenCalledWith(
-                expect.stringContaining('2 élèves'),
-                expect.any(Function),
-                expect.objectContaining({ duration: 7000, type: 'success', title: 'Restauration réussie' })
-            );
-
-            // Execute undo callback
-            const undoCallback = UI.showUndoNotification.mock.calls[0][1];
-            const restoreSpy = vi.spyOn(StorageManager, 'restorePreRestoreSnapshot').mockResolvedValue(true);
-            await undoCallback();
-            expect(restoreSpy).toHaveBeenCalled();
-            expect(UI.showNotification).toHaveBeenCalledWith('État précédent restauré.', 'success');
-
-            vi.useRealTimers();
         });
     });
 
@@ -1193,7 +1160,7 @@ describe('StorageManager', () => {
             localStorage.setItem('bulletin_last_sync_hash', 'hash-with-307-students');
             localStorage.setItem('bulletin_last_sync_students', '307');
 
-            await StorageManager.loadAppState({ checkPendingRestore: false });
+            await StorageManager.loadAppState();
 
             expect(runtimeState._dataPurgeDetected).toBe(true);
             expect(localStorage.getItem('bulletin_last_sync_hash')).toBe('hash-with-307-students');
@@ -1314,7 +1281,7 @@ describe('StorageManager', () => {
                 }
             });
 
-            await StorageManager.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+            await StorageManager.loadAppState({ fromTabSync: true });
 
             expect(userSettings.ui.theme).toBe('light');
             expect(userSettings.academic.currentClassId).toBe('c1');
@@ -1328,7 +1295,7 @@ describe('StorageManager', () => {
                 settings: { classes: [{ id: 'c2', name: '4B' }], currentClassId: 'c2' }
             });
 
-            await StorageManager.loadAppState({ checkPendingRestore: false, fromTabSync: true });
+            await StorageManager.loadAppState({ fromTabSync: true });
 
             expect(userSettings.academic.currentClassId).toBe('c2');
             expect(appState.currentClassId).toBe('c2');
@@ -1345,7 +1312,7 @@ describe('StorageManager', () => {
                 settings: { classes: [{ id: 'c2', name: '4B' }], currentClassId: 'deleted-class' }
             });
 
-            await StorageManager.loadAppState({ checkPendingRestore: false });
+            await StorageManager.loadAppState();
 
             expect(userSettings.academic.currentClassId).toBe('c2');
             expect(appState.currentClassId).toBe('c2');

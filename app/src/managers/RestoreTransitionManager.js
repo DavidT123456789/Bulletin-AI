@@ -43,7 +43,7 @@ export const RestoreTransitionManager = {
                 await window.App.rehydrateAll();
             } else {
                 const { StorageManager } = await import('./StorageManager.js');
-                await StorageManager.loadAppState({ checkPendingRestore: false });
+                await StorageManager.loadAppState();
                 if (window.App?.updateUIOnLoad) {
                     window.App.updateUIOnLoad();
                 }

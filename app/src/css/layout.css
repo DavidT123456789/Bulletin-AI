@@ -1027,12 +1027,12 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
-.cloud-btn-hint.hint-conflict {
+.cloud-btn-hint.hint-warning {
     color: var(--warning-color);
     font-weight: 500;
 }
 
-[data-theme="dark"] .cloud-btn-hint.hint-conflict {
+[data-theme="dark"] .cloud-btn-hint.hint-warning {
     color: var(--warning-bright);
 }
 
@@ -1111,11 +1111,11 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
-.cloud-save-menu-item:hover .cloud-btn-hint.hint-conflict {
+.cloud-save-menu-item:hover .cloud-btn-hint.hint-warning {
     color: var(--warning-dark);
 }
 
-[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-conflict {
+[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-warning {
     color: var(--warning-bright);
 }
 
@@ -1137,26 +1137,6 @@ body.is-cloud-syncing label {
     cursor: wait;
     opacity: 0.75;
     transition: opacity var(--transition-fast);
-}
-
-.cloud-save-menu-item.saving .cloud-save-label::after {
-    content: '...';
-    animation: ellipsis 1.2s steps(4, end) infinite;
-}
-
-@keyframes ellipsis {
-    0% {
-        content: '';
-    }
-    25% {
-        content: '.';
-    }
-    50% {
-        content: '..';
-    }
-    75% {
-        content: '...';
-    }
 }
 
 /* État désactivé (non connecté ou action non nécessaire) */
@@ -1188,6 +1168,14 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
+.cloud-save-menu-item:has(.hint-warning) > iconify-icon {
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .cloud-save-menu-item:has(.hint-warning) > iconify-icon {
+    color: var(--warning-bright);
+}
+
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */
 .cloud-connect-item {
     font-weight: 500;
@@ -1208,58 +1196,6 @@ body.is-cloud-syncing label {
     opacity: 0.7;
 }
 
-/* Bouton Reconnexion - Style neutre au repos, ambré uniquement si modifications en attente */
-.cloud-reconnect-item {
-    background-color: transparent;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.cloud-reconnect-item.has-warning {
-    color: var(--warning-color);
-}
-
-[data-theme="dark"] .cloud-reconnect-item.has-warning {
-    color: var(--warning-bright);
-}
-
-.cloud-reconnect-item.has-warning:hover {
-    color: var(--warning-dark);
-}
-
-[data-theme="dark"] .cloud-reconnect-item.has-warning:hover {
-    color: var(--warning-bright);
-}
-
-.cloud-reconnect-item iconify-icon {
-    font-size: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    width: 24px;
-    height: 24px;
-    color: var(--text-tertiary);
-    transition: opacity var(--transition-fast), color var(--transition-fast);
-}
-
-.cloud-reconnect-item.has-warning iconify-icon {
-    color: var(--warning-color);
-}
-
-[data-theme="dark"] .cloud-reconnect-item.has-warning iconify-icon {
-    color: var(--warning-bright);
-}
-
-.cloud-reconnect-item.has-warning:hover iconify-icon {
-    color: var(--warning-dark);
-    opacity: 1;
-}
-
-[data-theme="dark"] .cloud-reconnect-item.has-warning:hover iconify-icon {
-    color: var(--warning-bright);
-}
-
 /* Wrapper carré pour rotation centrée d'icônes non-carrées */
 .icon-spin-wrapper {
     display: inline-flex;
@@ -1273,8 +1209,7 @@ body.is-cloud-syncing label {
 
 /* Alignement optique et géométrique du centroïde du logo Google Drive (triangle équilatéral) */
 .icon-spin-wrapper > iconify-icon[icon="logos:google-drive"],
-.cloud-connect-item .icon-spin-wrapper > iconify-icon,
-.cloud-reconnect-item .icon-spin-wrapper > iconify-icon {
+.cloud-connect-item .icon-spin-wrapper > iconify-icon {
     transform: translateY(-0.083em);
 }
 

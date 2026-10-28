@@ -718,17 +718,19 @@ export const ModalUI = {
     },
 
     /**
-     * Affiche une modale de résolution de conflit Cloud à 3 choix (Merge, Overwrite, Restore).
+     * Modale de résolution quand le Cloud est plus récent que la dernière synchronisation.
+     * - `conflict` : modifications des deux côtés → Fusionner (recommandé), Écraser, Remplacer.
+     * - `cloud-changes` : aucune modification locale → Récupérer (recommandé), Écraser.
      * @param {Object} options
      * @param {string|number} [options.remoteDate] - Timestamp de la version Cloud
-     * @param {number} [options.localStudentCount] - Nombre d'élèves en local
+     * @param {'conflict'|'cloud-changes'} [options.syncState='conflict'] - État de synchronisation détecté
      * @returns {Promise<'merge'|'overwrite'|'restore'|'cancel'>}
      */
     showConflictResolutionModal(options = {}) {
         return new Promise((resolve) => {
             const {
                 remoteDate = null,
-                localStudentCount = 0
+                syncState = 'conflict'
             } = options;
 
             const modalId = 'conflictResolutionModal';
@@ -739,6 +741,52 @@ export const ModalUI = {
                 ? new Date(remoteDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                 : 'récemment';
 
+            const isConflict = syncState !== 'cloud-changes';
+
+            const choices = {
+                merge: {
+                    id: 'conflictChoiceMerge',
+                    icon: 'solar:magic-stick-3-bold-duotone',
+                    title: 'Fusionner les deux versions',
+                    desc: 'Combine vos ajouts locaux et les données distantes <strong>sans perte</strong> (nouveaux élèves, entrées de journal de bord, appréciations).'
+                },
+                overwrite: {
+                    id: 'conflictChoiceOverwrite',
+                    icon: 'solar:cloud-upload-bold',
+                    title: 'Écraser la version Cloud',
+                    desc: 'Remplace le Cloud par cet appareil. Les modifications enregistrées depuis un autre appareil seront perdues.'
+                },
+                restore: {
+                    id: 'conflictChoiceRestore',
+                    icon: 'solar:cloud-download-bold',
+                    title: isConflict ? 'Remplacer par la version Cloud' : 'Récupérer la version Cloud',
+                    desc: isConflict
+                        ? 'Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).'
+                        : 'Recharge la sauvegarde la plus récente sur cet appareil (une copie de secours locale sera conservée).'
+                }
+            };
+
+            const order = isConflict ? ['merge', 'overwrite', 'restore'] : ['restore', 'overwrite'];
+            const recommended = order[0];
+
+            const renderChoice = (key) => {
+                const { id, icon, title, desc } = choices[key];
+                const isRecommended = key === recommended;
+                return `
+                        <button type="button" class="conflict-choice-card${isRecommended ? ' recommended' : ''}" id="${id}" data-choice="${key}">
+                            <div class="conflict-choice-icon">
+                                <iconify-icon icon="${icon}"></iconify-icon>
+                            </div>
+                            <div class="conflict-choice-body">
+                                <div class="conflict-choice-header">
+                                    <span class="conflict-choice-title">${title}</span>
+                                    ${isRecommended ? '<span class="conflict-badge-rec">Recommandé</span>' : ''}
+                                </div>
+                                <span class="conflict-choice-desc">${desc}</span>
+                            </div>
+                        </button>`;
+            };
+
             modal = document.createElement('div');
             modal.id = modalId;
             modal.className = 'modal';
@@ -746,58 +794,21 @@ export const ModalUI = {
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-content-conflict modal-alert-ios">
                 <div class="modal-alert-body">
-                    <h3 class="modal-alert-title">⚠️ Conflit de synchronisation</h3>
+                    <h3 class="modal-alert-title has-header-icon">
+                        <div class="modal-alert-header-icon warning">
+                            <iconify-icon icon="solar:cloud-warning-bold"></iconify-icon>
+                        </div>
+                        <span>${isConflict ? 'Conflit de synchronisation' : 'Version Cloud plus récente'}</span>
+                    </h3>
                     <div class="modal-alert-message">
-                        Une sauvegarde plus récente existe sur le Cloud (<strong>${remoteDateStr}</strong>), enregistrée depuis un autre appareil.<br>
-                        Des modifications locales existent également (${localStudentCount} élève${localStudentCount > 1 ? 's' : ''}).
+                        Une sauvegarde plus récente existe sur le Cloud (<strong>${remoteDateStr}</strong>).<br>
+                        ${isConflict
+                            ? 'Cet appareil contient aussi des modifications non sauvegardées.'
+                            : 'Cet appareil n\'a aucune modification non sauvegardée.'}
                     </div>
 
                     <div class="conflict-choices-list">
-                        <!-- Option 1: Merge (Recommandé) -->
-                        <button type="button" class="conflict-choice-card recommended" id="conflictChoiceMerge">
-                            <div class="conflict-choice-icon">
-                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon>
-                            </div>
-                            <div class="conflict-choice-body">
-                                <div class="conflict-choice-header">
-                                    <span class="conflict-choice-title">Fusionner les deux versions</span>
-                                    <span class="conflict-badge-rec">Recommandé</span>
-                                </div>
-                                <span class="conflict-choice-desc">
-                                    Combine vos ajouts locaux et les données distantes <strong>sans perte</strong> (nouveaux élèves, entrées de journal de bord, appréciations).
-                                </span>
-                            </div>
-                        </button>
-
-                        <!-- Option 2: Overwrite -->
-                        <button type="button" class="conflict-choice-card" id="conflictChoiceOverwrite">
-                            <div class="conflict-choice-icon">
-                                <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
-                            </div>
-                            <div class="conflict-choice-body">
-                                <div class="conflict-choice-header">
-                                    <span class="conflict-choice-title">Écraser la version Cloud</span>
-                                </div>
-                                <span class="conflict-choice-desc">
-                                    Remplace le Cloud par cet appareil. Ignore les modifications faites sur l'autre appareil.
-                                </span>
-                            </div>
-                        </button>
-
-                        <!-- Option 3: Restore -->
-                        <button type="button" class="conflict-choice-card" id="conflictChoiceRestore">
-                            <div class="conflict-choice-icon">
-                                <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
-                            </div>
-                            <div class="conflict-choice-body">
-                                <div class="conflict-choice-header">
-                                    <span class="conflict-choice-title">Remplacer par la version Cloud</span>
-                                </div>
-                                <span class="conflict-choice-desc">
-                                    Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).
-                                </span>
-                            </div>
-                        </button>
+                        ${order.map(renderChoice).join('')}
                     </div>
                 </div>
 
@@ -809,26 +820,19 @@ export const ModalUI = {
             document.body.appendChild(modal);
             this.openModal(modal);
 
-            const mergeBtn = document.getElementById('conflictChoiceMerge');
-            const overwriteBtn = document.getElementById('conflictChoiceOverwrite');
-            const restoreBtn = document.getElementById('conflictChoiceRestore');
             const cancelBtn = document.getElementById('conflictCancelBtn');
 
             let keyHandler;
 
-            const cleanup = () => {
-                if (keyHandler) document.removeEventListener('keydown', keyHandler);
-            };
-
             const selectChoice = (choice) => {
-                cleanup();
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
                 resolve(choice);
                 this.closeModal(modal);
             };
 
-            mergeBtn.addEventListener('click', () => selectChoice('merge'), { once: true });
-            overwriteBtn.addEventListener('click', () => selectChoice('overwrite'), { once: true });
-            restoreBtn.addEventListener('click', () => selectChoice('restore'), { once: true });
+            modal.querySelectorAll('.conflict-choice-card').forEach(card => {
+                card.addEventListener('click', () => selectChoice(card.dataset.choice), { once: true });
+            });
             cancelBtn.addEventListener('click', () => selectChoice('cancel'), { once: true });
 
             modal.addEventListener('click', (e) => {
@@ -844,7 +848,7 @@ export const ModalUI = {
             };
             document.addEventListener('keydown', keyHandler);
 
-            mergeBtn.focus();
+            document.getElementById(choices[recommended].id)?.focus();
         });
     },
 
@@ -1070,7 +1074,7 @@ export const ModalUI = {
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-content-restore modal-alert-ios">
                 <div class="modal-alert-body">
-                    <h3 class="modal-alert-title" style="display: flex; align-items: center; gap: 12px;">
+                    <h3 class="modal-alert-title has-header-icon">
                         <div class="modal-alert-header-icon cloud">
                             <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
                         </div>
@@ -1086,7 +1090,7 @@ export const ModalUI = {
                         <!-- Carte Cloud -->
                         <div class="restore-comparison-card cloud">
                             <div class="restore-card-badge">
-                                <iconify-icon icon="${resolvedProviderIcon}" style="font-size: 0.9em;"></iconify-icon>
+                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
                                 <span>${resolvedProviderLabel}</span>
                             </div>
                             <div class="restore-card-main-stat">
@@ -1099,7 +1103,7 @@ export const ModalUI = {
                         <!-- Carte Locale -->
                         <div class="restore-comparison-card local">
                             <div class="restore-card-badge">
-                                <iconify-icon icon="solar:laptop-linear" style="font-size: 0.9em;"></iconify-icon>
+                                <iconify-icon icon="solar:laptop-linear"></iconify-icon>
                                 <span>Session locale</span>
                             </div>
                             <div class="restore-card-main-stat">
@@ -1159,48 +1163,19 @@ export const ModalUI = {
             document.body.appendChild(modal);
             this.openModal(modal);
 
-            const okBtn = document.getElementById('restoreConfirmOkBtn');
-            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
-
-            let keyHandler;
-
-            const cleanup = () => {
-                if (keyHandler) document.removeEventListener('keydown', keyHandler);
-            };
-
-            const finish = (confirmed) => {
-                cleanup();
-                resolve(confirmed);
-                this.closeModal(modal);
-            };
-
-            okBtn?.addEventListener('click', () => finish(true), { once: true });
-            cancelBtn?.addEventListener('click', () => finish(false), { once: true });
-
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) finish(false);
-            });
-
-            keyHandler = (e) => {
-                if (this.activeModal !== modal) return;
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    finish(false);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    finish(true);
-                }
-            };
-            document.addEventListener('keydown', keyHandler);
-
-            okBtn?.focus();
+            this._bindConfirmActions(
+                modal,
+                document.getElementById('restoreConfirmOkBtn'),
+                document.getElementById('restoreConfirmCancelBtn'),
+                resolve,
+                hasLocalChanges
+            );
         });
     },
 
     /**
      * Modale de confirmation de sauvegarde vers le Cloud.
-     * Résumé épuré (élèves, classes, provider) sans bruit inutile.
-     * Détecte et alerte en cas de régression de données (data shrinkage).
+     * Affichée en cas de régression du nombre d'élèves (focus sur Annuler) ou lorsque la session est déjà alignée.
      * 
      * @param {Object} options
      * @param {number} [options.localStudentCount=0]
@@ -1210,6 +1185,7 @@ export const ModalUI = {
      * @param {string} [options.providerName='google']
      * @param {string} [options.providerLabel='Google Drive']
      * @param {string} [options.providerIcon='logos:google-drive']
+     * @param {boolean} [options.isInSync=false]
      * @returns {Promise<boolean>}
      */
     showSaveConfirmationModal(options = {}) {
@@ -1222,7 +1198,7 @@ export const ModalUI = {
                 providerName = 'google',
                 providerLabel = null,
                 providerIcon = null,
-                syncState = null
+                isInSync = false
             } = options;
 
             const modalId = 'saveConfirmationModal';
@@ -1235,11 +1211,6 @@ export const ModalUI = {
 
             const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
             const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
-
-            const resolvedSyncState = syncState ||
-                window.SyncService?._lastSyncState ||
-                (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
-            const hasLocalChanges = resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict';
 
             const formattedLastSync = this._formatRelativeDate(lastSyncTime);
             const subtitleDetail = formattedLastSync ? `Dernière sauvegarde : ${formattedLastSync}` : 'Prêt à synchroniser';
@@ -1256,22 +1227,22 @@ export const ModalUI = {
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-content-save modal-alert-ios">
                 <div class="modal-alert-body">
-                    <h3 class="modal-alert-title" style="display: flex; align-items: center; gap: 12px;">
+                    <h3 class="modal-alert-title has-header-icon">
                         <div class="modal-alert-header-icon cloud">
                             <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
                         </div>
                         <span>Sauvegarder vers le Cloud</span>
                     </h3>
                     <div class="modal-alert-message">
-                        ${hasLocalChanges
-                            ? 'Vos modifications locales vont être sécurisées sur votre espace personnel.'
-                            : 'Votre espace de travail est déjà synchronisé. Cette action va confirmer l\'état actuel.'}
+                        ${isInSync && !hasDataShrinkageWarning
+                            ? 'Aucune modification détectée depuis la dernière sauvegarde. Voulez-vous renvoyer vos données quand même ?'
+                            : 'Votre session actuelle va remplacer la sauvegarde de votre espace personnel.'}
                     </div>
 
                     <div class="save-summary-card">
                         <div class="save-summary-header">
-                            <div class="restore-card-badge" style="background: var(--primary-color); color: white;">
-                                <iconify-icon icon="${resolvedProviderIcon}" style="font-size: 0.9em;"></iconify-icon>
+                            <div class="restore-card-badge">
+                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
                                 <span>${resolvedProviderLabel}</span>
                             </div>
                         </div>
@@ -1279,7 +1250,7 @@ export const ModalUI = {
                             ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
                         </div>
                         <div class="restore-card-date">
-                            <iconify-icon icon="${hasLocalChanges ? 'solar:cloud-upload-linear' : 'solar:check-circle-bold'}" style="color: ${hasLocalChanges ? 'var(--primary-color)' : 'var(--success-color, #10b981)'};"></iconify-icon>
+                            <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
                             <span>${subtitleDetail}</span>
                         </div>
                     </div>
@@ -1288,7 +1259,14 @@ export const ModalUI = {
                     <div class="restore-safety-notice warning">
                         <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                         <div>
-                            <strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${remoteStudentCount} élèves</strong>. Cette action va la remplacer par votre session actuelle (${localStudentCount} élèves).
+                            <strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${remoteStudentCount} élèves</strong>. Cette action va la remplacer par votre session actuelle (${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}).
+                        </div>
+                    </div>
+                    ` : isInSync ? `
+                    <div class="restore-safety-notice in-sync">
+                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                        <div>
+                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées avec le Cloud.
                         </div>
                     </div>
                     ` : ''}
@@ -1303,42 +1281,54 @@ export const ModalUI = {
             document.body.appendChild(modal);
             this.openModal(modal);
 
-            const okBtn = document.getElementById('saveConfirmOkBtn');
-            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
-
-            let keyHandler;
-
-            const cleanup = () => {
-                if (keyHandler) document.removeEventListener('keydown', keyHandler);
-            };
-
-            const finish = (confirmed) => {
-                cleanup();
-                resolve(confirmed);
-                this.closeModal(modal);
-            };
-
-            okBtn?.addEventListener('click', () => finish(true), { once: true });
-            cancelBtn?.addEventListener('click', () => finish(false), { once: true });
-
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) finish(false);
-            });
-
-            keyHandler = (e) => {
-                if (this.activeModal !== modal) return;
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    finish(false);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    finish(true);
-                }
-            };
-            document.addEventListener('keydown', keyHandler);
-
-            okBtn?.focus();
+            this._bindConfirmActions(
+                modal,
+                document.getElementById('saveConfirmOkBtn'),
+                document.getElementById('saveConfirmCancelBtn'),
+                resolve,
+                hasDataShrinkageWarning
+            );
         });
+    },
+
+    /**
+     * Branche les actions standard d'une modale de confirmation (boutons, clic extérieur, clavier).
+     * @param {HTMLElement} modal
+     * @param {HTMLElement} okBtn
+     * @param {HTMLElement} cancelBtn
+     * @param {Function} resolve - Résolu avec true (confirmé) ou false (annulé)
+     * @param {boolean} [isDestructive=false] - Focus sur Annuler ; Entrée active le bouton focalisé au lieu de confirmer
+     * @private
+     */
+    _bindConfirmActions(modal, okBtn, cancelBtn, resolve, isDestructive = false) {
+        let keyHandler;
+
+        const finish = (confirmed) => {
+            document.removeEventListener('keydown', keyHandler);
+            resolve(confirmed);
+            this.closeModal(modal);
+        };
+
+        okBtn.addEventListener('click', () => finish(true), { once: true });
+        cancelBtn.addEventListener('click', () => finish(false), { once: true });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) finish(false);
+        });
+
+        keyHandler = (e) => {
+            if (this.activeModal !== modal) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                finish(false);
+            } else if (e.key === 'Enter' && !isDestructive) {
+                e.preventDefault();
+                finish(true);
+            }
+        };
+        document.addEventListener('keydown', keyHandler);
+
+        (isDestructive ? cancelBtn : okBtn).focus();
     },
 
     /**
