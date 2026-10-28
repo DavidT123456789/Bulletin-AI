@@ -2114,8 +2114,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             const dragClone = document.querySelector('.sc-drag-clone');
             expect(dragClone).not.toBeNull();
-            expect(dragClone.style.getPropertyValue('--sc-drag-x')).toBe('120px');
-            expect(dragClone.style.getPropertyValue('--sc-drag-y')).toBe('160px');
+            expect(dragClone.style.translate).toBe('120px 160px 0px');
             expect(dragClone.style.left).toBe('');
             expect(dragClone.style.top).toBe('');
 
@@ -2123,8 +2122,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             dragOverWindow.clientX = 245;
             dragOverWindow.clientY = 310;
             window.dispatchEvent(dragOverWindow);
-            expect(dragClone.style.getPropertyValue('--sc-drag-x')).toBe('245px');
-            expect(dragClone.style.getPropertyValue('--sc-drag-y')).toBe('310px');
+            expect(dragClone.style.translate).toBe('245px 310px 0px');
 
             expect(dragClone.querySelector('.sc-student-chip-name')).toBeNull();
             expect(dragClone.querySelector('.sc-chip-badge')).toBeNull();
@@ -2138,8 +2136,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._createTouchGhost(chip, { clientX: 120, clientY: 160 });
             const touchGhost = document.querySelector('.sc-touch-ghost');
             expect(touchGhost).not.toBeNull();
-            expect(touchGhost.style.getPropertyValue('--sc-drag-x')).toBe('120px');
-            expect(touchGhost.style.getPropertyValue('--sc-drag-y')).toBe('160px');
+            expect(touchGhost.style.translate).toBe('120px 160px 0px');
             expect(touchGhost.style.left).toBe('');
             expect(touchGhost.style.top).toBe('');
             expect(touchGhost.querySelector('.sc-student-chip-name')).toBeNull();
@@ -2188,8 +2185,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
                 const activeClone = document.querySelector('.sc-drag-clone');
                 expect(activeClone).not.toBeNull();
-                expect(activeClone.style.getPropertyValue('--sc-drag-x')).toBe('220px');
-                expect(activeClone.style.getPropertyValue('--sc-drag-y')).toBe('140px');
+                expect(activeClone.style.translate).toBe('220px 140px 0px');
                 expect(activeClone.hasAttribute('data-row')).toBe(false);
                 expect(activeClone.hasAttribute('data-col')).toBe(false);
                 expect(activeClone.hasAttribute('data-result-id')).toBe(false);
@@ -2204,8 +2200,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 const pointerMoveSameCell = new Event('pointermove', { bubbles: true, cancelable: true });
                 Object.assign(pointerMoveSameCell, { pointerType: 'mouse', clientX: 224, clientY: 142 });
                 window.dispatchEvent(pointerMoveSameCell);
-                expect(activeClone.style.getPropertyValue('--sc-drag-x')).toBe('224px');
-                expect(activeClone.style.getPropertyValue('--sc-drag-y')).toBe('142px');
+                expect(activeClone.style.translate).toBe('224px 142px 0px');
                 expect(validTargetSpy).toHaveBeenCalledTimes(1);
 
                 const pointerUp = new Event('pointerup', { bubbles: true, cancelable: true });

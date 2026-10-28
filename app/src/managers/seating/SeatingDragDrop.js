@@ -527,16 +527,22 @@ export const SeatingDragDrop = {
         return activeSourceInfo;
     },
 
-    _executePointerDrop(x, y, sourceInfo) {
+    _executePointerDrop(x, y, sourceInfo, hitTarget = null) {
         if (!sourceInfo || !(x > 0 || y > 0)) return;
-        const elementsAtPoint = document.elementsFromPoint?.(x, y) || [];
-        if (this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+        const directHit = (!this._touchDragEl && hitTarget?.closest?.('#seatingChartView')) ? hitTarget : null;
+        const elementsAtPoint = directHit ? null : (document.elementsFromPoint?.(x, y) || []);
+        const isOverSidebar = directHit
+            ? (sourceInfo.type !== 'sidebar' && Boolean(directHit.closest('.sc-sidebar')))
+            : this._isTouchOverSidebar(x, y, elementsAtPoint);
+        if (isOverSidebar) {
             if (sourceInfo.type === 'cell' || sourceInfo.type === 'multi-cell' || sourceInfo.type === 'group-member') {
                 this._dragSource = sourceInfo;
                 this._handleRemoveFromSidebarDrop();
             }
         } else {
-            const targetCell = this._getCellUnderPoint(x, y, elementsAtPoint);
+            const targetCell = directHit
+                ? directHit.closest('.sc-cell')
+                : this._getCellUnderPoint(x, y, elementsAtPoint);
             if (targetCell) {
                 const targetRow = parseInt(targetCell.dataset.row, 10);
                 const targetCol = parseInt(targetCell.dataset.col, 10);
@@ -611,7 +617,7 @@ export const SeatingDragDrop = {
                 lastX = cx;
                 lastY = cy;
                 if (cx > 0 || cy > 0) {
-                    this._highlightCellUnderTouch(cx, cy);
+                    this._highlightCellUnderTouch(cx, cy, ev.target);
                     this._updateTouchAutoScroll(cx, cy);
                 }
                 return;
@@ -622,7 +628,7 @@ export const SeatingDragDrop = {
             lastY = cy;
 
             if (this._mouseDragClone && (cx > 0 || cy > 0)) {
-                this._highlightCellUnderTouch(cx, cy);
+                this._highlightCellUnderTouch(cx, cy, ev.target);
                 this._updateTouchAutoScroll(cx, cy);
                 this._setFloatingClonePosition(this._mouseDragClone, cx, cy);
             }
@@ -652,7 +658,7 @@ export const SeatingDragDrop = {
                 setTimeout(() => dragTarget.removeEventListener('click', suppressClickOnce, true), 0);
 
                 if (!cancelled && ev) {
-                    this._executePointerDrop(ev.clientX, ev.clientY, sourceInfo);
+                    this._executePointerDrop(ev.clientX, ev.clientY, sourceInfo, ev.target);
                 }
             }
 
@@ -909,7 +915,6 @@ export const SeatingDragDrop = {
     _removeTouchGhost() {
         this._touchDragEl?.remove();
         this._touchDragEl = null;
-        this._touchGhostOffsetX = null;
         this._touchGhostOffsetY = null;
     },
 
@@ -1036,17 +1041,23 @@ export const SeatingDragDrop = {
         document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
     },
 
-    _highlightCellUnderTouch(x, y) {
+    _highlightCellUnderTouch(x, y, hitTarget = null) {
         const sidebar = document.getElementById('scSidebar') || document.querySelector('.sc-sidebar');
         const activeSource = this._touchSourceInfo || this._dragSource;
         const canCheckSidebar = activeSource?.type !== 'sidebar';
-        const elementsAtPoint = (canCheckSidebar || !this._touchDragEl)
+        const directHit = (!this._touchDragEl && hitTarget?.closest?.('#seatingChartView')) ? hitTarget : null;
+        const elementsAtPoint = (!directHit && (canCheckSidebar || !this._touchDragEl))
             ? (document.elementsFromPoint?.(x, y) || [])
             : null;
 
-        if (canCheckSidebar && this._isTouchOverSidebar(x, y, elementsAtPoint)) {
+        const isOverSidebar = canCheckSidebar && (
+            directHit
+                ? Boolean(directHit.closest('.sc-sidebar'))
+                : this._isTouchOverSidebar(x, y, elementsAtPoint)
+        );
+
+        if (isOverSidebar) {
             this._isDragOverSidebar = true;
-            this._touchGhostOffsetX = null;
             this._touchGhostOffsetY = null;
             this._lastEvaluatedDragCell = undefined;
             if (this._hoveredDragCell) {
@@ -1066,13 +1077,14 @@ export const SeatingDragDrop = {
 
         if (this._isDragOverSidebar || sidebar?.classList.contains('drag-over')) {
             this._isDragOverSidebar = false;
-            this._touchGhostOffsetX = null;
             this._touchGhostOffsetY = null;
             sidebar?.classList.remove('drag-over');
             document.body.classList.remove('sc-drag-over-sidebar');
         }
 
-        const cell = this._getCellUnderPoint(x, y, elementsAtPoint);
+        const cell = directHit
+            ? directHit.closest('.sc-cell')
+            : this._getCellUnderPoint(x, y, elementsAtPoint);
         if (cell === this._lastEvaluatedDragCell) {
             if (!cell || !this._hoveredDragCell || cell.classList.contains('drag-over')) {
                 return;
@@ -1099,23 +1111,14 @@ export const SeatingDragDrop = {
 
     _getCellUnderPoint(x, y, elementsAtPoint = null) {
         if (this._touchDragEl) {
-            let offsetX = this._touchGhostOffsetX;
-            let offsetY = this._touchGhostOffsetY;
-            if (offsetX === null || offsetX === undefined || offsetY === null || offsetY === undefined) {
+            if (this._touchGhostOffsetY === null || this._touchGhostOffsetY === undefined) {
                 const ghostRect = this._touchDragEl.getBoundingClientRect?.();
                 if (ghostRect && ghostRect.width > 0 && ghostRect.height > 0) {
-                    const anchorX = this._touchDragEl._dragX ?? x;
-                    const anchorY = this._touchDragEl._dragY ?? y;
-                    offsetX = (ghostRect.left + ghostRect.width / 2) - anchorX;
-                    offsetY = (ghostRect.top + ghostRect.height / 2) - anchorY;
-                    this._touchGhostOffsetX = offsetX;
-                    this._touchGhostOffsetY = offsetY;
+                    this._touchGhostOffsetY = (ghostRect.top + ghostRect.height / 2) - y;
                 }
             }
-            if (offsetX !== null && offsetX !== undefined && offsetY !== null && offsetY !== undefined) {
-                const centerX = x + offsetX;
-                const centerY = y + offsetY;
-                const cellUnderGhost = (document.elementsFromPoint?.(centerX, centerY) || []).find(el => el.classList.contains('sc-cell'));
+            if (this._touchGhostOffsetY !== null && this._touchGhostOffsetY !== undefined) {
+                const cellUnderGhost = (document.elementsFromPoint?.(x, y + this._touchGhostOffsetY) || []).find(el => el.classList.contains('sc-cell'));
                 if (cellUnderGhost) return cellUnderGhost;
             }
         }

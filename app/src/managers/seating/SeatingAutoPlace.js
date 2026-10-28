@@ -506,10 +506,6 @@ export const SeatingAutoPlace = {
 
     _setFloatingClonePosition(clone, x, y) {
         if (!clone) return;
-        clone._dragX = x;
-        clone._dragY = y;
-        clone.style.setProperty('--sc-drag-x', `${x}px`);
-        clone.style.setProperty('--sc-drag-y', `${y}px`);
         clone.style.translate = `${x}px ${y}px 0px`;
     },
 

@@ -2090,7 +2090,7 @@ textarea.import-textarea,
 }
 
 /* Hide body bottom radius when any footer is visible (handled by unified footer) */
-.import-wizard-modal:has(.import-wizard-footer:not([style*="display: none"])) .import-wizard-body {
+.import-wizard-modal .import-wizard-body {
     border-radius: 0;
 }
 

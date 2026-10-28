@@ -57,7 +57,6 @@
 #seatingChartView[data-has-selection="true"]:not([data-dragging="true"]) .sc-cell.empty:hover {
     border-color: var(--highlight-standard-border) !important;
     border-style: dashed !important;
-    border-width: 2px !important;
     background: var(--highlight-standard-bg) !important;
     transform: scale(1.06) !important;
     box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md) !important;
@@ -189,19 +188,7 @@
     }
 }
 
-/* Non-inherited custom properties so 120 fps clone coordinate updates never invalidate child styles */
-@property --sc-drag-x {
-    syntax: '<length>';
-    inherits: false;
-    initial-value: -9999px;
-}
-
-@property --sc-drag-y {
-    syntax: '<length>';
-    inherits: false;
-    initial-value: -9999px;
-}
-
+/* Non-inherited custom property so scale updates never invalidate child styles */
 @property --sc-drag-scale {
     syntax: '<number>';
     inherits: false;
@@ -209,7 +196,8 @@
 }
 
 #seatingChartView[data-dragging="true"],
-#seatingChartView[data-dragging="true"] * {
+#seatingChartView[data-dragging="true"] .sc-cell,
+#seatingChartView[data-dragging="true"] .sc-student-chip {
     cursor: grabbing !important;
 }
 
@@ -233,7 +221,7 @@
     box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
     opacity: 1 !important;
     border: 1.5px solid var(--highlight-standard-border) !important;
-    translate: var(--sc-drag-x, -9999px) var(--sc-drag-y, -9999px) 0;
+    translate: -9999px -9999px 0px;
     transform: translate(-50%, -50%) scale(calc(var(--sc-drag-scale, 1) * 1.05)) translateY(var(--sc-ghost-lift)) !important;
     will-change: translate, transform, opacity;
     contain: layout style size;
@@ -861,8 +849,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     transition: opacity 0.2s var(--ease-material);
     background: rgba(var(--surface-color-rgb), 0.6);
     border-radius: var(--radius-md);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
     z-index: 5;
     pointer-events: none; /* Active only on hover */
 }
@@ -872,6 +858,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
         opacity: 1;
         pointer-events: auto;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
     }
 }
 
