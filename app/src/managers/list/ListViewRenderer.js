@@ -284,6 +284,16 @@ export const ListViewRenderer = {
 
         const activePeriodKey = (periods && periods[currentPeriodIndex]) || appState.currentPeriod || 'S1';
         const activePeriodLabel = Utils.getPeriodLabel(activePeriodKey, false) || activePeriodKey;
+        const searchQuery = document.getElementById('searchInput')?.value || '';
+        const wasInlineSearchActive = Boolean(
+            searchQuery ||
+            container?.querySelector?.('#inlineSearchContainer.active')
+        );
+        const inlineSearchClasses = [
+            'inline-search-container',
+            wasInlineSearchActive ? 'active' : '',
+            searchQuery ? 'has-value' : ''
+        ].filter(Boolean).join(' ');
 
         const theadContent = `
             <tr>
@@ -295,11 +305,11 @@ export const ListViewRenderer = {
                     <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" aria-label="Rechercher" data-tooltip="Rechercher (Ctrl+F)">
                         <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                     </button>
-                    <div class="inline-search-container" id="inlineSearchContainer">
+                    <div class="${inlineSearchClasses}" id="inlineSearchContainer">
                         <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
                             <iconify-icon icon="solar:magnifer-linear" class="inline-search-close-icon"></iconify-icon>
                         </button>
-                        <input type="text" class="inline-search-input custom-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
+                        <input type="text" class="inline-search-input custom-input" id="inlineSearchInput" placeholder="Rechercher..." value="${Utils.escapeHtml(searchQuery)}" autocomplete="off">
                         <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
@@ -396,7 +406,6 @@ export const ListViewRenderer = {
             </tr>
         `;
 
-        const searchQuery = document.getElementById('searchInput')?.value || '';
         const currentClassName = Utils.getCurrentClassName();
         const importReveal = options.importReveal;
         const shouldAnimateEntrance = !isPeriodSwitch && Boolean(importReveal);

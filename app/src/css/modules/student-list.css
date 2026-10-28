@@ -1823,17 +1823,22 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         align-items: center;
         gap: 14px;
         width: auto !important;
-        pointer-events: none !important;
-        /* Empêche le clic dans les espaces vides de déclencher le tri */
     }
 
-    /* Réactive les clics pour les vrais boutons */
-    .inline-search-trigger-btn,
-    .inline-search-container,
-    .appreciation-header-actions,
-    #avgWordsChip,
-    .global-actions-dropdown {
+    /* Empêcher le clic dans l'espace vide central de basculer la vue compacte/étendue */
+    .student-list-table th.appreciation-toggle-header {
+        pointer-events: none !important;
+    }
+
+    .appreciation-header-actions {
         pointer-events: auto !important;
+    }
+
+    /* Masquer les autres boutons de la barre d'outils mobile quand la recherche est déployée */
+    .student-list-table thead tr:has(.inline-search-container.active) > th:not(.name-header-with-search) {
+        opacity: 0;
+        pointer-events: none !important;
+        transition: opacity 0.15s ease;
     }
 
     /* Make search button visible as an action button */
@@ -1865,7 +1870,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         justify-content: center;
         opacity: 1 !important;
         color: var(--text-secondary) !important;
-        pointer-events: auto !important;
         transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
     }
 
@@ -1916,7 +1920,11 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         font-size: 13px;
     }
 
-    /* Spécificités du bouton de bascule vue compacte/étendue */
+    /* Spécificités des boutons de la barre d'outils mobile */
+    .inline-search-trigger-btn iconify-icon {
+        font-size: 1.15rem;
+    }
+
     #mobileCompactToggleBtn {
         font-size: 1.2rem;
     }
@@ -1931,6 +1939,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         color: var(--text-primary) !important;
     }
 
+    .inline-search-trigger-btn:active,
     #mobileCompactToggleBtn:active {
         background: var(--item-active-bg);
         color: var(--icon-btn-hover) !important;

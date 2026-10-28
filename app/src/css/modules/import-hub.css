@@ -1,6 +1,6 @@
 /* ====================================================================
-   MODULE: Import Hub Modal
-   iOS 2026 Premium Design - Neutral / Clean / Modern
+   MODULE: Import Hub Modal & Mutualized Empty-State Hub Cards
+   iOS 2026 Premium Design - Neutral / Clean / Concentric
    ==================================================================== */
 
 /* === MODAL BACKDROP === */
@@ -8,7 +8,6 @@
     position: fixed;
     inset: 0;
     background: rgba(255, 255, 255, 0.4);
-    /* Lighter backdrop for cleaner feel */
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     z-index: 9999;
@@ -39,12 +38,10 @@
     width: 90vw;
     max-width: 720px;
     background: var(--surface-color);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    /* Slate-200 neutral border */
+    border: var(--modal-border);
     border-radius: var(--modal-radius);
     box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.08),
-        /* Very soft shadow */
         0 0 0 1px rgba(0, 0, 0, 0.02);
     z-index: 10000;
     opacity: 0;
@@ -53,35 +50,11 @@
     overflow: hidden;
 }
 
-/* Neutral subtle ambient glow instead of colored orb */
-.import-hub-modal::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 50% 50%,
-            rgba(248, 250, 252, 0.6),
-            /* Slate-50 very subtle */
-            transparent 60%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Dark mode - Neutral gray glass */
 [data-theme="dark"] .import-hub-modal {
-    background: var(--surface-color);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    /* Thinner border */
+    border-color: rgba(255, 255, 255, 0.08);
     box-shadow:
         0 25px 60px -12px rgba(0, 0, 0, 0.6),
         0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .import-hub-modal::before {
-    display: none;
-    /* No glow in dark mode for cleaner look */
 }
 
 .import-hub-backdrop.active .import-hub-modal {
@@ -90,29 +63,12 @@
     transform: translate(-50%, -50%) scale(1);
 }
 
-/* === CLOSE BUTTON: Harmonized with universal close button system === */
+/* === CLOSE BUTTON (Inherits base styling from .close-button in modals.css) === */
 .import-hub-close {
     position: absolute;
     top: 20px;
     right: 20px;
-    width: var(--close-btn-size, 32px);
-    height: var(--close-btn-size, 32px);
-    border: none;
-    background: var(--close-btn-bg, transparent);
-    color: var(--close-btn-color, var(--text-tertiary));
-    font-size: var(--close-btn-icon-size, 18px);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
     z-index: 10;
-    border-radius: 50%;
-}
-
-.import-hub-close:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
 }
 
 .import-hub-close:active {
@@ -122,7 +78,7 @@
 /* === HEADER === */
 .import-hub-header {
     text-align: center;
-    padding: 48px 24px 32px;
+    padding: 36px 24px 28px;
 }
 
 .import-hub-title {
@@ -131,10 +87,6 @@
     color: var(--text-primary);
     margin: 0;
     letter-spacing: -0.02em;
-}
-
-[data-theme="dark"] .import-hub-title {
-    color: var(--text-primary);
 }
 
 /* === DEMO GUARD ALERT === */
@@ -148,16 +100,16 @@
     margin-right: auto;
     max-width: 580px;
     padding: 12px 18px;
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: rgba(var(--warning-rgb), 0.08);
+    border: 1px solid rgba(var(--warning-rgb), 0.25);
     border-radius: var(--radius-md);
     text-align: left;
     animation: fadeIn 0.3s ease-out;
 }
 
 [data-theme="dark"] .import-hub-demo-alert {
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(var(--warning-rgb), 0.12);
+    border-color: rgba(var(--warning-rgb), 0.35);
 }
 
 .import-hub-demo-alert .demo-alert-content {
@@ -168,12 +120,12 @@
 
 .import-hub-demo-alert .demo-alert-icon {
     font-size: 1.5rem;
-    color: #d97706;
+    color: var(--warning-dark);
     flex-shrink: 0;
 }
 
 [data-theme="dark"] .import-hub-demo-alert .demo-alert-icon {
-    color: #fbbf24;
+    color: var(--warning-bright);
 }
 
 .import-hub-demo-alert .demo-alert-text {
@@ -197,85 +149,73 @@
     white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-    .import-hub-demo-alert {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-    .import-hub-demo-alert button {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
 /* === CHOICES CONTAINER === */
 .import-hub-choices {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    padding: 0 40px 48px;
+    gap: 16px;
+    padding: 0 28px 32px;
 }
 
-/* === CHOICE CARD === */
-.import-hub-card {
+/* ====================================================================
+   MUTUALIZED HUB CARDS (.import-hub-card & .empty-state-hub-card)
+   Concentric hierarchy:
+   - Desktop (>768px): Modal 24px -> Card 16px -> Icon 14px (56x56, 25% squircle)
+   - Tablet (641-768px): Modal 20px -> Card 16px -> Icon 14px (56x56, 25% squircle)
+   - Mobile (<=640px): Modal 20px -> Card 16px -> Icon 12px (48x48, 25% squircle)
+   ==================================================================== */
+
+.import-hub-card,
+.empty-state-hub-card {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 32px 20px;
     background: var(--surface-color);
     border: 1px solid transparent;
-    /* Borderless (transparent to prevent layout shift on hover) */
-    border-radius: var(--radius-md);
-    /* Squircle card */
+    border-radius: max(var(--radius-md), 16px);
     cursor: pointer;
     overflow: hidden;
     will-change: transform;
-    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
-    box-shadow:
-        0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
+    box-shadow: var(--shadow-sm);
 }
 
-/* Dark mode card */
-[data-theme="dark"] .import-hub-card {
+.import-hub-card {
+    gap: 6px;
+    padding: 24px 16px;
+}
+
+[data-theme="dark"] .import-hub-card,
+[data-theme="dark"] .empty-state-hub-card {
     background: var(--bg-tertiary);
-    border: 1px solid transparent;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.import-hub-card:active {
+.import-hub-card:active,
+.empty-state-hub-card:active {
     transform: translateY(-2px) scale(0.98);
 }
 
 /* === CARD ICON === */
-.import-hub-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    /* Squircle Icon */
-    background: var(--bg-secondary);
+.import-hub-icon,
+.empty-state-hub-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.85rem;
-    color: var(--text-secondary);
+    font-size: 1.7rem;
     transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .import-hub-icon {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-tertiary);
+.import-hub-card .import-hub-icon {
+    margin-bottom: 10px;
 }
 
-/* ====================================================================
-   MUTUALIZED HUB CARD ACCENTS (.import-hub-card & .empty-state-hub-card)
-   Fixed semantic palette (Blue / Emerald / Violet) with equalized
-   Light & Dark contour visibility, independent of user accent preset.
-   ==================================================================== */
-
+/* === SEMANTIC ACCENTS === */
 .import-hub-card[data-action="individual"],
 .empty-state-hub-card[data-action="individual"] {
     --hub-card-color: var(--color-blue);
@@ -361,17 +301,20 @@
     box-shadow: 0 0 0 3px rgba(var(--hub-card-rgb), 0.2);
 }
 
-/* === CARD TEXT === */
-.import-hub-card-title {
+/* === CARD TEXT (Mutualized between Modal Hub & Empty-State Hub) === */
+.import-hub-card-title,
+.empty-state-hub-text h4 {
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
     text-align: center;
+    letter-spacing: -0.01em;
     transition: color 0.3s ease;
 }
 
-.import-hub-card-desc {
+.import-hub-card-desc,
+.empty-state-hub-text p {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin: 0;
@@ -379,15 +322,15 @@
     line-height: 1.4;
 }
 
-[data-theme="dark"] .import-hub-card-desc {
+[data-theme="dark"] .import-hub-card-desc,
+[data-theme="dark"] .empty-state-hub-text p {
     color: var(--text-tertiary);
 }
 
-/* === RESPONSIVE === */
-@media (max-width: 600px) {
+/* === RESPONSIVE (Unified mobile breakpoint: 640px) === */
+@media (max-width: 640px) {
     .import-hub-modal {
         width: min(92vw, 420px);
-        border-radius: 28px;
     }
 
     .import-hub-close {
@@ -396,17 +339,28 @@
     }
 
     .import-hub-header {
-        padding: 36px 20px 22px;
+        padding: 32px 20px 20px;
     }
 
     .import-hub-title {
         font-size: 1.4rem;
     }
 
+    .import-hub-demo-alert {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .import-hub-demo-alert button {
+        width: 100%;
+        justify-content: center;
+    }
+
     .import-hub-choices {
         grid-template-columns: 1fr;
-        gap: 14px;
-        padding: 0 20px 24px;
+        gap: 12px;
+        padding: 0 18px 22px;
     }
 
     .import-hub-card {
@@ -415,27 +369,28 @@
         column-gap: 16px;
         row-gap: 2px;
         align-items: center;
-        padding: 16px 18px;
-        border-radius: var(--radius-md);
+        padding: 14px 16px;
         text-align: left;
+    }
+
+    .import-hub-card .import-hub-icon,
+    .empty-state-hub-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        margin-bottom: 0;
+        font-size: 1.45rem;
     }
 
     .import-hub-card .import-hub-icon {
         grid-row: 1 / span 2;
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
-        font-size: 1.45rem;
-        flex-shrink: 0;
     }
 
     .import-hub-card-title {
         grid-column: 2;
         align-self: end;
         text-align: left;
-        font-size: 1rem;
         line-height: 1.25;
-        margin: 0;
     }
 
     .import-hub-card-desc {
@@ -444,7 +399,6 @@
         text-align: left;
         font-size: 0.84rem;
         line-height: 1.35;
-        margin: 0;
     }
 }
 

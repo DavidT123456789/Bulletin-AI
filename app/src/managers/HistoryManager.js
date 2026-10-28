@@ -101,8 +101,9 @@ export const HistoryManager = {
         this.init();
         if (!id) return;
 
-        // Éviter de pousser deux fois de suite le même ID au sommet
+        // Éviter de pousser deux fois de suite le même ID au sommet (mettre à jour le callback si le DOM a été recréé)
         if (this._stack.length > 0 && this._stack[this._stack.length - 1].id === id) {
+            this._stack[this._stack.length - 1].closeCallback = closeCallback;
             return;
         }
 

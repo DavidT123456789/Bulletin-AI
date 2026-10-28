@@ -647,22 +647,15 @@ export const ListViewEvents = {
         const _performActivateUI = () => {
             searchContainer.classList.add('active');
 
-            // 1. Immediate synchronous focus in current event turn
-            _focusAndPositionCaret();
-
-            // 2. Next animation frame
-            requestAnimationFrame(_focusAndPositionCaret);
-
-            // 3. Post-layout micro-timeouts to guarantee caret visibility
-            setTimeout(_focusAndPositionCaret, 25);
-            setTimeout(_focusAndPositionCaret, 80);
-
-            // Sync with existing search value if any
+            // Sync with existing search value if any before positioning caret
             const existingInput = document.getElementById('searchInput');
             if (existingInput && existingInput.value) {
                 searchInput.value = existingInput.value;
                 searchContainer.classList.add('has-value');
             }
+
+            _focusAndPositionCaret();
+            requestAnimationFrame(_focusAndPositionCaret);
         };
 
         // Helper to clear search input value and notify listeners immediately (0ms latency)
@@ -685,6 +678,7 @@ export const ListViewEvents = {
         const _performDeactivateUI = () => {
             searchContainer.classList.remove('active');
             _clearSearchInput();
+            searchInput.blur();
             searchTrigger?._tippy?.enable();
         };
 
@@ -702,53 +696,40 @@ export const ListViewEvents = {
 
         // Helper to deactivate search mode (With History Check)
         const deactivateSearch = () => {
+            if (!searchContainer.classList.contains('active')) return;
             _performDeactivateUI();
             HistoryManager.handleManualClose('inlineSearch');
         };
 
-        // Click / mousedown on search trigger button to activate search
+        // Refresh history callback if inline search is already active after a fresh re-render (e.g. period switch)
+        if (searchContainer.classList.contains('active')) {
+            HistoryManager.pushState('inlineSearch', () => {
+                _performDeactivateUI();
+            });
+        }
+
+        // Click on search trigger button to activate search (unified desktop & mobile flow)
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
         if (searchTrigger) {
-            const handleActivation = (e) => {
+            searchTrigger.addEventListener('mousedown', (e) => e.preventDefault(), { signal });
+            searchTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
-                e.preventDefault();
                 if (searchTrigger._tippy) {
                     searchTrigger._tippy.hide();
                     searchTrigger._tippy.disable();
                 }
-                if (searchContainer.classList.contains('active')) {
-                    deactivateSearch();
-                } else {
-                    activateSearch();
-                }
-            };
-
-            searchTrigger.addEventListener('mousedown', (e) => {
-                if (listContainer.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open')) return;
-                if (!searchContainer.classList.contains('active')) {
-                    handleActivation(e);
-                }
+                activateSearch();
             }, { signal });
-            searchTrigger.addEventListener('click', handleActivation, { signal });
         }
 
         // Close search when clicking the search close button inside the active bar
         const closeBtn = searchContainer.querySelector('#inlineSearchClose');
         if (closeBtn) {
-            const handleCloseClick = (e) => {
+            closeBtn.addEventListener('mousedown', (e) => e.preventDefault(), { signal });
+            closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                e.preventDefault();
                 closeBtn._tippy?.hide();
                 deactivateSearch();
-            };
-
-            closeBtn.addEventListener('mousedown', handleCloseClick, { signal });
-            closeBtn.addEventListener('click', handleCloseClick, { signal });
-            closeBtn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleCloseClick(e);
-                }
             }, { signal });
         }
 

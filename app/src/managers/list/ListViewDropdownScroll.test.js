@@ -564,4 +564,68 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         window.dispatchEvent(new Event('scroll'));
         expect(globalMenu.classList.contains('open')).toBe(false);
     });
+
+    it('should open inline search on smartphone tap (mousedown followed by click) without immediately closing, and close cleanly via close button or Back gesture', async () => {
+        const { HistoryManager } = await import('../HistoryManager.js');
+        const { ListViewRenderer } = await import('./ListViewRenderer.js');
+        HistoryManager.destroy();
+
+        const toolbarInput = document.createElement('input');
+        toolbarInput.id = 'searchInput';
+        container.appendChild(toolbarInput);
+
+        const outputList = document.createElement('div');
+        container.appendChild(outputList);
+
+        ListViewRenderer.init({
+            attachEventListeners: (view) => ListViewEvents.attachEventListeners(view)
+        });
+
+        ListViewRenderer.renderFresh(outputList, [{ id: 's1', nom: 'BERNARD', prenom: 'Thomas', studentData: { periods: {} } }], ['S1', 'S2'], 0);
+        const view = outputList.querySelector('.student-list-view');
+        const searchTrigger = view.querySelector('#inlineSearchTrigger');
+        const searchContainer = view.querySelector('#inlineSearchContainer');
+        const searchInput = view.querySelector('#inlineSearchInput');
+
+        expect(searchContainer.classList.contains('active')).toBe(false);
+
+        // Simulate mobile tap on #inlineSearchTrigger: mousedown followed immediately by click on the same target
+        searchTrigger.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        searchTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        // Search bar MUST remain open and focused (not toggled off by the synthetic click)
+        expect(searchContainer.classList.contains('active')).toBe(true);
+        expect(document.activeElement).toBe(searchInput);
+        expect(HistoryManager.isOpen('inlineSearch')).toBe(true);
+
+        // Type a query and switch period (renderFresh) -> inline search state, value, and Back callback must be preserved
+        searchInput.value = 'bernard';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(toolbarInput.value).toBe('bernard');
+
+        ListViewRenderer.renderFresh(outputList, [{ id: 's1', nom: 'BERNARD', prenom: 'Thomas', studentData: { periods: {} } }], ['S1', 'S2'], 1, {
+            isPeriodSwitch: true,
+            previousPeriod: 'S1',
+            currentPeriod: 'S2'
+        });
+
+        const updatedContainer = outputList.querySelector('#inlineSearchContainer');
+        const updatedInput = outputList.querySelector('#inlineSearchInput');
+        const updatedCloseBtn = outputList.querySelector('#inlineSearchClose');
+        expect(updatedContainer.classList.contains('active')).toBe(true);
+        expect(updatedContainer.classList.contains('has-value')).toBe(true);
+        expect(updatedInput.value).toBe('bernard');
+
+        // Close via mobile tap on #inlineSearchClose (mousedown + click) -> idempotent close + input blur
+        const handleManualCloseSpy = vi.spyOn(HistoryManager, 'handleManualClose');
+        updatedCloseBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        updatedCloseBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        expect(updatedContainer.classList.contains('active')).toBe(false);
+        expect(updatedInput.value).toBe('');
+        expect(toolbarInput.value).toBe('');
+        expect(HistoryManager.isOpen('inlineSearch')).toBe(false);
+        expect(handleManualCloseSpy).toHaveBeenCalledTimes(1);
+        handleManualCloseSpy.mockRestore();
+    });
 });

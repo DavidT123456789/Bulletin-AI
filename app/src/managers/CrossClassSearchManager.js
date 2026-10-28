@@ -416,6 +416,7 @@ export const CrossClassSearchManager = {
 
         if (inlineInput) {
             inlineInput.value = '';
+            inlineInput.blur?.();
         }
 
         if (inlineContainer) {
