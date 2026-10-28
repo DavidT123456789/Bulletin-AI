@@ -1330,7 +1330,11 @@ export const SettingsModalListeners = {
                     : restHtml;
             };
             btn.addEventListener('click', async () => {
-                if (await action({ onProgress })) onSuccess();
+                if (await action({ onProgress })) {
+                    onSuccess();
+                } else {
+                    this.updateCloudSyncUI();
+                }
             });
         };
 

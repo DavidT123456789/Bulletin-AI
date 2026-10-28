@@ -130,12 +130,13 @@ export const CloudActionsManager = {
             const SyncService = await loadSyncService();
             onProgress('Connexion…');
             const connected = await SyncService.connect(this._providerName(SyncService), { skipStatusCheck: true });
+            onProgress(null);
             if (!connected) {
+                SyncService._updateCloudIndicator?.('expired');
                 UI.showNotification('Connexion annulée.', 'warning');
                 return false;
             }
             SyncService._updateCloudIndicator?.('connected');
-            onProgress(null);
             await SyncService.refreshStatus({ showChecking: true });
             return true;
         } catch (error) {

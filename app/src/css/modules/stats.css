@@ -742,8 +742,9 @@
     background: var(--item-idle-bg);
     border: 1px solid transparent;
     box-shadow: none;
-    transition: transform 0.25s var(--ease-spring),
-                box-shadow 0.25s var(--ease-spring),
+    backface-visibility: hidden;
+    transition: transform 0.2s var(--ease-spring),
+                box-shadow 0.2s var(--ease-spring),
                 background-color 0.2s ease,
                 border-color 0.2s ease;
     position: relative;
@@ -1147,15 +1148,6 @@
     line-height: 1;
 }
 
-.dispersion-card .histogram-container {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    padding: 0;
-    /* Removed top padding for tighter spacing */
-    min-height: 90px;
-}
-
 /* === Chart Toggles === */
 .chart-toggles {
     display: flex;
@@ -1194,19 +1186,20 @@
 
 /* === Histogram (Distribution 2026) === */
 .histogram-container {
-    height: 92px;
+    height: 96px;
+    min-height: 90px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-top: 2px;
+    padding-top: 4px;
     width: 100%;
-    flex-grow: 1;
+    flex: 1;
 }
 
 .histogram-bars {
     display: flex;
     align-items: flex-end;
-    gap: 6px;
+    gap: 2px;
     height: 100%;
     width: 100%;
     justify-content: space-between;
@@ -1287,11 +1280,11 @@
 .hist-bar-group[role="button"] {
     cursor: pointer;
     border-radius: var(--radius-control);
-    padding: 6px 4px;
-    margin: -6px -4px;
+    padding: 4px 2px;
     border: 1px solid transparent;
-    transition: transform 0.25s var(--ease-spring), 
-                box-shadow 0.25s var(--ease-spring), 
+    backface-visibility: hidden;
+    transition: transform 0.2s var(--ease-spring), 
+                box-shadow 0.2s var(--ease-spring), 
                 background-color 0.2s ease, 
                 border-color 0.2s ease;
 }
@@ -1393,8 +1386,7 @@
         font-size: 1.15rem;
     }
 
-    .histogram-container,
-    .dispersion-card .histogram-container {
+    .histogram-container {
         height: 76px;
         min-height: 68px;
     }
@@ -1459,8 +1451,7 @@
         font-size: 1.1rem;
     }
 
-    .histogram-container,
-    .dispersion-card .histogram-container {
+    .histogram-container {
         height: 70px;
         min-height: 64px;
     }

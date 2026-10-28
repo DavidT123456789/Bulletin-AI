@@ -794,7 +794,7 @@ export const ModalUI = {
                 <div class="modal-alert-body">
                     <h3 class="modal-alert-title has-header-icon">
                         <div class="modal-alert-header-icon warning">
-                            <iconify-icon icon="solar:cloud-warning-bold"></iconify-icon>
+                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                         </div>
                         <span>${isConflict ? 'Conflit de synchronisation' : 'Version Cloud plus récente'}</span>
                     </h3>
