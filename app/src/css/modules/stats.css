@@ -469,8 +469,8 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-5);
-    margin: -24px -24px calc(var(--space-5) - 28px) -24px;
-    padding: 24px 24px 28px 24px;
+    margin: calc(-1 * var(--content-padding-x)) calc(-1 * var(--content-padding-x)) calc(var(--space-5) - 28px) calc(-1 * var(--content-padding-x));
+    padding: var(--content-padding-x) var(--content-padding-x) 28px var(--content-padding-x);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -930,15 +930,15 @@
 /* === Légende Interactive (Mutualisée avec .performance-details ci-dessus) === */
 @media (hover: hover) {
     /* Micro-déplacement des flèches au survol */
-    .evolution-card:not(.is-empty) .legend-item[data-filter-id="progressCount"]:hover .legend-count::before {
+    .evolution-card:not(.is-empty) .legend-item[data-filter-id="progressCount"]:not([data-count="0"]):hover .legend-count::before {
         transform: translate(1.5px, -1.5px) scale(1.08);
     }
 
-    .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"]:hover .legend-count::before {
+    .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"]:not([data-count="0"]):hover .legend-count::before {
         transform: translateX(2px) scale(1.08);
     }
 
-    .evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"]:hover .legend-count::before {
+    .evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"]:not([data-count="0"]):hover .legend-count::before {
         transform: translate(1.5px, 1.5px) scale(1.08);
     }
 }
@@ -1286,10 +1286,12 @@
     transition: transform 0.2s var(--ease-spring), 
                 box-shadow 0.2s var(--ease-spring), 
                 background-color 0.2s ease, 
-                border-color 0.2s ease;
+                border-color 0.2s ease,
+                opacity 0.2s ease;
 }
 
-.hist-bar-group[data-count="0"][role="button"] {
+.hist-bar-group[data-count="0"][role="button"],
+.evolution-card .legend-item[data-count="0"][role="button"] {
     cursor: default;
 }
 
@@ -1343,7 +1345,7 @@
     .stats-container {
         gap: var(--space-4);
         padding: var(--space-4) var(--content-padding-x) 22px;
-        margin: calc(-1 * var(--space-4)) calc(-1 * var(--content-padding-x)) -8px calc(-1 * var(--content-padding-x));
+        margin: calc(-1 * var(--space-4)) calc(-1 * var(--content-padding-x)) -6px calc(-1 * var(--content-padding-x));
     }
 
     .stats-container .stat-card {
@@ -1538,19 +1540,15 @@
 
 /* 1. Définition des variables d'accentuation sémantique par élément */
 .performance-card .detail-item[data-filter-id="minGrade"],
-.performance-card .detail-item[data-filter-id="maxGrade"] {
-    --accent-color: var(--primary-color);
-    --accent-rgb: var(--primary-color-rgb);
+.performance-card .detail-item[data-filter-id="maxGrade"],
+.evolution-card .legend-item[data-filter-id="stableCount"] {
+    --accent-color: var(--text-secondary);
+    --accent-rgb: var(--text-secondary-rgb);
 }
 
 .evolution-card .legend-item[data-filter-id="progressCount"] {
     --accent-color: var(--grade-range-16-20);
     --accent-rgb: var(--grade-range-16-20-rgb);
-}
-
-.evolution-card .legend-item[data-filter-id="stableCount"] {
-    --accent-color: var(--text-tertiary);
-    --accent-rgb: var(--text-secondary-rgb);
 }
 
 .evolution-card .legend-item[data-filter-id="regressionCount"] {
@@ -1586,7 +1584,7 @@
 /* 2. Style de survol unifié (Micro-élévation maîtrisée -2px) */
 @media (hover: hover) {
     .performance-card .detail-item[role="button"]:not(.active-filter):hover,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not(.active-filter):hover,
+    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
         transform: translateY(-2px);
         background: var(--surface-color);
@@ -1595,7 +1593,7 @@
     }
 
     [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover,
-    [data-theme="dark"] .evolution-card:not(.is-empty) .legend-item[role="button"]:not(.active-filter):hover,
+    [data-theme="dark"] .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     [data-theme="dark"] .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
         background: var(--bg-tertiary);
         border-color: var(--border-color-strong);
@@ -1604,22 +1602,31 @@
 
     /* Harmonisation des textes et valeurs (Haute lisibilité neutre au survol) */
     .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value,
+    .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"][role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-count,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover .hist-label,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover::before {
         color: var(--text-primary);
     }
 
     .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not(.active-filter):hover .legend-label {
+    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-label {
         color: var(--text-secondary);
     }
 
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover .hist-bar {
         filter: brightness(1.1) saturate(1.08);
     }
+
+    .histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
+        opacity: 1;
+    }
 }
 
 /* 3. Style d'état actif (filtre actif) unifié */
+.histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group:not(.active-filter) {
+    opacity: 0.5;
+}
+
 .performance-card .detail-item.active-filter,
 .evolution-card .legend-item.active-filter,
 .hist-bar-group.active-filter {
@@ -1629,6 +1636,7 @@
 }
 
 .performance-card .detail-item.active-filter .detail-value,
+.evolution-card .legend-item[data-filter-id="stableCount"].active-filter .legend-count,
 .hist-bar-group.active-filter .hist-label {
     color: var(--text-primary) !important;
     font-weight: 700;

@@ -414,15 +414,52 @@ describe('StatsUIManager', () => {
             const evolutionCard = document.getElementById('evolutionCard');
             const badge = document.getElementById('evolutionStatusBadge');
             const progressItem = evolutionCard.querySelector('.legend-item[data-filter-id="progressCount"]');
+            const regressionItem = evolutionCard.querySelector('.legend-item[data-filter-id="regressionCount"]');
 
             expect(evolutionCard.classList.contains('is-empty')).toBe(false);
             expect(badge.style.display).toBe('');
             expect(badge.textContent).toBe('1 élève vs S1');
             expect(badge.classList.contains('plain-context')).toBe(true);
+            expect(progressItem.getAttribute('data-count')).toBe('1');
             expect(progressItem.getAttribute('tabindex')).toBe('0');
             expect(progressItem.hasAttribute('aria-disabled')).toBe(false);
+            expect(regressionItem.getAttribute('data-count')).toBe('0');
+            expect(regressionItem.getAttribute('tabindex')).toBe('-1');
+            expect(regressionItem.getAttribute('aria-disabled')).toBe('true');
             expect(evoChip.getAttribute('data-tooltip')).toBe('Moyenne S1 : 12,0/20');
             expect(evoChip.querySelector('#classEvolutionRef')).toBeNull();
+        });
+
+        it('should preserve full class statistics and histogram bars when a stat filter restricts filteredResults', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            const { StatsService } = await import('../services/StatsService.js');
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            StatsService.getGradeDistribution.mockReturnValue([0, 0, 1, 1, 1]);
+
+            appState.currentClassId = 'class_1';
+            appState.currentPeriod = 'S2';
+            appState.generatedResults = [
+                { id: '1', classId: 'class_1', studentData: { name: 'A', periods: { S1: { grade: 10 }, S2: { grade: 10, appreciation: 'Bien' } } } },
+                { id: '2', classId: 'class_1', studentData: { name: 'B', periods: { S1: { grade: 13 }, S2: { grade: 14, appreciation: 'Très bien' } } } },
+                { id: '3', classId: 'class_1', studentData: { name: 'C', periods: { S1: { grade: 17 }, S2: { grade: 18, appreciation: 'Excellent' } } } },
+                { id: '4', classId: 'other_class', studentData: { name: 'D', periods: { S1: { grade: 5 }, S2: { grade: 5 } } } }
+            ];
+            // Simulate active filter on 12-16 (only 1 student in filteredResults)
+            appState.activeStatFilter = 'gradeRange_12-16';
+            appState.filteredResults = [appState.generatedResults[1]];
+
+            await StatsUI.updateStats();
+
+            expect(StatsService.getGradeDistribution).toHaveBeenCalledWith([10, 14, 18]);
+            expect(document.querySelector('.hist-bar-group[data-range="8-12"]').getAttribute('data-count')).toBe('1');
+            expect(document.querySelector('.hist-bar-group[data-range="12-16"]').getAttribute('data-count')).toBe('1');
+            expect(document.querySelector('.hist-bar-group[data-range="16-20"]').getAttribute('data-count')).toBe('1');
+
+            // Cleanup state for subsequent tests
+            delete appState.currentClassId;
+            delete appState.generatedResults;
+            delete appState.activeStatFilter;
         });
 
         it('should mark zero-student histogram bars as aria-disabled and non-focusable', () => {

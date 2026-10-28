@@ -209,9 +209,10 @@ export const StatsUI = {
 
             // Statistique 3: Mots et Caractères (Dépend des erreurs)
             if (!res.errorMessage) {
+                const appreciation = res.studentData?.periods?.[activePeriod]?.appreciation ?? res.appreciation ?? '';
                 errFree++;
-                words += Utils.countWords(res.appreciation);
-                chars += (res.appreciation || '').replace(/<[^>]*>/g, '').length;
+                words += Utils.countWords(appreciation);
+                chars += appreciation.replace(/<[^>]*>/g, '').length;
             }
         });
 
@@ -306,24 +307,40 @@ export const StatsUI = {
 
 
     /**
+     * Résout les élèves actifs de la classe courante pour la période donnée,
+     * indépendamment des filtres de recherche ou de statistiques actifs.
+     * Permet de maintenir les 3 cartes statistiques stables comme sélecteurs de filtre.
+     * @param {string} [activePeriod=appState.currentPeriod] - Période active
+     * @returns {Array} Élèves de la classe pour la période
+     */
+    _getStatsSourceResults(activePeriod = appState.currentPeriod) {
+        if (appState.currentClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
+            return appState.generatedResults.filter(
+                r => r.classId === appState.currentClassId && !Utils.isStudentDepartedBeforePeriod?.(r, activePeriod)
+            );
+        }
+        return appState.filteredResults || [];
+    },
+
+    /**
      * Met à jour les statistiques affichées dans l'interface.
      * @param {Object} uiManager - Référence vers UI Manager pour les tooltips
      * @returns {Promise<void>}
      */
     async updateStats(uiManager) {
-        const filtered = appState.filteredResults;
         const activePeriod = appState.currentPeriod;
+        const statsSource = this._getStatsSourceResults(activePeriod);
         const periods = Utils.getPeriods();
         const activePeriodIndex = periods.indexOf(activePeriod);
         const previousPeriod = activePeriodIndex > 0 ? periods[activePeriodIndex - 1] : null;
 
         const animationPromises = [];
 
-        // Utilise calculateStats existant
-        const stats = this.calculateStats(filtered, activePeriod, previousPeriod);
+        // Utilise calculateStats sur l'effectif complet de la classe (stable lors du filtrage)
+        const stats = this.calculateStats(statsSource, activePeriod, previousPeriod);
 
         // --- Empty State & Context Badge: Evolution card ---
-        this._updateEvolutionCardEmptyState(previousPeriod, filtered.length, stats);
+        this._updateEvolutionCardEmptyState(previousPeriod, statsSource.length, stats);
 
         const avgEvolution = (typeof stats.avgGrade === 'number' && typeof stats.prevAvgGrade === 'number')
             ? (stats.avgGrade - stats.prevAvgGrade)
@@ -466,7 +483,7 @@ export const StatsUI = {
         const hetBadge = document.getElementById('heterogeneityLabel');
         if (hetBadge) {
             const het = stats.heterogeneity;
-            if (!het || filtered.length === 0) {
+            if (!het || statsSource.length === 0) {
                 hetBadge.textContent = '';
                 hetBadge.removeAttribute('data-tooltip');
                 hetBadge.style.display = 'none';
@@ -487,7 +504,7 @@ export const StatsUI = {
         }
 
         // Update Histogram (en parallèle avec les animations)
-        this.updateHistogram(stats.distribution, filtered, activePeriod);
+        this.updateHistogram(stats.distribution, statsSource, activePeriod);
 
         await Promise.all(animationPromises);
 
@@ -502,10 +519,10 @@ export const StatsUI = {
     /**
      * Met à jour l'histogramme de distribution des notes.
      * @param {number[]} distribution - Tableau [0-4, 4-8, 8-12, 12-16, 16-20]
-     * @param {Array} [filteredResults] - Résultats filtrés pour enrichir le tooltip avec les noms des élèves
+     * @param {Array} [filteredResults] - Résultats de la classe pour enrichir le tooltip avec les noms des élèves
      * @param {string} [activePeriod] - Période active
      */
-    updateHistogram(distribution, filteredResults = appState.filteredResults, activePeriod = appState.currentPeriod) {
+    updateHistogram(distribution, filteredResults = this._getStatsSourceResults(appState.currentPeriod), activePeriod = appState.currentPeriod) {
         if (!distribution || distribution.length !== 5) return;
         const maxCount = Math.max(...distribution);
         const ranges = GRADE_BRACKET_IDS;
@@ -662,8 +679,20 @@ export const StatsUI = {
         const hasEvolutionData = previousPeriod !== null;
         evolutionCard.classList.toggle('is-empty', !hasEvolutionData);
 
+        const legendCounts = {
+            progressCount: stats ? stats.progress : 0,
+            stableCount: stats ? stats.stable : 0,
+            regressionCount: stats ? stats.regression : 0
+        };
+
         evolutionCard.querySelectorAll('.evolution-legend .legend-item').forEach(item => {
+            const count = legendCounts[item.dataset.filterId] ?? 0;
             if (hasEvolutionData) {
+                item.setAttribute('data-count', String(count));
+            } else {
+                item.removeAttribute('data-count');
+            }
+            if (hasEvolutionData && count > 0) {
                 item.setAttribute('tabindex', '0');
                 item.removeAttribute('aria-disabled');
             } else {

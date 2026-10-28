@@ -144,13 +144,14 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
     overscroll-behavior: contain;
     scroll-behavior: smooth;
     outline: none;
 
     /* --content-padding-x: single source of truth for padding.
        Ensures left, right AND top margins are perfectly symmetrical . */
-    --content-padding-x: var(--space-6);
+    --content-padding-x: var(--space-5);
     padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) calc(var(--content-padding-x) + env(safe-area-inset-bottom, 0px));
     max-width: none;
     width: 100%;
@@ -1491,15 +1492,6 @@ button > .icon-spin-wrapper {
 
 
 
-/* Tablette (max-width: 1024px) */
-@media (max-width: 1024px) {
-    .main-content {
-        --content-padding-x: var(--space-5);
-    }
-
-    /* Header inherits 16px from base - no override needed */
-}
-
 /* Tablette Small / Phablet (max-width: 768px) */
 @media (max-width: 768px) {
     :root {
@@ -1516,6 +1508,7 @@ button > .icon-spin-wrapper {
 
     .main-content {
         --content-padding-x: 16px;
+        scrollbar-gutter: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
