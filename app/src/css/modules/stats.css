@@ -558,6 +558,8 @@
     gap: 0;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    cursor: default;
+    user-select: none;
 }
 
 /* Dark mode: Match list view background (Original list view color) */
@@ -748,11 +750,6 @@
                 background-color 0.2s ease,
                 border-color 0.2s ease;
     position: relative;
-}
-
-/* Donnée informative centrale (Médiane) : même douceur sans bordure que Min et Max */
-.performance-card .detail-item:not([role="button"]) {
-    cursor: default;
 }
 
 .performance-card .detail-item[role="button"],
