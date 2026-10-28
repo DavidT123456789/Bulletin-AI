@@ -561,7 +561,7 @@
 .sc-classroom-board {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: calc(var(--sc-cell-radius, var(--radius-md)) + var(--sc-board-padding, 12px) + var(--sc-grid-padding, 4px));
+    border-radius: calc(var(--sc-cell-radius, 14px) + 10px);
     padding: var(--sc-board-padding, 12px);
     box-shadow: var(--shadow-sm);
     display: flex;

@@ -79,9 +79,12 @@
 
 @media (hover: hover) {
     #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover {
+        z-index: 10;
+    }
+
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:not(.sc-cell-stacked):hover {
         box-shadow: var(--shadow-md);
         transform: translateY(-2px);
-        z-index: 10;
     }
 }
 
@@ -479,8 +482,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-stacked-avatar .sc-cell-status-badge {
     width: 10px;
     height: 10px;
-    bottom: 0;
-    right: 0;
+    bottom: 1.5px;
+    right: 1.5px;
     left: auto;
     border-width: 1.5px;
     box-shadow: none;
@@ -488,7 +491,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* On the leftmost avatar in a group cluster, anchor the dot on the outer bottom-left arc so it never falls into the overlap seam between avatars */
 .sc-stacked-avatar:first-child .sc-cell-status-badge {
-    left: 0;
+    left: 1.5px;
     right: auto;
 }
 
@@ -504,6 +507,17 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar .sc-cell-status-badge {
     width: 9px;
     height: 9px;
+    bottom: 0.5px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar:last-child .sc-cell-status-badge,
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar:last-child .sc-cell-status-badge {
+    right: 0.5px;
+}
+
+.sc-cell.sc-cell-stacked[data-group-size="3"] .sc-stacked-avatar:first-child .sc-cell-status-badge,
+.sc-cell.sc-cell-stacked[data-group-size="4"] .sc-stacked-avatar:first-child .sc-cell-status-badge {
+    left: 0.5px;
 }
 
 @media (max-width: 768px) {
@@ -1765,8 +1779,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     /* ── Classroom Board: unified responsive card on mobile/tablet ── */
     .sc-classroom-board {
-        padding: var(--sc-board-padding, 10px);
-        border-radius: calc(var(--sc-cell-radius, 12px) + var(--sc-board-padding, 10px) + var(--sc-grid-padding, 4px));
+        padding: var(--sc-board-padding, 6px);
+        border-radius: calc(var(--sc-cell-radius, 12px) + 8px);
         border: 1px solid var(--border-color);
         background: var(--bg-secondary);
         box-shadow: var(--shadow-sm);
@@ -2030,7 +2044,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         --sc-cell-w: 62px;
         --sc-cell-h: 70px;
         --sc-cell-radius: 12px;
-        --sc-board-padding: 10px;
+        --sc-board-padding: 6px;
     }
 
     .sc-grid-container {

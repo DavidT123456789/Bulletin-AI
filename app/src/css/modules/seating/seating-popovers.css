@@ -645,7 +645,7 @@
 .sc-classroom-board[data-plan-mode="course"] {
     --sc-cell-w: 88px;
     --sc-cell-h: 96px;
-    --sc-cell-radius: var(--radius-md);
+    --sc-cell-radius: 14px;
 }
 
 #seatingChartView[data-plan-mode="activity"],
@@ -654,7 +654,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-drag-clone,
 body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     --sc-cell-w: 118px;
     --sc-cell-h: 114px;
-    --sc-cell-radius: 18px;
+    --sc-cell-radius: 14px;
 }
 
 @media (max-width: 768px) {
@@ -670,7 +670,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-drag-clone,
 body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
         --sc-cell-w: 84px;
         --sc-cell-h: 86px;
-        --sc-cell-radius: 14px;
+        --sc-cell-radius: 12px;
     }
 }
 
@@ -935,7 +935,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     }
 }
 
-/* Harmonize 1-student occupied station in Activity mode with stacked group cards */
+/* Harmonize 1-student occupied station in Activity mode with Course mode & stacked group cards */
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
     border: 1px solid transparent;
@@ -945,23 +945,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 [data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked),
 [data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: transparent;
     box-shadow: var(--shadow-sm);
-}
-
-.sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar,
-#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar {
-    width: 54px;
-    height: 54px;
-    font-size: 0.96rem;
-    border: 2px solid var(--surface-color, #ffffff);
-    box-shadow: var(--shadow-xs);
-    border-radius: 50%;
-}
-
-[data-theme="dark"] .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar,
-[data-theme="dark"] #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar {
-    border-color: var(--bg-tertiary, #1e2030);
 }
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .sc-cell-name,
@@ -1033,7 +1018,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked {
-    padding: 6px 5px 5px;
+    padding: 8px 5px 4px;
     gap: 3px;
     background: var(--surface-color);
     border: 1px solid transparent;
@@ -1048,23 +1033,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 [data-theme="dark"] .sc-cell.sc-cell-stacked {
     background: var(--bg-tertiary);
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: transparent;
     box-shadow: var(--shadow-sm);
-}
-
-@media (hover: hover) {
-    #seatingChartView:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:hover,
-    #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
-        transform: translateY(-2px);
-        border-color: transparent;
-        box-shadow: var(--shadow-md);
-        z-index: 10;
-    }
-}
-
-[data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:hover,
-[data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked):hover {
-    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .sc-stacked-avatar-cluster {
@@ -1117,7 +1087,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 [data-theme="dark"] .sc-stacked-avatar .student-avatar,
 [data-theme="dark"] .sc-stacked-avatar .student-avatar-wrap {
-    border-color: var(--bg-tertiary, #1e2030);
+    border-color: var(--bg-tertiary);
 }
 
 @media (hover: hover) {
@@ -1177,9 +1147,10 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 .sc-stacked-name {
     font-size: 0.65rem;
-    font-weight: 550;
+    font-weight: 560;
     line-height: 1.24;
-    color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary));
+    letter-spacing: -0.01em;
+    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
     max-width: 100%;
     white-space: nowrap;
     overflow: visible;
@@ -1197,6 +1168,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 /* ── Adaptive Internal Density by Group Size (Binôme / Trinôme / Quatuor) ── */
 .sc-cell.sc-cell-stacked[data-group-size="2"] {
+    padding: 9px 5px 4px;
     gap: 5px;
 }
 
@@ -1220,12 +1192,11 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="2"] .sc-stacked-name {
-    font-size: 0.71rem;
+    font-size: 0.73rem;
     line-height: 1.18;
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="3"] {
-    padding: 6px 5px 5px;
     gap: 3.5px;
 }
 
@@ -1254,7 +1225,6 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-cell.sc-cell-stacked[data-group-size="4"] {
-    padding: 8px 5px 4px;
     gap: 3px;
 }
 
@@ -1414,13 +1384,6 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
         line-height: 1.15;
         margin-top: 4px;
         max-width: 74px;
-    }
-
-    .sc-classroom-board[data-plan-mode="activity"] .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar,
-    #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.sc-cell-stacked) .student-avatar {
-        width: 40px;
-        height: 40px;
-        font-size: 0.75rem;
     }
 
     .sc-cell.sc-cell-stacked .sc-stacked-avatar .student-avatar,

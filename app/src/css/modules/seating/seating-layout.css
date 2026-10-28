@@ -6,7 +6,7 @@
 :root {
     --sc-cell-w: 88px;
     --sc-cell-h: 96px;
-    --sc-cell-radius: var(--radius-md);
+    --sc-cell-radius: 14px;
     --sc-board-padding: 12px;
     --sc-grid-padding: 4px;
     --sc-drawer-transition: 0.48s cubic-bezier(0.25, 0.1, 0.25, 1);
