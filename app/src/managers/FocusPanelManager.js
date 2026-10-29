@@ -127,7 +127,6 @@ export const FocusPanelManager = {
             setIsCreationMode: (val) => { this.isCreationMode = val; },
             onRefreshStatus: () => FocusPanelStatus.refreshAppreciationStatus(),
             onUpdateListRow: (r) => this._updateListRow(r),
-            onRenderTimeline: (d) => this._renderStudentDetailsTimeline(d, false),
             onUpdateNavigation: () => FocusPanelNavigation.updateControls(),
             onStudentCreated: (result) => {
                 this._isGradeEdited = false;
@@ -140,9 +139,7 @@ export const FocusPanelManager = {
                 this._updateGenerateButton(result);
                 this._updateActiveRow(result.id);
                 this.updateScrollAffordances();
-            },
-            getHistoryEdits: () => this._newStudentHistory,
-            clearHistoryEdits: () => { this._newStudentHistory = null; }
+            }
         });
 
         FocusPanelStatus.init({
@@ -396,8 +393,6 @@ export const FocusPanelManager = {
         this.updateScrollAffordances();
 
         FocusPanelHeader.toggleEditMode(true);
-        this._newStudentHistory = {};
-        this._renderStudentDetailsTimeline(null, true);
         FocusPanelHistory.reset();
     },
 
@@ -761,7 +756,6 @@ export const FocusPanelManager = {
 
     // --- Délégations vers FocusPanelGrades ---
     _autoResizeTextarea(textarea) { return FocusPanelGrades.autoResizeTextarea(this, textarea); },
-    _renderStudentDetailsTimeline(studentData, isEditable = false) { return FocusPanelGrades.renderStudentDetailsTimeline(this, studentData, isEditable); },
     _renderGradesAndContext(result, currentPeriod) { return FocusPanelGrades.renderGradesAndContext(this, result, currentPeriod); },
 
     // --- Délégations vers FocusPanelGenerator ---

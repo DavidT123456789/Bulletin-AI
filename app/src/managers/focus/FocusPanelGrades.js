@@ -99,8 +99,6 @@ export const FocusPanelGrades = {
      * @param {string} currentPeriod
      */
     renderCreationModePeriod(panel, currentPeriod) {
-        panel._renderStudentDetailsTimeline(null, true);
-
         const gradeLabel = document.getElementById('focusCurrentGradeLabel');
         if (gradeLabel) gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
 
@@ -148,92 +146,6 @@ export const FocusPanelGrades = {
                     evoEl.innerHTML = '<span class="grade-evolution neutral"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>';
                     prevGradesEl.appendChild(evoEl);
                 }
-            });
-        }
-    },
-
-    /**
-     * Rend la timeline compacte des périodes dans le menu rétractable (lecture et création)
-     * @param {Object} panel - Instance FocusPanelManager
-     * @param {Object|null} studentData - Données élève (null en mode création)
-     * @param {boolean} [isEditable=false]
-     */
-    renderStudentDetailsTimeline(panel, studentData, isEditable = false) {
-        const container = document.getElementById('studentDetailsTimeline');
-        if (!container) return;
-
-        container.innerHTML = '';
-        const periods = Utils.getPeriods();
-        const currentPeriod = appState.currentPeriod;
-
-        periods.forEach(periodKey => {
-            if (isEditable && periodKey === currentPeriod) return;
-
-            let grade = '-';
-            let appreciation = '';
-
-            if (isEditable) {
-                if (!panel._newStudentHistory) panel._newStudentHistory = {};
-                const savedData = panel._newStudentHistory[periodKey] || {};
-                grade = savedData.grade !== undefined ? savedData.grade : '';
-                appreciation = savedData.appreciation || '';
-            } else {
-                const periodData = studentData?.studentData?.periods?.[periodKey] || {};
-                grade = periodData.grade !== undefined ? periodData.grade : '-';
-                appreciation = periodData.appreciation || '';
-            }
-
-            const shortPeriod = Utils.getPeriodLabel(periodKey, false);
-            const item = document.createElement('div');
-            item.className = 'timeline-compact-item';
-            if (isEditable) {
-                item.classList.add('editing');
-                item.innerHTML = `
-                    <div class="timeline-compact-badge">${shortPeriod}</div>
-                    <div class="timeline-compact-content" style="width:100%;">
-                        <div class="timeline-compact-header" style="justify-content: space-between; margin-bottom: 8px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-weight: 600; color: var(--text-primary);">Moyenne :</span>
-                                <input type="text" class="history-grade-input-creation" data-period="${periodKey}" 
-                                    value="${Utils.escapeHtml(grade)}" 
-                                    placeholder="--" style="width:50px; text-align:center; padding:4px; border:1px solid var(--border-color); border-radius:4px; background: var(--bg-primary);">
-                            </div>
-                        </div>
-                        <textarea class="history-appreciation-input-creation" data-period="${periodKey}"
-                            placeholder="Saisissez l'appréciation pour le trimestre ${shortPeriod}..." 
-                            style="width:100%; min-height:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:0.9rem; resize:vertical; background: var(--bg-primary); line-height: 1.5;">${Utils.escapeHtml(appreciation)}</textarea>
-                    </div>
-                `;
-            } else {
-                item.innerHTML = `
-                    <div class="timeline-compact-badge">${shortPeriod}</div>
-                    <div class="timeline-compact-content">
-                        <div class="timeline-compact-header">
-                            <span>Moyenne : ${Utils.escapeHtml(grade)}</span>
-                        </div>
-                        ${appreciation ? `<div class="timeline-compact-appreciation">"${Utils.escapeHtml(appreciation)}"</div>` : ''}
-                    </div>
-                `;
-            }
-            container.appendChild(item);
-        });
-
-        if (isEditable) {
-            container.querySelectorAll('.history-grade-input-creation').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const period = e.target.dataset.period;
-                    const val = e.target.value.replace(',', '.');
-                    if (!panel._newStudentHistory[period]) panel._newStudentHistory[period] = {};
-                    panel._newStudentHistory[period].grade = val;
-                });
-            });
-
-            container.querySelectorAll('.history-appreciation-input-creation').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const period = e.target.dataset.period;
-                    if (!panel._newStudentHistory[period]) panel._newStudentHistory[period] = {};
-                    panel._newStudentHistory[period].appreciation = e.target.value;
-                });
             });
         }
     },

@@ -79,7 +79,7 @@ export const FocusPanelEvents = {
 
             focusContent.addEventListener('focusin', (e) => {
                 if (!focusHeader.classList.contains('editing')) return;
-                if (focusHeader.contains(e.target) || e.target.closest?.('#studentDetailsTimeline')) return;
+                if (focusHeader.contains(e.target)) return;
 
                 if (!panel.isCreationMode || FocusPanelHeader.hasCreationIdentityInput()) {
                     FocusPanelHeader.toggleEditMode(false, false);

@@ -682,6 +682,9 @@ export const UI = {
             DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(appState.currentPeriod, false)})`;
         }
 
+        // Only build and render legacy sidebar form if element exists (removed in Liste + Focus UX)
+        if (!DOM.singleStudentPeriodInputs) return;
+
         const currentPeriodIndex = periods.indexOf(appState.currentPeriod);
         let formHtml = '';
 
@@ -735,11 +738,8 @@ export const UI = {
             }
         }
 
-        // Only render if element exists (sidebar form may have been removed - Lista + Focus UX)
-        if (DOM.singleStudentPeriodInputs) {
-            DOM.singleStudentPeriodInputs.innerHTML = formHtml;
-            DOM.singleStudentPeriodInputs.querySelectorAll('input[type="text"]').forEach(input => input.addEventListener('input', () => Utils.validateGrade(input)));
-        }
+        DOM.singleStudentPeriodInputs.innerHTML = formHtml;
+        DOM.singleStudentPeriodInputs.querySelectorAll('input[type="text"]').forEach(input => input.addEventListener('input', () => Utils.validateGrade(input)));
     },
 
     // ====================================================================

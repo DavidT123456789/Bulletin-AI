@@ -451,6 +451,29 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(appState.generatedResults[2].prenom).toBe('Chloé');
             expect(appState.generatedResults[2].nom).toBe('PETIT');
         });
+
+        it('moves focus from Prénom to NOM on Enter when NOM is empty, and validates on Enter once NOM is filled', () => {
+            FocusPanelManager.openNew();
+
+            const prenomInput = document.getElementById('headerPrenomInput');
+            const nomInput = document.getElementById('headerNomInput');
+            const focusSpy = vi.spyOn(nomInput, 'focus');
+
+            prenomInput.value = 'Léo';
+            prenomInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+            expect(focusSpy).toHaveBeenCalledTimes(1);
+            expect(FocusPanelManager.isCreationMode).toBe(true);
+            expect(document.querySelector('.focus-header').classList.contains('editing')).toBe(true);
+
+            nomInput.value = 'Garnier';
+            nomInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+            expect(FocusPanelManager.isCreationMode).toBe(false);
+            expect(document.querySelector('.focus-header').classList.contains('editing')).toBe(false);
+            expect(appState.generatedResults).toHaveLength(3);
+            expect(appState.generatedResults[2].prenom).toBe('Léo');
+            expect(appState.generatedResults[2].nom).toBe('GARNIER');
+        });
     });
 });
-

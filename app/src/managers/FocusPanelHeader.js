@@ -24,11 +24,8 @@ export const FocusPanelHeader = {
         setIsCreationMode: (val) => { },
         onRefreshStatus: () => { },
         onUpdateListRow: () => { },
-        onRenderTimeline: () => { },
         onUpdateNavigation: () => { },
-        onStudentCreated: () => { },
-        getHistoryEdits: () => null,
-        clearHistoryEdits: () => { }
+        onStudentCreated: () => { }
     },
 
     // Internal state for edit reversions
@@ -158,7 +155,11 @@ export const FocusPanelHeader = {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                this.toggleEditMode(false);
+                if (e.target === prenomInput && nomInput && !nomInput.value.trim()) {
+                    nomInput.focus();
+                } else {
+                    this.toggleEditMode(false);
+                }
             }
         };
 
@@ -521,25 +522,6 @@ export const FocusPanelHeader = {
             if (prenomInput) result.prenom = prenomVal;
         }
 
-        // 1b. Merge History Edits (common to creation and edit modes)
-        const historyEdits = this.callbacks.getHistoryEdits();
-        if (historyEdits) {
-            Object.entries(historyEdits).forEach(([period, data]) => {
-                if (!result.studentData.periods[period]) {
-                    result.studentData.periods[period] = {};
-                }
-
-                if (data.grade !== undefined && data.grade !== '') {
-                    const num = parseFloat(data.grade.toString().replace(',', '.'));
-                    if (!isNaN(num)) result.studentData.periods[period].grade = num;
-                }
-                if (data.appreciation !== undefined) {
-                    result.studentData.periods[period].appreciation = data.appreciation;
-                }
-            });
-            this.callbacks.clearHistoryEdits();
-        }
-
         // 2. Save Statuses (Common)
         const editMode = document.querySelector('.focus-header-edit');
         if (editMode) {
@@ -562,9 +544,6 @@ export const FocusPanelHeader = {
 
         this.updateHeaderName(result);
         this.renderStatusBadges(result.studentData.statuses);
-
-        // Render history grades again to show the newly added history
-        this.callbacks.onRenderTimeline(result.studentData);
         this.callbacks.onUpdateNavigation();
 
         if (wasCreating) {
