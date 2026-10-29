@@ -119,13 +119,28 @@ export const FocusPanelManager = {
 
         FocusPanelHeader.init({
             getCurrentStudentId: () => this.currentStudentId,
-            setCurrentStudentId: (id) => { this.currentStudentId = id; },
+            setCurrentStudentId: (id) => {
+                this.currentStudentId = id;
+                this.currentIndex = id ? (appState.filteredResults || []).findIndex(r => r.id === id) : -1;
+            },
             getIsCreationMode: () => this.isCreationMode,
             setIsCreationMode: (val) => { this.isCreationMode = val; },
             onRefreshStatus: () => FocusPanelStatus.refreshAppreciationStatus(),
             onUpdateListRow: (r) => this._updateListRow(r),
-            onRenderTimeline: (d) => this._renderStudentDetailsTimeline(d, true),
+            onRenderTimeline: (d) => this._renderStudentDetailsTimeline(d, false),
             onUpdateNavigation: () => FocusPanelNavigation.updateControls(),
+            onStudentCreated: (result) => {
+                this._isGradeEdited = false;
+                this._isContextEdited = false;
+                this._isAppreciationEdited = false;
+                this._renderGradesAndContext(result, appState.currentPeriod);
+                FocusPanelJournal.render(result);
+                FocusPanelStatus.updateSourceIndicator(result);
+                FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+                this._updateGenerateButton(result);
+                this._updateActiveRow(result.id);
+                this.updateScrollAffordances();
+            },
             getHistoryEdits: () => this._newStudentHistory,
             clearHistoryEdits: () => { this._newStudentHistory = null; }
         });
@@ -258,15 +273,17 @@ export const FocusPanelManager = {
      * @param {string} studentId - ID de l'élève
      */
     open(studentId) {
-        this.isCreationMode = false;
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
 
         const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
-        if (openState && this.currentStudentId === studentId) {
+        if (openState && this.currentStudentId === studentId && !this.isCreationMode) {
             this.refreshPeriod();
             return;
         }
+
+        FocusPanelHeader.settleEditMode();
+        this.isCreationMode = false;
 
         if (this.currentStudentId && this.currentStudentId !== studentId) {
             SpeechRecognitionManager.abort();
@@ -336,6 +353,8 @@ export const FocusPanelManager = {
             ClassUIManager.renderClassList();
         }
 
+        FocusPanelHeader.settleEditMode();
+
         this.isCreationMode = true;
         this.currentStudentId = null;
         this.currentIndex = -1;
@@ -364,6 +383,7 @@ export const FocusPanelManager = {
         };
 
         this._renderContent(dummyResult);
+        FocusPanelNavigation.updateControls();
 
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
@@ -400,20 +420,11 @@ export const FocusPanelManager = {
         if (analysisPage) this._resetTransformations(analysisPage, null);
 
         this._isClosing = true;
-        const wasCreationMode = this.isCreationMode;
-
-        const header = document.querySelector('.focus-header');
-        if (!wasCreationMode && header && header.classList.contains('editing')) {
-            FocusPanelHeader.toggleEditMode(false, true);
-        } else if (wasCreationMode && header?.classList.contains('editing')) {
-            header.classList.remove('editing');
-            document.querySelector('.focus-header-read')?.classList.remove('hidden');
-            document.querySelector('.focus-header-edit')?.classList.remove('visible');
-        }
+        FocusPanelHeader.settleEditMode({ cancelCreation: Boolean(options.cancelCreation) });
 
         SpeechRecognitionManager.abort();
 
-        if (!wasCreationMode) {
+        if (!this.isCreationMode && this.currentStudentId) {
             this._saveContext();
         }
 

@@ -11,6 +11,7 @@ import { StorageManager } from '../StorageManager.js';
 import { PromptService } from '../../services/PromptService.js';
 import { ListViewManager } from '../ListViewManager.js';
 import { FocusPanelHistory } from '../FocusPanelHistory.js';
+import { FocusPanelHeader } from '../FocusPanelHeader.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 
@@ -19,6 +20,20 @@ const COPY_BUTTON_ICON = 'solar:copy-linear';
 const COPY_BUTTON_LABEL = 'Copier';
 
 export const FocusPanelGenerator = {
+    /**
+     * Valide et quitte le mode édition de l'en-tête si actif (notamment en mode création d'élève)
+     * @param {Object} panel - Instance FocusPanelManager
+     * @returns {boolean} false si la validation de création a échoué
+     * @private
+     */
+    _commitEditingHeaderIfNeeded(panel) {
+        const header = document.querySelector('.focus-header');
+        if (panel.isCreationMode || header?.classList.contains('editing')) {
+            const saved = FocusPanelHeader.toggleEditMode(false, false);
+            if (saved === false) return false;
+        }
+        return true;
+    },
     /**
      * Annule toute génération en cours pour un élève donné
      * @param {Object} panel - Instance FocusPanelManager
@@ -64,6 +79,7 @@ export const FocusPanelGenerator = {
      * @param {Object} panel - Instance FocusPanelManager
      */
     async showPromptPreview(panel) {
+        if (!this._commitEditingHeaderIfNeeded(panel)) return;
         if (!panel.currentStudentId) return;
 
         const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
@@ -84,6 +100,7 @@ export const FocusPanelGenerator = {
      * @param {Object} panel - Instance FocusPanelManager
      */
     async copyPromptToClipboard(panel) {
+        if (!this._commitEditingHeaderIfNeeded(panel)) return;
         if (!panel.currentStudentId) {
             UI.showNotification('Aucun élève sélectionné', 'warning');
             return;
@@ -137,7 +154,9 @@ export const FocusPanelGenerator = {
      * @param {Object} panel - Instance FocusPanelManager
      */
     async generate(panel) {
-        if (!panel.currentStudentId || panel._isCancellingGeneration) return;
+        if (panel._isCancellingGeneration) return;
+        if (!this._commitEditingHeaderIfNeeded(panel)) return;
+        if (!panel.currentStudentId) return;
 
         // Capture student ID, period AND class at the START of generation (Lot 5 concurrency lock)
         const generatingForStudentId = panel.currentStudentId;

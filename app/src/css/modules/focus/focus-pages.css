@@ -998,14 +998,13 @@
 
 .focus-header-edit.visible {
     display: flex;
-    padding: 4px 4px;
-    max-height: 200px;
-    /* Enough to show content */
+    gap: 10px;
+    padding: 2px 0 0 0;
+    max-height: none;
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
     overflow: visible;
-    /* Let focus glow & pill scroll extend beyond container */
 }
 
 /* Inputs Row in Header */
@@ -1046,12 +1045,12 @@
     background: var(--surface-color);
 }
 
-/* Status Selection in Header (Chips) — nowrap, visible overflow via ancestors */
+/* Status Selection in Header (Chips) — wrap cleanly so all statuses remain visible */
 .focus-status-selection {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 6px;
-    padding-bottom: 2px;
+    padding-bottom: 0;
 }
 
 .focus-status-selection::-webkit-scrollbar {
@@ -1389,14 +1388,5 @@
 
 .focus-analyze-btn:active {
     transform: scale(0.96);
-}
-
-/* Hide in edit mode (not relevant when editing identity) */
-.focus-header.editing .focus-analyze-btn {
-    opacity: 0;
-    width: 0;
-    min-width: 0;
-    overflow: hidden;
-    pointer-events: none;
 }
 

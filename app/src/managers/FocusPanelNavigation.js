@@ -61,6 +61,11 @@ export const FocusPanelNavigation = {
             isSwiping = false;
             currentTranslateX = 0;
 
+            const header = document.querySelector('.focus-header');
+            if (header && header.classList.contains('editing')) {
+                return;
+            }
+
             // Ignore if touching an input, textarea, slider, horizontal scroll area, or interactive elements
             if (e.target.closest('input') ||
                 e.target.closest('textarea') ||
@@ -226,11 +231,8 @@ export const FocusPanelNavigation = {
             document.activeElement.blur();
         }
 
-        // Cancel edit mode before navigating (don't save, just discard)
-        const header = document.querySelector('.focus-header');
-        if (header && header.classList.contains('editing')) {
-            FocusPanelHeader.toggleEditMode(false, true); // Cancel without saving
-        }
+        // Commit header edit mode before navigating so edits are preserved
+        FocusPanelHeader.settleEditMode();
 
         // Abort voice dictation immediately so recording does not spill over
         SpeechRecognitionManager.abort?.();

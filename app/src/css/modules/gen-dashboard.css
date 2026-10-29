@@ -452,8 +452,14 @@
     }
 
     .dash-model-label {
-        padding: 0 7px;
-        gap: 3px;
+        padding: 0 9px;
+        gap: 4px;
+    }
+
+    .dash-model-label iconify-icon:not(.dash-model-chevron),
+    .dash-model-label i,
+    .dash-model-label svg {
+        font-size: 18px;
     }
 
     .header-gen-dashboard.generating .dash-model-chevron {

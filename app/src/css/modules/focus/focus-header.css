@@ -4,8 +4,6 @@
     --focus-header-offset-tablet: 106px;
     --focus-header-offset-mobile: 92px;
     --focus-header-offset-small: 84px;
-    --focus-header-offset-editing: 164px;
-    --focus-header-offset-editing-mobile: 178px;
 }
 
 .focus-panel {
@@ -251,10 +249,28 @@
     border-radius: 50%;
 }
 
-/* Edit Mode adjustments */
+/* Edit Mode adjustments — In-flow card layout (prevents any overlap with content below) */
 .focus-header.editing {
-    padding: 12px 16px;
+    position: relative;
+    padding: 12px 14px 14px;
+    margin: 8px 16px 4px 16px;
     align-items: flex-start;
+    gap: 10px;
+    background: var(--surface-color);
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .focus-header.editing {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.focus-header.editing .focus-nav-buttons,
+.focus-header.editing .focus-analyze-btn {
+    display: none !important;
 }
 
 /* --- LEFT ZONE: Avatar flush into pill edge --- */
@@ -294,13 +310,13 @@
 }
 
 .focus-header.editing .focus-panel-avatar-container .student-avatar {
-    width: 80px !important;
-    height: 80px !important;
-    font-size: 33px !important;
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 26px !important;
 }
 
 .focus-header.editing+.focus-pages-container .focus-main-page .focus-content {
-    padding-top: var(--focus-header-offset-editing);
+    padding-top: 8px;
 }
 
 .focus-back-btn {
@@ -623,40 +639,45 @@
     width: 36px;
     height: 36px;
     font-size: 16px;
+    margin-left: auto;
     margin-right: 0;
-    /* Restore normal margin */
     pointer-events: auto;
-    background: var(--surface-color);
+    background: var(--bg-secondary);
     box-shadow: var(--shadow-sm) !important;
-    border: 1px solid transparent;
+    border: 1px solid var(--border-color);
     color: var(--success-color);
 }
 
 .focus-header.editing .focus-save-btn:hover {
     color: var(--success-bright, var(--success-color)) !important;
     background: var(--success-light) !important;
+    border-color: transparent;
     box-shadow: var(--shadow-elevation) !important;
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .focus-header.editing .focus-save-btn {
-    background: var(--surface-color);
-    border: 1px solid transparent;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
 [data-theme="dark"] .focus-header.editing .focus-save-btn:hover {
     background: var(--success-light) !important;
+    border-color: transparent;
 }
 
 /* Close → Cancel style in edit mode (neutral at rest, red on hover) */
 .focus-header.editing .focus-close-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     color: var(--text-secondary);
 }
 
 .focus-header.editing .focus-close-btn:hover {
     color: var(--error-bright, var(--error-color)) !important;
     background: var(--error-light) !important;
+    border-color: transparent;
     box-shadow: var(--shadow-elevation) !important;
     transform: translateY(-1px);
 }
@@ -664,6 +685,7 @@
 [data-theme="dark"] .focus-header.editing .focus-close-btn:hover {
     color: var(--error-bright) !important;
     background: var(--error-light) !important;
+    border-color: transparent;
 }
 
 

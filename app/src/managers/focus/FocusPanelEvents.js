@@ -76,6 +76,15 @@ export const FocusPanelEvents = {
                 });
                 resizeObserver.observe(focusContent);
             }
+
+            focusContent.addEventListener('focusin', (e) => {
+                if (!focusHeader.classList.contains('editing')) return;
+                if (focusHeader.contains(e.target) || e.target.closest?.('#studentDetailsTimeline')) return;
+
+                if (!panel.isCreationMode || FocusPanelHeader.hasCreationIdentityInput()) {
+                    FocusPanelHeader.toggleEditMode(false, false);
+                }
+            });
         }
 
         const preCloseHandler = () => {
@@ -102,8 +111,10 @@ export const FocusPanelEvents = {
                 const isEditing = header?.classList.contains('editing');
 
                 if (panel.isCreationMode) {
-                    FocusPanelHeader.clearPendingAvatarData();
-                    panel.close();
+                    FocusPanelHeader.toggleEditMode(false, true);
+                    if (isPanelOpen(panel)) {
+                        panel.close({ cancelCreation: true });
+                    }
                     return;
                 }
 
@@ -264,6 +275,14 @@ export const FocusPanelEvents = {
                     panel._isCancellingGeneration = true;
                     panel._cancelGenerationForStudent(panel.currentStudentId);
                     setTimeout(() => { panel._isCancellingGeneration = false; }, 300);
+                    return;
+                }
+                const header = document.querySelector('.focus-header');
+                if (header?.classList.contains('editing')) {
+                    FocusPanelHeader.toggleEditMode(false, true);
+                    if (panel.isCreationMode && isPanelOpen(panel)) {
+                        panel.close({ cancelCreation: true });
+                    }
                     return;
                 }
                 panel.close();

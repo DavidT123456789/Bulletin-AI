@@ -103,7 +103,8 @@
 
     .focus-header.editing {
         padding: 12px 14px 14px;
-        align-items: flex-start;
+        margin: 8px 12px 4px 12px;
+        align-items: center;
     }
 
     .focus-header-left,
@@ -114,17 +115,26 @@
         align-items: center;
     }
 
-    .focus-panel-avatar-container,
-    .focus-header.editing .focus-panel-avatar-container {
+    .focus-panel-avatar-container {
         width: 64px;
         height: 64px;
     }
 
-    .focus-header .focus-panel-avatar-container .student-avatar,
-    .focus-header.editing .focus-panel-avatar-container .student-avatar {
+    .focus-header.editing .focus-panel-avatar-container {
+        width: 56px;
+        height: 56px;
+    }
+
+    .focus-header .focus-panel-avatar-container .student-avatar {
         width: 64px !important;
         height: 64px !important;
         font-size: 26px !important;
+    }
+
+    .focus-header.editing .focus-panel-avatar-container .student-avatar {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 22px !important;
     }
 
     /* Content takes available space — vertically centered with photo */
@@ -139,9 +149,8 @@
     .focus-header.editing .focus-header-content {
         order: 3;
         flex-basis: 100%;
-        margin-top: 8px;
+        margin-top: 4px;
         padding: 0;
-        /* Reset padding when wrapping to new line */
         overflow: visible;
     }
 
@@ -159,9 +168,9 @@
         height: 0;
     }
 
-    /* Le focus content sur mobile + mode édition */
+    /* Le focus content sur mobile + mode édition (in-flow header card) */
     .focus-header.editing+.focus-pages-container .focus-main-page .focus-content {
-        padding-top: var(--focus-header-offset-editing-mobile);
+        padding-top: 8px;
     }
 
     .focus-header-read {
@@ -273,19 +282,18 @@
         display: none;
     }
 
-    .focus-header.editing .focus-nav-buttons {
-        order: 2;
-        margin-left: auto;
-    }
-
     /* Close & Save at pill level on mobile */
     .focus-header>.focus-close-btn,
     .focus-header>.focus-save-btn {
         order: 4;
     }
 
-    .focus-header.editing>.focus-close-btn,
     .focus-header.editing>.focus-save-btn {
+        order: 2;
+        margin-left: auto;
+    }
+
+    .focus-header.editing>.focus-close-btn {
         order: 2;
     }
 
@@ -428,15 +436,6 @@
        MOBILE EDIT MODE - Optimized vertical layout
        ============================================ */
 
-    .focus-header.editing .focus-close-btn,
-    .focus-header.editing .focus-save-btn {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 14px !important;
-    }
-
-    /* Content area - push down below the avatar/nav row */
-
     /* Edit form takes full width */
     .focus-header.editing .focus-header-edit {
         width: 100%;
@@ -445,45 +444,34 @@
     /* Keep inputs side-by-side on narrow screens */
     .focus-header.editing .focus-edit-row {
         flex-direction: row;
-        gap: 6px;
+        gap: 8px;
     }
 
     /* Apply correct flexible width */
     .focus-header.editing .focus-header-edit #headerNomInput {
-        flex: 1.5;
+        flex: 1.35;
     }
 
     .focus-header.editing .focus-input-header {
-        padding: 8px 14px;
+        padding: 8px 12px;
+        font-size: 16px;
+        /* 16px prevents iOS Safari automatic viewport zoom on focus */
     }
 
-    /* Status selection: horizontal scroll on mobile */
+    /* Status selection: wrapped pills so all statuses remain visible on mobile */
     .focus-header.editing .focus-status-selection,
     .focus-header.editing .status-checkboxes {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 8px;
-        /* Plus d'espace sous les statuts */
-        margin-bottom: 6px;
+        flex-wrap: wrap;
+        overflow-x: visible;
+        padding-bottom: 0;
+        margin-bottom: 0;
         gap: 6px;
     }
 
     .focus-header.editing .status-pill-check {
         flex-shrink: 0;
-        padding: 4.5px 12px;
+        padding: 5px 11px;
         font-size: 10.5px;
-    }
-
-    /* Edit action buttons: smaller on mobile */
-    .focus-header.editing .focus-edit-actions {
-        gap: 3px;
-    }
-
-    .focus-header.editing .btn-edit-action {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
     }
 
     /* Scrim gradient: compact on mobile */
@@ -663,8 +651,7 @@
         height: auto;
     }
 
-    .focus-nav-buttons,
-    .focus-header.editing .focus-nav-buttons {
+    .focus-nav-buttons {
         padding: 4px 8px;
     }
 
@@ -732,18 +719,8 @@
 
     /* EDIT MODE: Ultra-compact adjustments */
     .focus-header.editing .focus-input-header {
-        font-size: 14px;
-        padding: 8px 12px;
-    }
-
-    .focus-header.editing .status-checkboxes {
-        overflow-x: auto;
-    }
-
-    .focus-header.editing .btn-edit-action {
-        width: 26px;
-        height: 26px;
-        font-size: 11px;
+        font-size: 16px;
+        padding: 7px 10px;
     }
 }
 

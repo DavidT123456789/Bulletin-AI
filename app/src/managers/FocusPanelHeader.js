@@ -19,12 +19,14 @@ export const FocusPanelHeader = {
     // Callbacks to main manager
     callbacks: {
         getCurrentStudentId: () => null,
+        setCurrentStudentId: () => { },
         getIsCreationMode: () => false,
         setIsCreationMode: (val) => { },
         onRefreshStatus: () => { },
         onUpdateListRow: () => { },
         onRenderTimeline: () => { },
         onUpdateNavigation: () => { },
+        onStudentCreated: () => { },
         getHistoryEdits: () => null,
         clearHistoryEdits: () => { }
     },
@@ -147,11 +149,63 @@ export const FocusPanelHeader = {
         }
         // Note: Cancel is handled by the close button (×) at pill level
 
-        if (nomInput) nomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
-        if (prenomInput) prenomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
+        const handleIdentityInput = () => {
+            this._updateLiveAvatarInitials();
+            this.callbacks.onRefreshStatus();
+        };
+
+        const handleIdentityKeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleEditMode(false);
+            }
+        };
+
+        if (nomInput) {
+            nomInput.addEventListener('input', handleIdentityInput);
+            nomInput.addEventListener('keydown', handleIdentityKeydown);
+        }
+        if (prenomInput) {
+            prenomInput.addEventListener('input', handleIdentityInput);
+            prenomInput.addEventListener('keydown', handleIdentityKeydown);
+        }
 
         if (statusesContainer) {
             statusesContainer.addEventListener('change', () => this.callbacks.onRefreshStatus());
+        }
+    },
+
+    /**
+     * Checks whether at least a first name or last name has been typed in the header inputs
+     * @returns {boolean}
+     */
+    hasCreationIdentityInput() {
+        const nomInput = document.getElementById('headerNomInput');
+        const prenomInput = document.getElementById('headerPrenomInput');
+        return Boolean(nomInput?.value?.trim() || prenomInput?.value?.trim());
+    },
+
+    /**
+     * Updates avatar initials live as the user types in the header inputs
+     * @private
+     */
+    _updateLiveAvatarInitials() {
+        const avatarContainer = document.getElementById('focusAvatarContainer');
+        const avatarEl = avatarContainer?.querySelector('.student-avatar');
+        if (!avatarEl) return;
+
+        const nomInput = document.getElementById('headerNomInput');
+        const prenomInput = document.getElementById('headerPrenomInput');
+        const nom = nomInput?.value?.trim() || '';
+        const prenom = prenomInput?.value?.trim() || '';
+        const hasName = Boolean(nom || prenom);
+
+        avatarEl.classList.toggle('student-avatar--empty-name', !hasName);
+
+        const initialsEl = avatarEl.querySelector('.student-avatar__initials');
+        if (initialsEl) {
+            initialsEl.textContent = hasName ? StudentPhotoManager.getInitialsFromName(nom, prenom) : '';
         }
     },
 
@@ -201,58 +255,31 @@ export const FocusPanelHeader = {
             // === ENABLE avatar editing ===
             if (avatarEl) {
                 const studentId = avatarContainer.dataset.studentId;
-                if (studentId) {
-                    // Existing student: enable photo upload
-                    avatarEl.classList.add('student-avatar--editable');
-                    avatarEl.onclick = () => this.handleAvatarClick(studentId);
-                } else {
-                    // Creation mode: allow photo upload with temporary storage
-                    avatarEl.classList.add('student-avatar--editable');
-                    avatarEl.onclick = () => this._handlePendingAvatarClick(avatarEl);
-                }
+                avatarEl.classList.add('student-avatar--editable');
+                avatarEl.onclick = studentId
+                    ? () => this.handleAvatarClick(studentId)
+                    : () => this._handlePendingAvatarClick(avatarEl);
             }
 
             // Populate Inputs
             // FORCE null result if in creation mode to ensure we don't load a previous student
             // CRITICAL FIX: Use generatedResults as source of truth (filteredResults may be stale)
-            const result = (currentStudentId && !isCreationMode) ? appState.generatedResults.find(r => r.id === currentStudentId) : null;
+            const nomInput = document.getElementById('headerNomInput');
+            const prenomInput = document.getElementById('headerPrenomInput');
+            const result = (currentStudentId && !isCreationMode)
+                ? appState.generatedResults.find(r => r.id === currentStudentId)
+                : null;
+
             if (result) {
-                const nomInput = document.getElementById('headerNomInput');
-                const prenomInput = document.getElementById('headerPrenomInput');
                 if (nomInput) nomInput.value = result.nom;
                 if (prenomInput) prenomInput.value = result.prenom;
 
-                // STORE original values for cancel/revert
                 this._originalHeaderValues = {
                     nom: result.nom,
                     prenom: result.prenom,
                     statuses: [...(result.studentData.statuses || [])]
                 };
-
-                // Populate Statuses
-                const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
-                const currentStatuses = result.studentData.statuses || [];
-                checkboxes.forEach(cb => {
-                    cb.checked = this._isCheckboxActive(currentStatuses, cb.value);
-
-                    // Add tooltip to parent label
-                    const label = cb.closest('label');
-                    if (label) {
-                        const description = this._statusDescriptions[cb.value] || cb.value;
-                        label.setAttribute('data-tooltip', description);
-                        label.classList.add('tooltip');
-                    }
-                });
-
-                // Initialize tooltips for these new elements
-                setTimeout(() => UI.initTooltips(), 0);
-
-                // Focus Name
-                if (nomInput) setTimeout(() => nomInput.focus(), 100);
             } else if (isCreationMode) {
-                // Clear Inputs for New Student
-                const nomInput = document.getElementById('headerNomInput');
-                const prenomInput = document.getElementById('headerPrenomInput');
                 if (nomInput) nomInput.value = '';
                 if (prenomInput) prenomInput.value = '';
 
@@ -265,17 +292,18 @@ export const FocusPanelHeader = {
                 );
                 const shouldPreselectNew = isLaterPeriod && hasExistingClassStudents;
 
-                // Store initial values (with period-qualified Nouveau when pre-selected)
                 this._originalHeaderValues = {
                     nom: '',
                     prenom: '',
                     statuses: shouldPreselectNew ? [`Nouveau ${currentPeriod}`] : []
                 };
+            }
 
-                // Pre-check Nouveau only in later periods on a non-empty class, and initialize tooltips
+            if (result || isCreationMode) {
+                const activeStatuses = this._originalHeaderValues?.statuses || [];
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = this._isCheckboxActive(this._originalHeaderValues.statuses, cb.value);
+                    cb.checked = this._isCheckboxActive(activeStatuses, cb.value);
                     const label = cb.closest('label');
                     if (label) {
                         const description = this._statusDescriptions[cb.value] || cb.value;
@@ -285,17 +313,26 @@ export const FocusPanelHeader = {
                 });
 
                 setTimeout(() => UI.initTooltips?.(), 0);
+                this._updateLiveAvatarInitials();
 
-                // Focus Name
-                if (nomInput) setTimeout(() => nomInput.focus(), 100);
+                const focusTarget = prenomInput || nomInput;
+                if (focusTarget) setTimeout(() => focusTarget.focus(), 100);
             }
+            return true;
         } else {
             // Exit Edit Mode
+            if (cancel && isCreationMode) {
+                // Cancel in creation mode: clean up and close panel
+                this.clearPendingAvatarData();
+                this._originalHeaderValues = null;
+                this._exitEditModeUI(header, readMode, editMode, avatarEl);
 
-            // Check if we're in creation mode (no existing student)
-            const isCreationMode = this.callbacks.getIsCreationMode();
-
-            if (cancel && this._originalHeaderValues) {
+                // Close the panel
+                if (typeof FocusPanelManager !== 'undefined') {
+                    FocusPanelManager.close({ cancelCreation: true });
+                }
+                return false;
+            } else if (cancel && this._originalHeaderValues) {
                 // RESTORE original values to inputs (for visual consistency)
                 const nomInput = document.getElementById('headerNomInput');
                 const prenomInput = document.getElementById('headerPrenomInput');
@@ -324,26 +361,23 @@ export const FocusPanelHeader = {
                     this.callbacks.onRefreshStatus();
                 }
 
+                this._updateLiveAvatarInitials();
+
                 // Clear stored values and pending photo
                 this._originalHeaderValues = null;
                 this.clearPendingAvatarData();
-            } else if (cancel && isCreationMode) {
-                // Cancel in creation mode: clean up and close panel
-                this.clearPendingAvatarData();
-                this._exitEditModeUI(header, readMode, editMode, avatarEl);
-
-                // Close the panel
-                if (typeof FocusPanelManager !== 'undefined') {
-                    FocusPanelManager.close();
-                }
-                return;
             } else if (!cancel) {
-                this._saveHeaderChanges();
+                const saved = this._saveHeaderChanges();
+                if (saved === false) {
+                    return false;
+                }
                 this._originalHeaderValues = null;
             }
 
             // Clean up UI
-            this._exitEditModeUI(header, readMode, editMode, avatarEl);
+            const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || avatarEl;
+            this._exitEditModeUI(header, readMode, editMode, currentAvatarEl);
+            return true;
         }
     },
 
@@ -354,7 +388,7 @@ export const FocusPanelHeader = {
     _exitEditModeUI(header, readMode, editMode, avatarEl) {
         // Disable avatar editing
         if (avatarEl) {
-            avatarEl.classList.remove('student-avatar--editable', 'student-avatar--editable-pending', 'tooltip');
+            avatarEl.classList.remove('student-avatar--editable', 'student-avatar--empty-name', 'tooltip');
             avatarEl.removeAttribute('data-tooltip');
             avatarEl.onclick = null;
         }
@@ -381,6 +415,7 @@ export const FocusPanelHeader = {
 
     /**
      * Saves changes made in the Header Edit Mode
+     * @returns {boolean} True if changes were saved, false if validation failed
      * @private
      */
     _saveHeaderChanges() {
@@ -389,101 +424,120 @@ export const FocusPanelHeader = {
         const currentStudentId = this.callbacks.getCurrentStudentId();
         const isCreationMode = this.callbacks.getIsCreationMode();
 
+        const nomVal = nomInput?.value?.trim() || '';
+        const prenomVal = prenomInput?.value?.trim() || '';
+
         // Validation basic
-        if ((!nomInput?.value?.trim() && !prenomInput?.value?.trim()) && isCreationMode) {
+        if (!nomVal && !prenomVal) {
             UI.showNotification('Veuillez entrer au moins un nom ou un prénom', 'warning');
-            return;
+            (prenomInput || nomInput)?.focus?.();
+            return false;
         }
 
         let result;
+        const wasCreating = isCreationMode || !currentStudentId;
 
-        if (isCreationMode || !currentStudentId) {
+        if (wasCreating) {
             // === CREATION MODE ===
             const newId = 'student-' + Date.now();
+            const currentPeriod = appState.currentPeriod;
 
             result = {
                 id: newId,
-                nom: nomInput.value.trim().toUpperCase() || 'NOUVEAU',
-                prenom: prenomInput.value.trim() || 'Élève',
-                classId: userSettings.academic.currentClassId || null,
+                nom: nomVal.toUpperCase(),
+                prenom: prenomVal,
+                classId: userSettings?.academic?.currentClassId || appState?.currentClassId || null,
                 studentData: {
                     statuses: [],
-                    periods: {}
+                    periods: {
+                        [currentPeriod]: {}
+                    }
                 },
                 appreciation: '',
                 isPending: false,
                 wasGenerated: false
             };
 
-            // Merge history if available
-            const historyEdits = this.callbacks.getHistoryEdits();
-            if (historyEdits) {
-                Object.entries(historyEdits).forEach(([period, data]) => {
-                    if (!result.studentData.periods[period]) {
-                        result.studentData.periods[period] = {};
-                    }
-
-                    if (data.grade !== undefined && data.grade !== '') {
-                        const num = parseFloat(data.grade.toString().replace(',', '.'));
-                        if (!isNaN(num)) result.studentData.periods[period].grade = num;
-                    }
-                    if (data.appreciation !== undefined) {
-                        result.studentData.periods[period].appreciation = data.appreciation;
-                    }
-                });
+            // Capture any grade, context, or appreciation typed before validating header in creation mode
+            const gradeInput = document.getElementById('focusCurrentGradeInput');
+            if (gradeInput && gradeInput.value.trim() !== '') {
+                const parsedGrade = parseFloat(gradeInput.value.trim().replace(',', '.'));
+                if (!isNaN(parsedGrade)) {
+                    result.studentData.periods[currentPeriod].grade = parsedGrade;
+                }
             }
 
-            // Ensure current period exists in structure
-            const currentPeriod = appState.currentPeriod;
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
+            const contextInput = document.getElementById('focusContextInput');
+            if (contextInput && contextInput.value.trim() !== '') {
+                result.studentData.periods[currentPeriod].context = contextInput.value.trim();
             }
 
-            // Add to app state
-            appState.generatedResults.push(result);
-            appState.filteredResults.push(result);
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            if (appreciationEl && !appreciationEl.classList.contains('empty')) {
+                const rawAppreciation = (appreciationEl.innerText || appreciationEl.textContent || '')
+                    .replace(/\u00A0/g, ' ')
+                    .trim();
+                if (rawAppreciation && !rawAppreciation.startsWith('Aucune appréciation') && !rawAppreciation.startsWith('Cliquez sur')) {
+                    result.appreciation = rawAppreciation;
+                    result.studentData.periods[currentPeriod].appreciation = rawAppreciation;
+                    result.appreciationSource = 'manual';
+                    result.wasGenerated = false;
+                    result.generationPeriod = currentPeriod;
+                }
+            }
 
             // Apply pending avatar photo if any
             if (this._pendingAvatarData) {
-                result.studentData.photo = this._pendingAvatarData;
+                result.studentPhoto = {
+                    data: this._pendingAvatarData,
+                    source: 'manual',
+                    uploadedAt: new Date().toISOString()
+                };
                 this.clearPendingAvatarData();
+            }
+
+            // Add to app state (avoid duplicate push if filteredResults aliases generatedResults)
+            appState.generatedResults.push(result);
+            if (appState.filteredResults && appState.filteredResults !== appState.generatedResults) {
+                appState.filteredResults.push(result);
+            }
+
+            if (result.appreciation) {
+                FocusPanelHistory.load(newId);
+                FocusPanelHistory.push(result.appreciation, 'edit');
             }
 
             // Update tracking via callbacks
             this.callbacks.setCurrentStudentId(newId);
             this.callbacks.setIsCreationMode(false);
-            this.callbacks.clearHistoryEdits();
 
             UI.showNotification('Élève créé avec succès', 'success');
-            ClassUIManager.updateStudentCount();
-
         } else {
             // === EDIT MODE ===
             result = appState.generatedResults.find(r => r.id === currentStudentId);
-            if (!result) return;
+            if (!result) return false;
 
-            // 1. Save Identity
-            if (nomInput) result.nom = nomInput.value.trim().toUpperCase() || result.nom;
-            if (prenomInput) result.prenom = prenomInput.value.trim() || result.prenom;
+            if (nomInput) result.nom = nomVal.toUpperCase();
+            if (prenomInput) result.prenom = prenomVal;
+        }
 
-            // 1b. Save History Edits (if any)
-            const historyEdits = this.callbacks.getHistoryEdits();
-            if (historyEdits) {
-                Object.entries(historyEdits).forEach(([period, data]) => {
-                    if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
+        // 1b. Merge History Edits (common to creation and edit modes)
+        const historyEdits = this.callbacks.getHistoryEdits();
+        if (historyEdits) {
+            Object.entries(historyEdits).forEach(([period, data]) => {
+                if (!result.studentData.periods[period]) {
+                    result.studentData.periods[period] = {};
+                }
 
-                    if (data.grade !== undefined) {
-                        // Parse grade duplicate logic from FocusPanelManager._parseGrade but simple here
-                        const num = parseFloat(data.grade.toString().replace(',', '.'));
-                        const grade = isNaN(num) ? undefined : num;
-                        if (grade !== undefined) result.studentData.periods[period].grade = grade;
-                    }
-                    if (data.appreciation !== undefined) {
-                        result.studentData.periods[period].appreciation = data.appreciation;
-                    }
-                });
-                this.callbacks.clearHistoryEdits();
-            }
+                if (data.grade !== undefined && data.grade !== '') {
+                    const num = parseFloat(data.grade.toString().replace(',', '.'));
+                    if (!isNaN(num)) result.studentData.periods[period].grade = num;
+                }
+                if (data.appreciation !== undefined) {
+                    result.studentData.periods[period].appreciation = data.appreciation;
+                }
+            });
+            this.callbacks.clearHistoryEdits();
         }
 
         // 2. Save Statuses (Common)
@@ -500,20 +554,30 @@ export const FocusPanelHeader = {
         StorageManager.saveAppState();
 
         // 4. Update View
-        this.updateHeaderName(); // Uses current student, which we updated
+        const avatarContainer = document.getElementById('focusAvatarContainer');
+        if (avatarContainer) {
+            avatarContainer.dataset.studentId = result.id;
+            avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+        }
+
+        this.updateHeaderName(result);
         this.renderStatusBadges(result.studentData.statuses);
 
         // Render history grades again to show the newly added history
         this.callbacks.onRenderTimeline(result.studentData);
         this.callbacks.onUpdateNavigation();
 
+        if (wasCreating) {
+            this.callbacks.onStudentCreated?.(result);
+        }
+
         // 5. Sync with List
-        // CRITICAL FIX: Synchronize filteredResults to avoid stale data on subsequent list view renders
         StudentDataManager.syncFilteredStudent(result.id, result);
 
         this.callbacks.onUpdateListRow(result);
         ClassUIManager.updateStudentCount();
         window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
+        return true;
     },
 
     /**
@@ -526,22 +590,23 @@ export const FocusPanelHeader = {
 
         let nom, prenom;
 
-        // Try inputs first if in edit mode and active
-        const nomInput = document.getElementById('headerNomInput');
-        const prenomInput = document.getElementById('headerPrenomInput');
-
-        if (nomInput && prenomInput && (nomInput.value.trim() || prenomInput.value.trim())) {
-            nom = nomInput.value.trim().toUpperCase() || '...';
-            prenom = prenomInput.value.trim() || '...';
-        } else {
-            if (!result) {
-                const currentId = this.callbacks.getCurrentStudentId();
-                if (currentId) {
-                    result = appState.generatedResults.find(r => r.id === currentId);
-                }
+        if (!result) {
+            const currentId = this.callbacks.getCurrentStudentId();
+            if (currentId) {
+                result = appState.generatedResults.find(r => r.id === currentId);
             }
+        }
 
-            if (result) {
+        if (result && (result.nom || result.prenom)) {
+            nom = result.nom || '';
+            prenom = result.prenom || '';
+        } else {
+            const nomInput = document.getElementById('headerNomInput');
+            const prenomInput = document.getElementById('headerPrenomInput');
+            if (nomInput && prenomInput && (nomInput.value.trim() || prenomInput.value.trim())) {
+                nom = nomInput.value.trim().toUpperCase();
+                prenom = prenomInput.value.trim();
+            } else if (result) {
                 nom = result.nom || '...';
                 prenom = result.prenom || '...';
             } else {
@@ -677,21 +742,31 @@ export const FocusPanelHeader = {
             const file = e.target.files?.[0];
             if (!file) return;
 
-            // Validate file size (max 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                UI.showNotification('Image trop volumineuse (max 2 Mo)', 'warning');
+            if (file.type && !file.type.startsWith('image/')) {
+                UI.showNotification('Format d\'image non supporté', 'warning');
                 return;
             }
 
-            // Read file as base64 and store temporarily
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const base64Data = event.target.result;
+            // Validate file size (max 5MB before compression)
+            if (file.size > 5 * 1024 * 1024) {
+                UI.showNotification('Image trop volumineuse (max 5 Mo)', 'warning');
+                return;
+            }
+
+            try {
+                const base64Data = typeof StudentPhotoManager._compressImage === 'function'
+                    ? await StudentPhotoManager._compressImage(file)
+                    : await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => resolve(event.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+
                 this._pendingAvatarData = base64Data;
 
                 // Update avatar visually immediately
                 if (avatarEl) {
-                    // Create or update the image
                     let imgEl = avatarEl.querySelector('.student-avatar__img');
                     const initialsEl = avatarEl.querySelector('.student-avatar__initials');
 
@@ -703,9 +778,11 @@ export const FocusPanelHeader = {
 
                     imgEl.src = base64Data;
                     if (initialsEl) initialsEl.style.display = 'none';
+                    avatarEl.classList.remove('student-avatar--empty-name');
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (_) {
+                UI.showNotification('Erreur lors du téléchargement', 'error');
+            }
         };
 
         input.click();
@@ -727,13 +804,46 @@ export const FocusPanelHeader = {
     },
 
     /**
-     * Close edit mode if active (helper for external calls)
-     * @param {boolean} save - Whether to save changes
+     * Settles any active header edit state before a panel transition (open, openNew, close, navigate)
+     * - Commits changes when valid identity input is present (unless cancelCreation is true)
+     * - Cleans up or reverts cleanly when empty or cancelled without triggering a blocking toast
+     * @param {Object} [options={}]
+     * @param {boolean} [options.cancelCreation=false]
      */
-    closeEditMode(save) {
+    settleEditMode({ cancelCreation = false } = {}) {
+        const header = document.querySelector('.focus-header');
+        if (!header || !header.classList.contains('editing')) return;
+
+        const isCreationMode = this.callbacks.getIsCreationMode();
+        const hasIdentity = this.hasCreationIdentityInput();
+
+        if (isCreationMode) {
+            if (!cancelCreation && hasIdentity) {
+                this.toggleEditMode(false, false);
+            } else {
+                this.clearPendingAvatarData();
+                this._originalHeaderValues = null;
+                this.callbacks.setIsCreationMode(false);
+                const readMode = document.querySelector('.focus-header-read');
+                const editMode = document.querySelector('.focus-header-edit');
+                const avatarEl = document.getElementById('focusAvatarContainer')?.querySelector('.student-avatar');
+                this._exitEditModeUI(header, readMode, editMode, avatarEl);
+            }
+        } else {
+            this.toggleEditMode(false, !hasIdentity);
+        }
+    },
+
+    /**
+     * Close edit mode if active (helper for external calls)
+     * @param {boolean} [save=true] - Whether to save changes
+     * @returns {boolean}
+     */
+    closeEditMode(save = true) {
         const header = document.querySelector('.focus-header');
         if (header && header.classList.contains('editing')) {
-            this.toggleEditMode(false, !save);
+            return this.toggleEditMode(false, !save);
         }
+        return true;
     }
 };

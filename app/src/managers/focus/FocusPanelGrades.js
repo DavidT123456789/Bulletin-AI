@@ -108,7 +108,10 @@ export const FocusPanelGrades = {
         if (appreciationTitle) appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(currentPeriod, false)}`;
 
         const gradeInput = document.getElementById('focusCurrentGradeInput');
-        if (gradeInput) gradeInput.value = '';
+        if (gradeInput) {
+            gradeInput.value = '';
+            gradeInput.className = 'context-grade-input custom-input grade-value';
+        }
 
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) contextInput.value = '';

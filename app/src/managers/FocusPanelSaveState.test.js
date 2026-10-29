@@ -344,5 +344,113 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(FocusPanelHeader._originalHeaderValues.statuses).toEqual([]);
         });
     });
+
+    describe('Manual Edit & Student Creation Lifecycle', () => {
+        beforeEach(() => {
+            const editMode = document.querySelector('.focus-header-edit');
+            editMode.innerHTML = `
+                <input type="text" id="headerPrenomInput">
+                <input type="text" id="headerNomInput">
+                <div id="focusStatusCheckboxes" class="focus-status-selection">
+                    <label><input type="checkbox" value="Nouveau"> Nouveau</label>
+                    <label><input type="checkbox" value="PPRE"> PPRE</label>
+                </div>
+            `;
+            FocusPanelManager._listenersAttached = false;
+            FocusPanelManager.init(null, null);
+        });
+
+        it('keeps edit mode open and returns false when validating creation mode with empty name inputs', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            FocusPanelManager.openNew();
+
+            const header = document.querySelector('.focus-header');
+            const editMode = document.querySelector('.focus-header-edit');
+            expect(header.classList.contains('editing')).toBe(true);
+            expect(editMode.classList.contains('visible')).toBe(true);
+
+            const saved = FocusPanelHeader.toggleEditMode(false, false);
+            expect(saved).toBe(false);
+            expect(FocusPanelManager.isCreationMode).toBe(true);
+            expect(header.classList.contains('editing')).toBe(true);
+            expect(editMode.classList.contains('visible')).toBe(true);
+            expect(appState.generatedResults).toHaveLength(2);
+        });
+
+        it('captures grade, context, and appreciation typed before header validation in creation mode and unlocks Journal', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            FocusPanelManager.openNew();
+
+            const avatarEl = document.querySelector('#focusAvatarContainer .student-avatar');
+            expect(avatarEl.classList.contains('student-avatar--empty-name')).toBe(true);
+            expect(document.getElementById('focusJournalSection').style.display).toBe('none');
+
+            const prenomInput = document.getElementById('headerPrenomInput');
+            const nomInput = document.getElementById('headerNomInput');
+            prenomInput.value = 'Lucas';
+            nomInput.value = 'Bernard';
+            FocusPanelHeader._updateLiveAvatarInitials();
+
+            expect(avatarEl.classList.contains('student-avatar--empty-name')).toBe(false);
+            expect(avatarEl.querySelector('.student-avatar__initials').textContent).toBe('LB');
+
+            // Teacher fills lower cards BEFORE clicking the header checkmark
+            document.getElementById('focusCurrentGradeInput').value = '15,5';
+            document.getElementById('focusContextInput').value = 'Élève sérieux et curieux';
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            appreciationEl.classList.remove('empty');
+            appreciationEl.textContent = 'Très bon trimestre, continuez ainsi.';
+
+            const saved = FocusPanelHeader.toggleEditMode(false, false);
+            expect(saved).toBe(true);
+            expect(FocusPanelManager.isCreationMode).toBe(false);
+            expect(appState.generatedResults).toHaveLength(3); // No duplicate push into aliased filteredResults
+
+            const created = appState.generatedResults[2];
+            expect(created.prenom).toBe('Lucas');
+            expect(created.nom).toBe('BERNARD');
+            expect(created.studentData.periods.T1.grade).toBe(15.5);
+            expect(created.studentData.periods.T1.context).toBe('Élève sérieux et curieux');
+            expect(created.studentData.periods.T1.appreciation).toBe('Très bon trimestre, continuez ainsi.');
+            expect(created.appreciationSource).toBe('manual');
+            expect(document.getElementById('focusJournalSection').style.display).not.toBe('none');
+        });
+
+        it('auto-commits creation header when focusing lower content cards or clicking Generate once a name is entered', async () => {
+            FocusPanelManager.openNew();
+
+            document.getElementById('headerPrenomInput').value = 'Emma';
+            document.getElementById('headerNomInput').value = 'Moreau';
+
+            const contextInput = document.getElementById('focusContextInput');
+            contextInput.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+
+            expect(FocusPanelManager.isCreationMode).toBe(false);
+            expect(document.querySelector('.focus-header').classList.contains('editing')).toBe(false);
+            expect(appState.generatedResults).toHaveLength(3);
+            expect(appState.generatedResults[2].prenom).toBe('Emma');
+            expect(appState.generatedResults[2].nom).toBe('MOREAU');
+        });
+
+        it('discards creation on explicit cancel (close button / Escape) but auto-saves on normal panel close when name is filled', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+
+            // 1. Explicit cancel discards creation even if name is typed
+            FocusPanelManager.openNew();
+            document.getElementById('headerPrenomInput').value = 'Fantôme';
+            FocusPanelHeader.toggleEditMode(false, true);
+            expect(appState.generatedResults).toHaveLength(2);
+            expect(FocusPanelManager.isCreationMode).toBe(false);
+
+            // 2. Closing via backdrop (normal close) auto-saves when name is typed
+            FocusPanelManager.openNew();
+            document.getElementById('headerPrenomInput').value = 'Chloé';
+            document.getElementById('headerNomInput').value = 'Petit';
+            FocusPanelManager.close();
+            expect(appState.generatedResults).toHaveLength(3);
+            expect(appState.generatedResults[2].prenom).toBe('Chloé');
+            expect(appState.generatedResults[2].nom).toBe('PETIT');
+        });
+    });
 });
 

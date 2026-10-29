@@ -107,25 +107,25 @@
     }
 }
 
-/* Pending Editable State (creation mode - no ID yet) */
-.student-avatar--editable-pending {
-    cursor: help;
-    position: relative;
+/* Empty name in edit/creation mode: show camera icon instead of '??' placeholder */
+.student-avatar--editable.student-avatar--empty-name:not(:has(.student-avatar__img)) .student-avatar__initials {
+    opacity: 0;
 }
 
-.student-avatar--editable-pending::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 2px dashed var(--border-color);
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+.student-avatar--editable.student-avatar--empty-name:not(:has(.student-avatar__img))::before {
+    opacity: 0.65;
+    filter: brightness(0.35);
+}
+
+[data-theme="dark"] .student-avatar--editable.student-avatar--empty-name:not(:has(.student-avatar__img))::before {
+    opacity: 0.72;
+    filter: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .student-avatar--editable-pending:hover::after {
-        opacity: 0.6;
+    .student-avatar--editable.student-avatar--empty-name:hover::before {
+        opacity: 1;
+        filter: none;
     }
 }
 
