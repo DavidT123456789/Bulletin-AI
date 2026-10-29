@@ -554,6 +554,10 @@ export function cropStudentPhoto(pageCanvas, zone, targetSize = 200) {
     cropCanvas.width = targetSize;
     cropCanvas.height = targetSize;
     const ctx = cropCanvas.getContext('2d');
+    if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+    }
 
     const { cx, cy, r } = zone;
     const diameter = r * 2;

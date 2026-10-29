@@ -169,6 +169,8 @@ export const StudentPhotoManager = {
 
                 canvas.width = this.TARGET_SIZE;
                 canvas.height = this.TARGET_SIZE;
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
 
                 // Draw cropped and resized
                 ctx.drawImage(img, sx, sy, size, size, 0, 0, this.TARGET_SIZE, this.TARGET_SIZE);

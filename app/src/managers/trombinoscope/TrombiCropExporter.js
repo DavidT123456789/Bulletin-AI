@@ -396,9 +396,14 @@ export const TrombiCropExporter = {
 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext ? canvas.getContext('2d') : null;
-            const targetSize = 200;
+            const targetSize = StudentPhotoManager.TARGET_SIZE;
+            const jpegQuality = StudentPhotoManager.JPEG_QUALITY;
             canvas.width = targetSize;
             canvas.height = targetSize;
+            if (ctx) {
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+            }
 
             const assignments = [];
 
@@ -433,7 +438,7 @@ export const TrombiCropExporter = {
                     if (ctx && (typeof canvas.toDataURL === 'function' || typeof canvas.toBlob === 'function')) {
                         ctx.clearRect(0, 0, targetSize, targetSize);
                         ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
-                        photoData = await manager._canvasToDataUrlAsync(canvas, 0.85);
+                        photoData = await manager._canvasToDataUrlAsync(canvas, jpegQuality);
                     } else {
                         const matchedPdfStudent = manager._parsedPdfData.students?.find(s => s.id === item.originalStudentId);
                         photoData = matchedPdfStudent?.photoData || 'data:image/jpeg;base64,mock';
@@ -482,7 +487,7 @@ export const TrombiCropExporter = {
                     if (ctx && (typeof canvas.toDataURL === 'function' || typeof canvas.toBlob === 'function')) {
                         ctx.clearRect(0, 0, targetSize, targetSize);
                         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
-                        photoData = await manager._canvasToDataUrlAsync(canvas, 0.85);
+                        photoData = await manager._canvasToDataUrlAsync(canvas, jpegQuality);
                     } else {
                         photoData = 'data:image/jpeg;base64,mock';
                     }
