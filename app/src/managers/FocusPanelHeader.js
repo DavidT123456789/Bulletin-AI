@@ -230,41 +230,7 @@ export const FocusPanelHeader = {
         const avatarEl = avatarContainer?.querySelector('.student-avatar');
 
         if (show) {
-            // Enter Edit Mode
-            header.classList.add('editing');
-            readMode.classList.add('hidden');
-            editMode.classList.add('visible');
-
-            // Accessible labels for edit mode (no intrusive tooltips in compact top header)
-            const saveBtn = document.getElementById('focusEditSaveBtn');
-            const closeBtn = document.getElementById('focusBackBtn');
-            if (saveBtn) {
-                saveBtn.removeAttribute('data-tooltip');
-                saveBtn.classList.remove('tooltip');
-                saveBtn.setAttribute('aria-label', 'Valider les modifications');
-                saveBtn._tippy?.disable();
-                saveBtn._tippy?.hide();
-            }
-            if (closeBtn) {
-                closeBtn.removeAttribute('data-tooltip');
-                closeBtn.classList.remove('tooltip');
-                closeBtn.setAttribute('aria-label', 'Annuler les modifications');
-                closeBtn._tippy?.disable();
-                closeBtn._tippy?.hide();
-            }
-
-            // === ENABLE avatar editing ===
-            if (avatarEl) {
-                const studentId = avatarContainer.dataset.studentId;
-                avatarEl.classList.add('student-avatar--editable');
-                avatarEl.onclick = studentId
-                    ? () => this.handleAvatarClick(studentId)
-                    : () => this._handlePendingAvatarClick(avatarEl);
-            }
-
-            // Populate Inputs
-            // FORCE null result if in creation mode to ensure we don't load a previous student
-            // CRITICAL FIX: Use generatedResults as source of truth (filteredResults may be stale)
+            // Populate inputs & checkboxes before displaying the edit card to avoid first-frame visual flash
             const nomInput = document.getElementById('headerNomInput');
             const prenomInput = document.getElementById('headerPrenomInput');
             const result = (currentStudentId && !isCreationMode)
@@ -312,12 +278,52 @@ export const FocusPanelHeader = {
                         label.classList.add('tooltip');
                     }
                 });
-
-                setTimeout(() => UI.initTooltips?.(), 0);
                 this._updateLiveAvatarInitials();
+            }
 
+            // Enter Edit Mode
+            header.style.removeProperty('--scroll-p');
+            header.classList.remove('scrolled');
+            header.classList.add('editing');
+            readMode.classList.add('hidden');
+            editMode.classList.add('visible');
+
+            // Accessible labels for edit mode (no intrusive tooltips in compact top header)
+            const saveBtn = document.getElementById('focusEditSaveBtn');
+            const closeBtn = document.getElementById('focusBackBtn');
+            if (saveBtn) {
+                saveBtn.removeAttribute('data-tooltip');
+                saveBtn.classList.remove('tooltip');
+                saveBtn.setAttribute('aria-label', 'Valider les modifications');
+                saveBtn._tippy?.disable();
+                saveBtn._tippy?.hide();
+            }
+            if (closeBtn) {
+                closeBtn.removeAttribute('data-tooltip');
+                closeBtn.classList.remove('tooltip');
+                closeBtn.setAttribute('aria-label', 'Annuler les modifications');
+                closeBtn._tippy?.disable();
+                closeBtn._tippy?.hide();
+            }
+
+            // === ENABLE avatar editing ===
+            if (avatarEl) {
+                const studentId = avatarContainer.dataset.studentId;
+                avatarEl.classList.add('student-avatar--editable');
+                avatarEl.onclick = studentId
+                    ? () => this.handleAvatarClick(studentId)
+                    : () => this._handlePendingAvatarClick(avatarEl);
+            }
+
+            if (result || isCreationMode) {
+                setTimeout(() => UI.initTooltips?.(), 0);
                 const focusTarget = prenomInput || nomInput;
-                if (focusTarget) setTimeout(() => focusTarget.focus(), 100);
+                if (focusTarget) {
+                    const scheduleFocus = typeof requestAnimationFrame === 'function'
+                        ? requestAnimationFrame
+                        : (fn) => setTimeout(fn, 0);
+                    scheduleFocus(() => focusTarget.focus({ preventScroll: true }));
+                }
             }
             return true;
         } else {

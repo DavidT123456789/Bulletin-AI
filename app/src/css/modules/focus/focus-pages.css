@@ -564,50 +564,42 @@
     min-height: 40px;
 }
 
-/* Avatar container inside left zone */
-.focus-header-left .focus-panel-avatar-container {
-    transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
 /* Read Mode (Default) */
 .focus-header-read {
     display: flex;
     align-items: center;
     gap: 16px;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    animation: focusHeaderReadIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.focus-header-read.hidden {
-    opacity: 0;
-    transform: translateY(-10px);
-    position: absolute;
-    pointer-events: none;
+@keyframes focusHeaderReadIn {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.focus-header-read.hidden,
+.focus-header.editing .focus-header-read {
+    display: none !important;
 }
 
 /* Edit Mode (Hidden by default) */
 .focus-header-edit {
     display: none;
     flex-direction: column;
-    gap: 12px;
-    padding: 0;
+    gap: 10px;
+    padding: 2px 0 0 0;
     width: 100%;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transform: translateY(-10px);
-    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-    /* CRITICAL: Prevent invisible inputs from receiving clicks */
-    pointer-events: none;
 }
 
 .focus-header-edit.visible {
     display: flex;
-    gap: 10px;
-    padding: 2px 0 0 0;
-    max-height: none;
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
     overflow: visible;
 }
 

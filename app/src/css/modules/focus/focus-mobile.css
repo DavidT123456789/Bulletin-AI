@@ -18,12 +18,6 @@
         gap: 6px;
     }
 
-    .focus-header:not(.editing) .focus-save-btn {
-        margin-right: -6px;
-    }
-
-
-
     /* Navigation buttons more compact */
     .focus-nav-buttons {
         gap: 2px;
@@ -295,10 +289,6 @@
 
     .focus-header.editing>.focus-close-btn {
         order: 2;
-    }
-
-    .focus-header:not(.editing) .focus-save-btn {
-        margin-right: -8px;
     }
 
     .focus-nav-btn {
