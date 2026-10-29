@@ -318,33 +318,12 @@
     }
 }
 
-/* Focus Panel Header Avatar */
+/* Focus Panel Header Avatar (sizing, transitions & hover managed in focus-header.css) */
 .focus-panel-avatar-container {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.focus-panel-avatar-container .student-avatar {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
-    transition: box-shadow 0.25s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .focus-panel-avatar-container:hover {
-        transform: scale(1.15);
-    }
-
-    .focus-panel-avatar-container:hover .student-avatar {
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-    }
-
-    .focus-panel-avatar-container:hover .avatar-remove-btn {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
 /* Dark Mode Adjustments */

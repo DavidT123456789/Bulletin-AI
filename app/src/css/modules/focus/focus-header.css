@@ -155,7 +155,7 @@
     height: calc(76px - 28px * var(--p)) !important;
     font-size: calc(31px - 11px * var(--p)) !important;
     border: max(0px, calc(1.5px - 10px * var(--p))) solid var(--surface-color) !important;
-    box-shadow: 0 max(0px, calc(2px - 12px * var(--p))) max(0px, calc(8px - 48px * var(--p))) 0 rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 max(0px, calc(2px - 12px * var(--p))) max(0px, calc(8px - 48px * var(--p))) 0 rgba(0, 0, 0, 0.08);
 }
 
 /* Student name & details in read mode */
@@ -314,19 +314,19 @@
     flex-shrink: 0;
     gap: 8px;
     transition:
-        width 0.4s var(--ease-spring),
-        height 0.4s var(--ease-spring),
-        min-width 0.4s var(--ease-spring),
-        min-height 0.4s var(--ease-spring);
+        width 0.42s var(--ease-bounce),
+        height 0.42s var(--ease-bounce),
+        min-width 0.42s var(--ease-bounce),
+        min-height 0.42s var(--ease-bounce);
 }
 
 .focus-header .focus-panel-avatar-container {
     position: relative;
     transition:
-        width 0.4s var(--ease-spring),
-        height 0.4s var(--ease-spring),
-        min-width 0.4s var(--ease-spring),
-        min-height 0.4s var(--ease-spring);
+        width 0.42s var(--ease-bounce),
+        height 0.42s var(--ease-bounce),
+        min-width 0.42s var(--ease-bounce),
+        min-height 0.42s var(--ease-bounce);
 }
 
 .focus-header .focus-panel-avatar-container .student-avatar {
@@ -334,21 +334,38 @@
     height: 76px !important;
     font-size: 31px !important;
     border: 1.5px solid var(--surface-color) !important;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
     margin: 0 !important;
     transition:
-        width 0.4s var(--ease-spring),
-        height 0.4s var(--ease-spring),
-        font-size 0.4s var(--ease-spring),
-        border 0.4s var(--ease-spring),
-        box-shadow 0.4s var(--ease-spring);
+        width 0.42s var(--ease-bounce),
+        height 0.42s var(--ease-bounce),
+        font-size 0.42s var(--ease-bounce),
+        border 0.42s var(--ease-bounce),
+        transform 0.25s var(--ease-bounce),
+        box-shadow 0.25s ease;
 }
 
-/* Disable spring lag during scroll-linked interpolation so --scroll-p stays 1:1 with scrollTop */
+@media (hover: hover) and (pointer: fine) {
+    .focus-header .focus-panel-avatar-container:hover .student-avatar {
+        transform: scale(1.12);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    [data-theme="dark"] .focus-header .focus-panel-avatar-container:hover .student-avatar {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.38);
+    }
+}
+
+/* Disable spring lag on box dimensions during scroll-linked interpolation while preserving hover zoom & shadow transitions */
 .focus-header.scrolled:not(.editing) .focus-header-left,
-.focus-header.scrolled:not(.editing) .focus-panel-avatar-container,
-.focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
     transition: none !important;
+}
+
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+    transition:
+        transform 0.25s var(--ease-bounce),
+        box-shadow 0.25s ease !important;
 }
 
 .focus-header .focus-panel-avatar-container .avatar-selection-overlay {
