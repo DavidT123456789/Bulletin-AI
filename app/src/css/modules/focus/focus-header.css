@@ -260,18 +260,31 @@
     border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
-    animation: focusHeaderEditCardIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: top center;
+    animation: focusHeaderEditCardIn 0.36s var(--ease-spring);
 }
 
 @keyframes focusHeaderEditCardIn {
     from {
         opacity: 0;
-        transform: translateY(-4px);
+        transform: translateY(-8px) scale(0.975);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes focusHeaderControlSpringIn {
+    from {
+        opacity: 0;
+        transform: scale(0.86);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
@@ -286,6 +299,11 @@
     display: none !important;
 }
 
+.focus-header:not(.editing) .focus-analyze-btn,
+.focus-header:not(.editing) .focus-nav-buttons {
+    animation: focusHeaderControlSpringIn 0.34s var(--ease-spring);
+}
+
 /* --- LEFT ZONE: Avatar flush into pill edge --- */
 .focus-header-left {
     position: relative;
@@ -295,10 +313,20 @@
     justify-content: center;
     flex-shrink: 0;
     gap: 8px;
+    transition:
+        width 0.4s var(--ease-spring),
+        height 0.4s var(--ease-spring),
+        min-width 0.4s var(--ease-spring),
+        min-height 0.4s var(--ease-spring);
 }
 
 .focus-header .focus-panel-avatar-container {
     position: relative;
+    transition:
+        width 0.4s var(--ease-spring),
+        height 0.4s var(--ease-spring),
+        min-width 0.4s var(--ease-spring),
+        min-height 0.4s var(--ease-spring);
 }
 
 .focus-header .focus-panel-avatar-container .student-avatar {
@@ -308,6 +336,19 @@
     border: 1.5px solid var(--surface-color) !important;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08) !important;
     margin: 0 !important;
+    transition:
+        width 0.4s var(--ease-spring),
+        height 0.4s var(--ease-spring),
+        font-size 0.4s var(--ease-spring),
+        border 0.4s var(--ease-spring),
+        box-shadow 0.4s var(--ease-spring);
+}
+
+/* Disable spring lag during scroll-linked interpolation so --scroll-p stays 1:1 with scrollTop */
+.focus-header.scrolled:not(.editing) .focus-header-left,
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container,
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+    transition: none !important;
 }
 
 .focus-header .focus-panel-avatar-container .avatar-selection-overlay {
@@ -318,6 +359,8 @@
 .focus-header.editing .focus-panel-avatar-container {
     width: 64px;
     height: 64px;
+    min-width: 64px;
+    min-height: 64px;
 }
 
 .focus-header.editing .focus-panel-avatar-container .student-avatar {
@@ -328,6 +371,17 @@
 
 .focus-header.editing+.focus-pages-container .focus-main-page .focus-content {
     padding-top: 8px;
+    animation: focusContentEditOpen 0.36s var(--ease-spring);
+}
+
+@keyframes focusContentEditOpen {
+    from {
+        transform: translateY(-10px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
 }
 
 .focus-back-btn {
@@ -646,6 +700,7 @@
     box-shadow: var(--shadow-sm) !important;
     border: 1px solid var(--border-color);
     color: var(--success-color);
+    animation: focusHeaderControlSpringIn 0.34s var(--ease-spring);
 }
 
 .focus-header.editing .focus-save-btn:hover {

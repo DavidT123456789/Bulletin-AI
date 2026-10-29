@@ -326,18 +326,6 @@
         font-size: 1.2rem;
     }
 
-    /* Header */
-    .header-left {
-        gap: 4px;
-        flex-shrink: 0;
-    }
-
-    .header-center {
-        position: static;
-        transform: none;
-        flex-grow: 0;
-        flex-shrink: 0;
-    }
 
     /* Toolbar - Compact */
     .output-toolbar {

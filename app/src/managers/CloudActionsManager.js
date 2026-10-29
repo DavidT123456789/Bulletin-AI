@@ -41,8 +41,7 @@ export const CloudActionsManager = {
      * Sauvegarde explicite vers le Cloud.
      * - Données vides : propose la restauration au lieu d'écraser le Cloud.
      * - Cloud plus récent / conflit : modale de résolution adaptée à l'état.
-     * - Réduction de données : modale de confirmation.
-     * - Cas nominal : sauvegarde directe sans modale.
+     * - Cas nominal / réduction de données : modale comparative de confirmation.
      * @param {CloudActionHooks} [hooks]
      * @returns {Promise<boolean>} true si les données ont été envoyées
      */

@@ -475,5 +475,29 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(appState.generatedResults[2].prenom).toBe('Léo');
             expect(appState.generatedResults[2].nom).toBe('GARNIER');
         });
+
+        it('preserves the avatar DOM node on save for smooth spring transitions and skips persistence when nothing changed', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            FocusPanelManager.open('student-1');
+
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState');
+            const avatarBefore = document.querySelector('#focusAvatarContainer .student-avatar');
+            expect(avatarBefore).toBeTruthy();
+
+            // 1. Open and validate without changes -> fast path (0 persistence calls)
+            FocusPanelHeader.toggleEditMode(true);
+            FocusPanelHeader.toggleEditMode(false, false);
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(document.querySelector('#focusAvatarContainer .student-avatar')).toBe(avatarBefore);
+
+            // 2. Open, modify name, and validate -> saves changes while preserving the same .student-avatar DOM node
+            FocusPanelHeader.toggleEditMode(true);
+            document.getElementById('headerPrenomInput').value = 'Jean-Baptiste';
+            FocusPanelHeader.toggleEditMode(false, false);
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(document.querySelector('#focusAvatarContainer .student-avatar')).toBe(avatarBefore);
+            expect(avatarBefore.querySelector('.student-avatar__initials').textContent).toBe('JD');
+            saveSpy.mockRestore();
+        });
     });
 });

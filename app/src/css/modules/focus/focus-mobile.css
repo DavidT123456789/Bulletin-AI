@@ -112,11 +112,16 @@
     .focus-panel-avatar-container {
         width: 64px;
         height: 64px;
+        min-width: 64px;
+        min-height: 64px;
     }
 
+    .focus-header.editing .focus-header-left,
     .focus-header.editing .focus-panel-avatar-container {
         width: 56px;
         height: 56px;
+        min-width: 56px;
+        min-height: 56px;
     }
 
     .focus-header .focus-panel-avatar-container .student-avatar {

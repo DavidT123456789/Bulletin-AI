@@ -447,6 +447,10 @@
 }
 
 @media (max-width: 600px) {
+    .header-gen-dashboard {
+        height: 40px;
+    }
+
     #dashModelName {
         display: none !important;
     }

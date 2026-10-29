@@ -465,13 +465,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
         background-color: var(--surface-color);
         box-shadow: var(--shadow-elevation);
     }
-
-    .cloud-sync-indicator.minimal-cloud:hover {
-        color: var(--text-primary);
-        background-color: var(--surface-color);
-        box-shadow: var(--shadow-elevation);
-        transform: translateY(-1px);
-    }
 }
 
 .header-actions-pill .pill-segment.active,
@@ -494,231 +487,31 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
 }
 
 /* ====================================================================
-   Nouveau système: Menu unifié + Cloud minimal
+   Menu unifié : Animation organique des 3 points (Mise à jour & Cloud)
+   Construit via : 1. ::before (Gauche)  2. <iconify-icon>/<i> (Centre)  3. ::after (Droite)
    ==================================================================== */
-
-/* 1. Cloud Indicator Minimalist */
-.cloud-sync-indicator.minimal-cloud {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    position: relative;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    /* Default state */
-    transition: all var(--transition-fast);
-}
-
-.cloud-sync-indicator.minimal-cloud:active {
-    transform: scale(0.92);
-    background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
-    box-shadow: none;
-}
-
-[data-theme="dark"] .cloud-sync-indicator.minimal-cloud:hover {
-    background-color: var(--surface-color);
-    /* Ensure contrast in dark mode too */
-    box-shadow: var(--shadow-elevation);
-    /* Stronger shadow in dark mode */
-}
-
-.cloud-sync-indicator.minimal-cloud i.fa-cloud,
-.cloud-sync-indicator.minimal-cloud i.fa-hard-drive {
-    font-size: 20px;
-    /* User request: Cloud always white with dark grey outline */
-    color: #ffffff;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
-    -webkit-text-stroke: 1px #374151;
-    /* Gray-700 */
-    transition: all var(--transition-fast);
-}
-
-/* Status dot instead of complex badge */
-.cloud-sync-indicator.minimal-cloud .cloud-status-badge {
-    position: absolute;
-    bottom: 6px;
-    right: 6px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: transparent;
-    /* Default hidden/transparent */
-    border: 2px solid var(--bg-secondary);
-    /* Border to cut circle */
-    padding: 0;
-    pointer-events: none;
-}
-
-/* Override existing badge content (we want dots only) */
-.cloud-sync-indicator.minimal-cloud .cloud-status-badge i {
-    display: none;
-}
-
-/* Status colors map to the dot */
-/* État connecté - Nuage BLANC (fixe), point VERT */
-.cloud-sync-indicator.connected {
-    color: inherit;
-    /* Icon handles its own color */
-}
-
-[data-theme="dark"] .cloud-sync-indicator.connected {
-    color: inherit;
-}
-
-.cloud-sync-indicator.connected:hover {
-    background-color: var(--surface-color);
-    box-shadow: var(--shadow-elevation);
-}
-
-[data-theme="dark"] .cloud-sync-indicator.connected:hover {
-    background-color: var(--surface-color);
-}
-
-.cloud-sync-indicator.connected .cloud-status-badge {
-    background: var(--success-color);
-    border: 2px solid var(--surface-color);
-    /* Cutout effect */
-    box-shadow: none;
-    width: 10px;
-    height: 10px;
-    bottom: 4px;
-    right: 4px;
-}
-
-/* État expiré - Nuage BLANC (fixe), point ORANGE */
-.cloud-sync-indicator.expired {
-    color: inherit;
-    cursor: pointer;
-    background-color: transparent;
-}
-
-.cloud-sync-indicator.expired:hover {
-    background-color: var(--surface-color);
-    box-shadow: var(--shadow-elevation);
-    transform: translateY(-1px);
-}
-
-.cloud-sync-indicator.expired .cloud-status-badge {
-    background: var(--warning-color);
-    border: 2px solid var(--surface-color);
-    width: 10px;
-    height: 10px;
-    bottom: 4px;
-    right: 4px;
-}
-
-/* État en cours de synchronisation - Spinner */
-/* État en cours de synchronisation - Spinner */
-.cloud-sync-indicator.syncing {
-    color: var(--text-tertiary) !important;
-    /* Force gray */
-    cursor: wait;
-}
-
-.cloud-sync-indicator.syncing .cloud-status-badge {
-    display: block !important;
-    background: transparent !important;
-    border: 2px solid rgba(156, 163, 175, 0.3);
-    border-top-color: var(--primary-color);
-    border-radius: 50%;
-    width: 10px;
-    /* Match dot size */
-    height: 10px;
-    bottom: 4px;
-    /* Match dot position */
-    right: 4px;
-    box-shadow: none;
-    animation: spin-badge 0.8s linear infinite;
-    z-index: 10;
-}
-
-/* Fix: Disable main icon rotation */
-.cloud-sync-indicator.syncing i.fa-cloud,
-.cloud-sync-indicator.syncing i.fa-hard-drive {
-    animation: none !important;
-    transform: none !important;
-}
-
-.cloud-sync-indicator.local .cloud-status-badge {
-    display: none;
-}
-
-@keyframes spin-badge {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-
-/* Indicator active: Organic animation of the 3 dots (Pure CSS) */
-.menu-btn.has-update,
-.menu-btn.has-cloud-reminder,
-.menu-btn.has-cloud-warning,
-.menu-btn.has-cloud-conflict,
-.menu-btn.cloud-syncing {
-    /* Switch to row layout to align with horizontal icon style */
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing) {
     flex-direction: row;
     gap: 3px;
-    /* Ensure icon color transition works */
     color: var(--text-secondary);
-}
-
-/* 
-   We construct the 3 dots using:
-   1. ::before (Top)
-   2. The existing <i> element (Middle)
-   3. ::after (Bottom)
-*/
-
-/* Shared logic for all 3 dots (update & cloud backup reminder) */
-.menu-btn.has-update,
-.menu-btn.has-cloud-reminder,
-.menu-btn.cloud-syncing {
     --dot-target-bg: var(--color-sky-deep);
 }
 
-[data-theme="dark"] .menu-btn.has-update,
-[data-theme="dark"] .menu-btn.has-cloud-reminder,
-[data-theme="dark"] .menu-btn.cloud-syncing {
+[data-theme="dark"] .menu-btn:is(.has-update, .has-cloud-reminder, .cloud-syncing) {
     --dot-target-bg: var(--color-sky-bright);
 }
 
-/* Specific styling for version conflict and session warning (warning color) */
-.menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing),
-.menu-btn.has-cloud-warning:not(.has-update):not(.cloud-syncing) {
+.menu-btn:is(.has-cloud-conflict, .has-cloud-warning):not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-color);
 }
 
-[data-theme="dark"] .menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing),
-[data-theme="dark"] .menu-btn.has-cloud-warning:not(.has-update):not(.cloud-syncing) {
+[data-theme="dark"] .menu-btn:is(.has-cloud-conflict, .has-cloud-warning):not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-bright);
 }
 
-.menu-btn.has-update::before,
-.menu-btn.has-update::after,
-.menu-btn.has-update i,
-.menu-btn.has-update iconify-icon,
-.menu-btn.has-cloud-reminder::before,
-.menu-btn.has-cloud-reminder::after,
-.menu-btn.has-cloud-reminder i,
-.menu-btn.has-cloud-reminder iconify-icon,
-.menu-btn.has-cloud-warning::before,
-.menu-btn.has-cloud-warning::after,
-.menu-btn.has-cloud-warning i,
-.menu-btn.has-cloud-warning iconify-icon,
-.menu-btn.has-cloud-conflict::before,
-.menu-btn.has-cloud-conflict::after,
-.menu-btn.has-cloud-conflict i,
-.menu-btn.has-cloud-conflict iconify-icon,
-.menu-btn.cloud-syncing::before,
-.menu-btn.cloud-syncing::after,
-.menu-btn.cloud-syncing i,
-.menu-btn.cloud-syncing iconify-icon {
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing)::before,
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing)::after,
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing) :is(i, iconify-icon) {
     content: '';
     display: block;
     width: 3.5px;
@@ -728,86 +521,39 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
     border-radius: 50%;
     background-color: var(--text-secondary);
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* Animation base: organic floating wave without fuzzy glow */
     animation: organic-pulse-dots 2.0s infinite cubic-bezier(0.4, 0, 0.2, 1);
-    /* Override FA specific styles for the middle dot */
-    font-size: 0;
+    font-size: 0 !important;
+    color: transparent !important;
     line-height: 0;
     padding: 0;
     margin: 0;
     border: none;
+    overflow: hidden;
 }
 
-/* Specific overrides to hide the original font icon glyph */
-.menu-btn.has-update i::before,
-.menu-btn.has-update iconify-icon::part(svg),
-.menu-btn.has-cloud-reminder i::before,
-.menu-btn.has-cloud-reminder iconify-icon::part(svg),
-.menu-btn.has-cloud-warning i::before,
-.menu-btn.has-cloud-warning iconify-icon::part(svg),
-.menu-btn.has-cloud-conflict i::before,
-.menu-btn.has-cloud-conflict iconify-icon::part(svg),
-.menu-btn.cloud-syncing i::before,
-.menu-btn.cloud-syncing iconify-icon::part(svg) {
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing) i::before {
     display: none !important;
 }
 
-/* For iconify-icon, we might need to hide the content differently since it uses Shadow DOM or direct SVG */
-.menu-btn.has-update iconify-icon,
-.menu-btn.has-cloud-reminder iconify-icon,
-.menu-btn.has-cloud-warning iconify-icon,
-.menu-btn.has-cloud-conflict iconify-icon,
-.menu-btn.cloud-syncing iconify-icon {
-    /* When active, we actually want to turn the ELEMENT ITSELF into a dot, ignoring its SVG content */
-    background: transparent;
-    /* Reset background */
-}
-
-/* Stagger delay for wave effect (Left -> Right) */
-.menu-btn.has-update::before,
-.menu-btn.has-cloud-reminder::before,
-.menu-btn.has-cloud-warning::before,
-.menu-btn.has-cloud-conflict::before {
+/* Décalage progressif de l'onde (Gauche -> Droite) */
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing)::before {
     animation-delay: 0s;
 }
 
-.menu-btn.has-update i,
-.menu-btn.has-update iconify-icon,
-.menu-btn.has-cloud-reminder i,
-.menu-btn.has-cloud-reminder iconify-icon,
-.menu-btn.has-cloud-warning i,
-.menu-btn.has-cloud-warning iconify-icon,
-.menu-btn.has-cloud-conflict i,
-.menu-btn.has-cloud-conflict iconify-icon {
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing) :is(i, iconify-icon) {
     animation-delay: 0.15s;
 }
 
-.menu-btn.has-update::after,
-.menu-btn.has-cloud-reminder::after,
-.menu-btn.has-cloud-warning::after,
-.menu-btn.has-cloud-conflict::after {
+.menu-btn:is(.has-update, .has-cloud-reminder, .has-cloud-warning, .has-cloud-conflict, .cloud-syncing)::after {
     animation-delay: 0.3s;
 }
 
-/* Active cloud syncing: rapid energetic rhythm (0.9s cycle) */
+/* Synchronisation Cloud active : rythme rapide (cycle 0.9s) */
 .menu-btn.cloud-syncing::before,
 .menu-btn.cloud-syncing::after,
-.menu-btn.cloud-syncing i,
-.menu-btn.cloud-syncing iconify-icon {
-    animation: syncing-pulse-dots 0.9s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.menu-btn.cloud-syncing::before {
-    animation-delay: 0s;
-}
-
-.menu-btn.cloud-syncing i,
-.menu-btn.cloud-syncing iconify-icon {
-    animation-delay: 0.15s;
-}
-
-.menu-btn.cloud-syncing::after {
-    animation-delay: 0.3s;
+.menu-btn.cloud-syncing :is(i, iconify-icon) {
+    animation-name: syncing-pulse-dots;
+    animation-duration: 0.9s;
 }
 
 @keyframes organic-pulse-dots {
@@ -1220,167 +966,11 @@ button > .icon-spin-wrapper {
 }
 
 /* Separator Line */
-#darkModeToggle {
-    width: 36px;
-    height: 20px;
-    background-color: var(--border-color);
-    border-radius: 20px;
-    border: none;
-    position: relative;
-    cursor: pointer;
-    padding: 0;
-    transition: background-color 0.3s;
-    flex-shrink: 0;
-}
-
-#darkModeToggle::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background-color: white;
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-/* Active state for toggle is handled by data-theme on body usually, but button itself might not have class.
-   Actually current implementation toggles theme on #darkModeToggle CLICK.
-   But we want a visual switch now.
-   I need to make sure the button visual state matches the theme.
-   Since theme is global, I will style based on [data-theme="dark"] parent logic?
-   No, the button state logic is simple toggle.
-   If dark mode is active, I need to style this button as 'on'.
-*/
-
-[data-theme="dark"] #darkModeToggle {
-    background-color: var(--primary-color);
-}
-
-[data-theme="dark"] #darkModeToggle::after {
-    transform: translateX(16px);
-}
-
-/* Hide original icon inside dark mode toggle if present */
-#darkModeToggle i {
-    display: none;
-}
-
-/* Separator Line */
 .menu-separator {
     height: 1px;
     background-color: var(--border-color);
     margin: 4px 0;
     width: 100%;
-}
-
-/* Pill Divider (Vertical line in pill) - Hidden in minimalist mode */
-.pill-divider {
-    display: none;
-}
-
-/* ====================================================================
-   Cloud Sync Indicator - États de connexion Google Drive
-   ==================================================================== */
-.cloud-sync-indicator {
-    position: relative;
-}
-
-/* Annuler le scale sur l'icône pour éviter que le badge bouge */
-.cloud-sync-indicator:hover i.fa-cloud {
-    transform: none;
-}
-
-/* Badge de statut (coche ou exclamation) */
-.cloud-status-badge {
-    position: absolute;
-    bottom: 3px;
-    right: 3px;
-    border-radius: 50%;
-    width: 12px;
-    height: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    font-size: 7px;
-    line-height: 1;
-}
-
-.cloud-status-badge i {
-    font-size: 7px;
-}
-
-/* CSS Blocks Cleaned Up - Merged above */
-
-
-/* Animation supprimée pour éviter l'effet "erreur critique" trop agressif */
-@keyframes cloud-pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1);
-    }
-}
-
-/* État synchronisation en cours - Rotation */
-.cloud-sync-indicator.syncing {
-    color: currentColor;
-}
-
-.cloud-sync-indicator.syncing>i.fa-cloud {
-    animation: cloud-sync-spin 1.5s linear infinite;
-}
-
-.cloud-sync-indicator.syncing .cloud-status-badge {
-    display: none;
-}
-
-@keyframes cloud-sync-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-/* État local - Mode hors-ligne ou non configuré */
-.cloud-sync-indicator.local {
-    color: var(--text-tertiary);
-    cursor: pointer;
-    opacity: 0.8;
-    /* Légère transparence pour le rendre passif */
-}
-
-/* Au survol, on le rend plus visible pour inciter au clic */
-.cloud-sync-indicator.local:hover {
-    color: var(--text-primary);
-    opacity: 1;
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-/* Adaptation Dark Mode pour le hover local */
-[data-theme="dark"] .cloud-sync-indicator.local:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* État déconnecté - Visible mais grisé */
-.cloud-sync-indicator.disconnected {
-    color: var(--text-tertiary);
-    opacity: 0.5;
-}
-
-/* Tous les états sauf syncing sont cliquables */
-.cloud-sync-indicator:not(.syncing) {
-    cursor: pointer;
 }
 
 /* ====================================================================
@@ -1539,8 +1129,8 @@ button > .icon-spin-wrapper {
         min-width: 0;
     }
 
-    .class-selector-wrapper,
-    .header-context-chip {
+    .header .class-selector-wrapper,
+    .header .header-context-chip {
         min-width: 0;
     }
 
@@ -1550,8 +1140,8 @@ button > .icon-spin-wrapper {
         gap: 4px;
     }
 
-    .header-context-chip {
-        padding: 6px 10px;
+    .header .header-context-chip {
+        padding: 0 10px;
         gap: 6px;
     }
 
@@ -1576,8 +1166,8 @@ button > .icon-spin-wrapper {
 
 @media (max-width: 600px) {
     .header-left,
-    .class-selector-wrapper,
-    .header-context-chip {
+    .header .class-selector-wrapper,
+    .header .header-context-chip {
         flex-shrink: 1;
         min-width: 0;
     }
@@ -1599,7 +1189,7 @@ button > .icon-spin-wrapper {
         flex-shrink: 0;
     }
 
-    .class-chip .student-count-badge {
+    .header .class-chip .student-count-badge {
         padding: 0 6.5px;
         min-width: 22px;
         height: 20px;
@@ -1607,9 +1197,8 @@ button > .icon-spin-wrapper {
         gap: 3.5px;
     }
 
-    .header-context-chip,
+    .header .header-context-chip,
     .ui-segmented-control.header-style,
-    .header-gen-dashboard,
     .header-actions-pill {
         height: 40px;
     }
@@ -1630,13 +1219,6 @@ button > .icon-spin-wrapper {
     .menu-btn {
         width: 40px;
         height: 40px;
-    }
-
-    .header-actions-pill .pill-segment iconify-icon,
-    .header-actions-pill .pill-segment i,
-    .menu-btn iconify-icon,
-    .menu-btn i {
-        font-size: 21px;
     }
 
     .ui-segmented-control.header-style .ui-segment {
@@ -1666,10 +1248,9 @@ button > .icon-spin-wrapper {
 
     .header-left {
         gap: 4px;
-        min-width: 0;
     }
 
-    .header-context-chip {
+    .header .header-context-chip {
         padding: 0 8px;
         gap: 5px;
     }
@@ -1678,20 +1259,14 @@ button > .icon-spin-wrapper {
         max-width: 72px;
     }
 
-    .header-actions {
-        gap: 2px;
-    }
-
+    .header-actions,
     .header-center {
-        position: static;
-        transform: none;
         gap: 2px;
     }
 
     .ui-segmented-control.header-style .ui-segment {
         min-width: 34px;
         padding: 0 9px !important;
-        font-size: 13px !important;
     }
 
     .ui-segmented-control.header-style.view-toggle .ui-segment {
@@ -1702,11 +1277,6 @@ button > .icon-spin-wrapper {
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
         min-width: 31px;
         padding: 0 7.5px !important;
-    }
-
-    /* Pilule plus compacte sur mobile */
-    .header-actions-pill {
-        padding: 0;
     }
 
     .section-title {

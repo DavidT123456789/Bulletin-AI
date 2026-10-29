@@ -967,6 +967,7 @@ export const SeatingState = {
         if (this._isLocked) return;
         const posKey = this._getActivePositionKey();
         const lockKey = this._getActiveClassLockKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
         const result = appState.generatedResults?.find(r => r.id === resultId);
         if (!result?.[posKey]) return;
 
@@ -979,7 +980,10 @@ export const SeatingState = {
 
         this._hasChangesSinceUnlock = true;
         const currentClass = this._getCurrentClass();
-        if (currentClass) currentClass[lockKey] = false;
+        if (currentClass) {
+            currentClass[updatedKey] = Date.now();
+            currentClass[lockKey] = false;
+        }
         StorageManager.saveAppState();
         this._updateCellPinDOM(result[posKey].row, result[posKey].col, nextPinned);
         this._haptic(10);
@@ -996,6 +1000,7 @@ export const SeatingState = {
 
         const posKey = this._getActivePositionKey();
         const lockKey = this._getActiveClassLockKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
         const anyPinned = cellIds.some(id => {
             const r = appState.generatedResults?.find(x => x.id === id);
             return Boolean(r?.[posKey]?.pinned);
@@ -1016,7 +1021,10 @@ export const SeatingState = {
 
         this._hasChangesSinceUnlock = true;
         const currentClass = this._getCurrentClass();
-        if (currentClass) currentClass[lockKey] = false;
+        if (currentClass) {
+            currentClass[updatedKey] = Date.now();
+            currentClass[lockKey] = false;
+        }
         StorageManager.saveAppState();
         this._updateCellPinDOM(row, col, nextPinned);
         this._haptic(10);

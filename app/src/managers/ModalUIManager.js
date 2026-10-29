@@ -998,6 +998,7 @@ export const ModalUI = {
         isMissingLocalStudents = false,
         hasLocalChanges = false,
         isInSync = false,
+        isFirstSync = false,
         resolvedProviderLabel = 'Google Drive',
         resolvedProviderIcon = 'logos:google-drive'
     }) {
@@ -1020,6 +1021,14 @@ export const ModalUI = {
         const localSubStatHtml = isVolumeIdentical
             ? ''
             : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
+
+        const cloudMainStatText = cloudDateParts
+            ? cloudDateParts.relative
+            : (isFirstSync ? 'Aucune sauvegarde' : 'Date inconnue');
+
+        const cloudExactDateHtml = cloudDateParts
+            ? `<div class="restore-card-exact-date">${cloudDateParts.absolute}</div>`
+            : (isFirstSync ? '<div class="restore-card-exact-date">Première synchronisation</div>' : '');
 
         const localMainStatText = hasLocalChanges
             ? (localDateParts ? localDateParts.relative : 'À l\'instant')
@@ -1046,9 +1055,9 @@ export const ModalUI = {
                                 <span>${resolvedProviderLabel}</span>
                             </div>
                             <div class="restore-card-main-stat">
-                                ${cloudDateParts ? cloudDateParts.relative : 'Date inconnue'}
+                                ${cloudMainStatText}
                             </div>
-                            ${cloudDateParts ? `<div class="restore-card-exact-date">${cloudDateParts.absolute}</div>` : ''}
+                            ${cloudExactDateHtml}
                             ${cloudSubStatHtml}
                         </div>
 
@@ -1274,10 +1283,13 @@ export const ModalUI = {
 
             const hasDataShrinkageWarning = rStudentCount !== null && lStudentCount < rStudentCount;
             const isVolumeIdentical = rStudentCount === null || rStudentCount === lStudentCount;
+            const isFirstSync = !lastSyncTime && rStudentCount === null && !isInSync && !localStorage.getItem('bulletin_last_sync');
             const hasLocalChanges = !isInSync;
 
             const diffItems = (!hasDataShrinkageWarning && hasLocalChanges)
-                ? this._getLocalDiffDetails({ lastSyncTime, remoteStudentCount: rStudentCount, localStudentCount: lStudentCount })
+                ? (isFirstSync && lStudentCount > 0
+                    ? [{ icon: 'solar:users-group-rounded-bold', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
+                    : this._getLocalDiffDetails({ lastSyncTime, remoteStudentCount: rStudentCount, localStudentCount: lStudentCount }))
                 : [];
 
             const comparisonGridHtml = this._renderCloudComparisonGrid({
@@ -1291,6 +1303,7 @@ export const ModalUI = {
                 isMissingLocalStudents: false,
                 hasLocalChanges,
                 isInSync,
+                isFirstSync,
                 resolvedProviderLabel,
                 resolvedProviderIcon
             });

@@ -105,7 +105,13 @@ export const FocusPanelEvents = {
         }
 
         if (backBtn) {
-            backBtn.addEventListener('pointerdown', preCloseHandler);
+            backBtn.addEventListener('pointerdown', (e) => {
+                const header = document.querySelector('.focus-header');
+                if (header?.classList.contains('editing')) {
+                    e.preventDefault();
+                }
+                preCloseHandler();
+            });
             backBtn.addEventListener('click', () => {
                 const header = document.querySelector('.focus-header');
                 const isEditing = header?.classList.contains('editing');
@@ -226,7 +232,7 @@ export const FocusPanelEvents = {
                 result.studentData.periods[currentPeriod].context = target.value;
                 changed = true;
                 panel._isContextEdited = true;
-            } else if (target.type === 'checkbox' && target.closest('.focus-header-edit')) {
+            } else if (e.type === 'change' && target.type === 'checkbox' && target.closest('.focus-header-edit')) {
                 const allBoxes = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]'));
                 const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
                 const allCheckboxValues = allBoxes.map(cb => cb.value);

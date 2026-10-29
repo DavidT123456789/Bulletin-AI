@@ -569,18 +569,19 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    animation: focusHeaderReadIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: left center;
+    animation: focusHeaderReadIn 0.38s var(--ease-spring);
 }
 
 @keyframes focusHeaderReadIn {
     from {
         opacity: 0;
-        transform: translateY(3px);
+        transform: translateX(-8px) scale(0.95);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0) scale(1);
     }
 }
 

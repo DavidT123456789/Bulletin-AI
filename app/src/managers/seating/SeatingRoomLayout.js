@@ -611,6 +611,7 @@ export const SeatingRoomLayout = {
         }
         appState[gridKey] = nextGrid;
         if (currentClass && this._hasChangesSinceUnlock && !locked) {
+            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
             currentClass[lockKey] = false;
         }
         if (this._hasChangesSinceUnlock || (locked && classLocked)) {
@@ -828,8 +829,12 @@ export const SeatingRoomLayout = {
         }
 
         this._hasChangesSinceUnlock = true;
-        if (currentClass) currentClass[lockKey] = false;
+        if (currentClass) {
+            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
+            currentClass[lockKey] = false;
+        }
         this._saveGridConfig();
+        StorageManager.saveAppState();
         this._render();
     },
 
@@ -866,8 +871,12 @@ export const SeatingRoomLayout = {
         }
 
         this._hasChangesSinceUnlock = true;
-        if (currentClass) currentClass[lockKey] = false;
+        if (currentClass) {
+            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
+            currentClass[lockKey] = false;
+        }
         this._saveGridConfig();
+        StorageManager.saveAppState();
         this._render();
     }
 };

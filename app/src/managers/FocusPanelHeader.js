@@ -120,7 +120,6 @@ export const FocusPanelHeader = {
         const focusEditSaveBtn = document.getElementById('focusEditSaveBtn');
         const nomInput = document.getElementById('headerNomInput');
         const prenomInput = document.getElementById('headerPrenomInput');
-        const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes') || document.querySelector('.focus-header-edit .focus-status-selection');
 
         const initiateEdit = () => {
             const header = document.querySelector('.focus-header');
@@ -139,6 +138,9 @@ export const FocusPanelHeader = {
         }
 
         if (focusEditSaveBtn) {
+            focusEditSaveBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+            });
             focusEditSaveBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.toggleEditMode(false); // Validates and closes
@@ -148,7 +150,6 @@ export const FocusPanelHeader = {
 
         const handleIdentityInput = () => {
             this._updateLiveAvatarInitials();
-            this.callbacks.onRefreshStatus();
         };
 
         const handleIdentityKeydown = (e) => {
@@ -170,10 +171,6 @@ export const FocusPanelHeader = {
         if (prenomInput) {
             prenomInput.addEventListener('input', handleIdentityInput);
             prenomInput.addEventListener('keydown', handleIdentityKeydown);
-        }
-
-        if (statusesContainer) {
-            statusesContainer.addEventListener('change', () => this.callbacks.onRefreshStatus());
         }
     },
 
@@ -328,6 +325,11 @@ export const FocusPanelHeader = {
             return true;
         } else {
             // Exit Edit Mode
+            if (typeof FocusPanelManager !== 'undefined' && FocusPanelManager._uiUpdateTimeout) {
+                clearTimeout(FocusPanelManager._uiUpdateTimeout);
+                FocusPanelManager._uiUpdateTimeout = null;
+            }
+
             if (cancel && isCreationMode) {
                 // Cancel in creation mode: clean up and close panel
                 this.clearPendingAvatarData();
@@ -339,52 +341,95 @@ export const FocusPanelHeader = {
                     FocusPanelManager.close({ cancelCreation: true });
                 }
                 return false;
-            } else if (cancel && this._originalHeaderValues) {
-                // RESTORE original values to inputs (for visual consistency)
+            }
+
+            const firstContentCard = document.querySelector('.focus-main-page .focus-content > :first-child');
+            const beforeCloseTop = firstContentCard ? firstContentCard.getBoundingClientRect().top : null;
+
+            if (cancel && this._originalHeaderValues) {
+                const orig = this._originalHeaderValues;
                 const nomInput = document.getElementById('headerNomInput');
                 const prenomInput = document.getElementById('headerPrenomInput');
-                if (nomInput) nomInput.value = this._originalHeaderValues.nom;
-                if (prenomInput) prenomInput.value = this._originalHeaderValues.prenom;
+                if (nomInput) nomInput.value = orig.nom;
+                if (prenomInput) prenomInput.value = orig.prenom;
 
-                // Restore checkboxes
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = this._isCheckboxActive(this._originalHeaderValues.statuses, cb.value);
+                    cb.checked = this._isCheckboxActive(orig.statuses, cb.value);
                 });
 
-                // CRITICAL FIX: Revert mutated state that was modified live by handleDataChange
-                const resultToRevert = appState.generatedResults.find(r => r.id === currentStudentId);
-                if (resultToRevert) {
-                    resultToRevert.nom = this._originalHeaderValues.nom;
-                    resultToRevert.prenom = this._originalHeaderValues.prenom;
-                    resultToRevert.studentData.statuses = [...this._originalHeaderValues.statuses];
-
-                    // Sync the reverted state to filteredResults too
-                    StudentDataManager.syncFilteredStudent(currentStudentId, resultToRevert);
-
-                    this.callbacks.onUpdateListRow(resultToRevert);
-
-                    // Refresh the status so 'Mettre à jour' badge correctly reverts if we cancelled
-                    this.callbacks.onRefreshStatus();
-                }
-
                 this._updateLiveAvatarInitials();
-
-                // Clear stored values and pending photo
                 this._originalHeaderValues = null;
                 this.clearPendingAvatarData();
+
+                const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || avatarEl;
+                this._exitEditModeUI(header, readMode, editMode, currentAvatarEl);
+                this._animateContentCloseFlip(beforeCloseTop);
+
+                const resultToRevert = appState.generatedResults.find(r => r.id === currentStudentId);
+                if (resultToRevert) {
+                    const statusesMutated = !Utils.isEqual(resultToRevert.studentData.statuses || [], orig.statuses || []);
+                    resultToRevert.nom = orig.nom;
+                    resultToRevert.prenom = orig.prenom;
+                    resultToRevert.studentData.statuses = [...orig.statuses];
+
+                    if (statusesMutated) {
+                        StudentDataManager.syncFilteredStudent(currentStudentId, resultToRevert);
+                        this.callbacks.onUpdateListRow(resultToRevert);
+                        this.callbacks.onRefreshStatus();
+                    }
+                }
+                return true;
             } else if (!cancel) {
-                const saved = this._saveHeaderChanges();
+                const saved = this._saveHeaderChanges({
+                    beforeCloseTop,
+                    header,
+                    readMode,
+                    editMode,
+                    avatarEl
+                });
                 if (saved === false) {
                     return false;
                 }
                 this._originalHeaderValues = null;
+                return true;
             }
 
-            // Clean up UI
+            // Fallback clean up UI
             const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || avatarEl;
             this._exitEditModeUI(header, readMode, editMode, currentAvatarEl);
+            this._animateContentCloseFlip(beforeCloseTop);
             return true;
+        }
+    },
+
+    /**
+     * Smoothly springs lower content cards back into place when closing header edit mode (FLIP)
+     * @param {number|null} beforeTop
+     * @private
+     */
+    _animateContentCloseFlip(beforeTop) {
+        if (beforeTop === null) return;
+        const panelEl = document.getElementById('focusPanel');
+        if (!panelEl || !panelEl.classList.contains('open')) return;
+
+        const focusContent = panelEl.querySelector('.focus-main-page .focus-content');
+        const firstCard = focusContent?.firstElementChild;
+        if (!focusContent || !firstCard || typeof focusContent.animate !== 'function') return;
+
+        const afterTop = firstCard.getBoundingClientRect().top;
+        const deltaY = beforeTop - afterTop;
+        if (Math.abs(deltaY) > 2) {
+            focusContent.animate(
+                [
+                    { transform: `translateY(${deltaY}px)` },
+                    { transform: 'translateY(0)' }
+                ],
+                {
+                    duration: 380,
+                    easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.15)'
+                }
+            );
         }
     },
 
@@ -393,6 +438,10 @@ export const FocusPanelHeader = {
      * @private
      */
     _exitEditModeUI(header, readMode, editMode, avatarEl) {
+        if (editMode && document.activeElement && editMode.contains(document.activeElement)) {
+            document.activeElement.blur?.();
+        }
+
         // Disable avatar editing
         if (avatarEl) {
             avatarEl.classList.remove('student-avatar--editable', 'student-avatar--empty-name', 'tooltip');
@@ -422,10 +471,11 @@ export const FocusPanelHeader = {
 
     /**
      * Saves changes made in the Header Edit Mode
+     * @param {Object} [uiContext] - Optional UI elements to transition immediately before persistence
      * @returns {boolean} True if changes were saved, false if validation failed
      * @private
      */
-    _saveHeaderChanges() {
+    _saveHeaderChanges(uiContext = {}) {
         const nomInput = document.getElementById('headerNomInput');
         const prenomInput = document.getElementById('headerPrenomInput');
         const currentStudentId = this.callbacks.getCurrentStudentId();
@@ -441,8 +491,45 @@ export const FocusPanelHeader = {
             return false;
         }
 
-        let result;
+        const newNom = nomVal.toUpperCase();
+        const newPrenom = prenomVal;
         const wasCreating = isCreationMode || !currentStudentId;
+        const editMode = uiContext.editMode || document.querySelector('.focus-header-edit');
+
+        let result;
+        if (!wasCreating) {
+            result = appState.generatedResults.find(r => r.id === currentStudentId);
+            if (!result) return false;
+        }
+
+        // Compute merged statuses before deciding whether anything changed
+        let mergedStatuses = result?.studentData?.statuses || [];
+        if (editMode) {
+            const allBoxes = Array.from(editMode.querySelectorAll('input[type="checkbox"]'));
+            const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
+            const allCheckboxValues = allBoxes.map(cb => cb.value);
+            const baseStatuses = this._originalHeaderValues?.statuses || result?.studentData?.statuses || [];
+            mergedStatuses = this.mergeEditedStatuses(baseStatuses, checkedValues, allCheckboxValues);
+        }
+
+        const orig = this._originalHeaderValues;
+        const hasChanges = wasCreating
+            || Boolean(this._pendingAvatarData)
+            || !orig
+            || (orig.nom || '').toUpperCase() !== newNom
+            || (orig.prenom || '') !== newPrenom
+            || !Utils.isEqual(orig.statuses || [], mergedStatuses);
+
+        if (!hasChanges) {
+            // Fast path: nothing modified — transition UI immediately with zero persistence overhead
+            const avatarContainer = document.getElementById('focusAvatarContainer');
+            const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || uiContext.avatarEl;
+            if (uiContext.header) {
+                this._exitEditModeUI(uiContext.header, uiContext.readMode, editMode, currentAvatarEl);
+                this._animateContentCloseFlip(uiContext.beforeCloseTop ?? null);
+            }
+            return true;
+        }
 
         if (wasCreating) {
             // === CREATION MODE ===
@@ -451,11 +538,11 @@ export const FocusPanelHeader = {
 
             result = {
                 id: newId,
-                nom: nomVal.toUpperCase(),
-                prenom: prenomVal,
+                nom: newNom,
+                prenom: newPrenom,
                 classId: userSettings?.academic?.currentClassId || appState?.currentClassId || null,
                 studentData: {
-                    statuses: [],
+                    statuses: mergedStatuses,
                     periods: {
                         [currentPeriod]: {}
                     }
@@ -517,48 +604,49 @@ export const FocusPanelHeader = {
             // Update tracking via callbacks
             this.callbacks.setCurrentStudentId(newId);
             this.callbacks.setIsCreationMode(false);
-
-            UI.showNotification('Élève créé avec succès', 'success');
         } else {
             // === EDIT MODE ===
-            result = appState.generatedResults.find(r => r.id === currentStudentId);
-            if (!result) return false;
-
-            if (nomInput) result.nom = nomVal.toUpperCase();
-            if (prenomInput) result.prenom = prenomVal;
+            if (nomInput) result.nom = newNom;
+            if (prenomInput) result.prenom = newPrenom;
+            result.studentData.statuses = mergedStatuses;
         }
 
-        // 2. Save Statuses (Common)
-        const editMode = document.querySelector('.focus-header-edit');
-        if (editMode) {
-            const allBoxes = Array.from(editMode.querySelectorAll('input[type="checkbox"]'));
-            const checkedValues = allBoxes.filter(cb => cb.checked).map(cb => cb.value);
-            const allCheckboxValues = allBoxes.map(cb => cb.value);
-            const baseStatuses = this._originalHeaderValues?.statuses || result.studentData.statuses || [];
-            result.studentData.statuses = this.mergeEditedStatuses(baseStatuses, checkedValues, allCheckboxValues);
-        }
-
-        // 3. Persist
-        StorageManager.saveAppState();
-
-        // 4. Update View
+        // Update Header View in place (preserve existing .student-avatar DOM node so CSS spring transition plays!)
         const avatarContainer = document.getElementById('focusAvatarContainer');
+        let currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || uiContext.avatarEl;
         if (avatarContainer) {
             avatarContainer.dataset.studentId = result.id;
-            avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+            if (currentAvatarEl) {
+                currentAvatarEl.dataset.studentId = String(result.id || '');
+                const initialsEl = currentAvatarEl.querySelector('.student-avatar__initials');
+                if (initialsEl) {
+                    initialsEl.textContent = StudentPhotoManager.getInitialsFromName(result.nom, result.prenom);
+                }
+            } else {
+                avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+                currentAvatarEl = avatarContainer.querySelector('.student-avatar');
+            }
         }
 
         this.updateHeaderName(result);
         this.renderStatusBadges(result.studentData.statuses);
+
+        // Transition header UI immediately before heavy persistence/list updates
+        if (uiContext.header) {
+            this._exitEditModeUI(uiContext.header, uiContext.readMode, editMode, currentAvatarEl);
+            this._animateContentCloseFlip(uiContext.beforeCloseTop ?? null);
+        }
+
+        // Persist & synchronize secondary views
+        StorageManager.saveAppState();
         this.callbacks.onUpdateNavigation();
 
         if (wasCreating) {
             this.callbacks.onStudentCreated?.(result);
+            UI.showNotification('Élève créé avec succès', 'success');
         }
 
-        // 5. Sync with List
         StudentDataManager.syncFilteredStudent(result.id, result);
-
         this.callbacks.onUpdateListRow(result);
         ClassUIManager.updateStudentCount();
         window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));

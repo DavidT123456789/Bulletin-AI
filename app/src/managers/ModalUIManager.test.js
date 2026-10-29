@@ -669,6 +669,9 @@ describe('ModalUIManager', () => {
             expect(modal).not.toBeNull();
             expect(modal.textContent).toContain('Google Drive');
             expect(modal.querySelector('.restore-card-badge span').textContent).toBe('Google Drive');
+            expect(modal.textContent).toContain('Aucune sauvegarde');
+            expect(modal.textContent).toContain('Première synchronisation');
+            expect(modal.textContent).not.toContain('Date inconnue');
             expect(modal.textContent).not.toContain('null');
 
             const cancelBtn = document.getElementById('saveConfirmCancelBtn');
