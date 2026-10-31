@@ -464,4 +464,112 @@ describe('StudentDataManager', () => {
             expect(() => StudentDataManager.syncFilteredStudent(null, { id: 'a' })).not.toThrow();
         });
     });
+
+    describe('copyStudentsToClass & enrichWithExistingProfile (Multi-classes / Groupes projets)', () => {
+        let userSettingsRef;
+
+        beforeEach(async () => {
+            const stateMod = await import('../state/State.js');
+            userSettingsRef = stateMod.userSettings;
+            userSettingsRef.academic.classes = [
+                { id: 'cls-4a', name: '4e A', isDemo: false },
+                { id: 'cls-pad', name: 'Groupe PAD', isDemo: false },
+                { id: 'cls-demo', name: 'Classe Exemple', isDemo: true }
+            ];
+            userSettingsRef.academic.currentClassId = 'cls-pad';
+        });
+
+        it('devrait copier un élève vers un groupe cible en conservant photo, statuts pédagogiques et classe d\'origine mais avec des notes vierges', () => {
+            appState.generatedResults = [
+                {
+                    id: 'stu-1',
+                    nom: 'BOUKHARI',
+                    prenom: 'Sami',
+                    classId: 'cls-4a',
+                    appreciation: 'Très bon trimestre en 4e A.',
+                    studentPhoto: { data: 'data:image/jpeg;base64,abc', source: 'trombi' },
+                    studentData: {
+                        nom: 'BOUKHARI',
+                        prenom: 'Sami',
+                        statuses: ['PAP', 'Nouveau T1'],
+                        periods: { T1: { grade: 16, appreciation: 'Très bon trimestre en 4e A.' } }
+                    }
+                }
+            ];
+
+            const res = StudentDataManager.copyStudentsToClass(['stu-1'], 'cls-pad');
+
+            expect(res.copiedCount).toBe(1);
+            expect(res.skippedCount).toBe(0);
+            expect(appState.generatedResults).toHaveLength(2);
+
+            const copied = res.copiedStudents[0];
+            expect(copied.id).not.toBe('stu-1');
+            expect(copied.classId).toBe('cls-pad');
+            expect(copied.nom).toBe('BOUKHARI');
+            expect(copied.prenom).toBe('Sami');
+            expect(copied.originClass).toBe('4e A');
+            expect(copied.studentData.classe).toBe('4e A');
+            expect(copied.isCopiedProfile).toBe(true);
+            expect(copied.studentPhoto).toEqual({ data: 'data:image/jpeg;base64,abc', source: 'trombi' });
+            // Conserve PAP mais filtre le statut transitoire "Nouveau T1"
+            expect(copied.studentData.statuses).toEqual(['PAP']);
+            // Fiche vierge pour le nouveau groupe
+            expect(copied.appreciation).toBeNull();
+            expect(copied.isPending).toBe(true);
+            expect(copied.studentData.periods).toEqual({});
+        });
+
+        it('devrait ignorer les élèves déjà présents dans la classe cible lors d\'une copie', () => {
+            appState.generatedResults = [
+                { id: 'stu-1', nom: 'BOUKHARI', prenom: 'Sami', classId: 'cls-4a', studentData: {} },
+                { id: 'stu-2', nom: 'BOUKHARI', prenom: 'Sami', classId: 'cls-pad', studentData: {} }
+            ];
+
+            const res = StudentDataManager.copyStudentsToClass(['stu-1'], 'cls-pad');
+            expect(res.copiedCount).toBe(0);
+            expect(res.skippedCount).toBe(1);
+            expect(appState.generatedResults).toHaveLength(2);
+        });
+
+        it('devrait enrichir automatiquement un élève créé dans un groupe si son profil existe déjà dans une autre classe (hors démo)', () => {
+            appState.generatedResults = [
+                {
+                    id: 'demo-stu',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    classId: 'cls-demo',
+                    studentPhoto: { data: 'demo-photo' },
+                    studentData: { statuses: ['ULIS'] }
+                },
+                {
+                    id: 'real-stu',
+                    nom: 'BOURGADE',
+                    prenom: 'Thibaut',
+                    classId: 'cls-4a',
+                    originClass: '3*1',
+                    studentPhoto: { data: 'real-photo' },
+                    studentData: { classe: '3*1', statuses: ['PPRE'] }
+                }
+            ];
+
+            // Élève présent uniquement en démo -> aucun enrichissement
+            const pendingFromDemo = StudentDataManager.createPendingResult(
+                { nom: 'MARTIN', prenom: 'Lucas', statuses: [], periods: {} },
+                'cls-pad'
+            );
+            expect(pendingFromDemo.studentPhoto).toBeNull();
+            expect(pendingFromDemo.studentData.statuses).toEqual([]);
+
+            // Élève présent en 4e A -> récupère photo, PPRE et badge 3*1
+            const pendingReal = StudentDataManager.createPendingResult(
+                { nom: 'BOURGADE', prenom: 'Thibaut', statuses: [], periods: {} },
+                'cls-pad'
+            );
+            expect(pendingReal.studentPhoto).toEqual({ data: 'real-photo' });
+            expect(pendingReal.studentData.statuses).toEqual(['PPRE']);
+            expect(pendingReal.originClass).toBe('3*1');
+            expect(pendingReal.isCopiedProfile).toBe(true);
+        });
+    });
 });

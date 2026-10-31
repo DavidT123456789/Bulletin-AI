@@ -86,7 +86,7 @@ export const ImportWizardManager = {
                 const action = card.dataset.action;
 
                 // S'assurer qu'une classe active existe avant d'ajouter des élèves
-                if (action === 'individual' || action === 'mass') {
+                if (action === 'individual' || action === 'mass' || action === 'existing') {
                     if (ClassManager.getAllClasses().length === 0) {
                         const newClass = ClassManager.createClass('Nouvelle classe');
                         ClassManager.switchClass(newClass.id);
@@ -95,11 +95,15 @@ export const ImportWizardManager = {
                     }
                 }
 
-                this.closeHub();
+                const isDrawerTarget = action === 'individual';
+                this.closeHub({ handoff: !isDrawerTarget });
 
-                // Delay to allow Hub closing animation to complete (400ms + buffer)
-                // Prevents Focus Panel from appearing under the closing backdrop on mobile
-                const delay = action === 'individual' ? 450 : 0;
+                // Lateral drawer (#focusPanel) sits below .header (z-index: 600 vs 700):
+                // let the snappy 200ms Hub close mostly clear before sliding in from the right.
+                // Centered modals open immediately on top of the lowered Hub backdrop (z-index: 1000 > 900).
+                const prefersReducedMotion = typeof window !== 'undefined' &&
+                    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+                const delay = (isDrawerTarget && !prefersReducedMotion) ? 140 : 0;
 
                 setTimeout(() => {
                     if (action === 'individual') {
@@ -108,6 +112,8 @@ export const ImportWizardManager = {
                         this.open();
                     } else if (action === 'photos') {
                         TrombinoscopeManager.open();
+                    } else if (action === 'existing') {
+                        ClassUIManager.showPickExistingStudentsModal();
                     }
                 }, delay);
             });
@@ -135,6 +141,12 @@ export const ImportWizardManager = {
     openHub() {
         const backdrop = document.getElementById('importHubBackdrop');
         if (backdrop) {
+            if (this._hubHandoffTimer) {
+                clearTimeout(this._hubHandoffTimer);
+                this._hubHandoffTimer = null;
+            }
+            backdrop.classList.remove('is-handing-off');
+
             // [UX Mobile] Push History State
             HistoryManager.pushState('importHub', (options) => this.closeHub(options));
 
@@ -143,6 +155,21 @@ export const ImportWizardManager = {
             const demoAlert = document.getElementById('importHubDemoAlert');
             if (demoAlert) {
                 demoAlert.style.display = isDemo ? 'flex' : 'none';
+            }
+
+            // Afficher la 4e carte « Mes classes » si d'autres classes contiennent déjà des élèves
+            const hasOtherStudents = !isDemo && ClassManager.hasStudentsInOtherClasses(appState.currentClassId);
+            const choicesGrid = backdrop.querySelector('.import-hub-choices');
+            const hubModal = backdrop.querySelector('.import-hub-modal');
+            const existingCard = backdrop.querySelector('.import-hub-card[data-action="existing"]');
+            if (existingCard) {
+                existingCard.style.display = hasOtherStudents ? '' : 'none';
+            }
+            if (choicesGrid) {
+                choicesGrid.classList.toggle('has-existing-card', Boolean(hasOtherStudents && existingCard));
+            }
+            if (hubModal) {
+                hubModal.classList.toggle('has-existing-card', Boolean(hasOtherStudents && existingCard));
             }
 
             backdrop.classList.add('active');
@@ -168,6 +195,21 @@ export const ImportWizardManager = {
             // [UX Mobile] History Cleanup
             if (!options.causedByHistory && backdrop.classList.contains('active')) {
                 HistoryManager.handleManualClose('importHub');
+            }
+
+            if (this._hubHandoffTimer) {
+                clearTimeout(this._hubHandoffTimer);
+                this._hubHandoffTimer = null;
+            }
+
+            if (options.handoff) {
+                backdrop.classList.add('is-handing-off');
+                this._hubHandoffTimer = setTimeout(() => {
+                    this._hubHandoffTimer = null;
+                    backdrop.classList.remove('is-handing-off');
+                }, 250);
+            } else {
+                backdrop.classList.remove('is-handing-off');
             }
 
             backdrop.classList.remove('active');
@@ -592,9 +634,11 @@ export const ImportWizardManager = {
         // Update stepper visual states
         this._updateStepper();
 
-        // Direction-aware animation class (forward: slide-next, backward: slide-prev)
-        const isBackward = previousStep !== undefined && this.currentStep < previousStep;
-        const slideClass = isBackward ? 'slide-prev' : 'slide-next';
+        // Direction-aware animation class only on intra-wizard step changes (never on initial modal open)
+        const shouldAnimateStep = previousStep !== undefined && previousStep !== this.currentStep;
+        const slideClass = shouldAnimateStep
+            ? (this.currentStep < previousStep ? 'slide-prev' : 'slide-next')
+            : null;
 
         // Update step content - scope to modal only
         const modal = document.getElementById('importWizardModal');
@@ -605,8 +649,12 @@ export const ImportWizardManager = {
                 const isActive = i + 1 === this.currentStep;
                 el.classList.remove('slide-next', 'slide-prev');
                 if (isActive) {
-                    void el.offsetWidth;
-                    el.classList.add('active', slideClass);
+                    if (slideClass) {
+                        void el.offsetWidth;
+                        el.classList.add('active', slideClass);
+                    } else {
+                        el.classList.add('active');
+                    }
                     el.style.display = 'block';
                 } else {
                     el.classList.remove('active');
@@ -616,7 +664,7 @@ export const ImportWizardManager = {
         }
 
         // Update guide panel content based on current step
-        this._updateGuidePanel(previousStep);
+        this._updateGuidePanel(slideClass, modal);
 
         // Update preview if on step 3, or refresh horizontal scroll affordances on steps 1 & 2
         if (this.currentStep === 3) {
@@ -657,20 +705,23 @@ export const ImportWizardManager = {
 
     /**
      * Update the guide panel to show contextual content for current step
-     * @param {number} [previousStep] - Optional previous step to determine transition direction
+     * @param {string|null} [slideClass=null] - Optional direction class ('slide-next' | 'slide-prev')
+     * @param {HTMLElement|null} [modal=null] - Resolved #importWizardModal container
      * @private
      */
-    _updateGuidePanel(previousStep) {
-        const isBackward = previousStep !== undefined && this.currentStep < previousStep;
-        const slideClass = isBackward ? 'slide-prev' : 'slide-next';
-        const guideContents = document.querySelectorAll('.guide-content');
-        guideContents.forEach(content => {
-            const step = parseInt(content.dataset.guideStep);
+    _updateGuidePanel(slideClass = null, modal = null) {
+        const container = modal || document.getElementById('importWizardModal') || document;
+        container.querySelectorAll('.guide-content').forEach(content => {
+            const step = parseInt(content.dataset.guideStep, 10);
             const isActive = step === this.currentStep;
             content.classList.remove('slide-next', 'slide-prev');
             if (isActive) {
-                void content.offsetWidth;
-                content.classList.add('active', slideClass);
+                if (slideClass) {
+                    void content.offsetWidth;
+                    content.classList.add('active', slideClass);
+                } else {
+                    content.classList.add('active');
+                }
             } else {
                 content.classList.remove('active');
             }

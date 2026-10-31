@@ -253,18 +253,40 @@ export const TrombinoscopeManager = {
     // MODAL CONTROL
     // ========================================================================
 
+    _cancelOpenRaf() {
+        if (!this._openRafId) return;
+        if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(this._openRafId);
+        } else {
+            clearTimeout(this._openRafId);
+        }
+        this._openRafId = null;
+    },
+
     open() {
         if (this._closeTimer) {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
         }
+        this._cancelOpenRaf();
         this._reset();
         this._bindDocumentListeners();
         const modal = document.getElementById('trombiWizardModal');
         if (modal) {
             this._lastFocusedElement = document.activeElement;
-            modal.classList.remove('closing');
+            modal.classList.remove('closing', 'modal-visible');
             modal.classList.add('visible');
+            // Force reflow so browser registers initial state before transitioning to modal-visible
+            void modal.offsetWidth;
+            const scheduleVisible = typeof requestAnimationFrame === 'function'
+                ? requestAnimationFrame
+                : (fn) => setTimeout(fn, 0);
+            this._openRafId = scheduleVisible(() => {
+                this._openRafId = null;
+                if (modal.classList.contains('visible') && !modal.classList.contains('closing')) {
+                    modal.classList.add('modal-visible');
+                }
+            });
             if (!modal.hasAttribute('tabindex')) {
                 modal.setAttribute('tabindex', '-1');
             }
@@ -284,7 +306,9 @@ export const TrombinoscopeManager = {
 
     close() {
         const modal = document.getElementById('trombiWizardModal');
-        if (!modal || !modal.classList.contains('visible')) return;
+        if (!modal || !modal.classList.contains('visible') || modal.classList.contains('closing')) return;
+
+        this._cancelOpenRaf();
 
         ModalUI.deactivateFocusTrap?.(modal);
         this._unbindDocumentListeners();
@@ -299,7 +323,7 @@ export const TrombinoscopeManager = {
         // Wait for animation to complete, then hide
         this._closeTimer = setTimeout(() => {
             this._closeTimer = null;
-            modal.classList.remove('visible', 'closing');
+            modal.classList.remove('visible', 'modal-visible', 'closing');
             this._reset();
             if (this._lastFocusedElement) {
                 this._lastFocusedElement.focus?.({ preventScroll: true });

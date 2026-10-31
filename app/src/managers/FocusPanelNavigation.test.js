@@ -21,7 +21,8 @@ vi.mock('./UIManager.js', () => ({
 
 vi.mock('./FocusPanelHeader.js', () => ({
     FocusPanelHeader: {
-        toggleEditMode: vi.fn()
+        toggleEditMode: vi.fn(),
+        settleEditMode: vi.fn()
     }
 }));
 

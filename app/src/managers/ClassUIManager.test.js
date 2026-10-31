@@ -388,9 +388,10 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
         expect(emptyRow.querySelector('.meta-empty-state')?.textContent.trim()).toBe('Aucun élève');
     });
 
-    it('devrait utiliser .inline-field-input sans .custom-input lors du renommage in-situ', async () => {
+    it('devrait gérer les gardes .disabled / aria-disabled (sans attribut disabled natif) lors du renommage et de la création en ligne', async () => {
         const class5A = ClassManager.createClass('5 1', '2026-2027');
         await ClassManager.switchClass(class5A.id);
+        const updateSpy = vi.spyOn(ClassManager, 'updateClass');
 
         ClassUIManager.showManageClassesModal();
 
@@ -399,9 +400,62 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
         renameBtn.click();
 
         const renameInput = modal.querySelector('.in-situ-rename-input');
+        const saveBtn = modal.querySelector('.save-rename-btn');
         expect(renameInput).not.toBeNull();
         expect(renameInput.classList.contains('inline-field-input')).toBe(true);
         expect(renameInput.classList.contains('custom-input')).toBe(false);
+
+        // 1. Limite : nom inchangé à l'ouverture -> garde active sans bloquer les pointer-events (tooltip)
+        expect(saveBtn.disabled).toBe(false);
+        expect(saveBtn.classList.contains('disabled')).toBe(true);
+        expect(saveBtn.getAttribute('aria-disabled')).toBe('true');
+        saveBtn.click();
+        renameInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(updateSpy).not.toHaveBeenCalled();
+
+        // 2. Limite : saisie vide / espaces uniquement -> garde maintenue
+        renameInput.value = '   ';
+        renameInput.dispatchEvent(new Event('input'));
+        expect(saveBtn.classList.contains('disabled')).toBe(true);
+        expect(saveBtn.getAttribute('aria-disabled')).toBe('true');
+        saveBtn.click();
+        expect(updateSpy).not.toHaveBeenCalled();
+
+        // 3. Nominal : nouveau nom valide -> activation et enregistrement
+        renameInput.value = 'Classe PAPD';
+        renameInput.dispatchEvent(new Event('input'));
+        expect(saveBtn.classList.contains('disabled')).toBe(false);
+        expect(saveBtn.getAttribute('aria-disabled')).toBe('false');
+        saveBtn.click();
+        expect(updateSpy).toHaveBeenCalledWith(class5A.id, expect.objectContaining({ name: 'Classe PAPD' }));
+        expect(ClassManager.getClassById(class5A.id).name).toBe('Classe PAPD');
+        updateSpy.mockRestore();
+
+        // 4. Création en ligne + repli en cas d'échec
+        modal.querySelector('#addClassFromModalBtn').click();
+        const createInput = modal.querySelector('.new-class-input');
+        const createConfirmBtn = modal.querySelector('.create-class-confirm');
+        expect(createConfirmBtn.disabled).toBe(false);
+        expect(createConfirmBtn.classList.contains('disabled')).toBe(true);
+        expect(createConfirmBtn.getAttribute('aria-disabled')).toBe('true');
+
+        const createSpy = vi.spyOn(ClassUIManager, '_createAndSwitchClass').mockRejectedValueOnce(new Error('boom'));
+        createConfirmBtn.click();
+        expect(createSpy).not.toHaveBeenCalled();
+
+        createInput.value = '4 3';
+        createInput.dispatchEvent(new Event('input'));
+        expect(createConfirmBtn.classList.contains('disabled')).toBe(false);
+        expect(createConfirmBtn.getAttribute('aria-disabled')).toBe('false');
+
+        // Repli sur erreur : réactive la saisie et restaure l'état du bouton selon le contenu courant
+        createConfirmBtn.click();
+        await vi.waitFor(() => {
+            expect(createInput.disabled).toBe(false);
+        });
+        expect(createSpy).toHaveBeenCalledWith('4 3');
+        expect(createConfirmBtn.classList.contains('disabled')).toBe(false);
+        createSpy.mockRestore();
     });
 
     it('devrait basculer dynamiquement le bouton de tri entre (3ᵉ → 6ᵉ) et (6ᵉ → 3ᵉ)', () => {
@@ -646,6 +700,146 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         modalBody.dispatchEvent(new Event('scroll'));
         expect(modalBody.classList.contains('can-scroll-top')).toBe(true);
         expect(modalBody.classList.contains('can-scroll-bottom')).toBe(true);
+    });
+
+    it('devrait ouvrir la modale "Piocher dans mes classes", basculer la sélection sur place sans détruire le DOM et copier les élèves sélectionnés', async () => {
+        const class3G1 = ClassManager.createClass('3 G1');
+        const groupPad = ClassManager.createClass('Groupe PAD');
+        await ClassManager.switchClass(groupPad.id);
+
+        appState.generatedResults = [
+            {
+                id: 's1',
+                nom: 'BOUKHARI',
+                prenom: 'Sami',
+                classId: class3G1.id,
+                originClass: '3 1',
+                studentData: { classe: '3 1', statuses: ['PAP'] }
+            },
+            {
+                id: 's2',
+                nom: 'DUPONT',
+                prenom: 'Alice',
+                classId: class3G1.id,
+                originClass: '3 1',
+                studentData: { classe: '3 1', statuses: [] }
+            },
+            {
+                id: 's2_pad',
+                nom: 'DUPONT',
+                prenom: 'Alice',
+                classId: groupPad.id,
+                originClass: '3 1',
+                isCopiedProfile: true,
+                studentData: { classe: '3 1', statuses: [] }
+            }
+        ];
+
+        ClassUIManager.showPickExistingStudentsModal(groupPad.id);
+
+        const modal = document.getElementById('pickExistingStudentsModal');
+        // Brumes dynamiques horizontales sur la barre de pilules (#pickStudentsChips)
+        const chipsEl = modal.querySelector('#pickStudentsChips');
+        Object.defineProperty(chipsEl, 'scrollWidth', { value: 900, configurable: true });
+        Object.defineProperty(chipsEl, 'clientWidth', { value: 500, configurable: true });
+        chipsEl.scrollLeft = 0;
+        chipsEl.dispatchEvent(new Event('scroll'));
+        expect(chipsEl.classList.contains('can-scroll-left')).toBe(false);
+        expect(chipsEl.classList.contains('can-scroll-right')).toBe(true);
+        chipsEl.scrollLeft = 80;
+        chipsEl.dispatchEvent(new Event('scroll'));
+        expect(chipsEl.classList.contains('can-scroll-left')).toBe(true);
+        expect(chipsEl.classList.contains('can-scroll-right')).toBe(true);
+        expect(modal).not.toBeNull();
+
+        const row = modal.querySelector('.pick-student-row[data-student-id="s1"]');
+        expect(row).not.toBeNull();
+        expect(row.querySelector('.student-avatar__initials')?.textContent).toBe('SB');
+        expect(row.querySelector('.student-nom')?.textContent).toBe('BOUKHARI');
+        expect(row.querySelector('.student-prenom')?.textContent).toContain('Sami');
+        expect(row.querySelector('.student-origin-class-tag')?.textContent).toBe('3ᵉ1');
+        expect(row.querySelector('.pick-student-statuses .tag-badge')?.textContent).toBe('PAP');
+
+        // Alice est déjà présente dans Groupe PAD : verrouillée
+        const presentRow = modal.querySelector('.pick-student-row[data-student-id="s2"]');
+        expect(presentRow.classList.contains('already-present')).toBe(true);
+        presentRow.click();
+        expect(presentRow.classList.contains('selected')).toBe(false);
+
+        // Clic sur Sami : mise à jour sur place sans recréer le nœud DOM (zéro flash image/icône)
+        row.click();
+        expect(modal.querySelector('.pick-student-row[data-student-id="s1"]')).toBe(row);
+        expect(row.classList.contains('selected')).toBe(true);
+        expect(row.getAttribute('aria-selected')).toBe('true');
+
+        // Tout décocher / Tout cocher conserve également la même référence DOM
+        const selectAllBtn = modal.querySelector('#pickSelectAllBtn');
+        expect(selectAllBtn.textContent).toContain('Tout décocher');
+        selectAllBtn.click();
+        expect(row.classList.contains('selected')).toBe(false);
+        expect(modal.querySelector('.pick-student-row[data-student-id="s1"]')).toBe(row);
+
+        selectAllBtn.click();
+        expect(row.classList.contains('selected')).toBe(true);
+
+        const confirmBtn = modal.querySelector('#confirmPickStudentsBtn');
+        expect(confirmBtn.disabled).toBe(false);
+        await confirmBtn.click();
+
+        const padStudents = ClassManager.getStudentsForClass(groupPad.id);
+        expect(padStudents).toHaveLength(2);
+        expect(padStudents.some(s => s.nom === 'BOUKHARI' && s.originClass === '3 1')).toBe(true);
+    });
+
+    it('devrait gérer la confirmation inline de suppression (Échap restaure l\'état draggable, anti-double-clic sur Supprimer)', async () => {
+        vi.useFakeTimers();
+        try {
+            const cls1 = ClassManager.createClass('6 1');
+            const cls2 = ClassManager.createClass('5 2');
+            await ClassManager.switchClass(cls1.id);
+
+            const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockResolvedValue();
+            const deleteSpy = vi.spyOn(ClassUIManager, 'handleDeleteClass').mockImplementation(async (id) => {
+                userSettings.academic.classes = userSettings.academic.classes.filter(c => c.id !== id);
+            });
+
+            ClassUIManager.showManageClassesModal();
+            const row = document.querySelector(`.class-management-item[data-class-id="${cls2.id}"]`);
+            expect(row).not.toBeNull();
+            expect(row.getAttribute('draggable')).toBe('true');
+
+            // 1. Ouverture de la confirmation inline -> désactive le drag & le switch de classe au clic
+            row.querySelector('.manage-delete-btn').click();
+            expect(row.classList.contains('editing')).toBe(true);
+            expect(row.classList.contains('deleting')).toBe(true);
+            expect(row.hasAttribute('draggable')).toBe(false);
+            expect(row.querySelector('.delete-confirm-title')?.textContent).toContain('5ᵉ2');
+
+            row.click();
+            expect(switchSpy).not.toHaveBeenCalled();
+
+            // 2. Annulation au clavier (Escape) -> restaure intégralement la ligne et ses écouteurs
+            row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            expect(row.classList.contains('editing')).toBe(false);
+            expect(row.classList.contains('deleting')).toBe(false);
+            expect(row.getAttribute('draggable')).toBe('true');
+            expect(row.getAttribute('tabindex')).toBe('0');
+
+            // 3. Réouverture après restauration + double-clic rapide sur Supprimer -> une seule suppression déclenchée
+            row.querySelector('.manage-delete-btn').click();
+            const confirmBtn = row.querySelector('.confirm-delete-btn');
+            confirmBtn.click();
+            confirmBtn.click();
+
+            await vi.advanceTimersByTimeAsync(300);
+            expect(deleteSpy).toHaveBeenCalledTimes(1);
+            expect(deleteSpy).toHaveBeenCalledWith(cls2.id);
+
+            switchSpy.mockRestore();
+            deleteSpy.mockRestore();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

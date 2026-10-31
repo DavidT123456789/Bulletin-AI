@@ -20,7 +20,7 @@ const DYNAMIC_MODAL_IDS = new Set([
     'conflictResolutionModal',
     'restoreConfirmationModal',
     'saveConfirmationModal',
-    'backupImportModal'
+    'backupImportModal', 'moveStudentModal', 'pickExistingStudentsModal'
 ]);
 
 /**
@@ -179,7 +179,7 @@ export const ModalUI = {
 
     /** @private */
     _isOverlayModal(modal, options = {}) {
-        return modal.id === 'helpModal' || modal.id === 'moveStudentModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
+        return modal.id === 'helpModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
     },
 
     /**
@@ -471,8 +471,8 @@ export const ModalUI = {
 
             // Details button for the footer
             const detailsBtnHtml = detailsHtml ? `
-                <button type="button" class="btn btn-ghost modal-details-toggle" id="modalAlertDetailsBtn">
-                    <span>Détails</span> <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                <button type="button" class="btn btn-ghost modal-details-toggle" id="modalAlertDetailsBtn" aria-expanded="false" aria-controls="modalAlertDetails">
+                    <span>Détails</span> <iconify-icon icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                 </button>
             ` : '';
 
@@ -484,11 +484,9 @@ export const ModalUI = {
                     ${messageHtml}
                     ${accordionContentHtml}
                 </div>
-                <div class="modal-alert-actions" style="justify-content: ${detailsHtml ? 'space-between' : 'flex-end'}; width: 100%; align-items: center;">
-                    ${detailsHtml ? `<div class="modal-alert-actions-left">${detailsBtnHtml}</div>` : ''}
-                    <div class="modal-alert-actions-right" style="display: flex; gap: 12px;">
-                        ${buttonsHTML}
-                    </div>
+                <div class="modal-alert-actions${detailsHtml ? ' has-details' : ''}${extraButton ? ' modal-alert-actions-3' : ''}">
+                    ${detailsBtnHtml}
+                    ${buttonsHTML}
                 </div>
             </div>`;
 
@@ -505,11 +503,12 @@ export const ModalUI = {
 
             // Toggle fluid accordion and button active state
             if (detailsBtn) {
+                const detailsContainer = document.getElementById('modalAlertDetails');
                 detailsBtn.addEventListener('click', () => {
-                    const detailsContainer = document.getElementById('modalAlertDetails');
                     if (detailsContainer) {
-                        detailsContainer.classList.toggle('is-open');
-                        detailsBtn.classList.toggle('is-open');
+                        const isOpen = detailsContainer.classList.toggle('is-open');
+                        detailsBtn.classList.toggle('is-open', isOpen);
+                        detailsBtn.setAttribute('aria-expanded', String(isOpen));
                     }
                 });
             }
@@ -1464,7 +1463,7 @@ export const ModalUI = {
                         >
                     </div>
                 </div>
-                <div class="modal-alert-actions" style="margin-top: 12px;">
+                <div class="modal-alert-actions">
                     <button class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
                     <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
                 </div>

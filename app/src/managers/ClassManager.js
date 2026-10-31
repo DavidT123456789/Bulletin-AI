@@ -352,15 +352,26 @@ export const ClassManager = {
                     level: detectLevelFromName(rawOrigin),
                     year: parentClass?.year || this._getCurrentSchoolYear(),
                     isVirtual: true,
-                    students: [],
+                    studentsByKey: new Map(),
                     sourceGroupIds: new Set()
                 });
             }
 
             const entry = virtualMap.get(normOrigin);
-            entry.students.push(student);
-            if (student.classId) {
-                entry.sourceGroupIds.add(student.classId);
+            const studentKey = Utils.normalizeName(student.nom, student.prenom);
+            const existingInVirtual = entry.studentsByKey.get(studentKey);
+
+            if (!existingInVirtual) {
+                entry.studentsByKey.set(studentKey, student);
+                if (student.classId) {
+                    entry.sourceGroupIds.add(student.classId);
+                }
+            } else if (existingInVirtual.isCopiedProfile && !student.isCopiedProfile) {
+                // Prioriser la fiche d'enseignement principale sur une copie de groupe projet
+                entry.studentsByKey.set(studentKey, student);
+                if (student.classId) {
+                    entry.sourceGroupIds.add(student.classId);
+                }
             }
         });
 
@@ -368,7 +379,12 @@ export const ClassManager = {
 
         return sortClassesByLevel(
             Array.from(virtualMap.values()).map(entry => {
-                const sourceGroupIds = Array.from(entry.sourceGroupIds);
+                const deduplicatedStudents = Array.from(entry.studentsByKey.values());
+                // Recalculer les groupes sources principaux représentés dans la classe reconstituée
+                const primaryGroupIds = new Set(
+                    deduplicatedStudents.map(s => s.classId).filter(Boolean)
+                );
+                const sourceGroupIds = Array.from(primaryGroupIds.size > 0 ? primaryGroupIds : entry.sourceGroupIds);
                 const sourceGroupNames = sourceGroupIds
                     .map(id => classMap.get(id)?.name)
                     .filter(Boolean)
@@ -382,7 +398,7 @@ export const ClassManager = {
                     level: entry.level,
                     year: entry.year,
                     isVirtual: true,
-                    studentCount: entry.students.length,
+                    studentCount: deduplicatedStudents.length,
                     sourceGroupIds,
                     sourceGroupNames
                 };
@@ -507,6 +523,27 @@ export const ClassManager = {
     },
 
     /**
+     * Vérifie s'il existe des élèves dans d'autres classes (hors classe d'exemple)
+     * Permet d'afficher l'option « Mes classes (Élèves existants) » dans le Hub d'ajout.
+     * @param {string|null} [excludeClassId=null] - ID de la classe active à exclure
+     * @returns {boolean} True si au moins un élève est disponible dans une autre classe
+     */
+    hasStudentsInOtherClasses(excludeClassId = null) {
+        const currentId = excludeClassId ?? (appState.currentClassId || userSettings.academic.currentClassId);
+        const allResults = appState.generatedResults || [];
+        if (allResults.length === 0) return false;
+
+        const validOtherClassIds = new Set(
+            this.getAllClasses()
+                .filter(c => c.id && c.id !== currentId && !this.isDemoClass(c.id))
+                .map(c => c.id)
+        );
+        if (validOtherClassIds.size === 0) return false;
+
+        return allResults.some(r => r?.classId && validOtherClassIds.has(r.classId));
+    },
+
+    /**
      * Récupère de façon synchrone les élèves d'une classe (physique ou reconstituée)
      * @param {string|null} [classId=null] - ID de la classe
      * @param {Array|null} [sourceResults=null] - Liste source (par défaut appState.generatedResults)
@@ -523,10 +560,17 @@ export const ClassManager = {
         if (this.isVirtualClass(targetClassId)) {
             const vClass = this.getVirtualClasses().find(c => c.id === targetClassId);
             if (!vClass) return [];
-            return allResults.filter(r => {
+            const deduplicated = new Map();
+            allResults.forEach(r => {
                 const origin = r.studentData?.classe || r.classe || r.originClass || '';
-                return origin && Utils.normalizeClassName(origin) === vClass.normName;
+                if (!origin || Utils.normalizeClassName(origin) !== vClass.normName) return;
+                const key = Utils.normalizeName(r.nom, r.prenom);
+                const existing = deduplicated.get(key);
+                if (!existing || (existing.isCopiedProfile && !r.isCopiedProfile)) {
+                    deduplicated.set(key, r);
+                }
             });
+            return Array.from(deduplicated.values());
         }
 
         return allResults.filter(r => r.classId === targetClassId);

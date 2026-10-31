@@ -220,7 +220,8 @@
     }
 
     /* Fullscreen workspace modals - Single Source of Truth (iOS Sheet slide presentation) */
-    .modal-content {
+    .modal-content,
+    .trombi-wizard-content {
         width: 100%;
         max-width: 100%;
         height: 100vh;
@@ -248,11 +249,13 @@
         border: var(--modal-border);
     }
 
-    .modal.modal-visible .modal-content {
+    .modal.modal-visible .modal-content,
+    .trombi-wizard-modal.modal-visible .trombi-wizard-content {
         transform: translateY(0);
     }
 
-    .modal.modal-visible.modal-closing .modal-content {
+    .modal.modal-visible.modal-closing .modal-content,
+    .trombi-wizard-modal.visible.closing .trombi-wizard-content {
         transform: translateY(16px) !important;
     }
 

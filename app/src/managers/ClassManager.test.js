@@ -148,6 +148,69 @@ describe('ClassManager - Virtual Classes (Classes complètes)', () => {
         // Classe reconstituée 3 2 -> student3
         expect(ClassManager.getStudentsForClass('virtual_32').map(s => s.id)).toEqual(['s3']);
     });
+
+    it('ne devrait pas dupliquer un élève dans une classe reconstituée lorsqu\'il est copié dans un groupe projet (ex: Groupe PAD)', () => {
+        const group1 = ClassManager.createClass('3 G1');
+        const projectGroup = ClassManager.createClass('Groupe PAD');
+
+        // Copie projet d'abord dans le tableau pour vérifier que la fiche principale (!isCopiedProfile) gagne toujours
+        const copiedInPad = {
+            id: 's1-copy',
+            nom: 'BOUKHARI',
+            prenom: 'Sami',
+            classId: projectGroup.id,
+            originClass: '3 1',
+            isCopiedProfile: true,
+            studentData: { classe: '3 1' }
+        };
+        const primaryInG1 = {
+            id: 's1-main',
+            nom: 'BOUKHARI',
+            prenom: 'Sami',
+            classId: group1.id,
+            originClass: '3 1',
+            studentData: { classe: '3 1', periods: { T1: { grade: 15 } } }
+        };
+
+        appState.generatedResults = [copiedInPad, primaryInG1];
+
+        const virtuals = ClassManager.getVirtualClasses();
+        expect(virtuals.length).toBe(1);
+        expect(virtuals[0].id).toBe('virtual_31');
+        expect(virtuals[0].studentCount).toBe(1);
+        expect(virtuals[0].sourceGroupIds).toEqual([group1.id]);
+
+        const virtualStudents = ClassManager.getStudentsForClass('virtual_31');
+        expect(virtualStudents.length).toBe(1);
+        expect(virtualStudents[0].id).toBe('s1-main');
+
+        // Et dans Groupe PAD, la fiche copiée est bien présente avec son badge d'origine
+        const padStudents = ClassManager.getStudentsForClass(projectGroup.id);
+        expect(padStudents.length).toBe(1);
+        expect(padStudents[0].id).toBe('s1-copy');
+    });
+
+    it('devrait détecter correctement si d\'autres classes (hors démo) contiennent des élèves via hasStudentsInOtherClasses', () => {
+        const demoClass = ClassManager.createClass('Classe Exemple');
+        const classA = ClassManager.createClass('4e A');
+        const groupPad = ClassManager.createClass('Groupe PAD');
+
+        // Aucun élève
+        expect(ClassManager.hasStudentsInOtherClasses(groupPad.id)).toBe(false);
+
+        // Élève uniquement dans la classe démo -> false
+        appState.generatedResults = [
+            { id: 'd1', nom: 'DEMO', prenom: 'Test', classId: demoClass.id }
+        ];
+        expect(ClassManager.hasStudentsInOtherClasses(groupPad.id)).toBe(false);
+
+        // Élève dans 4e A -> true pour Groupe PAD, mais false si on interroge depuis 4e A seule
+        appState.generatedResults.push(
+            { id: 's1', nom: 'MARTIN', prenom: 'Lucas', classId: classA.id }
+        );
+        expect(ClassManager.hasStudentsInOtherClasses(groupPad.id)).toBe(true);
+        expect(ClassManager.hasStudentsInOtherClasses(classA.id)).toBe(false);
+    });
 });
 
 describe('ClassManager - Lot 10 (Persistance IndexedDB v2, Tombstones & EventBus)', () => {

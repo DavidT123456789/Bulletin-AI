@@ -324,6 +324,17 @@ export const ResultsUIManager = {
                     classInput.value = currentClass?.name || 'Nouvelle classe';
                     this._autoSizeClassInput(classInput);
                 }
+
+                // Afficher la 4e carte « Mes classes » si d'autres classes contiennent déjà des élèves
+                const hasOtherStudents = ClassManager.hasStudentsInOtherClasses(appState.currentClassId);
+                const hubGrid = DOM.emptyStateCard.querySelector('.empty-state-hub');
+                const existingCard = DOM.emptyStateCard.querySelector('.empty-state-hub-card[data-action="existing"]');
+                if (existingCard) {
+                    existingCard.style.display = hasOtherStudents ? '' : 'none';
+                }
+                if (hubGrid) {
+                    hubGrid.classList.toggle('has-existing-card', Boolean(hasOtherStudents && existingCard));
+                }
             }
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
@@ -564,11 +575,13 @@ export const ResultsUIManager = {
         const hubActions = {
             individual: () => FocusPanelManager.openNew(),
             mass: () => ImportWizardManager.open(),
-            photos: () => TrombinoscopeManager.open()
+            photos: () => TrombinoscopeManager.open(),
+            existing: () => ClassUIManager.showPickExistingStudentsModal()
         };
 
         hubCards.forEach(card => {
             card.addEventListener('click', () => {
+                container.querySelector('#emptyStateClassInput')?.blur();
                 hubActions[card.dataset.action]?.();
             });
 
@@ -965,7 +978,7 @@ export const ResultsUIManager = {
             : (msg, onConfirm, _onCancel, opts) => UI.showConfirmModal?.(opts?.title || 'Confirmation', msg, onConfirm);
 
         confirmFn(
-            'Cette action est irréversible et supprimera définitivement vos données.',
+            'Cette action est irréversible et supprimera toutes leurs données. Pour ne vider que les textes générés, utilisez « Effacer les appréciations ».',
             async () => {
                 const removedIds = Array.from(visibleIds);
                 const deleteTasks = removedIds.map(id => StudentDataManager.deleteStudent(id));
@@ -980,19 +993,10 @@ export const ResultsUIManager = {
                 UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
             },
             null,
-            { 
-                title: `Supprimer ${count} élève${count > 1 ? 's' : ''} ?`, 
-                confirmText: 'Tout supprimer', 
-                isDanger: true,
-                detailsHtml: `
-                    <p style="margin-bottom:8px;">Cette action supprimera :</p>
-                    <ul style="margin-left:20px; margin-bottom:10px;">
-                        <li>Les données de scolarité (notes, absences...)</li>
-                        <li>Les appréciations générées</li>
-                        <li>L'historique des modifications</li>
-                    </ul>
-                    <p style="opacity:0.8;">Si vous souhaitez uniquement effacer les textes générés, utilisez l'option "Effacer les appréciations".</p>
-                `
+            {
+                title: `Supprimer ${count} élève${count > 1 ? 's' : ''} ?`,
+                confirmText: 'Tout supprimer',
+                isDanger: true
             }
         );
     },
@@ -1011,7 +1015,7 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm(
-            'Cette action effacera le texte de toutes les appréciations visibles.',
+            'Seul le texte des appréciations visibles sera effacé. Les notes, dossiers élèves et journaux de bord seront conservés.',
             () => {
                 let clearedCount = 0;
                 const now = Date.now();
@@ -1050,8 +1054,7 @@ export const ResultsUIManager = {
             {
                 title: `Effacer ${count} appréciation${count > 1 ? 's' : ''} ?`,
                 confirmText: 'Effacer le texte',
-                isDanger: true,
-                detailsHtml: `<p>Les notes, données élèves et journaux de bord ne seront pas modifiés. Seul le texte des appréciations générées sera supprimé.</p>`
+                isDanger: true
             }
         );
     },
@@ -1068,7 +1071,7 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm(
-            'Cette action effacera les journaux de bord de ces élèves.',
+            'Les observations du journal de bord seront effacées pour ces élèves. Les notes et les appréciations déjà générées seront conservées.',
             () => {
                 let clearedCount = 0;
                 appState.generatedResults.forEach(r => {
@@ -1096,18 +1099,10 @@ export const ResultsUIManager = {
                 UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
             },
             null,
-            { 
-                title: `Réinitialiser le contexte IA (${count}) ?`, 
-                confirmText: 'Effacer Journaux', 
-                isDanger: true,
-                detailsHtml: `
-                    <p style="margin-bottom:8px;">Cela effacera :</p>
-                    <ul style="margin-left:20px; margin-bottom:10px;">
-                        <li>Les observations manuelles</li>
-                        <li>L'historique des interactions pour ces élèves</li>
-                    </ul>
-                    <p style="opacity:0.8;">Les appréciations déjà générées et les notes ne seront PAS modifiées.</p>
-                `
+            {
+                title: `Réinitialiser le contexte IA (${count}) ?`,
+                confirmText: 'Effacer les journaux',
+                isDanger: true
             }
         );
     }

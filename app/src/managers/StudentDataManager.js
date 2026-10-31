@@ -11,7 +11,7 @@ export const StudentDataManager = {
             newStudentData.periods[newStudentData.currentPeriod].appreciation = appreciation;
         }
 
-        return {
+        const result = {
             id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
             nom, prenom, appreciation, evolutions,
             // Associer à la classe courante pour le multi-classes
@@ -48,6 +48,240 @@ export const StudentDataManager = {
             wasGenerated: !errorMessage,
             // Source explicite de l'appréciation : 'ai' | 'manual' | 'imported'
             appreciationSource: errorMessage ? null : 'ai'
+        };
+
+        this.enrichWithExistingProfile(result, result.classId);
+        return result;
+    },
+
+    /**
+     * Recherche un profil existant pour le même élève dans les autres classes (hors démo)
+     * afin de mutualiser photo, statuts pédagogiques et classe d'origine.
+     *
+     * @param {string} nom - Nom de l'élève
+     * @param {string} prenom - Prénom de l'élève
+     * @param {string|null} [excludeClassId=null] - ID de la classe à exclure (classe cible)
+     * @returns {Object|null} Profil consolidé { studentPhoto, statuses, originClass, sourceStudent } ou null
+     */
+    findExistingStudentProfile(nom, prenom, excludeClassId = null) {
+        if (!nom && !prenom) return null;
+        const allResults = appState.generatedResults || [];
+        const classes = userSettings?.academic?.classes || [];
+        const classMap = new Map(classes.map(c => [c.id, c]));
+
+        const isDemoClassId = (classId) => {
+            if (!classId) return false;
+            const cls = classMap.get(classId);
+            if (!cls) return false;
+            return cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
+        };
+
+        const matches = allResults.filter(r => {
+            if (!r) return false;
+            if (excludeClassId && r.classId === excludeClassId) return false;
+            if (isDemoClassId(r.classId)) return false;
+            return Utils.matchesStudent(r, nom, prenom);
+        });
+
+        if (matches.length === 0) return null;
+
+        // Prioriser les fiches principales (non copiées)
+        matches.sort((a, b) => Number(Boolean(a.isCopiedProfile)) - Number(Boolean(b.isCopiedProfile)));
+
+        let studentPhoto = null;
+        let statuses = [];
+        let originClass = '';
+
+        for (const match of matches) {
+            if (!studentPhoto && match.studentPhoto?.data) {
+                studentPhoto = match.studentPhoto;
+            }
+            if (statuses.length === 0 && Array.isArray(match.studentData?.statuses) && match.studentData.statuses.length > 0) {
+                statuses = match.studentData.statuses.filter(
+                    s => typeof s === 'string' && !/^(Nouveau|Départ)\b/i.test(s.trim())
+                );
+            }
+            if (!originClass) {
+                const explicitOrigin = (match.studentData?.classe || match.classe || match.originClass || '').trim();
+                if (explicitOrigin) {
+                    originClass = explicitOrigin;
+                } else if (match.classId) {
+                    const sourceClass = classMap.get(match.classId);
+                    if (sourceClass?.name && !Utils.isGroupClassName(sourceClass.name)) {
+                        originClass = sourceClass.name.trim();
+                    }
+                }
+            }
+        }
+
+        // Fallback : si aucune classe non-groupe n'a été trouvée, utiliser le nom de la classe source
+        if (!originClass && matches[0]?.classId) {
+            const fallbackClass = classMap.get(matches[0].classId);
+            if (fallbackClass?.name) {
+                originClass = fallbackClass.name.trim();
+            }
+        }
+
+        return {
+            studentPhoto,
+            statuses,
+            originClass,
+            sourceStudent: matches[0]
+        };
+    },
+
+    /**
+     * Enrichit automatiquement une nouvelle fiche élève avec les données transversales
+     * (photo, statuts, classe d'origine) si cet élève existe déjà dans une autre classe.
+     *
+     * @param {Object} result - Nouvel objet élève
+     * @param {string|null} [targetClassId=null] - ID de la classe cible
+     * @returns {Object} L'objet élève enrichi
+     */
+    enrichWithExistingProfile(result, targetClassId = null) {
+        if (!result) return result;
+        const effectiveClassId = targetClassId ?? result.classId ?? userSettings?.academic?.currentClassId ?? null;
+        const profile = this.findExistingStudentProfile(result.nom, result.prenom, effectiveClassId);
+        if (!profile) return result;
+
+        if (!result.studentPhoto && profile.studentPhoto) {
+            result.studentPhoto = Utils.deepClone(profile.studentPhoto);
+        }
+
+        if (result.studentData) {
+            const currentStatuses = Array.isArray(result.studentData.statuses) ? result.studentData.statuses : [];
+            if (currentStatuses.length === 0 && profile.statuses.length > 0) {
+                result.studentData.statuses = Utils.deepClone(profile.statuses);
+            }
+        }
+
+        if (profile.originClass) {
+            const classes = userSettings?.academic?.classes || [];
+            const targetClass = effectiveClassId ? classes.find(c => c.id === effectiveClassId) : null;
+            const normTarget = targetClass?.name ? Utils.normalizeClassName(targetClass.name) : '';
+            const normOrigin = Utils.normalizeClassName(profile.originClass);
+
+            if (!normTarget || normOrigin !== normTarget) {
+                const existingOrigin = (result.studentData?.classe || result.classe || result.originClass || '').trim();
+                if (!existingOrigin) {
+                    result.originClass = profile.originClass;
+                    if (result.studentData) {
+                        result.studentData.classe = profile.originClass;
+                    }
+                }
+                result.isCopiedProfile = true;
+            }
+        }
+
+        return result;
+    },
+
+    /**
+     * Copie un ou plusieurs élèves existants vers une classe/groupe cible.
+     * Crée des fiches vierges (en attente) dans la classe cible tout en conservant
+     * leur identité, photo, statuts pédagogiques et classe d'origine.
+     *
+     * @param {string|Array<string>} studentIds - ID(s) des élèves sources
+     * @param {string} targetClassId - ID de la classe cible
+     * @returns {{ copiedStudents: Array<Object>, copiedCount: number, skippedCount: number }}
+     */
+    copyStudentsToClass(studentIds, targetClassId) {
+        const ids = Array.isArray(studentIds) ? studentIds : [studentIds];
+        if (!targetClassId || ids.length === 0) {
+            return { copiedStudents: [], copiedCount: 0, skippedCount: 0 };
+        }
+
+        const allResults = appState.generatedResults || [];
+        const classes = userSettings?.academic?.classes || [];
+        const classMap = new Map(classes.map(c => [c.id, c]));
+        const targetClass = classMap.get(targetClassId);
+        const normTargetName = targetClass?.name ? Utils.normalizeClassName(targetClass.name) : '';
+
+        // Indexation en une passe : recherche par ID O(1), clés déjà dans la cible O(1) et photos existantes hors démo
+        const resultsById = new Map();
+        const targetExistingKeys = new Set();
+        const photoByKey = new Map();
+        for (const r of allResults) {
+            if (!r) continue;
+            if (r.id) resultsById.set(r.id, r);
+            const rKey = Utils.normalizeName(r.nom, r.prenom);
+            if (r.classId === targetClassId) {
+                targetExistingKeys.add(rKey);
+            }
+            if (r.studentPhoto?.data && !photoByKey.has(rKey)) {
+                const cls = r.classId ? classMap.get(r.classId) : null;
+                if (cls && !cls.isDemo && cls.name?.toLowerCase() !== 'classe exemple') {
+                    photoByKey.set(rKey, r.studentPhoto);
+                }
+            }
+        }
+
+        // Dédupliquer les élèves sources par nom normalisé (en privilégiant la fiche principale)
+        const uniqueSources = new Map();
+        for (const id of ids) {
+            const student = resultsById.get(id);
+            if (!student) continue;
+            const key = Utils.normalizeName(student.nom, student.prenom);
+            if (!uniqueSources.has(key) || (!student.isCopiedProfile && uniqueSources.get(key).isCopiedProfile)) {
+                uniqueSources.set(key, student);
+            }
+        }
+
+        const copiedStudents = [];
+        let skippedCount = 0;
+
+        uniqueSources.forEach((sourceStudent, normalizedKey) => {
+            if (targetExistingKeys.has(normalizedKey)) {
+                skippedCount++;
+                return;
+            }
+
+            // Déterminer la classe d'origine à afficher en badge dans le nouveau groupe
+            const explicitOrigin = (sourceStudent.studentData?.classe || sourceStudent.classe || sourceStudent.originClass || '').trim();
+            const sourceClass = sourceStudent.classId ? classMap.get(sourceStudent.classId) : null;
+            let originClass = explicitOrigin || (sourceClass?.name || '').trim();
+
+            if (originClass && normTargetName && Utils.normalizeClassName(originClass) === normTargetName) {
+                originClass = '';
+            }
+
+            const statuses = Array.isArray(sourceStudent.studentData?.statuses)
+                ? sourceStudent.studentData.statuses.filter(s => typeof s === 'string' && !/^(Nouveau|Départ)\b/i.test(s.trim()))
+                : [];
+
+            const newStudent = this.createPendingResult({
+                nom: sourceStudent.nom,
+                prenom: sourceStudent.prenom,
+                classe: originClass || undefined,
+                statuses: Utils.deepClone(statuses),
+                periods: {}
+            }, targetClassId, { enrichProfile: false });
+
+            newStudent.classId = targetClassId;
+            newStudent.isCopiedProfile = true;
+            newStudent._lastModified = Date.now();
+
+            if (originClass) {
+                newStudent.originClass = originClass;
+                if (newStudent.studentData) {
+                    newStudent.studentData.classe = originClass;
+                }
+            }
+
+            const photoToCopy = sourceStudent.studentPhoto?.data ? sourceStudent.studentPhoto : photoByKey.get(normalizedKey);
+            if (photoToCopy) {
+                newStudent.studentPhoto = Utils.deepClone(photoToCopy);
+            }
+
+            targetExistingKeys.add(normalizedKey);
+            allResults.push(newStudent);
+            copiedStudents.push(newStudent);
+        });
+
+        return {
+            copiedStudents,
+            copiedCount: copiedStudents.length,
+            skippedCount
         };
     },
 
@@ -164,9 +398,10 @@ export const StudentDataManager = {
      * Note: isPending is set to false if an appreciation already exists
      * for the current period in the imported data.
      */
-    createPendingResult(studentData) {
+    createPendingResult(studentData, targetClassId = null, { enrichProfile = true } = {}) {
         const newStudentData = Utils.deepClone(studentData);
         const currentPeriod = appState.currentPeriod;
+        const effectiveClassId = targetClassId || userSettings.academic.currentClassId || appState.currentClassId || null;
 
         // Check if appreciation already exists for current period
         const existingAppreciation = studentData.periods?.[currentPeriod]?.appreciation;
@@ -180,7 +415,7 @@ export const StudentDataManager = {
             appreciation: hasAppreciation ? existingAppreciation : null,
             evolutions: [], // Calculées lors de la génération
             // Associer à la classe courante
-            classId: userSettings.academic.currentClassId || null,
+            classId: effectiveClassId,
             // Only mark as pending if NO appreciation exists for current period
             isPending: !hasAppreciation,
             studentData: {
@@ -203,6 +438,11 @@ export const StudentDataManager = {
             appreciationSource: hasAppreciation ? 'imported' : null,
             history: []
         };
+
+        // Enrichir avec photo, statuts et classe d'origine si l'élève existe déjà dans une autre classe
+        if (enrichProfile) {
+            this.enrichWithExistingProfile(result, effectiveClassId);
+        }
 
         // Compute promptHash baseline if appreciation is imported
         if (hasAppreciation) {

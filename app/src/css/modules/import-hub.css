@@ -7,26 +7,33 @@
 .import-hub-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    z-index: 9999;
-    opacity: 0;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    z-index: var(--z-modal);
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        visibility 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        backdrop-filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: background 0.22s ease-out,
+        backdrop-filter 0.22s ease-out,
+        -webkit-backdrop-filter 0.22s ease-out,
+        visibility 0s linear 0.22s;
+    will-change: backdrop-filter;
 }
 
-[data-theme="dark"] .import-hub-backdrop {
-    background: rgba(0, 0, 0, 0.6);
+.import-hub-backdrop.is-handing-off {
+    z-index: var(--z-modal-backdrop);
 }
 
 .import-hub-backdrop.active {
-    opacity: 1;
+    background: var(--modal-backdrop-bg);
+    backdrop-filter: blur(var(--modal-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
     visibility: visible;
     pointer-events: auto;
+    transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        -webkit-backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0s linear 0s;
 }
 
 /* === MODAL CONTAINER === */
@@ -34,7 +41,7 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.95);
     width: 90vw;
     max-width: 720px;
     background: var(--surface-color);
@@ -43,11 +50,14 @@
     box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.08),
         0 0 0 1px rgba(0, 0, 0, 0.02);
-    z-index: 10000;
+    z-index: 1;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.22s cubic-bezier(0.2, 0, 0, 1),
+        visibility 0s linear 0.22s;
     overflow: hidden;
+    will-change: transform, opacity;
 }
 
 [data-theme="dark"] .import-hub-modal {
@@ -61,6 +71,9 @@
     opacity: 1;
     visibility: visible;
     transform: translate(-50%, -50%) scale(1);
+    transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0s linear 0s;
 }
 
 /* === CLOSE BUTTON (Inherits base styling from .close-button in modals.css) === */
@@ -150,11 +163,19 @@
 }
 
 /* === CHOICES CONTAINER === */
+.import-hub-modal.has-existing-card {
+    max-width: 860px;
+}
+
 .import-hub-choices {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     padding: 0 28px 32px;
+}
+
+.import-hub-choices.has-existing-card {
+    grid-template-columns: repeat(4, 1fr);
 }
 
 /* ====================================================================
@@ -238,6 +259,14 @@
     --hub-card-rgb: var(--color-violet-rgb);
     --hub-card-bright: var(--color-violet-bright);
     --hub-card-deep: var(--color-violet-deep);
+}
+
+.import-hub-card[data-action="existing"],
+.empty-state-hub-card[data-action="existing"] {
+    --hub-card-color: var(--color-amber);
+    --hub-card-rgb: var(--color-amber-rgb);
+    --hub-card-bright: var(--color-amber-bright);
+    --hub-card-deep: var(--color-amber-deep);
 }
 
 .import-hub-card[data-action],
@@ -327,9 +356,20 @@
     color: var(--text-tertiary);
 }
 
-/* === RESPONSIVE (Unified mobile breakpoint: 640px) === */
+/* === RESPONSIVE (Tablet 2x2 for 4 cards, Unified mobile breakpoint: 640px) === */
+@media (max-width: 860px) and (min-width: 641px) {
+    .import-hub-modal.has-existing-card {
+        max-width: 560px;
+    }
+
+    .import-hub-choices.has-existing-card {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 640px) {
-    .import-hub-modal {
+    .import-hub-modal,
+    .import-hub-modal.has-existing-card {
         width: min(92vw, 420px);
     }
 
@@ -357,7 +397,8 @@
         justify-content: center;
     }
 
-    .import-hub-choices {
+    .import-hub-choices,
+    .import-hub-choices.has-existing-card {
         grid-template-columns: 1fr;
         gap: 12px;
         padding: 0 18px 22px;
@@ -417,6 +458,10 @@
 
 .import-hub-backdrop.active .import-hub-card:nth-child(3) {
     animation-delay: 0.15s;
+}
+
+.import-hub-backdrop.active .import-hub-card:nth-child(4) {
+    animation-delay: 0.2s;
 }
 
 @keyframes hub-card-fade-up {

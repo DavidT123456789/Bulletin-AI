@@ -274,8 +274,8 @@ export const ListSelectionManager = {
                         <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations sélectionnées (Presse-papier)">
                             <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
                         </button>
-                        <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer les élèves vers une autre classe">
-                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
+                        <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Copier ou déplacer les élèves vers une autre classe / groupe">
+                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer / Copier</span>
                         </button>
                     </div>
 
@@ -346,41 +346,31 @@ export const ListSelectionManager = {
     async bulkDelete(ids) {
         const results = appState.generatedResults || [];
         const students = ids.map(id => results.find(r => r.id === id)).filter(Boolean);
-        const currentPeriod = appState.currentPeriod;
 
-        // Build smart summary
-        const namesPreview = students.slice(0, 5).map(s => `<strong>${Utils.escapeHtml(s.prenom || '')} ${Utils.escapeHtml(s.nom || '')}</strong>`);
-        const remaining = students.length - namesPreview.length;
-        const namesList = namesPreview.join(', ') + (remaining > 0 ? ` et <strong>${remaining} autre${remaining > 1 ? 's' : ''}</strong>` : '');
+        let title = `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`;
+        let message = 'Cette action est irréversible et supprimera toutes les données associées.';
 
-        // Count data that will be lost
-        const withAppreciation = students.filter(s => {
-            const app = s.studentData?.periods?.[currentPeriod]?.appreciation || s.appreciation;
-            return app && app.replace(/<[^>]*>/g, '').trim().length > 0;
-        }).length;
-        const withJournal = students.filter(s => s.journal?.length > 0).length;
-        const withPhoto = students.filter(s => s.studentPhoto?.data).length;
-
-        const dataLines = [
-            withAppreciation > 0 ? `<li>${withAppreciation} appréciation${withAppreciation > 1 ? 's' : ''} générée${withAppreciation > 1 ? 's' : ''}</li>` : '',
-            withJournal > 0 ? `<li>${withJournal} ${withJournal > 1 ? 'journaux' : 'journal'} de bord</li>` : '',
-            withPhoto > 0 ? `<li>${withPhoto} photo${withPhoto > 1 ? 's' : ''}</li>` : ''
-        ].filter(Boolean).join('');
-
-        const detailsContent = `
-            <p style="margin-top:0; margin-bottom:12px;">Supprimer définitivement ${namesList} ?</p>
-            ${dataLines ? `<p class="modal-confirm-detail-label">Données perdues :</p><ul class="modal-confirm-detail-list">${dataLines}</ul>` : ''}
-        `;
+        if (students.length === 1) {
+            const singleName = Utils.escapeHtml(Utils.formatStudentName(students[0].nom, students[0].prenom));
+            if (singleName) title = `Supprimer ${singleName} ?`;
+        } else if (students.length > 1) {
+            const formattedNames = students.map(s =>
+                `<strong>${Utils.escapeHtml(Utils.formatStudentName(s.nom, s.prenom))}</strong>`
+            );
+            const namesSummary = formattedNames.length <= 3
+                ? `${formattedNames.slice(0, -1).join(', ')} et ${formattedNames[formattedNames.length - 1]}`
+                : `${formattedNames.slice(0, 2).join(', ')} et <strong>${formattedNames.length - 2} autres élèves</strong>`;
+            message = `Cette action est irréversible et supprimera ${namesSummary} ainsi que toutes leurs données.`;
+        }
 
         const confirmed = await ModalUIManager.showCustomConfirm(
-            'Cette action est irréversible et effacera toutes les données associées.',
+            message,
             null,
             null,
             {
-                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`,
+                title,
                 confirmText: 'Supprimer',
-                isDanger: true,
-                detailsHtml: detailsContent
+                isDanger: true
             }
         );
 

@@ -50,7 +50,6 @@
 
 .guide-content.active {
     display: flex;
-    animation: guideSlideNext 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .guide-content.active.slide-next {
@@ -651,7 +650,6 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    animation: wizardSlideNext 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .import-wizard-modal .wizard-step-content.active.slide-next,

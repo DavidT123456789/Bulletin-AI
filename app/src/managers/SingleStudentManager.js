@@ -413,11 +413,15 @@ export const SingleStudentManager = {
      * @param {string} id - Identifiant de l'élève
      */
     delete(id) {
+        const student = (appState.generatedResults || []).find(r => r.id === id);
+        const studentName = student ? Utils.escapeHtml(Utils.formatStudentName(student.nom, student.prenom)) : '';
+        const modalTitle = studentName ? `Supprimer ${studentName} ?` : 'Supprimer cet élève ?';
+
         const confirmFn = UI.showCustomConfirm
             ? (msg, onConfirm, onCancel, opts) => UI.showCustomConfirm(msg, onConfirm, onCancel, opts)
             : (msg, onConfirm, _onCancel, opts) => UI.showConfirmModal?.(opts?.title || 'Confirmation', msg, onConfirm);
 
-        confirmFn('L\'élève et ses données seront supprimés définitivement.', async () => {
+        confirmFn('Cette action est irréversible et supprimera toutes les données associées.', async () => {
             const visibleIds = new Set((appState.filteredResults || []).map(r => r.id));
 
             if (id === appState.currentEditingId) { this.resetForm(false); }
@@ -444,6 +448,6 @@ export const SingleStudentManager = {
             UI.showNotification('Supprimée.', 'success');
             await deleteTask;
             await StorageManager.saveAppState();
-        }, null, { title: 'Supprimer cet élève ?', isDanger: true, compact: true });
+        }, null, { title: modalTitle, confirmText: 'Supprimer', isDanger: true });
     }
 };

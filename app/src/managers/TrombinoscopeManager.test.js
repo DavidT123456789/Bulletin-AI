@@ -2389,4 +2389,100 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
             }
         });
     });
+
+    describe('Cycle de vie modale harmonisé (visible + rAF modal-visible & gardes de concurrence)', () => {
+        let modal;
+        let rafQueue;
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            rafQueue = [];
+            vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => {
+                const id = rafQueue.length + 1;
+                rafQueue.push({ id, cb, cancelled: false });
+                return id;
+            });
+            vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation((id) => {
+                const entry = rafQueue.find(item => item.id === id);
+                if (entry) entry.cancelled = true;
+            });
+
+            document.body.innerHTML = '<div id="trombiWizardModal" class="trombi-wizard-modal"></div>';
+            modal = document.getElementById('trombiWizardModal');
+            TrombinoscopeManager._closeTimer = null;
+            TrombinoscopeManager._openRafId = null;
+        });
+
+        const flushRaf = () => {
+            const pending = [...rafQueue];
+            rafQueue.length = 0;
+            pending.forEach(item => {
+                if (!item.cancelled) item.cb(16);
+            });
+        };
+
+        it('active .visible de façon synchrone puis .modal-visible au frame suivant, et nettoie tout après close()', () => {
+            TrombinoscopeManager.open();
+
+            expect(modal.classList.contains('visible')).toBe(true);
+            expect(modal.classList.contains('modal-visible')).toBe(false);
+
+            flushRaf();
+            expect(modal.classList.contains('modal-visible')).toBe(true);
+
+            TrombinoscopeManager.close();
+            expect(modal.classList.contains('closing')).toBe(true);
+            expect(modal.classList.contains('visible')).toBe(true);
+
+            vi.advanceTimersByTime(250);
+            expect(modal.classList.contains('visible')).toBe(false);
+            expect(modal.classList.contains('modal-visible')).toBe(false);
+            expect(modal.classList.contains('closing')).toBe(false);
+
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+
+        it('annule le rAF en attente si close() survient avant le premier frame et ignore un double close()', () => {
+            TrombinoscopeManager.open();
+            TrombinoscopeManager.close();
+
+            flushRaf();
+            expect(modal.classList.contains('modal-visible')).toBe(false);
+            expect(modal.classList.contains('closing')).toBe(true);
+
+            vi.advanceTimersByTime(150);
+            // Un second close() pendant la fermeture ne doit pas repousser le timer de 250ms
+            TrombinoscopeManager.close();
+            vi.advanceTimersByTime(100);
+
+            expect(modal.classList.contains('visible')).toBe(false);
+            expect(modal.classList.contains('closing')).toBe(false);
+
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+
+        it('ré-ouvre proprement si open() est appelé pendant l\'animation de fermeture', () => {
+            TrombinoscopeManager.open();
+            flushRaf();
+            TrombinoscopeManager.close();
+            vi.advanceTimersByTime(100);
+
+            expect(modal.classList.contains('closing')).toBe(true);
+
+            TrombinoscopeManager.open();
+            expect(modal.classList.contains('closing')).toBe(false);
+            expect(modal.classList.contains('visible')).toBe(true);
+            expect(modal.classList.contains('modal-visible')).toBe(false);
+
+            flushRaf();
+            vi.advanceTimersByTime(300);
+            expect(modal.classList.contains('visible')).toBe(true);
+            expect(modal.classList.contains('modal-visible')).toBe(true);
+
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+    });
 });

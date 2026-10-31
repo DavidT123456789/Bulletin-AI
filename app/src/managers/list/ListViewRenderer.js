@@ -88,7 +88,7 @@ export const ListViewRenderer = {
                 
                 <h5 class="dropdown-header">Élève</h5>
                 <button class="action-dropdown-item" data-action="move-student">
-                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
+                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer / Copier
                 </button>
                 <button class="action-dropdown-item warning" data-action="reset-student">
                     <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer...

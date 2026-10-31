@@ -138,9 +138,7 @@ export const StudentPhotoManager = {
      * @returns {string} Two-letter initials
      */
     getInitialsFromName(nom, prenom) {
-        const first = (prenom && prenom[0]) ? prenom[0].toUpperCase() : '';
-        const last = (nom && nom[0]) ? nom[0].toUpperCase() : '';
-        return first + last || '??';
+        return Utils.getInitials(nom, prenom);
     },
 
     /**

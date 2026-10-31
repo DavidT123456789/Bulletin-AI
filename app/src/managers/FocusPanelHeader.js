@@ -590,6 +590,9 @@ export const FocusPanelHeader = {
                 this.clearPendingAvatarData();
             }
 
+            // Enrichir avec photo, statuts et classe d'origine si l'élève existe déjà dans une autre classe
+            StudentDataManager.enrichWithExistingProfile(result, result.classId);
+
             // Add to app state (avoid duplicate push if filteredResults aliases generatedResults)
             appState.generatedResults.push(result);
             if (appState.filteredResults && appState.filteredResults !== appState.generatedResults) {

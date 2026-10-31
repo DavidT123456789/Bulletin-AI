@@ -334,18 +334,14 @@ export const CloudActionsManager = {
         const isPurge = runtimeState._dataPurgeDetected;
         return UI.showCustomConfirm(
             isPurge
-                ? 'Vos données élèves semblent avoir été <strong>effacées par le navigateur</strong> après une longue inactivité.'
-                : 'Vos données locales sont <strong>vides</strong> (0 élève).',
+                ? 'Vos données élèves semblent avoir été <strong>effacées par le navigateur</strong> après une longue inactivité. Sauvegarder maintenant écraserait votre copie Cloud : restaurez plutôt vos données en ligne.'
+                : 'Vos données locales sont <strong>vides</strong> (0 élève). Sauvegarder maintenant écraserait votre copie Cloud : restaurez plutôt vos données en ligne.',
             null, null,
             {
                 title: isPurge ? 'Restaurer depuis le Cloud ?' : 'Données locales vides',
                 confirmText: 'Restaurer depuis le Cloud',
                 cancelText: 'Annuler',
-                isDanger: false,
-                detailsHtml: `
-                    <p>Envoyer des données vides écraserait votre sauvegarde Cloud existante.</p>
-                    <p>Nous vous recommandons de <strong>restaurer</strong> vos données depuis le Cloud pour récupérer votre travail.</p>
-                `
+                isDanger: false
             }
         );
     },

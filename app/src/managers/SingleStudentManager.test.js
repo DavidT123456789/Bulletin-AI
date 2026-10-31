@@ -50,6 +50,7 @@ vi.mock('../utils/Utils.js', () => ({
         normalizeName: vi.fn((nom, prenom) => `${nom}_${prenom}`.toLowerCase()),
         translateErrorMessage: vi.fn(msg => msg),
         detectGender: vi.fn(() => 'M'),
+        escapeHtml: vi.fn(str => str),
         formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));

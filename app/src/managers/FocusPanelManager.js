@@ -381,6 +381,8 @@ export const FocusPanelManager = {
 
         this._renderContent(dummyResult);
         FocusPanelNavigation.updateControls();
+        FocusPanelHeader.toggleEditMode(true);
+        FocusPanelHistory.reset();
 
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
@@ -391,9 +393,6 @@ export const FocusPanelManager = {
         const focusContent = panel?.querySelector('.focus-main-page .focus-content');
         if (focusContent) focusContent.scrollTop = 0;
         this.updateScrollAffordances();
-
-        FocusPanelHeader.toggleEditMode(true);
-        FocusPanelHistory.reset();
     },
 
     /**

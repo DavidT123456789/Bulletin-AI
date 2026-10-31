@@ -260,7 +260,8 @@
 
 .student-list-table tbody tr:hover .student-origin-class-tag,
 .cross-class-result:hover .student-origin-class-tag,
-.sc-student-chip:hover .student-origin-class-tag {
+.sc-student-chip:hover .student-origin-class-tag,
+.pick-student-row:hover:not(.already-present) .student-origin-class-tag {
     color: var(--text-secondary);
     background: var(--bg-tertiary);
     border-color: var(--border-hover-color, var(--border-color));
@@ -356,6 +357,7 @@
 
 /* Instant 100% crispness restoration upon hover, drag or selection (avatar, table row, or seating cell) */
 [data-theme="dark"] .student-avatar.is-selected .student-avatar__img,
+[data-theme="dark"] .pick-student-row.selected .student-avatar .student-avatar__img,
 [data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar .student-avatar__img,
 [data-theme="dark"] .sc-cell.sc-chip-selected .student-avatar .student-avatar__img,
 [data-theme="dark"] .sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img,
@@ -367,6 +369,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     [data-theme="dark"] .student-avatar:hover .student-avatar__img,
+    [data-theme="dark"] .pick-student-row:hover:not(.already-present) .student-avatar .student-avatar__img,
     [data-theme="dark"] .student-list-table tbody tr:hover .student-avatar .student-avatar__img,
     [data-theme="dark"] .sc-cell.occupied:hover .student-avatar .student-avatar__img {
         opacity: 1;

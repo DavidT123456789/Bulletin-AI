@@ -1,7 +1,7 @@
 /**
  * @fileoverview UI Manager pour le sélecteur de classes
  * Gère l'affichage du dropdown, le rendu de la liste des classes, et les interactions utilisateur.
- * 
+ *
  * @module managers/ClassUIManager
  */
 
@@ -16,6 +16,8 @@ import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
+import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { Utils } from '../utils/Utils.js';
 import { TooltipsUI } from './TooltipsManager.js';
 
@@ -75,8 +77,8 @@ export const ClassUIManager = {
             document.removeEventListener('click', this._boundOutsideClick, true);
         }
         this._boundOutsideClick = (e) => {
-            if (this._isDropdownOpen && 
-                !e.target.closest?.('.class-selector-wrapper') && 
+            if (this._isDropdownOpen &&
+                !e.target.closest?.('.class-selector-wrapper') &&
                 !DOM.classDropdown?.contains(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -109,6 +111,12 @@ export const ClassUIManager = {
             const modalBody = document.querySelector('#classManagementModal .modal-body');
             if (modalBody) {
                 FocusPanelManager.updateScrollAffordances(modalBody);
+            }
+            const pickChips = document.getElementById('pickStudentsChips');
+            if (pickChips) FocusPanelManager.updateScrollAffordances(pickChips);
+            const pickList = document.getElementById('pickStudentsList');
+            if (pickList) {
+                FocusPanelManager.updateScrollAffordances(pickList);
             }
         };
         window.addEventListener('resize', this._boundResize, { passive: true });
@@ -549,7 +557,7 @@ export const ClassUIManager = {
                     const isCollapsed = !this._showVirtualClasses;
                     const sourceNames = item.sourceGroupNames?.join(' & ') || '';
                     return `
-                    <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}" 
+                    <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}"
                          data-class-id="${item.id}"
                          tabindex="${isCollapsed ? '-1' : '0'}"
                          role="option"
@@ -575,7 +583,7 @@ export const ClassUIManager = {
                 }
 
                 return `
-                <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}" 
+                <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}"
                      data-class-id="${item.id}"
                      tabindex="0"
                      role="option"
@@ -1218,7 +1226,7 @@ export const ClassUIManager = {
 
     /**
      * Calcule les statistiques d'une classe (élèves, progression)
-     * @param {string} classId 
+     * @param {string} classId
      * @returns {{total: number, completed: number, errors: number, icon: string, statusClass: string}}
      * @private
      */
@@ -1415,6 +1423,12 @@ export const ClassUIManager = {
             moreMenu?.classList.toggle('open');
         });
 
+        const setInlineConfirmDisabled = (btn, isDisabled) => {
+            if (!btn) return;
+            btn.classList.toggle('disabled', isDisabled);
+            btn.setAttribute('aria-disabled', String(isDisabled));
+        };
+
         // Add new class button in modal - inline row inside grouped list
         const addClassBtn = modalEl.querySelector('#addClassFromModalBtn');
         addClassBtn?.addEventListener('click', () => {
@@ -1439,10 +1453,10 @@ export const ClassUIManager = {
                         <iconify-icon icon="ph:plus"></iconify-icon>
                     </div>
                     <div class="class-management-info">
-                        <input type="text" class="inline-field-input new-class-input" 
+                        <input type="text" class="inline-field-input new-class-input"
                                id="newSchoolClassInput"
                                name="school_class_title"
-                               placeholder="Classe (ex. 6ème A, 3ème B)..." 
+                               placeholder="Classe (ex. 6ème A, 3ème B)..."
                                maxlength="50"
                                autocomplete="off"
                                autocorrect="off"
@@ -1453,10 +1467,10 @@ export const ClassUIManager = {
                                data-form-type="other">
                     </div>
                     <div class="class-management-actions">
-                        <button class="inline-action-btn confirm create-class-confirm" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" disabled>
-                            <iconify-icon icon="ph:check"></iconify-icon>
+                        <button type="button" class="inline-action-btn confirm create-class-confirm disabled" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" aria-disabled="true">
+                            <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button class="inline-action-btn cancel create-class-cancel" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
+                        <button type="button" class="inline-action-btn cancel create-class-cancel" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
@@ -1483,11 +1497,13 @@ export const ClassUIManager = {
             const input = row.querySelector('.new-class-input');
             const confirmBtn = row.querySelector('.create-class-confirm');
             const cancelBtn = row.querySelector('.create-class-cancel');
+            let isSubmitting = false;
 
-            UI?.initTooltips?.();
+            TooltipsUI?.initTooltips?.(row);
             input.focus();
 
             const removeRow = () => {
+                TooltipsUI?.cleanupTooltipsIn?.(row);
                 row.style.animation = 'slideUpCollapseRow 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards';
                 setTimeout(() => {
                     row.remove();
@@ -1499,48 +1515,57 @@ export const ClassUIManager = {
             };
 
             input.oninput = () => {
-                confirmBtn.disabled = input.value.trim().length === 0;
+                if (isSubmitting) return;
+                setInlineConfirmDisabled(confirmBtn, input.value.trim().length === 0);
             };
 
             input.onkeydown = (e) => {
-                if (e.key === 'Enter' && input.value.trim()) {
+                if (e.key === 'Enter') {
                     e.preventDefault();
-                    confirmBtn.click();
-                } else if (e.key === 'Escape') {
+                    if (!confirmBtn.classList.contains('disabled')) {
+                        confirmBtn.click();
+                    }
+                } else if (e.key === 'Escape' && !isSubmitting) {
                     removeRow();
                 }
             };
 
-            cancelBtn.onclick = removeRow;
+            cancelBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (!isSubmitting) removeRow();
+            };
 
-            confirmBtn.onclick = async () => {
+            confirmBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (isSubmitting || confirmBtn.classList.contains('disabled')) return;
                 const className = input.value.trim();
                 if (!className) return;
 
-                confirmBtn.disabled = true;
+                isSubmitting = true;
+                setInlineConfirmDisabled(confirmBtn, true);
                 input.disabled = true;
                 confirmBtn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
 
                 try {
                     const newClass = await this._createAndSwitchClass(className);
                     if (newClass) {
-                        confirmBtn.disabled = false;
-                        confirmBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
+                        setInlineConfirmDisabled(confirmBtn, false);
+                        confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon>';
+                        TooltipsUI?.cleanupTooltipsIn?.(row);
                         row.style.animation = 'slideUpCollapseRow 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards';
                         setTimeout(() => {
                             row.remove();
                             refreshList(newClass.id);
                         }, 200);
-                    } else {
-                        confirmBtn.disabled = false;
-                        input.disabled = false;
-                        confirmBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
+                        return;
                     }
                 } catch {
-                    confirmBtn.disabled = false;
-                    input.disabled = false;
-                    confirmBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
+                    // Handled by _createAndSwitchClass
                 }
+                isSubmitting = false;
+                input.disabled = false;
+                setInlineConfirmDisabled(confirmBtn, input.value.trim().length === 0);
+                confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon>';
             };
         });
 
@@ -1693,7 +1718,7 @@ export const ClassUIManager = {
 
                     // Remplacement in-situ du libellé par l'input
                     nameEl.outerHTML = `
-                        <input type="text" class="inline-field-input in-situ-rename-input" 
+                        <input type="text" class="inline-field-input in-situ-rename-input"
                                name="rename_school_class_title"
                                value="${this._escapeHtml(cls.name)}"
                                placeholder="Nom de la classe..."
@@ -1709,15 +1734,15 @@ export const ClassUIManager = {
 
                     // Remplacement des actions par Confirmer / Annuler
                     actionsEl.innerHTML = `
-                        <button class="inline-action-btn confirm save-rename-btn" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" disabled>
-                            <iconify-icon icon="ph:check"></iconify-icon>
+                        <button type="button" class="inline-action-btn confirm save-rename-btn disabled" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" aria-disabled="true">
+                            <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button class="inline-action-btn cancel cancel-rename-btn" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
+                        <button type="button" class="inline-action-btn cancel cancel-rename-btn" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     `;
 
-                    UI?.initTooltips?.();
+                    TooltipsUI?.initTooltips?.(row);
 
                     const input = row.querySelector('.in-situ-rename-input');
                     const saveBtn = row.querySelector('.save-rename-btn');
@@ -1728,26 +1753,15 @@ export const ClassUIManager = {
 
                     input.oninput = () => {
                         const val = input.value.trim();
-                        saveBtn.disabled = val.length === 0 || val === cls.name;
+                        setInlineConfirmDisabled(saveBtn, val.length === 0 || val === cls.name);
                     };
 
-                    const restore = () => {
-                        row.innerHTML = originalContent;
-                        row.classList.remove('editing', 'renaming');
-                        row.setAttribute('draggable', 'true');
-                        row.setAttribute('tabindex', '0');
-                        const newRenameBtn = row.querySelector('.manage-rename-btn');
-                        const newDuplicateBtn = row.querySelector('.manage-duplicate-btn');
-                        const newDeleteBtn = row.querySelector('.manage-delete-btn');
-                        if (newRenameBtn) bindRenameHandler(newRenameBtn);
-                        if (newDuplicateBtn) bindDuplicateHandler(newDuplicateBtn);
-                        if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
-                        UI?.initTooltips?.();
-                    };
+                    const restore = () => restoreRow(row, originalContent);
 
                     const save = () => {
                         const newName = input.value.trim();
                         if (newName && newName !== cls.name) {
+                            TooltipsUI?.cleanupTooltipsIn?.(row);
                             ClassManager.updateClass(classId, { name: newName });
                             UI?.showNotification(`Classe renommée en "${newName}"`, 'success');
                             this.updateHeaderDisplay();
@@ -1761,70 +1775,89 @@ export const ClassUIManager = {
                     input.onkeydown = (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            if (!saveBtn.disabled) save();
+                            if (!saveBtn.classList.contains('disabled')) save();
                         } else if (e.key === 'Escape') {
                             restore();
                         }
                     };
 
-                    saveBtn.onclick = save;
-                    cancelBtn.onclick = restore;
+                    saveBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (saveBtn.classList.contains('disabled')) return;
+                        save();
+                    };
+                    cancelBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        restore();
+                    };
                 });
             };
 
-            list.querySelectorAll('.manage-rename-btn').forEach(btn => bindRenameHandler(btn));
-
             // Delete buttons - inline confirmation
             const bindDeleteHandler = (btn) => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     const classId = btn.dataset.classId;
                     const row = btn.closest('.class-management-item');
                     if (!row) return;
 
                     closeActiveEditingRows(row);
+                    TooltipsUI?.cleanupTooltipsIn?.(row);
 
                     const originalContent = row.innerHTML;
                     const cls = ClassManager.getClassById(classId);
+                    const displayName = this._escapeHtml(Utils.formatClassDisplayName(cls?.name || ''));
+                    let isDeleting = false;
 
                     row.innerHTML = `
-                        <div class="delete-confirm-inline">
-                            <div class="delete-confirm-info">
-                                <span class="delete-confirm-title">
-                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> 
-                                    Supprimer la classe <strong>${this._escapeHtml(cls?.name || '')}</strong> ?
-                                </span>
-                                <span class="delete-confirm-subtext">Ses élèves et données seront définitivement effacés.</span>
-                            </div>
-                            <div class="delete-confirm-actions">
-                                <button class="inline-delete-btn cancel cancel-delete-btn">
-                                    Annuler
-                                </button>
-                                <button class="inline-delete-btn confirm confirm-delete-btn">
-                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
-                                </button>
-                            </div>
+                        <div class="delete-confirm-icon" aria-hidden="true">
+                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
+                        </div>
+                        <div class="class-management-info delete-confirm-info">
+                            <span class="delete-confirm-title">Supprimer « <strong>${displayName}</strong> » ?</span>
+                            <span class="delete-confirm-subtext">Ses élèves et données seront définitivement effacés.</span>
+                        </div>
+                        <div class="delete-confirm-actions">
+                            <button type="button" class="inline-delete-btn cancel cancel-delete-btn">
+                                Annuler
+                            </button>
+                            <button type="button" class="inline-delete-btn confirm confirm-delete-btn">
+                                Supprimer
+                            </button>
                         </div>
                     `;
 
-                    row.classList.add('editing');
+                    row.classList.add('editing', 'deleting');
+                    row.removeAttribute('draggable');
                     row.removeAttribute('tabindex');
                     updateModalScroll();
 
-                    row.querySelector('.cancel-delete-btn').onclick = () => {
-                        row.innerHTML = originalContent;
-                        row.classList.remove('editing');
-                        row.setAttribute('tabindex', '0');
-                        const newDeleteBtn = row.querySelector('.manage-delete-btn');
-                        if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
-                        const newRenameBtn = row.querySelector('.manage-rename-btn');
-                        if (newRenameBtn) bindRenameHandler(newRenameBtn);
-                        const newDuplicateBtn = row.querySelector('.manage-duplicate-btn');
-                        if (newDuplicateBtn) bindDuplicateHandler(newDuplicateBtn);
-                        UI?.initTooltips?.();
-                        updateModalScroll();
+                    const cancelBtn = row.querySelector('.cancel-delete-btn');
+                    const confirmBtn = row.querySelector('.confirm-delete-btn');
+
+                    row.onkeydown = (ev) => {
+                        if (ev.key === 'Escape' && !isDeleting) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            restoreRow(row, originalContent);
+                        }
                     };
 
-                    row.querySelector('.confirm-delete-btn').onclick = async () => {
+                    cancelBtn?.focus({ preventScroll: true });
+
+                    cancelBtn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        if (isDeleting) return;
+                        restoreRow(row, originalContent);
+                    };
+
+                    confirmBtn.onclick = async (ev) => {
+                        ev.stopPropagation();
+                        if (isDeleting) return;
+                        isDeleting = true;
+                        cancelBtn.disabled = true;
+                        confirmBtn.disabled = true;
+                        row.onkeydown = null;
                         row.style.animation = 'slideOutRow 0.3s ease-out forwards';
 
                         setTimeout(async () => {
@@ -1848,8 +1881,6 @@ export const ClassUIManager = {
                     };
                 });
             };
-
-            list.querySelectorAll('.manage-delete-btn').forEach(btn => bindDeleteHandler(btn));
 
             // Duplicate buttons handler
             const bindDuplicateHandler = (btn) => {
@@ -1876,7 +1907,28 @@ export const ClassUIManager = {
                 });
             };
 
-            list.querySelectorAll('.manage-duplicate-btn').forEach(btn => bindDuplicateHandler(btn));
+            const bindRowActionButtons = (row) => {
+                const renameBtn = row.querySelector('.manage-rename-btn');
+                const duplicateBtn = row.querySelector('.manage-duplicate-btn');
+                const deleteBtn = row.querySelector('.manage-delete-btn');
+                if (renameBtn) bindRenameHandler(renameBtn);
+                if (duplicateBtn) bindDuplicateHandler(duplicateBtn);
+                if (deleteBtn) bindDeleteHandler(deleteBtn);
+            };
+
+            const restoreRow = (row, originalContent) => {
+                TooltipsUI?.cleanupTooltipsIn?.(row);
+                row.onkeydown = null;
+                row.innerHTML = originalContent;
+                row.classList.remove('editing', 'renaming', 'deleting');
+                row.setAttribute('draggable', 'true');
+                row.setAttribute('tabindex', '0');
+                bindRowActionButtons(row);
+                TooltipsUI?.initTooltips?.(row);
+                updateModalScroll();
+            };
+
+            list.querySelectorAll('.class-management-item[data-class-id]').forEach(row => bindRowActionButtons(row));
         };
 
         let draggedItem = null;
@@ -1944,21 +1996,25 @@ export const ClassUIManager = {
                 e.stopPropagation();
                 moreMenu.classList.remove('open');
 
+                const isSingleEmpty = emptyClasses.length === 1;
+                const cleanMessage = isSingleEmpty
+                    ? `Supprimer définitivement la classe vide <strong>${this._escapeHtml(emptyClasses[0].name)}</strong> ? Aucun élève ni appréciation ne sera perdu.`
+                    : `Supprimer définitivement les <strong>${emptyClasses.length} classes</strong> sans élèves ? Aucun élève ni appréciation ne sera perdu.`;
+
                 const confirmed = await UI?.showCustomConfirm?.(
-                    `Supprimer définitivement les ${emptyClasses.length} classe${emptyClasses.length > 1 ? 's' : ''} vides ?`,
+                    cleanMessage,
                     null,
                     null,
                     {
-                        title: 'Nettoyer les classes vides ?',
-                        confirmText: 'Nettoyer',
+                        title: isSingleEmpty ? 'Supprimer cette classe vide ?' : 'Nettoyer les classes vides ?',
+                        confirmText: isSingleEmpty ? 'Supprimer' : 'Nettoyer',
                         cancelText: 'Annuler',
                         isDanger: true,
-                        detailsHtml: `
-                            <p class="confirm-details-lead">Classes sans élèves concernées :</p>
+                        detailsHtml: isSingleEmpty ? '' : `
+                            <p class="confirm-details-lead">Classes concernées :</p>
                             <ul class="confirm-details-list">
-                                ${emptyClasses.map(c => `<li><strong>${this._escapeHtml(c.name)}</strong> (0 élève)</li>`).join('')}
+                                ${emptyClasses.map(c => `<li><strong>${this._escapeHtml(c.name)}</strong></li>`).join('')}
                             </ul>
-                            <p class="confirm-details-note">Aucun élève ni appréciation ne sera perdu.</p>
                         `
                     }
                 );
@@ -1977,27 +2033,19 @@ export const ClassUIManager = {
                 moreMenu.classList.remove('open');
 
                 const totalStudents = appState.generatedResults?.length || 0;
+                const classLabel = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''}`;
+                const studentPart = totalStudents > 0
+                    ? ` ainsi que les <strong>${totalStudents} élève${totalStudents > 1 ? 's' : ''}</strong> associés`
+                    : '';
                 const confirmed = await UI?.showCustomConfirm?.(
-                    `Cette action est irréversible et supprimera l'ensemble de vos classes ainsi que leurs élèves.`,
+                    `Cette action est irréversible et supprimera vos <strong>${classLabel}</strong>${studentPart}. Vos clés API, prompts et réglages resteront intacts.`,
                     null,
                     null,
                     {
                         title: 'Supprimer toutes les classes ?',
                         confirmText: 'Tout supprimer',
                         cancelText: 'Annuler',
-                        isDanger: true,
-                        detailsHtml: `
-                            <p class="confirm-details-lead">Cette action supprimera :</p>
-                            <ul class="confirm-details-list">
-                                <li>Les <strong>${currentClasses.length} classes</strong> existantes</li>
-                                <li>Les <strong>${totalStudents} élèves</strong> et leurs données de scolarité</li>
-                                <li>Toutes les appréciations générées associées</li>
-                            </ul>
-                            <p class="confirm-details-safe">
-                                <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
-                                <span>Vos clés API, prompts et réglages resteront intacts.</span>
-                            </p>
-                        `
+                        isDanger: true
                     }
                 );
 
@@ -2111,8 +2159,8 @@ export const ClassUIManager = {
                         const isNew = highlightClassId && cls.id === highlightClassId;
 
                         return `
-                            <div class="class-management-item ${isActive ? 'active-switch' : ''} ${isNew ? 'class-item-just-created' : ''}" 
-                                 data-class-id="${cls.id}" 
+                            <div class="class-management-item ${isActive ? 'active-switch' : ''} ${isNew ? 'class-item-just-created' : ''}"
+                                 data-class-id="${cls.id}"
                                  draggable="true"
                                  tabindex="0"
                                  role="option"
@@ -2120,28 +2168,28 @@ export const ClassUIManager = {
                                 <div class="class-drag-handle" data-tooltip="Réorganiser">
                                     <iconify-icon icon="ph:dots-six-vertical-bold"></iconify-icon>
                                 </div>
-                                
+
                                 <div class="class-management-info">
                                     <div class="class-info-header">
                                         <span class="class-management-name">${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}</span>
                                         ${averageBadge}
                                     </div>
-                                    
+
                                     <div class="class-management-meta">
                                         ${metaContentHtml}
                                     </div>
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}" 
+                                    <button class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}" 
+                                    <button class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Renommer" aria-label="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}" 
+                                    <button class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Supprimer la classe" aria-label="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
@@ -2182,17 +2230,18 @@ export const ClassUIManager = {
     },
 
     /**
-     * Affiche une modale pour déplacer un ou plusieurs élèves vers une autre classe
-     * @param {string|Array<string>} studentIds - ID(s) des élèves à déplacer
-     * @param {Function} [onSuccess] - Callback appelée après le déplacement réussi
+     * Affiche une modale pour déplacer ou copier un ou plusieurs élèves vers une autre classe / groupe
+     * @param {string|Array<string>} studentIds - ID(s) des élèves concernés
+     * @param {Function} [onSuccess] - Callback appelée après l'action réussie
+     * @param {Object} [options] - Options facultatives ({ defaultMode: 'copy' | 'move' })
      */
-    showMoveStudentsModal(studentIds, onSuccess = null) {
-        // Ensure array
+    showMoveStudentsModal(studentIds, onSuccess = null, options = {}) {
         const ids = Array.isArray(studentIds) ? studentIds : [studentIds];
         if (ids.length === 0) return;
 
-        // Find students
-        const students = appState.generatedResults.filter(r => ids.includes(r.id));
+        const idSet = new Set(ids);
+        const allResults = appState.generatedResults || [];
+        const students = allResults.filter(r => r && idSet.has(r.id));
         if (students.length === 0) {
             UI?.showNotification('Aucun élève trouvé', 'error');
             return;
@@ -2200,99 +2249,183 @@ export const ClassUIManager = {
 
         const isBulk = students.length > 1;
         const firstStudent = students[0];
-
-        // Check if all are in the same class (they should be for this UI, but good to be safe)
         const currentClassId = firstStudent.classId;
         const allClassesAreSame = students.every(s => s.classId === currentClassId);
 
-        // Target classes (exclude current)
-        // If mixed classes, exclude none? Or just use "Move to..." logic. 
-        // For simplicity, we assume we are in a context where we move FROM a class (class dashboard usually).
-        // If from "All Students" view, we might have mixed classes.
-        // Let's list ALL classes except the one they are predominantly in, or just ALL classes if mixed.
-
-        let classes = ClassManager.getAllClasses();
+        let classes = ClassManager.getAllClasses().filter(c => !ClassManager.isDemoClass(c.id));
         if (allClassesAreSame) {
             classes = classes.filter(c => c.id !== currentClassId);
         }
 
-        if (classes.length === 0) {
-            UI?.showNotification('Aucune autre classe disponible. Créez d\'abord une autre classe.', 'warning');
-            return;
+        const classStudentCounts = new Map();
+        for (const r of allResults) {
+            if (r?.classId) {
+                classStudentCounts.set(r.classId, (classStudentCounts.get(r.classId) || 0) + 1);
+            }
         }
 
-        const currentClass = ClassManager.getClassById(currentClassId);
+        const isViewingVirtualClass = ClassManager.isVirtualClass(appState.currentClassId);
+        const currentClass = isViewingVirtualClass
+            ? ClassManager.getClassById(appState.currentClassId)
+            : ClassManager.getClassById(currentClassId);
 
-        // Title & Description
-        const title = isBulk ? 'Déplacer les élèves' : 'Déplacer l\'élève';
-        const description = isBulk
-            ? `Déplacer <strong>${students.length} élèves</strong> vers :`
-            : `Déplacer ${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, true)} ${allClassesAreSame ? `depuis <strong>${this._escapeHtml(currentClass?.name || 'Class')}</strong>` : ''} vers :`;
+        // Mode initial : 'copy' par défaut pour sécuriser la classe d'origine et faciliter l'affectation aux groupes
+        let currentMode = options.defaultMode || 'copy';
 
-        // Créer la modale
+        const getSubjectLabel = () => isBulk
+            ? `<strong>${students.length} élèves</strong>`
+            : `<strong>${this._escapeHtml(Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false))}</strong>`;
+
+        const getOriginLabel = () => {
+            if (!currentClass?.name) return '';
+            return ` depuis <strong>${this._escapeHtml(Utils.formatClassDisplayName(currentClass.name))}</strong>`;
+        };
+
+        const getInstructionHtml = (mode) => {
+            if (mode === 'copy') {
+                return `Copier ${getSubjectLabel()}${getOriginLabel()} vers :`;
+            }
+            return `Déplacer ${getSubjectLabel()}${allClassesAreSame ? getOriginLabel() : ''} vers :`;
+        };
+
+        const getHintText = (mode) => {
+            if (mode === 'copy') {
+                return isBulk
+                    ? 'Conserve ces élèves dans leur classe actuelle et crée une fiche vierge (photo, statuts et classe d\'origine conservés).'
+                    : 'Conserve l\'élève dans sa classe actuelle et crée une fiche vierge (photo, statuts et classe d\'origine conservés).';
+            }
+            return isBulk
+                ? 'Transfère ces élèves avec leurs notes et appréciations et les retire de leur classe actuelle.'
+                : 'Transfère l\'élève avec ses notes et appréciations et le retire de sa classe actuelle.';
+        };
+
         const modalEl = document.createElement('div');
         modalEl.className = 'modal modal-small';
         modalEl.id = 'moveStudentModal';
         modalEl.innerHTML = `
-            <div class="modal-content modal-content-confirm">
+            <div class="modal-content modal-content-confirm move-student-modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <span class="modal-title-icon"><iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon></span>
-                        <span class="modal-title-text">${title}</span>
+                        <span class="modal-title-icon" id="moveModalTitleIcon"><iconify-icon icon="solar:copy-bold-duotone"></iconify-icon></span>
+                        <span class="modal-title-text" id="moveModalTitleText">${isBulk ? 'Affecter ou déplacer les élèves' : 'Affecter ou déplacer l\'élève'}</span>
                     </h2>
                     <button class="close-button close-move-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body">
-                    <p class="modal-instruction-text">
-                        ${description}
+                    <div class="move-mode-segmented" role="tablist" aria-label="Mode d'action">
+                        <button type="button" class="move-mode-btn ${currentMode === 'copy' ? 'active' : ''}" data-mode="copy" role="tab" aria-selected="${currentMode === 'copy'}">
+                            <iconify-icon icon="solar:copy-bold-duotone"></iconify-icon>
+                            <span>Copier dans…</span>
+                        </button>
+                        <button type="button" class="move-mode-btn ${currentMode === 'move' ? 'active' : ''}" data-mode="move" role="tab" aria-selected="${currentMode === 'move'}">
+                            <iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon>
+                            <span>Déplacer vers…</span>
+                        </button>
+                    </div>
+                    <p class="move-mode-hint" id="moveModalHintText">${getHintText(currentMode)}</p>
+                    <p class="modal-instruction-text" id="moveModalInstructionText">
+                        ${getInstructionHtml(currentMode)}
                     </p>
-                    <div class="move-class-list">
-                        ${classes.map(cls => `
-                            <button class="btn btn-secondary move-target-btn" data-class-id="${cls.id}">
-                                <iconify-icon icon="solar:mortarboard-bold"></iconify-icon>
-                                ${this._escapeHtml(cls.name)}
-                                <span class="move-target-year">${cls.year || ''}</span>
+                    <div class="move-class-list" id="moveModalClassList">
+                        ${classes.map(cls => {
+                            const isGroup = Utils.isGroupClassName(cls.name);
+                            const count = classStudentCounts.get(cls.id) || 0;
+                            return `
+                                <button type="button" class="btn btn-secondary move-target-btn" data-class-id="${cls.id}">
+                                    <iconify-icon icon="${isGroup ? 'solar:users-group-rounded-bold' : 'solar:mortarboard-bold'}"></iconify-icon>
+                                    <span class="move-target-name">${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}</span>
+                                    <span class="move-target-year">${count} élève${count > 1 ? 's' : ''}</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="move-create-class-section">
+                        <button type="button" class="btn btn-secondary move-create-class-toggle" id="moveCreateClassToggle" style="${classes.length === 0 ? 'display: none;' : ''}">
+                            <iconify-icon icon="ph:plus-bold"></iconify-icon>
+                            <span>Nouvelle classe / groupe…</span>
+                        </button>
+                        <div class="move-create-class-form ${classes.length === 0 ? 'open' : ''}" id="moveCreateClassForm">
+                            <input type="text" class="move-create-class-input" id="moveCreateClassInput" placeholder="Nom du groupe (ex : Groupe PAD, Projet PAPD...)" maxlength="50" autocomplete="off">
+                            <button type="button" class="btn btn-primary move-create-class-submit" id="moveCreateClassSubmit">
+                                <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                <span>Créer</span>
                             </button>
-                        `).join('')}
+                        </div>
                     </div>
                 </div>
             </div>
         `;
 
+        document.getElementById('moveStudentModal')?.remove();
         document.body.appendChild(modalEl);
         UI?.openModal(modalEl);
 
-        // Close button
-        modalEl.querySelector('.close-move-modal')?.addEventListener('click', () => {
+        const closeModal = () => {
             UI?.closeModal(modalEl);
             setTimeout(() => modalEl.remove(), 300);
+        };
+
+        modalEl.querySelector('.close-move-modal')?.addEventListener('click', closeModal);
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) closeModal();
         });
 
-        // Class selection buttons
-        modalEl.querySelectorAll('.move-target-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const targetClassId = btn.dataset.classId;
-                const targetClass = ClassManager.getClassById(targetClassId);
+        // Toggle mode (Copier / Déplacer)
+        const modeBtns = modalEl.querySelectorAll('.move-mode-btn');
+        const hintEl = modalEl.querySelector('#moveModalHintText');
+        const instructionEl = modalEl.querySelector('#moveModalInstructionText');
+        const titleIconEl = modalEl.querySelector('#moveModalTitleIcon iconify-icon');
 
-                // Confirm action
-                btn.disabled = true;
-                btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon> Déplacement...';
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                if (!mode || mode === currentMode) return;
+                currentMode = mode;
+                modeBtns.forEach(b => {
+                    const isActive = b.dataset.mode === currentMode;
+                    b.classList.toggle('active', isActive);
+                    b.setAttribute('aria-selected', String(isActive));
+                });
+                if (hintEl) hintEl.textContent = getHintText(currentMode);
+                if (instructionEl) instructionEl.innerHTML = getInstructionHtml(currentMode);
+                if (titleIconEl) {
+                    titleIconEl.setAttribute('icon', currentMode === 'copy' ? 'solar:copy-bold-duotone' : 'solar:transfer-horizontal-bold');
+                }
+            });
+        });
 
-                // Move students
+        const executeTargetAction = async (targetClassId, triggerBtn = null) => {
+            const targetClass = ClassManager.getClassById(targetClassId);
+            if (!targetClass) return;
+
+            if (triggerBtn) {
+                triggerBtn.disabled = true;
+                triggerBtn.innerHTML = `<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon> ${currentMode === 'copy' ? 'Copie...' : 'Déplacement...'}`;
+            }
+
+            const displayTarget = Utils.formatClassDisplayName(targetClass.name);
+            let notificationText = '';
+            let notificationType = 'success';
+
+            if (currentMode === 'copy') {
+                const { copiedCount, skippedCount } = StudentDataManager.copyStudentsToClass(ids, targetClassId);
+                if (copiedCount > 0) {
+                    notificationText = isBulk
+                        ? `${copiedCount} élève${copiedCount > 1 ? 's' : ''} copié${copiedCount > 1 ? 's' : ''} dans « ${displayTarget} »${skippedCount > 0 ? ` (${skippedCount} déjà présent${skippedCount > 1 ? 's' : ''})` : ''}`
+                        : `${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false)} copié dans « ${displayTarget} »`;
+                } else if (skippedCount > 0) {
+                    notificationText = isBulk
+                        ? `Ces élèves sont déjà présents dans « ${displayTarget} »`
+                        : `${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false)} est déjà dans « ${displayTarget} »`;
+                    notificationType = 'info';
+                }
+            } else {
                 let movedCount = 0;
-
-                // Using imported StudentDataManager if needed, but here we seem to update raw objects
-                // Ideally we should use StudentDataManager.updateStudent() but direct manipulation 
-                // seems to be the pattern here (based on previous code). 
-                // Wait, previous code accessed 'student.classId = ...'. 
-                // Let's stick to that for now, but really we should persist it.
-                // The previous code did `await StorageManager?.saveAppState();` so that's enough.
-
+                const now = Date.now();
                 students.forEach(student => {
                     student.classId = targetClassId;
+                    student._lastModified = now;
 
-                    // Remove from current filtered results if we are viewing the source class
-                    // (This logic is a bit fragile if we are in "All Classes" view, but keeps consistency with previous code)
                     const indexInFiltered = appState.filteredResults.findIndex(r => r.id === student.id);
                     if (indexInFiltered !== -1 && allClassesAreSame && appState.currentClassId === currentClassId) {
                         appState.filteredResults.splice(indexInFiltered, 1);
@@ -2300,36 +2433,487 @@ export const ClassUIManager = {
                     movedCount++;
                 });
 
-                // Save
-                await StorageManager?.saveAppState();
+                notificationText = isBulk
+                    ? `${movedCount} élèves déplacés vers « ${displayTarget} »`
+                    : `${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false)} déplacé vers « ${displayTarget} »`;
+            }
 
-                // Update UI
-                this.updateStudentCount();
+            await ClassManager._filterResultsByClass(appState.currentClassId);
+            await StorageManager?.saveAppState();
 
-                // CRITICAL: if we are in ListView, we might need to refresh the whole list if we removed items
-                // The splice above modifies filteredResults in place, so renderResults SHOULD refect it.
-                // However, renderResults takes filteredResults as arg usually.
-                AppreciationsManager.renderResults();
-                UI?.updateStats?.();
+            this.updateStudentCount();
+            this.renderClassList();
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.();
 
-                // If ListViewManager has selections, we should probably clear them
-                // But we don't have access to ListViewManager instance here directly easily?
-                // Actually `AppreciationsManager.renderResults()` usually calls `ListViewManager.render`.
-                // We should rely on that.
+            closeModal();
 
-                // Close modal and notify
-                UI?.closeModal(modalEl);
-                setTimeout(() => modalEl.remove(), 300);
+            if (notificationText) {
+                UI?.showNotification(notificationText, notificationType);
+            }
+            window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            if (onSuccess) onSuccess();
+        };
 
-                const notificationText = isBulk
-                    ? `${movedCount} élèves déplacés vers "${targetClass?.name}"`
-                    : `${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false)} déplacé vers "${targetClass?.name}"`;
-
-                UI?.showNotification(notificationText, 'success');
-
-                // Callback for caller (e.g. to clear selections)
-                if (onSuccess) onSuccess();
+        // Sélection d'une classe existante
+        modalEl.querySelectorAll('.move-target-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                executeTargetAction(btn.dataset.classId, btn);
             });
         });
+
+        // Création rapide d'une nouvelle classe / groupe à la volée
+        const createToggleBtn = modalEl.querySelector('#moveCreateClassToggle');
+        const createForm = modalEl.querySelector('#moveCreateClassForm');
+        const createInput = modalEl.querySelector('#moveCreateClassInput');
+        const createSubmitBtn = modalEl.querySelector('#moveCreateClassSubmit');
+
+        if (classes.length === 0 && createInput) {
+            setTimeout(() => createInput.focus(), 80);
+        }
+
+        createToggleBtn?.addEventListener('click', () => {
+            createToggleBtn.style.display = 'none';
+            createForm?.classList.add('open');
+            setTimeout(() => createInput?.focus(), 50);
+        });
+
+        const handleCreateAndApply = async () => {
+            const rawName = (createInput?.value || '').trim();
+            if (!rawName) {
+                UI?.showNotification('Veuillez saisir un nom de classe ou de groupe', 'warning');
+                createInput?.focus();
+                return;
+            }
+            const newClass = ClassManager.createClass(rawName);
+            await executeTargetAction(newClass.id, createSubmitBtn);
+        };
+
+        createSubmitBtn?.addEventListener('click', handleCreateAndApply);
+        createInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreateAndApply();
+            }
+        });
+    },
+
+    /**
+     * Affiche la modale permettant de piocher des élèves parmi les classes existantes
+     * pour les ajouter (copier) dans la classe/groupe actif.
+     * @param {string|null} [targetClassId=null] - ID de la classe cible (par défaut classe active)
+     */
+    showPickExistingStudentsModal(targetClassId = null) {
+        const effectiveTargetId = targetClassId || appState.currentClassId || userSettings.academic.currentClassId;
+        const targetClass = ClassManager.getClassById(effectiveTargetId);
+        if (!targetClass || ClassManager.isVirtualClass(effectiveTargetId)) {
+            UI?.showNotification('Veuillez d\'abord sélectionner une classe ou un groupe.', 'warning');
+            return;
+        }
+
+        const allResults = appState.generatedResults || [];
+        const physicalClasses = ClassManager.getAllClasses().filter(
+            c => c.id !== effectiveTargetId && !ClassManager.isDemoClass(c.id)
+        );
+        const classMap = new Map(physicalClasses.map(c => [c.id, c]));
+        const virtualClasses = ClassManager.getVirtualClasses();
+        const virtualClassIds = new Set(virtualClasses.map(vc => vc.id));
+
+        // Élèves déjà présents dans la classe cible
+        const targetKeys = new Set();
+        for (const r of allResults) {
+            if (r?.classId === effectiveTargetId) {
+                targetKeys.add(Utils.normalizeName(r.nom, r.prenom));
+            }
+        }
+
+        // Consolider la liste unique des élèves disponibles dans les autres classes
+        const candidatesMap = new Map();
+
+        allResults.forEach(r => {
+            if (!r?.classId || r.classId === effectiveTargetId) return;
+            const sourceClass = classMap.get(r.classId);
+            if (!sourceClass) return;
+
+            const key = Utils.normalizeName(r.nom, r.prenom);
+            if (!key) return;
+
+            const explicitOrigin = (r.studentData?.classe || r.classe || r.originClass || '').trim();
+            const normOrigin = explicitOrigin ? Utils.normalizeClassName(explicitOrigin) : '';
+            const rawVirtualId = normOrigin ? `virtual_${normOrigin}` : null;
+            const virtualId = rawVirtualId && virtualClassIds.has(rawVirtualId) ? rawVirtualId : null;
+
+            const existing = candidatesMap.get(key);
+            if (!existing) {
+                const badgeRaw = explicitOrigin || sourceClass.name || '';
+                const statuses = Array.isArray(r.studentData?.statuses)
+                    ? r.studentData.statuses.filter(s => typeof s === 'string' && !/^(Nouveau|Départ)\b/i.test(s.trim()))
+                    : [];
+
+                candidatesMap.set(key, {
+                    key,
+                    id: r.id,
+                    nom: r.nom || '',
+                    prenom: r.prenom || '',
+                    studentPhoto: r.studentPhoto || r.studentData?.photo || null,
+                    originBadge: badgeRaw ? Utils.formatClassDisplayName(badgeRaw) : '',
+                    statuses,
+                    isCopiedProfile: Boolean(r.isCopiedProfile),
+                    classIds: new Set([sourceClass.id]),
+                    virtualIds: new Set(virtualId ? [virtualId] : []),
+                    alreadyInTarget: targetKeys.has(key)
+                });
+            } else {
+                existing.classIds.add(sourceClass.id);
+                if (virtualId) existing.virtualIds.add(virtualId);
+                // Préférer l'ID d'une fiche principale et récupérer photo / statuts s'ils manquent
+                if (existing.isCopiedProfile && !r.isCopiedProfile) {
+                    existing.id = r.id;
+                    existing.isCopiedProfile = false;
+                }
+                if (!existing.studentPhoto?.data && (r.studentPhoto?.data || r.studentData?.photo?.data)) {
+                    existing.studentPhoto = r.studentPhoto || r.studentData?.photo;
+                }
+                if (!existing.originBadge && explicitOrigin) {
+                    existing.originBadge = Utils.formatClassDisplayName(explicitOrigin);
+                }
+            }
+        });
+
+        const candidates = Array.from(candidatesMap.values()).sort((a, b) => {
+            const cmpNom = (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' });
+            if (cmpNom !== 0) return cmpNom;
+            return (a.prenom || '').localeCompare(b.prenom || '', 'fr', { sensitivity: 'base' });
+        });
+
+        if (candidates.length === 0) {
+            UI?.showNotification('Aucun élève disponible dans vos autres classes.', 'info');
+            return;
+        }
+
+        // Pré-calcul en une passe : compteurs par filtre et index de recherche normalisé sans accents
+        const classCounts = new Map();
+        const virtualCounts = new Map();
+        for (const cand of candidates) {
+            cand.searchHaystack = `${cand.nom} ${cand.prenom} ${cand.originBadge}`
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+            cand.classIds.forEach(cid => classCounts.set(cid, (classCounts.get(cid) || 0) + 1));
+            cand.virtualIds.forEach(vid => virtualCounts.set(vid, (virtualCounts.get(vid) || 0) + 1));
+        }
+
+        const filterChips = [
+            { id: 'all', label: 'Toutes', count: candidates.length, isVirtual: false },
+            ...virtualClasses
+                .filter(vc => virtualCounts.has(vc.id))
+                .map(vc => ({
+                    id: vc.id,
+                    label: Utils.formatClassDisplayName(vc.name),
+                    count: virtualCounts.get(vc.id),
+                    isVirtual: true
+                })),
+            ...physicalClasses
+                .filter(c => classCounts.has(c.id))
+                .map(c => ({
+                    id: c.id,
+                    label: Utils.formatClassDisplayName(c.name),
+                    count: classCounts.get(c.id),
+                    isVirtual: false
+                }))
+        ];
+
+        const selectedIds = new Set();
+        let activeFilterId = 'all';
+        let searchQuery = '';
+
+        const targetDisplayName = Utils.formatClassDisplayName(targetClass.name || 'la classe');
+
+        const modalEl = document.createElement('div');
+        modalEl.className = 'modal';
+        modalEl.id = 'pickExistingStudentsModal';
+        modalEl.innerHTML = `
+            <div class="modal-content pick-students-modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <span class="modal-title-icon"><iconify-icon icon="solar:users-group-two-rounded-bold-duotone"></iconify-icon></span>
+                        <span class="modal-title-text">Piocher dans mes classes</span>
+                    </h2>
+                    <button class="close-button close-pick-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
+                </div>
+                <div class="modal-body pick-students-modal-body">
+                    <div class="pick-students-toolbar">
+                        <div class="pick-students-search-box">
+                            <iconify-icon icon="solar:magnifer-linear" class="pick-search-icon"></iconify-icon>
+                            <input type="text" id="pickStudentsSearchInput" class="custom-input pick-students-search-input" placeholder="Rechercher un élève ou une classe d'origine..." autocomplete="off">
+                        </div>
+                        <div class="pick-students-chips" id="pickStudentsChips" role="tablist" aria-label="Filtrer par classe">
+                            ${filterChips.map(chip => `
+                                <button type="button" class="pick-class-chip ${chip.id === 'all' ? 'active' : ''}" data-filter-id="${chip.id}" role="tab" aria-selected="${chip.id === 'all'}">
+                                    ${chip.isVirtual ? '<iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>' : ''}
+                                    <span>${this._escapeHtml(chip.label)}</span>
+                                    <span class="pick-chip-count">${chip.count}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="pick-students-selection-bar">
+                            <span class="pick-visible-count" id="pickVisibleCount">${candidates.length} élève${candidates.length > 1 ? 's' : ''}</span>
+                            <button type="button" class="pick-select-all-btn" id="pickSelectAllBtn">
+                                <iconify-icon icon="solar:checklist-minimalistic-linear"></iconify-icon>
+                                <span>Tout cocher</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="pick-students-list" id="pickStudentsList" role="listbox" aria-multiselectable="true"></div>
+                </div>
+                <div class="modal-footer pick-students-modal-footer">
+                    <button type="button" class="btn btn-secondary close-pick-modal-cancel">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmPickStudentsBtn" disabled>
+                        <iconify-icon icon="solar:user-plus-bold"></iconify-icon>
+                        <span id="confirmPickStudentsLabel">Sélectionnez des élèves</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('pickExistingStudentsModal')?.remove();
+        document.body.appendChild(modalEl);
+        UI?.openModal(modalEl);
+
+        const closeModal = () => {
+            UI?.closeModal(modalEl);
+            setTimeout(() => modalEl.remove(), 300);
+        };
+
+        modalEl.querySelector('.close-pick-modal')?.addEventListener('click', closeModal);
+        modalEl.querySelector('.close-pick-modal-cancel')?.addEventListener('click', closeModal);
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) closeModal();
+        });
+
+        const listEl = modalEl.querySelector('#pickStudentsList');
+        const chipsEl = modalEl.querySelector('#pickStudentsChips');
+        const chipBtns = modalEl.querySelectorAll('.pick-class-chip');
+        const visibleCountEl = modalEl.querySelector('#pickVisibleCount');
+        const selectAllBtn = modalEl.querySelector('#pickSelectAllBtn');
+        const confirmBtn = modalEl.querySelector('#confirmPickStudentsBtn');
+        const confirmLabel = modalEl.querySelector('#confirmPickStudentsLabel');
+        const searchInput = modalEl.querySelector('#pickStudentsSearchInput');
+
+        const getVisibleCandidates = () => {
+            const normQuery = searchQuery.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return candidates.filter(c => {
+                if (activeFilterId !== 'all' && !c.classIds.has(activeFilterId) && !c.virtualIds.has(activeFilterId)) {
+                    return false;
+                }
+                if (normQuery && !c.searchHaystack.includes(normQuery)) {
+                    return false;
+                }
+                return true;
+            });
+        };
+
+        const updateSelectionUI = (visibleCandidates) => {
+            const selectableVisible = visibleCandidates.filter(c => !c.alreadyInTarget);
+            const allVisibleSelected = selectableVisible.length > 0 && selectableVisible.every(c => selectedIds.has(c.id));
+
+            if (visibleCountEl) {
+                visibleCountEl.textContent = `${visibleCandidates.length} élève${visibleCandidates.length > 1 ? 's' : ''}`;
+            }
+
+            if (selectAllBtn) {
+                selectAllBtn.disabled = selectableVisible.length === 0;
+                const span = selectAllBtn.querySelector('span');
+                if (span) span.textContent = allVisibleSelected ? 'Tout décocher' : 'Tout cocher';
+            }
+
+            const count = selectedIds.size;
+            if (confirmBtn && confirmLabel) {
+                confirmBtn.disabled = count === 0;
+                confirmLabel.textContent = count === 0
+                    ? 'Sélectionnez des élèves'
+                    : `Ajouter ${count} élève${count > 1 ? 's' : ''} à ${targetDisplayName}`;
+            }
+        };
+
+        // Mise à jour ciblée sur place sans destruction/recréation du DOM (zéro flash image/icône)
+        const syncRowSelectionDOM = (row, isSelected) => {
+            if (!row) return;
+            row.classList.toggle('selected', isSelected);
+            row.setAttribute('aria-selected', String(isSelected));
+        };
+
+        const renderList = () => {
+            const visible = getVisibleCandidates();
+            updateSelectionUI(visible);
+
+            if (!listEl) return;
+            if (visible.length === 0) {
+                listEl.innerHTML = `
+                    <div class="pick-students-empty">
+                        <iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon>
+                        <p>Aucun élève ne correspond à ce filtre.</p>
+                    </div>
+                `;
+                FocusPanelManager.updateScrollAffordances(listEl);
+                return;
+            }
+
+            const trimmedQuery = searchQuery.trim();
+            listEl.innerHTML = visible.map(cand => {
+                const isSelected = selectedIds.has(cand.id);
+                const isPresent = cand.alreadyInTarget;
+                const avatarHtml = StudentPhotoManager.getAvatarHTML(cand, 'sm', false);
+                const nameHtml = Utils.formatStudentName(cand.nom, cand.prenom, true, trimmedQuery, cand.originBadge);
+                const statusesHtml = cand.statuses.length > 0
+                    ? `<div class="pick-student-statuses">${cand.statuses.map(st => {
+                        const info = Utils.getStatusBadgeInfo(st);
+                        return `<span class="${info.className} tag-badge--sm">${this._escapeHtml(info.label)}</span>`;
+                    }).join('')}</div>`
+                    : '';
+
+                return `
+                    <div class="pick-student-row ${isSelected ? 'selected' : ''} ${isPresent ? 'already-present' : ''}"
+                         data-student-id="${cand.id}"
+                         role="option"
+                         aria-selected="${isSelected || isPresent}"
+                         tabindex="${isPresent ? '-1' : '0'}">
+                        <span class="pick-student-checkbox" aria-hidden="true">
+                            <svg viewBox="0 0 12 12" fill="none">
+                                <path d="M2.5 6.2L5 8.7L9.5 3.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <div class="student-identity-wrapper">
+                            ${avatarHtml}
+                            <span class="student-nom-prenom">${nameHtml}</span>
+                        </div>
+                        ${statusesHtml}
+                        ${isPresent ? '<span class="pick-student-present-tag">Déjà présent</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+            FocusPanelManager.updateScrollAffordances(listEl);
+        };
+
+        // Événement clic sur une ligne élève : bascule sur place sans re-rendre la liste
+        listEl?.addEventListener('click', (e) => {
+            const row = e.target.closest('.pick-student-row');
+            if (!row || row.classList.contains('already-present')) return;
+            const id = row.dataset.studentId;
+            if (!id) return;
+
+            const willSelect = !selectedIds.has(id);
+            if (willSelect) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+            syncRowSelectionDOM(row, willSelect);
+            updateSelectionUI(getVisibleCandidates());
+        });
+
+        listEl?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const row = e.target.closest('.pick-student-row');
+                if (row && !row.classList.contains('already-present')) {
+                    e.preventDefault();
+                    row.click();
+                }
+            }
+        });
+
+        // Défilement horizontal fluide à la molette sur la barre de filtres sans scrollbar native
+        chipsEl?.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0 && chipsEl.scrollWidth > chipsEl.clientWidth) {
+                e.preventDefault();
+                chipsEl.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        // Filtres par classe
+        chipBtns.forEach(chip => {
+            chip.addEventListener('click', () => {
+                activeFilterId = chip.dataset.filterId || 'all';
+                chipBtns.forEach(c => {
+                    const isActive = c.dataset.filterId === activeFilterId;
+                    c.classList.toggle('active', isActive);
+                    c.setAttribute('aria-selected', String(isActive));
+                });
+                if (activeFilterId === 'all') {
+                    chipsEl?.scrollTo?.({ left: 0, behavior: 'smooth' });
+                } else {
+                    chip.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                }
+                renderList();
+            });
+        });
+
+        // Recherche instantanée
+        searchInput?.addEventListener('input', () => {
+            searchQuery = searchInput.value || '';
+            renderList();
+        });
+
+        // Tout cocher / Tout décocher (sur place sur les élèves visibles)
+        selectAllBtn?.addEventListener('click', () => {
+            const visibleAll = getVisibleCandidates();
+            const selectable = visibleAll.filter(c => !c.alreadyInTarget);
+            if (selectable.length === 0) return;
+            const allSelected = selectable.every(c => selectedIds.has(c.id));
+            const targetState = !allSelected;
+            selectable.forEach(c => {
+                if (targetState) selectedIds.add(c.id);
+                else selectedIds.delete(c.id);
+            });
+            listEl?.querySelectorAll('.pick-student-row:not(.already-present)').forEach(row => {
+                const id = row.dataset.studentId;
+                if (id) syncRowSelectionDOM(row, selectedIds.has(id));
+            });
+            updateSelectionUI(visibleAll);
+        });
+
+        // Validation finale
+        confirmBtn?.addEventListener('click', async () => {
+            if (selectedIds.size === 0) return;
+            confirmBtn.disabled = true;
+
+            const { copiedStudents, copiedCount } = StudentDataManager.copyStudentsToClass(
+                Array.from(selectedIds),
+                effectiveTargetId
+            );
+
+            await ClassManager._filterResultsByClass(appState.currentClassId);
+            await StorageManager?.saveAppState();
+
+            this.updateStudentCount();
+            this.renderClassList();
+
+            import('./ListViewManager.js').then(({ ListViewManager }) => {
+                ListViewManager?.prepareImportReveal?.({
+                    newIds: copiedStudents.map(s => s.id),
+                    updatedIds: []
+                });
+                AppreciationsManager.renderResults();
+                UI?.updateStats?.();
+            }).catch(() => {
+                AppreciationsManager.renderResults();
+                UI?.updateStats?.();
+            });
+
+            closeModal();
+
+            if (copiedCount > 0) {
+                UI?.showNotification(
+                    `${copiedCount} élève${copiedCount > 1 ? 's' : ''} ajouté${copiedCount > 1 ? 's' : ''} à « ${targetDisplayName} »`,
+                    'success'
+                );
+            }
+            window.dispatchEvent(new CustomEvent('studentsUpdated'));
+        });
+
+        renderList();
+        FocusPanelManager.bindScrollAffordances(chipsEl);
+        FocusPanelManager.bindScrollAffordances(listEl);
+        setTimeout(() => searchInput?.focus(), 80);
     }
 };

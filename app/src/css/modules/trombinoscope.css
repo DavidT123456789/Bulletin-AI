@@ -3,80 +3,23 @@
    iOS 2025 Premium Design - Unified modal animations
    ==================================================================== */
 
-/* Modal Container */
-.trombi-wizard-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 1100;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-}
-
+/* Modal Container, Backdrop & Content animations mutualized in modals.css & responsive.css */
 .trombi-wizard-modal.visible {
     display: flex;
 }
 
-/* Backdrop with fade-in animation */
 .trombi-wizard-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    transition: background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        backdrop-filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.trombi-wizard-modal.visible .trombi-wizard-backdrop {
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-/* Content with iOS 2025 spring animation */
 .trombi-wizard-content {
     position: relative;
     width: 92%;
     max-width: 1250px;
     height: 90vh;
     max-height: 95vh;
-    background: var(--modal-bg);
-    border-radius: var(--modal-radius);
-    box-shadow: var(--modal-shadow);
-    border: var(--modal-border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
     z-index: 1;
-    /* Initial state for animation */
-    opacity: 0;
-    transform: scale(0.95) translateY(14px);
-    transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform, opacity;
-}
-
-.trombi-wizard-modal.visible .trombi-wizard-content {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-}
-
-/* Closing animation - matches standard modal pattern (single source of truth) */
-.trombi-wizard-modal.visible.closing .trombi-wizard-content {
-    opacity: 0 !important;
-    transform: scale(0.96) translateY(8px) !important;
-    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-/* Backdrop fade out during closing */
-.trombi-wizard-modal.closing .trombi-wizard-backdrop {
-    background: rgba(0, 0, 0, 0) !important;
-    backdrop-filter: blur(0px) !important;
-    -webkit-backdrop-filter: blur(0px) !important;
-    transition: background 0.25s ease-out, backdrop-filter 0.25s ease-out !important;
 }
 
 /* Header & Stepper mutualized in import-wizard.css and ui-components.css */
@@ -2310,17 +2253,6 @@ input.trombi-popover-search-input::placeholder {
 }
 
 @media (max-width: 600px) {
-    .trombi-wizard-content {
-        width: 100%;
-        max-width: 100%;
-        height: 100vh;
-        height: 100dvh;
-        max-height: 100vh;
-        max-height: 100dvh;
-        border-radius: 0;
-        border: none;
-    }
-
     .trombi-step-footer {
         flex-direction: row;
         flex-wrap: wrap;

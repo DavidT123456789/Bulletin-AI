@@ -279,7 +279,7 @@ export const ListViewManager = {
             null,
             null,
             {
-                title: `Supprimer ${studentName} ?`,
+                title: `Supprimer ${Utils.escapeHtml(studentName)} ?`,
                 confirmText: 'Supprimer',
                 cancelText: 'Annuler',
                 isDanger: true

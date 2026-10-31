@@ -179,6 +179,7 @@
     --color-rose-bright: #fb7185;
     --color-rose-deep: #be123c;
     --color-amber: #f59e0b;
+    --color-amber-rgb: 245, 158, 11;
     --color-amber-bright: #fbbf24;
     --color-amber-pastel: #fde68a;
     --color-amber-deep: #b45309;
@@ -226,6 +227,7 @@
     --info-light: rgba(59, 130, 246, 0.15);
 
     /* Aliases — resolve orphan token references */
+    --text-on-primary: #ffffff;
     --bg-primary: var(--bg-color);
     --bg-surface: var(--surface-color);
     --bg-secondary-dark: var(--bg-tertiary);
@@ -515,6 +517,7 @@
     --color-rose-bright: #fda4af;
     --color-rose-deep: #f43f5e;
     --color-amber: #fbbf24;
+    --color-amber-rgb: 251, 191, 36;
     --color-amber-bright: #fcd34d;
     --color-amber-deep: #f59e0b;
     --color-orange: #fb923c;

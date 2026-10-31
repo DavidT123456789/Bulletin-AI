@@ -507,6 +507,20 @@ export const Utils = {
     },
 
     /**
+     * Extrait les initiales (2 lettres) à partir du prénom et du nom d'un élève
+     * @param {string} nom - Nom de famille
+     * @param {string} prenom - Prénom
+     * @returns {string} Initiales en majuscules (ex: "JD") ou "??"
+     */
+    getInitials(nom, prenom) {
+        const cleanPrenom = (prenom || '').trim();
+        const cleanNom = (nom || '').trim();
+        const first = cleanPrenom ? cleanPrenom[0].toUpperCase() : '';
+        const last = cleanNom ? cleanNom[0].toUpperCase() : '';
+        return (first + last) || '??';
+    },
+
+    /**
      * Formate le nom d'un élève en ordre pédagogique / oral (Prénom NOM en majuscules)
      * Recommandé pour les tooltips en vue Plan pour une continuité cognitive avec l'étiquette "Prénom N."
      * @param {string} nom - Nom de famille

@@ -146,6 +146,10 @@
     animation-delay: 0.18s;
 }
 
+#empty-state-card.empty-state-entrance .empty-state-hub-card:nth-child(4) {
+    animation-delay: 0.24s;
+}
+
 @keyframes emptyStateHubCardEntrance {
     0% {
         opacity: 0;
@@ -305,6 +309,11 @@
     margin-right: auto;
 }
 
+.empty-state-hub.has-existing-card {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 920px;
+}
+
 .empty-state-hub-card {
     gap: 16px;
     padding: 24px 16px;
@@ -316,9 +325,17 @@
     gap: 6px;
 }
 
+@media (max-width: 860px) and (min-width: 641px) {
+    .empty-state-hub.has-existing-card {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 520px;
+    }
+}
+
 /* Responsive: Stack on mobile (aligned with .import-hub-choices at 640px) */
 @media (max-width: 640px) {
-    .empty-state-hub {
+    .empty-state-hub,
+    .empty-state-hub.has-existing-card {
         grid-template-columns: 1fr;
         gap: 12px;
         max-width: 380px;
