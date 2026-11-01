@@ -14,7 +14,7 @@
     <meta property="og:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta property="og:description"
         content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
-    <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png">
+    <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
     <meta property="og:url" content="https://bulletin-ai.pages.dev">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="fr_FR">
@@ -23,14 +23,14 @@
     <meta name="twitter:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta name="twitter:description"
         content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
-    <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png">
+    <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
 
     <link rel="canonical" href="https://bulletin-ai.pages.dev">
     <!-- Favicon & Icons -->
-    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg?v=2">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png?v=2">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="./assets/icon-192.png?v=2">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -761,7 +761,7 @@
         <div class="absolute inset-0 bg-white/70 backdrop-blur-xl transition-opacity duration-300"></div>
         <div class="relative max-w-7xl mx-auto px-[34px] h-14 flex items-center justify-between">
             <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
-                <img src="./assets/logo.png" alt="Bulletin AI" class="w-8 h-8 object-contain transition-transform duration-200 group-hover:scale-105" width="32" height="32">
+                <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="w-8 h-8 object-contain transition-transform duration-200 group-hover:scale-105" width="32" height="32">
                 <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin AI</span>
                 <span id="landingVersionDisplay"
                     class="px-2.5 py-0.5 rounded-full bg-zinc-100/90 text-zinc-600 text-[10px] font-medium tracking-normal ring-1 ring-zinc-900/5 backdrop-blur-sm">
@@ -1168,7 +1168,7 @@
 
                 <div class="text-center md:text-left">
                     <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
-                        <img src="./assets/logo.png" alt="Bulletin AI" class="w-6 h-6 object-contain opacity-80" width="24"
+                        <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="w-6 h-6 object-contain opacity-80" width="24"
                             height="24">
                         <span class="font-semibold text-zinc-700 tracking-tight">Bulletin AI</span>
                     </div>
@@ -1573,6 +1573,34 @@
                 }
             })
             .catch(() => {});
+
+        // Ensure any existing Service Worker controlling the landing page activates pending updates silently
+        if ('serviceWorker' in navigator) {
+            let isSwReloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (isSwReloading || document.body.classList.contains('is-navigating-to-app')) return;
+                isSwReloading = true;
+                window.location.reload();
+            });
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(reg => {
+                    if (reg.waiting) {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                    reg.addEventListener('updatefound', () => {
+                        const installing = reg.installing;
+                        if (installing) {
+                            installing.addEventListener('statechange', () => {
+                                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                                    installing.postMessage({ type: 'SKIP_WAITING' });
+                                }
+                            });
+                        }
+                    });
+                    reg.update().catch(() => {});
+                });
+            }).catch(() => {});
+        }
 
         /* ── Transition vers l'application (fluidité iOS 2026) ── */
         (function initAppTransition() {

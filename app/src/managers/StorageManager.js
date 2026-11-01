@@ -33,6 +33,7 @@ import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 import { ClassManager } from './ClassManager.js';
+import { ModalUI as ModalUIManager } from './ModalUIManager.js';
 
 let UI;
 let App;
@@ -1094,8 +1095,6 @@ export const StorageManager = {
      * Preserves user data (classes, students, appreciations).
      */
     async resetAllSettings() {
-        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
-
         const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(appState[k])).length;
 
         const subjectCount = appState.subjects ? Object.keys(appState.subjects).length : 0;
@@ -1218,8 +1217,6 @@ export const StorageManager = {
      * Uses Hard Confirm modal (user must type SUPPRIMER).
      */
     async factoryReset() {
-        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
-
         const studentCount = appState.generatedResults?.length || 0;
         const classCount = appState.classes?.length || 0;
 

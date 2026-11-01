@@ -23,6 +23,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
+import { ResultsUIManager } from './ResultsUIManager.js';
 
 /** Délai court (ms) avant la première ligne d'un import : démarre dès le début du retrait de la modale sans trou noir */
 const IMPORT_REVEAL_START_DELAY_MS = 40;
@@ -167,9 +168,7 @@ export const ListViewManager = {
                     tbody.innerHTML = emptyRowHtml;
                 }
 
-                import('./ResultsUIManager.js').then(({ ResultsUIManager }) => {
-                    ResultsUIManager?.updateGenerateButtonState?.();
-                });
+                ResultsUIManager?.updateGenerateButtonState?.();
                 return;
             }
         }
@@ -313,7 +312,6 @@ export const ListViewManager = {
         UI?.updateControlButtons?.();
         UI?.updateAIButtonsState?.();
 
-        const { ResultsUIManager } = await import('./ResultsUIManager.js').catch(() => ({ ResultsUIManager: null }));
         ResultsUIManager?.updateGenerateButtonState?.();
 
         // Notify user

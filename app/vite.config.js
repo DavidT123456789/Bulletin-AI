@@ -26,8 +26,13 @@ export default defineConfig({
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
         cleanupOutdatedCaches: true,
+        // Only skip Workbox revision hashing on Vite-generated content-hashed bundles,
+        // so static files in public/assets/ (logo.png, icon.svg, icon-192.png, icon-512.png)
+        // receive a proper MD5 revision and are refreshed when updated.
+        dontCacheBustURLsMatching: /^assets\/.*-[a-zA-Z0-9_-]{8}\./,
+        ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
         globPatterns: ['**/*.{js,css,png,jpg,jpeg,webp,svg,ico,woff,woff2,webmanifest}', 'index.html', 'app.html'],
-        globIgnores: ['**/Image Source*', 'welcome-transformation.svg', '**/sample-*'],
+        globIgnores: ['**/Image Source*', '**/sample-*'],
         navigateFallback: null, // Don't cache navigation requests
         runtimeCaching: [
           {

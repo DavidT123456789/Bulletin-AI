@@ -15,6 +15,8 @@ import { ExportManager } from '../ExportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { HistoryManager } from '../HistoryManager.js';
+import { ClassUIManager } from '../ClassUIManager.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
 
 export const ListSelectionManager = {
     selectedIds: new Set(),
@@ -206,7 +208,8 @@ export const ListSelectionManager = {
 
             const countLabel = toolbar.querySelector('#selectionCount');
             if (countLabel) {
-                countLabel.textContent = `${count} ${count > 1 ? 'sélectionnés' : 'sélectionné'}`;
+                countLabel.textContent = String(count);
+                countLabel.setAttribute('aria-label', `${count} ${count > 1 ? 'élèves sélectionnés' : 'élève sélectionné'}`);
             }
 
             const selectAllLink = toolbar.querySelector('#btnSelectAllLink');
@@ -258,7 +261,10 @@ export const ListSelectionManager = {
                     <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection" aria-label="Annuler la sélection">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
-                    <span id="selectionCount" class="selection-count-badge">0 sélectionné</span>
+                    <span class="selection-count-badge">
+                        <iconify-icon icon="solar:users-group-rounded-linear" aria-hidden="true"></iconify-icon>
+                        <span id="selectionCount" aria-label="0 élève sélectionné">0</span>
+                    </span>
                     <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste" aria-label="Tout sélectionner">
                         <iconify-icon icon="solar:checklist-linear"></iconify-icon>
                         <span>Tout sélectionner</span>
@@ -395,10 +401,7 @@ export const ListSelectionManager = {
                 this.callbacks.renderList();
             }
 
-            const { ClassUIManager } = await import('../ClassUIManager.js').catch(() => ({ ClassUIManager: null }));
             ClassUIManager?.updateStudentCount?.();
-
-            const { ResultsUIManager } = await import('../ResultsUIManager.js').catch(() => ({ ResultsUIManager: null }));
             ResultsUIManager?.updateGenerateButtonState?.();
 
             UI?.populateLoadStudentSelect?.();

@@ -376,7 +376,7 @@ export const PwaInstallManager = {
                 <div class="pwa-modal">
                     <div class="pwa-modal-header">
                         <div class="pwa-modal-icon">
-                            <img src="./assets/icon-192.png" alt="Bulletin AI" />
+                            <img src="./assets/icon-192.png?v=2" alt="Bulletin AI" />
                         </div>
                         <h3>Installer Bulletin AI</h3>
                         <p>Suivez ces étapes simples</p>
@@ -460,7 +460,7 @@ export const PwaInstallManager = {
                 <div class="pwa-modal">
                     <div class="pwa-modal-header">
                         <div class="pwa-modal-icon">
-                            <img src="./assets/icon-192.png" alt="Bulletin AI" />
+                            <img src="./assets/icon-192.png?v=2" alt="Bulletin AI" />
                         </div>
                         <h3>Installer Bulletin AI</h3>
                         <p>Installation manuelle</p>
