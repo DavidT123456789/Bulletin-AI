@@ -602,8 +602,12 @@ export const ResultsUIManager = {
      */
     _autoSizeClassInput(input) {
         if (!input) return;
-        const len = Math.max((input.value || input.placeholder || '').length, 12);
-        input.style.width = `${Math.min(Math.max(len + 2, 14), 38)}ch`;
+        if (typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content')) {
+            input.style.removeProperty('width');
+            return;
+        }
+        const len = Math.max((input.value || input.placeholder || '').length, 4);
+        input.style.width = `${Math.min(Math.max(Math.ceil(len * 0.85) + 1, 5), 36)}ch`;
     },
 
     /**
@@ -617,19 +621,31 @@ export const ResultsUIManager = {
         const pill = input?.closest('.empty-state-class-pill');
         if (!input) return;
 
-        pill?.addEventListener('click', (e) => {
+        let wasFocusedOnPointerDown = false;
+
+        input.addEventListener('mousedown', () => {
+            wasFocusedOnPointerDown = (document.activeElement === input);
+        });
+
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!wasFocusedOnPointerDown) {
+                input.select();
+                wasFocusedOnPointerDown = true;
+            }
+        });
+
+        const focusAndSelectInput = (e) => {
             if (e.target !== input) {
                 e.stopPropagation();
                 input.focus();
                 input.select();
+                wasFocusedOnPointerDown = true;
             }
-        });
+        };
 
-        editBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            input.focus();
-            input.select();
-        });
+        pill?.addEventListener('click', focusAndSelectInput);
+        editBtn?.addEventListener('click', focusAndSelectInput);
 
         input.addEventListener('input', () => {
             this._autoSizeClassInput(input);
@@ -695,6 +711,7 @@ export const ResultsUIManager = {
         });
 
         input.addEventListener('blur', () => {
+            wasFocusedOnPointerDown = false;
             if (escaping) {
                 escaping = false;
                 return;

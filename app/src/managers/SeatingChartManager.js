@@ -443,12 +443,12 @@ export const SeatingChartManager = {
                 } else if (this._planMode === 'course' && !this._hasClassCoursePlan() && this._hasClassActivityPlan()) {
                     this._planMode = 'activity';
                 }
-                this._loadGridConfig();
+                this._loadGridConfig({ skipRender: true });
                 this._loadPositionsFromState();
                 const currentClass = this._getCurrentClass();
                 const isVirtual = this._isVirtualClass(currentClass);
                 const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
-                this._applyLockState(locked, { skipSmartFit: true });
+                this._applyLockState(locked, { skipSmartFit: true, skipDraggabilityUpdate: true });
                 this._updateSidebarLockState();
                 this._undoStack = [];
                 this._redoStack = [];
@@ -522,13 +522,13 @@ export const SeatingChartManager = {
         document.querySelector('.sc-onboarding-hint')?.remove();
         this._prevPlacedCount = 0;
         this._students = this._getCurrentClassStudents();
-        this._loadGridConfig();
+        this._loadGridConfig({ skipRender: true });
         this._loadPositionsFromState();
 
         const isVirtual = this._isVirtualClass(currentClass);
         // En mode consultation par défaut dès qu'au moins un élève est placé (ou classe reconstituée)
         const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
-        this._applyLockState(locked, { skipSmartFit: true });
+        this._applyLockState(locked, { skipSmartFit: true, skipDraggabilityUpdate: true });
         this._syncPlacementPopover();
 
         this._render();

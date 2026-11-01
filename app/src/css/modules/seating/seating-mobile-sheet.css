@@ -986,7 +986,6 @@
 
 #seatingChartView.sc-fold-transitioning[data-locked="true"] .sc-sidebar {
     opacity: 0 !important;
-    visibility: hidden !important;
     animation: none !important;
 }
 

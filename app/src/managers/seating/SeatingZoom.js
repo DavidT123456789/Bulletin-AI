@@ -86,12 +86,18 @@ export const SeatingZoom = {
         }
 
         const isMobile = this._isCompactLayout ? this._isCompactLayout() : (window.innerWidth <= 768);
+        const sidebar = isMobile ? document.getElementById('scSidebar') : null;
+        const mobileDrawerH = (sidebar?.offsetHeight > 0) ? sidebar.offsetHeight : 0;
+        if (mobileDrawerH > 0) {
+            view.style.setProperty('--sc-mobile-drawer-h', `${mobileDrawerH}px`);
+        }
+        const unlockedMobileBottom = mobileDrawerH > 0 ? (mobileDrawerH + 12) : 12;
         const isMobileLandscape = isMobile && areaWidth > areaHeight;
         const isCompactTablet = isMobile && !isMobileLandscape && areaWidth >= 540;
         const isLandscapeTabletLocked = !isMobile && Boolean(this._isLocked) && areaWidth < 1180;
         const landscapePad = areaHeight <= 460 ? 30 : 46;
         const reservedTop = isMobileLandscape ? (56 + 30) : (isMobile ? (56 + 48) : (56 + (isLandscapeTabletLocked ? landscapePad : 24)));
-        const reservedBottom = isMobileLandscape ? (this._isLocked ? 30 : 12) : (isMobile ? (this._isLocked ? 48 : 12) : (isLandscapeTabletLocked ? landscapePad : 24));
+        const reservedBottom = isMobileLandscape ? (this._isLocked ? 30 : unlockedMobileBottom) : (isMobile ? (this._isLocked ? 48 : unlockedMobileBottom) : (isLandscapeTabletLocked ? landscapePad : 24));
         const reservedHoriz = isLandscapeTabletLocked ? (landscapePad * 2) : (isMobileLandscape ? 60 : (isCompactTablet ? 76 : (isMobile ? 24 : 48)));
 
         // On wide desktop (>= 1180px) or when unlocked, account for the 260px sidebar;

@@ -4647,4 +4647,78 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             switchSpy.mockRestore();
         });
     });
+
+    describe('Fluidité de la première ouverture du volet Édition après changement de vue & tiroir mobile', () => {
+        beforeEach(() => {
+            const cls = ClassManager.createClass('3ème Fluide');
+            appState.currentClassId = cls.id;
+            appState.generatedResults = [
+                {
+                    id: 's1',
+                    nom: 'MARTIN',
+                    prenom: 'Léo',
+                    classId: cls.id,
+                    seatingPosition: { row: 0, col: 0 },
+                    seatingActivityPosition: { row: 0, col: 0, order: 0 }
+                }
+            ];
+            document.body.innerHTML = `
+                <div class="main-content">
+                    <div class="main-content-wrapper" data-view="plan">
+                        <div class="output-section"></div>
+                    </div>
+                </div>
+            `;
+            SeatingChartManager._isActive = true;
+            SeatingChartManager._planMode = 'activity';
+            SeatingChartManager.init();
+            SeatingChartManager.switchToView('plan', { immediate: true, silent: true });
+        });
+
+        it('ne doit effectuer qu’un seul rendu de grille lors de switchPlanMode et nettoyer le carrousel dès _toggleLock', () => {
+            const renderGridSpy = vi.spyOn(SeatingChartManager, '_renderGrid');
+            const cleanupCarouselSpy = vi.spyOn(SeatingChartManager, '_cleanupModeCarousel');
+
+            SeatingChartManager.switchPlanMode('course', { animate: true });
+
+            expect(renderGridSpy).toHaveBeenCalledTimes(1);
+            const board = document.getElementById('scClassroomBoard');
+            expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(true);
+
+            cleanupCarouselSpy.mockClear();
+            SeatingChartManager._toggleLock();
+
+            expect(cleanupCarouselSpy).toHaveBeenCalledTimes(1);
+            expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(false);
+
+            renderGridSpy.mockRestore();
+            cleanupCarouselSpy.mockRestore();
+        });
+
+        it('doit réserver la hauteur du tiroir mobile (--sc-mobile-drawer-h) dans _applySmartFit en mode Édition sur mobile', () => {
+            const view = document.getElementById('seatingChartView');
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+            const sidebar = document.getElementById('scSidebar');
+
+            const compactSpy = vi.spyOn(SeatingChartManager, '_isCompactLayout').mockReturnValue(true);
+            Object.defineProperty(gridArea, 'clientWidth', { value: 390, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 700, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 360, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 520, configurable: true });
+            Object.defineProperty(sidebar, 'offsetHeight', { value: 140, configurable: true });
+
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._applySmartFit(true);
+            const lockedScale = SeatingChartManager._fitScale;
+            expect(view.style.getPropertyValue('--sc-mobile-drawer-h')).toBe('140px');
+
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._applySmartFit(true);
+            const unlockedScale = SeatingChartManager._fitScale;
+
+            expect(unlockedScale).toBeLessThan(lockedScale);
+            compactSpy.mockRestore();
+        });
+    });
 });

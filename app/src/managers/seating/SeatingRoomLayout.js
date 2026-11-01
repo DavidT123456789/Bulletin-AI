@@ -174,7 +174,8 @@ export const SeatingRoomLayout = {
         localStorage.setItem('bulletin_seating_orientation', next);
     },
 
-    _applyOrientation(orientation, animate = false) {
+    _applyOrientation(orientation, animate = false, options = {}) {
+        const { skipRender = false } = options;
         this._orientation = orientation;
         const effectiveOrientation = this._isActivityMode() ? 'teacher' : orientation;
         const view = document.getElementById('seatingChartView');
@@ -214,6 +215,7 @@ export const SeatingRoomLayout = {
                 icon.setAttribute('icon', 'solar:users-group-rounded-linear');
             }
         });
+        if (skipRender) return;
         TooltipsUI.initTooltips(document.getElementById('seatingChartView'));
 
         if (animate) {
@@ -560,7 +562,7 @@ export const SeatingRoomLayout = {
         return !isNaN(sliderVal) ? sliderVal : (appState[gridKey]?.cols ?? this._getDefaultCols());
     },
 
-    _loadGridConfig() {
+    _loadGridConfig(options = {}) {
         const gridKey = this._getActiveGridKey();
         const config = appState[gridKey];
         const defaultRows = this._getDefaultRows();
@@ -573,7 +575,7 @@ export const SeatingRoomLayout = {
         if (colSlider) { colSlider.value = cols; document.getElementById('scColsValue').textContent = cols; }
 
         this._orientation = localStorage.getItem('bulletin_seating_orientation') || appState.seatingGrid?.orientation || config?.orientation || 'teacher';
-        this._applyOrientation(this._orientation);
+        this._applyOrientation(this._orientation, false, options);
     },
 
     _saveGridConfig() {

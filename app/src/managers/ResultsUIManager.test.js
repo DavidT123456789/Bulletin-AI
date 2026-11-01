@@ -30,7 +30,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             <template id="empty-state-template">
                 <div class="empty-state-header">
                     <div class="empty-state-class-pill" id="emptyStateClassPill">
-                        <iconify-icon icon="solar:users-group-rounded-linear" class="empty-state-pill-icon"></iconify-icon>
                         <input type="text"
                                class="empty-state-class-input" 
                                id="emptyStateClassInput"
@@ -177,6 +176,28 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         input.dispatchEvent(new Event('input'));
 
         expect(DOM.headerClassName.textContent).toBe('3ᵉ1');
+    });
+
+    it('devrait sélectionner tout le texte au premier clic sur le titre, sans forcer la sélection au second clic en cours d\'édition', () => {
+        const cls = ClassManager.createClass('Nouvelle classe');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+
+        ResultsUIManager.renderResults();
+
+        const input = DOM.emptyStateCard.querySelector('#emptyStateClassInput');
+        const selectSpy = vi.spyOn(input, 'select');
+
+        // 1er clic (champ non focalisé au mousedown) -> sélection complète
+        input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        input.focus();
+        input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(selectSpy).toHaveBeenCalledTimes(1);
+
+        // 2e clic (champ déjà focalisé au mousedown) -> placement libre du curseur sans re-sélectionner tout
+        input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(selectSpy).toHaveBeenCalledTimes(1);
     });
 
     it('devrait appliquer highlight-new sur la ligne cible (même après recréation DOM) et nettoyer les classes concurrentes', () => {

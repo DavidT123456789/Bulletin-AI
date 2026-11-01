@@ -403,17 +403,18 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 /* Touch & Mobile devices: hide permanent remove and unpinned buttons to prevent accidental clicks and declutter UI */
 @media (hover: none), (max-width: 768px) {
     #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove {
-        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     #seatingChartView[data-locked="false"] .sc-cell.occupied:not(.pinned) .sc-cell-pin {
-        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     /* Pinned badge remains visible as an elegant indicator */
     #seatingChartView[data-locked="false"] .sc-cell.pinned .sc-cell-pin {
-        display: flex !important;
-        opacity: 1;
+        opacity: 1 !important;
         pointer-events: none;
     }
 }
@@ -606,11 +607,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* ────────── LOCKED STATE ────────── */
 
-/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
+/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate, pre-painted offscreen) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
-    --sc-sidebar-vis-delay: 0.48s;
     translate: -100% 0;
-    visibility: hidden;
     box-shadow: none;
     border-right-color: transparent;
     pointer-events: none;
@@ -703,21 +702,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     box-shadow: var(--shadow-sm);
 }
 
-/* Hide remove/pin and scope badge in locked — clean read-only view */
+/* Hide remove/pin and scope badge in locked — clean read-only view without layout invalidation */
 .sc-classroom-board[data-locked="true"] .sc-cell-remove,
 .sc-classroom-board[data-locked="true"] .sc-cell-pin,
 .sc-classroom-board[data-locked="true"] .sc-cell-scope-badge,
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-remove,
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-pin,
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-scope-badge {
-    display: none !important;
-}
-
-/* Edit-only toolbar groups hidden when locked — persistent group stays */
-#seatingChartView[data-locked="true"] .sc-toolbar-primary,
-#seatingChartView[data-locked="true"] .sc-toolbar-secondary,
-#seatingChartView[data-locked="true"] .sc-toolbar-divider {
-    display: none;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 /* Hide avatar selection checkmark in seating chart context */
@@ -1790,39 +1783,22 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         align-items: safe center;
     }
 
-    /* ── Layout: sidebar becomes bottom tray ── */
-    .sc-body {
-        flex-direction: column-reverse; /* grid on top, sidebar tray at bottom */
-    }
-
+    /* ── Layout: sidebar becomes bottom tray (inherits GPU translate transition from base .sc-sidebar) ── */
     .sc-sidebar {
-        position: relative;
+        top: auto;
+        right: 0;
         width: 100%;
-        max-height: none;
-        translate: none !important;
         border-right: none;
         border-top: 1px solid var(--border-color);
-        border-bottom: none;
         padding-top: 0;
-        flex-shrink: 0;
-        overflow: visible;
-        transition: max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-                    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-                    visibility 0s linear var(--sc-sidebar-vis-delay);
     }
 
-    /* Locked sidebar collapses vertically on mobile */
+    /* Locked sidebar slides smoothly off-screen vertically on mobile (120Hz GPU translate) */
     #seatingChartView[data-locked="true"] .sc-sidebar {
-        --sc-sidebar-vis-delay: 0.38s;
-        translate: none !important;
-        opacity: 0;
-        visibility: hidden;
-        width: 100%;
-        max-height: 0;
-        margin-left: 0;
-        margin-top: 0;
-        border-top: none;
-        overflow: hidden;
+        translate: 0 100%;
+        box-shadow: none;
+        border-top-color: transparent;
+        pointer-events: none;
     }
 
     #seatingChartView[data-locked="false"] .sc-grid-area[data-fitted="false"] {
@@ -2016,7 +1992,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-grid-area,
     .sc-grid-area[data-fitted="true"],
     .sc-grid-area[data-fitted="false"] {
-        padding: calc(56px + 48px) 12px 12px;
+        padding: calc(56px + 48px) 12px calc(var(--sc-mobile-drawer-h, 136px) + 12px);
         scrollbar-width: none; /* Firefox */
     }
 
@@ -2026,7 +2002,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     @media (orientation: landscape) {
         .sc-grid-area:not([data-fitted="false"]) {
-            padding: calc(56px + 30px) 12px 12px;
+            padding: calc(56px + 30px) 12px calc(var(--sc-mobile-drawer-h, 136px) + 12px);
         }
 
         #seatingChartView[data-locked="true"] .sc-grid-area:not([data-fitted="false"]) {
@@ -2527,7 +2503,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView,
     #seatingChartView[data-locked="true"] .sc-sidebar {
         --sc-drawer-transition: 0.01ms linear;
-        --sc-sidebar-vis-delay: 0s;
     }
     .sc-cell,
     .sc-cell.sc-cell-stagger,

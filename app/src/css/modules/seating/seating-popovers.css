@@ -1323,7 +1323,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (min-width: 769px) {
     #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-stacked-member:hover .sc-stacked-member-remove {
         opacity: 1;
         pointer-events: auto;
@@ -1336,21 +1336,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     }
 }
 
-#seatingChartView[data-locked="true"] .sc-stacked-member-remove {
-    display: none !important;
-}
-
-@media (hover: none) {
-    .sc-stacked-member-remove {
-        display: none !important;
-    }
-}
-
 @media (max-width: 768px) {
-    .sc-stacked-member-remove {
-        display: none !important;
-    }
-
     .sc-stacked-group-tag {
         font-size: 0.45rem;
         padding: 1px 2.5px;

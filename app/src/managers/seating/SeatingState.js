@@ -206,14 +206,14 @@ export const SeatingState = {
         this._redoStack = [];
 
         this._students = this._getCurrentClassStudents();
-        this._loadGridConfig();
+        this._loadGridConfig({ skipRender: true });
         this._loadPositionsFromState();
 
         const currentClass = this._getCurrentClass();
         const isVirtual = this._isVirtualClass(currentClass);
         const locked = isVirtual ? true : (this._getPlacedIds().size > 0);
 
-        this._applyLockState(locked, { skipSmartFit: true });
+        this._applyLockState(locked, { skipSmartFit: true, skipDraggabilityUpdate: true });
         this._syncPlacementPopover();
         this._render();
         this._applySmartFit(true);
@@ -284,9 +284,11 @@ export const SeatingState = {
     },
 
     _applyLockState(locked, options = {}) {
-        const { skipSmartFit = false } = options;
+        const { skipSmartFit = false, skipDraggabilityUpdate = false } = options;
         const board = document.getElementById('scClassroomBoard');
+        const sidebar = document.getElementById('scSidebar');
         if (board) board.style.transition = 'none';
+        if (sidebar) sidebar.style.transition = 'none';
         const currentClass = this._getCurrentClass();
         const lockKey = this._getActiveClassLockKey();
         this._isLocked = locked;
@@ -296,13 +298,16 @@ export const SeatingState = {
         this._touchSourceInfo = null;
         this._syncLockControlsUI(locked);
         this._updatePlanModeSwitchUI();
-        this._updateCellsDraggability();
+        if (!skipDraggabilityUpdate) {
+            this._updateCellsDraggability();
+        }
         if (!skipSmartFit) {
             this._applySmartFit(true);
-        } else if (board) {
-            void board.offsetWidth;
-            board.style.removeProperty('transition');
+        } else {
+            void (board || sidebar)?.offsetWidth;
+            board?.style.removeProperty('transition');
         }
+        sidebar?.style.removeProperty('transition');
     },
 
     _bindBoardSlideCleanup(board, timeoutMs = 600) {
@@ -346,6 +351,7 @@ export const SeatingState = {
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
 
+        this._cleanupModeCarousel();
         const board = document.getElementById('scClassroomBoard');
         const currentClass = this._getCurrentClass();
         const lockKey = this._getActiveClassLockKey();

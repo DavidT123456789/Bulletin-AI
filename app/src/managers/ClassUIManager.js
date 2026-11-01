@@ -2626,7 +2626,7 @@ export const ClassUIManager = {
             <div class="modal-content pick-students-modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <span class="modal-title-icon"><iconify-icon icon="solar:users-group-two-rounded-bold-duotone"></iconify-icon></span>
+                        <span class="modal-title-icon"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
                         <span class="modal-title-text">Piocher dans mes classes</span>
                     </h2>
                     <button class="close-button close-pick-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>

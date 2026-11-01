@@ -102,15 +102,15 @@
 /* === HEADER === */
 .import-hub-header {
     text-align: center;
-    padding: 36px 24px 28px;
+    padding: 32px 24px 24px;
 }
 
 .import-hub-title {
-    font-size: 1.75rem;
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--text-primary);
     margin: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
 }
 
 /* === DEMO GUARD ALERT === */
@@ -175,14 +175,14 @@
 
 /* === CHOICES CONTAINER === */
 .import-hub-modal.has-existing-card {
-    max-width: 860px;
+    max-width: 880px;
 }
 
 .import-hub-choices {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    padding: 0 28px 32px;
+    gap: 14px;
+    padding: 0 24px 28px;
 }
 
 .import-hub-choices.has-existing-card {
@@ -192,9 +192,9 @@
 /* ====================================================================
    MUTUALIZED HUB CARDS (.import-hub-card & .empty-state-hub-card)
    Concentric hierarchy:
-   - Desktop (>768px): Modal 24px -> Card 16px -> Icon 14px (56x56, 25% squircle)
-   - Tablet (641-768px): Modal 20px -> Card 16px -> Icon 14px (56x56, 25% squircle)
-   - Mobile (<=640px): Modal 20px -> Card 16px -> Icon 12px (48x48, 25% squircle)
+   - Desktop (>768px): Modal 24px -> Card 16px -> Icon 13px (48x48)
+   - Tablet (641-768px): Modal 20px -> Card 16px -> Icon 13px (48x48)
+   - Mobile (<=640px): Modal 20px -> Card 16px -> Icon 12px (44x44)
    ==================================================================== */
 
 .import-hub-card,
@@ -204,42 +204,56 @@
     flex-direction: column;
     align-items: center;
     background: var(--surface-color);
-    border: 1px solid transparent;
+    border: 1px solid var(--border-default);
     border-radius: max(var(--radius-md), 16px);
     cursor: pointer;
     overflow: hidden;
     will-change: transform;
-    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.25s ease;
     box-shadow: var(--shadow-sm);
 }
 
 .import-hub-card {
-    gap: 6px;
-    padding: 24px 16px;
+    gap: 4px;
+    padding: 22px 14px;
+    background: var(--palette-zinc-50);
 }
 
-[data-theme="dark"] .import-hub-card,
 [data-theme="dark"] .empty-state-hub-card {
-    background: var(--bg-tertiary);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background: var(--surface-color);
+    border-color: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .import-hub-card {
+    background: rgba(255, 255, 255, 0.025);
+    border-color: rgba(255, 255, 255, 0.07);
+    box-shadow: none;
 }
 
 .import-hub-card:active,
 .empty-state-hub-card:active {
-    transform: translateY(-2px) scale(0.98);
+    transform: translateY(-1px) scale(0.985);
 }
 
 /* === CARD ICON === */
 .import-hub-icon,
 .empty-state-hub-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.7rem;
-    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    font-size: 1.45rem;
+    border: 1px solid transparent;
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
     flex-shrink: 0;
 }
 
@@ -247,13 +261,12 @@
     margin-bottom: 10px;
 }
 
-/* === SEMANTIC ACCENTS === */
+/* === SEMANTIC ACCENTS (Pastille teintée au repos, carte Zinc neutre) === */
 .import-hub-card[data-action="individual"],
 .empty-state-hub-card[data-action="individual"] {
     --hub-card-color: var(--color-blue);
     --hub-card-rgb: var(--color-blue-rgb);
     --hub-card-bright: var(--color-blue-bright);
-    --hub-card-deep: var(--color-blue-deep);
 }
 
 .import-hub-card[data-action="mass"],
@@ -261,7 +274,6 @@
     --hub-card-color: var(--color-emerald);
     --hub-card-rgb: var(--color-emerald-rgb);
     --hub-card-bright: var(--color-emerald-bright);
-    --hub-card-deep: var(--color-emerald-deep);
 }
 
 .import-hub-card[data-action="photos"],
@@ -269,7 +281,6 @@
     --hub-card-color: var(--color-violet);
     --hub-card-rgb: var(--color-violet-rgb);
     --hub-card-bright: var(--color-violet-bright);
-    --hub-card-deep: var(--color-violet-deep);
 }
 
 .import-hub-card[data-action="existing"],
@@ -277,61 +288,56 @@
     --hub-card-color: var(--color-amber);
     --hub-card-rgb: var(--color-amber-rgb);
     --hub-card-bright: var(--color-amber-bright);
-    --hub-card-deep: var(--color-amber-deep);
-}
-
-.import-hub-card[data-action],
-.empty-state-hub-card[data-action] {
-    border-color: rgba(var(--hub-card-rgb), 0.16);
-}
-
-[data-theme="dark"] .import-hub-card[data-action],
-[data-theme="dark"] .empty-state-hub-card[data-action] {
-    border-color: rgba(var(--hub-card-rgb), 0.24);
 }
 
 .import-hub-card[data-action] .import-hub-icon,
 .empty-state-hub-card[data-action] .empty-state-hub-icon {
-    background: rgba(var(--hub-card-rgb), 0.09);
+    background: rgba(var(--hub-card-rgb), 0.08);
+    border-color: rgba(var(--hub-card-rgb), 0.14);
     color: var(--hub-card-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action] .import-hub-icon,
 [data-theme="dark"] .empty-state-hub-card[data-action] .empty-state-hub-icon {
-    background: rgba(var(--hub-card-rgb), 0.16);
+    background: rgba(var(--hub-card-rgb), 0.12);
+    border-color: rgba(var(--hub-card-rgb), 0.2);
     color: var(--hub-card-bright);
 }
 
 .import-hub-card[data-action]:hover,
 .empty-state-hub-card[data-action]:hover {
-    transform: translateY(-4px);
-    background: rgba(var(--hub-card-rgb), 0.04);
-    border-color: var(--hub-card-color);
+    transform: translateY(-2px);
+    background: var(--surface-color);
+    border-color: rgba(var(--hub-card-rgb), 0.35);
     box-shadow:
-        0 20px 40px -6px rgba(0, 0, 0, 0.08),
-        0 8px 12px -4px rgba(var(--hub-card-rgb), 0.12);
+        0 10px 24px -6px rgba(0, 0, 0, 0.06),
+        0 4px 10px -4px rgba(var(--hub-card-rgb), 0.08);
 }
 
 .import-hub-card[data-action]:hover .import-hub-icon,
 .empty-state-hub-card[data-action]:hover .empty-state-hub-icon {
-    background: var(--hub-card-color);
-    color: #ffffff;
-    transform: scale(1.08);
+    background: rgba(var(--hub-card-rgb), 0.14);
+    border-color: rgba(var(--hub-card-rgb), 0.28);
+    transform: scale(1.04);
 }
 
 [data-theme="dark"] .import-hub-card[data-action]:hover,
 [data-theme="dark"] .empty-state-hub-card[data-action]:hover {
-    background: rgba(var(--hub-card-rgb), 0.08);
-    border-color: rgba(var(--hub-card-rgb), 0.55);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(var(--hub-card-rgb), 0.38);
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.4),
-        0 4px 12px rgba(var(--hub-card-rgb), 0.2);
+        0 12px 28px -8px rgba(0, 0, 0, 0.45),
+        0 4px 12px -4px rgba(var(--hub-card-rgb), 0.12);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action]:hover {
+    background: color-mix(in srgb, var(--surface-color), white 3.5%);
 }
 
 [data-theme="dark"] .import-hub-card[data-action]:hover .import-hub-icon,
 [data-theme="dark"] .empty-state-hub-card[data-action]:hover .empty-state-hub-icon {
-    background: var(--hub-card-deep);
-    color: #ffffff;
+    background: rgba(var(--hub-card-rgb), 0.2);
+    border-color: rgba(var(--hub-card-rgb), 0.36);
 }
 
 .import-hub-card[data-action]:focus-visible,
@@ -344,18 +350,18 @@
 /* === CARD TEXT (Mutualized between Modal Hub & Empty-State Hub) === */
 .import-hub-card-title,
 .empty-state-hub-text h4 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
     text-align: center;
     letter-spacing: -0.01em;
-    transition: color 0.3s ease;
+    transition: color 0.2s ease;
 }
 
 .import-hub-card-desc,
 .empty-state-hub-text p {
-    font-size: 0.85rem;
+    font-size: 0.8125rem;
     color: var(--text-secondary);
     margin: 0;
     text-align: center;
@@ -427,11 +433,11 @@
 
     .import-hub-card .import-hub-icon,
     .empty-state-hub-icon {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
         border-radius: var(--radius-md);
         margin-bottom: 0;
-        font-size: 1.45rem;
+        font-size: 1.35rem;
     }
 
     .import-hub-card .import-hub-icon {

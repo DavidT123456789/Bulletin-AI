@@ -202,56 +202,65 @@
 }
 
 .empty-state-class-pill {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px 6px 16px;
-    background: var(--surface-color);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    margin-bottom: 14px;
-    max-width: 100%;
+    justify-content: center;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    margin-bottom: 8px;
+    max-width: calc(100% - 64px);
     cursor: pointer;
 }
 
-[data-theme="dark"] .empty-state-class-pill {
+.empty-state-class-pill:hover:not(:focus-within) {
+    background: var(--item-hover-bg);
+}
+
+.empty-state-class-pill:focus-within {
+    background: var(--surface-color);
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-sm);
+    cursor: text;
+}
+
+[data-theme="dark"] .empty-state-class-pill:focus-within {
     background: var(--bg-tertiary);
+    border-color: var(--border-color-hover);
     box-shadow: var(--shadow-elevation);
 }
 
-.empty-state-class-pill:hover,
-.empty-state-class-pill:focus-within {
-    border-color: var(--border-color-hover);
-}
-
 .empty-state-class-pill.saved {
+    background: var(--surface-color);
     border-color: var(--success-color);
-    box-shadow: 0 0 0 3px rgba(var(--success-rgb), 0.25);
+    box-shadow: 0 0 0 3px rgba(var(--success-rgb), 0.22);
 }
 
-.empty-state-pill-icon {
-    font-size: 1.25rem;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
+[data-theme="dark"] .empty-state-class-pill.saved {
+    background: var(--bg-tertiary);
 }
 
 .empty-state-class-input {
-    font-size: 1.25rem;
+    font-size: 1.55rem;
     font-weight: 700;
     color: var(--text-primary);
     text-align: center;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
     font-family: inherit;
-    width: 16ch;
-    min-width: 12ch;
-    max-width: 32ch;
-    padding: 2px 4px;
+    field-sizing: content;
+    width: auto;
+    min-width: 3ch;
+    max-width: min(32ch, 75vw);
+    padding: 2px 0;
     margin: 0;
     transition: color 0.15s ease;
+    cursor: pointer;
+}
+
+.empty-state-class-input:focus {
     cursor: text;
 }
 
@@ -262,10 +271,15 @@
 }
 
 .empty-state-edit-btn {
+    position: absolute;
+    left: calc(100% + 2px);
+    top: 50%;
+    transform: translateY(-50%);
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--text-tertiary);
+    opacity: 0.55;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -273,17 +287,29 @@
     border-radius: var(--radius-full);
     font-size: 0.95rem;
     flex-shrink: 0;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.empty-state-class-pill:hover .empty-state-edit-btn {
+    color: var(--text-primary);
+    opacity: 1;
 }
 
 .empty-state-edit-btn:hover {
     color: var(--text-primary);
     background: var(--item-hover-bg);
+    opacity: 1;
+}
+
+.empty-state-class-pill:focus-within .empty-state-edit-btn {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) scale(0.85);
 }
 
 .empty-state-subtitle {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     margin: 0 auto;
     line-height: 1.5;
     max-width: 560px;
@@ -301,28 +327,28 @@
 .empty-state-hub {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
+    gap: 14px;
+    margin-top: 32px;
     width: 100%;
-    max-width: 720px;
+    max-width: 680px;
     margin-left: auto;
     margin-right: auto;
 }
 
 .empty-state-hub.has-existing-card {
     grid-template-columns: repeat(4, 1fr);
-    max-width: 920px;
+    max-width: 880px;
 }
 
 .empty-state-hub-card {
-    gap: 16px;
-    padding: 24px 16px;
+    gap: 14px;
+    padding: 22px 14px;
 }
 
 .empty-state-hub-text {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 @media (max-width: 860px) and (min-width: 641px) {

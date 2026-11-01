@@ -246,14 +246,16 @@ export const SeatingDragDrop = {
 
             if (students.length === 1) {
                 const student = students[0];
-                const tooltipText = this._getStudentTooltipText(student);
-                cell.setAttribute('data-tooltip', tooltipText);
+                if (!cell.hasAttribute('data-tooltip')) {
+                    const tooltipText = this._getStudentTooltipText(student);
+                    cell.setAttribute('data-tooltip', tooltipText);
+                    TooltipsUI?.updateTooltip?.(cell, tooltipText);
+                }
                 if (this._isLocked) {
                     cell.removeAttribute('data-tooltip-anchor');
                 } else {
                     cell.setAttribute('data-tooltip-anchor', '.student-avatar');
                 }
-                TooltipsUI?.updateTooltip?.(cell, tooltipText);
                 const nameEl = cell.querySelector('.sc-cell-name');
                 if (nameEl) {
                     nameEl.removeAttribute('data-tooltip');
@@ -280,14 +282,16 @@ export const SeatingDragDrop = {
                 this._attachMemberHoverEcho(cell);
                 cell.querySelectorAll('.sc-stacked-member, .sc-stacked-avatar').forEach(memberEl => {
                     const memberId = memberEl.dataset.resultId;
-                    const s = this._studentMap?.get(memberId);
-                    if (!s) return;
-                    const tooltipText = this._getStudentTooltipText(s);
-                    memberEl.setAttribute('data-tooltip', tooltipText);
+                    if (!memberEl.hasAttribute('data-tooltip')) {
+                        const s = this._studentMap?.get(memberId);
+                        if (!s) return;
+                        const tooltipText = this._getStudentTooltipText(s);
+                        memberEl.setAttribute('data-tooltip', tooltipText);
+                        TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
+                    }
                     if (memberEl.classList.contains('sc-stacked-member')) {
                         memberEl.setAttribute('data-tooltip-anchor', `.sc-stacked-avatar[data-result-id='${memberId}']`);
                     }
-                    TooltipsUI?.updateTooltip?.(memberEl, tooltipText);
                 });
             }
         });
