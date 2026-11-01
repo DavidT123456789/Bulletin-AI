@@ -435,7 +435,6 @@ export const SeatingChartManager = {
                 }
                 viewEl.style.display = '';
                 if (fab) fab.style.display = 'none';
-                this._isActive = true;
                 this._onboardingStep = null;
                 document.querySelector('.sc-onboarding-hint')?.remove();
                 if (this._planMode === 'activity' && !this._hasClassActivityPlan()) {
@@ -443,6 +442,7 @@ export const SeatingChartManager = {
                 } else if (this._planMode === 'course' && !this._hasClassCoursePlan() && this._hasClassActivityPlan()) {
                     this._planMode = 'activity';
                 }
+                this._isActive = true;
                 this._loadGridConfig({ skipRender: true });
                 this._loadPositionsFromState();
                 const currentClass = this._getCurrentClass();
@@ -478,6 +478,10 @@ export const SeatingChartManager = {
 
     /** Restaure la dernière vue active (plan ou liste) au chargement de l'application */
     restoreActiveView() {
+        this._isActive = false;
+        this._hasChangesSinceUnlock = false;
+        this._wasLockedBeforeEdit = false;
+
         const targetView = appState.activeView || 'list';
         const hasResults = ClassManager.getStudentsForClass(appState.currentClassId).length > 0;
         this.updateToggleVisibility(hasResults);

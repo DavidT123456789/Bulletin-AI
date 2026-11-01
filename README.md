@@ -2,7 +2,7 @@
 
 > **L'assistant numérique des enseignants**
 
-[![Version](https://img.shields.io/badge/version-0.1.0_Beta-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.1_Beta-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-orange.svg)](./LICENSE.txt)
 [![Demo](https://img.shields.io/badge/🚀_Démo_Live-bulletin--ai.pages.dev-00d4aa.svg)](https://bulletin-ai.pages.dev/app.html)
 
@@ -18,21 +18,22 @@ Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour
 
 ## ✨ Fonctionnalités
 
-- 🤖 **Génération IA** — Support multi-provider (Mistral AI, Google Gemini, OpenRouter, Ollama)
-- 📊 **Import en masse** — Copier-coller depuis Excel/Google Sheets ou import de fichiers
+- 🤖 **Génération IA multi-moteurs** — Compatible **Albert API** (IA souveraine de l'État / DINUM via ProConnect), Google Gemini, Groq Cloud, Mistral AI, OpenAI, Claude, OpenRouter et **Ollama** (100 % hors-ligne)
+- 🛡️ **Pseudonymisation RGPD à la volée** — Masquage par défaut des prénoms (`[PRÉNOM]`), exclusion systématique des noms de famille et des photos, et traduction locale des statuts médico-scolaires (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`) en consignes pédagogiques neutres
+- 📊 **Import en masse** — Copier-coller depuis Pronote/Excel ou import de fichiers PDF/CSV
 - 🎨 **Personnalisation par matière** — Ton, longueur, voix, vocabulaire spécifique
-- 🗺️ **Plan de classe** — Disposition interactive par glisser-déposer, export PDF
-- 📈 **Statistiques** — Moyennes, évolutions, filtres interactifs
+- 🗺️ **Plan de classe & Trombinoscope** — Disposition interactive (cours & îlots d'activité), découpe locale de trombinoscope PDF Pronote, export PDF
+- 📈 **Statistiques & Synthèse du conseil** — Moyennes, évolutions, filtres interactifs et bilan global de classe
 - 🎙️ **Dictée vocale** — Reconnaissance vocale pour le contexte et les appréciations
 - 🌙 **Mode sombre** — Thème clair/sombre adaptatif
-- 💾 **Stockage local** — Données sauvegardées dans le navigateur (RGPD conforme)
-- ☁️ **Synchronisation cloud** — Sync optionnel via Google Drive (multi-appareils)
+- 💾 **Architecture Local-First** — Données stockées exclusivement dans le navigateur (`IndexedDB` & `LocalStorage`), sans serveur tiers
+- ☁️ **Synchronisation cloud optionnelle** — Sauvegarde manuelle vers votre propre Google Drive (clés API isolées)
 
 ## 🚀 Installation
 
 ### Prérequis
 
-- [Node.js](https://nodejs.org/) v18+ 
+- [Node.js](https://nodejs.org/) v18+
 - npm (inclus avec Node.js)
 
 ### Étapes
@@ -68,36 +69,38 @@ npm run dev
 ```
 📂 Bulletin-AI/
 ├── 📂 app/           # Application (code source, assets, config)
-│   ├── index.html    # Landing page (site vitrine)  
+│   ├── index.html    # Landing page (site vitrine)
 │   ├── app.html      # Application principale
+│   ├── functions/    # Relais Cloudflare Pages sans état (CORS Albert API)
 │   └── src/          # Code source JS/CSS
 ├── 📂 .github/       # GitHub Actions (deploy automatique)
 └── README.md
 ```
 
-## 🔑 Configuration API
+## 🔑 Configuration API (Modèle BYOK — Clés personnelles)
 
-L'application nécessite une clé API pour fonctionner :
+Chaque enseignant utilise sa propre clé personnelle (stockée uniquement dans son navigateur) :
 
-1. **Mistral AI (recommandé, gratuit 🇫🇷)** :
-   - Créer un compte sur [console.mistral.ai](https://console.mistral.ai/api-keys/)
-   - Générer une clé API (1 milliard de tokens/mois gratuits)
-   - La coller dans les paramètres de l'application
+1. **Albert API — IA souveraine de l'État (recommandé, 100 % gratuit 🇫🇷)** :
+   - Se connecter via **ProConnect** (adresse académique) sur [albert.playground.etalab.gouv.fr](https://albert.playground.etalab.gouv.fr)
+   - Générer une clé API personnelle (`sk-...`) et la coller dans l'application
 
-2. **Google Gemini** (gratuit) : Créer une clé sur [aistudio.google.com](https://aistudio.google.com/app/apikey)
+2. **Google Gemini (gratuit sans carte bancaire)** : Créer une clé sur [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
-3. **OpenRouter** : Créer une clé sur [openrouter.ai](https://openrouter.ai/)
+3. **Groq Cloud (gratuit sans carte bancaire)** : Créer une clé sur [console.groq.com/keys](https://console.groq.com/keys)
 
-4. **Ollama** (100% hors ligne) : Installer [Ollama](https://ollama.com/) et configurer l'URL locale
+4. **Mistral AI / OpenAI / Anthropic / OpenRouter** : Fournisseurs spécialisés en mode *pay-as-you-go*
+
+5. **Ollama (100 % local & hors-ligne)** : Installer [Ollama](https://ollama.com/) sur votre poste pour une exécution sans aucun appel réseau externe
 
 ## ⌨️ Raccourcis clavier
 
 | Raccourci | Action |
 |-----------|--------|
-| `Ctrl + G` | Générer l'appréciation |
-| `Ctrl + S` | Sauvegarder les paramètres (dans la modale) |
+| `Ctrl + Entrée` | Générer l'appréciation |
+| `Ctrl + F` | Rechercher un élève |
 | `Escape` | Fermer la modale active |
-| `←` / `→` | Navigation entre élèves (dans une modale) |
+| `←` / `→` | Navigation entre élèves (dans le panneau Focus) |
 
 ## 🧪 Tests
 
@@ -112,12 +115,12 @@ npm run test -- --watch
 npm run test:coverage
 ```
 
-## 🔒 Confidentialité
+## 🔒 Confidentialité, RGPD & Indépendance
 
-- ✅ Données stockées **localement** dans le navigateur
-- ✅ Clés API jamais partagées
-- ✅ Communication directe avec les APIs (pas de serveur intermédiaire)
-- ✅ Conforme RGPD
+- ✅ **Zéro base de données serveur** : Toutes les classes, notes et photos restent dans le navigateur de l'enseignant (`IndexedDB` / `LocalStorage`).
+- ✅ **Pseudonymisation avant envoi IA** : Les noms de famille et photos ne sont jamais transmis ; les prénoms sont remplacés par `[PRÉNOM]` par défaut et réinjectés localement au retour ; les acronymes relevant de l'Art. 9 du RGPD (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`, `Geva-Sco`) sont convertis localement en consignes pédagogiques neutres.
+- ✅ **Clés API personnelles (BYOK)** : Vos clés (notamment ProConnect / Albert API) ne sont jamais partagées ni mutualisées.
+- ✅ **Outil gratuit & indépendant** : Application développée bénévolement, sans compte, sans pistage ni publicité. Les dons libres sur [Ko-fi](https://ko-fi.com/profassistant) soutiennent exclusivement le développement de l'interface et son hébergement.
 
 ## 📄 Licence
 

@@ -53,6 +53,7 @@ export const ExportManager = {
         navigator.clipboard.writeText(Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciationToCopy))).then(() => {
             appState.generatedResults[resultIndex].copied = true;
             StorageManager.saveAppState();
+            UI?.recordSupportMilestone?.('bulletin-export');
 
             if (buttonEl) {
                 const originalIcon = buttonEl.innerHTML;
@@ -144,6 +145,7 @@ export const ExportManager = {
                 }, 2000);
             }
             UI.showNotification(`${items.length} appréciation${items.length > 1 ? 's' : ''} copiée${items.length > 1 ? 's' : ''} !`, 'success');
+            UI?.recordSupportMilestone?.('bulletin-export');
         });
     },
 
@@ -274,6 +276,7 @@ export const ExportManager = {
 
         const count = results.length;
         UI.showNotification(`CSV exporté (${count} élève${count > 1 ? 's' : ''}, ${Utils.getPeriodLabel(currentPeriod, true)}).`, 'success');
+        UI?.recordSupportMilestone?.('bulletin-export');
     },
 
     /**
@@ -328,6 +331,7 @@ export const ExportManager = {
 
         window.onafterprint = cleanup;
         window.print();
+        UI?.recordSupportMilestone?.('bulletin-export');
     },
 
     /**
@@ -364,6 +368,7 @@ export const ExportManager = {
             });
 
             StorageManager.saveAppState();
+            UI?.recordSupportMilestone?.('bulletin-export');
             return activeResults.length;
         } catch (err) {
             console.error('Erreur bulk copy:', err);

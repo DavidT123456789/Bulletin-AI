@@ -634,6 +634,23 @@ export const SyncService = {
     // Use forceUpload() or forceDownload() instead.
 
     /**
+     * Aligne l'empreinte de données locale (`bulletin_last_sync_hash`), l'horodatage de modification
+     * (`bulletin_last_modified`) et les caches de `StorageManager` sur l'état synchronisé courant,
+     * puis rafraîchit l'indicateur Cloud.
+     */
+    alignLocalSyncBaseline() {
+        const syncTime = this.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || Date.now();
+        this.lastSyncTime = syncTime;
+        const syncHash = StorageManager.computeCurrentDataHash();
+        localStorage.setItem('bulletin_last_sync', syncTime.toString());
+        localStorage.setItem('bulletin_last_sync_hash', syncHash);
+        localStorage.setItem('bulletin_last_modified', syncTime.toString());
+        StorageManager._lastDataHash = syncHash;
+        StorageManager._lastSaveHash = null;
+        this._updateCloudIndicator('connected');
+    },
+
+    /**
      * Force push local data to cloud (overwrites remote).
      */
     async forceUpload() {
@@ -658,13 +675,7 @@ export const SyncService = {
         this.remoteSyncTime = this.lastSyncTime;
 
         // Save data hash at sync time and align modified timestamp
-        const syncHash = StorageManager.computeCurrentDataHash();
-        localStorage.setItem('bulletin_last_sync_hash', syncHash);
-        localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
-        StorageManager._lastDataHash = syncHash;
-        StorageManager._lastSaveHash = null;
-
-        this._updateCloudIndicator('connected');
+        this.alignLocalSyncBaseline();
         this._setStatus('idle');
     },
 
@@ -698,13 +709,7 @@ export const SyncService = {
 
         // Save data hash at sync time and align ALL internal hashes to prevent
         // subsequent saveAppState calls from re-setting bulletin_last_modified
-        const syncHash = StorageManager.computeCurrentDataHash();
-        localStorage.setItem('bulletin_last_sync_hash', syncHash);
-        localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
-        StorageManager._lastDataHash = syncHash;
-        StorageManager._lastSaveHash = null;
-
-        this._updateCloudIndicator('connected');
+        this.alignLocalSyncBaseline();
         this._setStatus('idle');
         return { success: true, count: importedCount };
     },

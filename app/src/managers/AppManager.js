@@ -179,6 +179,9 @@ export const App = {
                 // Ignore silent error
             }
         }
+        if (StorageManager._savePromise) {
+            await StorageManager._savePromise;
+        }
     },
 
     updateUIOnLoad() {

@@ -26,7 +26,7 @@ export const AI_PROVIDERS = {
         keyProperty: 'googleApiKey',
         domKey: 'googleApiKey',
         apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        description: '<strong>Google Gemini (Recommandé)</strong> : solution officielle, <strong>100% gratuite et sans carte bancaire</strong>, idéale pour débuter sereinement.'
+        description: '<strong>Google Gemini</strong> : alternative rapide et performante, <strong>100% gratuite et sans carte bancaire</strong> via Google AI Studio.'
     },
     albert: {
         id: 'albert',
@@ -38,7 +38,7 @@ export const AI_PROVIDERS = {
         keyProperty: 'albertApiKey',
         domKey: 'albertApiKey',
         apiBaseUrl: 'https://albert.api.etalab.gouv.fr/v1',
-        description: '<strong>Albert API (État français / DINUM)</strong> : passerelle souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants de l\'Éducation nationale via ProConnect.'
+        description: '<strong>Albert API (État français / DINUM — Recommandé)</strong> : passerelle souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants et agents publics via ProConnect.'
     },
     groq: {
         id: 'groq',
@@ -117,8 +117,8 @@ export const PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', 'mistral'
 /** Liste des fournisseurs nécessitant une clé API distante */
 export const API_KEY_PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic'];
 
-/** Ordre de priorité des fournisseurs pour le fallback automatique */
-export const FALLBACK_PROVIDER_ORDER = ['google', 'albert', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
+/** Ordre de priorité des fournisseurs pour le fallback automatique (souverain en tête) */
+export const FALLBACK_PROVIDER_ORDER = ['albert', 'google', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
 
 /**
  * Registre unifié des modèles IA (27 modèles actifs dans le sélecteur + 7 alias historiques).

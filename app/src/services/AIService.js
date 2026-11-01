@@ -103,15 +103,16 @@ export const AIService = {
     sleep,
 
     /**
-     * Résout l'URL de base d'Albert API (utilise le proxy local Vite /api/albert/v1 sur localhost
-     * pour contourner l'absence d'en-têtes CORS sur albert.api.etalab.gouv.fr).
+     * Résout l'URL de base d'Albert API (utilise le relais sans état /api/albert/v1 sur localhost
+     * et Cloudflare Pages *.pages.dev pour contourner l'absence d'en-têtes CORS sur albert.api.etalab.gouv.fr).
      * @returns {string}
      */
     _getAlbertBaseUrl() {
+        const hostname = typeof window !== 'undefined' ? window.location?.hostname || '' : '';
         if (
-            typeof window !== 'undefined' &&
-            (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1') &&
-            !import.meta.env?.VITEST
+            hostname &&
+            !import.meta.env?.VITEST &&
+            (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.pages.dev'))
         ) {
             return '/api/albert/v1';
         }

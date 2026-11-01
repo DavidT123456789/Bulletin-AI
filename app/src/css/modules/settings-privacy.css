@@ -3,13 +3,13 @@
    Styles spécifiques pour la section confidentialité
    ==================================================================== */
 
-.privacy-warning-badge {
+.privacy-reassurance-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     font-size: 0.72rem;
-    background: rgba(var(--warning-rgb), 0.1);
-    color: var(--warning-dark);
+    background: rgba(var(--success-rgb), 0.1);
+    color: var(--color-emerald-deep);
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: 500;
@@ -17,6 +17,7 @@
     white-space: nowrap;
 }
 
-[data-theme="dark"] .privacy-warning-badge {
-    background: rgba(var(--warning-rgb), 0.15);
+[data-theme="dark"] .privacy-reassurance-badge {
+    background: rgba(var(--success-rgb), 0.15);
+    color: var(--color-emerald-bright);
 }

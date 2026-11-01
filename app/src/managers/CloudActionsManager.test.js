@@ -9,6 +9,7 @@ const SyncServiceMock = vi.hoisted(() => ({
     mergeAndSync: vi.fn(() => Promise.resolve({ success: true, stats: { addedStudents: 2 } })),
     getRemoteBackupSummary: vi.fn(),
     loadFromCloud: vi.fn(() => Promise.resolve({ success: true, count: 3 })),
+    alignLocalSyncBaseline: vi.fn(),
     _computeSyncState: vi.fn(() => 'in-sync'),
     _lastSyncState: 'local-changes',
     currentProviderName: 'google',
@@ -232,6 +233,7 @@ describe('CloudActionsManager', () => {
 
             expect(StorageManager.savePreRestoreSnapshot).toHaveBeenCalled();
             expect(SyncServiceMock.loadFromCloud).toHaveBeenCalledWith(summary().remoteData);
+            expect(SyncServiceMock.alignLocalSyncBaseline).toHaveBeenCalled();
             expect(UI.showUndoNotification).toHaveBeenCalledWith(
                 'Votre espace de travail a été restauré.',
                 expect.any(Function),

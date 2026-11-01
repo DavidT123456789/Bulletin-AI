@@ -35,6 +35,10 @@ export const GeneralListeners = {
         // Initialize external links
         if (DOM.linkGithub) DOM.linkGithub.href = APP_LINKS.GITHUB;
         if (DOM.linkKofi) DOM.linkKofi.href = APP_LINKS.KOFI;
+        document.querySelectorAll('[data-kofi-link]').forEach(link => {
+            link.href = APP_LINKS.KOFI;
+            link.addEventListener('click', () => UI?.markSupportLinkClicked?.());
+        });
         if (DOM.linkFeedback) DOM.linkFeedback.href = APP_LINKS.FEEDBACK;
         if (DOM.linkLicense) DOM.linkLicense.href = APP_LINKS.LICENSE;
 

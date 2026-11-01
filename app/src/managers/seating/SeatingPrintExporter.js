@@ -5,6 +5,7 @@
 
 import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
+import { UI } from '../UIManager.js';
 
 export const SeatingPrintExporter = {
     // ========================================================================
@@ -71,5 +72,8 @@ export const SeatingPrintExporter = {
 
         window.onafterprint = cleanup;
         window.print();
+        if (placed >= 8) {
+            UI?.recordSupportMilestone?.('seating-action', 1, { classId: classData?.id, isPrint: true });
+        }
     }
 };

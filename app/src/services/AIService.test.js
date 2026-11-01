@@ -480,5 +480,60 @@ describe('AIService', () => {
             expect(AIService._hasApiKeyForModel('ollama-qwen2.5:7b')).toBe(false);
         });
     });
+
+    describe('Cloudflare Pages Albert API Relay Function ([[path]].js)', () => {
+        it('should forward allowed endpoints (models, me, chat/completions) statelessly and preserve rate-limit headers', async () => {
+            const { onRequest } = await import('../../functions/api/albert/v1/[[path]].js');
+            globalThis.fetch = vi.fn().mockResolvedValueOnce(
+                new Response(JSON.stringify({ choices: [{ message: { content: 'Bonjour' } }] }), {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-ratelimit-reset-requests': '4s'
+                    }
+                })
+            );
+
+            const req = new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer sk-albert-test',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model: 'openweight-medium', messages: [{ role: 'user', content: 'Test' }] })
+            });
+
+            const res = await onRequest({ request: req, params: { path: ['chat', 'completions'] } });
+            expect(res.status).toBe(200);
+            expect(res.headers.get('Cache-Control')).toBe('no-store');
+            expect(res.headers.get('x-ratelimit-reset-requests')).toBe('4s');
+            expect(globalThis.fetch).toHaveBeenCalledWith(
+                'https://albert.api.etalab.gouv.fr/v1/chat/completions',
+                expect.objectContaining({ method: 'POST' })
+            );
+        });
+
+        it('should handle OPTIONS preflight, reject unauthorized endpoints (404) and methods (405), and return 502 on upstream failure', async () => {
+            const { onRequest } = await import('../../functions/api/albert/v1/[[path]].js');
+
+            const optionsReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'OPTIONS' });
+            const optionsRes = await onRequest({ request: optionsReq, params: { path: ['models'] } });
+            expect(optionsRes.status).toBe(204);
+            expect(optionsRes.headers.get('Access-Control-Allow-Origin')).toBe('https://bulletin-ai.pages.dev');
+
+            const deleteReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'DELETE' });
+            const deleteRes = await onRequest({ request: deleteReq, params: { path: ['models'] } });
+            expect(deleteRes.status).toBe(405);
+
+            const forbiddenPathReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/admin/users', { method: 'GET' });
+            const forbiddenPathRes = await onRequest({ request: forbiddenPathReq, params: { path: ['admin', 'users'] } });
+            expect(forbiddenPathRes.status).toBe(404);
+
+            globalThis.fetch = vi.fn().mockRejectedValueOnce(new Error('Network down'));
+            const failReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'GET' });
+            const failRes = await onRequest({ request: failReq, params: { path: ['models'] } });
+            expect(failRes.status).toBe(502);
+        });
+    });
 });
 

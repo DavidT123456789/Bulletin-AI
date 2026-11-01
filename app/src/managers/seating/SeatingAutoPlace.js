@@ -229,6 +229,9 @@ export const SeatingAutoPlace = {
             if (remaining > 0) {
                 UI.showNotification(`${cursor} élèves placés. ${remaining} ne rentrent pas — ajoutez des postes.`, 'warning');
             }
+            if (cursor >= 8) {
+                UI?.recordSupportMilestone?.('seating-action', 1, { classId: appState.currentClassId });
+            }
             return;
         }
 
@@ -325,6 +328,9 @@ export const SeatingAutoPlace = {
         const remaining = ordered.length - k;
         if (remaining > 0) {
             UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
+        }
+        if (k >= 8) {
+            UI?.recordSupportMilestone?.('seating-action', 1, { classId: appState.currentClassId });
         }
     },
 

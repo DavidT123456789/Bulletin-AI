@@ -15,7 +15,7 @@
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG, hasValidApiKey } from '../config/providers.js';
-import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS } from '../config/Config.js';
+import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_LINKS } from '../config/Config.js';
 import { getMovementStatusLabels, getSelectableStatusLabels } from '../config/academicConstants.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
@@ -1714,6 +1714,149 @@ export const UI = {
         DOM.headerClassChip.removeAttribute('data-tooltip');
         DOM.headerClassChip.classList.remove('tooltip');
         DOM.headerClassChip._tippy?.destroy?.();
+    },
+
+    // ====================================================================
+    //  SOUTIEN BÉNÉVOLE (JALONS D'USAGE NON-INTRUSIFS)
+    //  Notification sobre en fin de tâche après un volume réel d'usage
+    // ====================================================================
+
+    _supportMilestoneKey: 'bulletin-ai-support-milestone-v1',
+    _supportMinGenerations: 30,
+    _supportMinSeatingActions: 3,
+    _supportCooldownMs: 60 * 24 * 60 * 60 * 1000, // 60 jours (~1 trimestre)
+    _supportSeatingDebounceMs: 10 * 60 * 1000,    // 10 min entre 2 placements de la même classe
+
+    _getSupportMilestoneState() {
+        const defaults = {
+            generationsCount: 0,
+            seatingActionsCount: 0,
+            lastSeatingClassId: null,
+            lastSeatingAt: 0,
+            lastShownAt: 0,
+            supportClickedAt: 0
+        };
+        try {
+            const raw = localStorage.getItem(this._supportMilestoneKey);
+            if (!raw) return defaults;
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object') ? { ...defaults, ...parsed } : defaults;
+        } catch (_) {
+            return defaults;
+        }
+    },
+
+    _saveSupportMilestoneState(state) {
+        try {
+            localStorage.setItem(this._supportMilestoneKey, JSON.stringify(state));
+        } catch (_) {
+            // Ignorer silencieusement en navigation privée ou quota plein
+        }
+    },
+
+    /**
+     * Enregistre que l'utilisateur a cliqué sur un lien de soutien Ko-fi
+     * afin de ne plus jamais afficher le rappel automatique.
+     */
+    markSupportLinkClicked() {
+        const state = this._getSupportMilestoneState();
+        state.supportClickedAt = Date.now();
+        this._saveSupportMilestoneState(state);
+    },
+
+    /**
+     * Enregistre un jalon d'usage réel et affiche une notification sobre
+     * uniquement en fin de tâche (lot terminé, export/copie de classe ou 3e plan de classe),
+     * avec un délai de grâce trimestriel (60 jours) et zéro rappel après clic.
+     *
+     * @param {'generation'|'batch-complete'|'bulletin-export'|'seating-action'} event
+     * @param {number} [count=1]
+     * @param {Object} [options={}]
+     * @param {string|null} [options.classId]
+     * @param {boolean} [options.isPrint=false]
+     * @param {number} [options.delayMs=1200]
+     * @returns {boolean} true si une notification de soutien a été programmée
+     */
+    recordSupportMilestone(event, count = 1, options = {}) {
+        const now = Date.now();
+        const state = this._getSupportMilestoneState();
+
+        if (event === 'generation') {
+            const delta = Math.max(0, Number(count) || 0);
+            if (delta > 0) {
+                state.generationsCount = (Number(state.generationsCount) || 0) + delta;
+                this._saveSupportMilestoneState(state);
+            }
+            return false;
+        }
+
+        if (event === 'seating-action') {
+            const classId = options.classId ?? appState?.currentClassId ?? null;
+            const isPrint = Boolean(options.isPrint);
+            const sameClassRecent = !isPrint
+                && classId !== null
+                && state.lastSeatingClassId === classId
+                && (now - (Number(state.lastSeatingAt) || 0) < this._supportSeatingDebounceMs);
+
+            if (!sameClassRecent) {
+                state.seatingActionsCount = (Number(state.seatingActionsCount) || 0) + 1;
+                state.lastSeatingClassId = classId;
+                state.lastSeatingAt = now;
+                this._saveSupportMilestoneState(state);
+            }
+
+            if ((Number(state.seatingActionsCount) || 0) < this._supportMinSeatingActions) {
+                return false;
+            }
+        } else if (event === 'batch-complete' || event === 'bulletin-export') {
+            if ((Number(state.generationsCount) || 0) < this._supportMinGenerations) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        // Garde anti-intrusion : jamais si déjà cliqué ou affiché durant les 60 derniers jours
+        if ((Number(state.supportClickedAt) || 0) > 0) return false;
+        if ((Number(state.lastShownAt) || 0) > 0 && (now - Number(state.lastShownAt) < this._supportCooldownMs)) {
+            return false;
+        }
+
+        state.lastShownAt = now;
+        this._saveSupportMilestoneState(state);
+
+        const isSeating = event === 'seating-action';
+        const title = isSeating ? 'Plans de classe prêts ?' : 'Bulletin bouclé ?';
+        const subtitle = isSeating
+            ? "Outil développé bénévolement par un collègue. S'il vous simplifie la rentrée, un café aide à faire vivre le projet !"
+            : "Outil développé bénévolement par un collègue. S'il vous fait gagner votre soirée, un café aide à faire vivre le projet !";
+
+        const showToast = () => {
+            this.showNotification(subtitle, 'info', 9000, {
+                title,
+                icon: 'solar:cup-hot-bold',
+                bypassCoalescing: true,
+                action: {
+                    label: 'Soutenir ☕',
+                    onClick: () => {
+                        this.markSupportLinkClicked();
+                        const url = APP_LINKS?.KOFI || 'https://ko-fi.com/profassistant';
+                        if (typeof window !== 'undefined' && typeof window.open === 'function') {
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                        }
+                    }
+                }
+            });
+        };
+
+        const delayMs = typeof options.delayMs === 'number' ? options.delayMs : 1200;
+        if (delayMs <= 0) {
+            showToast();
+        } else {
+            setTimeout(showToast, delayMs);
+        }
+
+        return true;
     },
 
     // Result card functions delegated to ResultCardsUIManager - REMOVED (Legacy Card View Deprecated)

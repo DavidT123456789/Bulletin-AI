@@ -43,7 +43,8 @@ vi.mock('../config/Config.js', () => ({
         'Générique': { iaConfig: { length: 50, tone: 2 } }
     },
     DEFAULT_IA_CONFIG: { length: 50, tone: 3, voice: 'default', styleInstructions: '' },
-    MODEL_DESCRIPTIONS: { 'gemini-2.0-flash': 'Test model description' }
+    MODEL_DESCRIPTIONS: { 'gemini-2.0-flash': 'Test model description' },
+    APP_LINKS: { KOFI: 'https://ko-fi.com/profassistant' }
 }));
 
 // Mock DOM module
@@ -852,6 +853,78 @@ describe('UIManager', () => {
                 window.matchMedia = origMatchMedia;
                 DOM.mainPeriodSelector = prevSelector;
             }
+        });
+    });
+
+    describe('Support Milestone (recordSupportMilestone & markSupportLinkClicked)', () => {
+        beforeEach(() => {
+            localStorage.removeItem(UI._supportMilestoneKey);
+        });
+
+        it('ne déclenche pas de notification sous le seuil de 30 générations (protection démo / inspection)', () => {
+            const spy = vi.spyOn(UI, 'showNotification');
+            UI.recordSupportMilestone('generation', 20);
+            expect(UI.recordSupportMilestone('batch-complete', 1, { delayMs: 0 })).toBe(false);
+            expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(false);
+            expect(spy).not.toHaveBeenCalled();
+            spy.mockRestore();
+        });
+
+        it('déclenche la notification en fin de lot après >= 30 générations puis applique le cooldown de 60 jours', () => {
+            const spy = vi.spyOn(UI, 'showNotification');
+            const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+            UI.recordSupportMilestone('generation', 30);
+            const triggered = UI.recordSupportMilestone('batch-complete', 1, { delayMs: 0 });
+            expect(triggered).toBe(true);
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.mock.calls[0][3]).toMatchObject({
+                title: 'Bulletin bouclé ?',
+                icon: 'solar:cup-hot-bold',
+                bypassCoalescing: true
+            });
+
+            // Cooldown immédiat : un export suivant ne doit pas réafficher le toast
+            expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(false);
+            expect(spy).toHaveBeenCalledTimes(1);
+
+            // Clic sur le bouton d'action ouvre Ko-fi et désactive définitivement le rappel
+            spy.mock.calls[0][3].action.onClick();
+            expect(openSpy).toHaveBeenCalledWith('https://ko-fi.com/profassistant', '_blank', 'noopener,noreferrer');
+
+            const state = UI._getSupportMilestoneState();
+            expect(state.supportClickedAt).toBeGreaterThan(0);
+
+            openSpy.mockRestore();
+            spy.mockRestore();
+        });
+
+        it('débounce les placements répétés sur une même classe et déclenche au 3e plan de classe distinct', () => {
+            const spy = vi.spyOn(UI, 'showNotification');
+
+            // 3 placements rapides sur la même classe "6eA" ne comptent que pour 1 action
+            expect(UI.recordSupportMilestone('seating-action', 1, { classId: '6eA', delayMs: 0 })).toBe(false);
+            expect(UI.recordSupportMilestone('seating-action', 1, { classId: '6eA', delayMs: 0 })).toBe(false);
+            expect(UI.recordSupportMilestone('seating-action', 1, { classId: '6eA', delayMs: 0 })).toBe(false);
+            expect(UI._getSupportMilestoneState().seatingActionsCount).toBe(1);
+
+            // 2e et 3e classes distinctes -> déclenchement au 3e plan
+            expect(UI.recordSupportMilestone('seating-action', 1, { classId: '5eB', delayMs: 0 })).toBe(false);
+            expect(UI.recordSupportMilestone('seating-action', 1, { classId: '4eC', delayMs: 0 })).toBe(true);
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.mock.calls[0][3].title).toBe('Plans de classe prêts ?');
+
+            spy.mockRestore();
+        });
+
+        it('ne déclenche plus jamais après markSupportLinkClicked même au-delà du cooldown', () => {
+            const spy = vi.spyOn(UI, 'showNotification');
+            UI.recordSupportMilestone('generation', 40);
+            UI.markSupportLinkClicked();
+
+            expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(false);
+            expect(spy).not.toHaveBeenCalled();
+            spy.mockRestore();
         });
     });
 });

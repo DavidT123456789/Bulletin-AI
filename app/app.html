@@ -1931,6 +1931,11 @@
                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"></iconify-icon>
                                 Guide
                             </button>
+                            <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
+                                class="ui-tabs-action-btn" id="settingsSidebarKofiLink" data-kofi-link>
+                                <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
+                                Soutenir le projet
+                            </a>
                             <button class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build 4558af8)">
                                 <span class="ui-tabs-action-btn-main">
                                     <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
@@ -2580,13 +2585,13 @@
                                     <div class="settings-row">
                                         <div class="settings-row-info">
                                             <label for="settingsPrivacyAnonymizeToggle" class="settings-row-title">
-                                                Anonymiser les prénoms
-                                                <span class="privacy-warning-badge" title="Peut causer des répétitions dans le texte">
-                                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Moins fluide
+                                                Pseudonymiser les prénoms
+                                                <span class="privacy-reassurance-badge" title="Protection active par défaut conformément aux recommandations RGPD">
+                                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Recommandé RGPD
                                                 </span>
                                             </label>
                                             <span class="settings-row-desc">
-                                                Active par défaut : remplace le prénom des élèves par une balise neutre dans tous les prompts (historique, observations, retouches, bilan). Le nom de famille et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont <strong>jamais</strong> transmis.
+                                                Active par défaut : remplace le prénom des élèves par une balise neutre <code>[PRÉNOM]</code> avant tout envoi à l'IA et réinjecte le vrai prénom localement au retour (désactivez si vous préférez conserver le prénom pour varier les tournures). Le nom de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont <strong>jamais</strong> transmis.
                                             </span>
                                         </div>
                                         <div class="settings-row-control">
@@ -2927,6 +2932,11 @@
                                 <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
                                 Assistant d'accueil
                             </button>
+                            <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
+                                class="ui-tabs-action-btn" id="helpSidebarKofiLink" data-kofi-link>
+                                <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
+                                Soutenir le projet
+                            </a>
                         </div>
                     </div>
 
@@ -3368,8 +3378,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont masqués par défaut).</li>
-                                            <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes sont enregistrées dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Les requêtes partent directement vers le fournisseur d'IA choisi — y compris sur l'infrastructure souveraine de l'État avec <strong>Albert API (DINUM)</strong> ou 100 % hors-ligne avec <em>Ollama</em>.</li>
+                                            <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont remplacés par <code>[PRÉNOM]</code> par défaut).</li>
+                                            <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes restent dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Pour un traitement 100 % souverain ou hors-ligne, privilégiez <strong>Albert API (DINUM / ProConnect)</strong> ou <em>Ollama</em> (et désactivez le <em>Relais automatique</em> si d'autres clés non européennes sont enregistrées).</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3451,12 +3461,12 @@
                                             <iconify-icon class="iconify-inline" icon="solar:home-2-linear"></iconify-icon>
                                             Site vitrine
                                         </a>
-                                        <a id="linkGithub" href="https://github.com/dtrafial/Bulletin-AI" target="_blank" rel="noopener noreferrer"
+                                        <a id="linkGithub" href="https://github.com/davidt123456789/Bulletin-AI" target="_blank" rel="noopener noreferrer"
                                             class="btn btn-secondary btn-small">
                                             <iconify-icon class="iconify-inline" icon="mdi:github"></iconify-icon>
                                             GitHub
                                         </a>
-                                        <a id="linkFeedback" href="https://forms.gle/4yQ3o5sZqKzQ6Z6c8" target="_blank" rel="noopener noreferrer"
+                                        <a id="linkFeedback" href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform" target="_blank" rel="noopener noreferrer"
                                             class="btn btn-secondary btn-small">
                                             <iconify-icon class="iconify-inline" icon="solar:chat-line-bold"></iconify-icon> Avis
                                         </a>
@@ -3496,7 +3506,7 @@
                                     </div>
                                     <div class="about-pillar-text">
                                         <h4>Code ouvert &amp; indépendant</h4>
-                                        <p>Application open-source gratuite, utilisable sans création de compte, sans pistage ni publicité.</p>
+                                        <p>Application open-source gratuite, utilisable sans création de compte, sans pistage ni publicité. Vos clés d'IA (dont Albert / ProConnect) restent strictement personnelles.</p>
                                     </div>
                                 </div>
                             </div>
@@ -3508,11 +3518,11 @@
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Bulletin AI est développé bénévolement sur mon temps libre. Si l'outil vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez encourager son évolution en offrant un café !
+                                        Bulletin AI est un outil indépendant développé bénévolement sur mon temps libre. Si l'application vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez soutenir son développement et son hébergement en offrant un café !
                                     </p>
                                 </div>
-                                <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
-                                    class="btn btn-kofi">
+                                <a id="linkKofi" href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
+                                    class="btn btn-kofi" data-kofi-link>
                                     <iconify-icon class="iconify-inline" icon="solar:cup-hot-bold"></iconify-icon>
                                     Soutenir sur Ko-fi
                                 </a>
@@ -3522,7 +3532,7 @@
                             <div class="about-footer">
                                 <p>Développé pour les enseignants par David Trafial · © 2025-2026 Bulletin AI</p>
                                 <p class="license-text">
-                                    Licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
+                                    Licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
                                 </p>
                             </div>
                         </div>

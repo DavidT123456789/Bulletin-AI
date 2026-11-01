@@ -553,6 +553,7 @@ export const ListSelectionManager = {
                 ? `Terminé avec ${errorCount} erreur(s).`
                 : `Régénération terminée (${successCount}/${total}).`;
             UI.showNotification(resultMsg, errorCount > 0 ? "warning" : "success");
+            if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
         }
 
         StorageManager.saveAppState();

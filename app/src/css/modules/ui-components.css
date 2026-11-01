@@ -313,6 +313,7 @@
     font-size: 0.80em;
     font-weight: 500;
     cursor: pointer;
+    text-decoration: none;
     transition: all var(--transition-fast);
     box-shadow: none;
     white-space: nowrap;

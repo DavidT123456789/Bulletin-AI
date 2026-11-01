@@ -304,6 +304,7 @@ export const CloudActionsManager = {
 
             const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
             await RestoreTransitionManager.rehydrateAndTransition();
+            SyncService.alignLocalSyncBaseline?.();
 
             const count = result.count ?? summary.studentCount;
             const message = wasEmptyLocal && count > 0

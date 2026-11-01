@@ -157,6 +157,9 @@ export const StorageManager = {
             if (App?.updateUIOnLoad) {
                 App.updateUIOnLoad();
             }
+            if (window.SeatingChartManager?._isActive) {
+                window.SeatingChartManager.restoreActiveView?.();
+            }
             window.SyncService?.refreshLocalIndicator?.();
             bus.emit(EVENTS.TAB_SYNC_RECEIVED, {
                 type: 'STATE_UPDATED',
@@ -429,7 +432,7 @@ export const StorageManager = {
                     const validDbClasses = Array.isArray(dbClasses)
                         ? dbClasses.filter(c => c && typeof c.id === 'string' && typeof c.name === 'string')
                         : [];
-                    if (validDbClasses.length > 0 && (fromTabSync || !userSettings.academic.classes || userSettings.academic.classes.length === 0)) {
+                    if (validDbClasses.length > 0 && ((!hasLoadedSettingsFromLS && fromTabSync) || !userSettings.academic.classes || userSettings.academic.classes.length === 0)) {
                         userSettings.academic.classes = validDbClasses;
                     } else if (!fromTabSync && userSettings.academic.classes?.length > 0 && validDbClasses.length === 0 && typeof DBService.replaceAll === 'function') {
                         // Migration ascendante transparente v1 -> v2 : persiste les classes existantes dans le store 'classes'
@@ -688,6 +691,12 @@ export const StorageManager = {
         if (['openai-gpt-4o', 'openai-gpt-3.5-turbo', 'openai-gpt-4-turbo'].includes(userSettings.api.currentAIModel)) {
             userSettings.api.currentAIModel = 'openai-o3-mini';
         }
+        // Migration Groq legacy (identique à _applyLoadedSettings)
+        if (userSettings.api.currentAIModel === 'groq-llama-3.3-70b') {
+            userSettings.api.currentAIModel = 'groq-gpt-oss-120b';
+        } else if (['groq-llama-3.1-8b', 'groq-gemma-2-9b'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'groq-gpt-oss-20b';
+        }
     },
 
 
@@ -870,6 +879,11 @@ export const StorageManager = {
                 studentPhoto: this._getPhotoFingerprint(r.studentPhoto)
             };
         });
+        lightResults.sort((a, b) => {
+            const idA = String(a?.id ?? '');
+            const idB = String(b?.id ?? '');
+            return idA < idB ? -1 : (idA > idB ? 1 : 0);
+        });
         return this._hashString(JSON.stringify(lightResults));
     },
 
@@ -896,7 +910,8 @@ export const StorageManager = {
             dataSettings.seatingActivityGrid = actGridRest;
         }
 
-        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified), états UI éphémères et base64 lourds
+        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified), états UI éphémères et base64 lourds.
+        // Tri déterministe par ID pour garantir l'invariance du hash après rechargement IndexedDB (DBService.getAll trie par clé primaire id).
         const cleanResults = (runtimeState.data.generatedResults || []).map(r => {
             const clean = { ...r };
             delete clean._lastModified;
@@ -920,6 +935,10 @@ export const StorageManager = {
                 clean.studentData = { ...clean.studentData, periods: cleanPeriods };
             }
             return clean;
+        }).sort((a, b) => {
+            const idA = String(a?.id ?? '');
+            const idB = String(b?.id ?? '');
+            return idA < idB ? -1 : (idA > idB ? 1 : 0);
         });
 
         const rawData = JSON.stringify(dataSettings) + JSON.stringify(cleanResults);
@@ -1782,6 +1801,7 @@ export const StorageManager = {
 
             // Import settings
             if (shouldImport('settings') && settings.subjects) {
+                const isMerge = Boolean(options.mergeData);
                 Object.assign(appState, {
                     theme: settings.theme || appState.theme,
                     accentColor: settings.accentColor || appState.accentColor || 'blue',
@@ -1794,8 +1814,8 @@ export const StorageManager = {
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
-                    seatingGrid: settings.seatingGrid || appState.seatingGrid,
-                    seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid,
+                    seatingGrid: isMerge ? (settings.seatingGrid || appState.seatingGrid) : (settings.seatingGrid ?? null),
+                    seatingActivityGrid: isMerge ? (settings.seatingActivityGrid || appState.seatingActivityGrid) : (settings.seatingActivityGrid ?? null),
                     journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
                     activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                 });
@@ -1900,6 +1920,7 @@ export const StorageManager = {
             this._updateFilteredResultsForCurrentClass();
             this._ensureDefaultState();
             this._ensureConfigUpgrades();
+            this._lastSaveHash = null;
             await this.saveAppState();
             if (App && App.updateUIOnLoad) App.updateUIOnLoad();
 
@@ -2012,8 +2033,12 @@ export const StorageManager = {
         if (runtimeState.data.generatedResults?.length > 0) {
             runtimeState._dataPurgeDetected = false;
         }
+        this._lastSaveHash = null;
         await this.saveAppState();
         if (App?.updateUIOnLoad) App.updateUIOnLoad();
+        if (window.SeatingChartManager?._isActive) {
+            window.SeatingChartManager.restoreActiveView?.();
+        }
 
         return { success: true, stats };
     },

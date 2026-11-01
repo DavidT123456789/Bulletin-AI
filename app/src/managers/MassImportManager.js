@@ -225,6 +225,9 @@ export const MassImportManager = {
                 } else {
                     UI.showNotification(successMessage, 'success');
                 }
+                if (totalProcessed - failedImports.length > 0) {
+                    UI?.recordSupportMilestone?.('batch-complete');
+                }
                 appState.importJustCompleted = true;
                 if (DOM.massData) DOM.massData.value = '';
                 UI.updateMassImportPreview();

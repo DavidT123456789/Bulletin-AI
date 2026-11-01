@@ -832,6 +832,7 @@ export const ResultsUIManager = {
                 this.renderResults();
             } else {
                 UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
+                if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
             }
 
             appState.activeMassAction = null;
@@ -968,6 +969,7 @@ export const ResultsUIManager = {
                 this.renderResults();
             } else {
                 UI.showNotification(`${successCount}/${total} actualisée(s) avec succès.`, "success");
+                if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
             }
 
             appState.activeMassAction = null;

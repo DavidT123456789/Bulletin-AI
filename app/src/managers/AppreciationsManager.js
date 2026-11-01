@@ -236,6 +236,7 @@ export const AppreciationsManager = {
         result.classId = targetClassId;
         result.generationPeriod = targetPeriod;
         result.copied = false; // Ensure initialized as false
+        UI?.recordSupportMilestone?.('generation', 1);
         return result;
     },
 

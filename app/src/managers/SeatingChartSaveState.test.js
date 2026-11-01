@@ -336,5 +336,107 @@ describe('SeatingChartManager and Save State integrity', () => {
         expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['student-1', 'student-3', 'student-4']);
         expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['student-2']);
     });
+
+    it('maintains strict in-sync state after Cloud restore and rehydration even when IndexedDB reorders student IDs or Plan view was active', async () => {
+        const { DBService } = await import('../services/DBService.js');
+
+        // 1. User is currently on the Plan view in Activity mode with local unsaved edits
+        SeatingChartManager.switchToView('plan', { immediate: true });
+        SeatingChartManager._toggleLock();
+        SeatingChartManager.switchPlanMode('activity', { animate: false });
+        SeatingChartManager._setCellStudentIds(0, 0, ['student-1', 'student-2']);
+        SeatingChartManager._savePositionsToState(true);
+        SeatingChartManager._saveGridConfig();
+
+        // 2. Prepare a Cloud backup where:
+        //    - generatedResults has non-alphabetical student IDs ('student-z' before 'student-a')
+        //    - seatingActivityGrid is null (whereas local had a configured activity grid)
+        //    - activeView is 'list' (or 'plan')
+        const remoteStudents = [
+            {
+                id: 'student-z',
+                nom: 'Zola',
+                prenom: 'Émile',
+                classId: testClass.id,
+                seatingPosition: { row: 0, col: 0, pinned: false },
+                seatingActivityPosition: { row: 0, col: 0, pinned: false, order: 0 },
+                studentData: { periods: { T1: { grade: 14, appreciation: 'Bien' } }, statuses: [] },
+                _lastModified: 5000
+            },
+            {
+                id: 'student-a',
+                nom: 'Aragon',
+                prenom: 'Louis',
+                classId: testClass.id,
+                seatingPosition: { row: 0, col: 1, pinned: false },
+                seatingActivityPosition: { row: 0, col: 0, pinned: false, order: 1 },
+                studentData: { periods: { T1: { grade: 16, appreciation: 'Très bien' } }, statuses: [] },
+                _lastModified: 5000
+            }
+        ];
+
+        const remoteBackup = {
+            _meta: { appVersion: '2.0.0', exportedAt: new Date(5000).toISOString(), lastSyncTimestamp: 5000 },
+            settings: {
+                ...StorageManager.getExportableSettings(),
+                seatingGrid: { rows: 5, cols: 6, locked: true, specialLayout: {} },
+                seatingActivityGrid: null,
+                activeView: 'list'
+            },
+            classes: [
+                {
+                    ...testClass,
+                    seatingLocked: true,
+                    seatingValidatedAt: 5000,
+                    seatingUpdatedAt: 5000,
+                    seatingActivityLocked: true,
+                    seatingActivityValidatedAt: 5000,
+                    seatingActivityUpdatedAt: 5000
+                }
+            ],
+            generatedResults: remoteStudents,
+            deletedItems: { students: [], classes: [] }
+        };
+
+        // Simulate IndexedDB primary-key sorting on getAll('generatedResults'): returns ['student-a', 'student-z']
+        DBService.getAll = vi.fn(async (store) => {
+            if (store === 'generatedResults') {
+                return [...remoteStudents].sort((a, b) => a.id.localeCompare(b.id));
+            }
+            if (store === 'classes') {
+                return remoteBackup.classes;
+            }
+            return [];
+        });
+        DBService.replaceAll = vi.fn().mockResolvedValue(true);
+        DBService.get = vi.fn().mockResolvedValue(null);
+        DBService.put = vi.fn().mockResolvedValue(true);
+
+        SyncService.currentProviderName = 'google';
+        SyncService._provider = {
+            isConnected: () => true,
+            read: vi.fn().mockResolvedValue(remoteBackup)
+        };
+
+        // 3. Execute forceDownload + full rehydration sequence (loadAppState + restoreActiveView + alignLocalSyncBaseline)
+        await SyncService.forceDownload(remoteBackup);
+        const hashBeforeLoadAppState = StorageManager.computeCurrentDataHash();
+
+        await StorageManager.loadAppState();
+        const hashAfterLoadAppState = StorageManager.computeCurrentDataHash();
+
+        // Hash must be strictly invariant to IndexedDB primary-key reordering
+        expect(hashAfterLoadAppState).toBe(hashBeforeLoadAppState);
+
+        // Rehydrate SeatingChartManager active view (switching from active 'plan' to restored 'list')
+        SeatingChartManager.restoreActiveView();
+        SyncService.alignLocalSyncBaseline();
+
+        // Must NOT have overwritten restored students or seatingActivityGrid with pre-restore state
+        expect(appState.seatingActivityGrid).toBeNull();
+        expect(StorageManager.computeCurrentDataHash()).toBe(hashBeforeLoadAppState);
+        expect(SyncService._computeSyncState()).toBe('in-sync');
+        expect(localStorage.getItem('bulletin_last_modified')).toBe(localStorage.getItem('bulletin_last_sync'));
+    });
 });
 

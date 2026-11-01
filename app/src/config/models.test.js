@@ -96,9 +96,9 @@ describe('models.js configuration & helpers', () => {
             ]);
         });
 
-        it('should prioritize generous free providers in providerOrder', () => {
-            expect(FALLBACK_CONFIG.providerOrder[0]).toBe('google');
-            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('albert');
+        it('should prioritize generous free providers in providerOrder (with sovereign Albert first)', () => {
+            expect(FALLBACK_CONFIG.providerOrder[0]).toBe('albert');
+            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('google');
             expect(FALLBACK_CONFIG.providerOrder[2]).toBe('groq');
             expect(FALLBACK_CONFIG.providerOrder[3]).toBe('openrouter');
             expect(FALLBACK_CONFIG.providerOrder[4]).toBe('mistral');

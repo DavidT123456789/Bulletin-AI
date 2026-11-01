@@ -865,7 +865,7 @@
                         </li>
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:shield-star-linear" class="text-emerald-600 text-sm"></iconify-icon>
-                            IA de l'État (Albert)
+                            Compatible IA de l'État (Albert)
                         </li>
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:check-circle-linear" class="text-emerald-600 text-sm"></iconify-icon>
@@ -921,12 +921,18 @@
                             </div>
                             <div
                                 class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm ring-2 ring-blue-50 relative overflow-hidden group">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div
-                                        class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                        <iconify-icon icon="solar:magic-stick-3-linear" width="14"></iconify-icon>
+                                <div class="flex items-center justify-between gap-2 mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                            <iconify-icon icon="solar:magic-stick-3-linear" width="14"></iconify-icon>
+                                        </div>
+                                        <span class="text-xs font-semibold text-zinc-700">Analyse & Appréciation</span>
                                     </div>
-                                    <span class="text-xs font-semibold text-zinc-700">Analyse & Appréciation</span>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-50 text-green-600 text-[10px] font-medium border border-green-100/50">
+                                        <iconify-icon icon="solar:shield-check-linear" width="11"></iconify-icon>
+                                        Pseudonymisé · RGPD
+                                    </span>
                                 </div>
                                 <div class="space-y-2">
                                     <div id="mockup-analysis" class="text-[10px] mb-2 flex gap-2 min-h-[24px]"></div>
@@ -984,8 +990,7 @@
                         </div>
                         <div class="text-center px-4">
                             <h3 class="text-lg font-semibold text-zinc-800 mb-2">Générez en un clic</h3>
-                            <p class="text-sm text-zinc-500 leading-relaxed">L'IA analyse et génère points forts, axes
-                                d'amélioration et appréciation pour chaque élève.</p>
+                            <p class="text-sm text-zinc-500 leading-relaxed">L'IA (Albert / État, Gemini, Mistral ou Ollama) rédige l'appréciation à partir de données pseudonymisées à la volée.</p>
                         </div>
                     </div>
 
@@ -1045,24 +1050,23 @@
 
                 <div class="space-y-1 reveal-on-scroll" role="region" aria-label="Détails techniques">
 
-                    <div class="accordion-item border-b border-zinc-100">
+                    <div class="accordion-item is-open border-b border-zinc-100">
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
-                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-1">
+                            onclick="toggleAccordion(this)" aria-expanded="true" aria-controls="acc-panel-1">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:server-square-linear"
                                     class="text-green-500 text-lg"></iconify-icon>
-                                Architecture Local-First & Confidentialité
+                                Architecture Local-First & Confidentialité (RGPD)
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
                                 class="accordion-icon text-zinc-400 flex-shrink-0 ml-4"></iconify-icon>
                         </button>
-                        <div class="accordion-content" id="acc-panel-1" role="region" aria-hidden="true">
+                        <div class="accordion-content" id="acc-panel-1" role="region" aria-hidden="false">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    Les données sensibles (identités des élèves, notes brutes) sont stockées
-                                    <strong>localement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, avec sauvegarde optionnelle sur votre Google Drive privé (sans clés API). L'application
-                                    applique par défaut une pseudonymisation à la volée (masquage des noms/prénoms et traduction des statuts sensibles en consignes neutres) avant tout envoi vers les API
-                                    d'inférence — avec possibilité d'utiliser <strong>Albert API</strong> (infrastructure souveraine de l'État / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
+                                    Les données sensibles (identités des élèves, notes brutes, photos) sont stockées
+                                    <strong>exclusivement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, sans serveur intermédiaire, avec sauvegarde optionnelle sur votre propre Google Drive (clés API isolées). L'application
+                                    applique par défaut une <strong>pseudonymisation à la volée</strong> (masquage des noms/prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres) avant tout appel vers l'IA — compatible avec <strong>Albert API</strong> (infrastructure souveraine de l'État / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
                                 </div>
                             </div>
                         </div>
@@ -1140,7 +1144,7 @@
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:copyright-linear"
                                     class="text-orange-500 text-lg"></iconify-icon>
-                                Licence & Contribution
+                                Licence, Indépendance & Soutien
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
                                 class="accordion-icon text-zinc-400 flex-shrink-0 ml-4"></iconify-icon>
@@ -1148,9 +1152,8 @@
                         <div class="accordion-content" id="acc-panel-5" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    Code source distribué sous licence <strong>CC BY-NC-SA 4.0</strong>. Auditable sur
-                                    GitHub pour vérifier l'absence de télémétrie cachée. Les dons via Ko-fi servent
-                                    exclusivement à financer l'hébergement et le développement.
+                                    Outil indépendant distribué gratuitement sous licence <strong>CC BY-NC-SA 4.0</strong>, au code auditable sur
+                                    GitHub pour garantir l'absence de télémétrie ou de publicité. Vos clés d'accès aux modèles d'IA (dont <strong>Albert API</strong> via ProConnect) restent strictement personnelles ; les dons libres via Ko-fi soutiennent exclusivement le développement bénévole de l'interface et son hébergement.
                                 </div>
                             </div>
                         </div>
@@ -1332,8 +1335,8 @@
             { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Formats Universels', desc: 'Compatible Excel, CSV et copier-coller depuis Pronote.', label: 'Import' },
             { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
             { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en cours, binômes ou îlots d\'activité et export PDF.', label: 'Spatial' },
-            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Anonymisation Auto', desc: 'Prénoms, noms et statuts sensibles masqués par défaut avant l\'envoi IA. Stockage local IndexedDB.', label: 'Sécurité' },
-            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Albert (IA de l\'État), Mistral, Gemini, Groq ou Ollama en local.', label: 'Flexible' },
+            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
+            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA de l\'État via ProConnect), Gemini, Groq, Mistral ou Ollama en local.', label: 'Flexible' },
             { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
             { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },
             { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Sauvegarde Cloud', desc: 'Archivez vos bulletins (manuel). Zéro synchronisation cachée.', label: 'Stockage' }
