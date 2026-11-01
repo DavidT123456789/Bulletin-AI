@@ -2113,7 +2113,7 @@ textarea.import-textarea,
    ==================================================================== */
 
 /* Disabled state for Next button */
-.import-wizard-footer .btn-primary:disabled {
+:is(.import-wizard-footer, .pick-students-modal-footer) .btn-primary:disabled {
     background: var(--bg-secondary);
     color: var(--text-tertiary);
     border: 1px solid var(--border-color);
@@ -2122,7 +2122,7 @@ textarea.import-textarea,
     box-shadow: none;
 }
 
-.import-wizard-footer .btn-primary:disabled:hover {
+:is(.import-wizard-footer, .pick-students-modal-footer) .btn-primary:disabled:hover {
     background: var(--bg-secondary);
     transform: none;
     box-shadow: none;

@@ -1161,7 +1161,7 @@ export const UI = {
             if (chevronEl) chevronEl.style.display = '';
 
             const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
-            const shortModelName = modelName.split(' ')[0];
+            const shortModelName = providerId === 'albert' ? 'Albert' : modelName.split(' ')[0];
 
             if (DOM.dashModelName) {
                 DOM.dashModelName.textContent = shortModelName;
@@ -1185,7 +1185,7 @@ export const UI = {
             }
 
             if (DOM.headerGenDashboard) {
-                const tooltip = `<strong>${modelName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${appState.currentAIModel}</span><br><span style="font-size: 0.8em; opacity: 0.8;">Cliquer pour changer de modèle</span>`;
+                const tooltip = modelName;
                 if (TooltipsUI && TooltipsUI.updateTooltip) {
                     TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
                 } else {
@@ -1255,44 +1255,13 @@ export const UI = {
     // ====================================================================
 
     checkAPIKeyPresence(silent = false) {
-        const model = appState.currentAIModel;
-        let key = '', name = '', provider = '';
-
-        if (model.startsWith('ollama')) {
-            // Ollama est local, pas de clé API nécessaire
-            provider = 'ollama';
-            key = appState.ollamaEnabled ? 'local' : '';
-            name = 'Ollama';
-        } else if (model.endsWith('-free')) {
-            // Modèles gratuits OpenRouter (même gemini-*-free !)
-            provider = 'openrouter';
-            key = appState.openrouterApiKey;
-            name = 'OpenRouter';
-        } else if (model.startsWith('openai')) {
-            provider = 'openai';
-            key = appState.openaiApiKey;
-            name = 'OpenAI';
-        } else if (model.startsWith('gemini')) {
-            provider = 'google';
-            key = appState.googleApiKey;
-            name = 'Google';
-        } else if (model.startsWith('groq-')) {
-            provider = 'groq';
-            key = appState.groqApiKey;
-            name = 'Groq Cloud';
-        } else if (model.startsWith('mistral-direct')) {
-            provider = 'mistral';
-            key = appState.mistralApiKey;
-            name = 'Mistral';
-        } else if (model.startsWith('anthropic')) {
-            provider = 'anthropic';
-            key = appState.anthropicApiKey;
-            name = 'Anthropic';
-        } else {
-            provider = 'openrouter';
-            key = appState.openrouterApiKey;
-            name = 'OpenRouter';
-        }
+        const model = appState.currentAIModel || '';
+        const provider = getProviderForModel(model);
+        const config = PROVIDER_CONFIG[provider] || PROVIDER_CONFIG.openrouter;
+        const name = provider === 'groq' ? config.name : (config.shortLabel || config.name);
+        const key = provider === 'ollama'
+            ? (appState.ollamaEnabled ? 'local' : '')
+            : (config.keyProperty ? appState[config.keyProperty] : '');
 
         const errEl = provider !== 'ollama' ? document.getElementById(`${provider}ApiKeyError`) : null;
 

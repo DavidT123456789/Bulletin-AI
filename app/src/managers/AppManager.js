@@ -229,6 +229,7 @@ export const App = {
 
         const buttonMap = {
             google: DOM.validateGoogleApiKeyBtn,
+            albert: DOM.validateAlbertApiKeyBtn,
             groq: DOM.validateGroqApiKeyBtn,
             openai: DOM.validateOpenaiApiKeyBtn,
             openrouter: DOM.validateOpenrouterApiKeyBtn,
@@ -370,6 +371,7 @@ export const App = {
         }
         StorageManager.saveAppState();
         SettingsUIManager.updateHeaderAiModelDisplay();
+        SettingsUIManager.renderProviderModelChips?.();
         UI.updateHeaderPremiumLook();
         SettingsUIManager.updatePersonalizationState();
     },

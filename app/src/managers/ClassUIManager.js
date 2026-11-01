@@ -6,6 +6,7 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { DOMHelper } from '../utils/DOMHelper.js';
 import { CONFIG } from '../config/Config.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
@@ -108,16 +109,9 @@ export const ClassUIManager = {
                 this._positionDropdown();
                 FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
             }
-            const modalBody = document.querySelector('#classManagementModal .modal-body');
-            if (modalBody) {
-                FocusPanelManager.updateScrollAffordances(modalBody);
-            }
-            const pickChips = document.getElementById('pickStudentsChips');
-            if (pickChips) FocusPanelManager.updateScrollAffordances(pickChips);
-            const pickList = document.getElementById('pickStudentsList');
-            if (pickList) {
-                FocusPanelManager.updateScrollAffordances(pickList);
-            }
+            document.querySelectorAll('#classManagementModal .modal-body, .ui-tabs-content, #pickStudentsChips, #pickStudentsList, #moveModalClassList, #scStudentList').forEach(el => {
+                FocusPanelManager.updateScrollAffordances(el);
+            });
         };
         window.addEventListener('resize', this._boundResize, { passive: true });
 
@@ -401,13 +395,6 @@ export const ClassUIManager = {
     renderClassList() {
         if (!DOM.classDropdownList) return;
 
-        if (!DOM.classDropdownList.dataset.scrollBound) {
-            DOM.classDropdownList.dataset.scrollBound = 'true';
-            DOM.classDropdownList.addEventListener('scroll', (e) => {
-                FocusPanelManager.updateScrollAffordances(e.currentTarget);
-            }, { passive: true });
-        }
-
         const classes = ClassManager.getAllClasses();
         const currentClassId = appState.currentClassId;
 
@@ -425,7 +412,7 @@ export const ClassUIManager = {
             document.getElementById('createFirstClassBtn')?.addEventListener('click', () => {
                 this.showNewClassPrompt();
             });
-            FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
+            FocusPanelManager.bindScrollAffordances(DOM.classDropdownList);
             return;
         }
 
@@ -641,7 +628,7 @@ export const ClassUIManager = {
         if (this._isDropdownOpen) {
             DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView?.({ block: 'nearest' });
         }
-        FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
+        FocusPanelManager.bindScrollAffordances(DOM.classDropdownList);
     },
 
     /**
@@ -1405,8 +1392,7 @@ export const ClassUIManager = {
         const moreMenu = modalEl.querySelector('#classManageMoreMenu');
         const subtitle = modalEl.querySelector('.modal-subtitle');
         const modalBody = modalEl.querySelector('.modal-body');
-        const updateModalScroll = () => FocusPanelManager.updateScrollAffordances(modalBody);
-        modalBody?.addEventListener('scroll', updateModalScroll, { passive: true });
+        const updateModalScroll = () => FocusPanelManager.bindScrollAffordances(modalBody);
 
         modalEl.querySelector('.close-manage-modal')?.addEventListener('click', closeModal);
         modalEl.addEventListener('click', (e) => {
@@ -2359,6 +2345,7 @@ export const ClassUIManager = {
         document.getElementById('moveStudentModal')?.remove();
         document.body.appendChild(modalEl);
         UI?.openModal(modalEl);
+        FocusPanelManager.bindScrollAffordances(modalEl.querySelector('#moveModalClassList'));
 
         const closeModal = () => {
             UI?.closeModal(modalEl);
@@ -2595,9 +2582,10 @@ export const ClassUIManager = {
         const classCounts = new Map();
         const virtualCounts = new Map();
         for (const cand of candidates) {
-            cand.searchHaystack = `${cand.nom} ${cand.prenom} ${cand.originBadge}`
+            const plainClass = (cand.originBadge || '').replace(/[ᵉʳ]/g, ' ');
+            cand.searchHaystack = `${cand.nom} ${cand.prenom} ${cand.originBadge} ${plainClass}`
                 .toLowerCase()
-                .normalize('NFD')
+                .normalize('NFKD')
                 .replace(/[\u0300-\u036f]/g, '');
             cand.classIds.forEach(cid => classCounts.set(cid, (classCounts.get(cid) || 0) + 1));
             cand.virtualIds.forEach(vid => virtualCounts.set(vid, (virtualCounts.get(vid) || 0) + 1));
@@ -2629,6 +2617,8 @@ export const ClassUIManager = {
 
         const targetDisplayName = Utils.formatClassDisplayName(targetClass.name || 'la classe');
 
+        document.getElementById('pickExistingStudentsModal')?.remove();
+
         const modalEl = document.createElement('div');
         modalEl.className = 'modal';
         modalEl.id = 'pickExistingStudentsModal';
@@ -2645,12 +2635,15 @@ export const ClassUIManager = {
                     <div class="pick-students-toolbar">
                         <div class="pick-students-search-box">
                             <iconify-icon icon="solar:magnifer-linear" class="pick-search-icon"></iconify-icon>
-                            <input type="text" id="pickStudentsSearchInput" class="custom-input pick-students-search-input" placeholder="Rechercher un élève ou une classe d'origine..." autocomplete="off">
+                            <input type="text" id="pickStudentsSearchInput" class="custom-input pick-students-search-input" placeholder="Rechercher un élève..." autocomplete="off">
+                            <button type="button" class="sc-search-clear" id="pickStudentsSearchClear" aria-label="Effacer">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
                         </div>
                         <div class="pick-students-chips" id="pickStudentsChips" role="tablist" aria-label="Filtrer par classe">
                             ${filterChips.map(chip => `
                                 <button type="button" class="pick-class-chip ${chip.id === 'all' ? 'active' : ''}" data-filter-id="${chip.id}" role="tab" aria-selected="${chip.id === 'all'}">
-                                    ${chip.isVirtual ? '<iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>' : ''}
+                                    ${chip.isVirtual ? '<iconify-icon icon="solar:diploma-linear"></iconify-icon>' : ''}
                                     <span>${this._escapeHtml(chip.label)}</span>
                                     <span class="pick-chip-count">${chip.count}</span>
                                 </button>
@@ -2676,13 +2669,8 @@ export const ClassUIManager = {
             </div>
         `;
 
-        document.getElementById('pickExistingStudentsModal')?.remove();
-        document.body.appendChild(modalEl);
-        UI?.openModal(modalEl);
-
         const closeModal = () => {
             UI?.closeModal(modalEl);
-            setTimeout(() => modalEl.remove(), 300);
         };
 
         modalEl.querySelector('.close-pick-modal')?.addEventListener('click', closeModal);
@@ -2696,35 +2684,51 @@ export const ClassUIManager = {
         const chipBtns = modalEl.querySelectorAll('.pick-class-chip');
         const visibleCountEl = modalEl.querySelector('#pickVisibleCount');
         const selectAllBtn = modalEl.querySelector('#pickSelectAllBtn');
+        const selectAllLabel = selectAllBtn?.querySelector('span');
         const confirmBtn = modalEl.querySelector('#confirmPickStudentsBtn');
         const confirmLabel = modalEl.querySelector('#confirmPickStudentsLabel');
         const searchInput = modalEl.querySelector('#pickStudentsSearchInput');
+        let currentVisibleCandidates = candidates;
 
         const getVisibleCandidates = () => {
-            const normQuery = searchQuery.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const normWords = searchQuery
+                .trim()
+                .toLowerCase()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .split(/\s+/)
+                .filter(Boolean);
             return candidates.filter(c => {
                 if (activeFilterId !== 'all' && !c.classIds.has(activeFilterId) && !c.virtualIds.has(activeFilterId)) {
                     return false;
                 }
-                if (normQuery && !c.searchHaystack.includes(normQuery)) {
+                if (normWords.length > 0 && !normWords.every(w => c.searchHaystack.includes(w))) {
                     return false;
                 }
                 return true;
             });
         };
 
-        const updateSelectionUI = (visibleCandidates) => {
-            const selectableVisible = visibleCandidates.filter(c => !c.alreadyInTarget);
-            const allVisibleSelected = selectableVisible.length > 0 && selectableVisible.every(c => selectedIds.has(c.id));
+        const updateSelectionUI = (visibleCandidates = currentVisibleCandidates) => {
+            let selectableCount = 0;
+            let allVisibleSelected = true;
+            for (const c of visibleCandidates) {
+                if (!c.alreadyInTarget) {
+                    selectableCount++;
+                    if (allVisibleSelected && !selectedIds.has(c.id)) {
+                        allVisibleSelected = false;
+                    }
+                }
+            }
+            allVisibleSelected = selectableCount > 0 && allVisibleSelected;
 
             if (visibleCountEl) {
                 visibleCountEl.textContent = `${visibleCandidates.length} élève${visibleCandidates.length > 1 ? 's' : ''}`;
             }
 
             if (selectAllBtn) {
-                selectAllBtn.disabled = selectableVisible.length === 0;
-                const span = selectAllBtn.querySelector('span');
-                if (span) span.textContent = allVisibleSelected ? 'Tout décocher' : 'Tout cocher';
+                selectAllBtn.disabled = selectableCount === 0;
+                if (selectAllLabel) selectAllLabel.textContent = allVisibleSelected ? 'Tout décocher' : 'Tout cocher';
             }
 
             const count = selectedIds.size;
@@ -2743,27 +2747,29 @@ export const ClassUIManager = {
             row.setAttribute('aria-selected', String(isSelected));
         };
 
-        const renderList = () => {
-            const visible = getVisibleCandidates();
-            updateSelectionUI(visible);
+        const renderList = ({ skipScrollAffordances = false } = {}) => {
+            currentVisibleCandidates = getVisibleCandidates();
+            updateSelectionUI(currentVisibleCandidates);
 
             if (!listEl) return;
-            if (visible.length === 0) {
+            if (currentVisibleCandidates.length === 0) {
                 listEl.innerHTML = `
                     <div class="pick-students-empty">
                         <iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon>
                         <p>Aucun élève ne correspond à ce filtre.</p>
                     </div>
                 `;
-                FocusPanelManager.updateScrollAffordances(listEl);
+                if (!skipScrollAffordances) {
+                    FocusPanelManager.updateScrollAffordances(listEl);
+                }
                 return;
             }
 
             const trimmedQuery = searchQuery.trim();
-            listEl.innerHTML = visible.map(cand => {
+            listEl.innerHTML = currentVisibleCandidates.map(cand => {
                 const isSelected = selectedIds.has(cand.id);
                 const isPresent = cand.alreadyInTarget;
-                const avatarHtml = StudentPhotoManager.getAvatarHTML(cand, 'sm', false);
+                const avatarHtml = StudentPhotoManager.getAvatarHTML(cand, 'sm', false, false);
                 const nameHtml = Utils.formatStudentName(cand.nom, cand.prenom, true, trimmedQuery, cand.originBadge);
                 const statusesHtml = cand.statuses.length > 0
                     ? `<div class="pick-student-statuses">${cand.statuses.map(st => {
@@ -2792,7 +2798,9 @@ export const ClassUIManager = {
                     </div>
                 `;
             }).join('');
-            FocusPanelManager.updateScrollAffordances(listEl);
+            if (!skipScrollAffordances) {
+                FocusPanelManager.updateScrollAffordances(listEl);
+            }
         };
 
         // Événement clic sur une ligne élève : bascule sur place sans re-rendre la liste
@@ -2809,7 +2817,7 @@ export const ClassUIManager = {
                 selectedIds.delete(id);
             }
             syncRowSelectionDOM(row, willSelect);
-            updateSelectionUI(getVisibleCandidates());
+            updateSelectionUI();
         });
 
         listEl?.addEventListener('keydown', (e) => {
@@ -2848,28 +2856,31 @@ export const ClassUIManager = {
             });
         });
 
-        // Recherche instantanée
-        searchInput?.addEventListener('input', () => {
-            searchQuery = searchInput.value || '';
-            renderList();
-        });
+        // Recherche instantanée mutualisée (saisie, bouton ×, touche Échap, clic conteneur)
+        DOMHelper.bindSearchInput(
+            searchInput,
+            modalEl.querySelector('#pickStudentsSearchClear'),
+            (val) => {
+                searchQuery = val;
+                renderList();
+            },
+            modalEl.querySelector('.pick-students-search-box')
+        );
 
         // Tout cocher / Tout décocher (sur place sur les élèves visibles)
         selectAllBtn?.addEventListener('click', () => {
-            const visibleAll = getVisibleCandidates();
-            const selectable = visibleAll.filter(c => !c.alreadyInTarget);
-            if (selectable.length === 0) return;
-            const allSelected = selectable.every(c => selectedIds.has(c.id));
-            const targetState = !allSelected;
-            selectable.forEach(c => {
-                if (targetState) selectedIds.add(c.id);
-                else selectedIds.delete(c.id);
-            });
+            if (selectAllBtn.disabled) return;
+            const targetState = !currentVisibleCandidates.every(c => c.alreadyInTarget || selectedIds.has(c.id));
+            for (const c of currentVisibleCandidates) {
+                if (!c.alreadyInTarget) {
+                    if (targetState) selectedIds.add(c.id);
+                    else selectedIds.delete(c.id);
+                }
+            }
             listEl?.querySelectorAll('.pick-student-row:not(.already-present)').forEach(row => {
-                const id = row.dataset.studentId;
-                if (id) syncRowSelectionDOM(row, selectedIds.has(id));
+                syncRowSelectionDOM(row, targetState);
             });
-            updateSelectionUI(visibleAll);
+            updateSelectionUI();
         });
 
         // Validation finale
@@ -2911,9 +2922,11 @@ export const ClassUIManager = {
             window.dispatchEvent(new CustomEvent('studentsUpdated'));
         });
 
-        renderList();
+        // Construire la liste hors DOM avant montage pour éviter tout reflow intermédiaire à l'ouverture
+        renderList({ skipScrollAffordances: true });
+        document.body.appendChild(modalEl);
+        UI?.openModal(modalEl);
         FocusPanelManager.bindScrollAffordances(chipsEl);
         FocusPanelManager.bindScrollAffordances(listEl);
-        setTimeout(() => searchInput?.focus(), 80);
     }
 };

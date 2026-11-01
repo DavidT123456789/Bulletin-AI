@@ -1929,8 +1929,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         min-height: 0;
         scroll-snap-type: x proximity;
         scrollbar-width: none; /* Firefox */
-        mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
-        -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
     }
 
     .sc-student-list::-webkit-scrollbar {

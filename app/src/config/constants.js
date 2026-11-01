@@ -21,6 +21,7 @@ export const CONFIG = {
     OPENROUTER_API_BASE: AI_PROVIDERS.openrouter.apiBaseUrl,
     OPENAI_API_BASE: AI_PROVIDERS.openai.apiBaseUrl,
     GOOGLE_API_BASE: AI_PROVIDERS.google.apiBaseUrl,
+    ALBERT_API_BASE: AI_PROVIDERS.albert.apiBaseUrl,
     ANTHROPIC_API_BASE: AI_PROVIDERS.anthropic.apiBaseUrl,
     MISTRAL_API_BASE: AI_PROVIDERS.mistral.apiBaseUrl,
     GROQ_API_BASE: AI_PROVIDERS.groq.apiBaseUrl,

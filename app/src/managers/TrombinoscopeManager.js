@@ -223,8 +223,8 @@ export const TrombinoscopeManager = {
         document.addEventListener('mousemove', e => this._handleMouseMove(e), { signal });
         document.addEventListener('mouseup', () => this._handleMouseUp(), { signal });
 
-        // Keyboard navigation for gap sliders, zone positioning and Escape
-        document.addEventListener('keydown', e => this._handleKeyDown(e), { signal });
+        // Keyboard navigation for gap sliders, zone positioning and Escape (capture phase to precede GlobalListeners on popover Escape)
+        document.addEventListener('keydown', e => this._handleKeyDown(e), { capture: true, signal });
 
         // Global paste event for image
         document.addEventListener('paste', e => {
@@ -250,50 +250,18 @@ export const TrombinoscopeManager = {
     },
 
     // ========================================================================
-    // MODAL CONTROL
+    // MODAL CONTROL (Mutualized with ModalUI.openModal / ModalUI.closeModal)
     // ========================================================================
 
-    _cancelOpenRaf() {
-        if (!this._openRafId) return;
-        if (typeof cancelAnimationFrame === 'function') {
-            cancelAnimationFrame(this._openRafId);
-        } else {
-            clearTimeout(this._openRafId);
-        }
-        this._openRafId = null;
-    },
-
     open() {
-        if (this._closeTimer) {
-            clearTimeout(this._closeTimer);
-            this._closeTimer = null;
-        }
-        this._cancelOpenRaf();
         this._reset();
         this._bindDocumentListeners();
         const modal = document.getElementById('trombiWizardModal');
         if (modal) {
-            this._lastFocusedElement = document.activeElement;
-            modal.classList.remove('closing', 'modal-visible');
-            modal.classList.add('visible');
-            // Force reflow so browser registers initial state before transitioning to modal-visible
-            void modal.offsetWidth;
-            const scheduleVisible = typeof requestAnimationFrame === 'function'
-                ? requestAnimationFrame
-                : (fn) => setTimeout(fn, 0);
-            this._openRafId = scheduleVisible(() => {
-                this._openRafId = null;
-                if (modal.classList.contains('visible') && !modal.classList.contains('closing')) {
-                    modal.classList.add('modal-visible');
-                }
+            ModalUI.openModal(modal, {
+                onClose: () => this._unbindDocumentListeners(),
+                onClosed: () => this._reset()
             });
-            if (!modal.hasAttribute('tabindex')) {
-                modal.setAttribute('tabindex', '-1');
-            }
-            if (!modal.contains(document.activeElement)) {
-                modal.focus?.({ preventScroll: true });
-            }
-            ModalUI.activateFocusTrap?.(modal);
         }
 
         // Update class badge in header
@@ -304,32 +272,15 @@ export const TrombinoscopeManager = {
         }
     },
 
-    close() {
+    close(options = {}) {
         const modal = document.getElementById('trombiWizardModal');
-        if (!modal || !modal.classList.contains('visible') || modal.classList.contains('closing')) return;
+        if (!modal || (!modal.classList.contains('visible') && !modal.classList.contains('modal-visible')) || modal.classList.contains('closing')) return;
 
-        this._cancelOpenRaf();
-
-        ModalUI.deactivateFocusTrap?.(modal);
         this._unbindDocumentListeners();
-
-        // Add closing animation
-        modal.classList.add('closing');
-
-        if (this._closeTimer) {
-            clearTimeout(this._closeTimer);
-        }
-
-        // Wait for animation to complete, then hide
-        this._closeTimer = setTimeout(() => {
-            this._closeTimer = null;
-            modal.classList.remove('visible', 'modal-visible', 'closing');
-            this._reset();
-            if (this._lastFocusedElement) {
-                this._lastFocusedElement.focus?.({ preventScroll: true });
-                this._lastFocusedElement = null;
-            }
-        }, 250); // Match CSS transition duration
+        ModalUI.closeModal(modal, {
+            ...options,
+            onClosed: () => this._reset()
+        });
     },
 
     _reset() {

@@ -22,6 +22,17 @@
 
 .import-hub-backdrop.is-handing-off {
     z-index: var(--z-modal-backdrop);
+    transition: background 0.12s ease-out,
+        backdrop-filter 0.12s ease-out,
+        -webkit-backdrop-filter 0.12s ease-out,
+        visibility 0s linear 0.12s;
+}
+
+.import-hub-backdrop.is-handing-off .import-hub-modal {
+    transform: translate(-50%, -50%) scale(0.92);
+    transition: opacity 0.08s ease-out,
+        transform 0.1s ease-out,
+        visibility 0s linear 0.1s;
 }
 
 .import-hub-backdrop.active {

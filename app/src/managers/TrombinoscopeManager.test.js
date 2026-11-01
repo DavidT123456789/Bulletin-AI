@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { ModalUI } from './ModalUIManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { appState } from '../state/State.js';
@@ -2409,8 +2410,6 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
 
             document.body.innerHTML = '<div id="trombiWizardModal" class="trombi-wizard-modal"></div>';
             modal = document.getElementById('trombiWizardModal');
-            TrombinoscopeManager._closeTimer = null;
-            TrombinoscopeManager._openRafId = null;
         });
 
         const flushRaf = () => {
@@ -2480,6 +2479,46 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
             vi.advanceTimersByTime(300);
             expect(modal.classList.contains('visible')).toBe(true);
             expect(modal.classList.contains('modal-visible')).toBe(true);
+
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+
+        it('ferme uniquement le popover élève au premier Escape (sans déclencher de listener bubble global) puis la modale au second Escape', () => {
+            TrombinoscopeManager.open();
+            flushRaf();
+
+            TrombinoscopeManager._openPopoverZoneId = 42;
+            const bubbleListenerSpy = vi.fn();
+            document.addEventListener('keydown', bubbleListenerSpy);
+
+            // 1er Escape : ferme uniquement le popover en phase capture
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            expect(TrombinoscopeManager._openPopoverZoneId).toBeNull();
+            expect(bubbleListenerSpy).not.toHaveBeenCalled();
+            expect(modal.classList.contains('closing')).toBe(false);
+            expect(modal.classList.contains('visible')).toBe(true);
+
+            // 2e Escape : ferme la modale Trombinoscope
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            expect(modal.classList.contains('closing')).toBe(true);
+
+            document.removeEventListener('keydown', bubbleListenerSpy);
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+
+        it('exécute _unbindDocumentListeners et _reset même si la fermeture provient de ModalUI.closeModal (ex: bouton Retour mobile)', () => {
+            TrombinoscopeManager.open();
+            flushRaf();
+            TrombinoscopeManager._zones = [{ id: 1, cx: 50, cy: 50, r: 20, studentId: 's1' }];
+
+            ModalUI.closeModal(modal, { causedByHistory: true });
+            expect(TrombinoscopeManager._documentListenersAbortController).toBeNull();
+
+            vi.advanceTimersByTime(250);
+            expect(TrombinoscopeManager._zones).toEqual([]);
+            expect(modal.classList.contains('visible')).toBe(false);
 
             vi.restoreAllMocks();
             vi.useRealTimers();

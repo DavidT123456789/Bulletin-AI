@@ -8,21 +8,27 @@ import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
 import { AI_PROVIDERS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
 
 /**
- * Extrait le délai d'attente (en secondes) d'un message d'erreur de rate-limit (429/quota).
- * Supporte les formats Google, Groq, OpenAI, Anthropic, Mistral :
- * - "Please try again in 1.45s"
- * - "Please retry in 55.35s"
- * - "try again in 400ms"
- * - "retry after 15 seconds"
+ * Extrait le délai d'attente (en secondes) d'un message d'erreur ou des en-têtes HTTP de rate-limit (429/quota).
+ * Supporte les en-têtes standards (Retry-After, x-ratelimit-reset*) et les formats texte (Google, Albert/OpenGateLLM, Groq, OpenAI, Anthropic, Mistral).
  * @param {string} errorMessage
+ * @param {Headers|Object|null} [headers=null]
  * @returns {number|null} Délai en secondes ou null si non trouvé
  */
-export function parseRetryDelay(errorMessage) {
+export function parseRetryDelay(errorMessage, headers = null) {
+    if (headers && typeof headers.get === 'function') {
+        const retryAfter = headers.get('retry-after') || headers.get('x-ratelimit-reset-requests') || headers.get('x-ratelimit-reset');
+        if (retryAfter) {
+            const parsedHeader = parseRetryDelay(
+                /^\d+(\.\d+)?$/.test(retryAfter.trim()) ? `retry after ${retryAfter.trim()}s` : `retry after ${retryAfter.trim()}`
+            );
+            if (parsedHeader !== null) return parsedHeader;
+        }
+    }
     if (!errorMessage || typeof errorMessage !== 'string') return null;
-    const match = errorMessage.match(/(?:retry|try again|retry after)\s+(?:in\s+)?(\d+(?:\.\d+)?)\s*(ms|s|seconds?|minutes?|m)?/i);
+    const match = errorMessage.match(/(?:retry|try again|retry after|réessayer dans|wait)\s+(?:in\s+)?(\d+(?:\.\d+)?)\s*(ms|s|sec|seconds?|secondes?|minutes?|min|m)?/i);
     if (!match) return null;
     const val = parseFloat(match[1]);
-    if (isNaN(val)) return null;
+    if (isNaN(val) || val <= 0) return null;
     const unit = (match[2] || 's').toLowerCase();
     if (unit === 'ms') {
         return Math.max(1, Math.ceil(val / 1000));
@@ -97,6 +103,22 @@ export const AIService = {
     sleep,
 
     /**
+     * Résout l'URL de base d'Albert API (utilise le proxy local Vite /api/albert/v1 sur localhost
+     * pour contourner l'absence d'en-têtes CORS sur albert.api.etalab.gouv.fr).
+     * @returns {string}
+     */
+    _getAlbertBaseUrl() {
+        if (
+            typeof window !== 'undefined' &&
+            (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1') &&
+            !import.meta.env?.VITEST
+        ) {
+            return '/api/albert/v1';
+        }
+        return CONFIG.ALBERT_API_BASE;
+    },
+
+    /**
      * Génère la configuration API pour un provider donné
      * @private
      * @param {string} prompt - Le prompt à envoyer
@@ -128,6 +150,19 @@ export const AIService = {
                     }
                     return body;
                 },
+            },
+            albert: {
+                apiKey: appState.albertApiKey,
+                apiUrl: `${this._getAlbertBaseUrl()}/chat/completions`,
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                }),
+                payload: (p, m, sys) => ({
+                    model: getApiModelName(m),
+                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
+                    max_tokens: m === 'albert-openweight-large' ? 2048 : MAX_RESPONSE_TOKENS
+                }),
             },
             openrouter: {
                 apiKey: appState.openrouterApiKey, apiUrl: `${CONFIG.OPENROUTER_API_BASE}/chat/completions`,
@@ -326,10 +361,13 @@ export const AIService = {
 
                     // Si erreur transitoire (surcharge 503, rate limit 429) et qu'il reste 1 tentative
                     if (isTransient && attempt <= maxRetries && !externalSignal?.aborted) {
-                        const retrySec = status === 429 ? parseRetryDelay(String(errorDetails)) : null;
+                        const retrySec = status === 429 ? parseRetryDelay(String(errorDetails), resp.headers) : null;
                         const backoffDelay = retrySec
                             ? Math.min(retrySec * 1000, 15000)
                             : 1200 + Math.round(Math.random() * 800);
+                        if (status === 429 && typeof options.onRetryWait === 'function') {
+                            options.onRetryWait(Math.max(1, Math.ceil(backoffDelay / 1000)));
+                        }
                         console.info(`[AI Retry] ⏳ Réessai pour ${selectedModel} (HTTP ${status}) dans ${backoffDelay}ms...`);
                         cleanup();
                         await sleep(backoffDelay, externalSignal);
@@ -434,7 +472,78 @@ export const AIService = {
                 throw e;
             }
         }
+        if (provider === 'albert') {
+            const apiKey = appState.albertApiKey;
+            if (!apiKey) throw new Error("Clé API manquante.");
+            const url = `${this._getAlbertBaseUrl()}/models`;
+            const resp = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                if (resp.status === 403) {
+                    throw new Error("Compte Albert expiré (403) : renouvelez votre accès sur le portail DINUM.");
+                }
+                throw new Error(data.detail || data.error?.message || `Erreur HTTP ${resp.status}`);
+            }
+            return data.data || [];
+        }
         return [];
+    },
+
+    /**
+     * Récupère les informations de compte et limites de débit Albert API (/v1/me).
+     * @param {string|null} [apiKeyOverride=null] - Clé API à utiliser (à défaut de appState.albertApiKey)
+     * @returns {Promise<{rpmLimit: number|null, rpdLimit: number|null, budget: number|null, expires: number|null}|null>}
+     */
+    async getAlbertAccountInfo(apiKeyOverride = null) {
+        const apiKey = apiKeyOverride || appState.albertApiKey;
+        if (!apiKey) return null;
+
+        try {
+            const response = await fetch(`${this._getAlbertBaseUrl()}/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    const errData = await response.json().catch(() => ({}));
+                    const detail = errData.detail || errData.error?.message || `HTTP ${response.status}`;
+                    const err = new Error(detail);
+                    err.status = response.status;
+                    throw err;
+                }
+                return null;
+            }
+
+            const data = await response.json();
+            if (!data || typeof data !== 'object') return null;
+
+            const limits = Array.isArray(data.limits) ? data.limits : [];
+            const llmRouterIds = new Set(
+                limits.filter(l => l?.type === 'tpm' && typeof l.value === 'number' && l.value > 0).map(l => l.router_id)
+            );
+            const relevantLimits = llmRouterIds.size > 0
+                ? limits.filter(l => llmRouterIds.has(l.router_id))
+                : limits;
+            const rpmValues = relevantLimits.filter(l => l?.type === 'rpm' && typeof l.value === 'number' && l.value > 0).map(l => l.value);
+            const rpdValues = relevantLimits.filter(l => l?.type === 'rpd' && typeof l.value === 'number' && l.value > 0).map(l => l.value);
+
+            return {
+                rpmLimit: rpmValues.length > 0 ? Math.max(...rpmValues) : null,
+                rpdLimit: rpdValues.length > 0 ? Math.max(...rpdValues) : null,
+                budget: typeof data.budget === 'number' ? data.budget : null,
+                expires: typeof data.expires === 'number' ? data.expires : null
+            };
+        } catch (error) {
+            if (error?.status === 401 || error?.status === 403) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     /**

@@ -132,6 +132,7 @@ export const DropdownManager = {
         if (!labelText) return null;
         const mappings = [
             { pattern: /Google Gemini/i, id: 'google' },
+            { pattern: /Albert/i, id: 'albert' },
             { pattern: /Groq/i, id: 'groq' },
             { pattern: /OpenRouter/i, id: 'openrouter' },
             { pattern: /OpenAI/i, id: 'openai' },

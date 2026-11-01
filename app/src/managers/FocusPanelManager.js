@@ -192,13 +192,13 @@ export const FocusPanelManager = {
         const scrollTop = Math.max(0, content.scrollTop);
         const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
 
-        container.classList.toggle('can-scroll-top', scrollTop > 4);
+        container.classList.toggle('can-scroll-top', maxScroll > 4 && scrollTop > 4);
         container.classList.toggle('can-scroll-bottom', maxScroll > 4 && (maxScroll - scrollTop) > 4);
 
         const scrollLeft = Math.max(0, content.scrollLeft);
         const maxScrollX = Math.max(0, content.scrollWidth - content.clientWidth);
 
-        container.classList.toggle('can-scroll-left', scrollLeft > 4);
+        container.classList.toggle('can-scroll-left', maxScrollX > 4 && scrollLeft > 4);
         container.classList.toggle('can-scroll-right', maxScrollX > 4 && (maxScrollX - scrollLeft) > 4);
     },
 
@@ -218,6 +218,18 @@ export const FocusPanelManager = {
                 scrollEl._scrollAffordanceCallback?.();
                 this.updateScrollAffordances(scrollEl);
             }, { passive: true });
+            scrollEl.addEventListener('toggle', () => {
+                this.updateScrollAffordances(scrollEl);
+            }, { capture: true, passive: true });
+            if (typeof ResizeObserver === 'function') {
+                scrollEl._scrollAffordanceRo = new ResizeObserver(() => {
+                    this.updateScrollAffordances(scrollEl);
+                });
+                scrollEl._scrollAffordanceRo.observe(scrollEl);
+            }
+        }
+        if (scrollEl._scrollAffordanceRo) {
+            Array.from(scrollEl.children).forEach(child => scrollEl._scrollAffordanceRo.observe(child));
         }
         this.updateScrollAffordances(scrollEl);
         if (typeof requestAnimationFrame === 'function') {

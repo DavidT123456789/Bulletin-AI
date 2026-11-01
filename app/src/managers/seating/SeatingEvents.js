@@ -5,6 +5,7 @@
  */
 
 import { appState } from '../../state/State.js';
+import { DOMHelper } from '../../utils/DOMHelper.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
@@ -409,36 +410,15 @@ export const SeatingEvents = {
 
         window.addEventListener('pointerup', () => { isSliding = false; });
 
-        document.getElementById('scSearchInput')?.addEventListener('input', (e) => {
-            document.getElementById('scSearchClear')?.classList.toggle('visible', e.target.value.length > 0);
-            this._renderSidebar();
-            this._applySearchHighlight(e.target.value);
-        });
-
-        document.getElementById('scSearchInput')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && e.target.value) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.target.value = '';
-                document.getElementById('scSearchClear')?.classList.remove('visible');
+        DOMHelper.bindSearchInput(
+            document.getElementById('scSearchInput'),
+            document.getElementById('scSearchClear'),
+            (val) => {
                 this._renderSidebar();
-                this._applySearchHighlight('');
-            }
-        });
-
-        document.getElementById('scSearchClear')?.addEventListener('click', () => {
-            const input = document.getElementById('scSearchInput');
-            if (input) { input.value = ''; input.focus(); }
-            document.getElementById('scSearchClear')?.classList.remove('visible');
-            this._renderSidebar();
-            this._applySearchHighlight('');
-        });
-
-        document.querySelector('.sc-search-box')?.addEventListener('click', (e) => {
-            if (!e.target.closest('input') && !e.target.closest('.sc-search-clear')) {
-                document.getElementById('scSearchInput')?.focus();
-            }
-        });
+                this._applySearchHighlight(val);
+            },
+            document.querySelector('.sc-search-box')
+        );
 
         document.getElementById('scQuickGroupBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();

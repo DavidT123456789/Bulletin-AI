@@ -2,6 +2,7 @@ import { initDOM, DOM } from './utils/DOM.js';
 import { initErrorBoundary } from './utils/ErrorBoundary.js';
 import { App } from './managers/AppManager.js';
 import { UI } from './managers/UIManager.js';
+import { FocusPanelManager } from './managers/FocusPanelManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
@@ -67,6 +68,9 @@ const init = () => {
             // Search inside the container first for scoped IDs, fallback to global
             const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
             if (content) content.classList.add('active');
+            if (contentArea) {
+                FocusPanelManager.bindScrollAffordances(contentArea);
+            }
         };
 
         window.openSettingsTab = (tabName, elementId) => {

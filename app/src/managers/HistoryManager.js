@@ -23,6 +23,9 @@ export const HistoryManager = {
     /** @type {number} Compteur de retours programmatiques pour ignorer les popstates correspondants */
     _programmaticBackCount: 0,
 
+    /** @type {boolean} Remplace l'entrée d'historique courante lors du prochain pushState (handoff inter-modales sans history.back asynchrone) */
+    _replaceNextPush: false,
+
     /** @type {number} Timestamp du dernier appui retour à la racine */
     _lastRootBackTime: 0,
 
@@ -107,9 +110,16 @@ export const HistoryManager = {
             return;
         }
 
+        const useReplace = this._replaceNextPush;
+        this._replaceNextPush = false;
+
         try {
-            if (typeof history !== 'undefined' && history.pushState) {
-                history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+            if (typeof history !== 'undefined') {
+                if (useReplace && history.replaceState) {
+                    history.replaceState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+                } else if (history.pushState) {
+                    history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+                }
             }
         } catch (_) {}
 
@@ -121,8 +131,9 @@ export const HistoryManager = {
      * Synchronise physiquement l'historique du navigateur sans déclencher le closeCallback.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
+     * @param {Object} [options={}] - Options (ex: { replaceNext: true } lors d'un handoff direct vers une autre modale)
      */
-    handleManualClose(id) {
+    handleManualClose(id, options = {}) {
         if (!id || this._stack.length === 0) return;
 
         const topIndex = this._stack.length - 1;
@@ -130,13 +141,21 @@ export const HistoryManager = {
 
         if (top.id === id) {
             this._stack.pop();
-            this._triggerProgrammaticBack();
+            if (options.replaceNext) {
+                this._replaceNextPush = true;
+            } else {
+                this._triggerProgrammaticBack();
+            }
         } else {
             // Fermeture désordonnée (ex: parent fermé emportant un enfant)
             const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
-                this._triggerProgrammaticBack();
+                if (options.replaceNext) {
+                    this._replaceNextPush = true;
+                } else {
+                    this._triggerProgrammaticBack();
+                }
             }
         }
     },
@@ -193,6 +212,7 @@ export const HistoryManager = {
     clearStack() {
         this._stack = [];
         this._programmaticBackCount = 0;
+        this._replaceNextPush = false;
         this._lastRootBackTime = 0;
     },
 

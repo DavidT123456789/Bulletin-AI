@@ -56,7 +56,8 @@ vi.mock('../services/AIService.js', () => ({
         callAI: vi.fn(),
         getAvailableModels: vi.fn(),
         _hasApiKeyForModel: vi.fn(() => true),
-        getOpenRouterCredits: vi.fn(() => Promise.resolve(10.5))
+        getOpenRouterCredits: vi.fn(() => Promise.resolve(10.5)),
+        getAlbertAccountInfo: vi.fn(() => Promise.resolve({ rpmLimit: 30, rpdLimit: 1000 }))
     }
 }));
 
@@ -229,6 +230,16 @@ describe('ApiValidationManager', () => {
             );
             expect(appState.apiKeyStatus.groq).toBe('valid');
             expect(appState.validatedApiKeys.groq).toBe(true);
+
+            // Albert API two-step validation + quota display
+            AIService.getAvailableModels.mockResolvedValue([{ id: 'openweight-medium' }]);
+            AIService.callAI.mockResolvedValue({ text: 'ok' });
+            AIService.getAlbertAccountInfo.mockResolvedValue({ rpmLimit: 30, rpdLimit: 1000 });
+            await ApiValidationManager.validateApiKeyUI('albert', mockInputEl, mockErrorEl, mockBtnEl);
+            expect(AIService.getAvailableModels).toHaveBeenCalledWith('albert');
+            expect(appState.apiKeyStatus.albert).toBe('valid');
+            expect(appState.validatedApiKeys.albert).toBe(true);
+            expect(mockErrorEl.innerHTML).toContain('30 req/min');
         });
 
         it('should call onSuccess callback on successful validation', async () => {

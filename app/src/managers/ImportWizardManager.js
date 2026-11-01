@@ -96,16 +96,16 @@ export const ImportWizardManager = {
                 }
 
                 const isDrawerTarget = action === 'individual';
-                this.closeHub({ handoff: !isDrawerTarget });
+                this.closeHub({ handoff: !isDrawerTarget, replaceHistory: true });
 
                 // Lateral drawer (#focusPanel) sits below .header (z-index: 600 vs 700):
                 // let the snappy 200ms Hub close mostly clear before sliding in from the right.
-                // Centered modals open immediately on top of the lowered Hub backdrop (z-index: 1000 > 900).
+                // Centered modals open immediately in the same frame on top of the lowered Hub backdrop (z-index: 1000 > 900).
                 const prefersReducedMotion = typeof window !== 'undefined' &&
                     window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
                 const delay = (isDrawerTarget && !prefersReducedMotion) ? 140 : 0;
 
-                setTimeout(() => {
+                const runAction = () => {
                     if (action === 'individual') {
                         FocusPanelManager.openNew();
                     } else if (action === 'mass') {
@@ -115,7 +115,13 @@ export const ImportWizardManager = {
                     } else if (action === 'existing') {
                         ClassUIManager.showPickExistingStudentsModal();
                     }
-                }, delay);
+                };
+
+                if (delay > 0) {
+                    setTimeout(runAction, delay);
+                } else {
+                    runAction();
+                }
             });
 
             // Keyboard support
@@ -194,7 +200,9 @@ export const ImportWizardManager = {
         if (backdrop) {
             // [UX Mobile] History Cleanup
             if (!options.causedByHistory && backdrop.classList.contains('active')) {
-                HistoryManager.handleManualClose('importHub');
+                HistoryManager.handleManualClose('importHub', {
+                    replaceNext: Boolean(options.handoff || options.replaceHistory)
+                });
             }
 
             if (this._hubHandoffTimer) {

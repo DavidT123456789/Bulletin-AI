@@ -61,10 +61,10 @@ export const ApiValidationManager = {
             appState[`${provider}ApiKey`] = key;
 
             // Pour Google: validation en deux étapes
-            if (provider === 'google') {
+            if (provider === 'google' || provider === 'albert') {
                 // Étape 1: Vérifier que la clé est valide (endpoint /models ne consomme pas de quota)
                 try {
-                    await AIService.getAvailableModels('google');
+                    await AIService.getAvailableModels(provider);
                 } catch (modelsError) {
                     // Si /models échoue, la clé est invalide
                     throw new Error(`Clé invalide : ${modelsError.message}`);
@@ -72,7 +72,11 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : (PROVIDER_DEFAULT_MODELS.google || 'gemini-3.6-flash');
+                    const defaultModel = PROVIDER_DEFAULT_MODELS[provider] || (provider === 'albert' ? 'albert-openweight-medium' : 'gemini-3.6-flash');
+                    const isSameProvider = provider === 'google'
+                        ? appState.currentAIModel.startsWith('gemini')
+                        : appState.currentAIModel.startsWith('albert-');
+                    const modelOverride = isSameProvider ? appState.currentAIModel : defaultModel;
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
@@ -137,6 +141,19 @@ export const ApiValidationManager = {
                         creditsNum = Number(credits);
                     }
                     errorEl.innerHTML = `<iconify-icon icon="solar:wallet-money-linear" style="vertical-align: -2px;"></iconify-icon> <span>Solde disponible : <strong style="color:var(--text-primary);">${creditsNum.toFixed(3)}$</strong></span>`;
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = 'var(--text-secondary)';
+                } else {
+                    errorEl.style.display = 'none';
+                    errorEl.style.color = '';
+                }
+            } else if (provider === 'albert') {
+                const accountInfo = await AIService.getAlbertAccountInfo(key).catch(() => null);
+                if (accountInfo && (accountInfo.rpmLimit || accountInfo.rpdLimit)) {
+                    const parts = [];
+                    if (accountInfo.rpmLimit) parts.push(`<strong style="color:var(--text-primary);">${accountInfo.rpmLimit} req/min</strong>`);
+                    if (accountInfo.rpdLimit) parts.push(`${accountInfo.rpdLimit} req/jour`);
+                    errorEl.innerHTML = `<iconify-icon icon="solar:shield-check-linear" style="vertical-align: -2px;"></iconify-icon> <span>Accès souverain actif · Quota : ${parts.join(' · ')}</span>`;
                     errorEl.style.display = 'block';
                     errorEl.style.color = 'var(--text-secondary)';
                 } else {
@@ -301,6 +318,7 @@ export const ApiValidationManager = {
         const inputMap = {
             'openai': DOM.openaiApiKey,
             'google': DOM.googleApiKey,
+            'albert': DOM.albertApiKey,
             'groq': DOM.groqApiKey,
             'openrouter': DOM.openrouterApiKey,
             'anthropic': DOM.anthropicApiKey,
@@ -309,6 +327,7 @@ export const ApiValidationManager = {
         const errorMap = {
             'openai': DOM.openaiApiKeyError,
             'google': DOM.googleApiKeyError,
+            'albert': DOM.albertApiKeyError,
             'groq': DOM.groqApiKeyError,
             'openrouter': DOM.openrouterApiKeyError,
             'anthropic': DOM.anthropicApiKeyError,
@@ -317,6 +336,7 @@ export const ApiValidationManager = {
         const btnMap = {
             'openai': DOM.validateOpenaiApiKeyBtn,
             'google': DOM.validateGoogleApiKeyBtn,
+            'albert': DOM.validateAlbertApiKeyBtn,
             'groq': DOM.validateGroqApiKeyBtn,
             'openrouter': DOM.validateOpenrouterApiKeyBtn,
             'anthropic': DOM.validateAnthropicApiKeyBtn,
@@ -350,6 +370,7 @@ export const ApiValidationManager = {
         let errorEl = null;
         let provider = null;
         if (inputId === 'googleApiKey') { btnEl = DOM.validateGoogleApiKeyBtn; errorEl = DOM.googleApiKeyError; provider = 'google'; }
+        else if (inputId === 'albertApiKey') { btnEl = DOM.validateAlbertApiKeyBtn; errorEl = DOM.albertApiKeyError; provider = 'albert'; }
         else if (inputId === 'groqApiKey') { btnEl = DOM.validateGroqApiKeyBtn; errorEl = DOM.groqApiKeyError; provider = 'groq'; }
         else if (inputId === 'openaiApiKey') { btnEl = DOM.validateOpenaiApiKeyBtn; errorEl = DOM.openaiApiKeyError; provider = 'openai'; }
         else if (inputId === 'openrouterApiKey') { btnEl = DOM.validateOpenrouterApiKeyBtn; errorEl = DOM.openrouterApiKeyError; provider = 'openrouter'; }

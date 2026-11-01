@@ -2055,6 +2055,48 @@
                                                 </div>
                                             </div>
 
+                                            <div class="api-key-section" id="albertApiKeyGroup">
+                                                <div class="api-key-header">
+                                                    <div class="api-key-title-group">
+                                                        <span class="api-key-provider"><iconify-icon
+                                                                class="iconify-inline provider-albert"
+                                                                icon="solar:shield-check-bold"
+                                                                style="color: var(--color-blue);"></iconify-icon> Albert API (État)</span>
+                                                        <span class="provider-status-badge status-unconfigured" id="albertStatusBadge">
+                                                            <span class="status-dot"></span>
+                                                            <span class="status-text">Non configuré</span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="api-key-links">
+                                                        <a href="https://albert.playground.etalab.gouv.fr"
+                                                            target="_blank" rel="noopener noreferrer"
+                                                            class="btn-link">Clé ProConnect ↗</a>
+                                                        <a href="https://ia.numerique.gouv.fr/outils-ia/albert-api/"
+                                                            target="_blank" rel="noopener noreferrer"
+                                                            class="btn-link btn-link-secondary">Portail DINUM ↗</a>
+                                                    </div>
+                                                </div>
+                                                <div class="provider-models-hint">
+                                                    <span class="hint-label">Modèles :</span>
+                                                    <span class="model-chip">Mistral Small 3.2 24B</span>
+                                                    <span class="model-chip">Ministral 3 8B</span>
+                                                    <span class="model-chip">GPT-OSS 120B</span>
+                                                </div>
+                                                <div class="api-key-actions">
+                                                    <div class="api-key-input-container">
+                                                        <input type="text" id="albertApiKey"
+                                                            placeholder="sk-..." aria-label="Clé API Albert (État français)">
+                                                        <span id="albertApiKeyValidationIcon"
+                                                            class="api-key-validation-icon"></span>
+                                                    </div>
+                                                    <button type="button" id="validateAlbertApiKeyBtn"
+                                                        class="btn btn-purple btn-small" aria-label="Vérifier la clé Albert API">Vérifier</button>
+                                                </div>
+                                                <div class="error-message" id="albertApiKeyError"
+                                                    style="display: none;">
+                                                </div>
+                                            </div>
+
                                             <div class="api-key-section" id="groqApiKeyGroup">
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
@@ -2910,7 +2952,7 @@
                                                 </span>
                                             </div>
                                             <div class="help-step-footer-row">
-                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Google Gemini</strong> (recommandé) ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire, prêt en 30 secondes.</p>
+                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Google Gemini</strong>, <strong>Albert API</strong> (IA souveraine de l'État via ProConnect) ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
                                                 <div class="help-btn-row">
                                                     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                         <iconify-icon class="iconify-inline" icon="solar:link-circle-linear"></iconify-icon> Clé Google gratuite
@@ -3265,7 +3307,7 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Groq Cloud</strong> et activez <em>Relais auto.</em> pour basculer sans coupure au-delà de 15 requêtes/min.</li>
+                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais auto.</em> pour basculer sans coupure en cas de pic de débit.</li>
                                             <li><strong>100% hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
                                         </ul>
                                         <div class="help-btn-row">
@@ -3287,8 +3329,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li>Vérifiez qu'aucun espace ne s'est glissé au début ou à la fin (format : <code>AIzaSy…</code> pour Google, <code>gsk_…</code> pour Groq).</li>
-                                            <li>Régénérez gratuitement une clé neuve sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
+                                            <li>Vérifiez qu'aucun espace ne s'est glissé au début ou à la fin (format : <code>AIzaSy…</code> pour Google, <code>sk-…</code> pour Albert, <code>gsk_…</code> pour Groq).</li>
+                                            <li>Régénérez gratuitement une clé neuve sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a>, <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="help-inline-link">Albert Playground (ProConnect)</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3327,7 +3369,7 @@
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
                                             <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont masqués par défaut).</li>
-                                            <li><strong>Stockage local &amp; direct :</strong> Vos classes sont enregistrées dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Les requêtes partent directement vers le fournisseur d'IA choisi (ou restent 100 % hors-ligne avec <em>Ollama</em>).</li>
+                                            <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes sont enregistrées dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Les requêtes partent directement vers le fournisseur d'IA choisi — y compris sur l'infrastructure souveraine de l'État avec <strong>Albert API (DINUM)</strong> ou 100 % hors-ligne avec <em>Ollama</em>.</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3518,7 +3560,7 @@
                             <span class="welcome-title-gradient">Activez votre Assistant</span>
                         </h3>
                         <p class="welcome-subtitle-premium">
-                            Sélectionnez une IA. Chaque option propose un accès gratuit.
+                            Démarrage rapide avec une IA gratuite. Les moteurs payants (OpenAI, Claude…) ou locaux (Ollama) restent accessibles dans les Paramètres.
                         </p>
                     </div>
 
@@ -3530,24 +3572,24 @@
                                     <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
                                     <span>Gemini</span>
                                 </label>
-                                <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
-                                <label for="providerGroq" class="ui-segment">
-                                    <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold"
-                                        style="color: #f55036;"></iconify-icon>
-                                    <span>Groq</span>
-                                </label>
-                                <input type="radio" id="providerOpenRouter" name="welcomeProvider"
-                                    value="openrouter">
-                                <label for="providerOpenRouter" class="ui-segment">
-                                    <iconify-icon class="iconify-inline"
-                                        icon="solar:bolt-bold-duotone"></iconify-icon>
-                                    <span>OpenRouter</span>
+                                <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert">
+                                <label for="providerAlbert" class="ui-segment">
+                                    <iconify-icon class="iconify-inline provider-albert"
+                                        icon="solar:shield-check-bold"
+                                        style="color: var(--primary-color);"></iconify-icon>
+                                    <span>Albert</span>
                                 </label>
                                 <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
                                 <label for="providerMistral" class="ui-segment">
                                     <iconify-icon class="iconify-inline" icon="solar:cat-bold"
                                         style="color: #fd6f00;"></iconify-icon>
                                     <span>Mistral</span>
+                                </label>
+                                <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
+                                <label for="providerGroq" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold"
+                                        style="color: #f55036;"></iconify-icon>
+                                    <span>Groq</span>
                                 </label>
                             </div>
                         </div>

@@ -87,6 +87,11 @@ export const FocusPanelEvents = {
             });
         }
 
+        const analysisContent = panelEl.querySelector('.focus-analysis-content-area');
+        if (analysisContent) {
+            panel.bindScrollAffordances?.(analysisContent);
+        }
+
         const preCloseHandler = () => {
             const header = document.querySelector('.focus-header');
             const isEditing = header?.classList.contains('editing');

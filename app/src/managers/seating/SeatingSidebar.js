@@ -382,6 +382,7 @@ export const SeatingSidebar = {
             : '';
 
         list.innerHTML = activeListHtml + departedHtml;
+        FocusPanelManager.bindScrollAffordances?.(list);
 
         const allVisible = [...filtered, ...filteredDeparted];
 

@@ -878,6 +878,27 @@ describe('ModalUIManager', () => {
             expect(ModalUI.activeModal).toBe(testModal);
             expect(ModalUI.stackedModal).toBeNull();
         });
+
+        it('should bind dynamic scroll affordances on .ui-tabs-content when opening a tabbed modal', () => {
+            helpModal.innerHTML = `
+                <div class="modal-content">
+                    <div class="ui-tabs-content" id="helpTabsContent"></div>
+                </div>
+            `;
+            const tabsContent = helpModal.querySelector('#helpTabsContent');
+            Object.defineProperty(tabsContent, 'scrollHeight', { value: 900, configurable: true });
+            Object.defineProperty(tabsContent, 'clientHeight', { value: 400, configurable: true });
+            tabsContent.scrollTop = 0;
+
+            ModalUI.openModal(helpModal);
+            expect(tabsContent.classList.contains('can-scroll-top')).toBe(false);
+            expect(tabsContent.classList.contains('can-scroll-bottom')).toBe(true);
+
+            tabsContent.scrollTop = 120;
+            tabsContent.dispatchEvent(new Event('scroll'));
+            expect(tabsContent.classList.contains('can-scroll-top')).toBe(true);
+            expect(tabsContent.classList.contains('can-scroll-bottom')).toBe(true);
+        });
     });
 });
 

@@ -128,6 +128,7 @@ export const SettingsModalListeners = {
         // API validation - delegated to ApiValidationManager
         addClickListener(DOM.validateOpenaiApiKeyBtn, () => ApiValidationManager.validateApiKey('openai'));
         addClickListener(DOM.validateGoogleApiKeyBtn, () => ApiValidationManager.validateApiKey('google'));
+        addClickListener(DOM.validateAlbertApiKeyBtn, () => ApiValidationManager.validateApiKey('albert'));
         addClickListener(DOM.validateGroqApiKeyBtn, () => ApiValidationManager.validateApiKey('groq'));
         addClickListener(DOM.validateOpenrouterApiKeyBtn, () => ApiValidationManager.validateApiKey('openrouter'));
         addClickListener(DOM.validateAnthropicApiKeyBtn, () => ApiValidationManager.validateApiKey('anthropic'));
@@ -142,7 +143,7 @@ export const SettingsModalListeners = {
             SettingsUIManager.updateApiStatusDisplay();
         });
 
-        [DOM.openaiApiKey, DOM.googleApiKey, DOM.groqApiKey, DOM.openrouterApiKey, DOM.anthropicApiKey, DOM.mistralApiKey].forEach(input => {
+        [DOM.openaiApiKey, DOM.googleApiKey, DOM.albertApiKey, DOM.groqApiKey, DOM.openrouterApiKey, DOM.anthropicApiKey, DOM.mistralApiKey].forEach(input => {
             if (input) input.addEventListener('input', ApiValidationManager.handleApiKeyInput);
         });
 

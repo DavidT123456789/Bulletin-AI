@@ -120,6 +120,7 @@ export const FormUI = {
         if (DOM.aiModelSelect) DOM.aiModelSelect.value = appState.currentAIModel;
         if (DOM.openaiApiKey) DOM.openaiApiKey.value = appState.openaiApiKey;
         if (DOM.googleApiKey) DOM.googleApiKey.value = appState.googleApiKey;
+        if (DOM.albertApiKey) DOM.albertApiKey.value = appState.albertApiKey;
         if (DOM.groqApiKey) DOM.groqApiKey.value = appState.groqApiKey;
         if (DOM.openrouterApiKey) DOM.openrouterApiKey.value = appState.openrouterApiKey;
         if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;

@@ -105,11 +105,12 @@
     border-radius: var(--dropdown-radius-sm);
     box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
-    max-height: 320px;
+    max-height: 360px;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    scrollbar-color: var(--border-color-strong) transparent;
     opacity: 0;
     visibility: hidden;
     transform-origin: top center;
@@ -125,6 +126,12 @@
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
+}
+
+.custom-dropdown[data-for="aiModelSelect"] .custom-dropdown-menu {
+    min-width: 300px;
+    left: auto;
+    right: 0;
 }
 
 /* === Optgroup (groupe d'options) === */
@@ -168,6 +175,12 @@
 
 /* Google - Logo officiel (couleurs d'origine) */
 /* .provider-google: Pas de couleur forcée */
+
+/* Albert API (État / DINUM) - Bleu institutionnel */
+.provider-albert {
+    color: var(--color-blue);
+    transform: scale(1.2);
+}
 
 /* Groq Cloud - Orange corail caractéristique */
 .provider-groq {

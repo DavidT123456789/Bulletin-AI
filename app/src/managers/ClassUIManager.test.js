@@ -740,6 +740,8 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         const modal = document.getElementById('pickExistingStudentsModal');
         // Brumes dynamiques horizontales sur la barre de pilules (#pickStudentsChips)
         const chipsEl = modal.querySelector('#pickStudentsChips');
+        const virtualChip = chipsEl.querySelector('.pick-class-chip[data-filter-id^="virtual_"]');
+        expect(virtualChip?.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:diploma-linear');
         Object.defineProperty(chipsEl, 'scrollWidth', { value: 900, configurable: true });
         Object.defineProperty(chipsEl, 'clientWidth', { value: 500, configurable: true });
         chipsEl.scrollLeft = 0;
@@ -751,6 +753,19 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         expect(chipsEl.classList.contains('can-scroll-left')).toBe(true);
         expect(chipsEl.classList.contains('can-scroll-right')).toBe(true);
         expect(modal).not.toBeNull();
+
+        // Recherche avec bouton d'effacement (×) et touche Échap mutualisés
+        const searchInput = modal.querySelector('#pickStudentsSearchInput');
+        const searchClear = modal.querySelector('#pickStudentsSearchClear');
+        expect(searchClear.classList.contains('visible')).toBe(false);
+        searchInput.value = 'Dupont 3e1';
+        searchInput.dispatchEvent(new Event('input'));
+        expect(searchClear.classList.contains('visible')).toBe(true);
+        expect(modal.querySelectorAll('.pick-student-row')).toHaveLength(1);
+        searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(searchInput.value).toBe('');
+        expect(searchClear.classList.contains('visible')).toBe(false);
+        expect(modal.querySelectorAll('.pick-student-row')).toHaveLength(2);
 
         const row = modal.querySelector('.pick-student-row[data-student-id="s1"]');
         expect(row).not.toBeNull();

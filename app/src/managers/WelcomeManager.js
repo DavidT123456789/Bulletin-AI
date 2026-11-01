@@ -94,6 +94,7 @@ export const WelcomeManager = {
 
         const hasAnyConfiguredKey = () => Boolean(
             appState.googleApiKey ||
+            appState.albertApiKey ||
             appState.groqApiKey ||
             appState.openrouterApiKey ||
             appState.mistralApiKey ||
@@ -109,6 +110,7 @@ export const WelcomeManager = {
 
             const keyByProvider = {
                 google: appState.googleApiKey,
+                albert: appState.albertApiKey,
                 groq: appState.groqApiKey,
                 openrouter: appState.openrouterApiKey,
                 mistral: appState.mistralApiKey
@@ -157,6 +159,11 @@ export const WelcomeManager = {
                 placeholder: "Clé API Gemini (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
                 linkText: "Obtenir une clé Gemini ↗"
+            },
+            albert: {
+                placeholder: "Clé API Albert (sk-...)",
+                linkUrl: "https://albert.playground.etalab.gouv.fr",
+                linkText: "Obtenir une clé Albert (ProConnect) ↗"
             },
             groq: {
                 placeholder: "Clé API Groq (gsk_...)",
@@ -378,9 +385,9 @@ export const WelcomeManager = {
         // Pré-remplir le champ API key et montrer l'état validé si une clé existe (ou réinitialiser sur Google)
         const initialProviderMap = [
             { key: appState.googleApiKey, provider: 'google', radioId: 'providerGoogle' },
+            { key: appState.albertApiKey, provider: 'albert', radioId: 'providerAlbert' },
             { key: appState.groqApiKey, provider: 'groq', radioId: 'providerGroq' },
-            { key: appState.mistralApiKey, provider: 'mistral', radioId: 'providerMistral' },
-            { key: appState.openrouterApiKey, provider: 'openrouter', radioId: 'providerOpenRouter' }
+            { key: appState.mistralApiKey, provider: 'mistral', radioId: 'providerMistral' }
         ];
         const activeEntry = initialProviderMap.find(entry => Boolean(entry.key)) || initialProviderMap[0];
         currentProvider = activeEntry.provider;

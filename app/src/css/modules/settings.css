@@ -2061,31 +2061,8 @@
         pointer-events: auto;
     }
 
-    #appSettingsModal .ui-tabs-content,
-    #helpModal .ui-tabs-content {
+    #appSettingsModal .ui-tabs-content {
         padding: 18px 40px 26px 46px;
-        -webkit-mask-image: linear-gradient(
-            to bottom,
-            transparent 0px,
-            rgba(0, 0, 0, 0.4) 5px,
-            rgba(0, 0, 0, 0.85) 11px,
-            #000 17px,
-            #000 calc(100% - 18px),
-            rgba(0, 0, 0, 0.85) calc(100% - 12px),
-            rgba(0, 0, 0, 0.4) calc(100% - 5px),
-            transparent 100%
-        );
-        mask-image: linear-gradient(
-            to bottom,
-            transparent 0px,
-            rgba(0, 0, 0, 0.4) 5px,
-            rgba(0, 0, 0, 0.85) 11px,
-            #000 17px,
-            #000 calc(100% - 18px),
-            rgba(0, 0, 0, 0.85) calc(100% - 12px),
-            rgba(0, 0, 0, 0.4) calc(100% - 5px),
-            transparent 100%
-        );
     }
 
     #helpModal .ui-tabs-content {

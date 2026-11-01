@@ -56,6 +56,7 @@ export const userSettings = {
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',
+        albertApiKey: '',      // Albert API (État français / DINUM)
         groqApiKey: '',
         openrouterApiKey: '',
         anthropicApiKey: '',   // Claude (Anthropic)
@@ -115,6 +116,7 @@ export const runtimeState = {
     /** Statuts de validation des API */
     apiStatus: {
         google: 'not-configured',
+        albert: 'not-configured',
         groq: 'not-configured',
         openai: 'not-configured',
         openrouter: 'not-configured',
@@ -126,6 +128,7 @@ export const runtimeState = {
     /** Rétro-compatibilité: clés validées */
     validatedApiKeys: {
         google: false,
+        albert: false,
         groq: false,
         openai: false,
         openrouter: false,
@@ -185,6 +188,7 @@ const propertyMap = {
     enableApiFallback: () => userSettings.api,
     openaiApiKey: () => userSettings.api,
     googleApiKey: () => userSettings.api,
+    albertApiKey: () => userSettings.api,
     groqApiKey: () => userSettings.api,
     openrouterApiKey: () => userSettings.api,
     anthropicApiKey: () => userSettings.api,

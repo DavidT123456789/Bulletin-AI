@@ -1058,7 +1058,7 @@
                                     Les données sensibles (identités des élèves, notes brutes) sont stockées
                                     <strong>localement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, avec sauvegarde optionnelle sur votre Google Drive privé (sans clés API). L'application
                                     applique par défaut une pseudonymisation à la volée (masquage des noms/prénoms et traduction des statuts sensibles en consignes neutres) avant tout envoi vers les API
-                                    d'inférence.
+                                    d'inférence — avec possibilité d'utiliser <strong>Albert API</strong> (infrastructure souveraine de l'État / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
                                 </div>
                             </div>
                         </div>
@@ -1078,7 +1078,7 @@
                         <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    Compatible nativement avec <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi que Mistral AI et
+                                    Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA souveraine de l'État français / DINUM, gratuite pour les enseignants via ProConnect), <strong>Mistral AI</strong>, <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi qu'OpenAI, Claude et
                                     OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
                                     100% hors ligne (Air-Gapped).
                                 </div>
@@ -1329,7 +1329,7 @@
             { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
             { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en cours, binômes ou îlots d\'activité et export PDF.', label: 'Spatial' },
             { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Anonymisation Auto', desc: 'Prénoms, noms et statuts sensibles masqués par défaut avant l\'envoi IA. Stockage local IndexedDB.', label: 'Sécurité' },
-            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Google Gemini, Groq Cloud, ou Ollama en local.', label: 'Flexible' },
+            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Albert (IA de l\'État), Mistral, Gemini, Groq ou Ollama en local.', label: 'Flexible' },
             { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
             { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },
             { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Sauvegarde Cloud', desc: 'Archivez vos bulletins (manuel). Zéro synchronisation cachée.', label: 'Stockage' }

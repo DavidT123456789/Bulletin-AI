@@ -990,7 +990,7 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
     box-shadow: var(--shadow-md);
 }
 
-/* Morphed State: Scroll to Top (Elevated Neutral Surface) */
+/* Morphed State: Scroll to Top (Frosted Neutral Surface - Harmonized with Selection Toolbar) */
 .fab-add-student.is-scroll-top {
     background-color: var(--surface-color);
     background-image: none;
@@ -1000,22 +1000,19 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 
 .fab-add-student.is-scroll-top:hover {
     background-color: var(--bg-secondary);
-    background-image: none;
     border-color: var(--border-color-hover);
-    color: var(--text-primary);
 }
 
 [data-theme="dark"] .fab-add-student.is-scroll-top {
-    background-color: var(--bg-tertiary);
-    border-color: var(--border-color-strong);
-    color: var(--text-primary);
+    background-color: rgba(38, 38, 43, 0.86);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-color: rgba(255, 255, 255, 0.10);
 }
 
 [data-theme="dark"] .fab-add-student.is-scroll-top:hover {
-    background-color: var(--bg-tertiary);
-    background-image: linear-gradient(var(--item-hover-bg), var(--item-hover-bg));
-    border-color: var(--border-color-hover);
-    color: var(--text-primary);
+    background-color: rgba(48, 48, 54, 0.92);
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 /* Stacked Icons for Vertical Morph Choreography */

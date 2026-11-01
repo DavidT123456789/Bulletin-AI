@@ -146,4 +146,69 @@ describe('FocusPanelManager - Scroll Affordances (Edge Scrims)', () => {
         expect(scrollEl.classList.contains('can-scroll-right')).toBe(true);
         expect(callbackCount).toBe(10);
     });
+
+    it('clears top/left scrims if content does not overflow even with stale scrollTop/scrollLeft > 4', () => {
+        const scrollEl = document.createElement('div');
+        Object.defineProperty(scrollEl, 'scrollHeight', { value: 300, configurable: true });
+        Object.defineProperty(scrollEl, 'clientHeight', { value: 300, configurable: true });
+        Object.defineProperty(scrollEl, 'scrollWidth', { value: 400, configurable: true });
+        Object.defineProperty(scrollEl, 'clientWidth', { value: 400, configurable: true });
+        scrollEl.scrollTop = 40;
+        scrollEl.scrollLeft = 40;
+
+        FocusPanelManager.updateScrollAffordances(scrollEl);
+        expect(scrollEl.classList.contains('can-scroll-top')).toBe(false);
+        expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(false);
+        expect(scrollEl.classList.contains('can-scroll-left')).toBe(false);
+        expect(scrollEl.classList.contains('can-scroll-right')).toBe(false);
+    });
+
+    it('updates scroll affordances when a nested <details> accordion dispatches toggle', () => {
+        const scrollEl = document.createElement('div');
+        const detailsEl = document.createElement('details');
+        scrollEl.appendChild(detailsEl);
+
+        Object.defineProperty(scrollEl, 'scrollHeight', { value: 300, configurable: true });
+        Object.defineProperty(scrollEl, 'clientHeight', { value: 300, configurable: true });
+        scrollEl.scrollTop = 0;
+
+        FocusPanelManager.bindScrollAffordances(scrollEl);
+        expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // Expanding the accordion increases scrollHeight
+        Object.defineProperty(scrollEl, 'scrollHeight', { value: 650, configurable: true });
+        detailsEl.dispatchEvent(new Event('toggle', { bubbles: false }));
+        expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(true);
+    });
+
+    it('observes container and direct children via ResizeObserver to refresh scrims when dynamic content grows', () => {
+        const observed = [];
+        let roCallback = null;
+        const OriginalRO = globalThis.ResizeObserver;
+        globalThis.ResizeObserver = class {
+            constructor(cb) { roCallback = cb; }
+            observe(el) { observed.push(el); }
+        };
+
+        try {
+            const scrollEl = document.createElement('div');
+            const tabChild = document.createElement('div');
+            scrollEl.appendChild(tabChild);
+
+            Object.defineProperty(scrollEl, 'scrollHeight', { value: 300, configurable: true });
+            Object.defineProperty(scrollEl, 'clientHeight', { value: 300, configurable: true });
+            scrollEl.scrollTop = 0;
+
+            FocusPanelManager.bindScrollAffordances(scrollEl);
+            expect(observed).toContain(scrollEl);
+            expect(observed).toContain(tabChild);
+            expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(false);
+
+            Object.defineProperty(scrollEl, 'scrollHeight', { value: 700, configurable: true });
+            roCallback?.();
+            expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(true);
+        } finally {
+            globalThis.ResizeObserver = OriginalRO;
+        }
+    });
 });

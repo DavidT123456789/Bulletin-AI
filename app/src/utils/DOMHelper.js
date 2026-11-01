@@ -88,5 +88,47 @@ export const DOMHelper = {
         } else {
             console.warn(`DOMHelper: Element ${elementOrId} not found for event ${event}`);
         }
+    },
+
+    /**
+     * Connects a search input with its clear button (×), Escape key reset, and optional container click focus.
+     * @param {HTMLInputElement|null} inputEl - The search input element.
+     * @param {HTMLElement|null} clearBtnEl - The clear button element (toggles `.visible`).
+     * @param {(value: string) => void} onChange - Callback fired when the search value changes or is cleared.
+     * @param {HTMLElement|null} [boxEl=null] - Optional outer search box container that focuses `inputEl` on click.
+     */
+    bindSearchInput(inputEl, clearBtnEl, onChange, boxEl = null) {
+        if (!inputEl) return;
+
+        const clearSearch = (focusInput = false) => {
+            inputEl.value = '';
+            clearBtnEl?.classList.remove('visible');
+            if (focusInput) inputEl.focus();
+            onChange('');
+        };
+
+        inputEl.addEventListener('input', (e) => {
+            const val = e.target.value || '';
+            clearBtnEl?.classList.toggle('visible', val.length > 0);
+            onChange(val);
+        });
+
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && inputEl.value) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearSearch(false);
+            }
+        });
+
+        clearBtnEl?.addEventListener('click', () => {
+            clearSearch(true);
+        });
+
+        boxEl?.addEventListener('click', (e) => {
+            if (!e.target.closest('input') && (!clearBtnEl || !clearBtnEl.contains(e.target))) {
+                inputEl.focus();
+            }
+        });
     }
 };

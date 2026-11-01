@@ -24,9 +24,10 @@ import { appState } from '../state/State.js';
 import { AppreciationsManager } from '../managers/AppreciationsManager.js';
 
 describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
-    it('unifie les 7 fournisseurs IA avec leurs métadonnées et endpoints de base', () => {
+    it('unifie les 8 fournisseurs IA avec leurs métadonnées et endpoints de base', () => {
         expect(PROVIDER_IDS).toEqual([
             'google',
+            'albert',
             'groq',
             'openrouter',
             'mistral',
@@ -35,7 +36,7 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
             'ollama'
         ]);
         expect(PROVIDER_CONFIG).toBe(AI_PROVIDERS);
-        expect(API_KEY_PROVIDER_IDS).toHaveLength(6);
+        expect(API_KEY_PROVIDER_IDS).toHaveLength(7);
         expect(API_KEY_PROVIDER_IDS).not.toContain('ollama');
 
         PROVIDER_IDS.forEach(id => {
@@ -47,12 +48,12 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         });
     });
 
-    it('expose les 28 modèles actifs du sélecteur et les 7 alias de rétrocompatibilité', () => {
+    it('expose les 31 modèles actifs du sélecteur et les 7 alias de rétrocompatibilité', () => {
         const selectorModels = MODEL_SELECTOR_CONFIG.flatMap(g => g.models);
-        expect(selectorModels).toHaveLength(28);
+        expect(selectorModels).toHaveLength(31);
 
         const allModelIds = Object.keys(AI_MODELS);
-        expect(allModelIds).toHaveLength(35);
+        expect(allModelIds).toHaveLength(38);
 
         selectorModels.forEach(({ id, qualifier }) => {
             const meta = getModelMeta(id);
@@ -97,9 +98,11 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(getApiModelName('openrouter')).toBe('deepseek/deepseek-chat');
         expect(API_MODEL_MAPPINGS['claude-sonnet-5']).toBe('anthropic/claude-sonnet-5');
         expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.6-flash');
+        expect(PROVIDER_DEFAULT_MODELS.albert).toBe('albert-openweight-medium');
+        expect(PROVIDER_SHOWCASE_MODELS.albert).toEqual(['albert-openweight-medium', 'albert-openweight-small', 'albert-openweight-large']);
         expect(PROVIDER_SHOWCASE_MODELS.groq).toEqual(['groq-gpt-oss-120b', 'groq-gpt-oss-20b']);
         expect(buildFallbackQueue('groq-gpt-oss-120b')[0]).toBe('groq-gpt-oss-120b');
-        expect(FALLBACK_CONFIG.providerOrder).toHaveLength(7);
+        expect(FALLBACK_CONFIG.providerOrder).toHaveLength(8);
     });
 
     it('corrige le message de clé API manquante dans AppreciationsManager pour Groq, Google et Ollama', async () => {

@@ -93,7 +93,23 @@ export default defineConfig({
   server: {
     open: true,
     port: 4000,
-    strictPort: false
+    strictPort: false,
+    proxy: {
+      '/api/albert/v1': {
+        target: 'https://albert.api.etalab.gouv.fr/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/albert\/v1/, '')
+      }
+    }
+  },
+  preview: {
+    proxy: {
+      '/api/albert/v1': {
+        target: 'https://albert.api.etalab.gouv.fr/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/albert\/v1/, '')
+      }
+    }
   },
   define: {
     __APP_VERSION__: JSON.stringify(`${pkg.version} Beta`),

@@ -24,9 +24,6 @@
 
 /* Modifier: Header Style (ex: generation-mode-selector.header-style) */
 .ui-segmented-control.header-style {
-    /* Remplacement du glassmorphism "froid" par la couleur unifiée chaude */
-    background: var(--bg-secondary);
-    border: none;
     backdrop-filter: blur(var(--glass-base-blur));
     -webkit-backdrop-filter: blur(var(--glass-base-blur));
 }
@@ -57,7 +54,7 @@
     white-space: nowrap;
 }
 
-/* Handle Icons — desaturate in inactive state */
+/* Handle Icons — inherit segment text color directly */
 .ui-segment i,
 .ui-segment iconify-icon {
     font-size: 16px;
@@ -66,8 +63,7 @@
     flex-shrink: 0;
     pointer-events: none;
     filter: grayscale(1);
-    opacity: 0.6;
-    transition: filter var(--transition-base), opacity var(--transition-base), color var(--transition-base);
+    transition: filter var(--transition-base), color var(--transition-base);
 }
 
 /* Handle Radio inputs */
@@ -81,27 +77,12 @@
     color: var(--text-primary);
 }
 
-/* Fallback pill background for segmented controls without dynamic glider */
-.ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
-.ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
-    background: var(--surface-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
-[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
-    background: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 .ui-segment.active i,
 .ui-segment.active iconify-icon,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment i,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
     color: currentColor;
-    filter: grayscale(0);
-    opacity: 1;
+    filter: none;
 }
 
 /* Hover state — desktop only to prevent sticky highlights on touch */
@@ -109,15 +90,14 @@
     button.ui-segment:not(.active):hover,
     .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover {
         color: var(--text-primary);
-        background: rgba(0, 0, 0, 0.03);
+        background: var(--item-hover-bg);
     }
 
     button.ui-segment:not(.active):hover i,
     button.ui-segment:not(.active):hover iconify-icon,
     .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover i,
     .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover iconify-icon {
-        filter: grayscale(0);
-        opacity: 1;
+        filter: none;
     }
 }
 
@@ -133,16 +113,21 @@
     box-shadow: 0 0 0 2px var(--primary-color);
 }
 
-/* --- The Glider (Sliding Background) --- */
+/* --- The Glider (Sliding Background) & Fallback Active Pill --- */
+.ui-glider,
+.ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
+.ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
+    background: var(--surface-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 /* By default, managed by JS (width and transform) for variable width segments */
 .ui-glider {
     position: absolute;
     top: var(--sc-padding, 3px);
     bottom: var(--sc-padding, 3px);
     left: 0;
-    background: var(--surface-color);
     border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
     z-index: 1;
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1), left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: none;
@@ -171,60 +156,22 @@
     transform: translateX(200%);
 }
 
-/* --- Dark Mode : Gold Standard Glassmorphism --- */
-[data-theme="dark"] .ui-segmented-control,
-[data-theme="dark"] .ui-segmented-control.header-style {
-    background: rgba(0, 0, 0, 0.4);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
+/* --- Dark Mode : Balanced Flat Matte Pill (Midpoint between recessed & elevated) --- */
+[data-theme="dark"] .ui-segmented-control {
+    background: rgba(14, 14, 17, 0.45);
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Ensure header style maintains blur */
 [data-theme="dark"] .ui-segmented-control.header-style {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
 
-[data-theme="dark"] .ui-glider {
+[data-theme="dark"] .ui-glider,
+[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
+[data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
     background: rgba(255, 255, 255, 0.12);
-    /* Glassmorphism pure */
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-/* Ensure text is visible on inactive segments */
-[data-theme="dark"] .ui-segment,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment {
-    color: var(--text-tertiary);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    [data-theme="dark"] button.ui-segment:not(.active):hover,
-    [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
-        color: var(--text-primary);
-        background: rgba(255, 255, 255, 0.04);
-    }
-
-    [data-theme="dark"] button.ui-segment:not(.active):hover iconify-icon,
-    [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover iconify-icon {
-        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
-    }
-}
-
-[data-theme="dark"] .ui-segment.active,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment {
-    color: var(--text-primary);
-    /* Bright white */
-    text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
-    /* Subtle glow for text */
-}
-
-[data-theme="dark"] .ui-segment.active i,
-[data-theme="dark"] .ui-segment.active iconify-icon,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment i,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon {
-    color: currentColor;
-    filter: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border: none;
 }

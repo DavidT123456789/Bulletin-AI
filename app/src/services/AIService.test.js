@@ -11,6 +11,7 @@ vi.mock('../state/State.js', () => ({
     appState: {
         openaiApiKey: '',
         googleApiKey: '',
+        albertApiKey: '',
         groqApiKey: '',
         openrouterApiKey: '',
         mistralApiKey: '',
@@ -24,6 +25,7 @@ vi.mock('../config/Config.js', () => ({
     CONFIG: {
         OPENAI_API_BASE: 'https://api.openai.com/v1',
         GOOGLE_API_BASE: 'https://generativelanguage.googleapis.com/v1beta',
+        ALBERT_API_BASE: 'https://albert.api.etalab.gouv.fr/v1',
         GROQ_API_BASE: 'https://api.groq.com/openai/v1',
         OPENROUTER_API_BASE: 'https://openrouter.ai/api/v1',
         MISTRAL_API_BASE: 'https://api.mistral.ai/v1',
@@ -112,6 +114,23 @@ describe('AIService', () => {
             expect(config.payload.model).toBe('openai/gpt-oss-120b');
             expect(config.payload.reasoning_format).toBe('parsed');
             expect(config.payload.messages[0].content).toBe('Test prompt');
+        });
+
+        it('should return correct config for Albert API provider using openweight alias', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.albertApiKey = 'sk-albert-test-key';
+            appState.currentAIModel = 'albert-openweight-medium';
+
+            const config = AIService._getApiConfig('Test prompt', { systemPrompt: 'Tu es enseignant.' });
+
+            expect(config.apiKey).toBe('sk-albert-test-key');
+            expect(config.apiUrl).toBe('https://albert.api.etalab.gouv.fr/v1/chat/completions');
+            expect(config.headers['Authorization']).toBe('Bearer sk-albert-test-key');
+            expect(config.payload.model).toBe('openweight-medium');
+            expect(config.payload.messages).toEqual([
+                { role: 'system', content: 'Tu es enseignant.' },
+                { role: 'user', content: 'Test prompt' }
+            ]);
         });
 
         it('should return correct config for validation mode', async () => {
@@ -306,9 +325,100 @@ describe('AIService', () => {
 
             expect(models).toEqual([]);
         });
+
+        it('should fetch Albert API models list and handle 403 account expiration', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.albertApiKey = 'sk-albert-valid';
+
+            globalThis.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    object: 'list',
+                    data: [{ id: 'openweight-medium', type: 'text-generation' }]
+                })
+            });
+
+            const models = await AIService.getAvailableModels('albert');
+            expect(models).toHaveLength(1);
+            expect(models[0].id).toBe('openweight-medium');
+
+            globalThis.fetch = vi.fn().mockResolvedValueOnce({
+                ok: false,
+                status: 403,
+                json: () => Promise.resolve({ detail: 'Your account has expired.' })
+            });
+
+            await expect(AIService.getAvailableModels('albert'))
+                .rejects.toThrow('Compte Albert expiré (403)');
+        });
+    });
+
+    describe('getAlbertAccountInfo', () => {
+        it('should extract rpm and rpd limits from /v1/me response', async () => {
+            globalThis.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    object: 'userInfo',
+                    id: 42,
+                    email: 'prof@ac-paris.fr',
+                    budget: null,
+                    expires: null,
+                    limits: [
+                        { router_id: 1, type: 'rpm', value: 30 },
+                        { router_id: 1, type: 'rpd', value: 1000 }
+                    ]
+                })
+            });
+
+            const info = await AIService.getAlbertAccountInfo('sk-albert-key');
+            expect(info).toEqual({
+                rpmLimit: 30,
+                rpdLimit: 1000,
+                budget: null,
+                expires: null
+            });
+        });
+
+        it('should prioritize LLM text-generation routers (with tpm > 0) over embedding routers', async () => {
+            globalThis.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    object: 'userInfo',
+                    id: 20899,
+                    limits: [
+                        { router_id: 342, type: 'rpm', value: 500 },
+                        { router_id: 342, type: 'rpd', value: 50000 },
+                        { router_id: 342, type: 'tpm', value: null },
+                        { router_id: 337, type: 'rpm', value: 50 },
+                        { router_id: 337, type: 'rpd', value: 1000 },
+                        { router_id: 337, type: 'tpm', value: 128000 }
+                    ]
+                })
+            });
+
+            const info = await AIService.getAlbertAccountInfo('sk-albert-key');
+            expect(info.rpmLimit).toBe(50);
+            expect(info.rpdLimit).toBe(1000);
+        });
+
+        it('should return null when key is empty or endpoint returns 404', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.albertApiKey = '';
+            expect(await AIService.getAlbertAccountInfo()).toBeNull();
+
+            globalThis.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 404 });
+            expect(await AIService.getAlbertAccountInfo('sk-albert-key')).toBeNull();
+        });
     });
 
     describe('parseRetryDelay()', () => {
+        it('should prioritize HTTP Retry-After and x-ratelimit-reset headers', () => {
+            const headers1 = { get: (k) => (k === 'retry-after' ? '8' : null) };
+            expect(parseRetryDelay('Rate limit exceeded', headers1)).toBe(8);
+
+            const headers2 = { get: (k) => (k === 'x-ratelimit-reset-requests' ? '3.2s' : null) };
+            expect(parseRetryDelay('Too many requests', headers2)).toBe(4);
+        });
         it('should parse Groq "try again in Xs" format', () => {
             expect(parseRetryDelay('Rate limit reached. Please try again in 1.45s.')).toBe(2);
             expect(parseRetryDelay('Please try again in 23.4s.')).toBe(24);

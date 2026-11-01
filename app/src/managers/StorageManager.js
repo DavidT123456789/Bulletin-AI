@@ -296,6 +296,7 @@ export const StorageManager = {
         if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
         if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
         if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;
+        if (settings.albertApiKey !== undefined) userSettings.api.albertApiKey = settings.albertApiKey;
         if (settings.groqApiKey !== undefined) userSettings.api.groqApiKey = settings.groqApiKey;
         if (settings.openrouterApiKey !== undefined) userSettings.api.openrouterApiKey = settings.openrouterApiKey;
         if (settings.anthropicApiKey !== undefined) userSettings.api.anthropicApiKey = settings.anthropicApiKey;
@@ -807,6 +808,7 @@ export const StorageManager = {
             enableApiFallback: userSettings.api.enableApiFallback,
             openaiApiKey: userSettings.api.openaiApiKey,
             googleApiKey: userSettings.api.googleApiKey,
+            albertApiKey: userSettings.api.albertApiKey,
             groqApiKey: userSettings.api.groqApiKey,
             openrouterApiKey: userSettings.api.openrouterApiKey,
             anthropicApiKey: userSettings.api.anthropicApiKey,

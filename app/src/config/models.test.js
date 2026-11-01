@@ -98,15 +98,17 @@ describe('models.js configuration & helpers', () => {
 
         it('should prioritize generous free providers in providerOrder', () => {
             expect(FALLBACK_CONFIG.providerOrder[0]).toBe('google');
-            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('groq');
-            expect(FALLBACK_CONFIG.providerOrder[2]).toBe('openrouter');
-            expect(FALLBACK_CONFIG.providerOrder[3]).toBe('mistral');
+            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('albert');
+            expect(FALLBACK_CONFIG.providerOrder[2]).toBe('groq');
+            expect(FALLBACK_CONFIG.providerOrder[3]).toBe('openrouter');
+            expect(FALLBACK_CONFIG.providerOrder[4]).toBe('mistral');
         });
     });
 
     describe('PROVIDER_DEFAULT_MODELS', () => {
         it('should map each provider to its primary recommended model', () => {
             expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.6-flash');
+            expect(PROVIDER_DEFAULT_MODELS.albert).toBe('albert-openweight-medium');
             expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-gpt-oss-120b');
             expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.openrouter).toBe('llama-3.3-70b-free');
@@ -126,8 +128,8 @@ describe('models.js configuration & helpers', () => {
             const queue = buildFallbackQueue('gemini-3.8-flash');
             expect(queue[1]).toBe('gemini-3.6-flash');
             expect(queue[2]).toBe('gemini-3.1-pro-preview');
-            // Next provider should be groq (since groq is next in providerOrder after google)
-            expect(queue[3]).toBe('groq-gpt-oss-120b');
+            // Next provider should be albert (since albert is next in providerOrder after google)
+            expect(queue[3]).toBe('albert-openweight-medium');
         });
 
         it('should contain no duplicates', () => {
@@ -155,6 +157,12 @@ describe('models.js configuration & helpers', () => {
     });
 
     describe('getApiModelName()', () => {
+        it('should map Albert API models to their perennial openweight aliases', () => {
+            expect(getApiModelName('albert-openweight-medium')).toBe('openweight-medium');
+            expect(getApiModelName('albert-openweight-small')).toBe('openweight-small');
+            expect(getApiModelName('albert-openweight-large')).toBe('openweight-large');
+        });
+
         it('should map Groq models to their technical API model names', () => {
             expect(getApiModelName('groq-gpt-oss-120b')).toBe('openai/gpt-oss-120b');
             expect(getApiModelName('groq-gpt-oss-20b')).toBe('openai/gpt-oss-20b');

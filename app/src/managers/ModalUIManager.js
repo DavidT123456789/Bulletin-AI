@@ -9,6 +9,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { HistoryManager } from './HistoryManager.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import { UI } from './UIManager.js';
 
 /** Modales de dialogue générées dynamiquement : empilées au-dessus de la modale active et retirées du DOM à la fermeture */
@@ -51,6 +52,28 @@ export const ModalUI = {
 
     /** @private Map pour stocker les timeouts d'animation par modale */
     _animTimeouts: new WeakMap(),
+
+    /** @private Map pour stocker les requestAnimationFrame d'ouverture par modale */
+    _animRafs: new WeakMap(),
+
+    /** @private Map pour stocker les hooks de cycle de vie (onClose/onClosed) par modale */
+    _modalHooks: new WeakMap(),
+
+    /**
+     * Annule un requestAnimationFrame d'ouverture en attente pour une modale.
+     * @param {HTMLElement} modal
+     * @private
+     */
+    _cancelAnimRaf(modal) {
+        const rafId = this._animRafs.get(modal);
+        if (!rafId) return;
+        if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(rafId);
+        } else {
+            clearTimeout(rafId);
+        }
+        this._animRafs.delete(modal);
+    },
 
     /**
      * Retourne les éléments focalisables visibles à l'intérieur d'un conteneur.
@@ -210,13 +233,24 @@ export const ModalUI = {
             document.dispatchEvent(new CustomEvent('settings-modal-open', { detail: { modalId: modal.id } }));
         }
 
-        // Clear any ongoing close animation timeout to prevent overlaps
+        // Clear any ongoing close animation timeout or pending open rAF to prevent overlaps
         if (this._animTimeouts.has(modal)) {
             clearTimeout(this._animTimeouts.get(modal));
             this._animTimeouts.delete(modal);
         }
+        this._cancelAnimRaf(modal);
 
-        modal.classList.remove('modal-closing');
+        const isTrombiModal = modal.id === 'trombiWizardModal' || modal.classList.contains('trombi-wizard-modal');
+        if (options.onClose || options.onClosed) {
+            this._modalHooks.set(modal, {
+                onClose: options.onClose,
+                onClosed: options.onClosed
+            });
+        }
+        modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show');
+        if (isTrombiModal) {
+            modal.classList.add('visible');
+        }
 
         // [UX Mobile] History Push via Manager
         if (!options.isRestoringStacked) {
@@ -232,7 +266,7 @@ export const ModalUI = {
             this.lastFocusedElement = document.activeElement;
         }
 
-        const modalContent = modal.querySelector('.modal-content');
+        const modalContent = modal.querySelector('.modal-content, .trombi-wizard-content');
         if (modalContent) {
             modalContent.style.transformOrigin = 'center center';
         }
@@ -241,11 +275,20 @@ export const ModalUI = {
         modal.style.display = 'flex';
         // Forcer le reflow pour que la transition s'applique
         void modal.offsetWidth;
-        // Ajouter les classes pour déclencher l'animation Apple
-        requestAnimationFrame(() => {
-            modal.classList.add('modal-visible');
-            modal.classList.add('show');
+        modal.querySelectorAll('.ui-tabs-content').forEach(el => {
+            FocusPanelManager.bindScrollAffordances?.(el);
         });
+        // Ajouter les classes pour déclencher l'animation Apple
+        const scheduleVisible = typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame
+            : (fn) => setTimeout(fn, 0);
+        const rafId = scheduleVisible(() => {
+            this._animRafs.delete(modal);
+            if (!modal.classList.contains('modal-closing') && !modal.classList.contains('closing')) {
+                modal.classList.add('modal-visible', 'show');
+            }
+        });
+        this._animRafs.set(modal, rafId);
 
         // Accessibilité (WCAG 2.1) : ARIA
         modal.setAttribute('role', 'dialog');
@@ -271,11 +314,11 @@ export const ModalUI = {
         // Focus sur le premier élément focalisable après l'animation (en évitant le bouton de fermeture si possible)
         setTimeout(() => {
             // Initialize and update gliders inside the modal (they weren't created when hidden)
-            UI.initGliders();
+            UI.initGliders?.();
             // Then update positions for this modal's visible containers
             modal.querySelectorAll('.ui-segmented-control').forEach(container => {
                 if (container.classList.contains('has-glider')) {
-                    UI.updateGlider(container, true);
+                    UI.updateGlider?.(container, true);
                 }
             });
 
@@ -313,10 +356,22 @@ export const ModalUI = {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
+        const isTrombiModal = modal.id === 'trombiWizardModal' || modal.classList.contains('trombi-wizard-modal');
         if (modal.classList.contains('modal-closing') ||
+            modal.classList.contains('closing') ||
             modal.style.display === 'none' ||
-            (modal.style.display === '' && !modal.classList.contains('modal-visible') && !modal.classList.contains('show'))) {
+            (modal.style.display === '' &&
+                !modal.classList.contains('modal-visible') &&
+                !modal.classList.contains('show') &&
+                !modal.classList.contains('visible'))) {
             return;
+        }
+
+        this._cancelAnimRaf(modal);
+        const hooks = this._modalHooks.get(modal);
+        options.onClose?.();
+        if (hooks?.onClose && hooks.onClose !== options.onClose) {
+            hooks.onClose();
         }
 
         // [UX Mobile] History Cleanup
@@ -335,20 +390,26 @@ export const ModalUI = {
         // IMPORTANT: Ne pas retirer modal-visible ici pour permettre à l'animation CSS de fonctionner
         // La classe modal-closing doit avoir priorité sur modal-visible dans le CSS
         modal.classList.add('modal-closing');
+        if (isTrombiModal) {
+            modal.classList.add('closing');
+        }
 
         // Attendre la fin de l'animation avant de masquer
         const timeoutId = setTimeout(() => {
             this._animTimeouts.delete(modal);
-            modal.style.display = 'none';
-            modal.classList.remove('modal-closing');
-            modal.classList.remove('modal-visible');
-            modal.classList.remove('show');
+            this._modalHooks.delete(modal);
+            modal.style.display = isTrombiModal ? '' : 'none';
+            modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show', 'visible');
+            options.onClosed?.();
+            if (hooks?.onClosed && hooks.onClosed !== options.onClosed) {
+                hooks.onClosed();
+            }
 
             if (modal.id !== 'helpModal') {
                 modal.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));
             }
 
-            const modalContent = modal.querySelector('.modal-content');
+            const modalContent = modal.querySelector('.modal-content, .trombi-wizard-content');
             if (modalContent) {
                 modalContent.style.transformOrigin = '';
             }

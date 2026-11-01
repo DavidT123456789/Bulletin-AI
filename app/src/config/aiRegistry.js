@@ -1,5 +1,5 @@
 /**
- * @fileoverview Source unique de vérité (SSOT) pour les 7 fournisseurs et l'ensemble des modèles IA :
+ * @fileoverview Source unique de vérité (SSOT) pour les 8 fournisseurs et l'ensemble des modèles IA :
  * métadonnées d'affichage, routage API, tarification, timeouts, sélecteur UI et chaînes de repli.
  * @module config/aiRegistry
  */
@@ -14,7 +14,7 @@ export const OLLAMA_CONFIG = {
 };
 
 /**
- * Registre unifié des 7 fournisseurs d'IA (Icônes, Noms, Styles, Clés, Endpoints).
+ * Registre unifié des 8 fournisseurs d'IA (Icônes, Noms, Styles, Clés, Endpoints).
  */
 export const AI_PROVIDERS = {
     google: {
@@ -27,6 +27,18 @@ export const AI_PROVIDERS = {
         domKey: 'googleApiKey',
         apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
         description: '<strong>Google Gemini (Recommandé)</strong> : solution officielle, <strong>100% gratuite et sans carte bancaire</strong>, idéale pour débuter sereinement.'
+    },
+    albert: {
+        id: 'albert',
+        name: 'Albert API (État)',
+        shortLabel: 'Albert',
+        icon: 'solar:shield-check-bold',
+        class: 'provider-albert',
+        style: 'color: var(--color-blue);',
+        keyProperty: 'albertApiKey',
+        domKey: 'albertApiKey',
+        apiBaseUrl: 'https://albert.api.etalab.gouv.fr/v1',
+        description: '<strong>Albert API (État français / DINUM)</strong> : passerelle souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants de l\'Éducation nationale via ProConnect.'
     },
     groq: {
         id: 'groq',
@@ -100,13 +112,13 @@ export const AI_PROVIDERS = {
 export const PROVIDER_CONFIG = AI_PROVIDERS;
 
 /** Liste ordonnée de tous les identifiants de fournisseurs */
-export const PROVIDER_IDS = ['google', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic', 'ollama'];
+export const PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic', 'ollama'];
 
 /** Liste des fournisseurs nécessitant une clé API distante */
-export const API_KEY_PROVIDER_IDS = ['google', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic'];
+export const API_KEY_PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic'];
 
 /** Ordre de priorité des fournisseurs pour le fallback automatique */
-export const FALLBACK_PROVIDER_ORDER = ['google', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
+export const FALLBACK_PROVIDER_ORDER = ['google', 'albert', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
 
 /**
  * Registre unifié des modèles IA (27 modèles actifs dans le sélecteur + 7 alias historiques).
@@ -144,7 +156,7 @@ export const AI_MODELS = {
         providerId: 'google',
         apiModelId: 'gemini-3.1-pro-preview',
         shortName: 'Gemini 3.1 Pro',
-        qualifier: 'Synthèses complexes',
+        qualifier: 'Synthèses',
         selectorGroup: 'Google Gemini — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: true,
@@ -196,6 +208,47 @@ export const AI_MODELS = {
         timeoutMs: 30000,
         costs: { input: 1.25, output: 10.00 },
         description: "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés."
+    },
+
+    // 1b. ALBERT API (ÉTAT FRANÇAIS / DINUM — OPENWEIGHT ALIASES)
+    'albert-openweight-medium': {
+        id: 'albert-openweight-medium',
+        providerId: 'albert',
+        apiModelId: 'openweight-medium',
+        shortName: 'Mistral Small 3.2 24B',
+        qualifier: 'Recommandé',
+        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        inSelector: true,
+        isReasoning: false,
+        timeoutMs: 25000,
+        costs: { input: 0, output: 0 },
+        description: "<strong>⭐ Recommandé (Albert Medium).</strong> Mistral Small 3.2 24B hébergé sur l'infrastructure souveraine de l'État (DINUM). Français irréprochable et rapide."
+    },
+    'albert-openweight-small': {
+        id: 'albert-openweight-small',
+        providerId: 'albert',
+        apiModelId: 'openweight-small',
+        shortName: 'Ministral 3 8B',
+        qualifier: 'Ultra-rapide',
+        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        inSelector: true,
+        isReasoning: false,
+        timeoutMs: 20000,
+        costs: { input: 0, output: 0 },
+        description: "<strong>⚡ Ultra-rapide (Albert Small).</strong> Ministral 3 8B souverain, idéal pour les retouches instantanées et la génération rapide de classes entières."
+    },
+    'albert-openweight-large': {
+        id: 'albert-openweight-large',
+        providerId: 'albert',
+        apiModelId: 'openweight-large',
+        shortName: 'GPT-OSS 120B',
+        qualifier: 'Synthèses',
+        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        inSelector: true,
+        isReasoning: true,
+        timeoutMs: 40000,
+        costs: { input: 0, output: 0 },
+        description: "<strong>🔥 Synthèses & Bilans (Albert Large).</strong> Modèle de raisonnement 120B souverain pour les synthèses globales de conseil de classe."
     },
 
     // 2. GROQ CLOUD
@@ -574,6 +627,7 @@ export const AI_MODELS = {
 
 const SELECTOR_GROUP_ORDER = [
     'Google Gemini — QUOTA GRATUIT',
+    'Albert API (État) — QUOTA GRATUIT',
     'Groq Cloud — QUOTA GRATUIT',
     'Mistral AI — PAY-AS-YOU-GO',
     'OpenRouter — QUOTA GRATUIT',
@@ -603,7 +657,7 @@ export const MODEL_SHORT_NAMES = Object.fromEntries(
 
 export const API_MODEL_MAPPINGS = Object.fromEntries(
     Object.entries(AI_MODELS)
-        .filter(([, m]) => m.providerId === 'openrouter' || m.providerId === 'groq')
+        .filter(([, m]) => m.providerId === 'openrouter' || m.providerId === 'groq' || m.providerId === 'albert')
         .map(([id, m]) => [id, m.apiModelId])
 );
 
@@ -634,6 +688,7 @@ export function getProviderForModel(model) {
     if (AI_MODELS[model]?.providerId) {
         return AI_MODELS[model].providerId;
     }
+    if (model.startsWith('albert-') || model.startsWith('openweight-')) return 'albert';
     if (model.endsWith('-free') || model.endsWith(':free')) return 'openrouter';
     if (model.startsWith('mistral-direct')) return 'mistral';
     if (model.startsWith('gemini')) return 'google';
@@ -655,6 +710,7 @@ export function getProviderForModel(model) {
 export const FALLBACK_CONFIG = (() => {
     const config = {
         google: [],
+        albert: [],
         groq: [],
         mistral: [],
         openrouter: [],
@@ -678,6 +734,7 @@ export const FALLBACK_CONFIG = (() => {
 
 export const PROVIDER_DEFAULT_MODELS = {
     google: FALLBACK_CONFIG.google[0],
+    albert: FALLBACK_CONFIG.albert[0],
     groq: FALLBACK_CONFIG.groq[0],
     mistral: FALLBACK_CONFIG.mistral[0],
     openai: FALLBACK_CONFIG.openai[0],
@@ -688,6 +745,7 @@ export const PROVIDER_DEFAULT_MODELS = {
 
 export const PROVIDER_SHOWCASE_MODELS = {
     google: ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
+    albert: ['albert-openweight-medium', 'albert-openweight-small', 'albert-openweight-large'],
     groq: ['groq-gpt-oss-120b', 'groq-gpt-oss-20b'],
     anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-opus-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],

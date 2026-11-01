@@ -66,6 +66,7 @@ export const SettingsUIManager = {
     renderProviderModelChips() {
         const providerMap = {
             google: 'googleApiKeyGroup',
+            albert: 'albertApiKeyGroup',
             groq: 'groqApiKeyGroup',
             anthropic: 'anthropicApiKeyGroup',
             mistral: 'mistralApiKeyGroup',
@@ -132,6 +133,7 @@ export const SettingsUIManager = {
 
         if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
         if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
+        if (DOM.albertApiKey) appState.albertApiKey = DOM.albertApiKey.value.trim();
         if (DOM.groqApiKey) appState.groqApiKey = DOM.groqApiKey.value.trim();
         if (DOM.openrouterApiKey) appState.openrouterApiKey = DOM.openrouterApiKey.value.trim();
         if (DOM.anthropicApiKey) appState.anthropicApiKey = DOM.anthropicApiKey.value.trim();
@@ -208,6 +210,7 @@ export const SettingsUIManager = {
             enableApiFallback: appState.enableApiFallback,
             openaiApiKey: appState.openaiApiKey,
             googleApiKey: appState.googleApiKey,
+            albertApiKey: appState.albertApiKey,
             groqApiKey: appState.groqApiKey,
             openrouterApiKey: appState.openrouterApiKey,
             anthropicApiKey: appState.anthropicApiKey,
@@ -402,6 +405,7 @@ export const SettingsUIManager = {
     injectProviderIcons() {
         const groupIds = {
             'google': 'googleApiKeyGroup',
+            'albert': 'albertApiKeyGroup',
             'groq': 'groqApiKeyGroup',
             'openrouter': 'openrouterApiKeyGroup',
             'openai': 'openaiApiKeyGroup',

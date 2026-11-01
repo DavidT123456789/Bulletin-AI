@@ -1043,6 +1043,7 @@ export const TrombiZoneEditor = {
             if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation?.();
                 manager._closeStudentPopover(true);
                 return;
             }
@@ -1054,8 +1055,10 @@ export const TrombiZoneEditor = {
         // Close modal on Escape when no overlay confirmation modal is open
         if (e.key === 'Escape') {
             const modal = document.getElementById('trombiWizardModal');
-            if (modal?.classList.contains('visible') && !ModalUI.activeModal) {
+            if (modal?.classList.contains('visible') && (!ModalUI.activeModal || ModalUI.activeModal === modal)) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation?.();
                 manager.close();
             }
             return;

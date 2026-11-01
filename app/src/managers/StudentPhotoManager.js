@@ -96,27 +96,28 @@ export const StudentPhotoManager = {
      * @param {Object} result - Student result object
      * @param {'sm'|'md'|'lg'} size - Avatar size
      * @param {boolean} isSelected - Whether the student is selected
+     * @param {boolean} [includeSelectionOverlay=true] - Whether to include the selection checkmark overlay
      * @returns {string} HTML string
      */
-    getAvatarHTML(result, size = 'sm', isSelected = false) {
+    getAvatarHTML(result, size = 'sm', isSelected = false, includeSelectionOverlay = true) {
         if (!result) return '';
 
         const initials = this.getInitialsFromName(result.nom, result.prenom);
         const sizeClass = `student-avatar--${size}`;
         const selectedClass = isSelected ? 'is-selected' : '';
 
-        const checkmarkHTML = `
+        const checkmarkHTML = includeSelectionOverlay ? `
             <div class="avatar-selection-overlay">
                 <iconify-icon icon="ph:check"></iconify-icon>
             </div>
-        `;
+        ` : '';
 
         // Check if student has a photo
         const photo = result.studentPhoto || result.studentData?.photo;
         if (typeof photo?.data === 'string' && /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/i.test(photo.data)) {
             return `
                 <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${Utils.escapeHtml(String(result.id || ''))}">
-                    <img src="${photo.data}" alt="${Utils.escapeHtml(result.prenom || '')} ${Utils.escapeHtml(result.nom || '')}" class="student-avatar__img" loading="lazy">
+                    <img src="${photo.data}" alt="${Utils.escapeHtml(result.prenom || '')} ${Utils.escapeHtml(result.nom || '')}" class="student-avatar__img" loading="lazy" decoding="async">
                     ${checkmarkHTML}
                 </div>
             `;

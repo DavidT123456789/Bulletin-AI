@@ -266,6 +266,7 @@ export const FocusPanelHistory = {
         html += '</div>';
         popover.innerHTML = html;
 
+        const listEl = popover.querySelector('.history-popover-list');
         if (indicator) {
             const rect = indicator.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom - 20;
@@ -288,7 +289,6 @@ export const FocusPanelHistory = {
 
             // Calculate maxHeight based on available space (up to 400px)
             const availableSpace = placeAbove ? spaceAbove : spaceBelow;
-            const listEl = popover.querySelector('.history-popover-list');
             if (listEl) {
                 const maxListHeight = Math.min(400, Math.max(150, availableSpace - titleHeight));
                 listEl.style.maxHeight = `${maxListHeight}px`;
@@ -296,6 +296,9 @@ export const FocusPanelHistory = {
         }
 
         document.body.appendChild(popover);
+        if (listEl) {
+            this._panel?.bindScrollAffordances?.(listEl);
+        }
 
         popover.querySelectorAll('.history-version-item').forEach(item => {
             item.addEventListener('click', () => {
