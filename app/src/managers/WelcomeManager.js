@@ -80,7 +80,7 @@ export const WelcomeManager = {
 
         const totalWelcomeSteps = 4;
         let isAnimating = false;
-        let currentProvider = 'google';
+        let currentProvider = 'albert';
         let isWelcomeCompleted = false;
 
         // Helpers Defined First
@@ -382,10 +382,10 @@ export const WelcomeManager = {
             }
         };
 
-        // Pré-remplir le champ API key et montrer l'état validé si une clé existe (ou réinitialiser sur Google)
+        // Pré-remplir le champ API key et montrer l'état validé si une clé existe (ou réinitialiser sur Albert)
         const initialProviderMap = [
-            { key: appState.googleApiKey, provider: 'google', radioId: 'providerGoogle' },
             { key: appState.albertApiKey, provider: 'albert', radioId: 'providerAlbert' },
+            { key: appState.googleApiKey, provider: 'google', radioId: 'providerGoogle' },
             { key: appState.groqApiKey, provider: 'groq', radioId: 'providerGroq' },
             { key: appState.mistralApiKey, provider: 'mistral', radioId: 'providerMistral' }
         ];

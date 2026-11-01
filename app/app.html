@@ -2014,47 +2014,6 @@
                                             </button>
                                         </div>
                                         <div class="settings-group-card settings-providers-card">
-                                            <div class="api-key-section" id="googleApiKeyGroup">
-                                                <div class="api-key-header">
-                                                    <div class="api-key-title-group">
-                                                        <span class="api-key-provider"><iconify-icon
-                                                                class="iconify-inline"
-                                                                icon="logos:google-icon"></iconify-icon> Google Gemini</span>
-                                                        <span class="provider-status-badge status-unconfigured" id="googleStatusBadge">
-                                                            <span class="status-dot"></span>
-                                                            <span class="status-text">Non configuré</span>
-                                                        </span>
-                                                    </div>
-                                                    <div class="api-key-links">
-                                                        <a href="https://aistudio.google.com/app/apikey"
-                                                            target="_blank" rel="noopener noreferrer"
-                                                            class="btn-link">Obtenir une clé ↗</a>
-                                                        <a href="https://aistudio.google.com/app/plan_information"
-                                                            target="_blank" rel="noopener noreferrer"
-                                                            class="btn-link btn-link-secondary">Quotas ↗</a>
-                                                    </div>
-                                                </div>
-                                                <div class="provider-models-hint">
-                                                    <span class="hint-label">Modèles :</span>
-                                                    <span class="model-chip">Gemini 3.6 Flash</span>
-                                                    <span class="model-chip">Gemini 3.8 Flash</span>
-                                                    <span class="model-chip">Gemini 3.1 Pro</span>
-                                                </div>
-                                                <div class="api-key-actions">
-                                                    <div class="api-key-input-container">
-                                                        <input type="text" id="googleApiKey"
-                                                            placeholder="AIzaSy..." aria-label="Clé API Google Gemini">
-                                                        <span id="googleApiKeyValidationIcon"
-                                                            class="api-key-validation-icon"></span>
-                                                    </div>
-                                                    <button type="button" id="validateGoogleApiKeyBtn"
-                                                        class="btn btn-purple btn-small" aria-label="Vérifier la clé Google Gemini">Vérifier</button>
-                                                </div>
-                                                <div class="error-message" id="googleApiKeyError"
-                                                    style="display: none;">
-                                                </div>
-                                            </div>
-
                                             <div class="api-key-section" id="albertApiKeyGroup">
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
@@ -2093,6 +2052,47 @@
                                                         class="btn btn-purple btn-small" aria-label="Vérifier la clé Albert API">Vérifier</button>
                                                 </div>
                                                 <div class="error-message" id="albertApiKeyError"
+                                                    style="display: none;">
+                                                </div>
+                                            </div>
+
+                                            <div class="api-key-section" id="googleApiKeyGroup">
+                                                <div class="api-key-header">
+                                                    <div class="api-key-title-group">
+                                                        <span class="api-key-provider"><iconify-icon
+                                                                class="iconify-inline"
+                                                                icon="logos:google-icon"></iconify-icon> Google Gemini</span>
+                                                        <span class="provider-status-badge status-unconfigured" id="googleStatusBadge">
+                                                            <span class="status-dot"></span>
+                                                            <span class="status-text">Non configuré</span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="api-key-links">
+                                                        <a href="https://aistudio.google.com/app/apikey"
+                                                            target="_blank" rel="noopener noreferrer"
+                                                            class="btn-link">Obtenir une clé ↗</a>
+                                                        <a href="https://aistudio.google.com/app/plan_information"
+                                                            target="_blank" rel="noopener noreferrer"
+                                                            class="btn-link btn-link-secondary">Quotas ↗</a>
+                                                    </div>
+                                                </div>
+                                                <div class="provider-models-hint">
+                                                    <span class="hint-label">Modèles :</span>
+                                                    <span class="model-chip">Gemini 3.6 Flash</span>
+                                                    <span class="model-chip">Gemini 3.8 Flash</span>
+                                                    <span class="model-chip">Gemini 3.1 Pro</span>
+                                                </div>
+                                                <div class="api-key-actions">
+                                                    <div class="api-key-input-container">
+                                                        <input type="text" id="googleApiKey"
+                                                            placeholder="AIzaSy..." aria-label="Clé API Google Gemini">
+                                                        <span id="googleApiKeyValidationIcon"
+                                                            class="api-key-validation-icon"></span>
+                                                    </div>
+                                                    <button type="button" id="validateGoogleApiKeyBtn"
+                                                        class="btn btn-purple btn-small" aria-label="Vérifier la clé Google Gemini">Vérifier</button>
+                                                </div>
+                                                <div class="error-message" id="googleApiKeyError"
                                                     style="display: none;">
                                                 </div>
                                             </div>
@@ -2952,12 +2952,12 @@
                                                 </span>
                                             </div>
                                             <div class="help-step-footer-row">
-                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Google Gemini</strong>, <strong>Albert API</strong> (IA souveraine de l'État via ProConnect) ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
+                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Albert API</strong> (IA souveraine de l'État via ProConnect), <strong>Google Gemini</strong> ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
                                                 <div class="help-btn-row">
-                                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-linear"></iconify-icon> Clé Google gratuite
+                                                    <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                        <iconify-icon class="iconify-inline" icon="solar:shield-check-linear"></iconify-icon> Clé Albert (ProConnect)
                                                     </a>
-                                                    <button type="button" class="btn btn-primary btn-small" id="helpOpenSettingsEngineBtn" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
+                                                    <button type="button" class="btn btn-primary btn-small" id="helpOpenSettingsEngineBtn" onclick="window.openSettingsTab('settings-engine', 'albertApiKey')">
                                                         <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> Configurer l'IA
                                                     </button>
                                                 </div>
@@ -3560,24 +3560,24 @@
                             <span class="welcome-title-gradient">Activez votre Assistant</span>
                         </h3>
                         <p class="welcome-subtitle-premium">
-                            Démarrage rapide avec une IA gratuite. Les moteurs payants (OpenAI, Claude…) ou locaux (Ollama) restent accessibles dans les Paramètres.
+                            Démarrage rapide avec <strong>Albert</strong> (IA souveraine de l'État via ProConnect) ou <strong>Gemini</strong>. Les moteurs locaux (Ollama) ou payants restent accessibles dans les Paramètres.
                         </p>
                     </div>
 
                     <div class="welcome-api-setup">
                         <div class="provider-selector-row">
                             <div class="ui-segmented-control" id="welcomeProviderSelector">
-                                <input type="radio" id="providerGoogle" name="welcomeProvider" value="google" checked>
-                                <label for="providerGoogle" class="ui-segment">
-                                    <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                    <span>Gemini</span>
-                                </label>
-                                <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert">
+                                <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert" checked>
                                 <label for="providerAlbert" class="ui-segment">
                                     <iconify-icon class="iconify-inline provider-albert"
                                         icon="solar:shield-check-bold"
-                                        style="color: var(--primary-color);"></iconify-icon>
+                                        style="color: var(--color-blue);"></iconify-icon>
                                     <span>Albert</span>
+                                </label>
+                                <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
+                                <label for="providerGoogle" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
+                                    <span>Gemini</span>
                                 </label>
                                 <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
                                 <label for="providerMistral" class="ui-segment">
@@ -3596,7 +3596,7 @@
 
                         <div class="welcome-api-key-group">
                             <input type="text" id="welcomeApiKeyInput" class="custom-input"
-                                placeholder="Clé API Gemini (AIzaSy...)"
+                                placeholder="Clé API Albert (sk-...)"
                                 autocomplete="off"
                                 autocorrect="off"
                                 autocapitalize="off"
@@ -3612,8 +3612,8 @@
                         </div>
 
                         <div class="welcome-action-links">
-                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
-                                class="get-key-link-mini" id="welcomeGetKeyLink">Obtenir une clé Gemini ↗</a>
+                            <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer"
+                                class="get-key-link-mini" id="welcomeGetKeyLink">Obtenir une clé Albert (ProConnect) ↗</a>
                             <span class="action-separator" id="welcomeSkipApiKeySep">•</span>
                             <button type="button" class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
                                 Configurer plus tard

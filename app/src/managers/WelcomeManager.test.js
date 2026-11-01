@@ -83,6 +83,7 @@ describe('WelcomeManager', () => {
         vi.clearAllMocks();
         localStorage.clear();
         appState.googleApiKey = '';
+        appState.albertApiKey = '';
         appState.groqApiKey = '';
         appState.openrouterApiKey = '';
         appState.mistralApiKey = '';
@@ -96,7 +97,8 @@ describe('WelcomeManager', () => {
             <div id="welcome-step-1" class="welcome-step active"></div>
             <div id="welcome-step-2" class="welcome-step">
                 <div id="welcomeProviderSelector">
-                    <input type="radio" id="providerGoogle" name="welcomeProvider" value="google" checked>
+                    <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert" checked>
+                    <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
                     <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
                     <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
                     <input type="radio" id="providerOpenRouter" name="welcomeProvider" value="openrouter">

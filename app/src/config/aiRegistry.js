@@ -626,8 +626,8 @@ export const AI_MODELS = {
 };
 
 const SELECTOR_GROUP_ORDER = [
-    'Google Gemini — QUOTA GRATUIT',
     'Albert API (État) — QUOTA GRATUIT',
+    'Google Gemini — QUOTA GRATUIT',
     'Groq Cloud — QUOTA GRATUIT',
     'Mistral AI — PAY-AS-YOU-GO',
     'OpenRouter — QUOTA GRATUIT',

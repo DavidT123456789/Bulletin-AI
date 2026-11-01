@@ -145,7 +145,7 @@ export const ModelSelectionManager = {
 
         // 0 clé configurée -> Direction les paramètres directement !
         if (available.length === 0) {
-            this.openAllSettings('googleApiKeyGroup');
+            this.openAllSettings('albertApiKeyGroup');
             return;
         }
 

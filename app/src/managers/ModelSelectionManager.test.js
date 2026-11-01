@@ -66,7 +66,7 @@ describe('ModelSelectionManager', () => {
         expect(ModelSelectionManager.isOpen).toBe(false);
         expect(UI.openModal).toHaveBeenCalledWith(DOM.settingsModal);
         expect(UI.showSettingsTab).toHaveBeenCalledWith('settings-engine');
-        expect(UI.highlightSettingsElement).toHaveBeenCalledWith('googleApiKeyGroup', { tab: 'settings-engine' });
+        expect(UI.highlightSettingsElement).toHaveBeenCalledWith('albertApiKeyGroup', { tab: 'settings-engine' });
     });
 
     it('devrait ouvrir le popover rapide si au moins un modèle est disponible', () => {

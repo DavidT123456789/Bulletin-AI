@@ -1137,7 +1137,7 @@ export const UI = {
             }
             if (DOM.headerGenDashboard) {
                 DOM.headerGenDashboard.classList.add('unconfigured');
-                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Google Gemini (100% gratuit)</span>`;
+                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (IA de l'État) ou Gemini (100% gratuit)</span>`;
                 if (TooltipsUI && TooltipsUI.updateTooltip) {
                     TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
                 } else {
