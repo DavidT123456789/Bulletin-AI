@@ -212,7 +212,14 @@ export default defineConfig({
           if (normalizedId.includes('/src/services/')) {
             return 'services';
           }
-          if (normalizedId.includes('/src/utils/')) {
+          if (
+            normalizedId.includes('/src/utils/') ||
+            normalizedId.includes('/src/config/') ||
+            normalizedId.includes('/src/state/') ||
+            normalizedId.includes('/src/core/') ||
+            normalizedId.includes('/src/data/') ||
+            normalizedId.includes('vite/preload-helper')
+          ) {
             return 'utils';
           }
         }
