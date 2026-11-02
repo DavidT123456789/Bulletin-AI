@@ -18,8 +18,8 @@
     gap: 12px;
     padding: 12.5px 14.5px;
     min-width: 0;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-control);
     font-size: 14px;
     color: var(--text-primary);
@@ -29,40 +29,42 @@
     text-align: left;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .custom-dropdown-trigger:hover:not(.disabled) {
-        border-color: rgba(var(--primary-color-rgb), 0.4);
-    }
+.custom-dropdown-trigger:hover:not(.disabled) {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-hover);
 }
 
 .custom-dropdown-trigger:active:not(.disabled) {
     transform: scale(0.985);
 }
 
-.custom-dropdown-trigger:focus-visible {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
-}
-
+.custom-dropdown-trigger:focus-visible,
 .custom-dropdown.open .custom-dropdown-trigger {
     outline: none;
+    background-color: var(--surface-color);
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.14);
 }
 
-/* Mode sombre : Anneau satiné sobre et moderne (Google / iOS 2026) identique aux inputs */
+/* Mode sombre : Élévation satinée unifiée (Google / iOS 2026) */
+[data-theme="dark"] .custom-dropdown-trigger {
+    background-color: rgba(255, 255, 255, 0.045);
+    border-color: var(--border-color-strong);
+}
+
 [data-theme="dark"] .custom-dropdown-trigger:hover:not(.disabled) {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    background-image: none !important;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-color-hover);
+    background-image: none;
 }
 
 [data-theme="dark"] .custom-dropdown-trigger:focus-visible,
 [data-theme="dark"] .custom-dropdown.open .custom-dropdown-trigger {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
-    background-image: none !important;
-    animation: none !important;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
+    background-image: none;
+    animation: none;
 }
 
 .custom-dropdown-value {
@@ -82,9 +84,17 @@
 }
 
 .custom-dropdown-arrow {
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     font-size: 12px;
-    transition: transform 0.24s cubic-bezier(0.34, 1.3, 0.64, 1);
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: transform 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), color var(--transition-fast);
+}
+
+.custom-dropdown-trigger:hover:not(.disabled) .custom-dropdown-arrow,
+.custom-dropdown.open .custom-dropdown-arrow {
+    color: var(--text-primary);
 }
 
 .custom-dropdown.open .custom-dropdown-arrow {
@@ -127,25 +137,27 @@
 }
 
 .custom-dropdown[data-for="aiModelSelect"] .custom-dropdown-menu {
-    min-width: 300px;
+    width: 320px;
+    max-width: calc(100vw - 24px);
     left: auto;
     right: 0;
+    border-radius: var(--dropdown-radius, 16px);
 }
 
 /* === Optgroup (groupe d'options) === */
 .custom-dropdown-group {
-    padding: 4px 0;
+    padding: 2px 0;
 }
 
-.custom-dropdown-group:not(:first-child) {
+.custom-dropdown-group:not(.group-all-disabled) ~ .custom-dropdown-group:not(.group-all-disabled) {
     border-top: 1px solid var(--border-color);
     margin-top: 4px;
-    padding-top: 8px;
+    padding-top: 6px;
 }
 
 .custom-dropdown-group-label {
-    padding: 6px 12px 4px;
-    font-size: 0.73rem;
+    padding: 6px 10px 4px;
+    font-size: 0.74rem;
     font-weight: 600;
     line-height: 1.2;
     text-transform: none;
@@ -153,27 +165,23 @@
     color: var(--text-tertiary);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     min-width: 0;
 }
 
 /* === Icônes des providers dans les labels de groupe === */
 .provider-icon {
-    font-size: 18px;
-    /* Un peu plus grand pour lisibilité */
-    width: 20px;
+    font-size: 17px;
+    width: 18px;
     height: 18px;
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-xs);
     background: transparent !important;
-    /* Force la suppression de tout fond */
 }
-
-/* Google - Logo officiel (couleurs d'origine) */
-/* .provider-google: Pas de couleur forcée */
 
 /* Albert API (État / DINUM) - Bleu institutionnel */
 .provider-albert {
@@ -187,94 +195,22 @@
     transform: scale(1.2);
 }
 
-/* OpenRouter gratuit - Accent primaire pour le "gratuit" */
+/* OpenRouter */
 .provider-openrouter {
     color: var(--success-color);
     transform: scale(1.3);
 }
 
-/* OpenRouter payant */
-.provider-openrouter-paid {
-    color: var(--purple-color);
-    transform: scale(1.3);
-}
-
-/* OpenAI - Logo officiel (couleurs d'origine) */
-/* .provider-openai: Pas de couleur forcée */
-
 /* Ollama (local) */
 .provider-ollama {
-    color: #708090; /* Gris acier professionnel */
+    color: #708090;
     transform: scale(1.3);
 }
 
-/* Anthropic (Claude) - Logo officiel (couleurs d'origine) */
-/* .provider-anthropic: Pas de couleur forcée */
-
-/* Mistral - Icône Solar donc on garde la couleur */
+/* Mistral */
 .provider-mistral {
     color: var(--color-orange);
     transform: scale(1.3);
-}
-
-/* === Badges de suffix (GRATUIT, PAYANT, LOCAL) === */
-.provider-suffix {
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: var(--radius-xs);
-    margin-left: auto;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    line-height: 1.4;
-    white-space: nowrap;
-}
-
-.provider-suffix-gratuit,
-.provider-suffix-quota {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-color);
-}
-
-.provider-suffix-payant,
-.provider-suffix-pay-as-you-go {
-    background: var(--purple-light);
-    color: var(--purple-color);
-}
-
-.provider-suffix-local {
-    background: rgba(var(--text-secondary-rgb), 0.12);
-    color: var(--text-secondary);
-}
-
-.provider-suffix-default {
-    background: rgba(var(--text-secondary-rgb), 0.10);
-    color: var(--text-secondary);
-}
-
-/* Mode sombre - contraste élevé et lisibilité optimale */
-[data-theme="dark"] .provider-suffix-gratuit,
-[data-theme="dark"] .provider-suffix-quota {
-    background: rgba(16, 185, 129, 0.20);
-    color: #34d399;
-}
-
-[data-theme="dark"] .provider-suffix-payant,
-[data-theme="dark"] .provider-suffix-pay-as-you-go {
-    background: rgba(167, 139, 250, 0.20);
-    color: #c4b5fd;
-}
-
-[data-theme="dark"] .provider-suffix-local {
-    background: rgba(var(--text-secondary-rgb), 0.16);
-    color: #cbd5e1;
-}
-
-[data-theme="dark"] .provider-suffix-default {
-    background: rgba(var(--text-secondary-rgb), 0.14);
-    color: var(--text-secondary);
 }
 
 /* Mode sombre - ajustements subtils */
@@ -285,7 +221,6 @@
 [data-theme="dark"] .provider-openai,
 [data-theme="dark"] .provider-anthropic {
     filter: brightness(0) invert(1);
-    /* Force les icônes en blanc pour une visibilité maximale sur fond sombre */
 }
 
 
@@ -293,16 +228,15 @@
 .custom-dropdown-option {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
-    border-radius: var(--dropdown-item-radius-sm);
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: var(--dropdown-item-radius, 10px);
     cursor: pointer;
     font-size: 0.84rem;
     font-weight: 450;
     color: var(--text-primary);
     transition: all var(--transition-fast);
     margin-bottom: 2px;
-    /* Séparation pour effet "pilule" */
     background: transparent;
     scroll-margin-top: 6px;
     scroll-margin-bottom: 6px;
@@ -321,7 +255,7 @@
 }
 
 .custom-dropdown-option:active:not(.disabled) {
-    background-color: rgba(var(--primary-color-rgb), 0.12);
+    background-color: var(--item-active-bg);
 }
 
 /* Sélection subtile et cohérente */
@@ -338,7 +272,7 @@
 }
 
 .custom-dropdown-option-check {
-    width: 16px;
+    width: 18px;
     color: var(--text-primary);
     opacity: 0;
     transition: opacity var(--transition-fast);
@@ -359,7 +293,7 @@
 }
 
 .custom-dropdown-option-text .model-name {
-    color: var(--text-primary);
+    color: inherit;
 }
 
 .custom-dropdown-option-text .model-qualifier {
@@ -374,29 +308,34 @@
 
 /* === Scrollbar personnalisée (curseur visuel 5px + 2px d'air côté bordure) === */
 @supports not selector(::-webkit-scrollbar) {
-    .custom-dropdown-menu {
+    .custom-dropdown-menu,
+    .model-dropdown-list {
         scrollbar-width: thin;
         scrollbar-color: var(--border-color-strong) transparent;
     }
 }
 
-.custom-dropdown-menu::-webkit-scrollbar {
+.custom-dropdown-menu::-webkit-scrollbar,
+.model-dropdown-list::-webkit-scrollbar {
     width: 9px;
 }
 
-.custom-dropdown-menu::-webkit-scrollbar-track {
+.custom-dropdown-menu::-webkit-scrollbar-track,
+.model-dropdown-list::-webkit-scrollbar-track {
     background: transparent;
     margin-block: 6px;
 }
 
-.custom-dropdown-menu::-webkit-scrollbar-thumb {
+.custom-dropdown-menu::-webkit-scrollbar-thumb,
+.model-dropdown-list::-webkit-scrollbar-thumb {
     background-color: var(--border-color-strong);
     border-radius: var(--radius-pill);
     border: 2px solid transparent;
     background-clip: padding-box;
 }
 
-.custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
+.custom-dropdown-menu::-webkit-scrollbar-thumb:hover,
+.model-dropdown-list::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-tertiary);
 }
 
@@ -431,145 +370,10 @@
 }
 
 /* ====================================================================
-   Styles spécifiques pour le dropdown de tri (#sortSelect)
-   Harmonisé avec le style global des dropdowns
-   ==================================================================== */
-
-/* Dropdown de tri : trigger plus compact */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-trigger {
-    padding: 8px 12px;
-    font-size: 13px;
-    gap: 8px;
-    min-width: 120px;
-    height: 40px;
-    border-radius: var(--dropdown-radius-sm);
-}
-
-/* Dropdown de tri : menu compact */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-menu {
-    min-width: 140px;
-    padding: 6px;
-}
-
-/* Dropdown de tri : options sans coche, plus compactes */
-/* Dropdown de tri : options sans coche, plus compactes */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option {
-    padding: 6px 12px;
-    /* Harmonisation global */
-    font-size: 13px;
-    gap: 0;
-    border-radius: var(--dropdown-item-radius-sm);
-    color: var(--text-primary);
-    transition: background-color var(--transition-fast);
-}
-
-/* Hover harmonisé avec le global (Fond neutre, texte foncé) */
-@media (hover: hover) and (pointer: fine) {
-    .custom-dropdown[data-for="sortSelect"] .custom-dropdown-option:hover {
-        background-color: var(--item-hover-bg);
-        color: var(--text-primary);
-    }
-
-    .custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected:hover {
-        background: rgba(var(--primary-color-rgb), 0.18);
-    }
-}
-
-/* Supprimer l'outline bleu voyant sur l'option focused */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.focused {
-    outline: none;
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-}
-
-/* ====================================================================
-   Styles spécifiques pour le dropdown de chargement d'élève (#loadStudentSelect)
-   ==================================================================== */
-
-/* Dropdown élève sidebar : style par défaut suffit */
-.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-menu {
-    max-height: 280px;
-}
-
-/* Option "nouvel élève" en italique */
-.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-option[data-value=""] {
-    font-style: italic;
-    color: var(--text-secondary);
-}
-
-.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-option[data-value=""]:hover {
-    color: var(--text-primary);
-    background-color: var(--item-hover-bg);
-    /* Harmonisation */
-}
-
-/* ====================================================================
-   Styles spécifiques pour le dropdown de prévisualisation (#previewStudentSelect)
-   ==================================================================== */
-
-.custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-menu {
-    max-height: 320px;
-}
-
-/* Labels de groupe plus visibles */
-.custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
-    color: var(--primary-bright);
-}
-
-/* ====================================================================
-   Styles spécifiques pour le dropdown de matière (#settingsSubjectSelect)
-   Enlever les overrides inutiles maintenant que le global est stylé
-   ==================================================================== */
-
-/* Cacher la coche dans le dropdown de matière */
-.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option-check {
-    display: none;
-}
-
-/* Options plus compactes (légèrement plus petit que le global si désiré, ou identique) */
-.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option {
-    padding: 6px 12px;
-    /* Identique au global pour cohérence */
-    font-size: 13px;
-    gap: 0;
-}
-
-/* Sélection (déjà géré par le global, mais on garde pour s'assurer que c'est bon) */
-.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option.selected {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    font-weight: 600;
-}
-
-/* ====================================================================
-   Sélecteur IA épuré (#aiModelSelect) : masquage des groupes sans clé
-   et pied de page contextuel
+   Sélecteur IA épuré (#aiModelSelect) : groupes sans clé API masqués
    ==================================================================== */
 .custom-dropdown-group.group-all-disabled {
     display: none;
-}
-
-.custom-dropdown-hint {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 9px 12px;
-    margin: 6px -6px -6px -6px;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.76rem;
-    line-height: 1.4;
-    color: var(--text-tertiary);
-    background: var(--item-hover-bg, rgba(255, 255, 255, 0.03));
-    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
-}
-
-.custom-dropdown-hint iconify-icon {
-    font-size: 0.95rem;
-    color: var(--text-tertiary);
-    flex-shrink: 0;
-    margin-top: 1px;
 }
 
 .custom-dropdown-empty-notice {

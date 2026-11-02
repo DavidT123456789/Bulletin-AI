@@ -455,8 +455,8 @@ export const ImportWizardManager = {
 
                 return `
                     <button type="button" class="wizard-period-option ${isActive ? 'active' : ''}" data-period="${p}">
+                        <span class="wizard-period-option-check"><iconify-icon icon="ph:check-bold"></iconify-icon></span>
                         <span>${pLabel}</span>
-                        ${isActive ? '<iconify-icon icon="ph:check-bold"></iconify-icon>' : ''}
                     </button>
                 `;
             }).join('');

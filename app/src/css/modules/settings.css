@@ -744,7 +744,7 @@
 
 [data-theme="dark"] .toggle-switch input:checked+.slider {
     background: var(--toggle-track-on);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+    box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -763,7 +763,7 @@
 
     [data-theme="dark"] .toggle-switch:hover input:checked+.slider {
         background: var(--toggle-track-on-hover);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+        box-shadow: none;
     }
 }
 
@@ -2091,14 +2091,13 @@
 }
 
 .settings-tab-header {
-    margin: 0 0 -4px 0;
-    padding: 0 0 12px 0;
-    border-bottom: 1px solid var(--border-color);
+    margin: 0;
+    padding: 0 0 4px 0;
 }
 
 #helpModal .settings-tab-header {
-    margin: 0 0 -2px 0;
-    padding: 0 0 10px 0;
+    margin: 0;
+    padding: 0 0 2px 0;
 }
 
 .settings-tab-title {
@@ -2134,11 +2133,11 @@
 
 .settings-group-title {
     margin: 0;
-    font-size: 0.82rem;
-    font-weight: 500;
+    font-size: 0.84rem;
+    font-weight: 600;
     text-transform: none;
-    letter-spacing: normal;
-    color: var(--text-tertiary);
+    letter-spacing: -0.005em;
+    color: var(--text-primary);
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -2285,6 +2284,11 @@ label.settings-row-title {
 .settings-group-card .number-input-wrapper {
     background: var(--bg-secondary);
     height: 32px;
+}
+
+[data-theme="dark"] .settings-group-card .number-input-wrapper {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: var(--border-color-strong);
 }
 
 /* API Provider Rows inside Single-Level Card */

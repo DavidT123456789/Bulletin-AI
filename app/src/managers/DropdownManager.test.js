@@ -188,15 +188,57 @@ describe('DropdownManager', () => {
     });
 
     describe('getProviderFromLabel() & formatGroupLabel()', () => {
-        it('devrait extraire le bon fournisseur et formater le badge gratuit / payant', () => {
+        it('devrait extraire le bon fournisseur et formater l\'en-tête épuré sans badge superflu', () => {
             const googleConfig = DropdownManager.getProviderFromLabel('Google Gemini — Quota gratuit');
             expect(googleConfig).toBeDefined();
             expect(googleConfig.name).toBe('Google Gemini');
 
             const formatted = DropdownManager.formatGroupLabel('Google Gemini — Quota gratuit');
-            expect(formatted).toContain('provider-suffix-gratuit');
-            expect(formatted).toContain('Quota gratuit');
+            expect(formatted).toContain('provider-google');
             expect(formatted).toContain('Google Gemini');
+            expect(formatted).not.toContain('Quota gratuit');
+        });
+
+        it('devrait harmoniser #aiModelSelect (trigger sans qualificatif, badge sans parenthèses, coche à gauche alignée sur l\'icône fournisseur)', () => {
+            document.body.innerHTML = `
+                <select id="aiModelSelect">
+                    <optgroup label="Albert API (État) — QUOTA GRATUIT">
+                        <option value="albert-large" selected>Mistral Small 3.2 24B (Recommandé)</option>
+                    </optgroup>
+                    <optgroup label="OpenRouter — PAYANT">
+                        <option value="or-free" disabled>Llama 3.3 (Gratuit)</option>
+                        <option value="or-paid" disabled>Claude 3.7 (Payant)</option>
+                    </optgroup>
+                </select>
+                <div id="apiKeysAccordion"></div>
+            `;
+            const selectEl = document.querySelector('#aiModelSelect');
+            const accordion = document.querySelector('#apiKeysAccordion');
+            accordion.scrollIntoView = vi.fn();
+
+            const wrapper = DropdownManager.enhance(selectEl);
+
+            // Trigger épuré sans "(Recommandé)"
+            expect(wrapper.querySelector('.value-text').textContent).toBe('Mistral Small 3.2 24B');
+
+            // Option avec badge sans parenthèses et coche dans la gouttière gauche (avant le texte)
+            const firstOpt = wrapper.querySelector('.custom-dropdown-option[data-value="albert-large"]');
+            const badge = firstOpt.querySelector('.model-dropdown-item-badge');
+            expect(badge).not.toBeNull();
+            expect(badge.textContent).toBe('Recommandé');
+            expect(firstOpt.firstElementChild.classList.contains('custom-dropdown-option-check')).toBe(true);
+
+            // Le groupe OpenRouter désactivé compte pour 1 fournisseur
+            const hint = wrapper.querySelector('.custom-dropdown-hint');
+            expect(hint).not.toBeNull();
+            expect(hint.textContent).toContain('1 autre fournisseur disponible ci-dessous');
+
+            // Clic sur le hint ferme le menu et scrolle vers #apiKeysAccordion
+            DropdownManager.toggle(wrapper);
+            expect(wrapper.classList.contains('open')).toBe(true);
+            hint.click();
+            expect(wrapper.classList.contains('open')).toBe(false);
+            expect(accordion.scrollIntoView).toHaveBeenCalled();
         });
     });
 });

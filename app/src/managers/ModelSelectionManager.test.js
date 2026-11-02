@@ -89,6 +89,11 @@ describe('ModelSelectionManager', () => {
         expect(items.length).toBeGreaterThan(0);
 
 
+        // Doit regrouper par fournisseur avec l'en-tête formaté
+        const groupLabels = DOM.headerModelDropdown.querySelectorAll('.custom-dropdown-group-label');
+        expect(groupLabels.length).toBe(1);
+        expect(groupLabels[0].textContent).toContain('Google Gemini');
+
         // Doit contenir le vrai modèle Gemini 3.6 Flash
         const flashItem = Array.from(items).find(item => item.getAttribute('data-model-id') === 'gemini-3.6-flash');
         expect(flashItem).toBeTruthy();

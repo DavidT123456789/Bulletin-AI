@@ -72,7 +72,7 @@ export const DropdownManager = {
 
         const arrow = document.createElement('span');
         arrow.className = 'custom-dropdown-arrow';
-        arrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>';
+        arrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>';
 
         trigger.appendChild(valueSpan);
         trigger.appendChild(arrow);
@@ -105,6 +105,13 @@ export const DropdownManager = {
         });
 
         menu.addEventListener('click', (e) => {
+            const hint = e.target.closest('.custom-dropdown-hint');
+            if (hint) {
+                e.stopPropagation();
+                this.closeAll();
+                document.getElementById('apiKeysAccordion')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+                return;
+            }
             const option = e.target.closest('.custom-dropdown-option');
             // Ne pas sélectionner les options désactivées
             if (option && !option.classList.contains('disabled')) {
@@ -118,11 +125,6 @@ export const DropdownManager = {
         return wrapper;
     },
 
-    /**
-     * Identifie le provider associé à un label de groupe.
-     * @param {string} labelText 
-     * @returns {Object|null} Configuration du provider ou null
-     */
     /**
      * Identifie le provider associé à un label de groupe.
      * @param {string} labelText 
@@ -150,37 +152,18 @@ export const DropdownManager = {
     },
 
     /**
-     * Transforme un label de groupe avec emojis en HTML avec icônes professionnelles.
+     * Formate un label de groupe avec l'icône et le nom épuré du fournisseur.
      * @param {string} labelText - Le texte du label original
-     * @returns {string} Le HTML avec des icônes Font Awesome
+     * @returns {string} Le HTML avec l'icône du fournisseur
      */
     formatGroupLabel(labelText) {
         const config = this.getProviderFromLabel(labelText);
 
         if (config) {
-            // Extraire la partie après le tiret séparateur (— ou -)
-            const suffixMatch = labelText.match(/[—–-]\s*(.+)$/);
-            let suffix = '';
-            if (suffixMatch) {
-                const fullSuffix = suffixMatch[1].trim();
-                let badgeClass = 'provider-suffix-default';
-                const lower = fullSuffix.toLowerCase();
-                if (lower.includes('gratuit') || lower.includes('quota') || lower.includes('free')) {
-                    badgeClass = 'provider-suffix-gratuit';
-                } else if (lower.includes('payant') || lower.includes('pay-as-you-go')) {
-                    badgeClass = 'provider-suffix-payant';
-                } else if (lower.includes('local')) {
-                    badgeClass = 'provider-suffix-local';
-                }
-                suffix = ` <span class="provider-suffix ${badgeClass}">${fullSuffix}</span>`;
-            }
-
-            // Construction de l'icône via la config
             const styleAttr = config.style ? ` style="${config.style}"` : '';
-            return `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"${styleAttr}></iconify-icon> ${config.name}${suffix}`;
+            return `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"${styleAttr}></iconify-icon> <span>${config.name}</span>`;
         }
 
-        // Fallback
         return labelText;
     },
 
@@ -191,7 +174,8 @@ export const DropdownManager = {
         menu.innerHTML = '';
         let focusIndex = 0;
         let hasVisibleOptions = false;
-        let hiddenGroupsCount = 0;
+        const hiddenProviders = new Set();
+        const isAiModelSelect = selectEl.id === 'aiModelSelect';
 
         Array.from(selectEl.children).forEach(child => {
             if (child.tagName === 'OPTGROUP') {
@@ -201,16 +185,16 @@ export const DropdownManager = {
                 const options = Array.from(child.children);
                 const allDisabled = options.length > 0 && options.every(opt => opt.disabled);
 
-                if (allDisabled && selectEl.id === 'aiModelSelect') {
+                if (allDisabled && isAiModelSelect) {
                     group.classList.add('group-all-disabled');
-                    hiddenGroupsCount++;
+                    const providerConfig = this.getProviderFromLabel(child.label);
+                    hiddenProviders.add(providerConfig?.name || child.label);
                 } else {
                     hasVisibleOptions = true;
                 }
 
                 const label = document.createElement('div');
                 label.className = 'custom-dropdown-group-label';
-                // Utiliser innerHTML pour permettre les icônes Font Awesome
                 label.innerHTML = this.formatGroupLabel(child.label);
                 group.appendChild(label);
 
@@ -232,17 +216,27 @@ export const DropdownManager = {
             }
         });
 
-        // Pour le sélecteur de modèle IA, afficher une information contextuelle propre et concise
-        if (selectEl.id === 'aiModelSelect') {
+        // Pour le sélecteur de modèle IA, afficher un pied de page contextuel harmonisé
+        if (isAiModelSelect) {
             if (!hasVisibleOptions) {
                 const emptyNotice = document.createElement('div');
                 emptyNotice.className = 'custom-dropdown-empty-notice';
                 emptyNotice.innerHTML = '<iconify-icon icon="solar:info-circle-linear"></iconify-icon> <span>Aucun modèle disponible. Configurez une clé API ci-dessous.</span>';
                 menu.appendChild(emptyNotice);
-            } else if (hiddenGroupsCount > 0) {
-                const hint = document.createElement('div');
+            } else if (hiddenProviders.size > 0) {
+                const divider = document.createElement('div');
+                divider.className = 'dropdown-divider';
+                divider.setAttribute('role', 'separator');
+                menu.appendChild(divider);
+
+                const count = hiddenProviders.size;
+                const hintLabel = count > 1
+                    ? `${count} autres fournisseurs disponibles ci-dessous`
+                    : `1 autre fournisseur disponible ci-dessous`;
+                const hint = document.createElement('button');
+                hint.type = 'button';
                 hint.className = 'custom-dropdown-hint';
-                hint.innerHTML = `<iconify-icon icon="solar:key-linear"></iconify-icon> <span>${hiddenGroupsCount} autre(s) fournisseur(s) disponibles ci-dessous</span>`;
+                hint.innerHTML = `<iconify-icon icon="solar:key-linear"></iconify-icon> <span>${hintLabel}</span>`;
                 menu.appendChild(hint);
             }
         }
@@ -283,9 +277,11 @@ export const DropdownManager = {
         const textSpan = document.createElement('span');
         textSpan.className = 'custom-dropdown-option-text';
 
-        // Sépare élégamment le nom du modèle et son qualificatif entre parenthèses
+        // Sépare élégamment le libellé et son qualificatif (hors symboles de ponctuation d'1 caractère comme (;))
         const qualifierMatch = optionEl.textContent.match(/^(.*?)\s*\(([^)]+)\)$/);
-        if (qualifierMatch) {
+        if (qualifierMatch && qualifierMatch[2].length > 1) {
+            textSpan.innerHTML = `<span class="model-name">${qualifierMatch[1]}</span> <span class="model-dropdown-item-badge">${qualifierMatch[2]}</span>`;
+        } else if (qualifierMatch) {
             textSpan.innerHTML = `<span class="model-name">${qualifierMatch[1]}</span> <span class="model-qualifier">(${qualifierMatch[2]})</span>`;
         } else {
             textSpan.textContent = optionEl.textContent;
@@ -318,7 +314,8 @@ export const DropdownManager = {
                 }
             }
 
-            valueSpan.innerHTML = `${iconHtml}<span class="value-text">${selectedOption.textContent}</span>`;
+            const displayText = selectedOption.textContent.replace(/\s*\([^)]{2,}\)$/, '');
+            valueSpan.innerHTML = `${iconHtml}<span class="value-text">${displayText}</span>`;
             valueSpan.classList.remove('placeholder');
         } else {
             valueSpan.innerHTML = '<span class="value-text">Sélectionner...</span>';

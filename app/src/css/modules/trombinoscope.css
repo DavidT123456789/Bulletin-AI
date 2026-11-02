@@ -1061,7 +1061,7 @@
     min-width: 0;
     height: 30px;
     padding: 0 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-sm, 6px);
     background-color: var(--surface-color);
     color: var(--text-primary);
@@ -1078,8 +1078,8 @@
 }
 
 [data-theme="dark"] .assignment-combobox-btn {
-    background-color: var(--bg-secondary);
-    border-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.045);
+    border-color: var(--border-color-strong);
 }
 
 .assignment-combobox-btn.is-placeholder .assignment-combobox-text {
@@ -1088,12 +1088,13 @@
 }
 
 .assignment-combobox-btn:hover {
-    border-color: var(--text-quaternary);
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-hover);
 }
 
 [data-theme="dark"] .assignment-combobox-btn:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    background-color: var(--bg-color);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-color-hover);
 }
 
 .assignment-combobox-text {
@@ -1114,7 +1115,7 @@
 }
 
 .assignment-combobox-btn:hover .assignment-select-chevron {
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 .assignment-combobox-btn[aria-expanded="true"] .assignment-select-chevron {
@@ -1136,20 +1137,16 @@
     left: 20px;
     right: 14px;
     z-index: 60;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    background: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: trombiPopoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme="dark"] .trombi-student-popover {
-    background: var(--bg-tertiary);
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
 @keyframes trombiPopoverIn {

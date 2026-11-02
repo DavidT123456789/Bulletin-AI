@@ -7,7 +7,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { appState } from '../state/State.js';
-import { MODEL_SELECTOR_CONFIG, MODEL_SHORT_NAMES, PROVIDER_CONFIG, getProviderForModel } from '../config/aiRegistry.js';
+import { MODEL_SELECTOR_CONFIG, MODEL_SHORT_NAMES } from '../config/aiRegistry.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { UI } from './UIManager.js';
@@ -108,25 +108,15 @@ export const ModelSelectionManager = {
         MODEL_SELECTOR_CONFIG.forEach(group => {
             group.models.forEach(modelInfo => {
                 if (SettingsUIManager.isModelAvailable(modelInfo.id)) {
-                    const provider = getProviderForModel(modelInfo.id);
                     available.push({
                         ...modelInfo,
                         name: MODEL_SHORT_NAMES[modelInfo.id] || modelInfo.id,
-                        groupLabel: group.label,
-                        provider
+                        groupLabel: group.label
                     });
                 }
             });
         });
         return available;
-    },
-
-    /**
-     * Indique si au moins un modèle IA est utilisable.
-     * @returns {boolean}
-     */
-    hasAnyAvailableModel() {
-        return this.getAvailableModels().length > 0;
     },
 
     /**
@@ -220,41 +210,39 @@ export const ModelSelectionManager = {
     },
 
     /**
-     * Génère dynamiquement le HTML du menu déroulant avec les VRAIS modèles disponibles.
+     * Génère dynamiquement le HTML du menu déroulant avec les modèles disponibles regroupés par fournisseur.
      */
     renderDropdown() {
         const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
         if (!dropdown) return;
 
-        const availableModels = this.getAvailableModels();
+        let html = `<div class="model-dropdown-list">`;
 
-        let html = `
-            <div class="model-dropdown-section-title">
-                <span>Modèle IA actif</span>
-                <span class="model-dropdown-count-badge">${availableModels.length} dispo.</span>
-            </div>
-            <div class="model-dropdown-list">
-        `;
-
-        availableModels.forEach(m => {
-            const isSelected = m.id === appState.currentAIModel;
-            const pConfig = PROVIDER_CONFIG[m.provider] || {};
-            const iconAttr = pConfig.style ? ` style="${pConfig.style}"` : '';
+        MODEL_SELECTOR_CONFIG.forEach(group => {
+            const availableInGroup = group.models.filter(m => SettingsUIManager.isModelAvailable(m.id));
+            if (availableInGroup.length === 0) return;
 
             html += `
-                <button type="button" class="model-dropdown-item ${isSelected ? 'active' : ''}" data-model-id="${m.id}" role="menuitem">
-                    <span class="model-dropdown-item-icon">
-                        <iconify-icon icon="${pConfig.icon || 'solar:cpu-linear'}" class="${pConfig.class || ''}"${iconAttr}></iconify-icon>
-                    </span>
-                    <span class="model-dropdown-item-details">
+                <div class="custom-dropdown-group">
+                    <div class="custom-dropdown-group-label">${DropdownManager.formatGroupLabel(group.label)}</div>
+            `;
+
+            availableInGroup.forEach(m => {
+                const isSelected = m.id === appState.currentAIModel;
+                const name = MODEL_SHORT_NAMES[m.id] || m.id;
+
+                html += `
+                    <button type="button" class="model-dropdown-item ${isSelected ? 'active' : ''}" data-model-id="${m.id}" role="menuitem">
+                        <span class="model-dropdown-item-check"><iconify-icon icon="ph:check-bold"></iconify-icon></span>
                         <span class="model-dropdown-item-name">
-                            ${m.name}
+                            <span class="model-name">${name}</span>
                             ${m.qualifier ? `<span class="model-dropdown-item-badge">${m.qualifier}</span>` : ''}
                         </span>
-                    </span>
-                    ${isSelected ? `<span class="model-dropdown-item-check"><iconify-icon icon="ph:check-bold"></iconify-icon></span>` : ''}
-                </button>
-            `;
+                    </button>
+                `;
+            });
+
+            html += `</div>`;
         });
 
         html += `

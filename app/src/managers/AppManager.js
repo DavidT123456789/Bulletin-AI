@@ -98,10 +98,6 @@ export const App = {
             SettingsUIManager.populateModelSelector();
             if (DOM.aiModelSelect && DOM.aiModelSelect.style.display !== 'none') DropdownManager.enhance(DOM.aiModelSelect);
             SettingsUIManager.updateApiStatusDisplay();
-            if (DOM.sortSelect) DropdownManager.enhance(DOM.sortSelect);
-            if (DOM.loadStudentSelect) DropdownManager.enhance(DOM.loadStudentSelect);
-            if (DOM.previewStudentSelect) DropdownManager.enhance(DOM.previewStudentSelect);
-            if (DOM.settingsSubjectSelect) DropdownManager.enhance(DOM.settingsSubjectSelect);
         });
 
         // 7. Gestion des classes

@@ -341,14 +341,14 @@ export const AI_MODELS = {
         description: "<strong>Français</strong> Mistral Large. Le modèle le plus puissant de Mistral."
     },
 
-    // 4. OPENROUTER — QUOTA GRATUIT
+    // 4. OPENROUTER
     'llama-3.3-70b-free': {
         id: 'llama-3.3-70b-free',
         providerId: 'openrouter',
         apiModelId: 'meta-llama/llama-3.3-70b-instruct:free',
         shortName: 'Llama 3.3 70B',
-        qualifier: 'Journalier',
-        selectorGroup: 'OpenRouter — QUOTA GRATUIT',
+        qualifier: 'Gratuit',
+        selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
         isReasoning: false,
         timeoutMs: 22000,
@@ -630,7 +630,6 @@ const SELECTOR_GROUP_ORDER = [
     'Google Gemini — QUOTA GRATUIT',
     'Groq Cloud — QUOTA GRATUIT',
     'Mistral AI — PAY-AS-YOU-GO',
-    'OpenRouter — QUOTA GRATUIT',
     'OpenRouter — PAYANT',
     'OpenAI — PAYANT',
     'Anthropic Claude — PAYANT',
