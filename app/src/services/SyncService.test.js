@@ -6,6 +6,7 @@ vi.mock('../managers/StorageManager.js', () => ({
     StorageManager: {
         savePreRestoreSnapshot: vi.fn(),
         mergeRemoteData: vi.fn(() => Promise.resolve({ success: true, stats: { addedStudents: 1 } })),
+        importBackup: vi.fn(() => Promise.resolve({ success: true, stats: { imported: 2 } })),
         getPreRestoreSnapshot: vi.fn(),
         clearPreRestoreSnapshot: vi.fn(),
         computeCurrentDataHash: vi.fn(() => 'mock-hash'),
@@ -153,7 +154,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             const res = await SyncService.mergeAndSync();
 
             expect(StorageManager.savePreRestoreSnapshot).toHaveBeenCalled();
-            expect(StorageManager.mergeRemoteData).toHaveBeenCalledWith(mockRemoteData);
+            expect(StorageManager.mergeRemoteData).toHaveBeenCalledWith(mockRemoteData, { skipSnapshot: true });
             expect(SyncService.forceUpload).toHaveBeenCalled();
             expect(res.success).toBe(true);
             expect(res.stats.addedStudents).toBe(1);
@@ -492,16 +493,44 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(SyncService._computeSyncState()).toBe('cloud-changes');
         });
 
-        it('_getLocalData should request exportable settings without includeApiKeys for Cloud sync and exclude currentClassId', async () => {
+        it('_getLocalData should request exportable settings with includeApiKeys for Cloud sync and exclude currentClassId', async () => {
             const { StorageManager } = await import('../managers/StorageManager.js');
             const { userSettings } = await import('../state/State.js');
             userSettings.academic.currentClassId = 'class-3a';
-            StorageManager.getExportableSettings.mockReturnValue({ theme: 'dark' });
+            StorageManager.getExportableSettings.mockReturnValue({ albertApiKey: 'sk-albert-key', currentAIModel: 'albert-openweight-medium', theme: 'dark' });
             const payload = await SyncService._getLocalData();
 
-            expect(StorageManager.getExportableSettings).toHaveBeenCalledWith();
-            expect(payload.settings).toEqual({ theme: 'dark' });
+            expect(StorageManager.getExportableSettings).toHaveBeenCalledWith({ includeApiKeys: true });
+            expect(payload.settings).toEqual({ albertApiKey: 'sk-albert-key', currentAIModel: 'albert-openweight-medium', theme: 'dark' });
             expect(payload.currentClassId).toBeUndefined();
+        });
+
+        it('forceDownload should pass remoteData object directly to importBackup with includeApiKeys: true', async () => {
+            const { StorageManager } = await import('../managers/StorageManager.js');
+            SyncService._provider = {
+                read: vi.fn()
+            };
+            vi.spyOn(SyncService, '_updateCloudIndicator').mockImplementation(() => {});
+
+            const remoteData = {
+                settings: {
+                    albertApiKey: 'sk-albert-test-123456',
+                    currentAIModel: 'albert-openweight-medium',
+                    subjects: { Français: {} }
+                },
+                classes: [{ id: 'c1', name: '3A' }],
+                generatedResults: [{ id: 's1', nom: 'Dupont', prenom: 'Alice' }]
+            };
+
+            const res = await SyncService.forceDownload(remoteData);
+
+            expect(StorageManager.importBackup).toHaveBeenCalledWith(remoteData, {
+                mergeData: false,
+                includeApiKeys: true,
+                silent: true,
+                skipSnapshot: true
+            });
+            expect(res).toEqual({ success: true, count: 2 });
         });
     });
 });

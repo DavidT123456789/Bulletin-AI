@@ -275,7 +275,7 @@ export const ModalUI = {
         modal.style.display = 'flex';
         // Forcer le reflow pour que la transition s'applique
         void modal.offsetWidth;
-        modal.querySelectorAll('.ui-tabs-content').forEach(el => {
+        modal.querySelectorAll('.ui-tabs-content, .modal-body:not(.modal-body-flex):not(.import-wizard-body)').forEach(el => {
             FocusPanelManager.bindScrollAffordances?.(el);
         });
         // Ajouter les classes pour déclencher l'animation Apple

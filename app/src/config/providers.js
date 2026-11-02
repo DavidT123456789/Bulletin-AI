@@ -14,5 +14,6 @@ export {
     getProviderApiKey,
     hasValidApiKey,
     getConfiguredProviders,
-    getProviderConfig
+    getProviderConfig,
+    getProviderForModel
 } from './aiRegistry.js';

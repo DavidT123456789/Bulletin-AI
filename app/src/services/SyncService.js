@@ -691,12 +691,13 @@ export const SyncService = {
 
         let importedCount = 0;
         if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
-            const importRes = await StorageManager.importBackup(JSON.stringify(remoteData), { mergeData: false, silent: true });
+            const importRes = await StorageManager.importBackup(remoteData, {
+                mergeData: false,
+                includeApiKeys: true,
+                silent: true,
+                skipSnapshot: true
+            });
             importedCount = importRes?.stats?.imported ?? (remoteData.generatedResults?.length || 0);
-
-            if (window.App?.updateUIOnLoad) {
-                window.App.updateUIOnLoad();
-            }
         }
 
         this.lastSyncTime = Date.now();
@@ -816,7 +817,7 @@ export const SyncService = {
                 return { success: true, stats: { addedStudents: 0, updatedStudents: 0, addedJournalEntries: 0, addedClasses: 0 } };
             }
 
-            const mergeResult = await StorageManager.mergeRemoteData(remoteData);
+            const mergeResult = await StorageManager.mergeRemoteData(remoteData, { skipSnapshot: true });
             await this.forceUpload();
 
             this._updateCloudIndicator('connected');
@@ -849,7 +850,7 @@ export const SyncService = {
                 lastSyncTimestamp: this.lastSyncTime || 0,
                 deviceId: StorageManager.getDeviceId()
             },
-            settings: StorageManager.getExportableSettings(),
+            settings: StorageManager.getExportableSettings({ includeApiKeys: true }),
             classes: userSettings.academic.classes || [],
             generatedResults: results,
             deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] }

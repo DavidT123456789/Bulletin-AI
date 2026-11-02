@@ -28,7 +28,7 @@
 
 import { appState, userSettings, runtimeState } from '../state/State.js';
 import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
-import { API_KEY_PROVIDER_IDS } from '../config/providers.js';
+import { API_KEY_PROVIDER_IDS, getProviderForModel, hasValidApiKey } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
@@ -554,7 +554,7 @@ export const StorageManager = {
             const snapshot = {
                 key: 'pre_restore_backup',
                 createdAt: Date.now(),
-                settings: this.getExportableSettings(),
+                settings: this.getExportableSettings({ includeApiKeys: true }),
                 classes: userSettings.academic.classes || [],
                 deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
                 generatedResults: results
@@ -592,7 +592,7 @@ export const StorageManager = {
     async restorePreRestoreSnapshot() {
         const backup = await this.getPreRestoreSnapshot();
         if (!backup) return false;
-        const res = await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true, skipSnapshot: true });
+        const res = await this.importBackup(backup, { mergeData: false, includeApiKeys: true, silent: true, skipSnapshot: true });
         if (res?.success) {
             await this.clearPreRestoreSnapshot();
             return true;
@@ -1765,15 +1765,15 @@ export const StorageManager = {
     },
 
     /**
-     * Import a backup file with merge support.
-     * @param {string} fileContent - JSON content
-     * @param {Object} options - { mergeData: boolean }
+     * Import a backup file or object with merge support.
+     * @param {string|Object} fileContent - JSON content or parsed backup object
+     * @param {Object} options - { mergeData: boolean, categories?: Object|null, includeApiKeys?: boolean, silent?: boolean, skipSnapshot?: boolean }
      */
     async importBackup(fileContent, options = { mergeData: true, categories: null, silent: false }) {
         try {
-            const backup = JSON.parse(fileContent);
+            const backup = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;
 
-            if (!backup._meta && !backup.appVersion && !backup.settings) {
+            if (!backup || typeof backup !== 'object' || (!backup._meta && !backup.appVersion && !backup.settings && !backup.generatedResults && !backup.classes)) {
                 throw new Error('Format de fichier invalide.');
             }
 
@@ -1800,28 +1800,46 @@ export const StorageManager = {
             }
 
             // Import settings
-            if (shouldImport('settings') && settings.subjects) {
-                const isMerge = Boolean(options.mergeData);
-                Object.assign(appState, {
-                    theme: settings.theme || appState.theme,
-                    accentColor: settings.accentColor || appState.accentColor || 'blue',
-                    useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
-                    periodSystem: settings.periodSystem || appState.periodSystem,
-                    currentPeriod: settings.currentPeriod || appState.currentPeriod,
-                    subjects: settings.subjects,
-                    evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
-                    massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
-                    currentAIModel: settings.currentAIModel || appState.currentAIModel,
-                    enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
-                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
-                    seatingGrid: isMerge ? (settings.seatingGrid || appState.seatingGrid) : (settings.seatingGrid ?? null),
-                    seatingActivityGrid: isMerge ? (settings.seatingActivityGrid || appState.seatingActivityGrid) : (settings.seatingActivityGrid ?? null),
-                    journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
-                    activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
-                });
-                userSettings.api.currentAIModel = appState.currentAIModel;
-                userSettings.api.enableApiFallback = appState.enableApiFallback;
-                stats.settingsImported = true;
+            if (shouldImport('settings') && settings && typeof settings === 'object') {
+                const canAdoptModel = (model) => Boolean(
+                    model && (!model.startsWith('ollama') || appState.ollamaEnabled || options.importOllamaConfig)
+                );
+                if (settings.subjects) {
+                    const isMerge = Boolean(options.mergeData);
+                    Object.assign(appState, {
+                        theme: settings.theme || appState.theme,
+                        accentColor: settings.accentColor || appState.accentColor || 'blue',
+                        isAppreciationFullView: settings.isAppreciationFullView ?? appState.isAppreciationFullView,
+                        seatingStatusDots: settings.seatingStatusDots || appState.seatingStatusDots || { ...DEFAULT_SEATING_STATUS_DOTS },
+                        useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
+                        periodSystem: settings.periodSystem || appState.periodSystem,
+                        currentPeriod: settings.currentPeriod || appState.currentPeriod,
+                        subjects: settings.subjects,
+                        evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
+                        massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
+                        currentAIModel: canAdoptModel(settings.currentAIModel) ? settings.currentAIModel : appState.currentAIModel,
+                        enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
+                        privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
+                        seatingGrid: isMerge ? (settings.seatingGrid || appState.seatingGrid) : (settings.seatingGrid ?? null),
+                        seatingActivityGrid: isMerge ? (settings.seatingActivityGrid || appState.seatingActivityGrid) : (settings.seatingActivityGrid ?? null),
+                        journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
+                        activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
+                    });
+                    userSettings.api.currentAIModel = appState.currentAIModel;
+                    userSettings.api.enableApiFallback = appState.enableApiFallback;
+                    stats.settingsImported = true;
+                } else {
+                    if (canAdoptModel(settings.currentAIModel)) {
+                        appState.currentAIModel = settings.currentAIModel;
+                        userSettings.api.currentAIModel = settings.currentAIModel;
+                        stats.settingsImported = true;
+                    }
+                    if (settings.enableApiFallback !== undefined) {
+                        appState.enableApiFallback = settings.enableApiFallback;
+                        userSettings.api.enableApiFallback = settings.enableApiFallback;
+                        stats.settingsImported = true;
+                    }
+                }
             }
 
             // Import API keys (only when explicitly selected; never overwrite an existing key by default or with empty)
@@ -1965,14 +1983,18 @@ export const StorageManager = {
      * Conserve les ajouts locaux (nouveaux élèves, modifications récentes)
      * tout en intégrant les ajouts et modifications du Cloud (nouveaux élèves, entrées de journal).
      * @param {Object} remoteData - Données distantes lues depuis le Cloud
+     * @param {Object} [options]
+     * @param {boolean} [options.skipSnapshot=false] - Ignorer le snapshot si déjà créé en amont
      * @returns {Promise<{success: boolean, stats: Object}>}
      */
-    async mergeRemoteData(remoteData) {
+    async mergeRemoteData(remoteData, { skipSnapshot = false } = {}) {
         if (!remoteData || typeof remoteData !== 'object') {
             throw new Error('Données distantes invalides pour la fusion');
         }
 
-        await this.savePreRestoreSnapshot();
+        if (!skipSnapshot) {
+            await this.savePreRestoreSnapshot();
+        }
 
         const stats = {
             addedStudents: 0,
@@ -1996,7 +2018,12 @@ export const StorageManager = {
                 }
             });
             const localModel = userSettings.api.currentAIModel || appState.currentAIModel;
-            if (rSettings.currentAIModel && !rSettings.currentAIModel.startsWith('ollama') && !localModel) {
+            const hasLocalModelKey = Boolean(
+                localModel &&
+                !localModel.startsWith('ollama') &&
+                hasValidApiKey(getProviderForModel(localModel), { state: userSettings.api })
+            );
+            if (rSettings.currentAIModel && !rSettings.currentAIModel.startsWith('ollama') && (!localModel || !hasLocalModelKey)) {
                 userSettings.api.currentAIModel = rSettings.currentAIModel;
                 appState.currentAIModel = rSettings.currentAIModel;
             }
@@ -2028,6 +2055,8 @@ export const StorageManager = {
         // 3. Mettre à jour la classe active et les filtres d'affichage (après fusion des élèves : classes virtuelles)
         this._ensureValidActiveClass({ preferRealClass: true });
         this._updateFilteredResultsForCurrentClass();
+        this._ensureDefaultState();
+        this._ensureConfigUpgrades();
 
         // 4. Sauvegarde de l'état
         if (runtimeState.data.generatedResults?.length > 0) {
@@ -2043,43 +2072,32 @@ export const StorageManager = {
         return { success: true, stats };
     },
 
-    importSettings(fileContent) {
+    async importSettings(fileContent) {
         try {
-            const importedData = JSON.parse(fileContent);
+            const importedData = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;
 
             // Redirect full backups to importBackup
-            if (importedData._meta?.exportType === 'full_backup' || importedData.generatedResults) {
-                return this.importBackup(fileContent, { mergeData: true });
+            if (importedData?._meta?.exportType === 'full_backup' || importedData?.generatedResults) {
+                return await this.importBackup(importedData, { mergeData: true });
             }
 
-            const settings = importedData.settings || importedData;
-            if (settings.subjects) {
-                Object.assign(appState, {
-                    theme: settings.theme || appState.theme,
-                    accentColor: settings.accentColor || appState.accentColor || 'blue',
-                    useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
-                    periodSystem: settings.periodSystem || appState.periodSystem,
-                    currentPeriod: settings.currentPeriod || appState.currentPeriod,
-                    subjects: settings.subjects,
-                    evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
-                    massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
-                    currentAIModel: settings.currentAIModel || appState.currentAIModel,
-                    enableApiFallback: settings.enableApiFallback ?? appState.enableApiFallback,
-                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
-                    seatingGrid: settings.seatingGrid || appState.seatingGrid,
-                    seatingActivityGrid: settings.seatingActivityGrid || appState.seatingActivityGrid
-                });
-                if (appState.wordCountLimit) {
-                    delete appState.wordCountLimit;
-                }
-                this._ensureConfigUpgrades();
-                this.saveAppState();
-                App.updateUIOnLoad();
+            const settings = importedData?.settings || importedData;
+            if (!settings?.subjects) {
+                throw new Error('Fichier de paramètres invalide.');
+            }
+
+            const res = await this.importBackup(
+                { settings },
+                { mergeData: true, categories: { settings: true }, silent: true, skipSnapshot: true }
+            );
+            if (res?.success) {
                 UI.showNotification('Paramètres importés avec succès !', 'success');
-            } else throw new Error('Fichier de paramètres invalide.');
+            }
+            return res;
         } catch (error) {
             console.error('Erreur importation paramètres:', error);
             UI.showNotification(`Erreur importation : ${error.message}`, 'error');
+            return { success: false, message: error.message };
         }
     },
 

@@ -109,8 +109,6 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color-strong) transparent;
     opacity: 0;
     visibility: hidden;
     transform-origin: top center;
@@ -381,22 +379,32 @@
     color: var(--text-secondary);
 }
 
-/* === Scrollbar personnalisée === */
+/* === Scrollbar personnalisée (curseur visuel 5px + 2px d'air côté bordure) === */
+@supports not selector(::-webkit-scrollbar) {
+    .custom-dropdown-menu {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color-strong) transparent;
+    }
+}
+
 .custom-dropdown-menu::-webkit-scrollbar {
-    width: 6px;
+    width: 9px;
 }
 
 .custom-dropdown-menu::-webkit-scrollbar-track {
     background: transparent;
+    margin-block: 6px;
 }
 
 .custom-dropdown-menu::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: var(--radius-xs);
+    background-color: var(--border-color-strong);
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 .custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+    background-color: var(--text-tertiary);
 }
 
 /* === État disabled === */

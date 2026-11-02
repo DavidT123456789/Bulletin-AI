@@ -40,6 +40,7 @@ vi.mock('../state/State.js', () => {
             enableApiFallback: true,
             openaiApiKey: '',
             googleApiKey: '',
+            albertApiKey: '',
             openrouterApiKey: '',
             groqApiKey: '',
             anthropicApiKey: '',
@@ -1072,6 +1073,39 @@ describe('StorageManager', () => {
             expect(runtimeState.apiStatus.openai).toBeNull();
             expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
         });
+
+        it('should accept a pre-parsed object in importBackup and restore Albert API key + model when includeApiKeys is true (Cloud restore flow)', async () => {
+            userSettings.api.albertApiKey = '';
+            appState.albertApiKey = '';
+            userSettings.api.currentAIModel = 'gemini-3.6-flash';
+            appState.currentAIModel = 'gemini-3.6-flash';
+
+            const cloudPayload = {
+                _meta: { appVersion: '4.3.0', exportedAt: new Date().toISOString() },
+                settings: {
+                    subjects: { Français: {} },
+                    albertApiKey: 'sk-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+                    currentAIModel: 'albert-openweight-medium',
+                    enableApiFallback: false
+                },
+                classes: [{ id: 'c1', name: '3A' }],
+                generatedResults: [{ id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } }]
+            };
+
+            const res = await StorageManager.importBackup(cloudPayload, {
+                mergeData: false,
+                includeApiKeys: true,
+                silent: true
+            });
+
+            expect(res.success).toBe(true);
+            expect(res.stats.apiKeysImported).toBe(1);
+            expect(userSettings.api.albertApiKey).toBe('sk-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
+            expect(appState.albertApiKey).toBe('sk-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
+            expect(userSettings.api.currentAIModel).toBe('albert-openweight-medium');
+            expect(appState.currentAIModel).toBe('albert-openweight-medium');
+            expect(userSettings.api.enableApiFallback).toBe(false);
+        });
     });
 
     describe('mergeRemoteData - API keys synchronization', () => {
@@ -1110,6 +1144,39 @@ describe('StorageManager', () => {
             // Invalid local key adopts non-empty remote key and resets status
             expect(userSettings.api.openrouterApiKey).toBe('valid-remote-or');
             expect(runtimeState.apiStatus.openrouter).toBeNull();
+        });
+
+        it('should adopt remote currentAIModel when local device is on default model without a local API key for that provider', async () => {
+            // Fresh smartphone state: default model is gemini-3.6-flash, but no Google API key is configured locally
+            userSettings.api.googleApiKey = '';
+            appState.googleApiKey = '';
+            userSettings.api.albertApiKey = '';
+            appState.albertApiKey = '';
+            userSettings.api.currentAIModel = 'gemini-3.6-flash';
+            appState.currentAIModel = 'gemini-3.6-flash';
+
+            await StorageManager.mergeRemoteData({
+                settings: {
+                    albertApiKey: 'sk-albert-remote-valid-key',
+                    currentAIModel: 'albert-openweight-medium'
+                },
+                generatedResults: []
+            });
+
+            expect(userSettings.api.albertApiKey).toBe('sk-albert-remote-valid-key');
+            expect(userSettings.api.currentAIModel).toBe('albert-openweight-medium');
+            expect(appState.currentAIModel).toBe('albert-openweight-medium');
+
+            // Now local model ('albert-openweight-medium') has a valid key -> subsequent merge with another remote model preserves local choice
+            await StorageManager.mergeRemoteData({
+                settings: {
+                    openaiApiKey: 'sk-proj-remote-openai-key',
+                    currentAIModel: 'gpt-4o-mini'
+                },
+                generatedResults: []
+            });
+
+            expect(userSettings.api.currentAIModel).toBe('albert-openweight-medium');
         });
     });
 

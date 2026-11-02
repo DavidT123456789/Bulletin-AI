@@ -67,8 +67,6 @@
     border: 2px solid transparent;
     border-radius: 0;
     box-sizing: border-box;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
 }
 
 [data-theme="dark"] .focus-appreciation-text {

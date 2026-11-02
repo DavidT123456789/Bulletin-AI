@@ -109,7 +109,7 @@ export const ClassUIManager = {
                 this._positionDropdown();
                 FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
             }
-            document.querySelectorAll('#classManagementModal .modal-body, .ui-tabs-content, #pickStudentsChips, #pickStudentsList, #moveModalClassList, #scStudentList').forEach(el => {
+            document.querySelectorAll('.modal-body:not(.modal-body-flex):not(.import-wizard-body), .ui-tabs-content, #pickStudentsChips, #pickStudentsList, #moveModalClassList, #scStudentList').forEach(el => {
                 FocusPanelManager.updateScrollAffordances(el);
             });
         };

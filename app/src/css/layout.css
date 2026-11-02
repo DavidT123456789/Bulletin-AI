@@ -672,7 +672,6 @@ body.is-cloud-syncing label {
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
     background-color: var(--dropdown-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);

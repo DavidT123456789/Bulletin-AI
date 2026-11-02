@@ -254,9 +254,17 @@
 /* Fallback Firefox uniquement (évite de désactiver ::-webkit-scrollbar sous Chromium 121+) */
 @supports not selector(::-webkit-scrollbar) {
     .class-dropdown-list,
-    #classManagementModal .modal-body,
+    .modal-body,
+    .ui-tabs-content,
     .pick-students-list,
-    .move-class-list {
+    .move-class-list,
+    .trombi-popover-list,
+    .history-popover-list,
+    .focus-appreciation-text,
+    .action-dropdown-menu,
+    .global-actions-dropdown-menu,
+    .header-dropdown-menu,
+    .model-dropdown-list {
         scrollbar-width: thin;
         scrollbar-color: var(--border-color) transparent;
     }
@@ -264,33 +272,45 @@
 
 /* Custom sleek scrollbar mutualisée : curseur visuel 5px + 2px d'air côté bordure = 7px */
 .class-dropdown-list::-webkit-scrollbar,
-#classManagementModal .modal-body::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.ui-tabs-content::-webkit-scrollbar,
 .pick-students-list::-webkit-scrollbar,
-.move-class-list::-webkit-scrollbar {
+.move-class-list::-webkit-scrollbar,
+.trombi-popover-list::-webkit-scrollbar,
+.history-popover-list::-webkit-scrollbar {
     width: calc(var(--scrollbar-width) - 1px);
     height: calc(var(--scrollbar-width) - 1px);
 }
 
 .class-dropdown-list::-webkit-scrollbar-track,
-#classManagementModal .modal-body::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track,
+.ui-tabs-content::-webkit-scrollbar-track,
 .pick-students-list::-webkit-scrollbar-track,
-.move-class-list::-webkit-scrollbar-track {
+.move-class-list::-webkit-scrollbar-track,
+.trombi-popover-list::-webkit-scrollbar-track,
+.history-popover-list::-webkit-scrollbar-track {
     background: transparent;
     margin-block: 6px 10px;
 }
 
 .class-dropdown-list::-webkit-scrollbar-thumb,
-#classManagementModal .modal-body::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb,
+.ui-tabs-content::-webkit-scrollbar-thumb,
 .pick-students-list::-webkit-scrollbar-thumb,
-.move-class-list::-webkit-scrollbar-thumb {
+.move-class-list::-webkit-scrollbar-thumb,
+.trombi-popover-list::-webkit-scrollbar-thumb,
+.history-popover-list::-webkit-scrollbar-thumb {
     border-radius: var(--radius-pill);
     background-color: var(--border-color-strong);
 }
 
 .class-dropdown-list::-webkit-scrollbar-thumb:hover,
-#classManagementModal .modal-body::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover,
+.ui-tabs-content::-webkit-scrollbar-thumb:hover,
 .pick-students-list::-webkit-scrollbar-thumb:hover,
-.move-class-list::-webkit-scrollbar-thumb:hover {
+.move-class-list::-webkit-scrollbar-thumb:hover,
+.trombi-popover-list::-webkit-scrollbar-thumb:hover,
+.history-popover-list::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-tertiary);
 }
 
@@ -805,16 +825,15 @@
             linear-gradient(to left, #000 var(--scrollbar-width), transparent var(--scrollbar-width));
     }
 
-    .class-dropdown-list:is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, .modal-body, .ui-tabs-content, .trombi-popover-list, .history-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
         margin-right: 2px;
     }
 
-    :is(.class-dropdown-list, .pick-students-list, .move-class-list):is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, .pick-students-list, .move-class-list, .trombi-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
         padding-right: 5px;
     }
 
     #classManagementModal .modal-body:is(.can-scroll-top, .can-scroll-bottom) {
-        margin-right: 2px;
         padding-right: 12px;
     }
 }

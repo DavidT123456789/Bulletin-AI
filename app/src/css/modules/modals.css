@@ -2586,20 +2586,6 @@
     border-color: var(--success-color);
 }
 
-/* Scrollbar */
-.modal-prompt-preview .modal-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.modal-prompt-preview .modal-body::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.modal-prompt-preview .modal-body::-webkit-scrollbar-thumb {
-    background: var(--text-quaternary);
-    border-radius: 10px;
-}
-
 /* Mobile Adjustments */
 @media (max-width: 480px) {
     .prompt-preview-container {

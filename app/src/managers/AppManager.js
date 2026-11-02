@@ -191,18 +191,18 @@ export const App = {
         UI.updatePeriodSystemUI();
         UI.setInputMode(appState.currentInputMode || CONSTS.INPUT_MODE.SINGLE, true);
         SettingsUIManager.updatePersonalizationState();
+
+        // Restaurer les champs des paramètres (clés API, modèle, curseurs) et le statut des API
+        // avant le calcul des états de boutons et d'en-tête qui dépendent du modèle IA actif
+        UI.updateSettingsFields?.();
+        SettingsUIManager.updateApiStatusDisplay();
+
         UI.updateGenerateButtonState();
         AppreciationsManager.renderResults();
         AppreciationsManager.resetForm(false);
         ClassUIManager.updateHeaderDisplay();
         UI.updateHeaderPremiumLook();
         UI.updateStatsTooltips();
-
-        // Restaurer les champs des paramètres (clés API, modèle, curseurs) avant le calcul du statut
-        UI.updateSettingsFields?.();
-
-        // Restaurer l'état des API au chargement
-        SettingsUIManager.updateApiStatusDisplay();
 
         // Restaurer l'état du toggle Ollama
         if (DOM.ollamaEnabledToggle) {

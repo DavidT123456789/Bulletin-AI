@@ -561,7 +561,6 @@
     max-height: min(340px, calc(100vh - 160px));
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
 }
 
 .model-dropdown-item {
