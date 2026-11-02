@@ -282,24 +282,9 @@
     margin-bottom: 0;
 }
 
-/* Fix scrollbar overlapping rounded corners */
-.style-instructions-textarea::-webkit-scrollbar {
-    width: 6px;
-}
-
+/* Fix scrollbar overlapping rounded corners (scrollbar style inherited from base.css) */
 .style-instructions-textarea::-webkit-scrollbar-track {
-    background: transparent;
     margin-block: 4px;
-    /* Push scrollbar away from rounded corners */
-}
-
-.style-instructions-textarea::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: var(--radius-pill);
-}
-
-.style-instructions-textarea::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-secondary);
 }
 
 /* Default spacing for all form groups in cards */
@@ -1129,7 +1114,7 @@
     line-height: 1.2;
     padding: 3px 9px;
     border-radius: var(--radius-pill);
-    border: 1px solid transparent;
+    border: none;
     transition: all 0.2s ease;
 }
 
@@ -1143,7 +1128,6 @@
 
 .provider-status-badge.status-connected {
     background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
-    border-color: rgba(var(--success-rgb, 16, 185, 129), 0.25);
     color: var(--success-color);
 }
 
@@ -1153,7 +1137,6 @@
 
 .provider-status-badge.status-warning {
     background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
-    border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.25);
     color: var(--warning-color);
 }
 
@@ -1163,7 +1146,6 @@
 
 .provider-status-badge.status-error {
     background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
-    border-color: rgba(var(--error-rgb, 239, 68, 68), 0.25);
     color: var(--error-color);
 }
 
@@ -1173,7 +1155,6 @@
 
 .provider-status-badge.status-unconfigured {
     background: var(--item-hover-bg);
-    border-color: var(--border-color);
     color: var(--text-tertiary);
     font-weight: 500;
 }
@@ -1206,30 +1187,19 @@
 .provider-models-hint .model-chip {
     display: inline-flex;
     align-items: center;
-    padding: 2px 7px;
-    background: var(--item-hover-bg, rgba(0, 0, 0, 0.04));
-    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    background: var(--tonal-bg);
+    border: none;
     border-radius: var(--radius-pill, 9999px);
     font-size: 0.72rem;
     font-weight: 500;
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .provider-models-hint .model-chip {
-    background: rgba(255, 255, 255, 0.05);
-}
-
 .provider-models-hint .model-chip.active-chip {
-    background: var(--item-hover-bg);
-    border-color: var(--text-secondary);
+    background: var(--tonal-active-bg);
     color: var(--text-primary);
     font-weight: 600;
-}
-
-[data-theme="dark"] .provider-models-hint .model-chip.active-chip {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.35);
-    color: var(--text-primary);
 }
 
 /* Active model label in settings */
@@ -2152,7 +2122,7 @@
 .settings-group-card,
 #apiStatusSummary.settings-group-card {
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: var(--radius-md);
     padding: 0 18px;
     display: flex;
@@ -2215,7 +2185,7 @@
 .settings-row + .settings-row-block,
 .settings-row-block + .settings-row,
 .settings-row-block + .settings-row-block {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .settings-row-info {
@@ -2281,16 +2251,6 @@ label.settings-row-title {
     width: 100%;
 }
 
-.settings-group-card .number-input-wrapper {
-    background: var(--bg-secondary);
-    height: 32px;
-}
-
-[data-theme="dark"] .settings-group-card .number-input-wrapper {
-    background: rgba(255, 255, 255, 0.045);
-    border-color: var(--border-color-strong);
-}
-
 /* API Provider Rows inside Single-Level Card */
 .settings-providers-card > .api-key-section {
     padding: 15px 0;
@@ -2300,7 +2260,7 @@ label.settings-row-title {
 }
 
 .settings-providers-card > .api-key-section + .api-key-section {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .settings-providers-card > .api-key-section.settings-focus-highlight {
@@ -2369,7 +2329,7 @@ label.settings-row-title {
 .data-action-row + .data-action-row,
 .data-action-row + .pre-restore-snapshot-row,
 .pre-restore-snapshot-row + .data-action-row {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .data-action-info {
@@ -2425,12 +2385,16 @@ label.settings-row-title {
     height: 38px;
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.35rem;
     flex-shrink: 0;
+}
+
+[data-theme="dark"] .data-provider-icon {
+    background: rgba(255, 255, 255, 0.055);
 }
 
 .data-provider-details {
@@ -2478,13 +2442,11 @@ label.settings-row-title {
 
 /* Danger Card Harmonization */
 .data-danger-card {
-    border-color: rgba(var(--error-rgb), 0.25) !important;
-    background: rgba(var(--error-rgb), 0.02) !important;
+    background: rgba(var(--error-rgb), 0.04) !important;
 }
 
 [data-theme="dark"] .data-danger-card {
-    background: rgba(var(--error-rgb), 0.04) !important;
-    border-color: rgba(var(--error-rgb), 0.3) !important;
+    background: rgba(var(--error-rgb), 0.06) !important;
 }
 
 .data-danger-title {

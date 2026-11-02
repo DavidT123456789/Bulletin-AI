@@ -473,7 +473,7 @@
     height: 34px;
     padding: 0 12px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color-strong);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--text-primary);
     font-size: 0.84rem;
@@ -485,19 +485,24 @@
 }
 
 [data-theme="dark"] .wizard-period-trigger {
-    background: rgba(255, 255, 255, 0.045);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
+}
+
+.wizard-period-trigger:hover,
+.wizard-period-trigger:focus-visible,
+.wizard-period-dropdown.open .wizard-period-trigger {
+    outline: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     border-color: var(--border-color-strong);
 }
 
-.wizard-period-trigger:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border-color: var(--border-color-hover);
-}
-
-[data-theme="dark"] .wizard-period-trigger:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--border-color-hover);
+[data-theme="dark"] .wizard-period-trigger:hover,
+[data-theme="dark"] .wizard-period-trigger:focus-visible,
+[data-theme="dark"] .wizard-period-dropdown.open .wizard-period-trigger {
+    background: rgba(255, 255, 255, 0.085);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .wizard-period-trigger iconify-icon {
@@ -510,20 +515,14 @@
     transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
-.wizard-period-trigger:hover iconify-icon {
+.wizard-period-trigger:hover iconify-icon,
+.wizard-period-dropdown.open .wizard-period-trigger iconify-icon {
     color: var(--text-primary);
 }
 
 .wizard-period-trigger iconify-icon:last-child {
     font-size: 0.8rem;
     color: var(--text-tertiary);
-}
-
-.wizard-period-dropdown.open .wizard-period-trigger {
-    background: var(--surface-color);
-    color: var(--text-primary);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.14);
 }
 
 .wizard-period-dropdown.open .wizard-period-trigger iconify-icon:last-child {
@@ -536,13 +535,7 @@
     top: calc(100% + 6px);
     right: 0;
     min-width: 164px;
-    background: var(--dropdown-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow);
-    padding: 6px;
     display: none;
     flex-direction: column;
     gap: 2px;
@@ -554,12 +547,6 @@
 .wizard-period-dropdown.open .wizard-period-menu,
 .wizard-period-menu.open {
     display: flex;
-}
-
-[data-theme="dark"] .wizard-period-dropdown.open .wizard-period-trigger {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.45);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
 .wizard-period-option {

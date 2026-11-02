@@ -1589,22 +1589,6 @@
     /* Plus élevé que le menu individuel (100) */
 }
 
-.action-dropdown-menu::-webkit-scrollbar,
-.global-actions-dropdown-menu::-webkit-scrollbar {
-    width: 5px;
-}
-
-.action-dropdown-menu::-webkit-scrollbar-track,
-.global-actions-dropdown-menu::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.action-dropdown-menu::-webkit-scrollbar-thumb,
-.global-actions-dropdown-menu::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: var(--radius-pill);
-}
-
 .global-actions-dropdown-menu.open {
     opacity: 1;
     visibility: visible;

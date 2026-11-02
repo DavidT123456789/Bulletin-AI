@@ -41,15 +41,10 @@
     gap: 8px;
 }
 
-.journal-controls-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
 .journal-header-right {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
 
 
@@ -69,13 +64,32 @@
 
 .journal-count-tag {
     margin-right: 0;
+    height: 26px;
+    padding: 0 8px;
+    font-size: 11.5px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
     cursor: help;
 }
 
 /* === Threshold Quick Control === */
 .journal-threshold-control {
     position: relative;
-    /* margin-left removed as order changed */
+}
+
+.journal-count-badge:not(.is-hidden) + .journal-threshold-control {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+}
+
+.journal-count-badge:not(.is-hidden) + .journal-threshold-control::before {
+    content: '';
+    width: 1px;
+    height: 14px;
+    background: var(--border-color-strong);
+    margin-right: 10px;
+    flex-shrink: 0;
 }
 
 /* === Header Buttons (Shared Style) === */
@@ -167,7 +181,7 @@
 .journal-section.editing #focusJournalNoteBtn,
 .journal-section:has(.journal-draft-preview.visible) #focusJournalNoteBtn {
     background: var(--item-active-bg);
-    border-color: var(--primary-color);
+    border-color: transparent;
     color: var(--text-primary);
     opacity: 0.8;
     pointer-events: none;
@@ -180,8 +194,8 @@
 
 /* Threshold button - Harmonized capsule (26px height, matching context & history chips) */
 .journal-threshold-btn {
-    background: var(--item-idle-bg);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
     padding: 0 8px;
@@ -202,123 +216,124 @@
     font-variant-numeric: tabular-nums;
 }
 
-[data-theme="dark"] .journal-threshold-btn {
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-secondary);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
 .journal-threshold-btn:hover {
-    background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.14);
+    background: var(--tonal-hover-bg);
+    border-color: transparent;
     color: var(--text-primary);
     box-shadow: none;
 }
 
-[data-theme="dark"] .journal-threshold-btn:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-}
-
 .journal-threshold-control.open .journal-threshold-btn {
-    background: var(--item-active-bg) !important;
-    border-color: var(--primary-color);
+    background: var(--tonal-active-bg) !important;
+    border-color: transparent;
     color: var(--text-primary);
 }
 
 .journal-threshold-control.open .journal-threshold-btn i,
 .journal-threshold-control.open .journal-threshold-btn iconify-icon {
-    color: var(--primary-bright, var(--text-primary));
+    color: var(--text-primary);
 }
 
 /* Threshold Popover */
 .journal-threshold-popover {
     position: absolute;
     top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    min-width: 200px;
-    padding: 12px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    right: 0;
+    transform: translateY(-8px);
+    width: max-content;
+    min-width: 236px;
+    padding: 14px 16px;
+    background: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow);
     z-index: 150;
     opacity: 0;
     visibility: hidden;
+    text-align: center;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    box-sizing: border-box;
 }
 
 .journal-threshold-control.open .journal-threshold-popover {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
 }
 
 .threshold-popover-header {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    letter-spacing: -0.01em;
 }
 
 .threshold-popover-desc {
     font-size: 11px;
+    line-height: 1.35;
     color: var(--text-tertiary);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    white-space: nowrap;
 }
 
 .threshold-popover-controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    margin-bottom: 10px;
+    gap: 18px;
+    margin-bottom: 12px;
 }
 
 .threshold-adjust-btn {
     width: 32px;
     height: 32px;
-    border: 1px solid var(--border-color);
+    padding: 0 0 1px 0;
+    line-height: 1;
+    border: 1px solid transparent;
     border-radius: 50%;
-    background: var(--surface-color);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none;
 }
 
-.threshold-adjust-btn:hover {
-    border-color: var(--primary-color);
-    background: var(--item-hover-bg);
+.threshold-adjust-btn:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--tonal-hover-bg);
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .threshold-adjust-btn:hover {
-    border-color: var(--primary-bright);
-    color: var(--text-primary);
+.threshold-adjust-btn:active:not(:disabled) {
+    transform: scale(0.94);
 }
 
-.threshold-adjust-btn:active {
-    transform: scale(0.95);
+.threshold-adjust-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+    pointer-events: none;
 }
 
 .threshold-current {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
-    min-width: 40px;
+    min-width: 36px;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    line-height: 1;
 }
 
 .threshold-popover-hint {
-    font-size: 10px;
+    font-size: 10.5px;
     color: var(--text-tertiary);
     text-align: center;
 }
@@ -336,12 +351,17 @@
     gap: 0;
     margin-bottom: 12px;
     padding: 14px;
-    background: color-mix(in srgb, var(--surface-color) 60%, var(--bg-tertiary));
-    border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color));
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-control);
+    box-shadow: none;
     position: relative;
     overflow: visible;
+}
+
+[data-theme="dark"] .journal-draft-preview {
+    background: rgba(255, 255, 255, 0.025);
+    border-color: var(--border-color-strong);
 }
 
 .journal-draft-preview.visible {
@@ -430,16 +450,6 @@
     letter-spacing: -0.01em;
 }
 
-.journal-draft-title iconify-icon {
-    font-size: 16px;
-    color: var(--success-color);
-    flex-shrink: 0;
-}
-
-[data-theme="dark"] .journal-draft-title iconify-icon {
-    color: var(--color-emerald-bright);
-}
-
 .journal-draft-title-text {
     color: var(--text-primary);
     font-weight: 600;
@@ -448,14 +458,16 @@
 .journal-draft-date-badge {
     display: inline-flex;
     align-items: center;
-    padding: 2px 8px;
+    height: 22px;
+    padding: 0 8px;
     border-radius: var(--radius-pill);
     font-size: 11px;
     font-weight: 500;
-    background: var(--bg-tertiary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     letter-spacing: 0.01em;
+    box-sizing: border-box;
 }
 
 .journal-draft-close-btn {
@@ -497,7 +509,7 @@
     display: inline-flex;
 }
 
-/* Pill Button Base — Desktop: compact, natural width, elegant */
+/* Pill Button Base — Desktop: compact, natural width, elegant (borderless tonal at rest & hover) */
 .journal-pill-btn {
     display: inline-flex;
     align-items: center;
@@ -507,8 +519,8 @@
     min-height: 30px;
     padding: 0 10px;
     border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in srgb, var(--pill-color) 28%, var(--border-color));
-    background: color-mix(in srgb, var(--pill-color) 6%, var(--surface-color));
+    border: 1px solid transparent;
+    background: color-mix(in srgb, var(--pill-color) 10%, transparent);
     color: var(--pill-color);
     font-size: 12px;
     font-weight: 500;
@@ -522,8 +534,8 @@
 }
 
 .journal-pill-btn:hover {
-    border-color: var(--pill-color);
-    background: color-mix(in srgb, var(--pill-color) 12%, transparent);
+    border-color: transparent;
+    background: color-mix(in srgb, var(--pill-color) 16%, transparent);
 }
 
 .journal-pill-btn:active {
@@ -550,10 +562,10 @@
 
 /* Active highlight on dropdown trigger when category has active tag */
 .journal-pill-dropdown.has-selected .journal-pill-btn {
-    border-color: var(--pill-color);
-    background: color-mix(in srgb, var(--pill-color) 16%, var(--surface-color));
+    border-color: color-mix(in srgb, var(--pill-color) 55%, transparent);
+    background: color-mix(in srgb, var(--pill-color) 16%, transparent);
     font-weight: 600;
-    box-shadow: 0 0 0 1px var(--pill-color);
+    box-shadow: none;
 }
 
 /* Pill Menu (dropdown) */
@@ -619,22 +631,13 @@
     flex-shrink: 0;
 }
 
-/* Direct Pill (Difficulté & Remarque) */
-.journal-pill-direct {
-    border-style: dashed;
-}
-
-.journal-pill-direct:hover {
-    border-style: solid;
-}
-
+/* Direct Pill (Difficulté & Remarque) — Solid tonal border (dashed is reserved for below-threshold tags) */
 .journal-pill-direct.selected {
-    border-style: solid;
-    background: color-mix(in srgb, var(--pill-color) 20%, var(--surface-color));
-    border-color: var(--pill-color);
+    background: color-mix(in srgb, var(--pill-color) 18%, transparent);
+    border-color: color-mix(in srgb, var(--pill-color) 55%, transparent);
     color: var(--pill-color);
     font-weight: 600;
-    box-shadow: 0 0 0 1px var(--pill-color);
+    box-shadow: none;
 }
 
 /* === Selected Chips Row === */
@@ -725,25 +728,31 @@
     width: 100%;
     min-height: 56px;
     padding: 10px 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 13px;
     line-height: 1.45;
-    resize: vertical;
+    resize: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     box-sizing: border-box;
+}
+
+[data-theme="dark"] .journal-note-input {
+    background: rgba(255, 255, 255, 0.045);
 }
 
 .journal-note-input:focus {
     outline: none;
     background: var(--surface-color);
+    border-color: var(--primary-color);
 }
 
 [data-theme="dark"] .journal-note-input:focus {
-    background: var(--bg-secondary);
+    background: rgba(255, 255, 255, 0.065);
+    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .journal-note-input::placeholder {
@@ -795,17 +804,17 @@
     font-size: 14px;
 }
 
-/* Cancel Button - Ghost Secondary */
+/* Cancel Button - Tonal Secondary */
 .journal-cancel-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
     color: var(--text-secondary);
 }
 
 .journal-cancel-btn:hover {
-    background: var(--item-hover-bg);
+    background: var(--tonal-hover-bg);
     color: var(--text-primary);
-    border-color: rgba(var(--text-secondary-rgb, 120, 120, 120), 0.3);
+    border-color: transparent;
 }
 
 .journal-cancel-btn:active {
@@ -832,9 +841,9 @@
 }
 
 .journal-save-btn:disabled {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
     color: var(--text-tertiary) !important;
-    border: 1px solid var(--border-color) !important;
+    border: 1px solid transparent !important;
     box-shadow: none !important;
     cursor: not-allowed;
     opacity: 0.45;
@@ -843,19 +852,24 @@
 }
 
 [data-theme="dark"] .journal-save-btn:disabled {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-color: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: transparent !important;
 }
 
 /* === Journal Content === */
 .journal-content {
-    padding: 12px 16px;
+    padding: 12px 14px 12px 16px;
+    margin-right: 2px;
     max-height: 180px;
     overflow-y: auto;
     transition:
         max-height 0.35s var(--ease-spring),
         padding 0.35s var(--ease-spring),
         opacity 0.25s ease;
+}
+
+.journal-content::-webkit-scrollbar-track {
+    margin-block: 6px 14px;
 }
 
 .journal-section.collapsed .journal-content {
@@ -919,7 +933,7 @@
 /* Interactive Empty State (clickable) */
 .journal-empty-interactive {
     cursor: pointer;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     transition: background var(--transition-base), opacity var(--transition-base);
 }
 
@@ -1099,7 +1113,7 @@
     padding: 10px 12px;
     margin-bottom: 8px;
     background: rgba(0, 0, 0, 0.02);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     position: relative;
     transition: background 0.2s ease, transform 0.2s ease;
 }
@@ -1154,11 +1168,13 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     font-size: 11px;
     font-weight: 400;
     background: color-mix(in srgb, var(--tag-color) 15%, transparent);
     color: var(--tag-color);
+    box-sizing: border-box;
 }
 
 .journal-tag.below-threshold {

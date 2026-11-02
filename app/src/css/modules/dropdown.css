@@ -19,50 +19,39 @@
     padding: 12.5px 14.5px;
     min-width: 0;
     background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color-strong);
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
     font-size: 14px;
     color: var(--text-primary);
     cursor: pointer;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
     width: 100%;
     text-align: left;
 }
 
-.custom-dropdown-trigger:hover:not(.disabled) {
+.custom-dropdown-trigger:hover:not(.disabled),
+.custom-dropdown-trigger:focus-visible,
+.custom-dropdown.open .custom-dropdown-trigger {
+    outline: none;
     background-color: var(--bg-tertiary);
-    border-color: var(--border-color-hover);
+    border-color: var(--border-color-strong);
 }
 
 .custom-dropdown-trigger:active:not(.disabled) {
     transform: scale(0.985);
 }
 
-.custom-dropdown-trigger:focus-visible,
-.custom-dropdown.open .custom-dropdown-trigger {
-    outline: none;
-    background-color: var(--surface-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.14);
-}
-
 /* Mode sombre : Élévation satinée unifiée (Google / iOS 2026) */
 [data-theme="dark"] .custom-dropdown-trigger {
-    background-color: rgba(255, 255, 255, 0.045);
-    border-color: var(--border-color-strong);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
 }
 
-[data-theme="dark"] .custom-dropdown-trigger:hover:not(.disabled) {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: var(--border-color-hover);
-    background-image: none;
-}
-
+[data-theme="dark"] .custom-dropdown-trigger:hover:not(.disabled),
 [data-theme="dark"] .custom-dropdown-trigger:focus-visible,
 [data-theme="dark"] .custom-dropdown.open .custom-dropdown-trigger {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.45);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.085);
+    border-color: rgba(255, 255, 255, 0.12);
     background-image: none;
     animation: none;
 }
@@ -93,6 +82,7 @@
 }
 
 .custom-dropdown-trigger:hover:not(.disabled) .custom-dropdown-arrow,
+.custom-dropdown-trigger:focus-visible .custom-dropdown-arrow,
 .custom-dropdown.open .custom-dropdown-arrow {
     color: var(--text-primary);
 }
@@ -101,19 +91,25 @@
     transform: rotate(180deg);
 }
 
+/* === Surface vitrée mutualisée des menus déroulants === */
+.custom-dropdown-menu,
+.header-model-dropdown,
+.wizard-period-menu {
+    background-color: var(--dropdown-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--dropdown-border);
+    box-shadow: var(--dropdown-shadow);
+    padding: 6px;
+}
+
 /* === Liste déroulante (options) === */
 .custom-dropdown-menu {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background-color: var(--dropdown-bg);
-    /* Glass effect */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
     border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
     max-height: 360px;
     overflow-y: auto;
@@ -126,7 +122,6 @@
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
                 visibility 0.24s;
-    padding: 6px;
     will-change: transform, opacity;
 }
 
@@ -271,27 +266,7 @@
     outline: none;
 }
 
-.custom-dropdown-option-check {
-    width: 18px;
-    color: var(--text-primary);
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.custom-dropdown-option.selected .custom-dropdown-option-check {
-    opacity: 1;
-}
-
 /* === Typographie affinée des options === */
-.custom-dropdown-option-text {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    flex-wrap: wrap;
-    min-width: 0;
-    width: 100%;
-}
-
 .custom-dropdown-option-text .model-name {
     color: inherit;
 }

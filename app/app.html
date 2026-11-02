@@ -880,39 +880,36 @@
                                 <div class="journal-title-group">
                                     <span>Journal de bord</span>
                                 </div>
-                                <div class="journal-controls-group">
-                                    <!-- Manual note button (Add observation icon) -->
-                                    <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
-                                        data-tooltip="Ajouter une observation" aria-label="Ajouter une observation">
-                                        <iconify-icon icon="solar:add-linear"></iconify-icon>
-                                    </button>
-
-
-                                    <!-- Threshold quick control -->
-                                    <div class="journal-threshold-control" id="journalThresholdControl">
-                                        <button class="journal-threshold-btn journal-header-btn tooltip"
-                                            id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
-                                            <iconify-icon icon="solar:filter-linear"></iconify-icon>
-                                            <span id="journalThresholdValue">≥2</span>
-                                        </button>
-                                        <div class="journal-threshold-popover" id="journalThresholdPopover">
-                                            <div class="threshold-popover-header">Seuil de signalement</div>
-                                            <div class="threshold-popover-desc">Observations répétées transmises à l'IA
-                                            </div>
-                                            <div class="threshold-popover-controls">
-                                                <button class="threshold-adjust-btn" data-delta="-1">−</button>
-                                                <span class="threshold-current" id="thresholdCurrentValue">2</span>
-                                                <button class="threshold-adjust-btn" data-delta="+1">+</button>
-                                            </div>
-                                            <div class="threshold-popover-hint">
-                                                <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- Manual note button (Add observation icon) -->
+                                <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
+                                    data-tooltip="Ajouter une observation" aria-label="Ajouter une observation">
+                                    <iconify-icon icon="solar:add-linear"></iconify-icon>
+                                </button>
                             </div>
                             <div class="journal-header-right">
                                 <span class="journal-count-badge" id="focusJournalCount">0</span>
+
+                                <!-- Threshold quick control -->
+                                <div class="journal-threshold-control" id="journalThresholdControl">
+                                    <button class="journal-threshold-btn journal-header-btn tooltip"
+                                        id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
+                                        <iconify-icon icon="solar:filter-linear"></iconify-icon>
+                                        <span id="journalThresholdValue">≥2</span>
+                                    </button>
+                                    <div class="journal-threshold-popover" id="journalThresholdPopover">
+                                        <div class="threshold-popover-header">Seuil de signalement</div>
+                                        <div class="threshold-popover-desc">Observations répétées transmises à l'IA
+                                        </div>
+                                        <div class="threshold-popover-controls">
+                                            <button class="threshold-adjust-btn" data-delta="-1">−</button>
+                                            <span class="threshold-current" id="thresholdCurrentValue">2</span>
+                                            <button class="threshold-adjust-btn" data-delta="+1">+</button>
+                                        </div>
+                                        <div class="threshold-popover-hint">
+                                            <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="journal-content" id="focusJournalContent">

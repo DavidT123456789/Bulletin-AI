@@ -107,9 +107,18 @@ a.btn-secondary:hover {
     color: var(--text-primary);
 }
 
+/* Fallback Firefox uniquement (évite de désactiver ::-webkit-scrollbar sous Chromium 121+) */
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color-strong) transparent;
+    }
+}
+
+/* Source unique de vérité pour la scrollbar : curseur fin 5px, discret au repos */
 ::-webkit-scrollbar {
-    width: var(--scrollbar-width);
-    height: var(--scrollbar-width);
+    width: calc(var(--scrollbar-width) - 1px);
+    height: calc(var(--scrollbar-width) - 1px);
 }
 
 ::-webkit-scrollbar-track {
@@ -117,12 +126,12 @@ a.btn-secondary:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(161, 161, 170, 0.4);
+    background-color: var(--border-color-strong);
     border-radius: var(--radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+    background-color: var(--text-tertiary);
 }
 
 ::-webkit-scrollbar-button {

@@ -418,25 +418,9 @@
     opacity: 0.75;
 }
 
-/* Custom Sleek Scrollbar for Context Textarea - Harmonized with App Style and rounded corners */
-.focus-context-textarea::-webkit-scrollbar {
-    width: 6px;
-}
-
+/* Track offset for Context Textarea (scrollbar style inherited from base.css) */
 .focus-context-textarea::-webkit-scrollbar-track {
-    background: transparent;
-    /* Offset top/bottom to clear rounded corners */
-    margin-top: 8px;
-    margin-bottom: 16px;
-}
-
-.focus-context-textarea::-webkit-scrollbar-thumb {
-    background: rgba(161, 161, 170, 0.4);
-    border-radius: var(--radius-pill);
-}
-
-.focus-context-textarea::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+    margin-block: 8px 16px;
 }
 
 
@@ -616,8 +600,8 @@
     align-items: center;
     gap: 5px;
     height: 26px;
-    background: var(--item-idle-bg);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     padding: 2px 8px 2px 7px;
     box-sizing: border-box;
@@ -625,31 +609,14 @@
     transition: all var(--transition-fast);
 }
 
-[data-theme="dark"] .previous-grade-chip,
-[data-theme="dark"] .context-grade-group {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
 .previous-grade-chip {
     cursor: default;
     user-select: none;
 }
 
-.previous-grade-chip:hover,
-.context-grade-group:hover {
-    background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.14);
-}
-
-[data-theme="dark"] .previous-grade-chip:hover,
-[data-theme="dark"] .context-grade-group:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
+.context-grade-group:hover,
 .context-grade-group:focus-within {
-    background: var(--item-hover-bg);
+    background: var(--tonal-hover-bg);
 }
 
 .context-grade-group:focus-within label {

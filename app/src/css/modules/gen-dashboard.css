@@ -518,13 +518,7 @@
     right: 0;
     width: 320px;
     max-width: calc(100vw - 24px);
-    background-color: var(--dropdown-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
     border-radius: var(--dropdown-radius, 16px);
-    box-shadow: var(--dropdown-shadow, 0 10px 30px rgba(0, 0, 0, 0.15));
-    padding: 6px;
     z-index: var(--z-dropdown, 100);
     display: flex;
     flex-direction: column;

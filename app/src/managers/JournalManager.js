@@ -479,7 +479,6 @@ export const JournalManager = {
         const formattedDate = this.formatDate(dateStr);
 
         // Header Label
-        const labelIcon = isEdit ? 'solar:pen-new-square-linear' : 'solar:add-circle-linear';
         const labelText = isEdit ? 'Modifier l\'observation' : 'Nouvelle observation';
 
         // Pre-render selected tags if editing
@@ -507,17 +506,15 @@ export const JournalManager = {
             <div class="journal-draft-preview ${isEdit ? 'visible is-editing' : ''}" id="journalDraftPreview">
                 <div class="journal-draft-header">
                     <div class="journal-draft-title">
-                        <iconify-icon icon="${labelIcon}"></iconify-icon>
                         <span class="journal-draft-title-text">${labelText}</span>
                         <span class="journal-draft-date-badge">${formattedDate}</span>
                         <button type="button" id="journalNoteMicBtn" class="focus-mic-btn tooltip"
                             data-tooltip="Dictée vocale" aria-label="Dicter la note">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
-                                stroke-linejoin="round" width="1em" height="1em">
-                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                                stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                stroke-linejoin="round" width="15" height="15">
+                                <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
+                                <rect width="6" height="13" x="9" y="2" rx="3"></rect>
                             </svg>
                         </button>
                     </div>

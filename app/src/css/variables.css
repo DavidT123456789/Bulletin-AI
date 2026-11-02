@@ -40,12 +40,12 @@
     --surface-2: var(--palette-zinc-100);
     --surface-elevated: rgba(255, 255, 255, 0.88);
 
-    --border-subtle: rgba(24, 24, 27, 0.06);
-    --border-default: rgba(24, 24, 27, 0.10);
-    --border-color: rgba(161, 161, 170, 0.15);
-    /* Zinc 400 with opacity */
-    --border-color-strong: rgba(0, 0, 0, 0.1);
-    --border-color-hover: rgba(0, 0, 0, 0.2);
+    --border-subtle: rgba(24, 24, 27, 0.05);
+    --border-default: rgba(24, 24, 27, 0.08);
+    --border-color: rgba(24, 24, 27, 0.065);
+    /* Crisp Neutral Border for high-precision table lines */
+    --border-color-strong: rgba(24, 24, 27, 0.09);
+    --border-color-hover: rgba(24, 24, 27, 0.18);
 
     /* Texte : Zinc Neutral */
     --text-primary: var(--palette-zinc-900);
@@ -215,6 +215,11 @@
     --item-active-bg: rgba(0, 0, 0, 0.05);
     --item-hover-bg-elevated: var(--bg-tertiary);
 
+    /* Tonal Control & Capsule Surfaces (Single Source of Truth) */
+    --tonal-bg: rgba(0, 0, 0, 0.045);
+    --tonal-hover-bg: rgba(0, 0, 0, 0.08);
+    --tonal-active-bg: rgba(0, 0, 0, 0.11);
+
     --purple-color: #9333ea;
     --purple-rgb: 147, 51, 234;
     --purple-light: rgba(147, 51, 234, 0.15);
@@ -349,8 +354,9 @@
     --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
     --modal-backdrop-blur: 8px;
     --modal-bg: var(--surface-color);
+    --modal-scene-bg: #f2f2f5;
     --modal-radius: var(--radius-lg);
-    --modal-border: 1px solid var(--border-color);
+    --modal-border: 1px solid rgba(24, 24, 27, 0.07);
     --modal-shadow: var(--shadow-lg);
 
     /* --- Niveau 3 : Tokens de Composants Préfixés (Sans collision) --- */
@@ -436,15 +442,17 @@
     --surface-1: #18181a;
     --surface-2: #262628;
     --surface-elevated: rgba(24, 24, 26, 0.88);
+    --modal-scene-bg: var(--bg-color);
+    --modal-border: 1px solid rgba(255, 255, 255, 0.07);
 
     --bg-hover: #262628;
     /* Obsidian 800 */
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.10);
+    --border-subtle: rgba(255, 255, 255, 0.045);
+    --border-default: rgba(255, 255, 255, 0.08);
     --border-color: rgba(255, 255, 255, 0.06);
-    /* Harmonized to fix table border intensity mismatch */
-    --border-color-strong: rgba(255, 255, 255, 0.12);
-    --border-color-hover: rgba(255, 255, 255, 0.24);
+    /* Subtle neutral rim */
+    --border-color-strong: rgba(255, 255, 255, 0.085);
+    --border-color-hover: rgba(255, 255, 255, 0.2);
 
     --text-primary: #f8f8f8;
     /* Graphite 50 */
@@ -466,7 +474,7 @@
 
     --glass-surface-bg: rgba(24, 24, 26, 0.75);
     /* Obsidian 900 */
-    --glass-surface-border: rgba(255, 255, 255, 0.08);
+    --glass-surface-border: rgba(255, 255, 255, 0.06);
 
     --glass-overlay-bg: rgba(12, 12, 13, 0.75);
     /* Obsidian 950 */
@@ -551,7 +559,7 @@
 
     /* --- Universal Card Style --- */
     --card-glass-bg: #18181a;
-    --card-glass-border: rgba(255, 255, 255, 0.08);
+    --card-glass-border: rgba(255, 255, 255, 0.06);
 
     /* --- Guide Panel Tokens --- */
     --guide-panel-bg: rgba(255, 255, 255, 0.03);
@@ -568,6 +576,11 @@
     --item-hover-bg: rgba(255, 255, 255, 0.055);
     --item-active-bg: rgba(255, 255, 255, 0.09);
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
+
+    /* Tonal Control & Capsule Surfaces (Dark Mode) */
+    --tonal-bg: rgba(255, 255, 255, 0.055);
+    --tonal-hover-bg: rgba(255, 255, 255, 0.10);
+    --tonal-active-bg: rgba(255, 255, 255, 0.14);
 
     /* --- Dropdown System Tokens (Dark Mode Single Source of Truth) --- */
     --dropdown-bg: rgba(24, 24, 26, 0.96);

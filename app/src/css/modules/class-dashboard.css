@@ -57,7 +57,7 @@
 
 .dashboard-context-line .context-item {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: none;
     padding: 3px 8px;
     border-radius: var(--radius-sm);
     display: inline-flex;
@@ -72,8 +72,7 @@
 #dashboardClassBadge {
     font-weight: 600;
     color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.06);
-    border-color: rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--primary-color-rgb), 0.08);
 }
 
 .cohort-header-metric {
@@ -83,7 +82,7 @@
     background: rgba(var(--primary-color-rgb), 0.08);
     padding: 4px 10px;
     border-radius: var(--radius-pill);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+    border: none;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -91,7 +90,6 @@
 
 [data-theme="dark"] .cohort-header-metric {
     background: rgba(var(--primary-color-rgb), 0.15);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
 }
 
 /* ==========================================================================
@@ -124,7 +122,7 @@
 
 .dashboard-panel {
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: var(--radius-md);
     padding: var(--space-5);
     display: flex;
@@ -191,12 +189,16 @@
 
 .cohort-kpi-card {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: var(--radius-md);
     padding: var(--space-4);
     display: flex;
     gap: var(--space-3);
     align-items: flex-start;
+}
+
+[data-theme="dark"] .cohort-kpi-card {
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .cohort-kpi-card .kpi-icon-wrapper {
@@ -388,24 +390,6 @@
     overflow-x: hidden;
     padding-right: 8px;
     scroll-behavior: smooth;
-}
-
-/* Custom scrollbar for premium look */
-.highlight-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.highlight-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.highlight-list::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: var(--radius-pill);
-}
-
-.highlight-list::-webkit-scrollbar-thumb:hover {
-    background: var(--text-quaternary);
 }
 
 /* Floating scroll-to-top button */

@@ -4,7 +4,6 @@
  * @module managers/DropdownManager
  */
 
-import { DOM } from '../utils/DOM.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { HistoryManager } from './HistoryManager.js';
@@ -339,9 +338,7 @@ export const DropdownManager = {
         // Fermer tous les autres dropdowns custom
         this.closeAll();
 
-        // Fermer aussi le menu actions (3 points) et le sélecteur de période de l'assistant s'ils sont ouverts
-        const actionsDropdown = document.querySelector('.actions-dropdown');
-        actionsDropdown?.classList.remove('show');
+        // Fermer aussi le sélecteur de période de l'assistant s'il est ouvert
         document.getElementById('wizardPeriodDropdown')?.classList.remove('open');
         document.getElementById('wizardPeriodMenu')?.classList.remove('open');
 
@@ -421,7 +418,6 @@ export const DropdownManager = {
         const menu = wrapper.querySelector('.custom-dropdown-menu');
         const options = Array.from(menu.querySelectorAll('.custom-dropdown-group:not(.group-all-disabled) .custom-dropdown-option, .custom-dropdown-menu > .custom-dropdown-option'));
         const focusedIndex = options.findIndex(opt => opt.classList.contains('focused'));
-        const selectEl = document.querySelector(`select[data-enhanced="true"]`);
 
         switch (e.key) {
             case 'Escape':

@@ -651,6 +651,15 @@ export const FocusPanelJournal = {
             popoverValue.textContent = threshold;
         }
 
+        // Update stepper bounds (- disabled at 1, + disabled at 5)
+        const thresholdControl = document.getElementById('journalThresholdControl');
+        if (thresholdControl) {
+            const decBtn = thresholdControl.querySelector('.threshold-adjust-btn[data-delta="-1"]');
+            const incBtn = thresholdControl.querySelector('.threshold-adjust-btn[data-delta="+1"]');
+            if (decBtn) decBtn.disabled = threshold <= 1;
+            if (incBtn) incBtn.disabled = threshold >= 5;
+        }
+
         // Update tooltip on button
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {

@@ -54,37 +54,23 @@
 }
 
 .btn-secondary {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: none;
     box-shadow: none;
 }
 
-[data-theme="dark"] .btn-secondary {
-    background: rgba(255, 255, 255, 0.06);
-}
-
 @media (hover: hover) and (pointer: fine) {
     .btn-secondary:hover:not(:disabled) {
-        background: rgba(0, 0, 0, 0.08);
+        background: var(--tonal-hover-bg);
         color: var(--text-primary);
         box-shadow: none;
-    }
-
-    [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.12);
-        color: var(--text-primary);
     }
 }
 
 .btn-secondary:active:not(:disabled) {
     transform: scale(0.97);
-    background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .btn-secondary:active:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.14);
+    background-color: var(--tonal-active-bg);
     color: var(--text-primary);
 }
 
@@ -710,8 +696,8 @@ label {
 
 /* --- Inputs & Forms (Nebula Style) --- */
 /* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
-input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input),
-textarea:not(.focus-context-textarea):not(.import-textarea),
+input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)),
+textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input)),
 select {
     padding: 12.5px 14.5px;
     border: 1px solid var(--border-color);
@@ -725,54 +711,6 @@ select {
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-/* Style spécifique pour les selects */
-select {
-    -webkit-appearance: none;
-    appearance: none;
-    padding-right: 40px;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    background-size: 1.2em 1.2em;
-    cursor: pointer;
-}
-
-/* Style pour les options désactivées (modèles sans clé API) */
-select option:disabled {
-    color: var(--text-tertiary);
-    background-color: var(--bg-secondary);
-    font-style: italic;
-}
-
-/* === Styles pour les options natives du select === */
-/* Note: Les navigateurs ont un support limité pour le styling des options */
-select option {
-    background-color: var(--surface-color);
-    color: var(--text-primary);
-    padding: 8px 12px;
-}
-
-select option:checked {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-select optgroup {
-    background-color: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-
-/* Dark theme: Force dark background on native select dropdown */
-[data-theme="dark"] select {
-    color-scheme: dark;
-}
-
-[data-theme="dark"] select option {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-}
-
 /* Force native controls (autocomplete, calendar) - Dark mode text color */
 [data-theme="dark"] input,
 [data-theme="dark"] select,
@@ -780,20 +718,9 @@ select optgroup {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] select option:checked {
-    background: linear-gradient(0deg, var(--primary-color) 0%, var(--primary-color) 100%);
-    color: white;
-}
-
-[data-theme="dark"] select optgroup {
-    background-color: var(--bg-color);
-    color: var(--text-secondary);
-}
-
-
 /* --- Hover & Focus States: Calm, distraction-free text fields (iOS 2026) --- */
-input:not([type="range"]):not(.custom-input):not(.context-grade-input):not(.inline-field-input):focus,
-textarea:not(.focus-context-textarea):focus {
+input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)):focus,
+textarea:not(:where(.focus-context-textarea, .journal-note-input)):focus {
     outline: none;
 }
 
@@ -804,22 +731,6 @@ textarea:not(.focus-context-textarea):focus {
     outline: none !important;
     box-shadow: none !important;
     background: transparent !important;
-}
-
-/* --- Select Focus: Clean ring (no animated gradient — selects close on click) --- */
-select:focus {
-    outline: none !important;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-}
-
-[data-theme="dark"] select:hover:not(:disabled):not(:focus) {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-[data-theme="dark"] select:focus {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* --- Input Number Spinners - Design Nebula Premium --- */
@@ -842,22 +753,31 @@ input[type="number"]::-webkit-outer-spin-button {
     align-items: stretch;
     gap: 0;
     width: fit-content;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    height: 32px;
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
     position: relative;
     overflow: hidden;
     /* Découpe parfaite de tout le contenu interne (boutons, input) */
 }
 
-.number-input-wrapper:hover:not(:focus-within) {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+[data-theme="dark"] .number-input-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
 }
 
+.number-input-wrapper:hover,
 .number-input-wrapper:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    background: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+}
+
+[data-theme="dark"] .number-input-wrapper:hover,
+[data-theme="dark"] .number-input-wrapper:focus-within {
+    background: rgba(255, 255, 255, 0.085);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .number-input-wrapper input[type="number"] {
@@ -882,9 +802,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Désactive les effets de hover/focus sur l'input interne pour déléguer au wrapper */
 .number-input-wrapper input[type="number"]:hover,
-.number-input-wrapper input[type="number"]:focus,
-.number-input-wrapper input[type="number"]:hover:not(:disabled):not(:focus),
-.number-input-wrapper input[type="number"]:focus:not(:disabled) {
+.number-input-wrapper input[type="number"]:focus {
     outline: none !important;
     background: transparent !important;
     background-image: none !important;
@@ -1340,37 +1258,6 @@ textarea {
 }
 
 /* --- Dropdowns --- */
-.actions-dropdown {
-    position: relative;
-}
-
-.actions-dropdown-content {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: var(--dropdown-bg);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
-    min-width: 200px;
-    width: max-content;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    z-index: var(--z-modal);
-    visibility: hidden;
-    opacity: 0;
-    transform: translatey(10px);
-    transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
-}
-
-.actions-dropdown.show .actions-dropdown-content {
-    visibility: visible;
-    opacity: 1;
-    transform: translatey(0);
-}
-
 .btn-dropdown-item {
     color: var(--text-secondary);
     padding: 6.5px 10px 6.5px 7px;

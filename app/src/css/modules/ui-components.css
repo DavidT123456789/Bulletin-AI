@@ -73,7 +73,7 @@
 
 .ui-accordion-content {
     overflow: hidden;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .ui-accordion-content-inner {
@@ -224,7 +224,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    border-right: 1px solid var(--border-color);
+    border-right: none;
     padding: 16px 12px;
     background: var(--surface-color);
     height: 100%;
@@ -290,7 +290,7 @@
 .ui-tabs-actions-wrapper {
     margin-top: auto;
     padding-top: 10px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -357,9 +357,9 @@
     letter-spacing: 0.02em;
     padding: 1px 6px;
     border-radius: var(--radius-pill);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid transparent;
     transition: all var(--transition-fast);
     line-height: 1.25;
     white-space: nowrap;
@@ -367,29 +367,17 @@
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .btn-build-pill {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
 .ui-tabs-action-btn:hover .btn-build-pill {
     color: var(--text-primary);
-    border-color: rgba(0, 0, 0, 0.14);
-    background: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .ui-tabs-action-btn:hover .btn-build-pill {
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.12);
+    border-color: transparent;
+    background: var(--tonal-hover-bg);
 }
 
 .ui-tabs-content {
     flex: 1;
     padding: 20px 28px 24px 24px;
     overflow-x: hidden;
-    background: var(--bg-color);
+    background: var(--modal-scene-bg, var(--bg-color));
     overflow-y: auto;
     min-height: 0;
 }
@@ -406,7 +394,7 @@
     .ui-tabs-sidebar {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: none;
         flex-direction: row;
         overflow-x: auto;
         height: auto;
