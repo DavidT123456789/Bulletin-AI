@@ -881,7 +881,7 @@
 }
 
 [data-theme="dark"] .drop-zone-status {
-    background: rgba(9, 9, 11, 0.6);
+    background: rgba(12, 12, 13, 0.6);
     background: rgba(var(--bg-color-rgb), 0.6);
 }
 

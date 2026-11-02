@@ -37,7 +37,7 @@
 }
 
 [data-theme="dark"] .focus-panel {
-    background: rgba(9, 9, 11, 0.75);
+    background: rgba(var(--bg-color-rgb), 0.75);
 }
 
 /* Remove 300ms click delay on mobile for all buttons inside the focus panel */
@@ -122,7 +122,7 @@
 }
 
 [data-theme="dark"] .focus-header:not(.editing) {
-    background: rgba(24, 24, 27, calc(0.82 * var(--p)));
+    background: rgba(var(--surface-color-rgb), calc(0.82 * var(--p)));
     backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
     -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
     border: 1px solid rgba(255, 255, 255, calc(0.1 * var(--p)));

@@ -433,7 +433,7 @@ export const ThemeManager = {
             effectiveTheme = 'dark';
         }
 
-        const bgColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
+        const bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f7f7f8';
 
         document.documentElement.dataset.theme = effectiveTheme;
         document.documentElement.style.backgroundColor = bgColor;

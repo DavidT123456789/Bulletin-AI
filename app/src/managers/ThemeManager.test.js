@@ -26,7 +26,7 @@ describe('ThemeManager', () => {
         document.head.innerHTML = `
             <meta name="color-scheme" content="light dark">
             <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f7f7f8">
-            <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#09090b">
+            <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0c0c0d">
         `;
         document.body.innerHTML = `
             <div id="themeSegmentedControl">
@@ -75,7 +75,7 @@ describe('ThemeManager', () => {
 
             expect(appState.theme).toBe('dark');
             expect(document.documentElement.dataset.theme).toBe('dark');
-            expect(document.documentElement.style.backgroundColor).toBe('rgb(9, 9, 11)');
+            expect(document.documentElement.style.backgroundColor).toBe('rgb(12, 12, 13)');
             expect(document.documentElement.style.colorScheme).toBe('dark');
             expect(localStorage.getItem('bulletin_theme')).toBe('dark');
         });
@@ -118,14 +118,14 @@ describe('ThemeManager', () => {
             ThemeManager.applyTheme();
 
             expect(document.documentElement.dataset.theme).toBe('dark');
-            expect(document.documentElement.style.backgroundColor).toBe('rgb(9, 9, 11)');
+            expect(document.documentElement.style.backgroundColor).toBe('rgb(12, 12, 13)');
             expect(document.documentElement.style.colorScheme).toBe('dark');
-            expect(document.body.style.backgroundColor).toBe('rgb(9, 9, 11)');
+            expect(document.body.style.backgroundColor).toBe('rgb(12, 12, 13)');
             expect(document.querySelector('meta[name="color-scheme"]').getAttribute('content')).toBe('dark');
 
             const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
             themeMetas.forEach(meta => {
-                expect(meta.getAttribute('content')).toBe('#09090b');
+                expect(meta.getAttribute('content')).toBe('#0c0c0d');
             });
         });
 
@@ -154,7 +154,7 @@ describe('ThemeManager', () => {
 
             expect(ThemeManager.currentResolvedTheme).toBe('dark');
             expect(document.documentElement.dataset.theme).toBe('dark');
-            expect(document.querySelector('#theme-color-light').getAttribute('content')).toBe('#09090b');
+            expect(document.querySelector('#theme-color-light').getAttribute('content')).toBe('#0c0c0d');
 
             mockMatches = false;
             if (mediaChangeHandler) mediaChangeHandler();

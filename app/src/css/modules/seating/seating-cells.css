@@ -609,7 +609,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 [data-theme="dark"] .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
     border-color: rgba(255, 255, 255, 0.22) !important;
-    background: rgba(39, 39, 42, 0.45) !important;
+    background: rgba(38, 38, 40, 0.45) !important;
 }
 
 .sc-cell.occupied.sc-cell-departed .student-avatar,

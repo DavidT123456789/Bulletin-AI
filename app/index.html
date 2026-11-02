@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <title>Bulletin AI | L'assistant numérique des enseignants</title>
     <meta name="description"
         content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. Compatible Albert (IA souveraine de l'État), gratuit et respectueux du RGPD.">
@@ -723,7 +723,7 @@
         }
 
         body.is-navigating-to-app.target-dark {
-            background-color: #09090b !important;
+            background-color: #0c0c0d !important;
             transition: background-color 0.25s cubic-bezier(0.32, 0.72, 0, 1);
         }
 
@@ -1657,7 +1657,7 @@
                             document.body.classList.add('target-dark');
                             document.documentElement.style.colorScheme = 'dark';
                             document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
-                                meta.setAttribute('content', '#09090b');
+                                meta.setAttribute('content', '#0c0c0d');
                             });
                         }
                     } catch (_) {}

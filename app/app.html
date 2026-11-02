@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#09090b">
-    <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#09090b">
+    <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#0c0c0d">
+    <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <!-- Immediate Anti-White-Flash & Theme Injection (0ms, before external CSS) -->
     <script>
         (function() {
@@ -28,7 +28,7 @@
                 if (!theme) theme = 'light';
                 var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var effectiveTheme = (theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme) === 'dark' ? 'dark' : 'light';
-                var bgColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
+                var bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f7f7f8';
 
                 var validAccents = ['blue', 'purple', 'pink', 'orange', 'green', 'teal'];
                 var customAccentHex = '';
@@ -136,12 +136,12 @@
         }
         @media (prefers-color-scheme: dark) {
             html:not([data-theme="light"]) {
-                background-color: #09090b;
+                background-color: #0c0c0d;
             }
         }
         html[data-theme="dark"] {
-            background-color: #09090b;
-            color: #fafafa;
+            background-color: #0c0c0d;
+            color: #f8f8f8;
             color-scheme: dark;
         }
         html[data-theme="light"] {

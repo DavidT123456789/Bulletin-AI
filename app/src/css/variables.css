@@ -411,7 +411,7 @@
 }
 
 [data-theme="dark"] {
-    /* Zinc Dark Mode */
+    /* Obsidian Graphite Dark Mode (50/50 Zinc–Carbon Calibration) */
 
     --purple-color: #a78bfa;
     /* Violet 400 */
@@ -419,26 +419,26 @@
     --purple-light: rgba(167, 139, 250, 0.15);
 
     /* Dark Mode Neutral Tint */
-    --neutral-light: rgba(161, 161, 170, 0.15);
-    /* Zinc 400 tint */
+    --neutral-light: rgba(162, 162, 166, 0.15);
+    /* Graphite 400 tint */
 
-    --bg-color: var(--palette-zinc-950);
-    --bg-color-rgb: 9, 9, 11;
-    /* Zinc 950 */
-    --bg-secondary: var(--palette-zinc-900);
-    /* Zinc 900 */
-    --bg-tertiary: #27272a;
-    /* Zinc 800 */
+    --bg-color: #0c0c0d;
+    --bg-color-rgb: 12, 12, 13;
+    /* Obsidian 950 */
+    --bg-secondary: #18181a;
+    /* Obsidian 900 */
+    --bg-tertiary: #262628;
+    /* Obsidian 800 */
 
-    --surface-color: var(--palette-zinc-900);
-    /* Zinc 900 */
-    --surface-color-rgb: 24, 24, 27;
-    --surface-1: var(--palette-zinc-900);
-    --surface-2: #27272a;
-    --surface-elevated: rgba(24, 24, 27, 0.88);
+    --surface-color: #18181a;
+    /* Obsidian 900 */
+    --surface-color-rgb: 24, 24, 26;
+    --surface-1: #18181a;
+    --surface-2: #262628;
+    --surface-elevated: rgba(24, 24, 26, 0.88);
 
-    --bg-hover: #27272a;
-    /* Zinc 800 */
+    --bg-hover: #262628;
+    /* Obsidian 800 */
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border-default: rgba(255, 255, 255, 0.10);
     --border-color: rgba(255, 255, 255, 0.06);
@@ -446,29 +446,30 @@
     --border-color-strong: rgba(255, 255, 255, 0.12);
     --border-color-hover: rgba(255, 255, 255, 0.24);
 
-    --text-primary: var(--palette-zinc-50);
-    /* Zinc 50 */
-    --text-secondary: #a1a1aa;
-    /* Zinc 400 */
-    --text-secondary-rgb: 161, 161, 170;
-    --text-tertiary: #71717a;
-    /* Zinc 500 */
-    --text-tertiary-rgb: 113, 113, 122;
-    --text-quaternary-rgb: 161, 161, 170;
+    --text-primary: #f8f8f8;
+    /* Graphite 50 */
+    --text-secondary: #a2a2a6;
+    /* Graphite 400 */
+    --text-secondary-rgb: 162, 162, 166;
+    --text-tertiary: #727276;
+    /* Graphite 500 */
+    --text-tertiary-rgb: 114, 114, 118;
+    --text-quaternary: #a2a2a6;
+    --text-quaternary-rgb: 162, 162, 166;
     --surface-alert-bg: rgba(var(--error-rgb), 0.08);
     --warning-light-text: var(--warning-dark);
 
     /* Glass Dark */
-    --glass-base-bg: rgba(9, 9, 11, 0.7);
-    /* Zinc 950 */
+    --glass-base-bg: rgba(12, 12, 13, 0.7);
+    /* Obsidian 950 */
     --glass-base-border: rgba(255, 255, 255, 0.06);
 
-    --glass-surface-bg: rgba(24, 24, 27, 0.75);
-    /* Zinc 900 */
+    --glass-surface-bg: rgba(24, 24, 26, 0.75);
+    /* Obsidian 900 */
     --glass-surface-border: rgba(255, 255, 255, 0.08);
 
-    --glass-overlay-bg: rgba(9, 9, 11, 0.75);
-    /* Zinc 950 */
+    --glass-overlay-bg: rgba(12, 12, 13, 0.75);
+    /* Obsidian 950 */
     --glass-overlay-border: rgba(255, 255, 255, 0.06);
 
     /* Ombres plus fortes en dark mode */
@@ -549,7 +550,7 @@
     --grade-range-16-20-rgb: 36, 184, 122;
 
     /* --- Universal Card Style --- */
-    --card-glass-bg: #18181b;
+    --card-glass-bg: #18181a;
     --card-glass-border: rgba(255, 255, 255, 0.08);
 
     /* --- Guide Panel Tokens --- */
@@ -569,8 +570,8 @@
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
 
     /* --- Dropdown System Tokens (Dark Mode Single Source of Truth) --- */
-    --dropdown-bg: rgba(24, 24, 27, 0.96);
-    --dropdown-bg-glass: rgba(24, 24, 27, 0.96);
+    --dropdown-bg: rgba(24, 24, 26, 0.96);
+    --dropdown-bg-glass: rgba(24, 24, 26, 0.96);
     --dropdown-border: 1px solid rgba(255, 255, 255, 0.10);
     --dropdown-border-glass: 1px solid rgba(255, 255, 255, 0.10);
     --dropdown-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
