@@ -25,6 +25,7 @@ export default defineConfig({
       registerType: 'prompt', // Changed to 'prompt' to show custom update notification
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
+        importScripts: ['sw-rescue.js'],
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         // Only skip Workbox revision hashing on Vite-generated content-hashed bundles,
@@ -33,7 +34,7 @@ export default defineConfig({
         dontCacheBustURLsMatching: /^assets\/.*-[a-zA-Z0-9_-]{8}\./,
         ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
         globPatterns: ['**/*.{js,css,png,jpg,jpeg,webp,svg,ico,woff,woff2,webmanifest}', 'index.html', 'app.html'],
-        globIgnores: ['**/Image Source*', '**/sample-*'],
+        globIgnores: ['**/Image Source*', '**/sample-*', 'sw-rescue.js'],
         navigateFallback: null, // Don't cache navigation requests
         runtimeCaching: [
           {

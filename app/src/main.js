@@ -182,6 +182,13 @@ function setupPWAUpdateHandler() {
     let isRefreshing = false;
     let isUpdating = false;
 
+    // Reply to Service Worker health checks so sw-rescue.js knows this client booted properly
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_HEALTH_CHECK' && event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ alive: Boolean(window.App) });
+        }
+    });
+
     const triggerSafeReload = () => {
         if (isRefreshing) return;
         isRefreshing = true;
