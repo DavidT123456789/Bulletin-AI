@@ -118,24 +118,28 @@ export const SeatingAutoPlace = {
 
             let targetRows = rows;
             let targetCols = cols;
-            if (specialOrPinnedOrOccupiedCount === 0) {
-                targetCols = neededFreeStations <= 4
-                    ? Math.max(2, neededFreeStations)
-                    : (neededFreeStations <= 9
-                        ? 3
-                        : (neededFreeStations <= 16 ? 4 : (neededFreeStations <= 25 ? 5 : 6)));
-                targetRows = Math.min(10, Math.max(2, Math.ceil(neededFreeStations / targetCols)));
-                if (targetRows * targetCols < neededFreeStations) {
-                    targetCols = Math.min(10, Math.ceil(neededFreeStations / targetRows));
-                }
-            } else if (currentFreeSpots < neededFreeStations) {
-                const totalNeededCells = specialOrPinnedOrOccupiedCount + neededFreeStations;
-                if (totalNeededCells > 16 && targetCols < 5) {
-                    targetCols = totalNeededCells <= 25 ? 5 : 6;
-                }
-                targetRows = Math.min(10, Math.max(rows, Math.ceil(totalNeededCells / targetCols)));
-                if (targetRows * targetCols < totalNeededCells) {
-                    targetCols = Math.min(10, Math.max(cols, Math.ceil(totalNeededCells / targetRows)));
+            if (currentFreeSpots < neededFreeStations) {
+                if (specialOrPinnedOrOccupiedCount === 0) {
+                    const idealCols = neededFreeStations <= 4
+                        ? Math.max(2, neededFreeStations)
+                        : (neededFreeStations <= 9
+                            ? 3
+                            : (neededFreeStations <= 16 ? 4 : (neededFreeStations <= 25 ? 5 : 6)));
+                    const idealRows = Math.min(10, Math.max(2, Math.ceil(neededFreeStations / idealCols)));
+                    targetCols = Math.max(cols, idealCols);
+                    targetRows = Math.min(10, Math.max(rows, idealRows, Math.ceil(neededFreeStations / targetCols)));
+                    if (targetRows * targetCols < neededFreeStations) {
+                        targetCols = Math.min(10, Math.max(targetCols, Math.ceil(neededFreeStations / targetRows)));
+                    }
+                } else {
+                    const totalNeededCells = specialOrPinnedOrOccupiedCount + neededFreeStations;
+                    if (totalNeededCells > 16 && targetCols < 5) {
+                        targetCols = totalNeededCells <= 25 ? 5 : 6;
+                    }
+                    targetRows = Math.min(10, Math.max(rows, Math.ceil(totalNeededCells / targetCols)));
+                    if (targetRows * targetCols < totalNeededCells) {
+                        targetCols = Math.min(10, Math.max(cols, Math.ceil(totalNeededCells / targetRows)));
+                    }
                 }
             }
 

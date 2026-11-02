@@ -63,7 +63,17 @@ export const SeatingPrintExporter = {
         const view = document.getElementById('seatingChartView');
         view?.insertBefore(header, view.firstChild);
 
+        const shouldCropForPrint = isActivity && !this._isLocked;
+        if (shouldCropForPrint) {
+            this._isPrinting = true;
+            this._renderGrid();
+        }
+
         const cleanup = () => {
+            if (shouldCropForPrint) {
+                this._isPrinting = false;
+                this._renderGrid();
+            }
             document.title = originalTitle;
             header.remove();
             pageStyle.remove();

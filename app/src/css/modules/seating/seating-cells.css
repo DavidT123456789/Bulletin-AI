@@ -107,7 +107,8 @@
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), var(--shadow-lg) !important;
 }
 
-.sc-cell.sc-chip-selected .sc-cell-name {
+.sc-cell.sc-chip-selected .sc-cell-name,
+.sc-cell.sc-chip-selected .sc-stacked-name-text {
     color: var(--text-primary) !important;
     font-weight: 700;
 }
@@ -115,6 +116,22 @@
 .sc-cell.sc-chip-selected .student-avatar .student-avatar__img {
     opacity: 1 !important;
     filter: none !important;
+}
+
+.sc-lasso-box {
+    position: fixed;
+    pointer-events: none;
+    z-index: 90;
+    border: 1.5px solid var(--highlight-standard-border);
+    background: var(--highlight-standard-glow);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .sc-lasso-box {
+    border-color: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
 }
 
 .sc-drag-clone.sc-drag-multi, .sc-touch-ghost.sc-drag-multi {
@@ -202,6 +219,11 @@
 #seatingChartView[data-dragging="true"] .sc-cell,
 #seatingChartView[data-dragging="true"] .sc-student-chip {
     cursor: grabbing !important;
+}
+
+#seatingChartView[data-lasso="true"],
+#seatingChartView[data-lasso="true"] .sc-cell {
+    cursor: crosshair !important;
 }
 
 /* Unified floating drag clone (.sc-drag-clone mouse / .sc-touch-ghost touch) */

@@ -26,6 +26,49 @@ export const SeatingSidebar = {
         this._updateSelectionAttribute();
     },
 
+    _toggleCellSelection(row, col) {
+        const cellIds = this._getCellStudentIds(row, col);
+        if (cellIds.length === 0) return;
+        const posKey = this._getActivePositionKey();
+        if (cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return;
+
+        const isSelected = cellIds.some(id => this._selectedChipIds.includes(id));
+        if (isSelected) {
+            this._selectedChipIds = this._selectedChipIds.filter(id => !cellIds.includes(id));
+        } else {
+            cellIds.forEach(id => {
+                if (!this._selectedChipIds.includes(id)) {
+                    this._selectedChipIds.push(id);
+                }
+            });
+        }
+        this._applyChipSelectionUI();
+        this._updateSelectionAttribute();
+    },
+
+    _getSelectedGridCells() {
+        if (!Array.isArray(this._selectedChipIds) || this._selectedChipIds.length === 0 || !Array.isArray(this._gridState)) {
+            return [];
+        }
+        const selectedSet = new Set(this._selectedChipIds);
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const cells = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.length > 0 && cellIds.some(id => selectedSet.has(id))) {
+                    cells.push({
+                        row: r,
+                        col: c,
+                        ids: [...cellIds]
+                    });
+                }
+            }
+        }
+        return cells;
+    },
+
     _selectGridRange(r1, c1, r2, c2) {
         const minR = Math.min(r1, r2);
         const maxR = Math.max(r1, r2);
@@ -36,12 +79,12 @@ export const SeatingSidebar = {
         for (let r = minR; r <= maxR; r++) {
             for (let c = minC; c <= maxC; c++) {
                 const cellIds = this._getCellStudentIds(r, c);
+                if (cellIds.length === 0) continue;
+                const isPinned = cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned);
+                if (isPinned) continue;
                 cellIds.forEach(id => {
                     if (id && !this._selectedChipIds.includes(id)) {
-                        const student = this._studentMap?.get(id);
-                        if (student && !student[posKey]?.pinned) {
-                            this._selectedChipIds.push(id);
-                        }
+                        this._selectedChipIds.push(id);
                     }
                 });
             }
@@ -66,6 +109,9 @@ export const SeatingSidebar = {
     },
 
     _clearSelection() {
+        if (this._activeLassoAbort || this._lassoBoxEl) {
+            this._cleanupMouseLasso?.();
+        }
         if (this._selectedChipIds.length === 0) return;
         this._selectedChipIds = [];
         this._lastSelectedGridPos = null;
@@ -75,9 +121,19 @@ export const SeatingSidebar = {
     },
 
     _applyChipSelectionUI() {
+        const selectedSet = new Set(this._selectedChipIds);
         document.querySelectorAll('.sc-student-chip, .sc-cell.occupied').forEach(el => {
-            const id = el.dataset.resultId;
-            if (id) el.classList.toggle('sc-chip-selected', this._selectedChipIds.includes(id));
+            if (el.classList.contains('sc-cell')) {
+                const r = parseInt(el.dataset.row, 10);
+                const c = parseInt(el.dataset.col, 10);
+                const cellIds = (!isNaN(r) && !isNaN(c))
+                    ? this._getCellStudentIds(r, c)
+                    : [el.dataset.resultId].filter(Boolean);
+                el.classList.toggle('sc-chip-selected', cellIds.some(id => selectedSet.has(id)));
+            } else {
+                const id = el.dataset.resultId;
+                if (id) el.classList.toggle('sc-chip-selected', selectedSet.has(id));
+            }
         });
     },
 
@@ -87,13 +143,27 @@ export const SeatingSidebar = {
         this._updateQuickGroupButton();
     },
 
+    _canQuickGroupSelection() {
+        const count = this._selectedChipIds.length;
+        if (!this._isActivityMode() || this._isLocked || count < 2 || count > MAX_ACTIVITY_GROUP_SIZE) {
+            return false;
+        }
+        const selectedCells = this._getSelectedGridCells();
+        const gridIdSet = new Set(selectedCells.flatMap(c => c.ids));
+        const hasUnplaced = this._selectedChipIds.some(id => !gridIdSet.has(id));
+        if (!hasUnplaced && (selectedCells.length <= 1 || selectedCells.some(c => c.ids.length > 1))) {
+            return false;
+        }
+        return true;
+    },
+
     _updateQuickGroupButton() {
         const btn = document.getElementById('scQuickGroupBtn');
         const labelEl = document.getElementById('scQuickGroupBtnLabel');
         if (!btn || !labelEl) return;
 
         const count = this._selectedChipIds.length;
-        const canQuickGroup = this._isActivityMode() && !this._isLocked && count >= 2 && count <= MAX_ACTIVITY_GROUP_SIZE;
+        const canQuickGroup = this._canQuickGroupSelection();
 
         if (!canQuickGroup) {
             btn.style.display = 'none';
@@ -141,15 +211,207 @@ export const SeatingSidebar = {
         }
 
         if (targetRow !== -1 && targetCol !== -1) {
-            this._placeSelectedAt(targetRow, targetCol);
+            this._placeSelectedAt(targetRow, targetCol, null, null, { groupIntoSingleStation: true });
         } else {
             UI.showNotification('Aucun poste libre disponible.', 'warning');
         }
     },
 
-    _placeSelectedAt(startRow, startCol) {
+    _resolveGridBlockMovePlan(targetRow, targetCol, anchorRow = null, anchorCol = null) {
+        const selectedCells = this._getSelectedGridCells();
+        if (selectedCells.length === 0) return null;
+
+        const rows = this._getRows();
+        const cols = this._getCols();
+        if (targetRow < 0 || targetRow >= rows || targetCol < 0 || targetCol >= cols) return null;
+        if (this._isSpecialSpot(targetRow, targetCol)) return null;
+
+        const posKey = this._getActivePositionKey();
+        const isCellPinned = (r, c) => {
+            const cellIds = this._getCellStudentIds(r, c);
+            return cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned);
+        };
+        if (isCellPinned(targetRow, targetCol)) return null;
+
+        const hasValidAnchor = anchorRow !== null && anchorCol !== null &&
+            !isNaN(Number(anchorRow)) && !isNaN(Number(anchorCol)) &&
+            selectedCells.some(s => s.row === Number(anchorRow) && s.col === Number(anchorCol));
+        const defaultAnchorCell = this._isStudentOrientation?.()
+            ? selectedCells[selectedCells.length - 1]
+            : selectedCells[0];
+        const anchor = hasValidAnchor
+            ? { row: Number(anchorRow), col: Number(anchorCol) }
+            : { row: defaultAnchorCell.row, col: defaultAnchorCell.col };
+
+        const rawDRow = targetRow - anchor.row;
+        const rawDCol = targetCol - anchor.col;
+
+        let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+        for (const s of selectedCells) {
+            if (s.row < minR) minR = s.row;
+            if (s.row > maxR) maxR = s.row;
+            if (s.col < minC) minC = s.col;
+            if (s.col > maxC) maxC = s.col;
+        }
+
+        const clampedDRow = Math.max(-minR, Math.min(rows - 1 - maxR, rawDRow));
+        const clampedDCol = Math.max(-minC, Math.min(cols - 1 - maxC, rawDCol));
+
+        const canTranslateWith = (dRow, dCol) => {
+            if (dRow === 0 && dCol === 0) return false;
+            return selectedCells.every(s => {
+                const nr = s.row + dRow;
+                const nc = s.col + dCol;
+                return nr >= 0 && nr < rows &&
+                    nc >= 0 && nc < cols &&
+                    !this._isSpecialSpot(nr, nc) &&
+                    !isCellPinned(nr, nc);
+            });
+        };
+
+        let effDRow = null;
+        let effDCol = null;
+        if (canTranslateWith(rawDRow, rawDCol)) {
+            effDRow = rawDRow;
+            effDCol = rawDCol;
+        } else if (canTranslateWith(clampedDRow, clampedDCol)) {
+            effDRow = clampedDRow;
+            effDCol = clampedDCol;
+        }
+
+        if (effDRow !== null && effDCol !== null) {
+            return {
+                mode: 'rigid',
+                dRow: effDRow,
+                dCol: effDCol,
+                selectedCells,
+                targets: selectedCells.map(s => ({
+                    srcRow: s.row,
+                    srcCol: s.col,
+                    row: s.row + effDRow,
+                    col: s.col + effDCol,
+                    ids: s.ids
+                }))
+            };
+        }
+
+        if (rawDRow === 0 && rawDCol === 0) return null;
+
+        // Tier 2 fallback: sequential placement of intact workstation units into free/selected valid cells starting from (targetRow, targetCol)
+        const selectedKeySet = new Set(selectedCells.map(s => `${s.row},${s.col}`));
+        const candidateSlots = [];
+        const totalCells = rows * cols;
+        const startIdx = targetRow * cols + targetCol;
+        for (let step = 0; step < totalCells && candidateSlots.length < selectedCells.length; step++) {
+            const idx = (startIdx + step) % totalCells;
+            const r = Math.floor(idx / cols);
+            const c = idx % cols;
+            if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
+            const isOccupiedByUnselected = this._getCellStudentIds(r, c).length > 0 && !selectedKeySet.has(`${r},${c}`);
+            if (!isOccupiedByUnselected) {
+                candidateSlots.push({ row: r, col: c });
+            }
+        }
+
+        if (candidateSlots.length < selectedCells.length) return null;
+
+        const anyMoved = selectedCells.some((s, i) => s.row !== candidateSlots[i].row || s.col !== candidateSlots[i].col);
+        if (!anyMoved) return null;
+
+        return {
+            mode: 'sequential',
+            selectedCells,
+            targets: selectedCells.map((s, i) => ({
+                srcRow: s.row,
+                srcCol: s.col,
+                row: candidateSlots[i].row,
+                col: candidateSlots[i].col,
+                ids: s.ids
+            }))
+        };
+    },
+
+    _executeGridBlockMovePlan(plan) {
+        if (!plan || !Array.isArray(plan.targets) || plan.targets.length === 0) return false;
+        this._snapshotGrid();
+
+        const cloneCellVal = (val) => (Array.isArray(val) ? [...val] : (val ?? null));
+
+        const swappedCells = [];
+        if (plan.mode === 'rigid') {
+            const { dRow, dCol, selectedCells, targets } = plan;
+            const selectedKeySet = new Set(selectedCells.map(s => `${s.row},${s.col}`));
+            const targetKeySet = new Set(targets.map(t => `${t.row},${t.col}`));
+            const oldGrid = this._gridState.map(row => row.map(cloneCellVal));
+
+            for (const t of targets) {
+                const tKey = `${t.row},${t.col}`;
+                if (!selectedKeySet.has(tKey)) {
+                    let vr = t.row - dRow;
+                    let vc = t.col - dCol;
+                    while (selectedKeySet.has(`${vr},${vc}`) && targetKeySet.has(`${vr},${vc}`)) {
+                        vr -= dRow;
+                        vc -= dCol;
+                    }
+                    const displaced = cloneCellVal(oldGrid[t.row]?.[t.col]);
+                    this._gridState[vr][vc] = displaced;
+                    if (displaced) {
+                        swappedCells.push({ row: vr, col: vc });
+                    }
+                }
+            }
+
+            for (const t of targets) {
+                this._setCellStudentIds(t.row, t.col, t.ids);
+            }
+        } else {
+            for (const s of plan.selectedCells) {
+                this._gridState[s.row][s.col] = null;
+            }
+            for (const t of plan.targets) {
+                this._setCellStudentIds(t.row, t.col, t.ids);
+            }
+        }
+
+        const placedCells = [
+            ...plan.targets.map((t, index) => ({ row: t.row, col: t.col, index })),
+            ...swappedCells
+        ];
+        this._selectedChipIds = [];
+        this._lastSelectedGridPos = null;
+        this._dismissOnboardingHint();
+        this._savePositionsToState();
+        this._render();
+        this._haptic(15);
+        this._updateSelectionAttribute();
+
+        requestAnimationFrame(() => {
+            placedCells.forEach(({ row, col }) => {
+                this._animateCellPlaced(row, col);
+            });
+        });
+        return true;
+    },
+
+    _placeSelectedAt(startRow, startCol, anchorRow = null, anchorCol = null, options = {}) {
         const ids = [...this._selectedChipIds];
         if (ids.length === 0) return;
+
+        if (!options.groupIntoSingleStation) {
+            const selectedGridCells = this._getSelectedGridCells();
+            if (selectedGridCells.length > 0) {
+                const gridIdSet = new Set(selectedGridCells.flatMap(c => c.ids));
+                const hasUnplacedSelected = ids.some(id => !gridIdSet.has(id));
+                if (!hasUnplacedSelected) {
+                    const plan = this._resolveGridBlockMovePlan(startRow, startCol, anchorRow, anchorCol);
+                    if (plan) {
+                        this._executeGridBlockMovePlan(plan);
+                        return;
+                    }
+                }
+            }
+        }
+
         this._snapshotGrid();
 
         const cols = this._getCols();
@@ -196,6 +458,7 @@ export const SeatingSidebar = {
         }
 
         this._selectedChipIds = [];
+        this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();

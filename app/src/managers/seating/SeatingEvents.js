@@ -9,7 +9,6 @@ import { DOMHelper } from '../../utils/DOMHelper.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
-import { MAX_ACTIVITY_GROUP_SIZE } from './SeatingState.js';
 
 export const SeatingEvents = {
     /**
@@ -31,6 +30,11 @@ export const SeatingEvents = {
                     const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
                     if (dragTarget && !dragTarget.classList.contains('pinned')) {
                         this._startMousePointerDrag(e, dragTarget);
+                    } else if (
+                        e.target.closest?.('#scGridArea') &&
+                        !e.target.closest?.('.sc-cell.occupied, .sc-desk, #scTopLeftBar, #scFloatingActions, .sc-onboarding-hint, #scStatusPill')
+                    ) {
+                        this._startMouseLassoSelection(e);
                     }
                 }
             } else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
@@ -742,10 +746,16 @@ export const SeatingEvents = {
                     }
                 }
 
-                if (e.key === 'Enter' && !isTyping && this._isActivityMode() && !this._isLocked &&
-                    this._selectedChipIds.length >= 2 && this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
+                if (e.key === 'Enter' && !isTyping && this._canQuickGroupSelection?.()) {
                     e.preventDefault();
                     this._placeSelectedAsGroupInFirstFreeStation();
+                    return;
+                }
+
+                if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping && this._isActive && !this._isLocked && this._getSelectedGridCells?.().length > 0) {
+                    e.preventDefault();
+                    this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+                    this._handleRemoveFromSidebarDrop();
                     return;
                 }
 

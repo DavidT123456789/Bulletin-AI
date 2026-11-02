@@ -403,10 +403,16 @@ export const SeatingState = {
 
         const gridArea = document.getElementById('scGridArea');
         const gridContainer = document.getElementById('scGridContainer');
-        const expectedCells = this._getEffectiveRowCount() * this._getCols();
-        const didRebuildGrid = this._isActivityMode() && gridContainer?.children.length !== expectedCells;
+        const bounds = this._getEffectiveGridBounds();
+        const expectedCells = bounds.rowCount * bounds.colCount;
+        const expectedBoundsKey = `${bounds.startRow},${bounds.endRow},${bounds.startCol},${bounds.endCol}`;
+        const didRebuildGrid = this._isActivityMode() && (
+            gridContainer?.children.length !== expectedCells
+            || (gridContainer?.dataset.gridBounds && gridContainer.dataset.gridBounds !== expectedBoundsKey)
+        );
         const areaW = gridArea?.clientWidth || window.innerWidth || 0;
         const isNativeDesktopSlide = !this._isCompactLayout()
+            && !this._isActivityMode()
             && areaW >= 1180
             && Boolean(this._isFitted && board?.style.getPropertyValue('--sc-scale'))
             && !didRebuildGrid;
@@ -555,8 +561,8 @@ export const SeatingState = {
             classSpecialLayout: currentClass?.[classSpecialKey]
                 ? Utils.deepClone(currentClass[classSpecialKey])
                 : null,
-            rows: this._getRows(),
-            cols: this._getCols()
+            rows: this._gridState?.length || this._getRows(),
+            cols: this._gridState?.[0]?.length || this._getCols()
         };
     },
 
@@ -598,6 +604,11 @@ export const SeatingState = {
     _restoreSnapshot(snapshot) {
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
+        const posKey = this._getActivePositionKey();
+        const oldRows = this._gridState?.length || this._getRows();
+        const targetRows = snapshot.rows || oldRows;
+        const rowOffset = this._isActivityMode() ? 0 : (targetRows - oldRows);
+
         this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
         if (appState[gridKey]) {
             appState[gridKey].specialLayout = snapshot.specialLayout;
@@ -612,6 +623,27 @@ export const SeatingState = {
             } else {
                 delete currentClass[classSpecialKey];
             }
+        }
+
+        if (rowOffset !== 0) {
+            (appState.classes || []).forEach(cls => {
+                if (!cls || cls.id === currentClass?.id || !cls[classSpecialKey]) return;
+                const nextClassSpecial = {};
+                for (const [key, type] of Object.entries(cls[classSpecialKey])) {
+                    const [r, c] = key.split(',').map(Number);
+                    nextClassSpecial[`${r + rowOffset},${c}`] = type;
+                }
+                cls[classSpecialKey] = nextClassSpecial;
+            });
+            const currentStudentIds = new Set(this._students.map(s => s.id));
+            (appState.generatedResults || []).forEach(r => {
+                if (!r || currentStudentIds.has(r.id)) return;
+                const pos = r[posKey];
+                if (pos && typeof pos.row === 'number') {
+                    r[posKey] = { ...pos, row: pos.row + rowOffset };
+                    r._lastModified = Date.now();
+                }
+            });
         }
         
         const rowSlider = document.getElementById('scRowsSlider');

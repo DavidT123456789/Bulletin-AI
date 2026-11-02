@@ -38,20 +38,59 @@ export const SeatingRenderer = {
         }
     },
 
-    _getEffectiveRowCount(rows = this._getRows(), cols = this._getCols()) {
-        if (!this._isActivityMode() || !this._isLocked || rows <= 1) return rows;
-        let maxActiveRow = -1;
+    _getEffectiveGridBounds(rows = this._getRows(), cols = this._getCols()) {
+        if (!this._isActivityMode() || (!this._isLocked && !this._isPrinting) || (rows <= 1 && cols <= 1)) {
+            return {
+                startRow: 0,
+                endRow: Math.max(0, rows - 1),
+                rowCount: rows,
+                startCol: 0,
+                endCol: Math.max(0, cols - 1),
+                colCount: cols
+            };
+        }
+        let minRow = Infinity;
+        let maxRow = -1;
+        let minCol = Infinity;
+        let maxCol = -1;
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const hasStudents = this._getCellStudentIds(r, c).length > 0;
                 const special = this._getCellSpecial(r, c);
-                if (hasStudents || (special && special !== 'aisle')) {
-                    maxActiveRow = r;
-                    break;
+                if (hasStudents || special?.type === 'aesh') {
+                    if (r < minRow) minRow = r;
+                    if (r > maxRow) maxRow = r;
+                    if (c < minCol) minCol = c;
+                    if (c > maxCol) maxCol = c;
                 }
             }
         }
-        return maxActiveRow >= 0 ? maxActiveRow + 1 : rows;
+        if (maxRow < 0 || maxCol < 0) {
+            return {
+                startRow: 0,
+                endRow: Math.max(0, rows - 1),
+                rowCount: rows,
+                startCol: 0,
+                endCol: Math.max(0, cols - 1),
+                colCount: cols
+            };
+        }
+        return {
+            startRow: minRow,
+            endRow: maxRow,
+            rowCount: maxRow - minRow + 1,
+            startCol: minCol,
+            endCol: maxCol,
+            colCount: maxCol - minCol + 1
+        };
+    },
+
+    _getEffectiveRowCount(rows = this._getRows(), cols = this._getCols()) {
+        return this._getEffectiveGridBounds(rows, cols).rowCount;
+    },
+
+    _getEffectiveColCount(rows = this._getRows(), cols = this._getCols()) {
+        return this._getEffectiveGridBounds(rows, cols).colCount;
     },
 
     _renderGrid() {
@@ -61,17 +100,25 @@ export const SeatingRenderer = {
         const rows = this._getRows();
         const cols = this._getCols();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
-        const effectiveRows = this._getEffectiveRowCount(rows, cols);
+        const {
+            startRow,
+            endRow,
+            rowCount: effectiveRows,
+            startCol,
+            endCol,
+            colCount: effectiveCols
+        } = this._getEffectiveGridBounds(rows, cols);
 
-        container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
+        container.dataset.gridBounds = `${startRow},${endRow},${startCol},${endCol}`;
+        container.style.gridTemplateColumns = `repeat(${effectiveCols}, var(--sc-cell-w, 88px))`;
         container.style.gridTemplateRows = `repeat(${effectiveRows}, var(--sc-cell-h, 96px))`;
         container.innerHTML = '';
 
         const isStudent = this._isStudentOrientation();
         for (let displayR = 0; displayR < effectiveRows; displayR++) {
-            for (let displayC = 0; displayC < cols; displayC++) {
-                const r = isStudent ? (effectiveRows - 1 - displayR) : displayR;
-                const c = isStudent ? (cols - 1 - displayC) : displayC;
+            for (let displayC = 0; displayC < effectiveCols; displayC++) {
+                const r = startRow + (isStudent ? (effectiveRows - 1 - displayR) : displayR);
+                const c = startCol + (isStudent ? (effectiveCols - 1 - displayC) : displayC);
                 container.appendChild(this._createCell(r, c));
             }
         }
@@ -141,42 +188,7 @@ export const SeatingRenderer = {
             `;
 
             cell.addEventListener('click', (e) => {
-                if (this._wasRecentTouchDrag() || e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
-                const currentlyPinned = cell.classList.contains('pinned');
-                if (this._isLocked) {
-                    FocusPanelManager.open(student.id);
-                } else if (this._selectedChipIds.length > 0 && !this._selectedChipIds.includes(student.id)) {
-                    if (isActivity && !currentlyPinned && !this._lastSelectedGridPos) {
-                        if (1 + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
-                            this._joinStudentsToCell(row, col, this._selectedChipIds);
-                            this._clearSelection();
-                        } else {
-                            this._notifyGroupFull(row, col);
-                        }
-                    } else if (this._selectedChipIds.length === 1) {
-                        const selectedId = this._selectedChipIds[0];
-                        const srcPos = this._findStudentGridPos(selectedId);
-                        if (srcPos) {
-                            this._swapGridPositions(srcPos.row, srcPos.col, row, col);
-                        } else {
-                            this._replaceOccupantWithUnplaced(row, col, selectedId);
-                        }
-                        this._clearSelection();
-                    }
-                } else if (this._selectedChipIds.length === 1 && this._selectedChipIds[0] === student.id) {
-                    this._clearSelection();
-                } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
-                    this._openOccupiedCellSheet(row, col, student, students);
-                } else if (!currentlyPinned) {
-                    if (e.shiftKey && this._lastSelectedGridPos) {
-                        this._selectGridRange(this._lastSelectedGridPos.row, this._lastSelectedGridPos.col, row, col);
-                    } else {
-                        this._toggleChipSelection(student.id);
-                        this._lastSelectedGridPos = { row, col };
-                    }
-                } else if (currentlyPinned && this._isMobileView()) {
-                    this._openOccupiedCellSheet(row, col, student, students);
-                }
+                this._handleOccupiedCellClick(e, cell, row, col, students, studentIds);
             });
 
             cell.querySelector('.sc-cell-remove')?.addEventListener('click', (e) => {
@@ -272,38 +284,7 @@ export const SeatingRenderer = {
             });
 
             cell.addEventListener('click', (e) => {
-                if (this._wasRecentTouchDrag() || e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin') || e.target.closest('.sc-stacked-member-remove')) return;
-                const currentlyPinned = cell.classList.contains('pinned');
-                if (this._isLocked) {
-                    const targetStudentEl = e.target.closest('[data-result-id]');
-                    const targetId = targetStudentEl?.dataset?.resultId || students[0].id;
-                    FocusPanelManager.open(targetId);
-                } else if (this._selectedChipIds.length > 0 && !this._selectedChipIds.some(id => studentIds.includes(id))) {
-                    if (isActivity && !currentlyPinned && !this._lastSelectedGridPos) {
-                        if (students.length + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
-                            this._joinStudentsToCell(row, col, this._selectedChipIds);
-                            this._clearSelection();
-                        } else {
-                            this._notifyGroupFull(row, col);
-                        }
-                    } else if (this._selectedChipIds.length === 1) {
-                        const selectedId = this._selectedChipIds[0];
-                        const srcPos = this._findStudentGridPos(selectedId);
-                        if (srcPos && (srcPos.row !== row || srcPos.col !== col)) {
-                            this._swapGridPositions(srcPos.row, srcPos.col, row, col);
-                        }
-                        this._clearSelection();
-                    }
-                } else if (this._selectedChipIds.length === 1 && studentIds.includes(this._selectedChipIds[0])) {
-                    this._clearSelection();
-                } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
-                    this._openOccupiedCellSheet(row, col, students[0], students);
-                } else if (!currentlyPinned) {
-                    this._toggleChipSelection(students[0].id);
-                    this._lastSelectedGridPos = { row, col };
-                } else if (currentlyPinned && this._isMobileView()) {
-                    this._openOccupiedCellSheet(row, col, students[0], students);
-                }
+                this._handleOccupiedCellClick(e, cell, row, col, students, studentIds);
             });
 
             this._attachCellDragListeners(cell, students[0], row, col);
@@ -380,20 +361,7 @@ export const SeatingRenderer = {
             cell.addEventListener('click', () => {
                 if (this._isLocked) return;
                 if (this._selectedChipIds.length > 0 && !special) {
-                    const selectedId = this._selectedChipIds[0];
-                    const srcPos = this._selectedChipIds.length === 1 ? this._findStudentGridPos(selectedId) : null;
-                    if (srcPos) {
-                        this._snapshotGrid();
-                        const srcVal = this._gridState[srcPos.row][srcPos.col];
-                        this._gridState[srcPos.row][srcPos.col] = null;
-                        this._gridState[row][col] = Array.isArray(srcVal) ? [...srcVal] : srcVal;
-                        this._clearSelection();
-                        this._savePositionsToState();
-                        this._render();
-                        this._animateCellPlaced(row, col);
-                    } else {
-                        this._placeSelectedAt(row, col);
-                    }
+                    this._placeSelectedAt(row, col);
                 } else if (this._selectedChipIds.length === 0) {
                     if (this._isMobileView()) {
                         this._openEmptyCellSheet(row, col, special);
@@ -405,8 +373,7 @@ export const SeatingRenderer = {
         cell.addEventListener('dragover', (e) => {
             if (!this._isValidDropTarget(row, col)) {
                 if (this._hoveredDragCell && this._hoveredDragCell !== cell) {
-                    this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-                    this._hoveredDragCell = null;
+                    this._clearGridDragHover();
                 }
                 return;
             }
@@ -414,34 +381,99 @@ export const SeatingRenderer = {
             e.preventDefault();
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
             if (this._hoveredDragCell === cell && cell.classList.contains('drag-over')) return;
-            if (this._hoveredDragCell && this._hoveredDragCell !== cell) {
-                this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-            }
-            this._hoveredDragCell = cell;
-            cell.classList.add('drag-over');
-            cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col));
-            cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col));
+            this._applyGridDragHover(cell, row, col);
         });
 
         cell.addEventListener('dragleave', (e) => {
             if (e.relatedTarget && cell.contains(e.relatedTarget)) return;
-            cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
             if (this._hoveredDragCell === cell) {
-                this._hoveredDragCell = null;
+                this._clearGridDragHover();
+            } else {
+                cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
             }
         });
 
         cell.addEventListener('drop', (e) => {
             if (this._isLocked) return;
             e.preventDefault();
-            cell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-            if (this._hoveredDragCell === cell) {
-                this._hoveredDragCell = null;
-            }
+            this._clearGridDragHover();
             this._handleDrop(row, col);
         });
 
         return cell;
+    },
+
+    _handleOccupiedCellClick(e, cell, row, col, students, studentIds) {
+        if (this._wasRecentTouchDrag() || e.target.closest('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove')) return;
+        const currentlyPinned = cell.classList.contains('pinned');
+        if (this._isLocked) {
+            const targetStudentEl = students.length > 1 ? e.target.closest('[data-result-id]') : null;
+            const targetId = targetStudentEl?.dataset?.resultId || students[0].id;
+            FocusPanelManager.open(targetId);
+            return;
+        }
+
+        if (!currentlyPinned && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+            if (e.shiftKey && this._lastSelectedGridPos) {
+                this._selectGridRange(this._lastSelectedGridPos.row, this._lastSelectedGridPos.col, row, col);
+            } else {
+                this._toggleCellSelection(row, col);
+            }
+            this._lastSelectedGridPos = { row, col };
+            return;
+        }
+
+        const isThisCellSelected = studentIds.some(id => this._selectedChipIds.includes(id));
+        const selectedGridCells = this._getSelectedGridCells();
+
+        if (this._selectedChipIds.length > 0 && !isThisCellSelected) {
+            const isActivity = this._isActivityMode();
+            if (isActivity && !currentlyPinned && !this._lastSelectedGridPos) {
+                if (students.length + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
+                    this._joinStudentsToCell(row, col, this._selectedChipIds);
+                    this._clearSelection();
+                } else {
+                    this._notifyGroupFull(row, col);
+                }
+            } else if (selectedGridCells.length === 1) {
+                const srcPos = selectedGridCells[0];
+                if (srcPos.row !== row || srcPos.col !== col) {
+                    this._swapGridPositions(srcPos.row, srcPos.col, row, col);
+                }
+                this._clearSelection();
+            } else if (this._selectedChipIds.length === 1) {
+                const selectedId = this._selectedChipIds[0];
+                const srcPos = this._findStudentGridPos(selectedId);
+                if (srcPos) {
+                    this._swapGridPositions(srcPos.row, srcPos.col, row, col);
+                } else {
+                    this._replaceOccupantWithUnplaced(row, col, selectedId);
+                }
+                this._clearSelection();
+            } else if (!currentlyPinned) {
+                this._selectedChipIds = [];
+                this._toggleCellSelection(row, col);
+                this._lastSelectedGridPos = { row, col };
+            } else {
+                this._clearSelection();
+            }
+        } else if (isThisCellSelected) {
+            if (selectedGridCells.length <= 1 && this._selectedChipIds.every(id => studentIds.includes(id))) {
+                this._clearSelection();
+            } else if (!currentlyPinned) {
+                this._selectedChipIds = [...studentIds];
+                this._lastSelectedGridPos = { row, col };
+                this._applyChipSelectionUI();
+                this._updateSelectionAttribute();
+            }
+        } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
+            this._openOccupiedCellSheet(row, col, students[0], students);
+        } else if (!currentlyPinned) {
+            this._toggleCellSelection(row, col);
+            this._lastSelectedGridPos = { row, col };
+        } else if (currentlyPinned && this._isMobileView()) {
+            this._openOccupiedCellSheet(row, col, students[0], students);
+        }
     },
 
     _normalizeFirstNameKey(prenom) {

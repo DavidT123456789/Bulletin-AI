@@ -138,9 +138,13 @@ export const SeatingDragDrop = {
             const c = isNaN(currentCol) ? col : currentCol;
             const cellIds = this._getCellStudentIds(r, c);
             const primaryId = cellIds[0] || student.id;
-            const isSelected = this._selectedChipIds.includes(primaryId);
+            const isSelected = cellIds.some(id => this._selectedChipIds.includes(id));
+            const selectedCells = isSelected ? this._getSelectedGridCells() : [];
+            const isMultiDrag = isSelected && (selectedCells.length > 1 || this._selectedChipIds.some(id => !cellIds.includes(id)));
             if (!isSelected) {
                 this._clearSelection();
+            }
+            if (!isMultiDrag) {
                 this._dragSource = {
                     type: 'cell',
                     resultId: primaryId,
@@ -149,18 +153,27 @@ export const SeatingDragDrop = {
                 };
                 e.dataTransfer.setData('text/plain', primaryId);
             } else {
-                this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+                this._dragSource = {
+                    type: 'multi-cell',
+                    ids: [...this._selectedChipIds],
+                    row: r,
+                    col: c,
+                    cellCount: selectedCells.length || this._selectedChipIds.length
+                };
                 e.dataTransfer.setData('text/plain', 'multi');
+                document.querySelectorAll('#scGridContainer .sc-cell.sc-chip-selected').forEach(el => el.classList.add('dragging'));
             }
             e.dataTransfer.effectAllowed = 'move';
             TooltipsUI?.hideAll?.();
-            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
+            const badgeCount = isMultiDrag ? (this._dragSource.cellCount || this._selectedChipIds.length) : 1;
+            this._setCleanDragImage(e, cell, badgeCount);
             cell.classList.add('dragging');
         });
 
         cell.addEventListener('dragend', () => {
-            cell.classList.remove('dragging');
+            document.querySelectorAll('#scGridContainer .sc-cell.dragging').forEach(el => el.classList.remove('dragging'));
             this._dragSource = null;
+            this._clearGridDragHover?.();
             this._removeDragClones?.();
             document.getElementById('scSidebar')?.classList.remove('drag-over');
         });
@@ -177,6 +190,9 @@ export const SeatingDragDrop = {
             memberEl.addEventListener('dragstart', (e) => {
                 if (this._isLocked || cell.classList.contains('pinned') || e.target.closest?.('.sc-stacked-member-remove') || this._isTouchInteractionActive()) {
                     e.preventDefault();
+                    return;
+                }
+                if (students.some(st => this._selectedChipIds.includes(st.id)) && this._getSelectedGridCells().length > 1) {
                     return;
                 }
                 e.stopPropagation();
@@ -319,6 +335,7 @@ export const SeatingDragDrop = {
             return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 <= MAX_ACTIVITY_GROUP_SIZE);
         }
         if (dragSource.type === 'multi-cell') {
+            if (dragSource.row !== undefined || this._getSelectedGridCells().length > 0) return false;
             const incoming = (dragSource.ids || []).filter(id => !targetIds.includes(id));
             return incoming.length > 0 && (targetIds.length + incoming.length <= MAX_ACTIVITY_GROUP_SIZE);
         }
@@ -349,6 +366,7 @@ export const SeatingDragDrop = {
             return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 > MAX_ACTIVITY_GROUP_SIZE);
         }
         if (dragSource.type === 'multi-cell') {
+            if (dragSource.row !== undefined || this._getSelectedGridCells().length > 0) return false;
             const incoming = (dragSource.ids || []).filter(id => !targetIds.includes(id));
             return incoming.length > 0 && (targetIds.length + incoming.length > MAX_ACTIVITY_GROUP_SIZE);
         }
@@ -385,7 +403,7 @@ export const SeatingDragDrop = {
 
         if (type === 'multi-cell') {
             this._selectedChipIds = ids;
-            this._placeSelectedAt(targetRow, targetCol);
+            this._placeSelectedAt(targetRow, targetCol, srcRow, srcCol);
             this._dragSource = null;
             return;
         }
@@ -416,9 +434,12 @@ export const SeatingDragDrop = {
         }
 
         this._dragSource = null;
+        this._selectedChipIds = [];
+        this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
+        this._updateSelectionAttribute();
 
         if (type === 'sidebar' || type === 'group-member') {
             this._animateCellPlaced(targetRow, targetCol);
@@ -502,20 +523,22 @@ export const SeatingDragDrop = {
                 ? { type: 'sidebar', resultId: element.dataset.resultId }
                 : { type: 'cell', resultId: element.dataset.resultId });
 
+        let cellIds = [];
         if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
             const r = parseInt(element.dataset.row, 10);
             const c = parseInt(element.dataset.col, 10);
             if (!isNaN(r) && !isNaN(c)) {
                 activeSourceInfo.row = r;
                 activeSourceInfo.col = c;
-                const cellIds = this._getCellStudentIds(r, c);
+                cellIds = this._getCellStudentIds(r, c);
                 if (cellIds.length > 0) {
                     activeSourceInfo.resultId = cellIds[0];
                 }
                 const memberEl = cellIds.length > 1
                     ? eventTarget?.closest?.('.sc-stacked-avatar[data-result-id], .sc-stacked-member[data-result-id]')
                     : null;
-                if (memberEl?.dataset?.resultId && !this._selectedChipIds.includes(activeSourceInfo.resultId)) {
+                const isCellSelected = cellIds.some(id => this._selectedChipIds.includes(id));
+                if (memberEl?.dataset?.resultId && !isCellSelected) {
                     activeSourceInfo = {
                         type: 'group-member',
                         resultId: memberEl.dataset.resultId,
@@ -525,8 +548,25 @@ export const SeatingDragDrop = {
                 }
             }
         }
-        if (activeSourceInfo.type !== 'group-member' && activeSourceInfo.resultId && this._selectedChipIds.includes(activeSourceInfo.resultId)) {
-            activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+        if (activeSourceInfo.type !== 'group-member' && activeSourceInfo.resultId) {
+            const isSelected = cellIds.length > 0
+                ? cellIds.some(id => this._selectedChipIds.includes(id))
+                : this._selectedChipIds.includes(activeSourceInfo.resultId);
+            if (isSelected) {
+                const selectedCells = this._getSelectedGridCells();
+                const isSingleSelectedGridCell = cellIds.length > 0 &&
+                    selectedCells.length === 1 &&
+                    this._selectedChipIds.every(id => cellIds.includes(id));
+                if (!isSingleSelectedGridCell) {
+                    activeSourceInfo = {
+                        type: 'multi-cell',
+                        ids: [...this._selectedChipIds],
+                        row: activeSourceInfo.row,
+                        col: activeSourceInfo.col,
+                        cellCount: selectedCells.length || this._selectedChipIds.length
+                    };
+                }
+            }
         }
         return activeSourceInfo;
     },
@@ -560,6 +600,7 @@ export const SeatingDragDrop = {
     },
 
     _startMousePointerDrag(e, dragTarget) {
+        this._cleanupMouseLasso();
         this._cleanupMouseDrag();
         this._mousePressedElement = dragTarget;
         this._setElementDraggable(dragTarget, false);
@@ -589,7 +630,7 @@ export const SeatingDragDrop = {
                 const memberStudent = isGroupMember
                     ? (this._studentMap?.get(sourceInfo.resultId) || this._students?.find(s => s.id === sourceInfo.resultId) || false)
                     : null;
-                const count = sourceInfo.type === 'multi-cell' ? sourceInfo.ids.length : 1;
+                const count = sourceInfo.type === 'multi-cell' ? (sourceInfo.cellCount || sourceInfo.ids.length) : 1;
                 const cloneSourceEl = isGroupMember
                     ? (dragTarget.querySelector(`.sc-stacked-avatar[data-result-id="${sourceInfo.resultId}"], .sc-stacked-member[data-result-id="${sourceInfo.resultId}"]`) || dragTarget)
                     : dragTarget;
@@ -611,6 +652,8 @@ export const SeatingDragDrop = {
                 } else {
                     if (sourceInfo.type !== 'multi-cell') {
                         this._clearSelection();
+                    } else {
+                        document.querySelectorAll('#scGridContainer .sc-cell.sc-chip-selected').forEach(el => el.classList.add('dragging'));
                     }
                     dragTarget.classList.add('dragging');
                 }
@@ -695,6 +738,7 @@ export const SeatingDragDrop = {
             el.querySelectorAll('.dragging-member').forEach(m => m.classList.remove('dragging-member'));
             this._setElementDraggable(el, this._isNativeDraggableAllowed() && !el.classList.contains('pinned'));
         }
+        document.querySelectorAll('#scGridContainer .sc-cell.dragging').forEach(el => el.classList.remove('dragging'));
         this._stopTouchAutoScroll();
         this._mouseDragClone = null;
         this._dragSource = null;
@@ -703,10 +747,160 @@ export const SeatingDragDrop = {
         if (hadActiveDrag) {
             this._suppressTouchTooltips(150);
         }
-        document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
-            c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-        });
+        this._clearGridDragHover();
         document.getElementById('scSidebar')?.classList.remove('drag-over');
+    },
+
+    _startMouseLassoSelection(e) {
+        if (this._isLocked || e.button !== 0) return;
+        this._cleanupMouseLasso();
+        this._cleanupMouseDrag();
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const isAdditive = Boolean(e.shiftKey || e.ctrlKey || e.metaKey);
+        const baseSelectedIds = isAdditive ? [...this._selectedChipIds] : [];
+        let hasLassoed = false;
+        let lassoEl = null;
+        let cellEntries = [];
+
+        const updateSelectionFromRect = (cx, cy) => {
+            const left = Math.min(startX, cx);
+            const top = Math.min(startY, cy);
+            const right = Math.max(startX, cx);
+            const bottom = Math.max(startY, cy);
+
+            if (lassoEl) {
+                lassoEl.style.left = `${left}px`;
+                lassoEl.style.top = `${top}px`;
+                lassoEl.style.width = `${right - left}px`;
+                lassoEl.style.height = `${bottom - top}px`;
+            }
+
+            const nextIds = [...baseSelectedIds];
+            let lastPos = null;
+            for (const entry of cellEntries) {
+                const r = entry.rect;
+                if (left < r.right && right > r.left && top < r.bottom && bottom > r.top) {
+                    lastPos = { row: entry.row, col: entry.col };
+                    for (const id of entry.ids) {
+                        if (!nextIds.includes(id)) {
+                            nextIds.push(id);
+                        }
+                    }
+                }
+            }
+
+            this._selectedChipIds = nextIds;
+            if (lastPos) {
+                this._lastSelectedGridPos = lastPos;
+            } else if (!isAdditive && nextIds.length === 0) {
+                this._lastSelectedGridPos = null;
+            }
+            this._applyChipSelectionUI();
+            this._updateSelectionAttribute();
+        };
+
+        const onPointerMove = (ev) => {
+            if (this._isLocked) {
+                finishLasso(true);
+                return;
+            }
+            const cx = ev.clientX;
+            const cy = ev.clientY;
+            if (!hasLassoed) {
+                if (Math.hypot(cx - startX, cy - startY) < 6) return;
+                hasLassoed = true;
+                this._suppressTouchTooltips(0);
+                this._dismissOnboardingHint();
+                TooltipsUI?.hideAll?.();
+
+                cellEntries = [];
+                document.querySelectorAll('#scGridContainer .sc-cell.occupied:not(.pinned)').forEach(cellEl => {
+                    const r = parseInt(cellEl.dataset.row, 10);
+                    const c = parseInt(cellEl.dataset.col, 10);
+                    if (isNaN(r) || isNaN(c)) return;
+                    const ids = this._getCellStudentIds(r, c);
+                    if (ids.length === 0) return;
+                    cellEntries.push({
+                        row: r,
+                        col: c,
+                        ids,
+                        rect: cellEl.getBoundingClientRect()
+                    });
+                });
+
+                lassoEl = document.createElement('div');
+                lassoEl.className = 'sc-lasso-box';
+                document.body.appendChild(lassoEl);
+                this._lassoBoxEl = lassoEl;
+                const viewEl = document.getElementById('seatingChartView');
+                viewEl?.setAttribute('data-dragging', 'true');
+                viewEl?.setAttribute('data-lasso', 'true');
+            }
+
+            updateSelectionFromRect(cx, cy);
+        };
+
+        const onKeyDown = (ev) => {
+            if (ev.key === 'Escape' && hasLassoed) {
+                this._selectedChipIds = baseSelectedIds;
+                this._applyChipSelectionUI();
+                this._updateSelectionAttribute();
+                finishLasso(true);
+            }
+        };
+
+        const finishLasso = (cancelled = false) => {
+            window.removeEventListener('pointermove', onPointerMove, true);
+            window.removeEventListener('pointerup', onPointerUp, true);
+            window.removeEventListener('pointercancel', onPointerCancel, true);
+            window.removeEventListener('blur', onPointerCancel);
+            window.removeEventListener('keydown', onKeyDown, true);
+            this._activeLassoAbort = null;
+
+            if (lassoEl) {
+                lassoEl.remove();
+                lassoEl = null;
+            }
+            this._lassoBoxEl = null;
+            const viewEl = document.getElementById('seatingChartView');
+            viewEl?.removeAttribute('data-dragging');
+            viewEl?.removeAttribute('data-lasso');
+
+            if (hasLassoed && !cancelled) {
+                const suppressClickOnce = (clickEv) => {
+                    clickEv.stopPropagation();
+                    clickEv.preventDefault();
+                    window.removeEventListener('click', suppressClickOnce, true);
+                };
+                window.addEventListener('click', suppressClickOnce, true);
+                setTimeout(() => window.removeEventListener('click', suppressClickOnce, true), 50);
+            }
+        };
+
+        const onPointerUp = () => finishLasso(false);
+        const onPointerCancel = () => finishLasso(true);
+
+        this._activeLassoAbort = () => finishLasso(true);
+        window.addEventListener('pointermove', onPointerMove, { capture: true, passive: true });
+        window.addEventListener('pointerup', onPointerUp, true);
+        window.addEventListener('pointercancel', onPointerCancel, true);
+        window.addEventListener('blur', onPointerCancel, { once: true });
+        window.addEventListener('keydown', onKeyDown, true);
+    },
+
+    _cleanupMouseLasso() {
+        if (this._activeLassoAbort) {
+            const abort = this._activeLassoAbort;
+            this._activeLassoAbort = null;
+            abort();
+            return;
+        }
+        if (this._lassoBoxEl) {
+            this._lassoBoxEl.remove();
+            this._lassoBoxEl = null;
+        }
     },
 
     _addTouchDrag(element, sourceInfo) {
@@ -905,7 +1099,9 @@ export const SeatingDragDrop = {
         const memberStudent = isGroupMember
             ? (this._studentMap?.get(this._touchSourceInfo.resultId) || this._students?.find(s => s.id === this._touchSourceInfo.resultId) || false)
             : null;
-        const count = this._touchSourceInfo?.type === 'multi-cell' ? this._touchSourceInfo.ids.length : 1;
+        const count = this._touchSourceInfo?.type === 'multi-cell'
+            ? (this._touchSourceInfo.cellCount || this._touchSourceInfo.ids.length)
+            : 1;
         const ghost = this._buildFloatingDragClone(element, {
             baseClass: 'sc-touch-ghost',
             count,
@@ -1037,12 +1233,38 @@ export const SeatingDragDrop = {
         }
         document.body.classList.remove('sc-drag-over-sidebar');
         document.getElementById('seatingChartView')?.removeAttribute('data-dragging');
-        this._hoveredDragCell = null;
         this._lastEvaluatedDragCell = undefined;
+        this._clearGridDragHover();
+        document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
+    },
+
+    _clearGridDragHover() {
+        this._hoveredDragCell = null;
         document.querySelectorAll('.sc-cell.drag-over, .sc-cell.drag-over-join, .sc-cell.drag-over-full').forEach(c => {
             c.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
         });
-        document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
+    },
+
+    _applyGridDragHover(cell, row, col, customSource = null) {
+        this._clearGridDragHover();
+        if (!cell) return;
+        this._hoveredDragCell = cell;
+        const activeSource = customSource || this._dragSource || this._touchSourceInfo;
+
+        if (activeSource?.type === 'multi-cell' && this._getSelectedGridCells().length > 1) {
+            const plan = this._resolveGridBlockMovePlan(row, col, activeSource.row, activeSource.col);
+            if (plan && plan.targets.length > 0) {
+                for (const t of plan.targets) {
+                    const targetEl = document.querySelector(`#scGridContainer .sc-cell[data-row="${t.row}"][data-col="${t.col}"]`);
+                    targetEl?.classList.add('drag-over');
+                }
+                return;
+            }
+        }
+
+        cell.classList.add('drag-over');
+        cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col, activeSource));
+        cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col, activeSource));
     },
 
     _highlightCellUnderTouch(x, y, hitTarget = null) {
@@ -1064,10 +1286,7 @@ export const SeatingDragDrop = {
             this._isDragOverSidebar = true;
             this._touchGhostOffsetY = null;
             this._lastEvaluatedDragCell = undefined;
-            if (this._hoveredDragCell) {
-                this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-                this._hoveredDragCell = null;
-            }
+            this._clearGridDragHover();
             const canRemove = Boolean(
                 sidebar &&
                 !this._isLocked &&
@@ -1096,20 +1315,17 @@ export const SeatingDragDrop = {
         }
         this._lastEvaluatedDragCell = cell;
 
-        if (this._hoveredDragCell) {
-            this._hoveredDragCell.classList.remove('drag-over', 'drag-over-join', 'drag-over-full');
-            this._hoveredDragCell = null;
+        if (!cell) {
+            this._clearGridDragHover();
+            return;
         }
 
-        if (cell) {
-            const row = parseInt(cell.dataset.row, 10);
-            const col = parseInt(cell.dataset.col, 10);
-            if (this._isValidDropTarget(row, col)) {
-                this._hoveredDragCell = cell;
-                cell.classList.add('drag-over');
-                cell.classList.toggle('drag-over-join', this._willDropJoinGroup(row, col, activeSource));
-                cell.classList.toggle('drag-over-full', this._willDropOverflowGroup(row, col, activeSource));
-            }
+        const row = parseInt(cell.dataset.row, 10);
+        const col = parseInt(cell.dataset.col, 10);
+        if (this._isValidDropTarget(row, col)) {
+            this._applyGridDragHover(cell, row, col, activeSource);
+        } else {
+            this._clearGridDragHover();
         }
     },
 

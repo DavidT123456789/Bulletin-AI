@@ -12,7 +12,7 @@ export const SeatingZoom = {
     // ========================================================================
 
     _getTargetZoomScale(fitScale = this._fitScale || 1) {
-        return fitScale < 0.95
+        return fitScale <= 0.8
             ? 1.0
             : Math.round(fitScale * 1.25 * 100) / 100;
     },
@@ -100,9 +100,13 @@ export const SeatingZoom = {
         const reservedBottom = isMobileLandscape ? (this._isLocked ? 30 : unlockedMobileBottom) : (isMobile ? (this._isLocked ? 48 : unlockedMobileBottom) : (isLandscapeTabletLocked ? landscapePad : 24));
         const reservedHoriz = isLandscapeTabletLocked ? (landscapePad * 2) : (isMobileLandscape ? 60 : (isCompactTablet ? 76 : (isMobile ? 24 : 48)));
 
-        // On wide desktop (>= 1180px) or when unlocked, account for the 260px sidebar;
-        // on landscape tablets (< 1180px) in locked consultation mode, reclaim the hidden sidebar width.
-        const effectiveAreaW = (!isMobile && areaWidth >= 600 && !isLandscapeTabletLocked) ? (areaWidth - 260) : areaWidth;
+        // On wide desktop (>= 1180px) in Course mode or when unlocked, account for the 260px sidebar;
+        // on landscape tablets (< 1180px) or in Activity consultation mode, reclaim the hidden sidebar width.
+        const isActivity = Boolean(this._isActivityMode?.());
+        const isActivityLocked = isActivity && Boolean(this._isLocked);
+        const effectiveAreaW = (!isMobile && areaWidth >= 600 && !isLandscapeTabletLocked && !isActivityLocked)
+            ? (areaWidth - 260)
+            : areaWidth;
         const availW = Math.max(80, effectiveAreaW - reservedHoriz);
         const availH = Math.max(80, areaHeight - reservedTop - reservedBottom);
 
@@ -130,7 +134,7 @@ export const SeatingZoom = {
         const scaleH = availH / boardH;
         let scale = Math.min(scaleW, scaleH);
 
-        const maxFitScale = (isCompactTablet || isMobileLandscape) ? 1.25 : (isMobile ? 1.0 : 1.65);
+        const maxFitScale = (isCompactTablet || isMobileLandscape) ? 1.25 : (isMobile ? 1.0 : (isActivity ? 1.95 : 1.65));
         scale = Math.min(maxFitScale, Math.max(0.35, Math.round(scale * 100) / 100));
 
         this._fitScale = scale;
@@ -279,7 +283,7 @@ export const SeatingZoom = {
 
         const nextIcon = isFitted ? 'solar:magnifer-zoom-in-linear' : 'solar:minimize-square-linear';
         const nextLabel = isFitted
-            ? ((this._fitScale < 0.95) ? 'Agrandir (100%)' : 'Agrandir (125%)')
+            ? ((this._fitScale <= 0.8) ? 'Agrandir (100%)' : 'Agrandir (125%)')
             : 'Ajuster à l’écran';
 
         if (icon && icon.getAttribute('icon') !== nextIcon) {

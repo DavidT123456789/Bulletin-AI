@@ -285,8 +285,13 @@ export const SeatingAnimations = {
             void view.offsetWidth;
         }
 
-        const cols = Math.max(1, this._getCols?.() || 6);
-        const rows = Math.max(1, this._getRows?.() || 5);
+        const rawCols = Math.max(1, this._getCols?.() || 6);
+        const rawRows = Math.max(1, this._getRows?.() || 5);
+        const bounds = this._getEffectiveGridBounds
+            ? this._getEffectiveGridBounds(rawRows, rawCols)
+            : { startRow: 0, rowCount: rawRows, startCol: 0, colCount: rawCols };
+        const cols = Math.max(1, bounds.colCount);
+        const rows = Math.max(1, bounds.rowCount);
         const isStudent = this._isStudentOrientation
             ? this._isStudentOrientation()
             : (!this._isActivityMode?.() && this._orientation === 'student');
@@ -295,8 +300,8 @@ export const SeatingAnimations = {
 
         const cells = board.querySelectorAll('.sc-cell:not([class*="sc-cell-special-"])');
         cells.forEach(cell => {
-            const r = Number(cell.dataset.row) || 0;
-            const c = Number(cell.dataset.col) || 0;
+            const r = Math.max(0, (Number(cell.dataset.row) || 0) - bounds.startRow);
+            const c = Math.max(0, (Number(cell.dataset.col) || 0) - bounds.startCol);
             const visualCol = isStudent ? (cols - 1 - c) : c;
             const visualRow = isStudent ? (rows - 1 - r) : r;
             const colOffset = visualCol - centerCol;
@@ -402,13 +407,18 @@ export const SeatingAnimations = {
         const enterClass = isForward ? 'sc-mode-carousel-in-right' : 'sc-mode-carousel-in-left';
         const exitClass = isForward ? 'sc-mode-carousel-out-left' : 'sc-mode-carousel-out-right';
 
-        const cols = Math.max(1, this._getCols());
-        const rows = Math.max(1, this._getRows());
+        const rawCols = Math.max(1, this._getCols());
+        const rawRows = Math.max(1, this._getRows());
+        const bounds = this._getEffectiveGridBounds
+            ? this._getEffectiveGridBounds(rawRows, rawCols)
+            : { startRow: 0, rowCount: rawRows, startCol: 0, colCount: rawCols };
+        const cols = Math.max(1, bounds.colCount);
+        const rows = Math.max(1, bounds.rowCount);
         const isStudent = this._isStudentOrientation ? this._isStudentOrientation() : (!this._isActivityMode?.() && this._orientation === 'student');
 
         board.querySelectorAll('.sc-cell').forEach(cell => {
-            const r = Number(cell.dataset.row) || 0;
-            const c = Number(cell.dataset.col) || 0;
+            const r = Math.max(0, (Number(cell.dataset.row) || 0) - bounds.startRow);
+            const c = Math.max(0, (Number(cell.dataset.col) || 0) - bounds.startCol);
             const visualCol = isStudent ? (cols - 1 - c) : c;
             const visualRow = isStudent ? (rows - 1 - r) : r;
             const leadCol = isForward ? visualCol : (cols - 1 - visualCol);

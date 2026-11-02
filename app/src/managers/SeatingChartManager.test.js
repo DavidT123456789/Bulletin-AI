@@ -4721,4 +4721,370 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             compactSpy.mockRestore();
         });
     });
+
+    describe('Mode Activité & Cours — Redimensionnement des rangées et badge de capacité', () => {
+        let classG1, classMax;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="plan">
+                    <div class="main-content">
+                        <section class="output-section"></section>
+                    </div>
+                </div>
+            `;
+            userSettings.academic.classes = [];
+            appState.classes = userSettings.academic.classes;
+            appState.generatedResults = [];
+            appState.seatingGrid = null;
+            appState.seatingActivityGrid = null;
+            userSettings.academic.seatingGrid = null;
+            userSettings.academic.seatingActivityGrid = null;
+
+            classG1 = ClassManager.createClass('3°G1');
+            classMax = ClassManager.createClass('3°A');
+
+            // 19 élèves dans 3°G1 placés sur les rangées 0 et 1 en mode Activité (rangée 2 vide, col 0 vide, col 9 occupée)
+            for (let i = 1; i <= 19; i++) {
+                const row = i <= 14 ? 0 : 1;
+                const col = i <= 14 ? Math.floor((i - 1) / 2) + 3 : ((i - 15) % 3) * 2 + 2;
+                const order = (i - 1) % 2;
+                appState.generatedResults.push({
+                    id: `g1-${i}`,
+                    classId: classG1.id,
+                    nom: `ELEVE${i}`,
+                    prenom: `Prenom${i}`,
+                    seatingPosition: { row: Math.floor((i - 1) / 6), col: (i - 1) % 6 },
+                    seatingActivityPosition: { row, col, order }
+                });
+            }
+
+            // 28 élèves dans 3°A (plus grande classe)
+            for (let i = 1; i <= 28; i++) {
+                appState.generatedResults.push({
+                    id: `max-${i}`,
+                    classId: classMax.id,
+                    nom: `MAX${i}`,
+                    prenom: `Prenom${i}`,
+                    seatingPosition: null,
+                    seatingActivityPosition: null
+                });
+            }
+
+            // 5 postes condamnés pour "Cette classe" sur la rangée 1 (comme dans la capture utilisateur)
+            classG1.seatingActivitySpecialLayout = {
+                '1,1': 'blocked',
+                '1,3': 'blocked',
+                '1,5': 'blocked',
+                '1,7': 'blocked',
+                '1,9': 'blocked'
+            };
+
+            appState.seatingActivityGrid = { rows: 3, cols: 10, locked: false, roomConfigured: true, specialLayout: {} };
+            userSettings.academic.seatingActivityGrid = appState.seatingActivityGrid;
+            appState.currentClassId = classG1.id;
+            userSettings.academic.currentClassId = classG1.id;
+
+            SeatingChartManager._planMode = 'activity';
+            SeatingChartManager._isActive = true;
+            SeatingChartManager._injectView();
+            SeatingChartManager._setupEventListeners();
+            SeatingChartManager.switchToView('plan', { immediate: true, silent: true });
+            SeatingChartManager.switchPlanMode('activity', { force: true, animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._render();
+        });
+
+        it('ne doit ni afficher d’alerte orange "Classe max à 28 élèves" ni éjecter la rangée du haut lors de la suppression de la rangée inférieure vide en mode Activité', () => {
+            expect(SeatingChartManager._getPlacedIds().size).toBe(19);
+
+            // 1. Avec 3x10 et 5 postes condamnés (25 postes) : aucune alerte orange en mode Activité
+            const capBefore = SeatingChartManager._getRoomCapacityInfo();
+            expect(capBefore.totalSeats).toBe(25);
+            expect(capBefore.isShortForCurrent).toBe(false);
+            expect(capBefore.isShortForMax).toBe(false);
+
+            const capEl = document.getElementById('scConfigCapacity');
+            expect(capEl.classList.contains('is-ok')).toBe(true);
+            expect(capEl.classList.contains('is-warning')).toBe(false);
+            expect(capEl.textContent).toContain('25 postes pour 19 élèves');
+            expect(capEl.textContent).not.toContain('Classe max');
+
+            // 2. Réduction de 3 à 2 rangées : supprime la rangée inférieure vide (r=2) sans éjecter aucun élève des rangées 0 et 1
+            SeatingChartManager._stepGridDimension('rows', -1);
+
+            expect(SeatingChartManager._getRows()).toBe(2);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(19);
+            expect(classG1.seatingActivitySpecialLayout['1,1']).toBe('blocked');
+
+            // 3. Avec 15 postes pour 19 élèves déjà regroupés en binômes : toujours OK (pas "Insuffisant (19 élèves)")
+            const capAfter = SeatingChartManager._getRoomCapacityInfo();
+            expect(capAfter.totalSeats).toBe(15);
+            expect(capAfter.isShortForCurrent).toBe(false);
+            expect(capAfter.isShortForMax).toBe(false);
+            expect(capEl.classList.contains('is-ok')).toBe(true);
+            expect(capEl.textContent).toContain('15 postes pour 19 élèves');
+
+            // 4. Ré-agrandir de 2 à 3 rangées rajoute la rangée vide en bas sans décaler les rangées 0 et 1
+            SeatingChartManager._stepGridDimension('rows', 1);
+            expect(SeatingChartManager._getRows()).toBe(3);
+            expect(SeatingChartManager._getPlacedIds().size).toBe(19);
+            expect(classG1.seatingActivitySpecialLayout['1,1']).toBe('blocked');
+
+            // 5. En mode Consultation (_isLocked = true), une allée verticale ne bloque pas le masquage des rangées et colonnes vides périphériques
+            SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
+            SeatingChartManager._setCellSpecialType(1, 0, 'aisle');
+            SeatingChartManager._setCellSpecialType(2, 0, 'aisle');
+            SeatingChartManager._isLocked = true;
+            expect(SeatingChartManager._getEffectiveRowCount(3, 10)).toBe(2);
+            // Les élèves de classG1 occupent les colonnes 2 à 9 (colonnes 0 et 1 vides/allée) -> 8 colonnes effectives (2..9)
+            expect(SeatingChartManager._getEffectiveColCount(3, 10)).toBe(8);
+            expect(SeatingChartManager._getEffectiveGridBounds(3, 10)).toEqual({
+                startRow: 0,
+                endRow: 1,
+                rowCount: 2,
+                startCol: 2,
+                endCol: 9,
+                colCount: 8
+            });
+        });
+
+        it('doit recadrer la grille sur la boîte englobante en mode Activité Consultation (_isLocked = true), exploiter toute la largeur Desktop dans _applySmartFit et garantir un saut de zoom de +25% dès fitScale > 0.80', () => {
+            // Regrouper les 19 élèves sur un îlot compact 5 colonnes (cols 0..4) x 2 rangées (rows 0..1) sur une grille 3x10
+            classG1.seatingActivitySpecialLayout = {};
+            SeatingChartManager._students.forEach((s, idx) => {
+                const stationIdx = idx % 10;
+                s.seatingActivityPosition = {
+                    row: Math.floor(stationIdx / 5),
+                    col: stationIdx % 5,
+                    order: Math.floor(idx / 10)
+                };
+            });
+            SeatingChartManager._loadPositionsFromState();
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._renderGrid();
+
+            const gridContainer = document.getElementById('scGridContainer');
+            // En mode Édition (_isLocked = false) : grille complète 3x10 = 30 cellules
+            expect(gridContainer.children.length).toBe(30);
+            expect(gridContainer.style.gridTemplateColumns).toBe('repeat(10, var(--sc-cell-w, 88px))');
+            expect(gridContainer.style.gridTemplateRows).toBe('repeat(3, var(--sc-cell-h, 96px))');
+
+            // Verrouillage en mode Consultation (_toggleLock -> _isLocked = true) : recadrage sur 2 rangées x 5 colonnes = 10 cellules
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(true);
+            expect(gridContainer.children.length).toBe(10);
+            expect(gridContainer.style.gridTemplateColumns).toBe('repeat(5, var(--sc-cell-w, 88px))');
+            expect(gridContainer.style.gridTemplateRows).toBe('repeat(2, var(--sc-cell-h, 96px))');
+            expect(gridContainer.dataset.gridBounds).toBe('0,1,0,4');
+
+            // Smart-Fit Desktop en mode Activité Consultation : récupère les 260px de la barre latérale masquée et autorise jusqu'à 1.95x
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+            const compactSpy = vi.spyOn(SeatingChartManager, '_isCompactLayout').mockReturnValue(false);
+            Object.defineProperty(gridArea, 'clientWidth', { value: 1440, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 860, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 540, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 260, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+            expect(SeatingChartManager._fitScale).toBeGreaterThan(1.65);
+            expect(SeatingChartManager._fitScale).toBeLessThanOrEqual(1.95);
+
+            // Seuil continu du bouton de zoom : entre 0.81 et 0.94 (ex: 0.88), agrandit de +25% (1.10) au lieu de plafonner à 1.00
+            SeatingChartManager._fitScale = 0.88;
+            expect(SeatingChartManager._getTargetZoomScale(0.88)).toBe(1.1);
+            SeatingChartManager._updateZoomButtonUI(true, 0.88);
+            const zoomBtn = document.getElementById('scFloatingZoomBtn');
+            expect(zoomBtn.getAttribute('data-tooltip')).toBe('Agrandir (125%)');
+
+            // En dessous ou égal à 0.80 (ex: 0.75), cible 100% (1.0)
+            SeatingChartManager._fitScale = 0.75;
+            expect(SeatingChartManager._getTargetZoomScale(0.75)).toBe(1.0);
+            SeatingChartManager._updateZoomButtonUI(true, 0.75);
+            expect(zoomBtn.getAttribute('data-tooltip')).toBe('Agrandir (100%)');
+
+            // Déverrouillage (_toggleLock -> _isLocked = false) : restaure les 30 cellules d'édition
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(gridContainer.children.length).toBe(30);
+
+            // Impression depuis le mode Édition (_isLocked = false) : recadre temporairement la grille puis la restaure dans onafterprint
+            let printedChildrenCount = 0;
+            const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {
+                printedChildrenCount = gridContainer.children.length;
+            });
+            SeatingChartManager._printChart();
+            expect(printedChildrenCount).toBe(10);
+            window.onafterprint?.();
+            expect(gridContainer.children.length).toBe(30);
+            printSpy.mockRestore();
+
+            // _autoPlace sur une salle configurée en 3x10 sans poste spécial : ne rétrécit jamais rows/cols (conserve 3x10)
+            SeatingChartManager._autoPlace('pairs-random');
+            expect(SeatingChartManager._getRows()).toBe(3);
+            expect(SeatingChartManager._getCols()).toBe(10);
+
+            // Vagues d'animation (_playModeCarousel & _animateFoldContinuum) alignées sur la boîte englobante décalée (cols 2..6 -> 5 colonnes)
+            SeatingChartManager._students.forEach((s, idx) => {
+                const stationIdx = idx % 10;
+                s.seatingActivityPosition = {
+                    row: Math.floor(stationIdx / 5),
+                    col: 2 + (stationIdx % 5),
+                    order: Math.floor(idx / 10)
+                };
+            });
+            SeatingChartManager._loadPositionsFromState();
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._renderGrid();
+            expect(gridContainer.dataset.gridBounds).toBe('0,1,2,6');
+
+            SeatingChartManager._playModeCarousel(null, true);
+            const firstVisibleCell = gridContainer.querySelector('.sc-cell[data-row="0"][data-col="2"]');
+            expect(firstVisibleCell.style.getPropertyValue('--carousel-col-i')).toBe('0.00');
+            SeatingChartManager._cleanupModeCarousel();
+
+            SeatingChartManager._animateFoldContinuum(true);
+            const centerVisibleCell = gridContainer.querySelector('.sc-cell[data-row="0"][data-col="4"]');
+            expect(centerVisibleCell.style.getPropertyValue('--fold-hinge-dx')).toBe('0px');
+            SeatingChartManager._cleanupFoldContinuum();
+
+            compactSpy.mockRestore();
+        });
+
+        it('doit signaler "Insuffisant" en mode Activité uniquement si le nombre de postes ne permet plus d’accueillir les élèves non placés', () => {
+            // Réduire à 2 rangées x 3 colonnes (6 cellules dont 1 condamnée en (1,1) = 5 postes)
+            document.getElementById('scRowsSlider').value = '2';
+            document.getElementById('scColsSlider').value = '3';
+            SeatingChartManager._onGridConfigChange();
+
+            const capShort = SeatingChartManager._getRoomCapacityInfo();
+            expect(capShort.totalSeats).toBe(5);
+            expect(capShort.isShortForCurrent).toBe(true);
+            expect(document.getElementById('scConfigCapacity').classList.contains('is-warning')).toBe(true);
+            expect(document.getElementById('scConfigCapacity').textContent).toContain('Insuffisant (19 élèves)');
+
+            // Ré-agrandir à 3x10 : tous les élèves éjectés retrouvent leur poste d'origine
+            document.getElementById('scRowsSlider').value = '3';
+            document.getElementById('scColsSlider').value = '10';
+            SeatingChartManager._onGridConfigChange();
+            expect(SeatingChartManager._getPlacedIds().size).toBe(19);
+        });
+
+        it('ne doit pas déclencher isShortForMax en mode Cours si seules des places condamnées "Cette classe" réduisent la capacité locale sous l’effectif max d’une autre classe, et doit maintenir l’alignement des autres classes lors d’un ajout/suppression de rangée + Undo', () => {
+            appState.seatingGrid = { rows: 5, cols: 6, locked: false, roomConfigured: true, specialLayout: {} };
+            userSettings.academic.seatingGrid = appState.seatingGrid;
+            // Condamner 6 places uniquement pour 3°G1 (19 élèves) -> 24 places pour 3°G1, mais toujours 30 places globales pour 3°A (28 élèves)
+            classG1.seatingSpecialLayout = {
+                '0,0': 'blocked', '0,1': 'blocked', '0,2': 'blocked',
+                '0,3': 'blocked', '0,4': 'blocked', '0,5': 'blocked'
+            };
+            // Placer un élève de 3°A au 1er rang face au bureau (row: 4) et une place AESH en (4, 1)
+            const maxStudent = appState.generatedResults.find(r => r.id === 'max-1');
+            maxStudent.seatingPosition = { row: 4, col: 0 };
+            classMax.seatingSpecialLayout = { '4,1': 'aesh' };
+
+            SeatingChartManager.switchPlanMode('course', { force: true, animate: false });
+            SeatingChartManager._isLocked = false;
+
+            const capCourse = SeatingChartManager._getRoomCapacityInfo();
+            expect(capCourse.totalSeats).toBe(24);
+            expect(capCourse.globalTotalSeats).toBe(30);
+            expect(capCourse.activeClassStudents).toBe(19);
+            expect(capCourse.maxClassStudents).toBe(28);
+            expect(capCourse.isShortForCurrent).toBe(false);
+            expect(capCourse.isShortForMax).toBe(false);
+
+            // Ajouter une 6ème rangée au fond en mode Cours (rowOffset = +1) : l'élève et la place AESH de 3°A restent au 1er rang (row: 5)
+            SeatingChartManager._stepGridDimension('rows', 1);
+            expect(maxStudent.seatingPosition.row).toBe(5);
+            expect(classMax.seatingSpecialLayout['5,1']).toBe('aesh');
+
+            // Annuler (Undo) : l'élève et la place AESH de 3°A reviennent en row: 4
+            SeatingChartManager._undo();
+            expect(maxStudent.seatingPosition.row).toBe(4);
+            expect(classMax.seatingSpecialLayout['4,1']).toBe('aesh');
+        });
+
+        it('doit permettre la sélection multiple par encadrement souris (lasso) et translater un bloc de groupes/binômes intact (avec bridage aux bords, permutation cyclique et contournement des places condamnées)', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const gridContainer = document.getElementById('scGridContainer');
+
+            // Simuler des coordonnées géométriques pour les cellules de la grille (100x100 par cellule)
+            gridContainer.querySelectorAll('.sc-cell').forEach(cellEl => {
+                const r = parseInt(cellEl.dataset.row, 10);
+                const c = parseInt(cellEl.dataset.col, 10);
+                cellEl.getBoundingClientRect = () => ({
+                    left: c * 100 + 10,
+                    top: r * 100 + 10,
+                    right: c * 100 + 90,
+                    bottom: r * 100 + 90,
+                    width: 80,
+                    height: 80
+                });
+            });
+
+            // 1. Sélection par encadrement (lasso) des 7 postes occupés de la rangée 0 : (0,3) à (0,9) (#4 à #10)
+            SeatingChartManager._startMouseLassoSelection({
+                button: 0,
+                clientX: 295,
+                clientY: 5,
+                shiftKey: false,
+                ctrlKey: false,
+                metaKey: false
+            });
+            window.dispatchEvent(new PointerEvent('pointermove', { clientX: 995, clientY: 95, bubbles: true }));
+            expect(document.querySelector('.sc-lasso-box')).not.toBeNull();
+
+            const selectedCells = SeatingChartManager._getSelectedGridCells();
+            expect(selectedCells.length).toBe(7);
+            expect(SeatingChartManager._selectedChipIds.length).toBe(14);
+            // Le bouton "Former le groupe" ne doit pas s'afficher quand des postes déjà groupés sont sélectionnés
+            expect(SeatingChartManager._canQuickGroupSelection()).toBe(false);
+
+            window.dispatchEvent(new PointerEvent('pointerup', { clientX: 995, clientY: 95, bubbles: true }));
+            expect(document.querySelector('.sc-lasso-box')).toBeNull();
+            // Le clic synthétique post-relâchement ne doit pas vider la sélection
+            gridArea.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(SeatingChartManager._getSelectedGridCells().length).toBe(7);
+
+            // 2. Translation 2D du bloc de 7 postes vers la gauche (#1..#7), même en saisissant un poste central (0,6) glissé vers (0,0) (bridage aux bords)
+            SeatingChartManager._dragSource = {
+                type: 'multi-cell',
+                ids: [...SeatingChartManager._selectedChipIds],
+                row: 0,
+                col: 6,
+                cellCount: 7
+            };
+            SeatingChartManager._handleDrop(0, 0);
+
+            // Les 7 binômes ont été décalés de 3 colonnes vers la gauche ((0,0)..(0,6)) en restant 100% intacts
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['g1-1', 'g1-2']);
+            expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['g1-3', 'g1-4']);
+            expect(SeatingChartManager._getCellStudentIds(0, 2)).toEqual(['g1-5', 'g1-6']);
+            expect(SeatingChartManager._getCellStudentIds(0, 6)).toEqual(['g1-13', 'g1-14']);
+            expect(SeatingChartManager._getCellStudentIds(0, 7)).toEqual([]);
+            expect(SeatingChartManager._getCellStudentIds(0, 8)).toEqual([]);
+            expect(SeatingChartManager._getCellStudentIds(0, 9)).toEqual([]);
+
+            // 3. Undo restaure le bloc à sa position initiale ((0,3)..(0,9))
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual([]);
+            expect(SeatingChartManager._getCellStudentIds(0, 3)).toEqual(['g1-1', 'g1-2']);
+            expect(SeatingChartManager._getCellStudentIds(0, 9)).toEqual(['g1-13', 'g1-14']);
+
+            // 4. Contournement automatique des places condamnées (Tier 2) :
+            // Sélectionner (0,3) [binôme 1] et (0,4) [binôme 2] via Ctrl+Clic puis les déposer en (1,0) où (1,1) est Condamné
+            SeatingChartManager._toggleCellSelection(0, 3);
+            SeatingChartManager._toggleCellSelection(0, 4);
+            expect(SeatingChartManager._getSelectedGridCells().length).toBe(2);
+
+            SeatingChartManager._placeSelectedAt(1, 0, 0, 3);
+            // (0,3) atterrit en (1,0) (#11) en conservant son binôme, et (0,4) saute les postes condamnés/occupés pour atterrir en (1,8) (#15)
+            expect(SeatingChartManager._getCellStudentIds(1, 0)).toEqual(['g1-1', 'g1-2']);
+            expect(SeatingChartManager._getCellStudentIds(1, 8)).toEqual(['g1-3', 'g1-4']);
+            expect(SeatingChartManager._getCellStudentIds(0, 3)).toEqual([]);
+            expect(SeatingChartManager._getCellStudentIds(0, 4)).toEqual([]);
+        });
+    });
 });

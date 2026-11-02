@@ -303,7 +303,7 @@ export const SeatingMobileSheet = {
             e.stopPropagation();
             this._closeMobileSheet(true);
             this._clearSelection();
-            this._toggleChipSelection(primary.id);
+            this._toggleCellSelection(row, col);
             this._lastSelectedGridPos = { row, col };
             UI?.showNotification?.(`Touchez un poste libre pour déplacer, ou occupé pour permuter.`, 'info');
         });

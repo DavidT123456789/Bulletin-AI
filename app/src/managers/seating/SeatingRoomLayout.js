@@ -289,38 +289,99 @@ export const SeatingRoomLayout = {
     _getRoomCapacityInfo() {
         const rows = this._getRows();
         const cols = this._getCols();
+        const isActivity = this._isActivityMode();
+        const gridKey = this._getActiveGridKey();
+        const globalSpecial = appState[gridKey]?.specialLayout || {};
+        const previewRowShift = isActivity ? 0 : ((this._gridState?.length || rows) - rows);
         let specialCount = 0;
+        let globalSpecialCount = 0;
         for (let r = 0; r < rows; r++) {
+            const srcR = r + previewRowShift;
             for (let c = 0; c < cols; c++) {
-                if (this._isSpecialSpot(r, c)) specialCount++;
+                if (this._isSpecialSpot(srcR, c)) specialCount++;
+                if (globalSpecial[`${srcR},${c}`]) globalSpecialCount++;
             }
         }
         const totalSeats = Math.max(0, (rows * cols) - specialCount);
-        const activeClassStudents = (this._students || []).filter(s => !this._isStudentDeparted(s)).length;
+        const globalTotalSeats = Math.max(0, (rows * cols) - globalSpecialCount);
+        const activeStudentsList = (this._students || []).filter(s => !this._isStudentDeparted(s));
+        const activeClassStudents = activeStudentsList.length;
         const maxClassStudents = this._getMaxClassStudentCount();
+
+        if (isActivity) {
+            const activeIds = new Set(activeStudentsList.map(s => s.id));
+            let occupiedSeats = 0;
+            let placedActiveStudents = 0;
+            let maxPlacedGroupSize = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (this._isSpecialSpot(r, c)) continue;
+                    const cellIds = this._getCellStudentIds(r, c);
+                    if (cellIds.length > 0) {
+                        occupiedSeats++;
+                        if (cellIds.length > maxPlacedGroupSize) {
+                            maxPlacedGroupSize = cellIds.length;
+                        }
+                        for (const id of cellIds) {
+                            if (activeIds.has(id)) placedActiveStudents++;
+                        }
+                    }
+                }
+            }
+            const unplacedActiveStudents = Math.max(0, activeClassStudents - placedActiveStudents);
+            const freeSeats = Math.max(0, totalSeats - occupiedSeats);
+            let isShortForCurrent = false;
+            if (activeClassStudents > 0) {
+                if (totalSeats === 0) {
+                    isShortForCurrent = true;
+                } else if (occupiedSeats === 0) {
+                    isShortForCurrent = (totalSeats * MAX_ACTIVITY_GROUP_SIZE) < activeClassStudents;
+                } else if (unplacedActiveStudents > 0) {
+                    const effectiveGroupSize = (maxPlacedGroupSize === 1 && occupiedSeats >= 2)
+                        ? 1
+                        : Math.max(2, Math.round(placedActiveStudents / occupiedSeats));
+                    const neededFreeSeats = Math.ceil(unplacedActiveStudents / effectiveGroupSize);
+                    isShortForCurrent = freeSeats < neededFreeSeats;
+                }
+            }
+            return {
+                rows,
+                cols,
+                totalSeats,
+                globalTotalSeats,
+                occupiedSeats,
+                activeClassStudents,
+                maxClassStudents,
+                isShortForCurrent,
+                isShortForMax: false
+            };
+        }
+
         return {
             rows,
             cols,
             totalSeats,
+            globalTotalSeats,
             activeClassStudents,
             maxClassStudents,
             isShortForCurrent: activeClassStudents > 0 && totalSeats < activeClassStudents,
-            isShortForMax: maxClassStudents > 0 && totalSeats < maxClassStudents
+            isShortForMax: maxClassStudents > 0 && globalTotalSeats < maxClassStudents
         };
     },
 
     _getCapacityBadgeInnerHTML(capInfo = this._getRoomCapacityInfo()) {
         const { totalSeats, activeClassStudents, maxClassStudents, isShortForCurrent, isShortForMax } = capInfo;
-        const unitLabel = this._isActivityMode() ? 'poste' : 'place';
+        const isActivity = this._isActivityMode();
+        const unitLabel = isActivity ? 'poste' : 'place';
         const seatsLabel = `${totalSeats} ${unitLabel}${totalSeats > 1 ? 's' : ''}`;
 
         if (isShortForCurrent) {
             return `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Insuffisant (${activeClassStudents} élèves)</span>`;
         }
-        if (isShortForMax) {
-            return `<iconify-icon icon="solar:info-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Classe max à ${maxClassStudents} élèves</span>`;
+        if (!isActivity && isShortForMax) {
+            return `<iconify-icon icon="solar:info-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Autre classe à ${maxClassStudents} élèves</span>`;
         }
-        if (maxClassStudents > activeClassStudents && maxClassStudents > 0) {
+        if (!isActivity && maxClassStudents > activeClassStudents && maxClassStudents > 0) {
             return `<iconify-icon icon="solar:check-circle-bold"></iconify-icon><span><strong>${seatsLabel}</strong> · Calibré (max ${maxClassStudents} élèves)</span>`;
         }
         if (activeClassStudents > 0) {
@@ -662,9 +723,9 @@ export const SeatingRoomLayout = {
 
         this._initGrid(newRows, newCols);
 
-        // Calcule le décalage pour ajouter/supprimer les rangées par le haut (éloigné du bureau)
-        // car le bureau (bottom) est l'origine visuelle.
-        const rowOffset = newRows - oldRows;
+        // En mode Cours, le bureau (en bas) est l'origine visuelle : on ajoute/supprime par le haut (fond de salle).
+        // En mode Activité, le poste #1 (en haut à gauche) est l'origine : on ajoute/supprime par le bas.
+        const rowOffset = this._isActivityMode() ? 0 : (newRows - oldRows);
 
         // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
         if (rowOffset !== 0) {
@@ -702,6 +763,31 @@ export const SeatingRoomLayout = {
                     cls[classSpecialKey] = newClassSpecial;
                 }
             });
+
+            // Décale également les élèves des autres classes partageant cette grille afin qu'ils restent alignés avec le bureau et leurs places spéciales
+            const currentStudentIds = new Set(this._students.map(s => s.id));
+            (appState.generatedResults || []).forEach(r => {
+                if (!r || currentStudentIds.has(r.id)) return;
+                const pos = r[posKey];
+                if (pos && typeof pos.row === 'number') {
+                    r[posKey] = {
+                        ...pos,
+                        row: pos.row + rowOffset
+                    };
+                    r._lastModified = Date.now();
+                }
+            });
+        } else if (newRows > oldRows && oldRows > 0 && appState[gridKey]?.specialLayout) {
+            const specialLayout = appState[gridKey].specialLayout;
+            for (let c = 0; c < newCols; c++) {
+                if (specialLayout[`${oldRows - 1},${c}`] === 'aisle') {
+                    for (let r = oldRows; r < newRows; r++) {
+                        if (!specialLayout[`${r},${c}`]) {
+                            specialLayout[`${r},${c}`] = 'aisle';
+                        }
+                    }
+                }
+            }
         }
 
         // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
@@ -726,8 +812,8 @@ export const SeatingRoomLayout = {
             this._setCellStudentIds(r, c, items.slice(0, maxPerCell).map(item => item.id));
         }
 
-        // Met à jour la coordonnée décalée des élèves temporairement hors-grille pour éviter toute collision avec la rangée 0
-        if (rowOffset !== 0) {
+        // Met à jour la coordonnée des élèves temporairement hors-grille pour éviter toute collision au ré-agrandissement
+        if (newRows !== oldRows || rowOffset !== 0) {
             const activePlacedIds = this._getPlacedIds();
             this._students.forEach(s => {
                 if (!activePlacedIds.has(s.id) && placed[s.id]) {
