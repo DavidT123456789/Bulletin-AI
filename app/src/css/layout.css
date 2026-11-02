@@ -799,7 +799,6 @@ body.is-cloud-syncing label {
 .cloud-save-menu-item .cloud-save-label {
     font-weight: 500;
     color: var(--text-secondary);
-    font-size: 14px;
     line-height: 1.2;
     transition: color var(--transition-fast);
 }
@@ -846,7 +845,7 @@ body.is-cloud-syncing label {
 }
 
 [data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-in-sync {
-    color: var(--success-dark);
+    color: var(--success-bright);
 }
 
 .cloud-save-menu-item:hover .cloud-btn-hint.hint-syncing {
@@ -887,13 +886,13 @@ body.is-cloud-syncing label {
 
 /* État désactivé (non connecté ou action non nécessaire) */
 .cloud-save-menu-item.disabled {
-    opacity: 0.45;
     cursor: not-allowed;
 }
 
 .cloud-save-menu-item.disabled > iconify-icon,
 .cloud-save-menu-item.disabled .cloud-save-label {
     color: var(--text-tertiary);
+    opacity: 0.45;
 }
 
 .cloud-save-menu-item.disabled:hover {
@@ -901,7 +900,8 @@ body.is-cloud-syncing label {
 }
 
 .cloud-save-menu-item.disabled:hover > iconify-icon,
-.cloud-save-menu-item.disabled:hover .cloud-save-label {
+.cloud-save-menu-item.disabled:hover .cloud-save-label,
+.cloud-save-menu-item.disabled:hover .cloud-btn-hint {
     color: var(--text-tertiary);
 }
 

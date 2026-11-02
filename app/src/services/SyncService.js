@@ -332,6 +332,9 @@ export const SyncService = {
 
         // Only offline disables Save/Load: an expired session reconnects on click
         const isOffline = state === 'local';
+        if (loadBtn) {
+            loadBtn.setAttribute('data-tooltip', isOffline ? 'Mode hors-ligne' : 'Récupérer vos données depuis le Cloud');
+        }
         [saveBtn, loadBtn].forEach(btn => {
             if (!btn) return;
             btn.classList.toggle('disabled', isOffline);

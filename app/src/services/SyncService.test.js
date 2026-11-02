@@ -339,6 +339,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(saveBtn.classList.contains('disabled')).toBe(true);
             expect(loadBtn.classList.contains('disabled')).toBe(true);
             expect(saveBtn.getAttribute('aria-disabled')).toBe('true');
+            expect(loadBtn.getAttribute('data-tooltip')).toBe('Mode hors-ligne');
             expect(saveHint.style.display).toBe('block');
             expect(saveHint.textContent).toBe('Mode hors-ligne');
         });
