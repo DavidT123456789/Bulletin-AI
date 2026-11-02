@@ -374,13 +374,7 @@
 }
 
 .actions-group .btn-dropdown-item {
-    padding: 6px 12px;
-}
-
-/* Séparateur danger - zone d'actions irréversibles */
-.dropdown-divider.danger-divider {
-    border-color: rgba(239, 68, 68, 0.3);
-    margin-top: 4px;
+    padding: 7px 10px;
 }
 
 /* NOUVEAU: Style for instruction suggestions dropdown */

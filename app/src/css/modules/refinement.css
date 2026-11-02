@@ -521,7 +521,11 @@
 button[data-refine-type="encouraging"]:hover iconify-icon,
 button[data-refine-type="encouraging"].is-generating iconify-icon {
     animation: heart-beat-soft 1.4s ease-in-out infinite;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }
 
 /* 2. Détaillée (Expand) - Pulsation */
@@ -574,7 +578,11 @@ button[data-refine-type="concise"].is-generating iconify-icon {
 button[data-refine-type="variations"]:hover iconify-icon,
 button[data-refine-type="variations"].is-generating iconify-icon {
     animation: rotate-soft 1.5s linear infinite;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }
 
 /* 5. Peaufiner (Stars) - Wobble magique + scintillement */
@@ -618,7 +626,11 @@ button[data-refine-type="variations"].is-generating iconify-icon {
 button[data-refine-type="polish"]:hover iconify-icon,
 button[data-refine-type="polish"].is-generating iconify-icon {
     animation: magic-polish 1.2s ease-in-out infinite;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }
 
 /* ====================================================================
@@ -632,7 +644,11 @@ button:not(.menu-item):hover iconify-icon[icon*="magic-stick"],
 .focus-nav-btn:hover iconify-icon[icon*="magic-stick"],
 .dropdown-item:not(.menu-item):hover iconify-icon[icon*="magic-stick"] {
     animation: magic-polish 1.2s ease-in-out infinite;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }
 
 /* Boutons avec icône de rafraîchissement (Régénérer / Mettre à jour) */
@@ -641,5 +657,9 @@ button:not(.menu-item):hover iconify-icon[icon*="refresh"],
 .focus-nav-btn:hover iconify-icon[icon*="refresh"],
 .dropdown-item:not(.menu-item):hover iconify-icon[icon*="refresh"] {
     animation: rotate-soft 1.5s linear infinite;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }

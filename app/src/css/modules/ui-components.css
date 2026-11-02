@@ -219,7 +219,7 @@
 }
 
 .ui-tabs-sidebar {
-    width: 204px;
+    width: 214px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -237,14 +237,15 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
+    gap: 9px;
+    padding: 8px 11px 8px 8px;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius);
     background: transparent;
     color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 0.88rem;
+    font-family: inherit;
+    font-weight: 450;
+    font-size: 0.86rem;
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast);
     text-align: left;
@@ -273,19 +274,17 @@
     align-items: center;
     justify-content: center;
     width: 20px;
+    height: 20px;
+    flex-shrink: 0;
     text-align: center;
-    font-size: 1.16em;
-    color: var(--text-tertiary);
+    font-size: 1.15em;
+    color: currentColor;
     transition: transform var(--transition-fast), color var(--transition-fast);
-}
-
-.ui-tabs-btn:hover:not(.active) iconify-icon:not(.rotate-icon):not(.icon-spin) {
-    color: var(--text-primary);
 }
 
 .ui-tabs-btn.active iconify-icon,
 .ui-tabs-btn.active i {
-    color: var(--text-primary) !important;
+    color: currentColor !important;
 }
 
 .ui-tabs-actions-wrapper {
@@ -295,7 +294,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     flex-shrink: 0;
 }
 
@@ -303,15 +302,16 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
-    padding: 7px 12px;
+    gap: 9px;
+    padding: 7px 9px 7px 8px;
     width: 100%;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.80em;
-    font-weight: 500;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 450;
     cursor: pointer;
     text-decoration: none;
     transition: all var(--transition-fast);
@@ -323,9 +323,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
+    width: 20px;
+    height: 20px;
     font-size: 1.15em;
-    color: var(--icon-btn-color);
+    color: currentColor;
     flex-shrink: 0;
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
@@ -336,10 +337,6 @@
     border-color: transparent;
 }
 
-.ui-tabs-action-btn:hover iconify-icon:not(.rotate-icon):not(.icon-spin) {
-    color: var(--text-primary);
-}
-
 .ui-tabs-action-btn:active {
     transform: scale(0.97);
 }
@@ -347,7 +344,7 @@
 .ui-tabs-action-btn-main {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -377,15 +374,15 @@
 }
 
 .ui-tabs-action-btn:hover .btn-build-pill {
-    color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.14);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .ui-tabs-action-btn:hover .btn-build-pill {
-    color: var(--primary-bright);
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-    background: rgba(var(--primary-color-rgb), 0.18);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .ui-tabs-content {

@@ -537,12 +537,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
     text-transform: none;
-    letter-spacing: normal;
+    letter-spacing: 0.01em;
     color: var(--text-tertiary);
-    padding: 6px 10px 4px 10px;
+    padding: 4px 10px 3px 10px;
 }
 
 .model-dropdown-count-badge {
@@ -568,13 +569,13 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 8px 10px;
+    padding: 7px 10px;
     border: none;
     background: transparent;
     border-radius: var(--dropdown-item-radius, 10px);
     cursor: pointer;
     text-align: left;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     color: var(--text-secondary);
     transition: all 0.15s ease;
 }
@@ -610,11 +611,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.84rem;
+    font-weight: 450;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.model-dropdown-item.active .model-dropdown-item-name {
+    font-weight: 500;
 }
 
 .model-dropdown-item-badge {
@@ -639,27 +644,20 @@
     align-items: center;
 }
 
-/* Divider & Footer */
-.model-dropdown-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 4px 6px;
-    opacity: 0.6;
-}
-
+/* Footer */
 .model-dropdown-footer {
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 8px 10px;
+    padding: 7px 10px;
     border: none;
     background: transparent;
     border-radius: var(--dropdown-item-radius, 10px);
     cursor: pointer;
     font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
+    font-weight: 450;
+    color: var(--text-secondary);
     transition: all 0.15s ease;
 }
 

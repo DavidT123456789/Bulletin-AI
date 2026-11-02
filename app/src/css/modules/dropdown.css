@@ -145,10 +145,11 @@
 
 .custom-dropdown-group-label {
     padding: 6px 12px 4px;
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-size: 0.73rem;
+    font-weight: 600;
+    line-height: 1.2;
     text-transform: none;
-    letter-spacing: normal;
+    letter-spacing: 0.01em;
     color: var(--text-tertiary);
     display: flex;
     align-items: center;
@@ -289,15 +290,6 @@
 
 
 /* === Options individuelles === */
-/* === Divider === */
-.dropdown-divider {
-    height: 1px;
-    margin: 4px 0;
-    overflow: hidden;
-    background-color: var(--border-color);
-}
-
-/* === Options individuelles === */
 .custom-dropdown-option {
     display: flex;
     align-items: center;
@@ -305,7 +297,8 @@
     padding: 6px 12px;
     border-radius: var(--dropdown-item-radius-sm);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.84rem;
+    font-weight: 450;
     color: var(--text-primary);
     transition: all var(--transition-fast);
     margin-bottom: 2px;

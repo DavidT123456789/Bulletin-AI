@@ -5,7 +5,7 @@
 /* Container wrapper to ensure proper spacing in menu */
 .theme-control-wrapper {
     width: 100%;
-    padding: 0.25rem 0.5rem;
+    padding: 2px 4px;
     box-sizing: border-box;
     margin-bottom: 0;
     display: flex;

@@ -609,7 +609,7 @@ body.is-cloud-syncing label {
 
 /* Update menu item style */
 .menu-item.update-item {
-    background-color: var(--item-idle-bg, rgba(0, 0, 0, 0.03));
+    background-color: var(--item-idle-bg);
     color: var(--text-primary);
     font-weight: 500;
     margin-bottom: 4px;
@@ -617,44 +617,6 @@ body.is-cloud-syncing label {
 
 .menu-item.update-item:hover {
     background-color: var(--item-hover-bg);
-}
-
-.menu-item.update-item i,
-.menu-item.update-item iconify-icon {
-    color: var(--text-tertiary);
-}
-
-.menu-item.update-item:hover i,
-.menu-item.update-item:hover iconify-icon {
-    color: var(--text-primary);
-}
-
-.menu-item.update-item span {
-    color: var(--text-primary);
-}
-
-/* Dark theme */
-[data-theme="dark"] .menu-item.update-item {
-    background-color: var(--item-idle-bg, rgba(255, 255, 255, 0.03));
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .menu-item.update-item:hover {
-    background-color: var(--item-hover-bg, rgba(255, 255, 255, 0.07));
-}
-
-[data-theme="dark"] .menu-item.update-item i,
-[data-theme="dark"] .menu-item.update-item iconify-icon {
-    color: var(--text-tertiary);
-}
-
-[data-theme="dark"] .menu-item.update-item:hover i,
-[data-theme="dark"] .menu-item.update-item:hover iconify-icon {
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .menu-item.update-item span {
-    color: var(--text-primary);
 }
 
 /* 3. Dropdown Menu Container */
@@ -666,7 +628,8 @@ body.is-cloud-syncing label {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 200px;
+    min-width: 205px;
+    width: max-content;
     max-height: calc(100dvh - 80px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -710,17 +673,18 @@ body.is-cloud-syncing label {
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 7.5px 11px 7.5px 8px;
+    font-size: 0.84rem;
+    font-weight: 450;
     color: var(--text-secondary);
+    white-space: nowrap;
     background: transparent;
     border: none;
     border-radius: var(--dropdown-item-radius);
     cursor: pointer;
     text-align: left;
     transition: all var(--transition-fast);
-    gap: 10px;
+    gap: 9.5px;
 }
 
 .menu-item-row {
@@ -738,20 +702,18 @@ body.is-cloud-syncing label {
 
 .menu-item > i,
 .menu-item > iconify-icon {
-    font-size: 18px;
-    color: var(--text-tertiary);
-    min-width: 24px;
-    width: 24px;
-    height: 24px;
+    font-size: 17.5px;
+    line-height: 1;
+    color: currentColor;
+    min-width: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
     align-items: center;
+    transform-origin: center center;
     transition: color var(--transition-fast);
-}
-
-.menu-item:hover > i,
-.menu-item:hover > iconify-icon {
-    color: var(--text-primary);
 }
 
 /* Cloud button hints — state variants */
@@ -762,6 +724,7 @@ body.is-cloud-syncing label {
 
 [data-theme="dark"] .cloud-btn-hint.hint-in-sync {
     color: var(--success-bright);
+    opacity: 0.9;
 }
 
 .cloud-btn-hint.hint-syncing {
@@ -797,8 +760,8 @@ body.is-cloud-syncing label {
 }
 
 .cloud-save-menu-item .cloud-save-label {
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 450;
+    color: currentColor;
     line-height: 1.2;
     transition: color var(--transition-fast);
 }
@@ -924,14 +887,14 @@ body.is-cloud-syncing label {
 
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */
 .cloud-connect-item {
-    font-weight: 500;
+    font-weight: 450;
 }
 
 .cloud-connect-item iconify-icon {
-    font-size: 18px;
-    min-width: 24px;
-    width: 24px;
-    height: 24px;
+    font-size: 17.5px;
+    min-width: 20px;
+    width: 20px;
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -947,8 +910,8 @@ body.is-cloud-syncing label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     animation: spin 1s linear infinite;
     will-change: transform;
 }
@@ -962,14 +925,6 @@ body.is-cloud-syncing label {
 button > .icon-spin-wrapper {
     vertical-align: middle;
     margin-right: 6px;
-}
-
-/* Separator Line */
-.menu-separator {
-    height: 1px;
-    background-color: var(--border-color);
-    margin: 4px 0;
-    width: 100%;
 }
 
 /* ====================================================================
@@ -1158,7 +1113,8 @@ button > .icon-spin-wrapper {
         top: 56px !important;
         right: 12px !important;
         left: auto !important;
-        width: 200px;
+        min-width: 205px;
+        width: max-content;
         z-index: 9999;
     }
 }

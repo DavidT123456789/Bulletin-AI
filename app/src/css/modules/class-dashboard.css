@@ -1157,12 +1157,8 @@
 
 .btn-refinement iconify-icon {
     font-size: var(--font-sm);
-    color: var(--text-tertiary);
+    color: currentColor;
     transition: color var(--transition-fast);
-}
-
-.btn-refinement:hover iconify-icon {
-    color: var(--text-primary);
 }
 
 /* Revert button modifier */

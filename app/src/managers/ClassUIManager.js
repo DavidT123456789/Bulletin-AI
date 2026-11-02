@@ -1958,6 +1958,9 @@ export const ClassUIManager = {
             }
 
             if (currentClasses.length > 0) {
+                if (menuHtml) {
+                    menuHtml += '<div class="dropdown-divider"></div>';
+                }
                 menuHtml += `
                     <button type="button" class="action-dropdown-item danger" id="resetAllClassesBtn">
                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
