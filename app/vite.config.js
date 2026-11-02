@@ -25,6 +25,7 @@ export default defineConfig({
       registerType: 'prompt', // Changed to 'prompt' to show custom update notification
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         // Only skip Workbox revision hashing on Vite-generated content-hashed bundles,
         // so static files in public/assets/ (logo.png, icon.svg, icon-192.png, icon-512.png)
@@ -128,7 +129,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     minify: 'esbuild',
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -147,85 +148,12 @@ export default defineConfig({
             return 'vendor';
           }
           if (
-            normalizedId.includes('/src/managers/SeatingChartManager') ||
-            normalizedId.includes('/src/managers/seating/')
+            !normalizedId.endsWith('.css') &&
+            (normalizedId.includes('/src/') ||
+              normalizedId.includes('virtual:pwa-register') ||
+              normalizedId.includes('vite/preload-helper'))
           ) {
-            return 'seating-chart';
-          }
-          if (
-            normalizedId.includes('/src/managers/TrombinoscopeManager') ||
-            normalizedId.includes('/src/managers/trombinoscope/') ||
-            normalizedId.includes('/src/utils/PronoteTrombiParser')
-          ) {
-            return 'trombinoscope';
-          }
-          if (
-            normalizedId.includes('/src/managers/FocusPanel') ||
-            normalizedId.includes('/src/managers/focus/') ||
-            normalizedId.includes('/src/managers/JournalManager') ||
-            normalizedId.includes('/src/managers/VariationsManager')
-          ) {
-            return 'focus-panel';
-          }
-          if (
-            normalizedId.includes('/src/managers/ImportWizardManager') ||
-            normalizedId.includes('/src/managers/FileImportManager') ||
-            normalizedId.includes('/src/managers/MassImportManager') ||
-            normalizedId.includes('/src/managers/ImportHubManager') ||
-            normalizedId.includes('/src/managers/ImportUIManager') ||
-            normalizedId.includes('/src/managers/BackupImportManager') ||
-            normalizedId.includes('/src/managers/ExportManager') ||
-            normalizedId.includes('/src/managers/PreviewManager')
-          ) {
-            return 'import-wizard';
-          }
-          if (
-            normalizedId.includes('/src/managers/ClassDashboardManager') ||
-            normalizedId.includes('/src/managers/StatsUIManager') ||
-            normalizedId.includes('/src/services/StatsService')
-          ) {
-            return 'stats-dashboard';
-          }
-          if (
-            normalizedId.includes('/src/managers/SettingsUIManager') ||
-            normalizedId.includes('/src/managers/listeners/SettingsModalListeners') ||
-            normalizedId.includes('/src/managers/listeners/OtherModalsListeners') ||
-            normalizedId.includes('/src/managers/listeners/ModalListeners') ||
-            normalizedId.includes('/src/managers/ApiValidationManager') ||
-            normalizedId.includes('/src/managers/ModelSelectionManager') ||
-            normalizedId.includes('/src/managers/WelcomeManager') ||
-            normalizedId.includes('/src/managers/RestoreTransitionManager') ||
-            normalizedId.includes('/src/managers/SpeechRecognitionManager') ||
-            normalizedId.includes('/src/managers/SpeechSynthesisManager') ||
-            normalizedId.includes('/src/managers/PwaInstallManager') ||
-            normalizedId.includes('/src/managers/CrossClassSearchManager')
-          ) {
-            return 'settings-modals';
-          }
-          if (
-            normalizedId.includes('/src/managers/ListViewManager') ||
-            normalizedId.includes('/src/managers/list/') ||
-            normalizedId.includes('/src/managers/ResultsUIManager') ||
-            normalizedId.includes('/src/managers/DropdownManager') ||
-            normalizedId.includes('/src/managers/HistoryManager')
-          ) {
-            return 'list-view';
-          }
-          if (normalizedId.includes('/src/managers/')) {
-            return 'managers-core';
-          }
-          if (normalizedId.includes('/src/services/')) {
-            return 'services';
-          }
-          if (
-            normalizedId.includes('/src/utils/') ||
-            normalizedId.includes('/src/config/') ||
-            normalizedId.includes('/src/state/') ||
-            normalizedId.includes('/src/core/') ||
-            normalizedId.includes('/src/data/') ||
-            normalizedId.includes('vite/preload-helper')
-          ) {
-            return 'utils';
+            return 'app-core';
           }
         }
       }

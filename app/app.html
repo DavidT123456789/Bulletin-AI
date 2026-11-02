@@ -81,6 +81,45 @@
                         document.documentElement.classList.add('is-first-visit');
                     }
                 } catch (_) {}
+
+                // Self-healing boot watchdog: if a stale Service Worker cache blocks ES module execution,
+                // automatically purge SW + Cache Storage once per session and reload cleanly.
+                var recoverFromStaleSW = function() {
+                    if (window.App) return;
+                    try {
+                        if (sessionStorage.getItem('bulletin_sw_recovery') === '1') return;
+                        sessionStorage.setItem('bulletin_sw_recovery', '1');
+                    } catch (_) {
+                        return;
+                    }
+                    var tasks = [];
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+                        tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+                            return Promise.all(regs.map(function(r) { return r.unregister(); }));
+                        }).catch(function() {}));
+                    }
+                    if (window.caches && window.caches.keys) {
+                        tasks.push(window.caches.keys().then(function(keys) {
+                            return Promise.all(keys.map(function(k) { return window.caches.delete(k); }));
+                        }).catch(function() {}));
+                    }
+                    Promise.all(tasks).then(function() {
+                        window.location.reload();
+                    });
+                };
+
+                window.addEventListener('error', function(e) {
+                    var t = e && e.target;
+                    if (t && ((t.tagName === 'SCRIPT' && t.type === 'module') || (t.tagName === 'LINK' && t.rel === 'modulepreload'))) {
+                        recoverFromStaleSW();
+                    }
+                }, true);
+
+                window.addEventListener('load', function() {
+                    setTimeout(function() {
+                        if (!window.App) recoverFromStaleSW();
+                    }, 3500);
+                });
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
                 document.documentElement.style.backgroundColor = '#f7f7f8';

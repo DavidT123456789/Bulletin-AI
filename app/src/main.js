@@ -9,11 +9,39 @@ import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js
 import { appState } from './state/State.js';
 import './css/main.css';
 
+window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    try {
+        if (!sessionStorage.getItem('bulletin_chunk_reload')) {
+            sessionStorage.setItem('bulletin_chunk_reload', '1');
+            window.location.reload();
+        }
+    } catch {
+        window.location.reload();
+    }
+});
+
 const init = () => {
     // Initialiser l'error boundary en premier pour capturer toutes les erreurs
     initErrorBoundary();
 
     try {
+        // Expose modules to global scope immediately so the boot watchdog knows module evaluation succeeded
+        window.UI = UI;
+        window.App = App;
+        window.AppreciationsManager = AppreciationsManager;
+        window.StorageManager = StorageManager;
+        window.RestoreTransitionManager = RestoreTransitionManager;
+        window.appState = appState;
+        window.DOM = DOM;
+
+        try {
+            sessionStorage.removeItem('bulletin_chunk_reload');
+            sessionStorage.removeItem('bulletin_sw_recovery');
+        } catch {
+            // Ignore storage errors in restricted contexts
+        }
+
         initDOM();
         App.init();
 
@@ -25,15 +53,6 @@ const init = () => {
                 appLayout.classList.remove('app-loading');
             }
         }, 800); // Wait for longest animation (0.6s + 0.3s delay = ~0.9s)
-
-        // Expose modules to global scope for inline HTML handlers
-        window.UI = UI;
-        window.App = App;
-        window.AppreciationsManager = AppreciationsManager;
-        window.StorageManager = StorageManager;
-        window.RestoreTransitionManager = RestoreTransitionManager;
-        window.appState = appState;
-        window.DOM = DOM;
 
         // Expose global functions for inline HTML onclick handlers
         window.switchHelpTab = (btn, tabId) => {
@@ -160,22 +179,36 @@ function setupPWAUpdateHandler() {
     // Check if service worker is available
     if (!('serviceWorker' in navigator)) return;
 
-    const hadController = !!navigator.serviceWorker.controller;
     let isRefreshing = false;
     let isUpdating = false;
+
+    const triggerSafeReload = () => {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        window.location.reload();
+    };
 
     // Reload on controllerchange only when a user-initiated update is in progress
     // and never on initial first-visit Service Worker installation
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (isRefreshing || !isUpdating || !hadController) return;
-        isRefreshing = true;
-        window.location.reload();
+        if (!isUpdating) return;
+        triggerSafeReload();
     });
 
     // Import the virtual module from vite-plugin-pwa
     import('virtual:pwa-register').then(({ registerSW }) => {
         let updateSW;
         let registration;
+
+        const activateWaitingWorker = (worker) => {
+            if (!worker) return;
+            worker.addEventListener('statechange', () => {
+                if (worker.state === 'activated') {
+                    triggerSafeReload();
+                }
+            });
+            worker.postMessage({ type: 'SKIP_WAITING' });
+        };
 
         const applyUpdate = async (btn) => {
             if (isUpdating) return;
@@ -192,23 +225,28 @@ function setupPWAUpdateHandler() {
                     await updateSW(true);
                 }
 
-                // 2. Direct message to waiting / installing workers
+                // 2. Direct message to waiting workers (or wait for installing worker to finish installing first)
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 registrations.forEach((reg) => {
-                    reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
-                    reg.installing?.postMessage({ type: 'SKIP_WAITING' });
+                    if (reg.waiting) {
+                        activateWaitingWorker(reg.waiting);
+                    } else if (reg.installing) {
+                        const installing = reg.installing;
+                        installing.addEventListener('statechange', () => {
+                            if (installing.state === 'installed') {
+                                activateWaitingWorker(reg.waiting || installing);
+                            }
+                        });
+                    }
                 });
             } catch (e) {
                 console.warn('[PWA] Error during update trigger:', e);
             }
 
-            // 3. Fallback: if controllerchange doesn't reload within 600ms, force reload
+            // 3. Safe fallback timeout after giving Workbox time to finish precaching & activating
             setTimeout(() => {
-                if (!isRefreshing) {
-                    isRefreshing = true;
-                    window.location.reload();
-                }
-            }, 600);
+                triggerSafeReload();
+            }, 4000);
         };
 
         const notifyUpdateAvailable = () => {
@@ -332,7 +370,7 @@ function setupPWAUpdateHandler() {
                     const installingWorker = swRegistration.installing;
                     if (installingWorker) {
                         installingWorker.addEventListener('statechange', () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            if (installingWorker.state === 'installed' && (navigator.serviceWorker.controller || swRegistration.waiting)) {
                                 notifyUpdateAvailable();
                             }
                         });
