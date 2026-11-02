@@ -20,9 +20,6 @@ export const InputListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
-        addClickListener(DOM.singleStudentTab, App.handleSingleStudentTabClick);
-        addClickListener(DOM.massImportTab, App.handleMassImportTabClick);
-
         // Mass Import Listeners - delegated to FileImportManager
         addClickListener(DOM.importFileBtn, () => FileImportManager.handleImportFileBtnClick());
         addClickListener(DOM.clearImportBtn, () => FileImportManager.handleClearImportClick());

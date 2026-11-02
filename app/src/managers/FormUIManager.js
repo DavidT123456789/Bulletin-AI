@@ -184,7 +184,6 @@ export const FormUI = {
             });
         }
 
-        this.renderSettingsLists();
         this.updateModelDescription();
     },
 
@@ -307,13 +306,4 @@ export const FormUI = {
         }, 400);
     },
 
-    /**
-     * Met à jour les listes dans les paramètres.
-     * Note: Cette fonction est conservée pour compatibilité mais ne fait plus rien
-     * après la suppression de la bibliothèque de mots-clés.
-     */
-    renderSettingsLists() {
-        // La bibliothèque de mots-clés a été supprimée.
-        // Cette fonction est conservée pour éviter les erreurs d'appel.
-    }
 };

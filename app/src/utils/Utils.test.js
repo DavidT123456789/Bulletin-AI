@@ -67,17 +67,6 @@ describe('Utils', () => {
         });
     });
 
-    describe('getRandomElement', () => {
-        it('devrait retourner un élément du tableau', () => {
-            const arr = ['a', 'b', 'c'];
-            expect(arr).toContain(Utils.getRandomElement(arr));
-        });
-
-        it('devrait retourner chaîne vide pour tableau vide', () => {
-            expect(Utils.getRandomElement([])).toBe('');
-        });
-    });
-
     describe('isNumeric', () => {
         it('devrait valider les nombres entre 0 et 20', () => {
             expect(Utils.isNumeric('10')).toBe(true);

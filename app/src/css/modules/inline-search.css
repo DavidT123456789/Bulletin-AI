@@ -215,56 +215,6 @@
     transform: scale(1.1);
 }
 
-/* ====================================================================
-   FILTER BADGE INLINE (in header when filter active)
-   ==================================================================== */
-.inline-filter-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: var(--radius-pill);
-    margin-left: var(--space-2);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
-}
-
-.inline-filter-badge:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
-}
-
-.inline-filter-badge .filter-remove {
-    font-size: 10px;
-    opacity: 0.7;
-    transition: opacity 0.15s ease;
-}
-
-.inline-filter-badge:hover .filter-remove {
-    opacity: 1;
-}
-
-/* ====================================================================
-   KEYBOARD HINTS
-   ==================================================================== */
-.search-kbd-hint {
-    display: none;
-    font-size: 0.65rem;
-    padding: 2px 5px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-sm);
-    color: var(--text-tertiary);
-    font-family: ui-monospace, monospace;
-    margin-left: auto;
-}
-
-.name-header-with-search:hover .search-kbd-hint {
-    display: inline-block;
-}
 
 /* ====================================================================
    DISABLE BROWSER AUTOCOMPLETE HIGHLIGHT
@@ -328,39 +278,4 @@
         font-size: 14px;
     }
 
-    .search-kbd-hint {
-        display: none !important;
-    }
-}
-
-/* ====================================================================
-   INLINE ANALYZE BUTTON (in appreciation header)
-   ==================================================================== */
-.btn-analyze-inline {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    border-radius: var(--radius-sm);
-    color: var(--primary-color);
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    margin-right: var(--space-2);
-}
-
-.btn-analyze-inline i {
-    font-size: 0.8rem;
-}
-
-.btn-analyze-inline:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
-    border-color: var(--primary-color);
-    transform: scale(1.1);
-}
-
-.btn-analyze-inline:active {
-    transform: scale(0.95);
 }

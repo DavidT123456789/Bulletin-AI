@@ -25,7 +25,6 @@ import { ResultsUIManager } from './ResultsUIManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
-
 export const App = {
     /**
      * Exécute une étape d'initialisation de manière isolée pour éviter les pannes en cascade.
@@ -185,7 +184,6 @@ export const App = {
         UI.updateDarkModeButtonIcon();
         UI.setPeriod(appState.currentPeriod || UI.getPeriods()[0]);
         UI.updatePeriodSystemUI();
-        UI.setInputMode(appState.currentInputMode || CONSTS.INPUT_MODE.SINGLE, true);
         SettingsUIManager.updatePersonalizationState();
 
         // Restaurer les champs des paramètres (clés API, modèle, curseurs) et le statut des API
@@ -323,14 +321,6 @@ export const App = {
     handleGenerateClick() {
         const mode = appState.currentInputMode;
         if (mode === CONSTS.INPUT_MODE.SINGLE) AppreciationsManager.generateSingleAppreciation();
-    },
-
-    handleSingleStudentTabClick() {
-        UI.setInputMode(CONSTS.INPUT_MODE.SINGLE);
-    },
-
-    handleMassImportTabClick() {
-        UI.setInputMode(CONSTS.INPUT_MODE.MASS);
     },
 
     handleClearClick() {

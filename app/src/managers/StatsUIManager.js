@@ -155,7 +155,6 @@ export const StatsUI = {
     },
 
 
-
     /**
      * Calcule les statistiques à partir des résultats filtrés.
      * @param {Array} filteredResults - Résultats filtrés
@@ -260,51 +259,7 @@ export const StatsUI = {
                 bar.setAttribute('data-percent', `${Math.round(data.percent)}%`);
             }
         }
-
-        // Mise à jour des compteurs du donut chart
-        const donutProgressCount = document.getElementById('donutProgressCount');
-        const donutStableCount = document.getElementById('donutStableCount');
-        const donutRegressionCount = document.getElementById('donutRegressionCount');
-        if (donutProgressCount) donutProgressCount.textContent = progress;
-        if (donutStableCount) donutStableCount.textContent = stable;
-        if (donutRegressionCount) donutRegressionCount.textContent = regression;
-
-        // Mise à jour du donut SVG
-        this.updateDonutChart(progressPercent, stablePercent, regressionPercent);
     },
-
-    /**
-     * Met à jour le graphique donut SVG.
-     * @param {number} progressPercent - Pourcentage de progrès
-     * @param {number} stablePercent - Pourcentage de stables
-     * @param {number} regressionPercent - Pourcentage de régression
-     */
-    updateDonutChart(progressPercent, stablePercent, regressionPercent) {
-        const circumference = 100; // Basé sur le viewBox
-        const donutProgress = document.getElementById('donutProgress');
-        const donutStable = document.getElementById('donutStable');
-        const donutRegression = document.getElementById('donutRegression');
-
-        if (donutProgress && donutStable && donutRegression) {
-            // Calcul des offsets pour les arcs
-            const progressDash = progressPercent;
-            const stableDash = stablePercent;
-            const regressionDash = regressionPercent;
-
-            // Progress commence à 0
-            donutProgress.setAttribute('stroke-dasharray', `${progressDash} ${circumference - progressDash}`);
-            donutProgress.setAttribute('stroke-dashoffset', '0');
-
-            // Stable commence après progress
-            donutStable.setAttribute('stroke-dasharray', `${stableDash} ${circumference - stableDash}`);
-            donutStable.setAttribute('stroke-dashoffset', `-${progressDash}`);
-
-            // Regression commence après stable
-            donutRegression.setAttribute('stroke-dasharray', `${regressionDash} ${circumference - regressionDash}`);
-            donutRegression.setAttribute('stroke-dashoffset', `-${progressDash + stableDash}`);
-        }
-    },
-
 
     /**
      * Résout les élèves actifs de la classe courante pour la période donnée,
@@ -581,47 +536,6 @@ export const StatsUI = {
                 }
             }
         });
-    },
-
-    /**
-     * Affiche la zone de progression de l'output.
-     */
-    showOutputProgressArea() {
-        const area = document.getElementById('mass-import-progress-output-area');
-        if (area) area.style.display = 'flex';
-    },
-
-    /**
-     * Masque la zone de progression de l'output.
-     */
-    hideOutputProgressArea() {
-        const area = document.getElementById('mass-import-progress-output-area');
-        if (area) area.style.display = 'none';
-    },
-
-    /**
-     * Met à jour la barre de progression de l'output.
-     * @param {number} current - Valeur actuelle
-     * @param {number} total - Valeur totale
-     * @param {string} [studentName] - Nom de l'élève en cours (optionnel)
-     */
-    updateOutputProgress(current, total, studentName = '') {
-        const percent = total > 0 ? (current / total) * 100 : 0;
-        if (DOM.outputProgressFill) DOM.outputProgressFill.style.width = `${percent}%`;
-        if (DOM.outputProgressText) {
-            let text = `${current}/${total} traités`;
-            if (studentName && current <= total) {
-                text = `${current}/${total} • ${studentName}`;
-            }
-            DOM.outputProgressText.textContent = text;
-        }
-    },
-
-    /**
-     * Réinitialise la barre de progression.
-     */
-    resetProgressBar() {
-        this.updateOutputProgress(0, 0);
     },
 
     /**

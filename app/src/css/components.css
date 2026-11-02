@@ -201,8 +201,7 @@
    BTN-PRIMARY / BTN-AI / BTN-ORGANIC - Shared Base
    ==================================================================== */
 .btn-primary,
-.btn-ai,
-.btn-organic {
+.btn-ai {
     color: white;
     border: none;
     border-radius: var(--radius-control);
@@ -223,8 +222,7 @@
 }
 
 /* --- BTN-AI / BTN-ORGANIC: Shared Gradient for generative actions --- */
-.btn-ai,
-.btn-organic {
+.btn-ai {
     background: var(--gradient-primary);
     background-size: 200% auto;
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -234,8 +232,7 @@
 }
 
 /* No ::before pseudo-element for primary/organic (no shine sweep) */
-.btn-primary::before,
-.btn-organic::before {
+.btn-primary::before {
     display: none;
 }
 
@@ -261,8 +258,7 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
     }
 
-    .btn-ai:hover:not(:disabled),
-    .btn-organic:hover:not(:disabled) {
+    .btn-ai:hover:not(:disabled) {
         background-color: transparent;
         background-image: var(--gradient-primary);
         background-position: right center;
@@ -298,8 +294,7 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.btn-ai:active:not(:disabled),
-.btn-organic:active:not(:disabled) {
+.btn-ai:active:not(:disabled) {
     transform: scale(0.97);
     filter: brightness(0.92);
     box-shadow:
@@ -309,8 +304,7 @@
 
 /* Disabled (shared) */
 .btn-primary:disabled,
-.btn-ai:disabled,
-.btn-organic:disabled {
+.btn-ai:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
@@ -472,181 +466,6 @@
     margin-bottom: 20px;
 }
 
-/* === Sidebar Cards (Cartes flottantes dans le formulaire) === */
-.sidebar-card {
-    background: var(--surface-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 14px;
-    /* Allow dropdowns to extend beyond card boundaries */
-    overflow: visible;
-    /* Harmonisation contours (Nebula) */
-    border: 1px solid var(--glass-surface-border);
-    transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
-}
-
-.sidebar-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.sidebar-card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
-    background: rgba(0, 0, 0, 0.02);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--text-primary);
-    /* Fix corners since parent has overflow: visible */
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-}
-
-[data-theme="dark"] .sidebar-card-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom-color: rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-card-header i {
-    color: currentColor;
-    font-size: 13px;
-}
-
-.sidebar-card-content {
-    padding: 18px 18px 0 18px;
-}
-
-/* Exception : cartes avec éléments visuels EN FIN de contenu */
-.sidebar-card-content:has(.drop-zone),
-.sidebar-card-content:has(> textarea:last-child),
-.sidebar-card-content:has(> .input-with-icon:last-child),
-.sidebar-card-content:has(> .form-group:last-child > textarea),
-.sidebar-card-content:has(> .form-group:last-child > .input-with-icon) {
-    padding-bottom: 18px;
-}
-
-.sidebar-card-content .form-group:last-child {
-    margin-bottom: 0;
-}
-
-/* === Option G: Current Period Card - Highlight === */
-.current-period-card {
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1), var(--shadow-sm);
-}
-
-.current-period-card .sidebar-card-header {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    border-bottom-color: rgba(var(--primary-color-rgb), 0.15);
-}
-
-.period-badge {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    margin-left: auto;
-}
-
-/* === Option G: History Accordion === */
-.history-accordion {
-    border-style: dashed;
-    border-color: var(--border-color);
-    opacity: 0.9;
-    transition: all var(--transition-fast);
-}
-
-.history-accordion:hover {
-    opacity: 1;
-    border-style: solid;
-}
-
-.accordion-trigger {
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    font: inherit;
-}
-
-.accordion-trigger:hover {
-    background: var(--item-hover-bg);
-}
-
-.accordion-icon {
-    margin-left: auto;
-    transition: transform var(--transition-fast);
-    font-size: 12px;
-    color: var(--text-tertiary);
-}
-
-.history-accordion.open .accordion-icon {
-    transform: rotate(180deg);
-}
-
-.accordion-content {
-    overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-    max-height: 0;
-    padding: 0 18px;
-}
-
-.history-accordion.open .accordion-content {
-    max-height: 1000px;
-    padding: 18px;
-    display: block !important;
-}
-
-/* Styles pour les périodes passées dans l'accordéon */
-.history-accordion .period-section {
-    padding: 12px;
-    margin-bottom: 12px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    border-left: 3px solid var(--border-color);
-}
-
-.history-accordion .period-section:last-child {
-    margin-bottom: 0;
-}
-
-.history-accordion .period-label {
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* === Animations de transition entre onglets === */
-.student-form,
-.import-section {
-    animation: fadeSlideIn 0.3s ease-out;
-}
-
-@keyframes fadeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* correction : rendre les champs de note plus courts */
-.period-main-row,
-.previous-period-group .form-row {
-    grid-template-columns: 140px 1fr;
-    align-items: start;
-}
 
 .form-group {
     display: flex;
@@ -858,72 +677,6 @@ input[type="number"]::-webkit-outer-spin-button {
     color: var(--icon-btn-hover);
 }
 
-/* === Grille des préférences avec mini-cartes === */
-.preferences-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.preference-mini-card {
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    transition: all var(--transition-base);
-    height: 100%;
-}
-
-.preference-mini-card:hover {
-    /* Pas de translateY dans les modales - espace confiné */
-    box-shadow: var(--shadow-lg);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-}
-
-.preference-mini-card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 20px;
-    color: var(--text-primary);
-}
-
-.preference-mini-card-header i {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    border-radius: var(--radius-md);
-    font-size: 1rem;
-    transition: all var(--transition-fast);
-}
-
-
-
-.preference-mini-card-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    flex: 1;
-    gap: 16px;
-}
-
-.preference-hint {
-    color: var(--text-tertiary);
-    font-size: 0.8rem;
-    text-align: center;
-    margin-top: 4px;
-    font-weight: 500;
-}
 
 /* Seuils d'évolution en ligne dans la mini-carte */
 .evolution-thresholds-inline {

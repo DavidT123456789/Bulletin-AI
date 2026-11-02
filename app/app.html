@@ -2807,122 +2807,6 @@
         </div>
     </div>
 
-    <div id="importPreviewModal" class="modal" role="dialog" aria-modal="true"
-        aria-labelledby="importPreviewModalTitle">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="importPreviewModalTitle"><span class="modal-title-icon"><iconify-icon class="iconify-inline"
-                        icon="solar:list-check-bold"></iconify-icon></span> Configurer
-                    et
-                    prévisualiser l'import</h2>
-                <button class="close-button" id="closeImportPreviewModalBtn"
-                    aria-label="Fermer la prévisualisation"><iconify-icon class="iconify-inline"
-                        icon="ph:x"></iconify-icon></button>
-            </div>
-            <div class="modal-body">
-
-                <div id="import-summary-text" class="generic-info-box"></div>
-                <div id="importSavedFormatInfo" class="generic-info-box"
-                    style="display: none; justify-content: space-between; align-items: center;">
-                </div>
-
-                <details class="ui-accordion" style="margin-bottom: 25px;">
-                    <summary><iconify-icon class="iconify-inline" icon="solar:settings-bold"></iconify-icon> Ajuster le
-                        mappage des colonnes</summary>
-                    <div class="ui-accordion-content">
-                        <div class="ui-accordion-content-inner">
-                            <p style="margin-top:0; font-size:0.9em; color:var(--summary-details-color);">
-                                Vérifiez que
-                                chaque colonne de vos données est correctement associée à un
-                                champ.
-                                L'application essaie
-                                de deviner le format, mais vous pouvez l'ajuster ici.</p>
-                            <div class="form-group-inline" style="margin-bottom: 20px;">
-                                <label for="separatorSelect" style="margin-bottom: 0;">Séparateur&nbsp;:</label>
-                                <select id="separatorSelect">
-                                    <option value="tab">Tabulation</option>
-                                    <option value=",">Virgule (,)</option>
-                                    <option value=";">Point-virgule (;)</option>
-                                    <option value="|">Barre verticale (|)</option>
-                                    <option value="custom">Autre...</option>
-                                </select>
-                                <input type="text" id="customSeparatorInput" style="display: none; width: 80px;"
-                                    maxlength="1" placeholder="Caractère">
-                            </div>
-
-                            <div class="mapping-table-container" style="overflow-x: auto;">
-                                <table class="mapping-preview-table">
-                                    <thead id="mappingHeaders"></thead>
-                                    <tbody id="mappingPreviewData"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </details>
-
-                <div id="import-strategy-container" class="import-strategy-container"
-                    style="display: none; margin-bottom: 25px;">
-                    <div class="ui-segmented-control">
-                        <input type="radio" id="strategyMerge" name="importStrategy" value="merge" checked>
-                        <label for="strategyMerge" class="ui-segment tooltip"
-                            data-tooltip="Ajoute les nouveaux, met à jour les existants et marque les absents. Recommandé.">Mettre
-                            à jour (Fusionner)</label>
-                        <input type="radio" id="strategyReplace" name="importStrategy" value="replace">
-                        <label for="strategyReplace" class="ui-segment tooltip"
-                            data-tooltip="Supprime tous les élèves actuels et les remplace par ceux de cet import.">Remplacer
-                            toute la liste</label>
-                    </div>
-                </div>
-
-                <div id="import-preview-container">
-                    <div class="import-preview-grid">
-                        <div id="import-preview-new-col" class="import-preview-column import-preview-new">
-                            <div class="column-header">
-                                <h4><iconify-icon class="iconify-inline" icon="solar:user-plus-bold"></iconify-icon>
-                                    Nouveaux <span id="new-count" class="ui-badge ui-badge-primary">0</span></h4>
-                            </div>
-                            <ul id="new-students-list" class="import-preview-list"></ul>
-                        </div>
-                        <div id="import-preview-updated-col" class="import-preview-column import-preview-updated">
-                            <div class="column-header">
-                                <h4><iconify-icon class="iconify-inline" icon="solar:user-id-bold"></iconify-icon> Mis à
-                                    jour <span id="updated-count" class="ui-badge ui-badge-primary">0</span></h4>
-                            </div>
-                            <ul id="updated-students-list" class="import-preview-list"></ul>
-                        </div>
-                        <div id="import-preview-departed-col" class="import-preview-column import-preview-departed">
-                            <div class="column-header">
-                                <h4><iconify-icon class="iconify-inline" icon="solar:user-minus-bold"></iconify-icon>
-                                    Départs <span id="departed-count" class="ui-badge ui-badge-warning">0</span></h4>
-                            </div>
-                            <ul id="departed-students-list" class="import-preview-list">
-                            </ul>
-                        </div>
-                    </div>
-                    <div id="import-preview-replace-warning" class="api-key-warning"
-                        style="display: none; border-color: var(--error-color); background-color: rgba(239, 68, 68, 0.08);">
-                    </div>
-                </div>
-
-            </div>
-            <div class="modal-footer">
-                <div class="form-group-inline" style="margin-right: auto;">
-                    <input type="checkbox" id="saveMappingCheckbox" style="width: auto;">
-                    <label for="saveMappingCheckbox" style="margin-bottom: 0; font-size: 0.9em;">Mémoriser
-                        ce
-                        format de
-                        colonnes</label>
-                </div>
-                <button class="btn btn-secondary" id="cancelImportPreviewBtn">Annuler</button>
-                <button class="btn btn-primary" id="importOnlyBtn">
-                    <iconify-icon icon="solar:import-bold"></iconify-icon>
-                    Importer les données
-                </button>
-            </div>
-        </div>
-    </div>
-
-
 
     <!-- Refinement Modal removed - Focus Panel handles all refinement with inline buttons -->
 
@@ -4017,54 +3901,7 @@
     </div>
 
 
-
-
     <!-- TEMPLATES -->
-    <template id="student-result-template">
-        <div class="appreciation-result" tabindex="0">
-            <div class="card-content-wrapper">
-                <div class="student-name-container" role="button" data-action="details">
-                    <div class="student-name">
-                        <span data-template="name"></span>
-                    </div>
-                    <div data-template="grades" class="student-grades-display"></div>
-                    <span class="details-on-hover-label"><iconify-icon class="iconify-inline"
-                            icon="solar:chart-2-bold"></iconify-icon>
-                        Analyser</span>
-                </div>
-                <div class="appreciation-text-container" role="button" data-action="refine">
-                    <p data-template="appreciation" class="appreciation-text"></p>
-                    <span class="refine-on-hover-label"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
-                        Raffinement</span>
-                </div>
-                <div class="card-footer">
-                    <div class="student-summary-details">
-                        <span data-template="subject" class="detail-chip tooltip"></span>
-                        <span data-template="wordCount" class="detail-chip tooltip"
-                            data-tooltip="Nombre de mots"></span>
-                    </div>
-                    <div class="appreciation-actions">
-                        <button class="icon-action-btn toggle-version-btn tooltip" data-action="toggle-version"
-                            data-tooltip="Voir version précédente" aria-label="Basculer entre versions"
-                            style="display: none;"><iconify-icon class="iconify-inline"
-                                icon="solar:history-bold"></iconify-icon></button>
-                        <button class="icon-action-btn copy-btn tooltip" data-action="copy" data-tooltip="Copier"
-                            aria-label="Copier l'appréciation"><iconify-icon class="iconify-inline"
-                                icon="solar:copy-bold"></iconify-icon></button>
-                        <button class="icon-action-btn tooltip" data-action="edit" data-tooltip="Modifier"
-                            aria-label="Modifier l'élève"><iconify-icon class="iconify-inline"
-                                icon="solar:pen-bold"></iconify-icon></button>
-                        <button class="icon-action-btn tooltip" data-action="regenerate" data-tooltip="Régénérer"
-                            aria-label="Régénérer l'appréciation"><iconify-icon class="iconify-inline"
-                                icon="solar:restart-bold"></iconify-icon></button>
-                        <button class="icon-action-btn tooltip" data-action="delete" data-tooltip="Supprimer"
-                            aria-label="Supprimer l'élève"><iconify-icon class="iconify-inline"
-                                icon="solar:trash-bin-trash-bold"></iconify-icon></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
 
     <template id="empty-state-template">
         <div class="empty-state-header">
@@ -4292,7 +4129,6 @@
     </div>
 
 
-
     <!-- ==================================================================== -->
     <!-- PWA INSTALL BANNER - Smart install prompt                             -->
     <!-- ==================================================================== -->
@@ -4332,8 +4168,6 @@
 
     <!-- Hidden file inputs -->
     <input type="file" id="importSettingsInput" accept=".json" style="display: none;">
-
-
 
 
     <!-- Landing Return Transition -->

@@ -302,12 +302,6 @@ describe('SingleStudentManager', () => {
 
             expect(appState.currentEditingId).toBeNull();
         });
-
-        it('should call switchToCreationModeUI', () => {
-            SingleStudentManager.switchToCreationMode();
-
-            expect(UI.switchToCreationModeUI).toHaveBeenCalled();
-        });
     });
 
     describe('resetForm', () => {

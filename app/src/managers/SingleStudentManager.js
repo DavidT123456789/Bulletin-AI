@@ -271,8 +271,6 @@ export const SingleStudentManager = {
 
         appState.currentEditingId = null;
         if (DOM.loadStudentSelect) DOM.loadStudentSelect.value = "";
-
-        UI.switchToCreationModeUI();
     },
 
     /**
@@ -362,7 +360,6 @@ export const SingleStudentManager = {
         }
 
 
-
         // Null checks for sidebar form elements (may have been removed - Liste + Focus UX)
         if (DOM.nomInput) DOM.nomInput.value = result.nom;
         if (DOM.prenomInput) DOM.prenomInput.value = result.prenom;
@@ -391,8 +388,6 @@ export const SingleStudentManager = {
             if (gInput) gInput.value = gradeStr;
             if (aInput) aInput.value = d?.appreciation ?? '';
         });
-
-        UI.switchToEditModeUI();
 
         if (DOM.loadStudentSelect) {
             DOM.loadStudentSelect.value = id;

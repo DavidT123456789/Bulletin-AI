@@ -439,14 +439,6 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Update KPI metric cards (obsolete, handled in header metric)
-     * @param {Object} stats 
-     */
-    updateKPICards(stats) {
-        // No-op : KPIs retirés pour éviter la redondance
-    },
-
-    /**
      * Update highlights sections (progressions and regressions)
      * @param {Object} stats 
      */

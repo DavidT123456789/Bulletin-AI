@@ -66,23 +66,6 @@
     }
 }
 
-/* === Section Header - Plus aéré, sans bordure agressive === */
-.stats-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    gap: 20px;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.stats-header .section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
 /* === Empty State - Style Premium avec Animation === */
 @keyframes empty-state-float {
 
@@ -1018,69 +1001,6 @@
 }
 
 /* ====================================================================
-   DONUT CHART VIEW (Alternative)
-   ==================================================================== */
-.evolution-card .chart-container {
-    display: none;
-    justify-content: center;
-    align-items: center;
-    padding: 8px 0;
-}
-
-.evolution-card.view-chart .evolution-distribution-bar,
-.evolution-card.view-chart .evolution-legend {
-    display: none;
-}
-
-.evolution-card.view-chart .chart-container {
-    display: flex;
-}
-
-/* Donut SVG */
-.evolution-donut {
-    width: 100px;
-    height: 100px;
-    transform: rotate(-90deg);
-}
-
-.evolution-donut circle {
-    fill: none;
-    stroke-width: 12;
-    stroke-linecap: round;
-    transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.evolution-donut .donut-progress {
-    stroke: var(--grade-range-16-20);
-}
-
-.evolution-donut .donut-stable {
-    stroke: var(--text-tertiary);
-}
-
-.evolution-donut .donut-regression {
-    stroke: var(--grade-range-0-4);
-}
-
-.evolution-donut .donut-bg {
-    stroke: var(--bg-secondary);
-    stroke-width: 12;
-}
-
-/* Chart legend inline */
-.chart-legend-inline {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-left: 16px;
-}
-
-.chart-legend-inline .legend-item {
-    padding: 6px 10px;
-    min-width: auto;
-}
-
-/* ====================================================================
    Focus Visible - Accessibilité
    ==================================================================== */
 /* Focus-visible unifié en fin de fichier */
@@ -1133,41 +1053,6 @@
     line-height: 1;
 }
 
-/* === Chart Toggles === */
-.chart-toggles {
-    display: flex;
-    gap: 4px;
-    background: var(--bg-secondary);
-    padding: 3px;
-    border-radius: var(--radius-sm);
-}
-
-.chart-toggles .view-toggle-btn {
-    background: transparent;
-    border: none;
-    border-radius: var(--radius-xs);
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 0.85rem;
-    padding: 0;
-}
-
-.chart-toggles .view-toggle-btn:hover {
-    color: var(--icon-btn-hover);
-    background: var(--item-hover-bg);
-}
-
-.chart-toggles .view-toggle-btn.active {
-    background: var(--surface-color);
-    color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
 
 /* === Histogram (Distribution 2026) === */
 .histogram-container {

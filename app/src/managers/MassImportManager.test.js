@@ -243,48 +243,6 @@ describe('MassImportManager', () => {
         });
     });
 
-    describe('_updatePendingCard', () => {
-        it('should handle null card gracefully', async () => {
-            await expect(
-                MassImportManager._updatePendingCard(null, { nom: 'TEST', prenom: 'A' }, false)
-            ).resolves.not.toThrow();
-        });
-
-        it('should update existing result in appState', async () => {
-            appState.generatedResults = [
-                { nom: 'MARTIN', prenom: 'Lucas', isPending: true, appreciation: '' }
-            ];
-
-            const resultObject = {
-                id: 'new-id-123',
-                nom: 'MARTIN',
-                prenom: 'Lucas',
-                appreciation: 'Excellent travail'
-            };
-
-            await MassImportManager._updatePendingCard(null, resultObject, false);
-
-            expect(appState.generatedResults[0].appreciation).toBe('Excellent travail');
-            expect(appState.generatedResults[0].isPending).toBe(false);
-        });
-
-        it('should push new result if not found in appState', async () => {
-            appState.generatedResults = [];
-
-            const resultObject = {
-                id: 'new-id',
-                nom: 'NEW',
-                prenom: 'Student',
-                appreciation: 'Good'
-            };
-
-            await MassImportManager._updatePendingCard(null, resultObject, false);
-
-            expect(appState.generatedResults.length).toBe(1);
-            expect(appState.generatedResults[0].isPending).toBe(false);
-        });
-    });
-
     describe('T-07 — Concurrence lors d\'un changement de classe/période en plein lot (Bug C-01)', () => {
         it('T-07 (Bug C-01) : processMassImport conserve le contexte de classe et de période initial si l\'utilisateur change de classe (6e-A -> 3e-B) et de période (T1 -> T2) pendant le lot', async () => {
             appState.currentClassId = '6e-A';

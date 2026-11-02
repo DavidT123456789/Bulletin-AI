@@ -193,16 +193,6 @@ export const Utils = {
     },
 
     /**
-     * Formate un label avec deux-points selon la typographie française
-     * @param {string} label - Le label (ex: "T1", "Moyenne")
-     * @param {string|number} value - La valeur à afficher
-     * @returns {string} Le label formaté avec espace avant et après les deux-points
-     */
-    formatLabel(label, value) {
-        return `${label} : ${value}`;
-    },
-
-    /**
      * Valide un champ de saisie (nom, prénom, ou nom de matière)
      * @param {HTMLInputElement} input - L'élément input à valider
      * @returns {boolean} true si valide
@@ -250,14 +240,6 @@ export const Utils = {
      * @returns {number} Nombre de caractères
      */
     countCharacters(text) { return typeof text !== 'string' ? 0 : text.trim().length; },
-
-    /**
-     * Retourne un élément aléatoire d'un tableau
-     * @template T
-     * @param {T[]} array - Le tableau source
-     * @returns {T|''} Un élément aléatoire ou chaîne vide
-     */
-    getRandomElement(array) { return !array || array.length === 0 ? '' : array[Math.floor(Math.random() * array.length)]; },
 
     /**
      * Vérifie si une valeur est une note valide (0-20)

@@ -205,55 +205,6 @@ describe('ExportManager', () => {
         });
     });
 
-    describe('copyRefinementText', () => {
-        beforeEach(() => {
-            DOM.originalAppreciationText.textContent = 'Original text';
-            DOM.suggestedAppreciationText.textContent = 'Suggested text';
-            DOM.originalAppreciationText.classList.contains = vi.fn(() => false);
-            DOM.suggestedAppreciationText.classList.contains = vi.fn(() => false);
-        });
-
-        it('should copy original text when type is original', async () => {
-            await ExportManager.copyRefinementText('original');
-
-            expect(mockClipboard.writeText).toHaveBeenCalledWith('Original text');
-        });
-
-        it('should copy suggested text when type is suggested', async () => {
-            await ExportManager.copyRefinementText('suggested');
-
-            expect(mockClipboard.writeText).toHaveBeenCalledWith('Suggested text');
-        });
-
-        it('should update button icon on success', async () => {
-            const mockBtn = { innerHTML: '', classList: { add: vi.fn(), remove: vi.fn() } };
-            DOM.refinementModal.querySelector = vi.fn(() => mockBtn);
-
-            await ExportManager.copyRefinementText('original');
-
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            expect(mockBtn.innerHTML).toContain('ph:check');
-        });
-
-        it('should show warning if text is empty', () => {
-            DOM.originalAppreciationText.textContent = '';
-
-            ExportManager.copyRefinementText('original');
-
-            expect(UI.showNotification).toHaveBeenCalledWith('Aucun texte à copier.', 'warning');
-            expect(mockClipboard.writeText).not.toHaveBeenCalled();
-        });
-
-        it('should show warning if text is placeholder', () => {
-            DOM.originalAppreciationText.classList.contains = vi.fn(() => true);
-
-            ExportManager.copyRefinementText('original');
-
-            expect(UI.showNotification).toHaveBeenCalledWith('Aucun texte à copier.', 'warning');
-        });
-    });
-
     describe('copyAllResults', () => {
         it('should show warning if no results to copy', () => {
             appState.filteredResults = [];

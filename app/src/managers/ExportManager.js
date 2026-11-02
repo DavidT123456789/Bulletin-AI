@@ -11,7 +11,6 @@
  */
 
 import { appState } from '../state/State.js';
-import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -80,32 +79,6 @@ export const ExportManager = {
             UI.showNotification('Échec copie.', 'error');
             console.error('Erreur :', err);
         });
-    },
-
-    /**
-     * Copie le texte original ou suggéré depuis la modale de raffinement.
-     * @param {'original'|'suggested'} type - Type de texte à copier
-     */
-    copyRefinementText(type) {
-        const el = type === 'original' ? DOM.originalAppreciationText : DOM.suggestedAppreciationText;
-        const text = el.textContent.trim();
-
-        if (text && !el.classList.contains('placeholder')) {
-            navigator.clipboard.writeText(text).then(() => {
-
-                const btn = DOM.refinementModal.querySelector(`[data-action="copy-${type}"]`);
-                if (btn) {
-                    btn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
-                        btn.classList.remove('copied');
-                    }, 2000);
-                }
-            });
-        } else {
-            UI.showNotification('Aucun texte à copier.', 'warning');
-        }
     },
 
     /**

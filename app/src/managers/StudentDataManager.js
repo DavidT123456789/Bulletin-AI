@@ -577,30 +577,6 @@ export const StudentDataManager = {
     },
 
     /**
-     * Efface l'appréciation d'un élève pour la période actuelle
-     * @param {string} id - ID de l'élève
-     */
-    clearStudentAppreciation(id) {
-        const student = appState.generatedResults.find(r => r.id === id);
-        if (!student) return false;
-
-        const currentPeriod = appState.currentPeriod;
-
-        // Clear in main object
-        student.appreciation = '';
-
-        // Clear in periods data
-        if (student.studentData?.periods?.[currentPeriod]) {
-            student.studentData.periods[currentPeriod].appreciation = '';
-        }
-
-        // Reset history if desired? No, let's keep it but mark changed
-        student._lastModified = Date.now();
-
-        return true;
-    },
-
-    /**
      * Synchronise un élève modifié dans appState.filteredResults si présent
      * pour maintenir la cohérence de l'affichage sans duplication de code.
      * @param {string} id - ID de l'élève

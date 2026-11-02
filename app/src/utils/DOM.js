@@ -1,57 +1,7 @@
 
 export const DOM = {};
 
-// Mode développement pour warnings détaillés
-const IS_DEV = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
-
-/**
- * Éléments DOM critiques qui doivent exister pour le fonctionnement de l'app.
- * Une erreur sera loggée si ces éléments sont manquants.
- */
-const CRITICAL_ELEMENTS = [
-    'resultsDiv',
-    'settingsModal',
-    'nomInput',
-    'prenomInput',
-    'generateAppreciationBtn',
-    'massData',
-    'aiModelSelect'
-];
-
-/**
- * Compteur d'éléments manquants pour le rapport final
- */
-let missingElementsCount = 0;
-
-/**
- * Helper pour récupérer un élément DOM avec null-check défensif.
- * @param {string} selector - Sélecteur CSS ou ID (sans #)
- * @param {string} propName - Nom de la propriété dans DOM
- * @param {boolean} isById - true pour getElementById, false pour querySelector
- * @returns {Element|null}
- */
-function safeGetElement(selector, propName, isById = true) {
-    const element = isById
-        ? document.getElementById(selector)
-        : document.querySelector(selector);
-
-    if (!element) {
-        missingElementsCount++;
-        const isCritical = CRITICAL_ELEMENTS.includes(propName);
-
-        if (isCritical) {
-            console.error(`[DOM] ❌ Élément CRITIQUE manquant: ${propName} (${isById ? '#' : ''}${selector})`);
-        } else if (IS_DEV) {
-            console.warn(`[DOM] ⚠️ Élément manquant: ${propName} (${isById ? '#' : ''}${selector})`);
-        }
-    }
-
-    return element;
-}
-
 export function initDOM() {
-    missingElementsCount = 0; // Reset le compteur à chaque init
-
     DOM.appLayout = document.querySelector('.app-layout');
     DOM.appVersionDisplay = document.getElementById('appVersionDisplay');
     DOM.darkModeToggle = document.getElementById('darkModeToggle');
@@ -104,8 +54,6 @@ export function initDOM() {
     DOM.importFileBtn = document.getElementById('importFileBtn');
     DOM.nomInput = document.getElementById('nom');
     DOM.prenomInput = document.getElementById('prenom');
-    DOM.nomError = document.getElementById('nomError');
-    DOM.prenomError = document.getElementById('prenomError');
     DOM.singleStudentPeriodInputs = document.getElementById('singleStudentPeriodInputs');
 
 
@@ -115,14 +63,11 @@ export function initDOM() {
     DOM.contextPeriodLabel = document.getElementById('contextPeriodLabel');
     DOM.historyAccordion = document.getElementById('historyAccordion');
     DOM.historyToggle = document.getElementById('historyToggle');
-    DOM.historyContent = document.getElementById('historyContent');
 
-    DOM.generationButtonsGroup = document.querySelector('.generation-buttons-group');
     DOM.generateAppreciationBtn = document.getElementById('generateAppreciationBtn');
     DOM.generateAndNextBtn = document.getElementById('generateAndNextBtn');
     DOM.resetFormBtn = document.getElementById('resetFormBtn');
     DOM.cancelEditBtn = document.getElementById('cancelEditBtn');
-    DOM.statsHeader = document.getElementById('statsHeader');
     DOM.statsContainer = document.getElementById('statsContainer');
     DOM.outputHeader = document.getElementById('outputHeader');
     DOM.resultsDiv = document.getElementById('outputList');
@@ -137,9 +82,7 @@ export function initDOM() {
     DOM.previousAvgGradeOutput = document.getElementById('previousAvgGradeOutput');
     DOM.minAvgGradeOutput = document.getElementById('minAvgGradeOutput');
     DOM.maxAvgGradeOutput = document.getElementById('maxAvgGradeOutput');
-    DOM.clearAllResultsBtn = document.getElementById('clearAllResultsBtn-shortcut');
     DOM.regenerateAllBtn = document.getElementById('regenerateAllBtn');
-    DOM.regenerateErrorsBtn = document.getElementById('regenerateErrorsBtn-shortcut');
     // retryErrorsFloatingBtn removed - headerRetryErrorsBtn is the single source of truth
     DOM.exportJsonBtn = document.getElementById('exportJsonBtn');
     DOM.exportCsvBtn = document.getElementById('exportCsvBtn');
@@ -157,7 +100,6 @@ export function initDOM() {
     DOM.periodSystemRadios = document.querySelectorAll('input[name="periodSystemRadio"]');
     DOM.settingsEvolutionThresholdPositive = document.getElementById('evolutionThresholdPositive');
     DOM.settingsEvolutionThresholdNegative = document.getElementById('evolutionThresholdNegative');
-    DOM.suggestionsList = document.getElementById('suggestionsList');
     DOM.resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.enableApiFallbackToggle = document.getElementById('enableApiFallbackToggle');
@@ -210,41 +152,8 @@ export function initDOM() {
     DOM.ollamaModelsInfo = document.getElementById('ollamaModelsInfo');
     DOM.ollamaModelsText = document.getElementById('ollamaModelsText');
     DOM.studentDetailsModal = document.getElementById('studentDetailsModal');
-    DOM.studentDetailsModalTitle = document.getElementById('studentDetailsModalTitle');
-    DOM.closeStudentDetailsModalBtn = document.getElementById('closeStudentDetailsModalBtn');
     DOM.nextStudentBtn = document.getElementById('nextStudentBtn');
     DOM.prevStudentBtn = document.getElementById('prevStudentBtn');
-    DOM.modalStudentPosition = document.getElementById('modalStudentPosition');
-    DOM.detailsPeriodsContainer = document.getElementById('details-periods-container');
-    DOM.technicalDetailsAccordion = document.getElementById('technicalDetailsAccordion');
-    DOM.detailsAppreciationPrompt = document.getElementById('detailsAppreciationPrompt');
-    DOM.detailsSWPrompt = document.getElementById('detailsSWPrompt');
-    DOM.detailsNSPrompt = document.getElementById('detailsNSPrompt');
-    DOM.detailsTokenUsageSection = document.getElementById('detailsTokenUsageSection');
-    DOM.detailsTokenUsageContent = document.getElementById('detailsTokenUsageContent');
-    DOM.strengthsWeaknessesSection = document.getElementById('strengthsWeaknessesSection');
-    DOM.strengthsWeaknessesContent = document.getElementById('strengthsWeaknessesContent');
-    DOM.nextStepsSection = document.getElementById('nextStepsSection');
-    DOM.nextStepsList = document.getElementById('nextStepsList');
-    DOM.closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
-    DOM.refinementModal = document.getElementById('refinementModal');
-    DOM.closeRefinementModalBtn = document.getElementById('closeRefinementModalBtn');
-    DOM.refinementModalTitle = document.getElementById('refinementModalTitle');
-    DOM.originalAppreciationText = document.getElementById('originalAppreciationText');
-    DOM.suggestedAppreciationText = document.getElementById('suggestedAppreciationText');
-    DOM.originalWordCount = document.getElementById('originalWordCount');
-    DOM.suggestedWordCount = document.getElementById('suggestedWordCount');
-    DOM.refineStyleOptions = document.getElementById('refineStyleOptions');
-    DOM.swapRefinementBtn = document.getElementById('swapRefinementBtn');
-    DOM.cancelRefinementBtn = document.getElementById('cancelRefinementBtn');
-    DOM.applyRefinedAppreciationBtn = document.getElementById('applyRefinedAppreciationBtn');
-    DOM.resetRefinementBtn = document.getElementById('resetRefinementBtn');
-    DOM.closeRefinementFooterBtn = document.getElementById('closeRefinementFooterBtn');
-    DOM.prevRefinementStudentBtn = document.getElementById('prevRefinementStudentBtn');
-    DOM.nextRefinementStudentBtn = document.getElementById('nextRefinementStudentBtn');
-    DOM.refinementContext = document.getElementById('refinementContext');
-    DOM.refineWithContextBtn = document.getElementById('refineWithContextBtn');
-    DOM.refinementErrorActions = document.getElementById('refinement-error-actions');
     DOM.helpModal = document.getElementById('helpModal');
     DOM.closeHelpModalBtn = document.getElementById('closeHelpModalBtn');
     DOM.closeHelpModalFooterBtn = document.getElementById('closeHelpModalFooterBtn');
@@ -253,7 +162,6 @@ export function initDOM() {
     DOM.linkFeedback = document.getElementById('linkFeedback');
     DOM.linkLicense = document.getElementById('linkLicense');
 
-    DOM.helpGoToSettingsBtn = document.getElementById('helpGoToSettingsBtn');
     DOM.helpFormatSelector = document.getElementById('helpFormatSelector');
     DOM.relaunchWelcomeGuideBtn = document.getElementById('relaunchWelcomeGuideBtn');
     DOM.loadingOverlay = document.getElementById('loadingOverlay');
@@ -275,16 +183,10 @@ export function initDOM() {
     DOM.cloudSeparator = document.getElementById('cloudSeparator');
     DOM.connectGoogleBtn = document.getElementById('connectGoogleBtn');
     DOM.disconnectGoogleBtn = document.getElementById('disconnectGoogleBtn');
-    DOM.connectDropboxBtn = document.getElementById('connectDropboxBtn');
     DOM.googleSyncStatus = document.getElementById('googleSyncStatus');
     DOM.googleSyncEmail = document.getElementById('googleSyncEmail');
     DOM.googleSyncName = document.getElementById('googleSyncName');
     DOM.googleSyncBadge = document.getElementById('googleSyncBadge');
-    DOM.dropboxSyncStatus = document.getElementById('dropboxSyncStatus');
-    DOM.syncStatusBar = document.getElementById('syncStatusBar');
-    DOM.syncRgpdWarning = document.getElementById('syncRgpdWarning');
-    // Cloud sync header indicator
-    DOM.cloudSyncIndicator = document.getElementById('cloudSyncIndicator');
     DOM.welcomeModal = document.getElementById('welcomeModal');
     DOM.closeWelcomeModalBtn = document.getElementById('closeWelcomeModalBtn');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');
@@ -302,10 +204,7 @@ export function initDOM() {
     DOM.importHubDemoAlert = document.getElementById('importHubDemoAlert');
     DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');
 
-    DOM.copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
-    DOM.actionsBtnToggle = document.getElementById('actionsBtnToggle');
     DOM.actionsDropdown = document.querySelector('.actions-dropdown');
-    DOM.actionsDropdownContent = document.querySelector('.actions-dropdown-content');
     DOM.iaStyleHeader = document.getElementById('iaStyleHeader');
     DOM.iaStyleInstructions = document.getElementById('iaStyleInstructions');
     DOM.iaStyleInstructionsToggle = document.getElementById('iaStyleInstructionsToggle');
@@ -330,43 +229,11 @@ export function initDOM() {
     DOM.previewStatus = document.getElementById('previewStatus');
     DOM.settingsPrivacyAnonymizeToggle = document.getElementById('settingsPrivacyAnonymizeToggle');
 
-    DOM.personalizationToggle = document.getElementById('personalizationToggle');
-    DOM.subjectCustomizationPanel = document.getElementById('subject-customization-panel');
     DOM.massImportApiKeyWarning = document.getElementById('massImportApiKeyWarning');
     DOM.loadStudentSelect = document.getElementById('loadStudentSelect');
-    DOM.brickDropdown = document.getElementById('brickDropdown');
-    DOM.brickDropdownRefinement = document.getElementById('brickDropdownRefinement');
     DOM.activeFilterInfo = document.getElementById('activeFilterInfo');
-    // massImportErrorActions removed - errors now shown in headerGenerationStatus chip
-    DOM.importPreviewModal = document.getElementById('importPreviewModal');
-    DOM.importPreviewModalTitle = document.getElementById('importPreviewModalTitle');
-    DOM.closeImportPreviewModalBtn = document.getElementById('closeImportPreviewModalBtn');
-    DOM.importSummaryText = document.getElementById('import-summary-text');
-    DOM.importSavedFormatInfo = document.getElementById('importSavedFormatInfo');
-    DOM.importStrategyContainer = document.getElementById('import-strategy-container');
-    DOM.strategyMergeRadio = document.getElementById('strategyMerge');
-    DOM.strategyReplaceRadio = document.getElementById('strategyReplace');
-    DOM.importPreviewContainer = document.getElementById('import-preview-container');
-    DOM.importPreviewGrid = document.querySelector('.import-preview-grid');
-    DOM.importPreviewReplaceWarning = document.getElementById('import-preview-replace-warning');
-    DOM.newStudentsList = document.getElementById('new-students-list');
-    DOM.updatedStudentsList = document.getElementById('updated-students-list');
-    DOM.departedStudentsList = document.getElementById('departed-students-list');
-    DOM.newCount = document.getElementById('new-count');
-    DOM.updatedCount = document.getElementById('updated-count');
-    DOM.departedCount = document.getElementById('departed-count');
-    DOM.mappingHeaders = document.getElementById('mappingHeaders');
-    DOM.mappingPreviewData = document.getElementById('mappingPreviewData');
-    DOM.separatorSelect = document.getElementById('separatorSelect');
-    DOM.customSeparatorInput = document.getElementById('customSeparatorInput');
-    DOM.saveMappingCheckbox = document.getElementById('saveMappingCheckbox');
-    DOM.cancelImportPreviewBtn = document.getElementById('cancelImportPreviewBtn');
-    DOM.importOnlyBtn = document.getElementById('importOnlyBtn');
     DOM.singleStudentActions = document.getElementById('singleStudentActions');
 
-    DOM.inputPanelsWrapper = document.querySelector('.input-panels-wrapper');
     DOM.massImportActions = document.getElementById('massImportActions');
-
-    // Rapport final (en développement uniquement)
 
 }

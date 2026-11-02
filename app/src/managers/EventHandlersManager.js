@@ -9,15 +9,9 @@
  * @module managers/EventHandlersManager
  */
 
-import { appState, UIState } from '../state/State.js';
-import { CONSTS, CONFIG } from '../config/Config.js';
-import { DOM } from '../utils/DOM.js';
-import { Utils } from '../utils/Utils.js';
+import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
-import { VariationsManager } from './VariationsManager.js';
-import { SettingsUIManager } from './SettingsUIManager.js';
-import { DropdownManager } from './DropdownManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -29,82 +23,6 @@ export const EventHandlersManager = {
      */
     init(appInstance) {
         App = appInstance;
-    },
-
-    /**
-     * Gère les clics sur les actions des cartes de résultat (copier, supprimer, raffiner, etc.)
-     * @param {Event} e - L'événement click
-     * @param {HTMLElement} [targetOverride] - Élément cible optionnel
-     */
-    async handleResultCardAction(e, targetOverride = null) {
-        const element = targetOverride || e.target.closest('[data-action]');
-        if (!element || element.disabled) return;
-
-        const card = element.closest('.appreciation-result');
-        if (!card) return;
-
-        const id = card.dataset.id;
-        const action = element.dataset.action;
-        UI.lastFocusedElement = element;
-
-        switch (action) {
-            case 'copy':
-                AppreciationsManager.copyAppreciation(id, element);
-                break;
-            case 'delete':
-                AppreciationsManager.deleteAppreciation(id);
-                break;
-            case 'details':
-                AppreciationsManager.showAppreciationDetails(id);
-                break;
-            case 'edit':
-                if (appState.currentInputMode !== CONSTS.INPUT_MODE.SINGLE) {
-                    UI.setInputMode(CONSTS.INPUT_MODE.SINGLE);
-                }
-                AppreciationsManager.editAppreciation(id);
-                break;
-            case 'regenerate':
-                await AppreciationsManager.regenerateFailedAppreciation(id, element);
-                break;
-            case 'toggle-version':
-                AppreciationsManager.toggleVersion(id);
-                break;
-            case 'variations':
-                await VariationsManager.generateVariation(id, element);
-                break;
-            case 'undo-variation':
-                await VariationsManager.undoVariation(id, element);
-                break;
-        }
-    },
-
-    /**
-     * Gère la navigation au clavier dans la liste des résultats (Haut/Bas).
-     * @param {KeyboardEvent} e - L'événement keydown
-     */
-    handleResultListKeyboardNav(e) {
-        if (!['ArrowDown', 'ArrowUp'].includes(e.key)) return;
-
-        const cards = Array.from(document.querySelectorAll('.appreciation-result'));
-        if (cards.length === 0) return;
-
-        const currentFocus = document.activeElement.closest('.appreciation-result');
-        let index = -1;
-
-        if (currentFocus) {
-            index = cards.indexOf(currentFocus);
-            if (e.key === 'ArrowDown') index++;
-            else index--;
-        } else {
-            if (e.key === 'ArrowDown') index = 0;
-            else index = cards.length - 1;
-        }
-
-        if (index >= 0 && index < cards.length) {
-            e.preventDefault();
-            cards[index].focus();
-            cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
     },
 
     /**
@@ -153,21 +71,6 @@ export const EventHandlersManager = {
         // FLIP animation is now handled in ListViewManager
         AppreciationsManager.renderResults();
     },
-
-    /**
-     * Gère l'ouverture/fermeture du menu d'actions.
-     * @param {Event} e - L'événement click
-     */
-    handleActionsBtnToggle(e) {
-        e.stopPropagation();
-        // Fermer les custom dropdowns avant d'ouvrir le menu actions
-        try {
-            DropdownManager.closeAll();
-        } catch { }
-        DOM.actionsDropdown.classList.toggle('show');
-    },
-
-
 
     /**
      * Gère le changement de système de période (Trimestre/Semestre).
@@ -222,37 +125,6 @@ export const EventHandlersManager = {
 
         // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();
-    },
-
-    /**
-     * Gère le clic sur le bouton "Tout Régénérer".
-     */
-    async handleRegenerateAllClick() {
-        if (appState.generatedResults.length === 0) return;
-
-        // Note: Le menu d'actions est maintenant fermé par le ListViewManager
-        // DOM.actionsDropdown n'existe plus dans le HTML statique
-
-        // On délègue à AppreciationsManager.regenerateVisible qui gère déjà la confirmation
-        await AppreciationsManager.regenerateVisible(false);
-    },
-
-    /**
-     * Gère le clic sur le bouton "Régénérer les erreurs".
-     */
-    async handleRegenerateErrorsClick() {
-        // Simplifié : on prend toutes les cartes avec une erreur
-        const errorIds = appState.generatedResults.filter(r => r.errorMessage).map(r => r.id);
-
-        if (errorIds.length === 0) {
-            UI.showNotification("Aucune erreur détectée à régénérer.", "info");
-            return;
-        }
-
-        // Note: Le menu d'actions est maintenant fermé par le ListViewManager
-
-        // Régénérer uniquement les erreurs
-        await AppreciationsManager.regenerateVisible(true);
     },
 
     /**

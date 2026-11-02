@@ -173,106 +173,6 @@
     gap: 4px;
 }
 
-/* COHORT INDICATORS (Advanced KPIs) */
-.cohort-kpis {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
-    margin-bottom: var(--space-2);
-}
-
-@media (max-width: 480px) {
-    .cohort-kpis {
-        grid-template-columns: 1fr;
-    }
-}
-
-.cohort-kpi-card {
-    background: var(--bg-secondary);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: var(--space-4);
-    display: flex;
-    gap: var(--space-3);
-    align-items: flex-start;
-}
-
-[data-theme="dark"] .cohort-kpi-card {
-    background: rgba(255, 255, 255, 0.035);
-}
-
-.cohort-kpi-card .kpi-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
-}
-
-.cohort-kpi-success .kpi-icon-wrapper {
-    background: rgba(var(--success-rgb), 0.1);
-    color: var(--success-color);
-}
-
-.cohort-kpi-spread .kpi-icon-wrapper {
-    background: rgba(var(--purple-rgb), 0.1);
-    color: var(--purple-color);
-}
-
-.cohort-kpi-card .kpi-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-}
-
-.cohort-kpi-card .kpi-label {
-    font-size: var(--font-xs);
-    color: var(--text-tertiary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.cohort-kpi-card .kpi-value-row {
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-    margin: var(--space-1) 0;
-}
-
-.cohort-kpi-card .kpi-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-}
-
-.cohort-kpi-card .kpi-unit {
-    font-size: var(--font-xs);
-    color: var(--text-tertiary);
-    font-weight: 500;
-}
-
-.cohort-kpi-card .kpi-subtitle {
-    font-size: var(--font-xs);
-    color: var(--text-secondary);
-}
-
-.cohort-kpi-card .cohort-badge {
-    display: inline-flex;
-    padding: 3px 8px;
-    font-size: var(--font-xs);
-    font-weight: 600;
-    border-radius: var(--radius-pill);
-    background: rgba(var(--purple-rgb), 0.08);
-    color: var(--purple-color);
-    width: fit-content;
-}
 
 /* COHORT STATS BAR */
 .cohort-stats-bar {
@@ -536,48 +436,6 @@
     padding: var(--space-4);
 }
 
-/* ==========================================================================
-   AI SYNTHESIS SECTION
-   ========================================================================== */
-
-.dashboard-ai-section {
-    background: var(--card-glass-bg);
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-.ai-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-4) var(--space-5);
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08) 0%, rgba(var(--primary-color-rgb), 0.02) 100%);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.ai-section-title {
-    font-size: var(--font-md);
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.ai-section-title i {
-    color: currentColor;
-}
-
-.ai-section-actions {
-    display: flex;
-    gap: var(--space-2);
-}
-
-.ai-section-content {
-    padding: var(--space-5);
-    min-height: 150px;
-}
 
 /* ==========================================================================
    SYNTHESIS SECTIONS - Modern Bento Grid Layout
@@ -1230,21 +1088,6 @@
    ANIMATION ENTRANCE
    ========================================================================== */
 
-.class-dashboard-modal.show .dashboard-kpi-card {
-    animation: slideUpFade 400ms ease-out backwards;
-}
-
-.class-dashboard-modal.show .dashboard-kpi-card:nth-child(1) {
-    animation-delay: 50ms;
-}
-
-.class-dashboard-modal.show .dashboard-kpi-card:nth-child(2) {
-    animation-delay: 100ms;
-}
-
-.class-dashboard-modal.show .dashboard-kpi-card:nth-child(3) {
-    animation-delay: 150ms;
-}
 
 .class-dashboard-modal.show .dashboard-distribution-section {
     animation: slideUpFade 400ms ease-out 200ms backwards;
@@ -1262,9 +1105,6 @@
     animation-delay: 300ms;
 }
 
-.class-dashboard-modal.show .dashboard-ai-section {
-    animation: slideUpFade 400ms ease-out 350ms backwards;
-}
 
 @keyframes slideUpFade {
     from {

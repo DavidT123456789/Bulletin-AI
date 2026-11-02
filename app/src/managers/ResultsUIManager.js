@@ -555,9 +555,7 @@ export const ResultsUIManager = {
         if (viewToggle) viewToggle.classList.toggle('visible', sourceResults.length > 0);
 
         // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
-        if (UI?.updateGenerateChipState) {
-            UI.updateGenerateChipState(pendingCount);
-        }
+        UI?.updateDashboardCounts?.();
         // Reinitialize tooltips to pick up updated data-tooltip on the update button
         if (UI?.initTooltips) {
             UI.initTooltips();
@@ -1020,109 +1018,4 @@ export const ResultsUIManager = {
         );
     },
 
-    /**
-     * Clears only the appreciation text for visible students
-     */
-    clearVisibleAppreciations() {
-        const visibleIds = new Set(appState.filteredResults.map(r => r.id));
-        const count = visibleIds.size;
-        const currentPeriod = appState.currentPeriod;
-
-        if (count === 0) {
-            UI.showNotification("Aucun résultat visible à effacer.", "warning");
-            return;
-        }
-
-        UI.showCustomConfirm(
-            'Seul le texte des appréciations visibles sera effacé. Les notes, dossiers élèves et journaux de bord seront conservés.',
-            () => {
-                let clearedCount = 0;
-                const now = Date.now();
-
-                appState.generatedResults.forEach(r => {
-                    if (visibleIds.has(r.id)) {
-                        r.appreciation = '';
-
-                        if (r.studentData?.periods?.[currentPeriod]) {
-                            r.studentData.periods[currentPeriod].appreciation = '';
-                            r.studentData.periods[currentPeriod]._lastModified = now;
-                        }
-
-                        r._lastModified = now;
-                        r.copied = false;
-                        r.promptHash = null;
-                        r.generationSnapshot = null;
-                        r.generationPeriod = null;
-                        r.wasGenerated = false;
-                        r.appreciationSource = null;
-
-                        if (r.historyPerPeriod?.[currentPeriod]) {
-                            r.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-                        }
-                        r.historyState = null;
-
-                        clearedCount++;
-                    }
-                });
-
-                this.renderResults();
-                StorageManager.saveAppState();
-                UI.showNotification(`${clearedCount} appréciations effacées.`, 'success');
-            },
-            null,
-            {
-                title: `Effacer ${count} appréciation${count > 1 ? 's' : ''} ?`,
-                confirmText: 'Effacer le texte',
-                isDanger: true
-            }
-        );
-    },
-    /**
-     * Clears journal entries for visible students (Reset AI Context)
-     */
-    clearVisibleJournals() {
-        const visibleIds = new Set(appState.filteredResults.map(r => r.id));
-        const count = visibleIds.size;
-
-        if (count === 0) {
-            UI.showNotification("Aucun résultat visible.", "warning");
-            return;
-        }
-
-        UI.showCustomConfirm(
-            'Les observations du journal de bord seront effacées pour ces élèves. Les notes et les appréciations déjà générées seront conservées.',
-            () => {
-                let clearedCount = 0;
-                appState.generatedResults.forEach(r => {
-                    if (visibleIds.has(r.id)) {
-                        if (r.journal && r.journal.length > 0) {
-                            r.journal = [];
-                            clearedCount++;
-                        }
-                    }
-                });
-    
-                this.renderResults();
-                StorageManager.saveAppState();
-                // Force refresh of focus panel if open, as it might show the journal
-                const focusPanel = document.getElementById('focusPanel');
-                if (focusPanel && focusPanel.classList.contains('open')) {
-                    // Trigger a refresh event or similar if needed, 
-                    // but re-rendering the list might be enough as interactions usually reload the panel data
-                    // However, FocusPanelJournal listens to 'journalThresholdChanged' but not necessarily generic updates
-                    // We'll rely on global UI refresh if possible, or user re-opening.
-                    // Actually ListViewManager.openFocusPanel re-renders. 
-                    // If the panel is open for a student whose journal was just cleared, it might be stale.
-                    // But this is a bulk action, usually done from the list view.
-                }
-                UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
-            },
-            null,
-            {
-                title: `Réinitialiser le contexte IA (${count}) ?`,
-                confirmText: 'Effacer les journaux',
-                isDanger: true
-            }
-        );
-    }
 };

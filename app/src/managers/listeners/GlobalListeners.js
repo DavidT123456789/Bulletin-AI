@@ -141,8 +141,6 @@ export const GlobalListeners = {
                     }
                     return;
                 }
-
-                EventHandlersManager.handleResultListKeyboardNav(e);
             }
         });
     },
@@ -460,11 +458,6 @@ export const GlobalListeners = {
             } else {
                 // Si on clique SUR un custom dropdown, fermer le menu actions
                 DOM.actionsDropdown?.classList.remove('show');
-            }
-
-            // Handle result card actions
-            if (e.target.closest('.appreciation-result [data-action]')) {
-                EventHandlersManager.handleResultCardAction(e);
             }
         });
     },

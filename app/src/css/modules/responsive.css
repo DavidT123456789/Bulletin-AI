@@ -11,40 +11,6 @@
    - 400px:  Very small mobile (single column stats)
    ==================================================================== */
 
-/* ====================================================================
-   DESKTOP MIN-WIDTH (Large screens only)
-   ==================================================================== */
-@media (min-width: 1201px) {
-    .sidebar-header {
-        justify-content: center;
-    }
-
-    #sidebarCloseBtn {
-        display: none;
-    }
-}
-
-/* ====================================================================
-   BREAKPOINT: 1200px - Sidebar Collapse
-   ==================================================================== */
-@media (max-width: 1200px) {
-    .sidebar .section-title {
-        display: block;
-    }
-
-    .close-sidebar-btn {
-        display: flex;
-    }
-}
-
-/* ====================================================================
-   BREAKPOINT: 1024px - Tablet Large
-   ==================================================================== */
-@media (max-width: 1024px) {
-    .results-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-}
 
 /* ====================================================================
    BREAKPOINT: 900px - Layout Simplification
@@ -52,8 +18,7 @@
 @media (max-width: 900px) {
     /* Header and .main-content padding managed in layout.css */
 
-    .output-header,
-    .output-toolbar {
+    .output-header {
         flex-direction: column;
         align-items: stretch;
     }
@@ -66,14 +31,6 @@
         grid-template-columns: 1fr;
     }
 
-    .refinement-comparison {
-        flex-direction: column;
-    }
-
-    .refinement-accept-btn {
-        transform: rotate(90deg);
-        margin: 12px 0;
-    }
 
     .settings-layout-grid {
         grid-template-columns: 1fr;
@@ -129,51 +86,11 @@
         font-size: 1.1rem;
     }
 
-    /* Cards */
-    .appreciation-result {
-        padding: 16px;
-    }
-
-    .appreciation-result .card-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .appreciation-result .card-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-
-    .results-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
 
     #empty-state-card {
         padding: 40px 20px;
     }
 
-    /* Toolbar */
-    .output-toolbar {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .search-wrapper {
-        width: 100%;
-        min-width: unset;
-    }
-
-    /* Import preview */
-    .import-preview-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-    }
-
-    .import-preview-grid>div {
-        min-height: auto;
-    }
 
     /* Settings tabs */
     .settings-tabs {
@@ -200,24 +117,6 @@
    Stats cards: 2+1 layout (handled in stats.css)
    ==================================================================== */
 @media (max-width: 600px) {
-    .sidebar {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .stats-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .stats-header .section-title {
-        font-size: 1.35rem;
-    }
-
-    .stats-header .btn {
-        width: 100%;
-    }
 
     /* Fullscreen workspace modals - Single Source of Truth (iOS Sheet slide presentation) */
     .modal-content,
@@ -237,8 +136,7 @@
     .modal-content:where(
         .modal-alert-ios,
         .modal-content-confirm,
-        .modal-content-backup-import,
-        .model-selection-content
+        .modal-content-backup-import
     ),
     :where(#classManagementModal, #welcomeModal, .modal-prompt-preview) > .modal-content {
         width: calc(100% - 24px);
@@ -308,14 +206,6 @@
 @media (max-width: 480px) {
     /* .main-content padding managed in layout.css */
 
-    /* Cards */
-    .appreciation-result {
-        padding: 12px;
-    }
-
-    .appreciation-result .card-actions .btn-icon {
-        padding: 8px;
-    }
 
     #empty-state-card {
         padding: 30px 16px;
@@ -330,26 +220,6 @@
     }
 
 
-    /* Toolbar - Compact */
-    .output-toolbar {
-        gap: 8px;
-    }
-
-    .search-container {
-        width: 100%;
-        max-width: none;
-    }
-
-    .toolbar-actions {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .toolbar-actions .btn {
-        flex: 1;
-        justify-content: center;
-    }
 
     /* Contextual FAB positioning on compact screens */
     .fab-add-student {
@@ -444,12 +314,9 @@
     }
 
     /* --- Hide UI chrome (NOT .app-layout — it's the root wrapper) --- */
-    .sidebar,
     .header,
-    .output-toolbar,
     .output-header,
     .stats-container,
-    .stats-header,
     .appreciation-actions,
     .fab-add-student,
     .focus-panel-backdrop,

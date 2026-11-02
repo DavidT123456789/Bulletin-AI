@@ -258,10 +258,4 @@ describe('FormUIManager', () => {
             expect(descEl.innerHTML).toBe('Description...');
         });
     });
-
-    describe('renderSettingsLists()', () => {
-        it('should not throw (no-op function)', () => {
-            expect(() => FormUI.renderSettingsLists()).not.toThrow();
-        });
-    });
 });

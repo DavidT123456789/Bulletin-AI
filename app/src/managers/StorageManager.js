@@ -700,9 +700,6 @@ export const StorageManager = {
     },
 
 
-
-
-
     migrateData(results) {
         if (!Array.isArray(results)) return [];
         let migrationNeeded = false;
@@ -1221,7 +1218,6 @@ export const StorageManager = {
             UI.updatePeriodSystemUI();
             UI.updateSettingsPromptFields();
             UI.updateSettingsFields();
-            UI.renderSettingsLists();
             if (App?.updateUIOnLoad) App.updateUIOnLoad();
             UI.showNotification(`Réinitialisé : ${parts.join(', ')} (données conservées).`, 'success');
         } catch (e) {

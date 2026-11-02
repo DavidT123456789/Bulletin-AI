@@ -15,7 +15,6 @@
 
 
 /* Common Card Style - Elevated surface harmonized with header nav buttons */
-.grades-timeline,
 .focus-context-group,
 .focus-appreciation,
 .journal-section {
@@ -34,7 +33,6 @@
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .grades-timeline,
 [data-theme="dark"] .focus-context-group,
 [data-theme="dark"] .focus-appreciation,
 [data-theme="dark"] .journal-section {
@@ -42,13 +40,8 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* FIX: If any specific card needs overflow hidden to fix corners */
-.grades-timeline {
-    overflow: hidden;
-}
 
 /* Fix header corners matching card radius - Explicit radius to prevent clipping issues */
-.grades-timeline> :first-child,
 .focus-context-group> :first-child,
 .focus-appreciation> :first-child,
 .journal-section> :first-child {
@@ -57,7 +50,6 @@
 }
 
 /* Fix footer corners */
-.grades-timeline> :last-child,
 .focus-context-group> :last-child,
 .focus-appreciation> :last-child,
 .journal-section> :last-child {
@@ -66,58 +58,6 @@
 }
 
 /* (Dark mode overrides removed - fully reliant on CSS variables) */
-
-/* Input Specific */
-.timeline-grade-input {
-    text-align: center;
-    caret-color: var(--primary-color);
-}
-
-.timeline-grade-input:focus {
-    outline: none;
-}
-
-/* Future Periods - Subtle & Faded */
-.timeline-period.future {
-    opacity: 0.35;
-}
-
-.timeline-period.future .timeline-grade-display {
-    background: transparent;
-    border-style: dashed;
-    border-color: var(--text-tertiary);
-    color: var(--text-tertiary);
-    font-size: 14px;
-}
-
-/* Arrows - Compact Modern Style */
-.timeline-arrow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    margin-top: 22px;
-    color: var(--text-tertiary);
-    opacity: 0.4;
-    font-size: 10px;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-}
-
-.timeline-arrow.positive {
-    color: var(--success-color);
-    opacity: 1;
-    background: rgba(var(--success-rgb), 0.1);
-    border-radius: 50%;
-}
-
-.timeline-arrow.negative {
-    color: var(--error-color);
-    opacity: 1;
-    background: rgba(var(--error-rgb), 0.1);
-    border-radius: 50%;
-}
 
 
 /* ============================
@@ -424,122 +364,6 @@
 }
 
 
-/* ============================
-   3. OPTIMIZED HISTORY & CONTEXT
-   ============================ */
-
-/* History Grades Summary (In Header) */
-.student-card-title-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.history-grades-summary {
-    display: flex;
-    gap: 8px;
-    margin-top: 2px;
-}
-
-/* --- Badges de Notes Historiques Premium --- */
-/* Style de base (lecture) */
-.history-grade-badge {
-    font-size: 12px;
-    background: var(--surface-color);
-    /* White background for pop */
-    color: var(--text-primary);
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 700;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    /* Subtle lift */
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all var(--transition-fast);
-}
-
-.history-grade-badge span:first-child {
-    color: var(--text-tertiary);
-    /* T1 label slightly dimmer */
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-}
-
-/* Editable style (Current Period) - Premium themed accent */
-.history-grade-badge.editable {
-    cursor: pointer;
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--text-primary);
-    padding: 3px 10px;
-    border: 1px solid rgba(var(--primary-color-rgb), 0.35);
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* The T-label inside editable badges gets theme color */
-.history-grade-badge.editable span:first-child {
-    color: var(--primary-color);
-    opacity: 0.85;
-}
-
-.history-grade-badge.editable:hover {
-    background: rgba(var(--primary-color-rgb), 0.14);
-    border-color: rgba(var(--primary-color-rgb), 0.55);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.18);
-}
-
-[data-theme="dark"] .history-grade-badge.editable {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-}
-
-/* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
-.read-prev-appreciation,
-.read-prev-context,
-#focusPrevAppreciationSection,
-#focusPrevContextSection {
-    border-left: 3px solid var(--primary-color) !important;
-    padding-left: 12px !important;
-    margin-top: 12px !important;
-    background: transparent !important;
-    /* Force removal of gray box */
-    border-top: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-}
-
-/* Header des sections précédentes (Titre + Icône) */
-.read-prev-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-tertiary);
-    margin-bottom: 4px;
-}
-
-.read-prev-header i {
-    font-size: 10px;
-    opacity: 0.7;
-}
-
-/* Texte des sections précédentes */
-.read-prev-text {
-    font-size: 13px;
-    color: var(--text-secondary);
-    /* Slightly softer than main text */
-    line-height: 1.4;
-    font-style: italic;
-}
-
 /* Context Header with Grade Input - Compact Style (matching Journal) */
 .focus-context-header {
     display: flex;
@@ -558,21 +382,6 @@
 
 
 
-/* History Grade Input (Small, inside badge) */
-.history-grade-input {
-    width: 30px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: center;
-    padding: 0;
-    margin: 0;
-}
-
-.history-grade-input:focus {
-    outline: none;
-}
 
 /* === NEW: Grades display (S1 vs S2) === */
 .grades-wrapper {

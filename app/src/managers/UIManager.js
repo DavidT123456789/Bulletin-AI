@@ -16,7 +16,6 @@ import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG, hasValidApiKey } from '../config/providers.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_LINKS } from '../config/Config.js';
-import { getMovementStatusLabels, getSelectableStatusLabels } from '../config/academicConstants.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { Utils } from '../utils/Utils.js';
@@ -24,7 +23,6 @@ import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { ModalUI } from './ModalUIManager.js';
 import { FormUI } from './FormUIManager.js';
-import { ImportUI } from './ImportUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
@@ -62,7 +60,6 @@ const NOTIF_ICONS = {
 };
 
 
-
 /**
  * Module de gestion de l'interface utilisateur.
  * @namespace UI
@@ -76,8 +73,6 @@ export const UI = {
         App = appInstance;
         // Initialize sub-managers
         FormUI.init(appInstance);
-
-        ImportUI.init(this, appInstance);
         ThemeManager.init();
         NotificationCoalescer.init();
 
@@ -302,56 +297,6 @@ export const UI = {
         });
 
         return { dismiss: removeNotification, element: notif };
-    },
-    /**
-     * Affiche une notification cliquable avec action.
-     * @param {string} message - Le message à afficher
-     * @param {NotificationType} [type='success'] - Type de notification
-     * @param {Function} [onClick] - Callback exécuté au clic sur la notification
-     * @param {number} [duration=5000] - Durée d'affichage en ms (plus long pour permettre le clic)
-     */
-    showActionableNotification(message, type = 'success', onClick = null, duration = 5000) {
-        let container = document.getElementById('notification-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'notification-container';
-            document.body.appendChild(container);
-        }
-        const notif = document.createElement('div');
-        notif.className = `notification ${type} actionable`;
-
-        // Accessibility (A11y) Roles
-        if (type === 'error' || type === 'warning') {
-            notif.setAttribute('role', 'alert');
-            notif.setAttribute('aria-live', 'assertive');
-        } else {
-            notif.setAttribute('role', 'status');
-            notif.setAttribute('aria-live', 'polite');
-        }
-
-        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span class="notification-message">${message}</span>`;
-        notif.style.cursor = 'pointer';
-        container.appendChild(notif);
-
-        if (onClick) {
-            notif.addEventListener('click', () => {
-                onClick();
-                notif.classList.remove('show');
-                setTimeout(() => {
-                    if (notif.parentNode === container) container.removeChild(notif);
-                    if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
-                }, 300);
-            });
-        }
-
-        setTimeout(() => notif.classList.add('show'), 10);
-        setTimeout(() => {
-            notif.classList.remove('show');
-            setTimeout(() => {
-                if (notif.parentNode === container) container.removeChild(notif);
-                if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
-            }, 300);
-        }, duration);
     },
 
     /**
@@ -682,96 +627,8 @@ export const UI = {
             DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(appState.currentPeriod, false)})`;
         }
 
-        // Only build and render legacy sidebar form if element exists (removed in Liste + Focus UX)
-        if (!DOM.singleStudentPeriodInputs) return;
-
-        const currentPeriodIndex = periods.indexOf(appState.currentPeriod);
-        let formHtml = '';
-
-        for (let i = 0; i <= currentPeriodIndex; i++) {
-            const p = periods[i];
-            const isCurrent = (i === currentPeriodIndex);
-
-            if (isCurrent) {
-                const movementOptions = getMovementStatusLabels(p);
-                const statusOptions = getSelectableStatusLabels({ includeMovement: false });
-
-                const createPills = (options) => options.map(opt => `
-                    <input type="checkbox" id="statut-${opt.replace(' ', '-')}" name="statuses" value="${opt}">
-                    <label for="statut-${opt.replace(' ', '-')}">${opt.split(' ')[0]}</label>
-                `).join('');
-
-                formHtml += `<div class="period-input-group">
-                    <h3><iconify-icon icon="solar:calendar-mark-linear"></iconify-icon> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
-                    <div class="form-row period-main-row">
-                        <div class="form-group current-grade-group">
-                            <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
-                            <input type="text" id="moy${p}" placeholder="14.5">
-                            <div class="error-message" id="moy${p}Error"></div>
-                        </div>
-                         <div class="form-group">
-                            <label>Statuts (optionnel)&nbsp;:</label>
-                            <div class="status-pills-container">
-                                ${createPills(movementOptions)}
-                                ${createPills(statusOptions)}
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            } else {
-                formHtml += `<div class="period-input-group previous-period-group">
-                    <h4>
-                        <iconify-icon icon="solar:history-linear"></iconify-icon> ${Utils.getPeriodLabel(p, true)} 
-                        <span class="detail-chip-small">(Période précédente)</span>
-                    </h4>
-                    <div class="form-row">
-                        <div class="form-group previous-grade-group">
-                            <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
-                            <input type="text" id="moy${p}" placeholder="14.5"><div class="error-message" id="moy${p}Error"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="app${p}">Appréciation ${p}&nbsp;:</label>
-                            <textarea id="app${p}" class="period-app-textarea" rows="1"></textarea>
-                        </div>
-                    </div>
-                </div>`;
-            }
-        }
-
-        DOM.singleStudentPeriodInputs.innerHTML = formHtml;
-        DOM.singleStudentPeriodInputs.querySelectorAll('input[type="text"]').forEach(input => input.addEventListener('input', () => Utils.validateGrade(input)));
     },
 
-    // ====================================================================
-    //  MODES D'ENTRÉE ET ÉTATS DES BOUTONS
-    //  Bascule entre saisie individuelle et import de masse
-    // ====================================================================
-
-    setInputMode(mode, force = false) {
-        if (!force && appState.currentInputMode === mode) return;
-        appState.currentInputMode = mode;
-        const isMass = mode === CONSTS.INPUT_MODE.MASS;
-
-        if (DOM.massImportSection) DOM.massImportSection.style.display = isMass ? 'block' : 'none';
-        if (DOM.singleStudentFormDiv) DOM.singleStudentFormDiv.style.display = isMass ? 'none' : 'block';
-
-        if (DOM.massImportActions) DOM.massImportActions.style.display = isMass ? 'flex' : 'none';
-        if (DOM.singleStudentActions) DOM.singleStudentActions.style.display = isMass ? 'none' : 'flex';
-
-        if (DOM.massImportTab) { DOM.massImportTab.classList.toggle('active', isMass); DOM.massImportTab.setAttribute('aria-selected', String(isMass)); }
-        if (DOM.singleStudentTab) { DOM.singleStudentTab.classList.toggle('active', !isMass); DOM.singleStudentTab.setAttribute('aria-selected', String(!isMass)); }
-
-
-        if (!isMass) {
-            AppreciationsManager.resetForm();
-            // Focus on available element (sidebar elements may not exist)
-            const focusTarget = DOM.loadStudentSelect || DOM.nomInput;
-            if (focusTarget) setTimeout(() => focusTarget.focus(), 100);
-        } else {
-            if (DOM.massData) setTimeout(() => DOM.massData.focus(), 100);
-        }
-        StorageManager.saveAppState();
-    },
     updateGenerateButtonState() {
         const model = appState.currentAIModel || '';
         const isOllama = model.startsWith('ollama');
@@ -820,28 +677,6 @@ export const UI = {
             }
         }
     },
-    switchToCreationModeUI() {
-        if (DOM.generateAppreciationBtn) DOM.generateAppreciationBtn.style.display = 'none';
-        if (DOM.generateAndNextBtn) {
-            DOM.generateAndNextBtn.style.display = 'inline-flex';
-            DOM.generateAndNextBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
-            DOM.generateAndNextBtn.className = 'btn btn-ai';
-            DOM.generateAndNextBtn.setAttribute('data-tooltip', 'Génère l\'appréciation et prépare le formulaire pour l\'élève suivant. Raccourci : Ctrl+Enter');
-        }
-        if (DOM.cancelEditBtn) DOM.cancelEditBtn.style.display = 'none';
-        if (DOM.resetFormBtn) DOM.resetFormBtn.style.display = 'inline-flex';
-    },
-    switchToEditModeUI() {
-        if (DOM.generateAppreciationBtn) {
-            DOM.generateAppreciationBtn.style.display = 'inline-flex';
-            DOM.generateAppreciationBtn.innerHTML = `<iconify-icon icon="solar:refresh-linear"></iconify-icon> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
-            DOM.generateAppreciationBtn.className = 'btn btn-ai';
-            DOM.generateAppreciationBtn.setAttribute('data-tooltip', 'Regénère l\'appréciation avec les données modifiées. Raccourci : Ctrl+Enter');
-        }
-        if (DOM.generateAndNextBtn) DOM.generateAndNextBtn.style.display = 'none';
-        if (DOM.cancelEditBtn) DOM.cancelEditBtn.style.display = 'inline-flex';
-        if (DOM.resetFormBtn) DOM.resetFormBtn.style.display = 'none';
-    },
     updateHeaderPremiumLook() {
         const header = document.querySelector('.header');
         if (header) {
@@ -882,8 +717,6 @@ export const UI = {
     //  LOADING, SPINNERS ET OVERLAYS
     // ====================================================================
 
-    showLoadingOverlay(msg = 'Génération...') { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'flex'; if (DOM.loadingText) DOM.loadingText.textContent = msg; },
-    hideLoadingOverlay() { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'none'; },
     showInlineSpinner(el, label = '', options = {}) {
         if (!el) return;
         if (!el.dataset.originalContent) {
@@ -1226,17 +1059,6 @@ export const UI = {
         this.updateDashboardCounts();
     },
 
-    /**
-     * Legacy method - now calls updateDashboardCounts
-     * @deprecated Use updateDashboardCounts instead
-     */
-    updateGenerateChipState(pendingCount) {
-        this.updateDashboardCounts();
-    },
-
-    // Legacy delegations - now redirect to header chip
-    updateOutputProgress(cur, total, studentName) { this.showHeaderProgress(cur, total, studentName); },
-    resetProgressBar() { this.resetHeaderProgress(); },
     showSettingsTab(tabName) {
         const modal = DOM.settingsModal || document.getElementById('appSettingsModal');
         if (modal) {
@@ -1283,8 +1105,6 @@ export const UI = {
         if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
         return true;
     },
-    // renderVocabList supprimé - fonctionnalité vocabulaire dépréciée
-    renderSettingsLists() { FormUI.renderSettingsLists(); },
     updateHelpImportFormat(period) {
         const struct = document.getElementById('helpFormatStructure'), ex = document.getElementById('helpFormatExample');
         if (!struct || !ex) return;
@@ -1395,9 +1215,6 @@ export const UI = {
         // Update generation dashboard with current counts
         this.updateDashboardCounts();
     },
-    _getMappingOptions() { return ImportUI._getMappingOptions(); },
-    _guessInitialMapping(selects, firstLineData, availableOptions) { return ImportUI._guessInitialMapping(selects, firstLineData, availableOptions); },
-    updateMassImportPreview() { ImportUI.updateMassImportPreview(); },
 
     getGradeClass(grade) { return Utils.getGradeClass(grade); },
     populateLoadStudentSelect() {
@@ -1481,10 +1298,6 @@ export const UI = {
             DOM.activeFilterInfo.innerHTML = '';
         }
     },
-    // DEPRECATED: Use ImportWizardManager.openWithData() instead
-    openImportPreviewModal() { console.warn('[UI] openImportPreviewModal is deprecated. Use ImportWizardManager.openWithData() instead.'); },
-
-    setMassImportProcessingState(isProcessing) { ImportUI.setMassImportProcessingState(isProcessing); },
 
     // ====================================================================
     //  ANIMATIONS DE TEXTE (LEGACY)

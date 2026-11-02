@@ -625,55 +625,6 @@ export const ClassManager = {
     },
 
     /**
-     * Exporte les données d'une classe en JSON
-     * @param {string} classId - ID de la classe
-     * @returns {Object} Données exportables
-     */
-    async exportClass(classId) {
-        const targetClass = this.getClassById(classId);
-        if (!targetClass) return null;
-
-        const students = await this.getClassStudents(classId);
-
-        return {
-            version: '1.0',
-            exportedAt: new Date().toISOString(),
-            class: targetClass,
-            students: students
-        };
-    },
-
-    /**
-     * Importe une classe depuis des données JSON
-     * @param {Object} data - Données importées
-     * @returns {Object} La classe importée
-     */
-    async importClass(data) {
-        if (!data || !data.class) {
-            throw new Error('Format de données invalide');
-        }
-
-        // Créer la classe avec un nouvel ID
-        const importedClass = this.createClass(
-            data.class.name + ' (importée)',
-            data.class.year,
-            data.class.subject
-        );
-
-        // Importer les étudiants avec le nouvel ID de classe
-        if (data.students && data.students.length > 0) {
-            const studentsToImport = data.students.map(s => ({
-                ...s,
-                id: generateUUID(), // Nouvel ID pour éviter les conflits
-                classId: importedClass.id
-            }));
-            await DBService.putAll('generatedResults', studentsToImport);
-        }
-
-        return importedClass;
-    },
-
-    /**
      * Duplique une classe existante avec tous ses élèves
      * @param {string} classId - ID de la classe à dupliquer
      * @param {string} [newName] - Nouveau nom (optionnel, sinon "Nom (copie)")

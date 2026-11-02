@@ -48,7 +48,7 @@ export const MassImportManager = {
                 'info'
             );
 
-            UI.updateOutputProgress(0, studentsToProcess.length, 'Démarrage...');
+            UI.showHeaderProgress(0, studentsToProcess.length, 'Démarrage...');
 
             for (const [index, studentData] of studentsToProcess.entries()) {
                 if (this.massImportAbortController.signal.aborted) {
@@ -61,7 +61,7 @@ export const MassImportManager = {
                 const generationStartTime = performance.now();
 
                 // Mettre à jour l'affichage avec le nom (le temps sera mis à jour après)
-                UI.updateOutputProgress(index + 1, studentsToProcess.length, studentName);
+                UI.showHeaderProgress(index + 1, studentsToProcess.length, studentName);
 
                 // Marquer la rangée courante comme "en cours de génération"
                 const resultId = pendingCards[index];
@@ -83,7 +83,7 @@ export const MassImportManager = {
 
                     // Calculer et afficher le temps de génération
                     const generationTime = ((performance.now() - generationStartTime) / 1000).toFixed(1);
-                    UI.updateOutputProgress(index + 1, studentsToProcess.length, `${studentName} (${generationTime}s)`);
+                    UI.showHeaderProgress(index + 1, studentsToProcess.length, `${studentName} (${generationTime}s)`);
 
                 } catch (e) {
                     // Vérifier si c'est une annulation (AbortError, signal aborted, ou message spécifique)
@@ -112,7 +112,7 @@ export const MassImportManager = {
                         const waitLabel = `${Math.ceil(waitTime / 1000)}s`;
 
                         // Absorb into progress bar instead of spawning a separate toast
-                        UI.updateOutputProgress(
+                        UI.showHeaderProgress(
                             index,
                             studentsToProcess.length,
                             `⏱️ Limite API – reprise dans ${waitLabel}`
@@ -230,7 +230,6 @@ export const MassImportManager = {
                 }
                 appState.importJustCompleted = true;
                 if (DOM.massData) DOM.massData.value = '';
-                UI.updateMassImportPreview();
             } else {
                 // Notification d'annulation si pas déjà affichée
                 UI.showNotification("Import annulé par l'utilisateur.", 'warning');
@@ -525,33 +524,6 @@ export const MassImportManager = {
 
         return resultIds;
     },
-
-    /**
-     * Met à jour un résultat après génération
-     * Liste + Focus: Met à jour dans appState, le ListViewManager se charge du rendu
-     * @param {string|HTMLElement} cardOrId - ID du résultat ou élément (compat)
-     * @param {Object} resultObject - L'objet résultat avec l'appréciation
-     * @param {boolean} hasError - Si la génération a échoué
-     */
-    async _updatePendingCard(cardOrId, resultObject, hasError) {
-        // Liste + Focus: Trouver et mettre à jour le résultat dans appState
-        const existingIndex = appState.generatedResults.findIndex(r =>
-            r.nom === resultObject.nom && r.prenom === resultObject.prenom
-        );
-
-        if (existingIndex !== -1) {
-            // Remplacer le résultat existant
-            appState.generatedResults[existingIndex] = {
-                ...resultObject,
-                isPending: false
-            };
-        } else {
-            resultObject.isPending = false;
-            appState.generatedResults.push(resultObject);
-        }
-
-        // Note: renderResults() sera appelé en batch après traitement
-    }
 };
 
 

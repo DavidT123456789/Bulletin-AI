@@ -1596,7 +1596,6 @@ export const ModalUI = {
             DOM.studentDetailsModal,
             DOM.helpModal,
             DOM.welcomeModal,
-            DOM.importPreviewModal,
             ...document.querySelectorAll('.modal.modal-visible, .modal.show')
         ]);
         this.stackedModal = null; // Prevent restoring stacked modals when closing all

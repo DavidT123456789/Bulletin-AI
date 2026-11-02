@@ -113,30 +113,6 @@
     box-shadow: none !important;
 }
 
-.trombi-image-container {
-    position: relative;
-    border-radius: var(--radius-md);
-    background: var(--bg-secondary);
-    overflow: hidden;
-    /* Clip l'image aux coins arrondis, pas de scroll */
-}
-
-/* Image s'adapte au container */
-.trombi-image-container .trombi-image {
-    width: 100%;
-    height: auto;
-    max-height: 350px;
-    /* Limite la hauteur de l'image, pas du container */
-    object-fit: contain;
-    display: block;
-}
-
-/* Inner wrapper to maintain positioning context */
-.trombi-image-container .trombi-image-wrapper {
-    position: relative;
-    display: inline-block;
-    min-width: 100%;
-}
 
 .trombi-image {
     width: 100%;
@@ -146,12 +122,6 @@
     -webkit-user-drag: none;
 }
 
-.trombi-image-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: auto;
-    cursor: crosshair;
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    Zones Overlay & Draggable Zones
@@ -1748,116 +1718,6 @@ input.trombi-popover-search-input::placeholder {
     font-size: 48px;
 }
 
-/* Controls Bar */
-.trombi-controls {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
-    margin-top: 16px;
-    padding: 12px 16px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.quick-grid-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.control-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-right: 4px;
-}
-
-.btn-grid {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.btn-grid:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    transform: translateY(-1px);
-}
-
-.btn-grid:active {
-    transform: translateY(0);
-}
-
-.controls-separator {
-    width: 1px;
-    height: 24px;
-    background: var(--border-color);
-    margin: 0 8px;
-}
-
-.trombi-controls .btn-secondary {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-primary);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.trombi-controls .btn-secondary:hover {
-    background: var(--item-hover-bg-elevated);
-    border-color: var(--border-color);
-    color: var(--text-primary);
-}
-
-.trombi-controls .btn-danger-subtle:hover {
-    border-color: var(--error-color);
-    color: var(--error-color);
-}
-
-.zone-counter {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    padding: 6px 12px;
-    background: var(--bg-color);
-    border-radius: 20px;
-    margin-left: auto;
-}
-
-.trombi-hint {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.trombi-hint i,
-.trombi-hint iconify-icon {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    Step Transition Animations (iOS 2025 Premium)
@@ -1956,28 +1816,6 @@ input.trombi-popover-search-input::placeholder {
         padding-right: 16px;
     }
 
-    .trombi-wizard-stepper .step-label {
-        display: none;
-    }
-
-    .trombi-controls {
-        gap: 6px;
-    }
-
-    .quick-grid-group {
-        width: 100%;
-        flex-wrap: wrap;
-    }
-
-    .trombi-controls .btn-secondary {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
-    .btn-grid {
-        padding: 5px 8px;
-        font-size: 11px;
-    }
 }
 
 /* Floating overlay HUD bars (Multi-page navigation, Zoom controls & Remove button — Minimalist Frosted Glass) */
