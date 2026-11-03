@@ -50,7 +50,7 @@ const getCommonTippyConfig = () => {
             if (ModalUI._isIgnoringTooltips) return false;
             // Ne jamais afficher de tooltip en arrière-plan (ou sur le bouton déclencheur) lorsqu'un menu déroulant est ouvert
             const openMenu = document.querySelector(
-                '#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open #headerModelDropdown, .global-actions-dropdown-menu.open, .action-dropdown-menu.open'
+                '#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open #headerModelDropdown, .global-actions-dropdown-menu.open, .action-dropdown-menu.open'
             );
             if (openMenu && !(instance.reference instanceof Node && openMenu.contains(instance.reference))) {
                 return false;

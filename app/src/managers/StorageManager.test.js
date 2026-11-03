@@ -1508,5 +1508,40 @@ describe('StorageManager', () => {
 
             syncSpy.mockRestore();
         });
+
+        it('fusionne classNote selon classNoteUpdatedAt dans _mergeClassesList et exclut classNoteUpdatedAt du hash de données', () => {
+            userSettings.academic.classes = [
+                { id: 'c1', name: '3e1', classNote: 'Ancienne note', classNoteUpdatedAt: 1000 },
+                { id: 'c2', name: '4e2', classNote: 'Note locale plus récente', classNoteUpdatedAt: 3000 },
+                { id: 'c3', name: '5e1', classNote: '', classNoteUpdatedAt: null }
+            ];
+            const remoteClasses = [
+                { id: 'c1', name: '3e1', classNote: 'Nouvelle note distante', classNoteUpdatedAt: 2000 },
+                { id: 'c2', name: '4e2', classNote: 'Note distante obsolète', classNoteUpdatedAt: 1500 },
+                { id: 'c3', name: '5e1', classNote: 'Note importée sans horodatage local', classNoteUpdatedAt: null }
+            ];
+
+            StorageManager._mergeClassesList(remoteClasses, new Map());
+            const merged = userSettings.academic.classes;
+            expect(merged.find(c => c.id === 'c1').classNote).toBe('Nouvelle note distante');
+            expect(merged.find(c => c.id === 'c1').classNoteUpdatedAt).toBe(2000);
+            expect(merged.find(c => c.id === 'c2').classNote).toBe('Note locale plus récente');
+            expect(merged.find(c => c.id === 'c2').classNoteUpdatedAt).toBe(3000);
+            expect(merged.find(c => c.id === 'c3').classNote).toBe('Note importée sans horodatage local');
+
+            userSettings.academic.classes = [{ id: 'c1', name: '3e1', classNote: 'Ch. 3', classNoteUpdatedAt: 1111, updatedAt: 1111 }];
+            const hash1 = StorageManager.computeCurrentDataHash();
+            userSettings.academic.classes = [{ id: 'c1', name: '3e1', classNote: 'Ch. 3', classNoteUpdatedAt: 9999, updatedAt: 9999 }];
+            const hash2 = StorageManager.computeCurrentDataHash();
+            expect(hash1).toBe(hash2);
+
+            const parsed = StorageManager.parseBackupFile(JSON.stringify({
+                _meta: { exportType: 'full_backup' },
+                settings: { subjects: {} },
+                classes: merged,
+                generatedResults: []
+            }));
+            expect(parsed.categories.classes.description).toContain('3 mémos');
+        });
     });
 });

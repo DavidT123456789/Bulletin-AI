@@ -87,6 +87,8 @@
 
 /* --- Main Content Area --- */
 .main-content-wrapper {
+    /* --content-padding-x: single source of truth for horizontal & top padding */
+    --content-padding-x: var(--space-5);
     grid-area: main;
     height: 100%;
     /* Scroll moved to .main-content */
@@ -128,13 +130,13 @@ body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible
 
 /* Neutralisation du survol et des interactions sur l'arrière-plan flouté et les contrôles inactifs de l'en-tête
    (tout en conservant pointer-events: auto sur #main-content et .header pour la fermeture au clic extérieur et au scroll) */
-body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) :is(#main-content, .header) {
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open)) :is(#main-content, .header) {
     cursor: default;
 }
 
-body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) :is(.output-section, #crossClassResults, .student-list-table thead *, #avgWordsChip, #mobileCompactToggleBtn, #seatingChartView, #seatingChartView *, .fab-add-student, .pwa-update-banner, .selection-toolbar, .header-center),
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open)) :is(.output-section, #crossClassResults, .student-list-table thead *, #avgWordsChip, #mobileCompactToggleBtn, #seatingChartView, #seatingChartView *, .fab-add-student, .pwa-update-banner, .selection-toolbar, .header-center),
 body:is(.header-menu-open, :has(#headerMenuDropdown.open)) .header :is(.header-left, #headerGenWrapper),
-body:has(#classDropdown.visible) .header :is(#mainPeriodSelector, .header-actions),
+body:has(#classDropdown.visible, #classNotePopover.visible) .header :is(#mainPeriodSelector, .header-actions),
 body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill) {
     pointer-events: none !important;
 }
@@ -149,9 +151,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill)
     scroll-behavior: smooth;
     outline: none;
 
-    /* --content-padding-x: single source of truth for padding.
-       Ensures left, right AND top margins are perfectly symmetrical . */
-    --content-padding-x: var(--space-5);
     padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) calc(var(--content-padding-x) + env(safe-area-inset-bottom, 0px));
     max-width: none;
     width: 100%;
@@ -934,12 +933,15 @@ button > .icon-spin-wrapper {
         grid-template-columns: 1fr;
     }
 
+    .main-content-wrapper {
+        --content-padding-x: 16px;
+    }
+
     .main-content-wrapper::after {
-        right: 0;
+        right: var(--content-padding-x, 16px);
     }
 
     .main-content {
-        --content-padding-x: 16px;
         scrollbar-gutter: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -1066,10 +1068,7 @@ button > .icon-spin-wrapper {
 
     .ui-segmented-control.header-style .ui-segment {
         min-width: 36px;
-        padding: 0 10px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        gap: 4px !important;
+        gap: 4px;
     }
 
     .ui-segmented-control.header-style .ui-segment iconify-icon,
@@ -1080,7 +1079,7 @@ button > .icon-spin-wrapper {
 
 /* Mobile (max-width: 480px) */
 @media (max-width: 480px) {
-    .main-content {
+    .main-content-wrapper {
         --content-padding-x: 12px;
     }
 
@@ -1109,17 +1108,17 @@ button > .icon-spin-wrapper {
 
     .ui-segmented-control.header-style .ui-segment {
         min-width: 34px;
-        padding: 0 9px !important;
+        padding: 0 9px;
     }
 
     .ui-segmented-control.header-style.view-toggle .ui-segment {
         min-width: 36px;
-        padding: 0 9px !important;
+        padding: 0 9px;
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
         min-width: 31px;
-        padding: 0 7.5px !important;
+        padding: 0 7.5px;
     }
 
     .section-title {

@@ -234,6 +234,36 @@
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear" class="class-chevron"></iconify-icon>
                         </div>
+                        <button type="button" id="headerClassNoteBtn" class="header-class-note-btn is-empty tooltip"
+                            data-tooltip="Ajouter un mémo de classe" aria-label="Mémo de la classe" aria-expanded="false">
+                            <iconify-icon icon="solar:bookmark-linear" class="header-class-note-icon"></iconify-icon>
+                        </button>
+                        <div id="classNotePopover" class="class-note-popover" role="dialog" aria-label="Mémo de la classe" style="display: none;">
+                            <div class="class-note-popover-header">
+                                <div class="class-note-popover-title">
+                                    <span>Mémo</span>
+                                    <span id="classNotePopoverMeta" class="class-note-popover-meta"></span>
+                                </div>
+                                <div class="class-note-popover-actions">
+                                    <button type="button" id="undoClassNoteBtn" class="btn-icon-small class-note-history-btn disabled tooltip" data-tooltip="Annuler (Ctrl+Z)" aria-label="Annuler" aria-disabled="true">
+                                        <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
+                                    </button>
+                                    <button type="button" id="redoClassNoteBtn" class="btn-icon-small class-note-history-btn disabled tooltip" data-tooltip="Rétablir (Ctrl+Y)" aria-label="Rétablir" aria-disabled="true">
+                                        <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
+                                    </button>
+                                    <button type="button" id="clearClassNoteBtn" class="class-note-popover-clear" style="display: none;" aria-label="Effacer le mémo">
+                                        Effacer
+                                    </button>
+                                    <button type="button" id="closeClassNotePopoverBtn" class="btn-icon-small tooltip" data-tooltip="Fermer (Échap)" aria-label="Fermer">
+                                        <iconify-icon icon="ph:x-bold"></iconify-icon>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="class-note-popover-body">
+                                <textarea id="classNoteTextarea" class="class-note-textarea" rows="3" maxlength="400"
+                                    placeholder="Où vous êtes-vous arrêté ? (ex. Ch. 3 act. 2 finie, interro à faire rattraper à Thomas…)"></textarea>
+                            </div>
+                        </div>
                         <div id="classDropdown" class="class-dropdown" style="display: none;">
                             <div class="class-dropdown-header">
                                 <div class="class-dropdown-title-group">
@@ -1763,7 +1793,7 @@
 
                                 <div class="form-group">
                                     <label>Voix du rédacteur</label>
-                                    <div class="ui-segmented-control compact" id="iaVoiceSelector">
+                                    <div class="ui-segmented-control" id="iaVoiceSelector">
                                         <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
                                             checked>
                                         <label for="voiceDefault" class="ui-segment tooltip"

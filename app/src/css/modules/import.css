@@ -337,8 +337,6 @@
     width: 100%;
     max-width: 480px;
     margin: 0 auto;
-    border: 1px solid var(--border-color);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 #welcomeModal .ui-segmented-control .ui-segment {

@@ -2134,9 +2134,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     .sc-plan-mode-switch {
-        --sc-mode-padding: 3px;
+        --sc-mode-padding: 2px;
         --sc-inactive-w: 28px;
-        height: 34px !important;
+        height: 32px !important;
         padding: var(--sc-mode-padding);
     }
 

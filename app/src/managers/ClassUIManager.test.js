@@ -570,6 +570,7 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         const firstItemBefore = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${class1.id}"]`);
         const calendarIconBefore = firstItemBefore.querySelector('.class-meta-year iconify-icon');
         const seatingIconBefore = firstItemBefore.querySelector('.class-seating-badge iconify-icon');
+        const noteBadgeIconBefore = firstItemBefore.querySelector('.class-note-badge iconify-icon');
         const progressIconBefore = firstItemBefore.querySelector('.class-progress-badge iconify-icon');
 
         // Changement de classe active et d'effectif, puis réouverture du menu
@@ -584,6 +585,7 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         expect(firstItemAfter).toBe(firstItemBefore);
         expect(firstItemAfter.querySelector('.class-meta-year iconify-icon')).toBe(calendarIconBefore);
         expect(firstItemAfter.querySelector('.class-seating-badge iconify-icon')).toBe(seatingIconBefore);
+        expect(firstItemAfter.querySelector('.class-note-badge iconify-icon')).toBe(noteBadgeIconBefore);
         expect(firstItemAfter.querySelector('.class-progress-badge iconify-icon')).toBe(progressIconBefore);
 
         // Les états et compteurs sont bien mis à jour en place
@@ -855,6 +857,109 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('devrait déployer la bulle Mémo depuis le header, sauvegarder en temps réel et synchroniser la pastille dans le menu des classes', async () => {
+        document.body.insertAdjacentHTML('beforeend', `
+            <button type="button" id="headerClassNoteBtn" class="header-class-note-btn is-empty">
+                <iconify-icon icon="solar:bookmark-linear"></iconify-icon>
+            </button>
+            <div id="classNotePopover" class="class-note-popover" style="display: none;">
+                <span id="classNotePopoverMeta" style="display: none;"></span>
+                <button type="button" id="undoClassNoteBtn" class="disabled"></button>
+                <button type="button" id="redoClassNoteBtn" class="disabled"></button>
+                <button type="button" id="clearClassNoteBtn" style="display: none;">Effacer</button>
+                <button type="button" id="closeClassNotePopoverBtn"></button>
+                <textarea id="classNoteTextarea"></textarea>
+            </div>
+        `);
+        DOM.headerClassNoteBtn = document.getElementById('headerClassNoteBtn');
+        DOM.classNotePopover = document.getElementById('classNotePopover');
+        DOM.classNotePopoverMeta = document.getElementById('classNotePopoverMeta');
+        DOM.classNoteTextarea = document.getElementById('classNoteTextarea');
+        DOM.undoClassNoteBtn = document.getElementById('undoClassNoteBtn');
+        DOM.redoClassNoteBtn = document.getElementById('redoClassNoteBtn');
+        DOM.clearClassNoteBtn = document.getElementById('clearClassNoteBtn');
+        DOM.closeClassNotePopoverBtn = document.getElementById('closeClassNotePopoverBtn');
+
+        ClassUIManager.init(null, null);
+
+        const cls1 = ClassManager.createClass('3 1');
+        const cls2 = ClassManager.createClass('4 2');
+        await ClassManager.switchClass(cls1.id);
+        ClassUIManager.updateHeaderDisplay();
+        ClassUIManager.renderClassList();
+
+        // 1. Par défaut : année scolaire affichée et pastille mémo masquée dans le menu
+        const item1 = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${cls1.id}"]`);
+        expect(item1.querySelector('.class-meta-year-text').textContent).toBeTruthy();
+        const badge1 = item1.querySelector('.class-note-badge');
+        expect(badge1.classList.contains('is-hidden')).toBe(true);
+        expect(DOM.headerClassNoteBtn.classList.contains('is-empty')).toBe(true);
+        expect(DOM.headerClassNoteBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('solar:bookmark-linear');
+
+        // 2. Clic sur le bouton Mémo du header -> déploie la bulle et place le focus sur le textarea
+        DOM.headerClassNoteBtn.click();
+        expect(ClassUIManager._isNotePopoverOpen).toBe(true);
+        expect(DOM.classNotePopover.style.display).toBe('flex');
+        expect(DOM.undoClassNoteBtn.classList.contains('disabled')).toBe(true);
+        expect(DOM.redoClassNoteBtn.classList.contains('disabled')).toBe(true);
+        expect(DOM.classNotePopoverMeta.style.display).toBe('none');
+
+        // 3. Saisie multiligne dans le textarea -> sauvegarde temps réel + <br> dans l'infobulle + date dans l'en-tête
+        DOM.classNoteTextarea.value = '  Ch. 3 • Act. 2 finie\nInterro pour Thomas  ';
+        DOM.classNoteTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect(ClassManager.getClassById(cls1.id).classNote).toBe('Ch. 3 • Act. 2 finie\nInterro pour Thomas');
+        expect(ClassManager.getClassById(cls1.id).classNoteUpdatedAt).toBeTypeOf('number');
+        expect(DOM.headerClassNoteBtn.classList.contains('has-note')).toBe(true);
+        expect(DOM.headerClassNoteBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('solar:bookmark-bold');
+        expect(DOM.headerClassNoteBtn.getAttribute('data-tooltip')).toBe("<div class='tooltip-note-multiline'>Ch. 3 • Act. 2 finie<br>Interro pour Thomas</div>");
+        expect(badge1.classList.contains('is-hidden')).toBe(false);
+        expect(badge1.getAttribute('data-tooltip')).toBe("<div class='tooltip-note-multiline'>Ch. 3 • Act. 2 finie<br>Interro pour Thomas</div>");
+        expect(DOM.classNoteTextarea.style.overflowY).toBe('hidden');
+        expect(DOM.clearClassNoteBtn.style.display).toBe('inline-flex');
+        expect(DOM.undoClassNoteBtn.classList.contains('disabled')).toBe(false);
+        expect(DOM.classNotePopoverMeta.textContent).toBe('· aujourd\'hui');
+        expect(DOM.classNotePopoverMeta.style.display).toBe('inline');
+
+        // Re-render complet (innerHTML) avec note multiligne : aucun attribut data-tooltip cassé
+        DOM.classDropdownList.innerHTML = '';
+        ClassUIManager.renderClassList();
+        const freshBadge1 = DOM.classDropdownList.querySelector(`.class-dropdown-item[data-class-id="${cls1.id}"] .class-note-badge`);
+        expect(freshBadge1.getAttribute('data-tooltip')).toBe("<div class='tooltip-note-multiline'>Ch. 3 • Act. 2 finie<br>Interro pour Thomas</div>");
+        expect(freshBadge1.textContent.trim()).toBe('');
+
+        // 4. Effacement via le bouton Effacer + Undo / Redo en cas de fausse manip
+        DOM.clearClassNoteBtn.click();
+        expect(ClassManager.getClassById(cls1.id).classNote).toBe('');
+        expect(DOM.headerClassNoteBtn.classList.contains('is-empty')).toBe(true);
+        expect(DOM.headerClassNoteBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('solar:bookmark-linear');
+        expect(freshBadge1.classList.contains('is-hidden')).toBe(true);
+        expect(DOM.clearClassNoteBtn.style.display).toBe('none');
+        expect(DOM.classNotePopoverMeta.style.display).toBe('none');
+
+        DOM.undoClassNoteBtn.click();
+        expect(ClassManager.getClassById(cls1.id).classNote).toBe('Ch. 3 • Act. 2 finie\nInterro pour Thomas');
+        expect(DOM.headerClassNoteBtn.classList.contains('has-note')).toBe(true);
+        expect(DOM.redoClassNoteBtn.classList.contains('disabled')).toBe(false);
+        expect(DOM.classNotePopoverMeta.textContent).toBe('· aujourd\'hui');
+
+        DOM.redoClassNoteBtn.click();
+        expect(ClassManager.getClassById(cls1.id).classNote).toBe('');
+        expect(DOM.headerClassNoteBtn.classList.contains('is-empty')).toBe(true);
+
+        // 5. Fermeture par Escape
+        DOM.classNoteTextarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        expect(ClassUIManager._isNotePopoverOpen).toBe(false);
+
+        // 6. Bascule sur une autre classe -> synchronise le bouton du header
+        ClassManager.updateClass(cls2.id, { classNote: 'Séquence 4 commencée' });
+        await ClassManager.switchClass(cls2.id);
+        ClassUIManager.updateHeaderDisplay();
+        expect(DOM.headerClassNoteBtn.classList.contains('has-note')).toBe(true);
+        expect(DOM.headerClassNoteBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('solar:bookmark-bold');
+        expect(DOM.headerClassNoteBtn.getAttribute('data-tooltip')).toBe('Séquence 4 commencée');
     });
 });
 

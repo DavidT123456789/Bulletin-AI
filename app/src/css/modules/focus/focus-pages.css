@@ -45,6 +45,7 @@
 .focus-main-page::before,
 .focus-main-page::after,
 .main-content-wrapper::after {
+    --scrim-rgb: var(--bg-color-rgb);
     content: '';
     position: absolute;
     left: 0;
@@ -63,10 +64,10 @@
     height: 28px;
     background: linear-gradient(
         to bottom,
-        rgba(var(--bg-color-rgb), 0.85) 0%,
-        rgba(var(--bg-color-rgb), 0.60) 25%,
-        rgba(var(--bg-color-rgb), 0.28) 50%,
-        rgba(var(--bg-color-rgb), 0.08) 75%,
+        rgba(var(--scrim-rgb), 0.72) 0%,
+        rgba(var(--scrim-rgb), 0.48) 25%,
+        rgba(var(--scrim-rgb), 0.22) 50%,
+        rgba(var(--scrim-rgb), 0.06) 75%,
         transparent 100%
     );
 }
@@ -77,16 +78,21 @@
     height: 28px;
     background: linear-gradient(
         to top,
-        rgba(var(--bg-color-rgb), 0.88) 0%,
-        rgba(var(--bg-color-rgb), 0.64) 25%,
-        rgba(var(--bg-color-rgb), 0.32) 50%,
-        rgba(var(--bg-color-rgb), 0.09) 75%,
+        rgba(var(--scrim-rgb), 0.72) 0%,
+        rgba(var(--scrim-rgb), 0.48) 25%,
+        rgba(var(--scrim-rgb), 0.22) 50%,
+        rgba(var(--scrim-rgb), 0.06) 75%,
         transparent 100%
     );
 }
 
 .main-content-wrapper::after {
-    right: var(--scrollbar-width, 6px);
+    left: var(--content-padding-x, var(--space-5));
+    right: calc(var(--content-padding-x, var(--space-5)) + var(--scrollbar-width, 6px));
+}
+
+[data-theme="dark"] .main-content-wrapper::after {
+    --scrim-rgb: var(--surface-color-rgb);
 }
 
 .focus-main-page.can-scroll-top::before,

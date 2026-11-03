@@ -264,28 +264,13 @@ export const WelcomeManager = {
                 // Initialize glider for provider selector IMMEDIATELY (before slide-in animation completes)
                 const providerSelectorEl = document.getElementById('welcomeProviderSelector');
                 if (providerSelectorEl) {
-                    let glider = providerSelectorEl.querySelector('.ui-glider');
-                    if (!glider) {
-                        glider = document.createElement('div');
+                    if (!providerSelectorEl.querySelector('.ui-glider')) {
+                        const glider = document.createElement('div');
                         glider.className = 'ui-glider';
-                        glider.style.transition = 'none';
                         providerSelectorEl.prepend(glider);
                         providerSelectorEl.classList.add('has-glider');
                     }
-
-                    const checked = providerSelectorEl.querySelector('input:checked');
-                    if (checked) {
-                        const label = providerSelectorEl.querySelector(`label[for="${checked.id}"]`);
-                        if (label) {
-                            requestAnimationFrame(() => {
-                                glider.style.width = `${label.offsetWidth}px`;
-                                glider.style.left = `${label.offsetLeft}px`;
-                                requestAnimationFrame(() => {
-                                    glider.style.transition = 'left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
-                                });
-                            });
-                        }
-                    }
+                    requestAnimationFrame(() => UI.updateGlider?.(providerSelectorEl, true));
                 }
             }
 

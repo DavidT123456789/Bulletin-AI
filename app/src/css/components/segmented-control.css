@@ -5,7 +5,7 @@
 
 /* The main container for the segmented control */
 .ui-segmented-control {
-    --sc-padding: 3px;
+    --sc-padding: 2px;
     position: relative;
     display: flex;
     align-items: center;
@@ -13,19 +13,12 @@
     border-radius: var(--radius-pill);
     padding: var(--sc-padding);
     width: fit-content;
-    height: 34px;
+    height: 32px;
     border: none;
+    box-shadow: none;
     isolation: isolate;
     /* Create stacking context */
     gap: 0;
-}
-
-
-
-/* Modifier: Header Style (ex: generation-mode-selector.header-style) */
-.ui-segmented-control.header-style {
-    backdrop-filter: blur(var(--glass-base-blur));
-    -webkit-backdrop-filter: blur(var(--glass-base-blur));
 }
 
 /* Individual segments (buttons or radio labels) */
@@ -33,21 +26,21 @@
     flex: 1;
     position: relative;
     z-index: 2;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     border: none;
     background: transparent;
     color: var(--text-tertiary);
-    font-size: 13px !important;
-    font-weight: 400 !important;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
-    transition: color var(--transition-base), filter var(--transition-base);
+    transition: color var(--transition-base), filter var(--transition-base), transform 0.18s cubic-bezier(0.32, 0.72, 0, 1);
     height: 100%;
-    padding: 0 10px !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
+    padding: 0 10px;
+    margin: 0;
+    box-sizing: border-box;
     border-radius: var(--radius-pill);
     outline: none;
     -webkit-tap-highlight-color: transparent;
@@ -64,6 +57,12 @@
     pointer-events: none;
     filter: grayscale(1);
     transition: filter var(--transition-base), color var(--transition-base);
+}
+
+.ui-segmented-control.header-style .ui-segment i,
+.ui-segmented-control.header-style .ui-segment iconify-icon {
+    filter: none;
+    transition: color var(--transition-base);
 }
 
 /* Handle Radio inputs */
@@ -90,6 +89,10 @@
     button.ui-segment:not(.active):hover,
     .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover {
         color: var(--text-primary);
+    }
+
+    .ui-segmented-control:not(:has(.ui-glider)) button.ui-segment:not(.active):hover,
+    .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:not(:checked) + .ui-segment:hover {
         background: var(--item-hover-bg);
     }
 
@@ -104,7 +107,6 @@
 /* Tactile active feedback */
 .ui-segment:active {
     transform: scale(0.96);
-    transition: transform 0.12s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* High Contrast Focus */
@@ -124,20 +126,21 @@
 /* By default, managed by JS (width and transform) for variable width segments */
 .ui-glider {
     position: absolute;
-    top: var(--sc-padding, 3px);
-    bottom: var(--sc-padding, 3px);
+    top: var(--sc-padding, 2px);
+    bottom: var(--sc-padding, 2px);
     left: 0;
     border-radius: var(--radius-pill);
     z-index: 1;
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1), left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: none;
 }
 
 /* Override Glider behavior for CSS-only versions (like theme control) */
 /* Requires the segments to be evenly distributed (flex: 1) */
 .ui-segmented-control.css-driven .ui-glider {
-    left: var(--sc-padding, 3px);
-    width: calc((100% - (var(--sc-padding, 3px) * 2)) / 3);
+    left: var(--sc-padding, 2px);
+    width: calc((100% - (var(--sc-padding, 2px) * 2)) / 3);
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -156,22 +159,17 @@
     transform: translateX(200%);
 }
 
-/* --- Dark Mode : Balanced Flat Matte Pill (Midpoint between recessed & elevated) --- */
+/* --- Dark Mode : Rail et pilule opaques sans bordure --- */
 [data-theme="dark"] .ui-segmented-control {
-    background: rgba(14, 14, 17, 0.45);
+    background: color-mix(in srgb, var(--surface-color) 60%, var(--bg-tertiary) 40%);
     box-shadow: none;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-[data-theme="dark"] .ui-segmented-control.header-style {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border: none;
 }
 
 [data-theme="dark"] .ui-glider,
 [data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
 [data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--bg-tertiary) 82%, var(--text-primary) 6%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
     border: none;
 }

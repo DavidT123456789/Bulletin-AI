@@ -322,7 +322,6 @@
     font-size: 0.95rem;
 }
 
-.settings-card .form-group .generation-mode-selector label,
 .settings-card .form-group label.toggle-switch,
 .settings-card .form-group label.toggle-switch-label,
 .settings-card .form-group label.toggle-label-text {
@@ -754,11 +753,6 @@
 
 #settings-controls-panel.disabled .slider-value-display {
     color: var(--text-secondary);
-}
-
-/* Atténuer les boutons radio du sélecteur de voix */
-#settings-controls-panel.disabled .generation-mode-selector input[type="radio"]:checked+label {
-    background: var(--text-secondary);
 }
 
 /* Icône de cadenas mise en avant */
@@ -1343,21 +1337,6 @@
 
 #settingsPreviewRefreshBtn.btn-regenerate:active {
     transform: translateY(0);
-}
-
-/* ====================================================================
-   GENERATION MODE SELECTOR (Period & Generic Segmented Controls)
-   Explicitly override active text color to avoid blue tint
-   ==================================================================== */
-.generation-mode-selector input:checked+label,
-.segmented-control input:checked+label {
-    color: var(--text-primary) !important;
-}
-
-/* Ensure hovered labels are also consistent (optional, based on pref) */
-.generation-mode-selector label:hover,
-.segmented-control label:hover {
-    color: var(--text-primary);
 }
 
 /* ====================================================================

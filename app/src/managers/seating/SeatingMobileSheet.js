@@ -87,7 +87,7 @@ export const SeatingMobileSheet = {
 
         const toggleWrapper = document.getElementById('viewToggle');
         if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
-            window.UI.updateGlider(toggleWrapper, false);
+            window.UI.updateGlider(toggleWrapper, true);
         }
 
         if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {

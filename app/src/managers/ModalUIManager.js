@@ -999,6 +999,14 @@ export const ModalUI = {
             items.push({ icon: 'solar:chair-bold', text: 'Plan de classe réorganisé' });
         }
 
+        const modifiedClassNotes = classes.filter(c => c.classNoteUpdatedAt && c.classNoteUpdatedAt > lastSync).length;
+        if (modifiedClassNotes > 0) {
+            items.push({
+                icon: 'solar:bookmark-bold',
+                text: modifiedClassNotes > 1 ? `${modifiedClassNotes} mémos de classe mis à jour` : 'Mémo de classe mis à jour'
+            });
+        }
+
         // 2. Appréciations / résultats élèves (distingue les éditions de bulletins des simples déplacements de plan de classe)
         const students = window.runtimeState?.data?.generatedResults || [];
         const modifiedStudents = students.filter(s => {

@@ -15,19 +15,15 @@
 /* ────────── VIEW TOGGLE (Header) ────────── */
 .view-toggle {
     display: none;
-    width: 150px;
+    width: fit-content;
     flex-shrink: 0;
     transition: opacity var(--transition-base), transform var(--transition-base);
 }
 
 .view-toggle.visible {
-    display: flex;
-}
-
-@media (max-width: 768px) {
-    .view-toggle {
-        width: auto;
-    }
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
 }
 
 /* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */

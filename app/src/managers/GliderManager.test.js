@@ -9,10 +9,11 @@ import { GliderManager } from './GliderManager.js';
 describe('GliderManager', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
+        GliderManager._observer = null;
         vi.restoreAllMocks();
     });
 
-    it('devrait positionner le glider sur l\'élément avec la classe .active', () => {
+    it('devrait positionner le glider en GPU transform sur l\'élément avec la classe .active', () => {
         const container = document.createElement('div');
         container.className = 'ui-segmented-control';
 
@@ -37,10 +38,10 @@ describe('GliderManager', () => {
         GliderManager.update(container, false);
 
         expect(glider.style.width).toBe('80px');
-        expect(glider.style.left).toBe('60px');
+        expect(glider.style.transform).toBe('translate3d(60px, 0, 0)');
     });
 
-    it('devrait positionner le glider sur le radio coché', () => {
+    it('devrait positionner le glider sur le radio coché et restaurer la transition après un déplacement immédiat', () => {
         const container = document.createElement('div');
         container.className = 'ui-segmented-control';
 
@@ -78,7 +79,8 @@ describe('GliderManager', () => {
         GliderManager.update(container, true);
 
         expect(glider.style.width).toBe('70px');
-        expect(glider.style.left).toBe('50px');
+        expect(glider.style.transform).toBe('translate3d(50px, 0, 0)');
+        expect(glider.style.transition).toContain('transform 0.35s');
     });
 
     it('devrait retenter une fois en requestAnimationFrame si la largeur initiale est 0 mais le conteneur visible', () => {
@@ -115,7 +117,7 @@ describe('GliderManager', () => {
         rafCallback();
 
         expect(glider.style.width).toBe('90px');
-        expect(glider.style.left).toBe('10px');
+        expect(glider.style.transform).toBe('translate3d(10px, 0, 0)');
     });
 
     it('devrait mettre la largeur à 0 si aucun élément actif n\'est trouvé', () => {
@@ -171,6 +173,44 @@ describe('GliderManager', () => {
 
         const glider = container.querySelector('.ui-glider');
         expect(glider.style.width).toBe('95px');
-        expect(glider.style.left).toBe('45px');
+        expect(glider.style.transform).toBe('translate3d(45px, 0, 0)');
+    });
+
+    it('ne devrait pas interrompre l\'animation de glissé si ResizeObserver signale une variation sous-pixel', () => {
+        let observerCb;
+        global.ResizeObserver = class {
+            constructor(cb) { observerCb = cb; }
+            observe() {}
+            disconnect() {}
+        };
+
+        const container = document.createElement('div');
+        container.className = 'ui-segmented-control';
+        Object.defineProperty(container, 'offsetWidth', { value: 140, configurable: true });
+        Object.defineProperty(container, 'offsetHeight', { value: 32, configurable: true });
+
+        const btn1 = document.createElement('button');
+        btn1.className = 'ui-segment active';
+        Object.defineProperty(btn1, 'offsetWidth', { value: 68, configurable: true });
+        Object.defineProperty(btn1, 'offsetLeft', { value: 2, configurable: true });
+
+        container.appendChild(btn1);
+        document.body.appendChild(container);
+
+        GliderManager.init();
+
+        const updateSpy = vi.spyOn(GliderManager, 'update');
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            cb();
+            return 1;
+        });
+
+        // Variation sous-pixel (140.2px -> arrondi à 140) : ne doit PAS déclencher update(container, true)
+        observerCb([{ target: container, contentRect: { width: 140.2, height: 32 } }]);
+        expect(updateSpy).not.toHaveBeenCalled();
+
+        // Vrai redimensionnement (breakpoint mobile : 140 -> 76) : doit déclencher update(container, true)
+        observerCb([{ target: container, contentRect: { width: 76, height: 40 } }]);
+        expect(updateSpy).toHaveBeenCalledWith(container, true);
     });
 });

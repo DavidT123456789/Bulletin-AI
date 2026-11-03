@@ -28,10 +28,16 @@ let StorageManager;
 
 export const ClassUIManager = {
     _isDropdownOpen: false,
+    _isNotePopoverOpen: false,
     _showVirtualClasses: localStorage.getItem('bulletin_show_virtual_classes') !== 'false',
     _originalDropdownParent: null, // Store original parent for teleportation
+    _originalNotePopoverParent: null,
     _virtualAnimationTimer: null,
     _closeDropdownTimer: null,
+    _closeNotePopoverTimer: null,
+    _noteTargetClassId: null,
+    _noteHistoryByClassId: new Map(),
+    _noteTypingBurstTimer: null,
 
     /**
      * Initialise le ClassUIManager avec les dépendances
@@ -74,29 +80,112 @@ export const ClassUIManager = {
             this.showManageClassesModal();
         });
 
-        // Close dropdown when clicking outside (capture phase to absorb click and prevent triggering underlying cards)
+        // Header class note button (Bulle Mémo)
+        DOM.headerClassNoteBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleNotePopover();
+        });
+
+        DOM.closeClassNotePopoverBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeNotePopover();
+        });
+
+        DOM.undoClassNoteBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.undoClassNote();
+        });
+
+        DOM.redoClassNoteBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.redoClassNote();
+        });
+
+        DOM.clearClassNoteBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!DOM.classNoteTextarea) return;
+            const prevVal = DOM.classNoteTextarea.value ?? '';
+            if (!prevVal.trim()) return;
+            if (this._noteTypingBurstTimer) {
+                clearTimeout(this._noteTypingBurstTimer);
+                this._noteTypingBurstTimer = null;
+            }
+            const targetId = this._noteTargetClassId || appState.currentClassId;
+            if (targetId) {
+                this._recordNoteSnapshot(targetId, prevVal);
+                const history = this._getNoteHistory(targetId, '');
+                history.lastCommitted = '';
+            }
+            DOM.classNoteTextarea.value = '';
+            this._handleNoteTextareaInput({ recordHistory: false });
+            this._syncNoteHistoryButtons(targetId);
+            DOM.classNoteTextarea.focus();
+        });
+
+        DOM.classNoteTextarea?.addEventListener('input', () => {
+            this._handleNoteTextareaInput({ recordHistory: true });
+        });
+
+        DOM.classNoteTextarea?.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeNotePopover();
+                DOM.headerClassNoteBtn?.focus?.();
+                return;
+            }
+            const isMod = e.ctrlKey || e.metaKey;
+            if (isMod && !e.altKey && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.shiftKey) {
+                    this.redoClassNote();
+                } else {
+                    this.undoClassNote();
+                }
+                return;
+            }
+            if (isMod && !e.altKey && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.redoClassNote();
+            }
+        });
+
+        // Close dropdown or note popover when clicking outside (capture phase to absorb click and prevent triggering underlying cards)
         if (this._boundOutsideClick) {
             document.removeEventListener('click', this._boundOutsideClick, true);
         }
         this._boundOutsideClick = (e) => {
             if (this._isDropdownOpen &&
-                !e.target.closest?.('.class-selector-wrapper') &&
+                !DOM.headerClassChip?.contains(e.target) &&
                 !DOM.classDropdown?.contains(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 this.closeDropdown();
             }
+            if (this._isNotePopoverOpen &&
+                !DOM.headerClassNoteBtn?.contains(e.target) &&
+                !DOM.classNotePopover?.contains(e.target)) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.closeNotePopover();
+            }
         };
         document.addEventListener('click', this._boundOutsideClick, true);
 
-        // Close dropdown when scrolling outside
+        // Close dropdown or note popover when scrolling outside
         if (this._boundOutsideScroll) {
             window.removeEventListener('scroll', this._boundOutsideScroll, true);
         }
         this._boundOutsideScroll = (e) => {
             if (this._isDropdownOpen && !(e.target instanceof Node && DOM.classDropdown?.contains(e.target))) {
                 this.closeDropdown();
+            }
+            if (this._isNotePopoverOpen && !(e.target instanceof Node && DOM.classNotePopover?.contains(e.target))) {
+                this.closeNotePopover();
             }
         };
         window.addEventListener('scroll', this._boundOutsideScroll, { capture: true, passive: true });
@@ -110,14 +199,22 @@ export const ClassUIManager = {
                 this._positionDropdown();
                 FocusPanelManager.updateScrollAffordances(DOM.classDropdownList);
             }
+            if (this._isNotePopoverOpen) {
+                this._positionNotePopover();
+            }
             document.querySelectorAll('.modal-body:not(.modal-body-flex):not(.import-wizard-body), .ui-tabs-content, #pickStudentsChips, #pickStudentsList, #moveModalClassList, #scStudentList').forEach(el => {
                 FocusPanelManager.updateScrollAffordances(el);
             });
         };
         window.addEventListener('resize', this._boundResize, { passive: true });
 
-        // Navigation clavier et fermeture via Échap lorsque le dropdown est ouvert
+        // Navigation clavier et fermeture via Échap lorsque le dropdown ou le mémo est ouvert
         document.addEventListener('keydown', (e) => {
+            if (this._isNotePopoverOpen && e.key === 'Escape') {
+                this.closeNotePopover();
+                DOM.headerClassNoteBtn?.focus?.();
+                return;
+            }
             if (!this._isDropdownOpen) return;
 
             // Ne pas interférer si l'utilisateur saisit du texte dans un champ (ex: création de classe)
@@ -206,6 +303,10 @@ export const ClassUIManager = {
     openDropdown() {
         if (!DOM.classDropdown) return;
 
+        if (this._isNotePopoverOpen) {
+            this.closeNotePopover();
+        }
+
         if (this._closeDropdownTimer) {
             clearTimeout(this._closeDropdownTimer);
             this._closeDropdownTimer = null;
@@ -216,6 +317,7 @@ export const ClassUIManager = {
 
         this._isDropdownOpen = true;
         DOM.headerClassChip?.classList.add('active');
+        DOM.headerClassChip?._tippy?.hide?.();
 
         // Teleport to body on all screens to escape header clipping & nested backdrop-filter rendering bug in Chromium
         if (DOM.classDropdown.parentElement !== document.body) {
@@ -537,6 +639,7 @@ export const ClassUIManager = {
                     if (yearTextEl && yearTextEl.textContent !== yearStr) {
                         yearTextEl.textContent = yearStr;
                     }
+                    this._syncDropdownNoteBadge(item.id, item.classNote);
                 }
             });
         } else {
@@ -570,6 +673,10 @@ export const ClassUIManager = {
                     `;
                 }
 
+                const noteText = typeof item.classNote === 'string' ? item.classNote.trim() : '';
+                const hasNote = Boolean(noteText);
+                const noteTooltipAttr = hasNote ? ` data-tooltip="${this._formatNoteTooltip(noteText)}"` : '';
+
                 return `
                 <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}"
                      data-class-id="${item.id}"
@@ -583,6 +690,7 @@ export const ClassUIManager = {
                         <span class="class-meta">
                             <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> <span class="class-meta-year-text">${this._escapeHtml(item.year || 'Non définie')}</span></span>
                             <span class="class-seating-badge is-hidden" data-class-id="${item.id}"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></span>
+                            <span class="class-note-badge ${hasNote ? 'tooltip' : 'is-hidden'}" data-class-id="${item.id}"${noteTooltipAttr}><iconify-icon icon="solar:bookmark-bold"></iconify-icon></span>
                         </span>
                     </div>
                     <div class="class-progress-badge" data-class-id="${item.id}">
@@ -601,6 +709,19 @@ export const ClassUIManager = {
 
             // Bind click and keyboard events on class items
             DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
+                const noteBadge = item.querySelector('.class-note-badge');
+                if (noteBadge) {
+                    noteBadge.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const classId = item.dataset.classId;
+                        this.closeDropdown();
+                        if (classId && classId !== appState.currentClassId) {
+                            await this.handleClassSwitch(classId);
+                        }
+                        this.openNotePopover(classId);
+                    });
+                }
+
                 const selectClass = async () => {
                     if (item.classList.contains('is-collapsed')) return;
                     const classId = item.dataset.classId;
@@ -630,6 +751,466 @@ export const ClassUIManager = {
             DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView?.({ block: 'nearest' });
         }
         FocusPanelManager.bindScrollAffordances(DOM.classDropdownList);
+    },
+
+    /**
+     * Formate un mémo de classe pour affichage dans une infobulle HTML (échappement XSS + sauts de ligne <br>)
+     * @param {string} [rawNote='']
+     * @returns {string}
+     * @private
+     */
+    _formatNoteTooltip(rawNote = '') {
+        const trimmed = typeof rawNote === 'string' ? rawNote.trim() : '';
+        if (!trimmed) return '';
+        const html = this._escapeHtml(trimmed).replace(/\r?\n/g, '<br>');
+        return html.includes('<br>') ? `<div class='tooltip-note-multiline'>${html}</div>` : html;
+    },
+
+    /**
+     * Formate l'horodatage court du mémo pour l'en-tête de la bulle (ex. "· aujourd'hui", "· hier", "· mar. 3 nov.")
+     * @param {number|null} [timestamp=null]
+     * @returns {string}
+     * @private
+     */
+    _formatNoteUpdatedMeta(timestamp = null) {
+        if (!timestamp || typeof timestamp !== 'number') return '';
+        const d = new Date(timestamp);
+        if (Number.isNaN(d.getTime())) return '';
+
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const startOfNoteDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const diffDays = Math.round((startOfToday - startOfNoteDay) / 86400000);
+
+        if (diffDays <= 0) return '· aujourd\'hui';
+        if (diffDays === 1) return '· hier';
+        const formatted = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+        return `· ${formatted}`;
+    },
+
+    /**
+     * Met à jour le sous-texte de date dans l'en-tête de la bulle Mémo
+     * @param {Object|null} [cls=null]
+     * @private
+     */
+    _syncNotePopoverMeta(cls = null) {
+        const metaEl = DOM.classNotePopoverMeta || document.getElementById('classNotePopoverMeta');
+        if (!metaEl) return;
+        const targetClass = cls || (this._noteTargetClassId ? ClassManager.getClassById(this._noteTargetClassId) : ClassManager.getCurrentClass());
+        const hasNote = Boolean(targetClass && typeof targetClass.classNote === 'string' && targetClass.classNote.trim());
+        const metaText = hasNote ? this._formatNoteUpdatedMeta(targetClass.classNoteUpdatedAt) : '';
+        metaEl.textContent = metaText;
+        metaEl.style.display = metaText ? 'inline' : 'none';
+    },
+
+    /**
+     * Synchronise sur place la pastille de mémo d'une classe dans le menu déroulant
+     * @param {string} classId
+     * @param {string} [rawNote]
+     * @private
+     */
+    _syncDropdownNoteBadge(classId, rawNote = '') {
+        const badge = DOM.classDropdownList?.querySelector(`.class-note-badge[data-class-id="${classId}"]`);
+        if (!badge) return;
+        const noteText = typeof rawNote === 'string' ? rawNote.trim() : '';
+        const hasNote = Boolean(noteText);
+        badge.classList.toggle('is-hidden', !hasNote);
+        badge.classList.toggle('tooltip', hasNote);
+        if (hasNote) {
+            const formatted = this._formatNoteTooltip(noteText);
+            badge.setAttribute('data-tooltip', formatted);
+            TooltipsUI?.updateTooltip?.(badge, formatted);
+        } else {
+            badge.removeAttribute('data-tooltip');
+            badge._tippy?.destroy?.();
+        }
+    },
+
+    /**
+     * Synchronise le bouton Mémo du header (#headerClassNoteBtn) avec la classe active
+     */
+    syncHeaderNoteButton() {
+        const btn = DOM.headerClassNoteBtn || document.getElementById('headerClassNoteBtn');
+        if (!btn) return;
+
+        const currentClass = ClassManager.getCurrentClass();
+        const isVirtual = currentClass ? ClassManager.isVirtualClass(currentClass.id) : false;
+
+        if (!currentClass || isVirtual) {
+            btn.style.display = 'none';
+            if (this._isNotePopoverOpen) {
+                this.closeNotePopover();
+            }
+            return;
+        }
+
+        btn.style.display = 'inline-flex';
+        const noteText = typeof currentClass.classNote === 'string' ? currentClass.classNote.trim() : '';
+        const hasNote = Boolean(noteText);
+
+        btn.classList.toggle('has-note', hasNote);
+        btn.classList.toggle('is-empty', !hasNote);
+
+        const iconEl = btn.querySelector('iconify-icon');
+        const targetIcon = hasNote ? 'solar:bookmark-bold' : 'solar:bookmark-linear';
+        if (iconEl && iconEl.getAttribute('icon') !== targetIcon) {
+            iconEl.setAttribute('icon', targetIcon);
+        }
+
+        const tooltipText = hasNote
+            ? this._formatNoteTooltip(noteText)
+            : 'Ajouter un mémo de classe';
+        btn.setAttribute('aria-label', hasNote ? `Mémo de la classe : ${noteText}` : 'Ajouter un mémo de classe');
+        btn.setAttribute('data-tooltip', tooltipText);
+        TooltipsUI?.updateTooltip?.(btn, tooltipText);
+    },
+
+    /**
+     * Bascule l'ouverture de la bulle Mémo de la classe
+     * @param {string|null} [classId=null]
+     */
+    toggleNotePopover(classId = null) {
+        if (this._isNotePopoverOpen) {
+            this.closeNotePopover();
+        } else {
+            this.openNotePopover(classId);
+        }
+    },
+
+    /**
+     * Positionne la bulle Mémo sous le bouton du header
+     * @private
+     */
+    _positionNotePopover() {
+        const popover = DOM.classNotePopover || document.getElementById('classNotePopover');
+        if (!popover) return;
+
+        const btn = DOM.headerClassNoteBtn || document.getElementById('headerClassNoteBtn');
+        const anchorEl = (btn && btn.offsetWidth > 0) ? btn : DOM.headerClassChip;
+        const rect = anchorEl?.getBoundingClientRect();
+
+        popover.style.position = 'fixed';
+        popover.style.top = `${Math.round((rect?.bottom || 56) + 8)}px`;
+        popover.style.zIndex = '9999';
+
+        if (window.innerWidth <= 600) {
+            popover.style.left = '12px';
+            popover.style.right = '12px';
+            popover.style.width = 'auto';
+        } else {
+            const width = 340;
+            const maxLeft = Math.max(12, window.innerWidth - width - 12);
+            const targetLeft = Math.min(Math.max(12, Math.round(rect?.left || 16)), maxLeft);
+            popover.style.left = `${targetLeft}px`;
+            popover.style.right = 'unset';
+            popover.style.width = `${width}px`;
+        }
+    },
+
+    /**
+     * Ajuste automatiquement la hauteur du textarea de la bulle Mémo
+     * @private
+     */
+    _autoResizeNoteTextarea() {
+        const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        const scrollH = textarea.scrollHeight || 82;
+        const nextHeight = Math.min(Math.max(scrollH, 82), 180);
+        textarea.style.height = `${nextHeight}px`;
+        textarea.style.overflowY = scrollH > 180 ? 'auto' : 'hidden';
+    },
+
+    /**
+     * Récupère ou initialise l'historique Undo/Redo du mémo d'une classe
+     * @param {string} classId
+     * @param {string} [initialValue='']
+     * @returns {{ past: string[], future: string[], lastCommitted: string }}
+     * @private
+     */
+    _getNoteHistory(classId, initialValue = '') {
+        if (!this._noteHistoryByClassId.has(classId)) {
+            this._noteHistoryByClassId.set(classId, {
+                past: [],
+                future: [],
+                lastCommitted: initialValue ?? ''
+            });
+        }
+        return this._noteHistoryByClassId.get(classId);
+    },
+
+    /**
+     * Enregistre un état précédent dans la pile Undo du mémo d'une classe
+     * @param {string} classId
+     * @param {string} previousValue
+     * @private
+     */
+    _recordNoteSnapshot(classId, previousValue) {
+        if (!classId) return;
+        const history = this._getNoteHistory(classId, previousValue);
+        const val = previousValue ?? '';
+        if (history.past.length === 0 || history.past[history.past.length - 1] !== val) {
+            history.past.push(val);
+            if (history.past.length > 20) {
+                history.past.shift();
+            }
+        }
+        history.future = [];
+    },
+
+    /**
+     * Synchronise l'état actif/désactivé des boutons Annuler / Rétablir du mémo
+     * @param {string|null} [classId=null]
+     * @private
+     */
+    _syncNoteHistoryButtons(classId = null) {
+        const targetId = classId || this._noteTargetClassId || appState.currentClassId;
+        const history = targetId ? this._noteHistoryByClassId.get(targetId) : null;
+        const canUndo = Boolean(history && history.past.length > 0);
+        const canRedo = Boolean(history && history.future.length > 0);
+
+        const undoBtn = DOM.undoClassNoteBtn || document.getElementById('undoClassNoteBtn');
+        if (undoBtn) {
+            undoBtn.classList.toggle('disabled', !canUndo);
+            undoBtn.setAttribute('aria-disabled', String(!canUndo));
+        }
+
+        const redoBtn = DOM.redoClassNoteBtn || document.getElementById('redoClassNoteBtn');
+        if (redoBtn) {
+            redoBtn.classList.toggle('disabled', !canRedo);
+            redoBtn.setAttribute('aria-disabled', String(!canRedo));
+        }
+    },
+
+    /**
+     * Annule la dernière modification du mémo de la classe active
+     */
+    undoClassNote() {
+        const targetId = this._noteTargetClassId || appState.currentClassId;
+        const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+        if (!targetId || !textarea) return;
+
+        if (this._noteTypingBurstTimer) {
+            clearTimeout(this._noteTypingBurstTimer);
+            this._noteTypingBurstTimer = null;
+        }
+
+        const currentVal = textarea.value ?? '';
+        const history = this._getNoteHistory(targetId, currentVal);
+        if (history.past.length === 0) return;
+
+        const previousVal = history.past.pop();
+        history.future.push(currentVal);
+        history.lastCommitted = previousVal;
+
+        textarea.value = previousVal;
+        this._handleNoteTextareaInput({ recordHistory: false });
+        this._syncNoteHistoryButtons(targetId);
+        textarea.focus({ preventScroll: true });
+    },
+
+    /**
+     * Rétablit la modification annulée du mémo de la classe active
+     */
+    redoClassNote() {
+        const targetId = this._noteTargetClassId || appState.currentClassId;
+        const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+        if (!targetId || !textarea) return;
+
+        if (this._noteTypingBurstTimer) {
+            clearTimeout(this._noteTypingBurstTimer);
+            this._noteTypingBurstTimer = null;
+        }
+
+        const currentVal = textarea.value ?? '';
+        const history = this._getNoteHistory(targetId, currentVal);
+        if (history.future.length === 0) return;
+
+        const nextVal = history.future.pop();
+        history.past.push(currentVal);
+        history.lastCommitted = nextVal;
+
+        textarea.value = nextVal;
+        this._handleNoteTextareaInput({ recordHistory: false });
+        this._syncNoteHistoryButtons(targetId);
+        textarea.focus({ preventScroll: true });
+    },
+
+    /**
+     * Gère la saisie en temps réel dans la bulle Mémo
+     * @param {Object} [options={}]
+     * @param {boolean} [options.recordHistory=true]
+     * @private
+     */
+    _handleNoteTextareaInput({ recordHistory = true } = {}) {
+        const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+        if (!textarea) return;
+
+        this._autoResizeNoteTextarea();
+        const rawValue = textarea.value ?? '';
+        const nextTrimmed = rawValue.trim();
+
+        const clearBtn = DOM.clearClassNoteBtn || document.getElementById('clearClassNoteBtn');
+        if (clearBtn) {
+            clearBtn.style.display = nextTrimmed.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        const targetId = this._noteTargetClassId || appState.currentClassId;
+        const cls = ClassManager.getClassById(targetId);
+        if (recordHistory && targetId) {
+            const history = this._getNoteHistory(targetId, cls?.classNote || '');
+            if (!this._noteTypingBurstTimer && history.lastCommitted !== rawValue) {
+                this._recordNoteSnapshot(targetId, history.lastCommitted);
+                this._syncNoteHistoryButtons(targetId);
+            }
+            if (this._noteTypingBurstTimer) {
+                clearTimeout(this._noteTypingBurstTimer);
+            }
+            this._noteTypingBurstTimer = setTimeout(() => {
+                this._noteTypingBurstTimer = null;
+                history.lastCommitted = textarea.value ?? '';
+            }, 600);
+        }
+
+        if (cls && !cls.isVirtual && (cls.classNote || '') !== nextTrimmed) {
+            ClassManager.updateClass(targetId, {
+                classNote: nextTrimmed,
+                classNoteUpdatedAt: Date.now()
+            });
+            this.syncHeaderNoteButton();
+            this._syncDropdownNoteBadge(targetId, nextTrimmed);
+            this._syncNotePopoverMeta(cls);
+        }
+    },
+
+    /**
+     * Ouvre la bulle Mémo de la classe
+     * @param {string|null} [classId=null]
+     */
+    openNotePopover(classId = null) {
+        const popover = DOM.classNotePopover || document.getElementById('classNotePopover');
+        if (!popover) return;
+
+        const targetClass = classId ? ClassManager.getClassById(classId) : ClassManager.getCurrentClass();
+        if (!targetClass || ClassManager.isVirtualClass(targetClass.id)) return;
+
+        if (this._isDropdownOpen) {
+            this.closeDropdown();
+        }
+
+        if (this._closeNotePopoverTimer) {
+            clearTimeout(this._closeNotePopoverTimer);
+            this._closeNotePopoverTimer = null;
+        }
+
+        HistoryManager.pushState('classNotePopover', (options) => this.closeNotePopover(options));
+
+        this._isNotePopoverOpen = true;
+        this._noteTargetClassId = targetClass.id;
+
+        const btn = DOM.headerClassNoteBtn || document.getElementById('headerClassNoteBtn');
+        btn?.classList.add('active');
+        btn?.setAttribute('aria-expanded', 'true');
+        btn?._tippy?.hide?.();
+        TooltipsUI?.hideAll?.();
+
+        const currentNote = typeof targetClass.classNote === 'string' ? targetClass.classNote : '';
+        const history = this._getNoteHistory(targetClass.id, currentNote);
+        history.lastCommitted = currentNote;
+        this._syncNoteHistoryButtons(targetClass.id);
+        this._syncNotePopoverMeta(targetClass);
+
+        const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+        if (textarea) {
+            textarea.value = currentNote;
+        }
+
+        const clearBtn = DOM.clearClassNoteBtn || document.getElementById('clearClassNoteBtn');
+        if (clearBtn) {
+            clearBtn.style.display = currentNote.trim().length > 0 ? 'inline-flex' : 'none';
+        }
+
+        if (popover.parentElement !== document.body) {
+            this._originalNotePopoverParent = popover.parentElement;
+            document.body.appendChild(popover);
+        }
+
+        this._positionNotePopover();
+        popover.style.display = 'flex';
+        this._autoResizeNoteTextarea();
+        TooltipsUI?.initTooltips?.(popover);
+
+        void popover.offsetWidth;
+        requestAnimationFrame(() => {
+            if (this._isNotePopoverOpen) {
+                popover.classList.add('visible');
+            }
+        });
+
+        if (textarea) {
+            textarea.focus({ preventScroll: true });
+            if (currentNote && textarea.setSelectionRange) {
+                const len = textarea.value.length;
+                textarea.setSelectionRange(len, len);
+            }
+        }
+    },
+
+    /**
+     * Ferme la bulle Mémo de la classe
+     * @param {Object} [options={}]
+     */
+    closeNotePopover(options = {}) {
+        const popover = DOM.classNotePopover || document.getElementById('classNotePopover');
+        if (!popover) return;
+
+        if (!options?.causedByHistory && this._isNotePopoverOpen) {
+            HistoryManager.handleManualClose('classNotePopover');
+        }
+
+        if (this._noteTypingBurstTimer) {
+            clearTimeout(this._noteTypingBurstTimer);
+            this._noteTypingBurstTimer = null;
+            if (this._noteTargetClassId) {
+                const history = this._noteHistoryByClassId.get(this._noteTargetClassId);
+                const textarea = DOM.classNoteTextarea || document.getElementById('classNoteTextarea');
+                if (history && textarea) {
+                    history.lastCommitted = textarea.value ?? '';
+                }
+            }
+        }
+
+        this._isNotePopoverOpen = false;
+        this._noteTargetClassId = null;
+
+        const btn = DOM.headerClassNoteBtn || document.getElementById('headerClassNoteBtn');
+        btn?.classList.remove('active');
+        btn?.setAttribute('aria-expanded', 'false');
+        btn?.blur?.();
+
+        popover.classList.remove('visible');
+        TooltipsUI?.cleanupTooltipsIn?.(popover);
+
+        if (this._closeNotePopoverTimer) {
+            clearTimeout(this._closeNotePopoverTimer);
+        }
+
+        this._closeNotePopoverTimer = setTimeout(() => {
+            this._closeNotePopoverTimer = null;
+            if (!this._isNotePopoverOpen) {
+                popover.style.display = 'none';
+                if (this._originalNotePopoverParent && popover.parentElement === document.body) {
+                    this._originalNotePopoverParent.appendChild(popover);
+                    popover.style.position = '';
+                    popover.style.top = '';
+                    popover.style.left = '';
+                    popover.style.right = '';
+                    popover.style.width = '';
+                    popover.style.zIndex = '';
+                    this._originalNotePopoverParent = null;
+                }
+            }
+        }, 200);
     },
 
     /**
@@ -896,8 +1477,9 @@ export const ClassUIManager = {
             'view-slide-out-left', 'view-slide-in-left'
         ];
 
-        // Fermer le menu immédiatement au clic pour une réactivité instantanée
+        // Fermer le menu et la bulle mémo immédiatement au clic pour une réactivité instantanée
         this.closeDropdown();
+        this.closeNotePopover();
 
         document.getElementById('crossClassResults')?.classList.remove(...allAnimClasses);
         const outgoingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
@@ -1017,8 +1599,9 @@ export const ClassUIManager = {
             DOM.headerVirtualClassTag.style.display = isVirtual ? 'inline-flex' : 'none';
         }
 
-        // Update student count
+        // Update student count & header note button
         this.updateStudentCount();
+        this.syncHeaderNoteButton();
     },
 
     /**
@@ -1154,15 +1737,9 @@ export const ClassUIManager = {
             if (seatingBadge && SeatingChartManager?.getClassSeatingStatus) {
                 const courseInfo = SeatingChartManager.getClassSeatingStatus(cls, 'course');
                 const activityInfo = SeatingChartManager.getClassSeatingStatus(cls, 'activity');
-                const primaryInfo = courseInfo.status !== 'empty' ? courseInfo : activityInfo;
-                const isActivityOnly = courseInfo.status === 'empty' && activityInfo.status !== 'empty';
-                const planPrefix = isActivityOnly ? 'Plan d\'activité' : 'Plan de classe';
-                const activityUnplacedNote = (!isActivityOnly && activityInfo.status !== 'empty' && activityInfo.unplaced > 0)
-                    ? ` (${activityInfo.unplaced} non placé${activityInfo.unplaced > 1 ? 's' : ''})`
-                    : '';
-                const activitySuffix = (!isActivityOnly && activityInfo.status !== 'empty')
-                    ? ` · Activité : ${activityInfo.shortLabel || (activityInfo.status === 'locked' ? 'Validé' : 'En test')}${activityUnplacedNote}`
-                    : '';
+                const hasCourse = courseInfo.status !== 'empty';
+                const hasActivity = activityInfo.status !== 'empty';
+                const primaryInfo = hasCourse ? courseInfo : activityInfo;
                 const effectiveStatus = (primaryInfo.status === 'testing' || activityInfo.status === 'testing')
                     ? 'testing'
                     : primaryInfo.status;
@@ -1180,21 +1757,17 @@ export const ClassUIManager = {
                 };
 
                 seatingBadge.removeAttribute('title');
-                if (effectiveStatus === 'locked') {
-                    seatingBadge.className = 'class-seating-badge is-locked';
+                if (effectiveStatus === 'locked' || effectiveStatus === 'testing') {
+                    seatingBadge.className = `class-seating-badge is-${effectiveStatus}`;
                     ensureSeatingIcon('solar:streets-map-point-bold');
-                    const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
-                    const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
-                    const seatingTooltip = `${planPrefix} : Validé${dateNote}${unplacedNote}${activitySuffix}`;
-                    seatingBadge.setAttribute('data-tooltip', seatingTooltip);
-                    TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
-                } else if (effectiveStatus === 'testing') {
-                    seatingBadge.className = 'class-seating-badge is-testing';
-                    ensureSeatingIcon('solar:streets-map-point-bold');
-                    const dateNote = primaryInfo.dateStr ? ` (${primaryInfo.dateStr})` : '';
-                    const unplacedNote = primaryInfo.unplaced > 0 ? ` · ${primaryInfo.unplaced} non placé${primaryInfo.unplaced > 1 ? 's' : ''}` : '';
-                    const primaryStatusLabel = primaryInfo.status === 'locked' ? 'Validé' : 'En test';
-                    const seatingTooltip = `${planPrefix} : ${primaryStatusLabel}${dateNote}${unplacedNote}${activitySuffix}`;
+                    const formatPlan = (prefix, info) => {
+                        const label = info.shortLabel || (info.status === 'locked' ? 'Validé' : 'En test');
+                        const unplaced = info.unplaced > 0 ? ` (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})` : '';
+                        return `${prefix} : ${label}${unplaced}`;
+                    };
+                    const seatingTooltip = (hasCourse && hasActivity)
+                        ? `${formatPlan('Cours', courseInfo)} · ${formatPlan('Activité', activityInfo)}`
+                        : formatPlan(hasCourse ? 'Plan de classe' : 'Plan d\'activité', primaryInfo);
                     seatingBadge.setAttribute('data-tooltip', seatingTooltip);
                     TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
                 } else if (SeatingChartManager._isActive) {
@@ -1898,9 +2471,24 @@ export const ClassUIManager = {
                 const renameBtn = row.querySelector('.manage-rename-btn');
                 const duplicateBtn = row.querySelector('.manage-duplicate-btn');
                 const deleteBtn = row.querySelector('.manage-delete-btn');
+                const noteMeta = row.querySelector('.class-management-note-meta');
                 if (renameBtn) bindRenameHandler(renameBtn);
                 if (duplicateBtn) bindDuplicateHandler(duplicateBtn);
                 if (deleteBtn) bindDeleteHandler(deleteBtn);
+                if (noteMeta) {
+                    noteMeta.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (row.classList.contains('editing')) return;
+                        const classId = row.dataset.classId;
+                        UI?.closeModal(modalEl);
+                        cleanupGhost();
+                        setTimeout(() => modalEl.remove(), 300);
+                        if (classId && classId !== appState.currentClassId) {
+                            await this.handleClassSwitch(classId);
+                        }
+                        this.openNotePopover(classId);
+                    });
+                }
             };
 
             const restoreRow = (row, originalContent) => {
@@ -2125,6 +2713,15 @@ export const ClassUIManager = {
                             <span class="meta-separator">•</span>
                         ` : '';
 
+                        const trimmedNote = typeof cls.classNote === 'string' ? cls.classNote.trim() : '';
+                        const noteMetaHtml = trimmedNote ? `
+                            <span class="meta-separator">•</span>
+                            <span class="meta-item-inline class-management-note-meta tooltip" data-tooltip="${this._formatNoteTooltip(trimmedNote)}">
+                                <iconify-icon icon="solar:bookmark-bold"></iconify-icon>
+                                <span class="class-management-note-text">${this._escapeHtml(trimmedNote)}</span>
+                            </span>
+                        ` : '';
+
                         const metaContentHtml = stats.total === 0
                             ? `
                                 ${yearMetaHtml}
@@ -2132,6 +2729,7 @@ export const ClassUIManager = {
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                     <span>Aucun élève</span>
                                 </span>
+                                ${noteMetaHtml}
                             `
                             : `
                                 ${yearMetaHtml}
@@ -2144,6 +2742,7 @@ export const ClassUIManager = {
                                     <iconify-icon icon="${stats.icon}"></iconify-icon>
                                     <span>${stats.completed}/${stats.total} appréciation${stats.total > 1 ? 's' : ''}</span>
                                 </span>
+                                ${noteMetaHtml}
                             `;
 
                         const isNew = highlightClassId && cls.id === highlightClassId;

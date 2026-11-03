@@ -23,6 +23,14 @@ export function initDOM() {
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');
+    DOM.headerClassNoteBtn = document.getElementById('headerClassNoteBtn');
+    DOM.classNotePopover = document.getElementById('classNotePopover');
+    DOM.classNotePopoverMeta = document.getElementById('classNotePopoverMeta');
+    DOM.classNoteTextarea = document.getElementById('classNoteTextarea');
+    DOM.undoClassNoteBtn = document.getElementById('undoClassNoteBtn');
+    DOM.redoClassNoteBtn = document.getElementById('redoClassNoteBtn');
+    DOM.clearClassNoteBtn = document.getElementById('clearClassNoteBtn');
+    DOM.closeClassNotePopoverBtn = document.getElementById('closeClassNotePopoverBtn');
     // Generation Dashboard & Quick AI Model Selector
     DOM.headerGenWrapper = document.getElementById('headerGenWrapper');
     DOM.headerGenDashboard = document.getElementById('headerGenDashboard');

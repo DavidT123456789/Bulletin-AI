@@ -4,7 +4,7 @@
  * @module managers/GliderManager
  */
 
-const GLIDER_TRANSITION = 'left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
+const GLIDER_TRANSITION = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
 
 export const GliderManager = {
 
@@ -15,6 +15,29 @@ export const GliderManager = {
     _resizeListenerAdded: false,
 
     /**
+     * Calcule les dimensions internes (content-box) arrondies d'un conteneur pour comparaison homogène avec ResizeObserver.
+     * @private
+     * @param {HTMLElement} container
+     * @param {ResizeObserverEntry} [entry]
+     * @returns {{ w: number, h: number }}
+     */
+    _getObservedContentSize(container, entry = null) {
+        if (entry?.contentRect) {
+            return {
+                w: Math.round(entry.contentRect.width),
+                h: Math.round(entry.contentRect.height)
+            };
+        }
+        const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(container) : null;
+        const padX = cs ? (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) : 0;
+        const padY = cs ? (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) : 0;
+        return {
+            w: Math.max(0, Math.round((container.offsetWidth || 0) - padX)),
+            h: Math.max(0, Math.round((container.offsetHeight || 0) - padY))
+        };
+    },
+
+    /**
      * Initialise les animations "Glider" pour les sélecteurs.
      */
     init() {
@@ -23,7 +46,14 @@ export const GliderManager = {
         if (!this._observer) {
             this._observer = new ResizeObserver((entries) => {
                 entries.forEach(entry => {
-                    requestAnimationFrame(() => this.update(entry.target, true));
+                    const container = entry.target;
+                    const { w, h } = this._getObservedContentSize(container, entry);
+                    if (container._gliderObservedW === w && container._gliderObservedH === h) {
+                        return;
+                    }
+                    container._gliderObservedW = w;
+                    container._gliderObservedH = h;
+                    requestAnimationFrame(() => this.update(container, true));
                 });
             });
         }
@@ -42,6 +72,9 @@ export const GliderManager = {
             }
 
             glider.style.transition = GLIDER_TRANSITION;
+            const { w, h } = this._getObservedContentSize(container);
+            container._gliderObservedW = w;
+            container._gliderObservedH = h;
 
             this._observer.observe(container);
 
@@ -66,7 +99,7 @@ export const GliderManager = {
                     this.update(c, true);
                 });
                 resizeTimer = setTimeout(() => {
-                    document.querySelectorAll('.has-glider').forEach(c => this.update(c));
+                    document.querySelectorAll('.has-glider').forEach(c => this.update(c, true));
                 }, 100);
             });
             this._resizeListenerAdded = true;
@@ -112,16 +145,15 @@ export const GliderManager = {
             if (width > 0) {
                 glider.style.transition = immediate ? 'none' : GLIDER_TRANSITION;
                 glider.style.width = `${width}px`;
-                glider.style.left = `${left}px`;
+                glider.style.transform = `translate3d(${left}px, 0, 0)`;
                 if (immediate) {
-                    requestAnimationFrame(() => {
-                        glider.style.transition = GLIDER_TRANSITION;
-                    });
+                    void glider.offsetWidth;
+                    glider.style.transition = GLIDER_TRANSITION;
                 }
             } else {
                 glider.style.transition = GLIDER_TRANSITION;
                 glider.style.width = '0px';
-                glider.style.left = `${left}px`;
+                glider.style.transform = `translate3d(${left}px, 0, 0)`;
                 if (!isRetry && (container.offsetWidth > 0 || container.classList.contains('visible'))) {
                     requestAnimationFrame(() => this.update(container, immediate, true));
                 }

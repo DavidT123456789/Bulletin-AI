@@ -893,7 +893,7 @@ export const StorageManager = {
         // Exclure les horodatages transitoires des classes
         if (Array.isArray(dataSettings.classes)) {
             dataSettings.classes = dataSettings.classes.map(c => {
-                const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, ...rest } = c;
+                const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, classNoteUpdatedAt, updatedAt, ...rest } = c;
                 return rest;
             });
         }
@@ -1316,6 +1316,7 @@ export const StorageManager = {
         const classes = backup.classes || [];
         const journalCount = results.reduce((n, r) => n + (r.journal?.length || 0), 0);
         const photoCount = results.filter(r => r.studentPhoto?.data).length;
+        const classNoteCount = classes.filter(c => typeof c?.classNote === 'string' && c.classNote.trim()).length;
 
         const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(settings[k])).length;
         const hasApiKeys = apiKeyCount > 0;
@@ -1326,7 +1327,7 @@ export const StorageManager = {
             meta: backup._meta || {},
             categories: {
                 settings: { available: !!settings.subjects, count: subjectCount, label: 'Paramètres', description: 'Matières, thème, seuils, modèle IA' },
-                classes: { available: classes.length > 0, count: classes.length, label: 'Classes', description: 'Structure des classes et listes d\'élèves' },
+                classes: { available: classes.length > 0, count: classes.length, label: 'Classes', description: `Structure des classes et listes d'élèves${classNoteCount > 0 ? `, ${classNoteCount} mémo${classNoteCount > 1 ? 's' : ''}` : ''}` },
                 students: { available: results.length > 0, count: results.length, label: 'Données élèves', description: `Notes, appréciations, statuts, contexte${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
                 journal: { available: journalCount > 0, count: journalCount, label: 'Journal de bord', description: 'Observations et notes de suivi', parent: 'students' },
                 apiKeys: { available: hasApiKeys, count: apiKeyCount, label: 'Clés API', description: 'Clés d\'accès aux services IA' }
@@ -1509,6 +1510,12 @@ export const StorageManager = {
                     localC.seatingActivityUpdatedAt = rClass.seatingActivityUpdatedAt;
                     if (rClass.seatingActivityLocked !== undefined) localC.seatingActivityLocked = rClass.seatingActivityLocked;
                     if (rClass.seatingActivitySpecialLayout !== undefined) localC.seatingActivitySpecialLayout = rClass.seatingActivitySpecialLayout;
+                }
+                const rNoteTs = rClass.classNoteUpdatedAt || 0;
+                const lNoteTs = localC.classNoteUpdatedAt || 0;
+                if (rClass.classNote !== undefined && (rNoteTs > lNoteTs || (!localC.classNote && rClass.classNote && lNoteTs === 0))) {
+                    localC.classNote = rClass.classNote;
+                    if (rClass.classNoteUpdatedAt) localC.classNoteUpdatedAt = rClass.classNoteUpdatedAt;
                 }
                 if (rClass.analyses && typeof rClass.analyses === 'object') {
                     if (!localC.analyses || typeof localC.analyses !== 'object') {

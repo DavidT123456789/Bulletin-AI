@@ -360,7 +360,6 @@
     --modal-shadow: var(--shadow-lg);
 
     /* --- Niveau 3 : Tokens de Composants Préfixés (Sans collision) --- */
-    --seg-ctrl-padding: 3px;
     --seating-padding: 16px;
 
     /* Layout Tokens */
