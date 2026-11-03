@@ -19,7 +19,7 @@
 
 /* Dégagement en bas de vue Liste uniquement pour que la dernière carte/ligne puisse toujours remonter au-dessus du FAB (.fab-add-student) */
 .main-content-wrapper:not([data-view="plan"]) .output-section:has(.student-list-view) {
-    padding-bottom: 56px;
+    padding-bottom: 64px;
 }
 
 [data-theme="dark"] .student-list-view {
