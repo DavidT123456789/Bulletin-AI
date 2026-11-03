@@ -2391,51 +2391,45 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 .sc-empty-text {
     font-weight: 400;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     max-width: 220px;
     line-height: 1.5;
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     margin-bottom: auto;
     text-wrap: balance;
 }
 
 .sc-empty-text strong {
-    font-size: 0.96rem;
+    display: inline-block;
+    margin-bottom: 2px;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-/* Directly Engraved Checkmark (debossed channel in sidebar surface) */
-.sc-empty-success-badge,
-[data-theme="dark"] .sc-empty-success-badge {
-    position: relative;
-    width: 76px;
-    height: 76px;
+/* Subtle Filigrane Checkmark (No button circle — melts into sidebar surface) */
+.sc-empty-success-badge {
+    width: 56px;
+    height: 56px;
     margin-bottom: auto;
     background: transparent;
-    box-shadow: none;
     border: none;
+    color: rgba(24, 24, 27, 0.14);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    pointer-events: none;
 }
 
-.sc-empty-engraved-svg {
-    width: 72px;
-    height: 72px;
+[data-theme="dark"] .sc-empty-success-badge {
+    color: rgba(255, 255, 255, 0.12);
+}
+
+.sc-empty-check-svg {
+    width: 48px;
+    height: 48px;
     display: block;
-    overflow: visible;
-}
-
-.sc-empty-engraved-path {
-    stroke: #ececef;
-    filter: url(#scEngravedCheckLight);
-}
-
-[data-theme="dark"] .sc-empty-engraved-path {
-    stroke: #121215;
-    filter: url(#scEngravedCheckDark);
 }
 
 @keyframes scFadeUp {
@@ -2450,7 +2444,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         flex-direction: row !important;
         padding: 2px 4px;
         font-size: 0.78rem;
-        gap: 8px;
+        gap: 6px;
         justify-content: center !important;
         align-items: center !important;
         flex: none !important;
@@ -2458,24 +2452,16 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     .sc-empty-success-badge {
-        width: 26px !important;
-        height: 26px !important;
+        width: 18px !important;
+        height: 18px !important;
         margin-bottom: 0 !important;
         order: 1 !important;
-        border-radius: 50%;
-        background: var(--item-idle-bg) !important;
-        border: 1px solid var(--border-color-strong) !important;
+        color: var(--text-tertiary) !important;
     }
 
-    .sc-empty-engraved-svg {
-        width: 15px !important;
-        height: 15px !important;
-    }
-
-    .sc-empty-engraved-path {
-        stroke: var(--text-secondary) !important;
-        stroke-width: 7 !important;
-        filter: none !important;
+    .sc-empty-check-svg {
+        width: 16px !important;
+        height: 16px !important;
     }
 
     .sc-empty-text {
@@ -2487,6 +2473,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     .sc-empty-text strong {
+        display: inline;
         font-size: 0.75rem;
         margin-bottom: 0;
     }
