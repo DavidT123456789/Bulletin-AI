@@ -8,6 +8,7 @@
 
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
+import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { DOM } from '../utils/DOM.js';
 import { runtimeState, userSettings } from '../state/State.js';
 
@@ -91,7 +92,6 @@ export const CloudActionsManager = {
             UI.showNotification('Aucune copie de sécurité disponible.', 'warning');
             return false;
         }
-        const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
         await RestoreTransitionManager.rehydrateAndTransition();
         UI.showNotification('État précédent restauré.', 'success');
         return true;
@@ -302,7 +302,6 @@ export const CloudActionsManager = {
                 return false;
             }
 
-            const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
             await RestoreTransitionManager.rehydrateAndTransition();
             SyncService.alignLocalSyncBaseline?.();
 

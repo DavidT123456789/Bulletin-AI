@@ -25,7 +25,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             <div id="statsPagination"></div>
             <div id="headerClassName"></div>
             <div id="classDropdownList"></div>
-            <input id="searchInput" value="">
 
             <template id="empty-state-template">
                 <div class="empty-state-header">
@@ -51,7 +50,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         DOM.noResultsMessage = document.getElementById('noResultsMessage');
         DOM.statsContainer = document.getElementById('statsContainer');
         DOM.outputHeader = document.getElementById('outputHeader');
-        DOM.searchInput = document.getElementById('searchInput');
         DOM.headerClassName = document.getElementById('headerClassName');
         DOM.classDropdownList = document.getElementById('classDropdownList');
 
@@ -61,7 +59,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             updateStats: vi.fn(),
             updateControlButtons: vi.fn(),
             updateAIButtonsState: vi.fn(),
-            populateLoadStudentSelect: vi.fn(),
             updateActiveFilterInfo: vi.fn(),
             updateHeaderContext: vi.fn()
         };
@@ -75,6 +72,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         appState.generatedResults = [];
         appState.filteredResults = [];
         appState.activeStatFilter = null;
+        appState.searchQuery = '';
         appState.currentPeriod = 'T1';
 
         vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
@@ -252,6 +250,38 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         appState.sortState = { field: 'evolution', direction: 'asc', param: 'T2' };
         ResultsUIManager.renderResults();
         expect(appState.filteredResults.map(r => r.id)).toEqual(['minus', 'small-plus', 'big-plus', 'no-grade']);
+    });
+
+    it('devrait filtrer les élèves via appState.searchQuery et gérer les filtres statistiques sans .output-toolbar', async () => {
+        const { UI } = await import('./UIManager.js');
+        const cls = ClassManager.createClass('3ème B');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+        appState.generatedResults = [
+            { id: 'stu-1', nom: 'DUPONT', prenom: 'Alice', classId: cls.id, studentData: { periods: { T1: { grade: 15 } } } },
+            { id: 'stu-2', nom: 'MARTIN', prenom: 'Bob', classId: cls.id, studentData: { periods: { T1: { grade: 9 } } } }
+        ];
+
+        appState.searchQuery = 'dupont';
+        ResultsUIManager.renderResults();
+        expect(appState.filteredResults.map(r => r.id)).toEqual(['stu-1']);
+
+        appState.searchQuery = '';
+        ResultsUIManager.renderResults();
+        expect(appState.filteredResults.map(r => r.id)).toEqual(['stu-1', 'stu-2']);
+
+        // Vérifier que UI.updateActiveFilterInfo restaure .active-filter et ajoute .filter-close-btn sans #activeFilterInfo
+        DOM.statsContainer.innerHTML = '<div class="hist-bar-group" data-filter-id="gradeRange_12-16"></div>';
+        appState.activeStatFilter = 'gradeRange_12-16';
+        UI.updateActiveFilterInfo();
+
+        const bar = DOM.statsContainer.querySelector('[data-filter-id="gradeRange_12-16"]');
+        expect(bar.classList.contains('active-filter')).toBe(true);
+        expect(bar.querySelector('.filter-close-btn')).not.toBeNull();
+
+        appState.activeStatFilter = null;
+        UI.updateActiveFilterInfo();
+        expect(bar.querySelector('.filter-close-btn')).toBeNull();
     });
 });
 

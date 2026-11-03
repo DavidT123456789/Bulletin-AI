@@ -24,6 +24,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
 
 /** Délai court (ms) avant la première ligne d'un import : démarre dès le début du retrait de la modale sans trou noir */
 const IMPORT_REVEAL_START_DELAY_MS = 40;
@@ -138,9 +139,7 @@ export const ListViewManager = {
             const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
 
             if (remainingInClass === 0) {
-                import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
-                    AppreciationsManager?.renderResults?.();
-                });
+                AppreciationsManager?.renderResults?.();
                 return;
             }
 
@@ -299,7 +298,6 @@ export const ListViewManager = {
         const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
 
         if (remainingInClass === 0) {
-            const { AppreciationsManager } = await import('./AppreciationsManager.js');
             AppreciationsManager?.renderResults?.();
         } else {
             this.render(appState.filteredResults, document.getElementById('outputList'));
@@ -307,7 +305,6 @@ export const ListViewManager = {
 
         // Update global UI
         ClassUIManager.updateStudentCount();
-        UI?.populateLoadStudentSelect?.();
         UI?.updateStats?.();
         UI?.updateControlButtons?.();
         UI?.updateAIButtonsState?.();

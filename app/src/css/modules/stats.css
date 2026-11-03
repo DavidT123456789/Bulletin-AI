@@ -54,18 +54,6 @@
     }
 }
 
-@keyframes segment-grow {
-    from {
-        transform: scaleX(0);
-        opacity: 0.5;
-    }
-
-    to {
-        transform: scaleX(1);
-        opacity: 1;
-    }
-}
-
 /* === Empty State - Style Premium avec Animation === */
 @keyframes empty-state-float {
 
@@ -365,67 +353,6 @@
     }
 }
 
-/* === Active Filter Badge - Inline in toolbar === */
-#activeFilterInfo {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    /* Styling - compact chip */
-    padding: 6px 12px;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15) 0%, rgba(var(--primary-color-rgb), 0.1) 100%);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
-    white-space: nowrap;
-    font-size: 0.8rem;
-    /* Animation */
-    animation: filter-badge-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-
-@keyframes filter-badge-appear {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-#activeFilterInfo.show {
-    display: inline-flex;
-}
-
-#activeFilterInfo p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#activeFilterInfo p i {
-    color: var(--primary-color);
-}
-
-#activeFilterInfo .btn-link {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
-}
-
-#activeFilterInfo .btn-link:hover {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
-    color: var(--error-color);
-}
-
 .no-results-message {
     display: none;
     text-align: center;
@@ -650,18 +577,6 @@
     background: var(--bg-secondary);
     color: var(--text-secondary);
     white-space: nowrap;
-    animation: evolution-chip-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes evolution-chip-pop {
-    0% {
-        opacity: 0;
-        transform: scale(0.85);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
 /* États sémantiques mutualisés (evolution-chip & homogeneity-badge) - Palette minérale douce */
@@ -801,16 +716,17 @@
     background-color: var(--bg-secondary);
     margin: auto 0 16px 0;
     flex-shrink: 0;
-    gap: 3px;
 }
 
 /* Segments de la barre unifiés avec animation fluide */
 .evolution-card .bar-segment {
+    width: 0%;
     height: 100%;
     border-radius: 0; /* Fin des capsules séparées, rendu continu premium */
     border: none; /* Suppression des anciennes bordures blanches */
     box-sizing: border-box;
     transition: width 0.5s var(--ease-spring), 
+                margin-left 0.5s var(--ease-spring),
                 transform 0.3s var(--ease-spring), 
                 opacity 0.3s ease, 
                 filter 0.3s ease;
@@ -820,9 +736,14 @@
     flex-shrink: 1; /* Permet un ajustement parfait avec flexbox */
 }
 
+.evolution-card .bar-segment[style]:not([style*="width: 0%"]):not([style*="width:0%"]) ~ .bar-segment[style]:not([style*="width: 0%"]):not([style*="width:0%"]) {
+    margin-left: 3px;
+}
+
+.evolution-card .bar-segment:not([style]),
 .evolution-card .bar-segment[style*="width: 0%"],
 .evolution-card .bar-segment[style*="width:0%"] {
-    display: none !important;
+    pointer-events: none;
 }
 
 /* Tooltip pourcentage au hover */
@@ -854,12 +775,10 @@
 /* Aplats mats minéraux harmonisés (Style Éditorial 2026) */
 .evolution-card .bar-segment.progress {
     background: var(--grade-range-16-20);
-    animation: segment-grow 0.5s ease-out 0.1s backwards;
 }
 
 .evolution-card .bar-segment.stable {
     background: color-mix(in srgb, var(--text-quaternary) 62%, var(--bg-tertiary));
-    animation: segment-grow 0.5s ease-out 0.25s backwards;
 }
 
 [data-theme="dark"] .evolution-card .bar-segment.stable {
@@ -868,7 +787,6 @@
 
 .evolution-card .bar-segment.regression {
     background: var(--grade-range-0-4);
-    animation: segment-grow 0.5s ease-out 0.4s backwards;
 }
 
 /* Micro-interactions tactiles premium (Style iOS/Google 2026) */

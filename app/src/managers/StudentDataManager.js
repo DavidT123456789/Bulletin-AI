@@ -287,7 +287,7 @@ export const StudentDataManager = {
 
     /**
      * Transfère les métadonnées de génération d'un nouveau résultat vers un existant
-     * Utilisé par MassImportManager et SingleStudentManager pour éviter la duplication
+     * Utilisé par MassImportManager pour éviter la duplication
      * 
      * @param {Object} existingResult - Le résultat existant à mettre à jour
      * @param {Object} newResult - Le nouveau résultat avec les métadonnées à transférer
@@ -541,6 +541,7 @@ export const StudentDataManager = {
      * @param {string} id - ID de l'élève
      */
     async deleteStudent(id) {
+        if (!id || !Array.isArray(appState.generatedResults)) return false;
         const student = appState.generatedResults.find(r => r.id === id);
         if (!student) return false;
 

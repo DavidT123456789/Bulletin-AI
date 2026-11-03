@@ -6,6 +6,7 @@
  */
 
 import { ModalUI } from './ModalUIManager.js';
+import { StorageManager } from './StorageManager.js';
 import { DOM } from '../utils/DOM.js';
 
 let isTransitioning = false;
@@ -42,7 +43,6 @@ export const RestoreTransitionManager = {
             } else if (window.App?.rehydrateAll) {
                 await window.App.rehydrateAll();
             } else {
-                const { StorageManager } = await import('./StorageManager.js');
                 await StorageManager.loadAppState();
                 if (window.App?.updateUIOnLoad) {
                     window.App.updateUIOnLoad();

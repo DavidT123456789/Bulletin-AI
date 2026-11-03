@@ -341,12 +341,7 @@ export const CrossClassSearchManager = {
                 } else if (idx > 0) {
                     results[idx - 1]?.focus();
                 } else {
-                    const inlineInput = document.getElementById('inlineSearchInput');
-                    if (inlineInput && inlineInput.offsetParent !== null) {
-                        inlineInput.focus();
-                    } else {
-                        document.getElementById('searchInput')?.focus();
-                    }
+                    document.getElementById('inlineSearchInput')?.focus();
                 }
             }
         });
@@ -389,7 +384,7 @@ export const CrossClassSearchManager = {
     },
 
     /**
-     * Réinitialise proprement toute la recherche de la vue Liste (input toolbar, input inline,
+     * Réinitialise proprement toute la recherche de la vue Liste (état, input inline,
      * historique mobile et résultats inter-classes)
      * @param {Object} [options={}]
      * @param {boolean} [options.renderList=false] - Si true et qu'une recherche filtrait la liste, relance le rendu de la classe
@@ -398,21 +393,17 @@ export const CrossClassSearchManager = {
     clearListSearch({ renderList = false, immediate = false } = {}) {
         this.cancelPendingSearch();
 
-        const searchInput = document.getElementById('searchInput');
         const inlineInput = document.getElementById('inlineSearchInput');
         const inlineContainer = document.getElementById('inlineSearchContainer');
         const inlineTrigger = document.getElementById('inlineSearchTrigger');
 
         const hadSearchValue = Boolean(
             this._lastTerm ||
-            searchInput?.value ||
+            appState.searchQuery ||
             inlineInput?.value
         );
 
-        if (searchInput) {
-            searchInput.value = '';
-            searchInput.parentElement?.classList.remove('has-value');
-        }
+        appState.searchQuery = '';
 
         if (inlineInput) {
             inlineInput.value = '';

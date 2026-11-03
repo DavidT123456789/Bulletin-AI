@@ -42,9 +42,7 @@ export const GeneralListeners = {
         if (DOM.linkFeedback) DOM.linkFeedback.href = APP_LINKS.FEEDBACK;
         if (DOM.linkLicense) DOM.linkLicense.href = APP_LINKS.LICENSE;
 
-        addClickListener(DOM.generateAppreciationBtn, App.handleGenerateClick);
         addClickListener(DOM.importGenerateBtn, () => FileImportManager.handleMassImportTrigger());
-        addClickListener(DOM.resetFormBtn, App.handleClearClick);
         addClickListener(DOM.darkModeToggle, UI.toggleDarkMode);
 
         // Header Menu Logic - with teleportation for mobile to escape backdrop-filter containing block
@@ -315,14 +313,6 @@ export const GeneralListeners = {
 
 
         // Sidebar removed - toggling handled by Hub Modal now
-
-        // Option G: Accordion toggle for history section
-        addClickListener(DOM.historyToggle, () => {
-            const accordion = DOM.historyAccordion;
-            if (accordion) {
-                accordion.classList.toggle('open');
-            }
-        });
     },
 
     /**

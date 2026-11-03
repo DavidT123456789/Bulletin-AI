@@ -542,28 +542,7 @@
 
                     <!-- Progress and error UI moved to header chip (#headerGenerationStatus) -->
 
-                    <div class="output-header" id="outputHeader">
-                        <div class="output-toolbar">
-                            <!-- Recherche à gauche -->
-                            <div class="search-container">
-                                <iconify-icon icon="solar:magnifer-linear" class="search-icon"></iconify-icon>
-                                <input type="text" class="search-input" id="searchInput" placeholder="Rechercher...">
-                                <button type="button" class="search-clear-btn" id="searchClearBtn"
-                                    aria-label="Effacer la recherche">
-                                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
-                                </button>
-                            </div>
-                            <!-- Active filter badge - inline in toolbar -->
-                            <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
-                            <!-- Actions à droite - ordre stable -->
-                            <div class="toolbar-actions">
-                                <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
-                                    data-tooltip="Analyse IA de la classe">
-                                    <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="output-header" id="outputHeader"></div>
 
                     <div id="outputList" role="region" aria-live="polite">
                         <div class="student-list-view skeleton-table-view" id="initialTableSkeleton" aria-hidden="true">

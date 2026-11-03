@@ -30,7 +30,7 @@ export const EventHandlersManager = {
      * @param {Event} e - L'événement input
      */
     handleSearchInput(e) {
-        // La valeur est lue directement depuis DOM.searchInput.value dans renderResults
+        // La valeur est lue directement depuis appState.searchQuery dans renderResults
         // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();
     },
@@ -125,12 +125,5 @@ export const EventHandlersManager = {
 
         // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();
-    },
-
-    /**
-     * Gère le clic sur le bouton "Infos filtre actif".
-     */
-    handleActiveFilterInfoClick() {
-        this.handleStatFilterClick(null);
     }
 };

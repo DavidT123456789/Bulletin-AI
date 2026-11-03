@@ -34,6 +34,7 @@ import { Utils } from '../utils/Utils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 import { ClassManager } from './ClassManager.js';
 import { ModalUI as ModalUIManager } from './ModalUIManager.js';
+import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 
 let UI;
 let App;
@@ -1291,7 +1292,6 @@ export const StorageManager = {
 
             UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
 
-            const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
             await RestoreTransitionManager.performReloadTransition({
                 title: 'Réinitialisation',
                 subtitle: 'Remise à zéro de l\'application...'

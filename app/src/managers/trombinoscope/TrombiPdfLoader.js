@@ -6,6 +6,7 @@
 
 import { UI } from '../UIManager.js';
 import { ClassManager } from '../ClassManager.js';
+import { ImportWizardManager } from '../ImportWizardManager.js';
 import { Utils } from '../../utils/Utils.js';
 import { parsePronoteTrombiPdf } from '../../utils/PronoteTrombiParser.js';
 
@@ -37,7 +38,6 @@ export const TrombiPdfLoader = {
             );
             if (shouldSwitch) {
                 manager.close();
-                const { ImportWizardManager } = await import('../ImportWizardManager.js');
                 ImportWizardManager.open();
                 ImportWizardManager._handleFile(file);
             }
@@ -146,7 +146,6 @@ export const TrombiPdfLoader = {
                 );
                 if (shouldSwitch) {
                     manager.close();
-                    const { ImportWizardManager } = await import('../ImportWizardManager.js');
                     ImportWizardManager.open();
                     ImportWizardManager._handleFile(file);
                 }
@@ -244,7 +243,6 @@ export const TrombiPdfLoader = {
             );
             if (shouldSwitch) {
                 manager.close();
-                const { ImportWizardManager } = await import('../ImportWizardManager.js');
                 ImportWizardManager.open();
                 ImportWizardManager._handleFile(file);
             }

@@ -6,6 +6,8 @@ import { FocusPanelManager } from './managers/FocusPanelManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
+import { ImportWizardManager } from './managers/ImportWizardManager.js';
+import { TrombinoscopeManager } from './managers/TrombinoscopeManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -106,8 +108,7 @@ const init = () => {
 
         window.openImportWizardFromHelp = () => {
             UI.closeAllModals();
-            setTimeout(async () => {
-                const { ImportWizardManager } = await import('./managers/ImportWizardManager.js');
+            setTimeout(() => {
                 window.ImportWizardManager = ImportWizardManager;
                 ImportWizardManager.open();
             }, 200);
@@ -115,8 +116,7 @@ const init = () => {
 
         window.openTrombiWizardFromHelp = () => {
             UI.closeAllModals();
-            setTimeout(async () => {
-                const { TrombinoscopeManager } = await import('./managers/TrombinoscopeManager.js');
+            setTimeout(() => {
                 window.TrombinoscopeManager = TrombinoscopeManager;
                 TrombinoscopeManager.open();
             }, 200);

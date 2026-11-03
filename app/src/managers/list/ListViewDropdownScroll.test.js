@@ -240,7 +240,7 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         DOM.headerMenuBtn = headerWrapper.querySelector('#headerMenuBtn');
         DOM.headerMenuDropdown = headerWrapper.querySelector('#headerMenuDropdown');
 
-        GeneralListeners.init({ handleGenerateClick: vi.fn(), handleClearClick: vi.fn() });
+        GeneralListeners.init({ handleHelpButtonClick: vi.fn() });
         vi.spyOn(GeneralListeners, '_onMenuOpen').mockImplementation(() => {});
         vi.spyOn(GeneralListeners, 'setupCloudListeners').mockImplementation(() => {});
 
@@ -516,7 +516,7 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         DOM.headerMenuBtn = headerWrapper.querySelector('#headerMenuBtn');
         DOM.headerMenuDropdown = headerWrapper.querySelector('#headerMenuDropdown');
 
-        GeneralListeners.init({ handleGenerateClick: vi.fn(), handleClearClick: vi.fn() });
+        GeneralListeners.init({ handleHelpButtonClick: vi.fn() });
         vi.spyOn(GeneralListeners, '_onMenuOpen').mockImplementation(() => {});
         vi.spyOn(GeneralListeners, 'setupCloudListeners').mockImplementation(() => {});
 
@@ -566,13 +566,11 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
     });
 
     it('should open inline search on smartphone tap (mousedown followed by click) without immediately closing, and close cleanly via close button or Back gesture', async () => {
+        const { appState } = await import('../../state/State.js');
         const { HistoryManager } = await import('../HistoryManager.js');
         const { ListViewRenderer } = await import('./ListViewRenderer.js');
         HistoryManager.destroy();
-
-        const toolbarInput = document.createElement('input');
-        toolbarInput.id = 'searchInput';
-        container.appendChild(toolbarInput);
+        appState.searchQuery = '';
 
         const outputList = document.createElement('div');
         container.appendChild(outputList);
@@ -601,7 +599,7 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         // Type a query and switch period (renderFresh) -> inline search state, value, and Back callback must be preserved
         searchInput.value = 'bernard';
         searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        expect(toolbarInput.value).toBe('bernard');
+        expect(appState.searchQuery).toBe('bernard');
 
         ListViewRenderer.renderFresh(outputList, [{ id: 's1', nom: 'BERNARD', prenom: 'Thomas', studentData: { periods: {} } }], ['S1', 'S2'], 1, {
             isPeriodSwitch: true,
@@ -623,9 +621,30 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
 
         expect(updatedContainer.classList.contains('active')).toBe(false);
         expect(updatedInput.value).toBe('');
-        expect(toolbarInput.value).toBe('');
+        expect(appState.searchQuery).toBe('');
         expect(HistoryManager.isOpen('inlineSearch')).toBe(false);
         expect(handleManualCloseSpy).toHaveBeenCalledTimes(1);
         handleManualCloseSpy.mockRestore();
+    });
+
+    it('should clear activeStatFilter on Escape when no menu or selection is active', async () => {
+        const { appState } = await import('../../state/State.js');
+        const { EventHandlersManager } = await import('../EventHandlersManager.js');
+        const { ListSelectionManager } = await import('./ListSelectionManager.js');
+
+        appState.activeView = 'list';
+        appState.activeStatFilter = 'gradeRange_12-16';
+        ListSelectionManager.selectedIds.clear();
+
+        const filterSpy = vi.spyOn(EventHandlersManager, 'handleStatFilterClick').mockImplementation(() => {
+            appState.activeStatFilter = null;
+        });
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+        expect(filterSpy).toHaveBeenCalledWith(null);
+        expect(appState.activeStatFilter).toBeNull();
+
+        filterSpy.mockRestore();
     });
 });

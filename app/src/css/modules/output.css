@@ -50,11 +50,6 @@
     gap: 12px;
 }
 
-.output-toolbar {
-    /* DEPRECATED: Toolbar hidden - search now in table header, Generate in header chip */
-    display: none !important;
-}
-
 /* Badge spécifique pour le tableau - extends .header-action-trigger */
 #avgWordsChip {
     /* Position override - chip is on the right side */

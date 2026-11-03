@@ -12,6 +12,7 @@
 import { appState, massImportMappingState, setMassImportMappingState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { detectSeparator, parseLine } from '../utils/ImportUtils.js';
+import { extractTextFromPdf } from '../utils/PdfUtils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { MassImportManager } from './MassImportManager.js';
@@ -69,8 +70,6 @@ export const FileImportManager = {
             try {
                 UI.showNotification('Extraction du texte PDF en cours...', 'info');
 
-                // Import dynamique pour lazy loading
-                const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
                 const textContent = await extractTextFromPdf(file);
 
                 // Ouvre l'assistant d'import avec le texte extrait

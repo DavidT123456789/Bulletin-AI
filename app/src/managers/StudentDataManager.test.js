@@ -13,11 +13,17 @@ vi.mock('../state/State.js', () => ({
         currentSubject: 'Mathématiques',
         useSubjectPersonalization: false,
         generatedResults: [],
+        filteredResults: [],
         journalThreshold: 2
     },
     userSettings: {
         academic: {
             currentClassId: null
+        }
+    },
+    runtimeState: {
+        data: {
+            deletedItems: { students: [], classes: [] }
         }
     }
 }));
@@ -33,8 +39,9 @@ vi.mock('../utils/Utils.js', async (importOriginal) => ({
 }));
 
 import { StudentDataManager } from './StudentDataManager.js';
-import { appState } from '../state/State.js';
+import { appState, runtimeState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { DBService } from '../services/DBService.js';
 
 describe('StudentDataManager', () => {
     beforeEach(() => {
@@ -570,6 +577,60 @@ describe('StudentDataManager', () => {
             expect(pendingReal.studentData.statuses).toEqual(['PPRE']);
             expect(pendingReal.originClass).toBe('3*1');
             expect(pendingReal.isCopiedProfile).toBe(true);
+        });
+    });
+
+    describe('deleteStudent', () => {
+        beforeEach(() => {
+            appState.generatedResults = [
+                { id: 'stu-1', nom: 'MARTIN', prenom: 'Lucas', classId: 'cls-4a', studentData: {} },
+                { id: 'stu-2', nom: 'DUPONT', prenom: 'Emma', classId: 'cls-4a', studentData: {} }
+            ];
+            appState.filteredResults = [...appState.generatedResults];
+            runtimeState.data.deletedItems = { students: [], classes: [] };
+        });
+
+        it('devrait supprimer l\'élève de generatedResults, filteredResults, IndexedDB et créer un tombstone', async () => {
+            const dbDeleteSpy = vi.spyOn(DBService, 'delete').mockResolvedValue();
+
+            const deleted = await StudentDataManager.deleteStudent('stu-1');
+
+            expect(deleted).toBe(true);
+            expect(appState.generatedResults.map(r => r.id)).toEqual(['stu-2']);
+            expect(appState.filteredResults.map(r => r.id)).toEqual(['stu-2']);
+            expect(runtimeState.data.deletedItems.students).toHaveLength(1);
+            expect(runtimeState.data.deletedItems.students[0]).toMatchObject({
+                id: 'stu-1',
+                classId: 'cls-4a'
+            });
+            expect(typeof runtimeState.data.deletedItems.students[0].deletedAt).toBe('number');
+            expect(dbDeleteSpy).toHaveBeenCalledWith('generatedResults', 'stu-1');
+        });
+
+        it('devrait retourner false sans effet de bord si l\'identifiant est inconnu, null ou undefined', async () => {
+            const dbDeleteSpy = vi.spyOn(DBService, 'delete').mockResolvedValue();
+
+            expect(await StudentDataManager.deleteStudent('inconnu')).toBe(false);
+            expect(await StudentDataManager.deleteStudent(null)).toBe(false);
+            expect(await StudentDataManager.deleteStudent(undefined)).toBe(false);
+            expect(await StudentDataManager.deleteStudent('')).toBe(false);
+
+            expect(appState.generatedResults).toHaveLength(2);
+            expect(runtimeState.data.deletedItems.students).toHaveLength(0);
+            expect(dbDeleteSpy).not.toHaveBeenCalled();
+        });
+
+        it('devrait finaliser la suppression en mémoire et le tombstone même si DBService.delete échoue', async () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const dbDeleteSpy = vi.spyOn(DBService, 'delete').mockRejectedValue(new Error('IDB failure'));
+
+            const deleted = await StudentDataManager.deleteStudent('stu-1');
+
+            expect(deleted).toBe(true);
+            expect(appState.generatedResults.map(r => r.id)).toEqual(['stu-2']);
+            expect(runtimeState.data.deletedItems.students).toHaveLength(1);
+            expect(dbDeleteSpy).toHaveBeenCalledWith('generatedResults', 'stu-1');
+            expect(warnSpy).toHaveBeenCalled();
         });
     });
 });

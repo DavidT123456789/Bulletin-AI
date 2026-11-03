@@ -13,13 +13,8 @@ describe('DOM', () => {
                 <select id="mainPeriodSelector"></select>
                 <span id="headerClassChip"></span>
                 <span id="headerStudentCount"></span>
-                <span id="sidebarPeriodContext"></span>
                 <div id="inputSection"></div>
-                <button id="massImportTab"></button>
-                <button id="singleStudentTab"></button>
                 <div id="massImportSection"></div>
-                <div id="singleStudentFormDiv"></div>
-                <form id="actualSingleStudentForm"></form>
                 <textarea id="massData"></textarea>
                 <div id="massImportPreview"></div>
                 <div id="mass-import-progress-output-area"></div>
@@ -31,19 +26,7 @@ describe('DOM', () => {
                 <a id="loadSampleDataLink"></a>
                 <div id="dropZone"></div>
                 <button id="importFileBtn"></button>
-                <input id="nom" />
-                <input id="prenom" />
-                <span id="nomError"></span>
-                <span id="prenomError"></span>
-                <div id="singleStudentPeriodInputs"></div>
-                <textarea id="negativeInstructions"></textarea>
-                <div class="generation-buttons-group"></div>
-                <button id="generateAppreciationBtn"></button>
-                <button id="generateAndNextBtn"></button>
-                <button id="resetFormBtn"></button>
-                <button id="cancelEditBtn"></button>
                 <div id="outputList"></div>
-                <input id="searchInput" />
                 <span id="avgWordsChip"></span>
                 <div id="evolutionCard"></div>
                 <span id="classEvolutionAverageStat"></span>
@@ -170,7 +153,6 @@ describe('DOM', () => {
                 <button id="welcomeSkipApiKeyBtn"></button>
                 <div id="actions-irreversibles-container"></div>
                 <button id="addStudentFab"></button>
-                <button id="analyzeClassBtn"></button>
 
                 <button id="copyAnalysisBtn"></button>
                 <button id="actionsBtnToggle"></button>
@@ -204,10 +186,8 @@ describe('DOM', () => {
                 <button id="sidebarCloseBtn"></button>
                 <div id="subject-customization-panel"></div>
                 <div id="massImportApiKeyWarning"></div>
-                <select id="loadStudentSelect"></select>
                 <div id="brickDropdown"></div>
                 <div id="brickDropdownRefinement"></div>
-                <div id="activeFilterInfo"></div>
                 <div id="massImportErrorActions"></div>
                 <div id="importPreviewModal"></div>
                 <span id="importPreviewModalTitle"></span>
@@ -233,7 +213,6 @@ describe('DOM', () => {
                 <input type="checkbox" id="saveMappingCheckbox" />
                 <button id="cancelImportPreviewBtn"></button>
                 <button id="confirmImportPreviewBtn"></button>
-                <div id="singleStudentActions"></div>
                 <div class="input-panels-wrapper"></div>
                 <div id="massImportActions"></div>
             </div>
@@ -249,7 +228,7 @@ describe('DOM', () => {
             expect(DOM.appVersionDisplay).toBeDefined();
             expect(DOM.darkModeToggle).toBeDefined();
             expect(DOM.settingsButton).toBeDefined();
-            expect(DOM.generateAppreciationBtn).toBeDefined();
+            expect(DOM.importGenerateBtn).toBeDefined();
             expect(DOM.resultsDiv).toBeDefined();
             expect(DOM.settingsModal).toBeDefined();
             expect(DOM.welcomeModal).toBeDefined();

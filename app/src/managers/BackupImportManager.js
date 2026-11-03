@@ -5,6 +5,7 @@
  */
 
 import { StorageManager } from './StorageManager.js';
+import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { UI } from './UIManager.js';
 import { ModalUI } from './ModalUIManager.js';
 
@@ -204,7 +205,6 @@ export const BackupImportManager = {
                     silent: true,
                     skipSnapshot: true
                 });
-                const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
                 await RestoreTransitionManager.rehydrateAndTransition();
                 closeModal();
                 this._showRichFeedback(result.stats, selectedCategories, isMerge, categories);

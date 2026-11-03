@@ -7,6 +7,7 @@
 
 import { userSettings, runtimeState } from '../state/State.js';
 import { StorageManager } from '../managers/StorageManager.js';
+import { SettingsModalListeners } from '../managers/listeners/SettingsModalListeners.js';
 import { APP_VERSION } from '../config/Config.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
@@ -506,7 +507,6 @@ export const SyncService = {
         setTimeout(async () => {
             if (providerName === 'google') {
                 try {
-                    const { SettingsModalListeners } = await import('../managers/listeners/SettingsModalListeners.js');
                     if (SettingsModalListeners?.updateCloudSyncUI) {
                         await SettingsModalListeners.updateCloudSyncUI();
                     }

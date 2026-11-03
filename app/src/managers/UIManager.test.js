@@ -55,16 +55,9 @@ vi.mock('../utils/DOM.js', () => ({
         loadingOverlay: null,
         loadingText: null,
         mainPeriodSelector: { innerHTML: '', querySelectorAll: vi.fn(() => []), querySelector: vi.fn(() => null) },
-        singleStudentPeriodInputs: { innerHTML: '', querySelectorAll: vi.fn(() => []) },
         massImportSection: { style: { display: '' } },
-        singleStudentFormDiv: { style: { display: '' } },
         massImportActions: { style: { display: '' } },
-        singleStudentActions: { style: { display: '' } },
-        massImportTab: { classList: { toggle: vi.fn() }, setAttribute: vi.fn() },
-        singleStudentTab: { classList: { toggle: vi.fn() }, setAttribute: vi.fn() },
-        massData: { focus: vi.fn() },
-        loadStudentSelect: null,
-        nomInput: { focus: vi.fn() }
+        massData: { focus: vi.fn() }
     }
 }));
 
@@ -113,7 +106,6 @@ vi.mock('./StorageManager.js', () => ({
 vi.mock('./AppreciationsManager.js', () => ({
     AppreciationsManager: {
         renderResults: vi.fn(),
-        resetForm: vi.fn(),
         getAllPrompts: vi.fn(() => ({ main: '', sw: '', ns: '' })),
         getRefinementPrompt: vi.fn(() => 'Refine prompt'),
         getRelevantEvolution: vi.fn()
@@ -362,7 +354,7 @@ describe('UIManager', () => {
             const btn = document.createElement('button');
             const warningEl = document.createElement('div');
             warningEl.style.display = 'none';
-            DOM.generateAppreciationBtn = btn;
+            DOM.importGenerateBtn = btn;
             DOM.massImportApiKeyWarning = warningEl;
 
             const onLineSpy = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);

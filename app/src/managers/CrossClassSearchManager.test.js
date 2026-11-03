@@ -115,18 +115,16 @@ describe('CrossClassSearchManager', () => {
         vi.useRealTimers();
     });
 
-    it('devrait réinitialiser toute la recherche Liste via clearListSearch (inputs, conteneur inline et résultats)', () => {
+    it('devrait réinitialiser toute la recherche Liste via clearListSearch (appState.searchQuery, conteneur inline et résultats)', () => {
         document.body.innerHTML = `
             <div>
-                <div class="search-container has-value">
-                    <input id="searchInput" value="boukhari" />
-                </div>
                 <div id="inlineSearchContainer" class="inline-search-container active has-value">
                     <input id="inlineSearchInput" value="boukhari" />
                 </div>
                 <div id="outputList"></div>
             </div>
         `;
+        appState.searchQuery = 'boukhari';
         CrossClassSearchManager.reset(true);
         CrossClassSearchManager.updateCrossClassResults('boukhari');
 
@@ -135,8 +133,7 @@ describe('CrossClassSearchManager', () => {
 
         CrossClassSearchManager.clearListSearch({ renderList: false, immediate: true });
 
-        expect(document.getElementById('searchInput').value).toBe('');
-        expect(document.querySelector('.search-container').classList.contains('has-value')).toBe(false);
+        expect(appState.searchQuery).toBe('');
         expect(document.getElementById('inlineSearchInput').value).toBe('');
         expect(document.getElementById('inlineSearchContainer').classList.contains('active')).toBe(false);
         expect(document.getElementById('inlineSearchContainer').classList.contains('has-value')).toBe(false);
@@ -147,7 +144,7 @@ describe('CrossClassSearchManager', () => {
     it('devrait naviguer au clavier (ArrowDown / ArrowUp) entre les résultats inter-classes', () => {
         document.body.innerHTML = `
             <div>
-                <input id="searchInput" value="3" />
+                <input id="inlineSearchInput" value="3" />
                 <div id="outputList"></div>
             </div>
         `;
@@ -168,18 +165,19 @@ describe('CrossClassSearchManager', () => {
         expect(document.activeElement).toBe(results[0]);
 
         results[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-        expect(document.activeElement).toBe(document.getElementById('searchInput'));
+        expect(document.activeElement).toBe(document.getElementById('inlineSearchInput'));
     });
 
     it('devrait permettre une nouvelle recherche inter-classes après avoir cliqué sur un élève d\'une autre classe', async () => {
         document.body.innerHTML = `
             <div>
-                <div class="search-container">
-                    <input id="searchInput" value="boukhari" />
+                <div id="inlineSearchContainer" class="inline-search-container active has-value">
+                    <input id="inlineSearchInput" value="boukhari" />
                 </div>
                 <div id="outputList"></div>
             </div>
         `;
+        appState.searchQuery = 'boukhari';
         vi.spyOn(ClassManager, 'getClassById').mockImplementation(id => {
             if (id === 'class-other-group') return { id: 'class-other-group', name: 'Groupe Techno G2' };
             if (id === 'class-group-1') return { id: 'class-group-1', name: 'Groupe Techno G1' };

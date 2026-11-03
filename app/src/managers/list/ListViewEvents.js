@@ -3,6 +3,7 @@
  * Handles all DOM event listeners (click, keyboard, contextmenu, touch long-press) for the List View
  */
 
+import { CONFIG } from '../../config/Config.js';
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
@@ -16,6 +17,7 @@ import { StorageManager } from '../StorageManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
+import { ClassUIManager } from '../ClassUIManager.js';
 
 export const ListViewEvents = {
 
@@ -284,9 +286,7 @@ export const ListViewEvents = {
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
-                    import('../ClassUIManager.js').then(({ ClassUIManager }) => {
-                        ClassUIManager.showMoveStudentsModal([studentId]);
-                    });
+                    ClassUIManager.showMoveStudentsModal([studentId]);
                 }
                 return;
             }
@@ -500,6 +500,17 @@ export const ListViewEvents = {
                 else if (ListSelectionManager.selectedIds.size > 0) {
                     ListSelectionManager.clearSelections();
                 }
+                // Priority 3: Clear active stat filter if in list view and no header dropdown is open
+                else if (
+                    appState.activeStatFilter &&
+                    appState.activeView !== 'plan' &&
+                    !document.querySelector('#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open')
+                ) {
+                    EventHandlersManager.handleStatFilterClick(null);
+                    if (document.activeElement?.closest?.('.stats-container')) {
+                        document.activeElement.blur?.();
+                    }
+                }
             }
 
             // Delete key shortcut for bulk delete
@@ -648,9 +659,8 @@ export const ListViewEvents = {
             searchContainer.classList.add('active');
 
             // Sync with existing search value if any before positioning caret
-            const existingInput = document.getElementById('searchInput');
-            if (existingInput && existingInput.value) {
-                searchInput.value = existingInput.value;
+            if (appState.searchQuery) {
+                searchInput.value = appState.searchQuery;
                 searchContainer.classList.add('has-value');
             }
 
@@ -660,15 +670,11 @@ export const ListViewEvents = {
 
         // Helper to clear search input value and notify listeners immediately (0ms latency)
         const _clearSearchInput = () => {
-            const existingInput = document.getElementById('searchInput');
-            if (searchInput.value || existingInput?.value || CrossClassSearchManager._lastTerm || CrossClassSearchManager._debounceTimer) {
+            if (searchInput.value || appState.searchQuery || CrossClassSearchManager._lastTerm || CrossClassSearchManager._debounceTimer) {
                 CrossClassSearchManager.cancelPendingSearch();
                 searchInput.value = '';
                 searchContainer.classList.remove('has-value');
-                if (existingInput) {
-                    existingInput.value = '';
-                    existingInput.parentElement?.classList.remove('has-value');
-                }
+                appState.searchQuery = '';
                 EventHandlersManager.handleSearchInput();
                 CrossClassSearchManager.updateCrossClassResults('');
             }
@@ -753,13 +759,14 @@ export const ListViewEvents = {
         searchInput.addEventListener('input', (e) => {
             const value = e.target.value;
             searchContainer.classList.toggle('has-value', value.length > 0);
+            appState.searchQuery = value;
 
-            // Sync with the existing searchInput in toolbar (for backward compatibility)
-            const existingInput = document.getElementById('searchInput');
-            if (existingInput) {
-                existingInput.value = value;
-                existingInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }
+            // Filtrage tableau + recherche inter-classes synchronisés via un debounce unique annulable
+            CrossClassSearchManager.scheduleSearch(
+                value,
+                () => EventHandlersManager.handleSearchInput(),
+                CONFIG.DEBOUNCE_TIME_MS
+            );
         }, { signal });
 
         // Clear button

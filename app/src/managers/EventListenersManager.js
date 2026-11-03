@@ -9,7 +9,6 @@
 
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
-import { InputListeners } from './listeners/InputListeners.js';
 import { OutputListeners } from './listeners/OutputListeners.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { OtherModalsListeners } from './listeners/OtherModalsListeners.js';
@@ -33,7 +32,6 @@ export const EventListenersManager = {
 
         // Initialiser les sous-modules qui en ont besoin
         GeneralListeners.init(appInstance);
-        InputListeners.init(appInstance);
         SettingsModalListeners.init(appInstance);
         OtherModalsListeners.init(appInstance);
     },
@@ -51,7 +49,6 @@ export const EventListenersManager = {
 
         // Déléguer à chaque module spécialisé
         GeneralListeners.setup(addClickListener);
-        InputListeners.setup(addClickListener);
         OutputListeners.setup(addClickListener);
         SettingsModalListeners.setup(addClickListener);
         OtherModalsListeners.setup(addClickListener);

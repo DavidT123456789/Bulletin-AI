@@ -43,7 +43,7 @@ export const ListViewRenderer = {
         const studentData = result.studentData || {};
         const appreciationCell = this.getAppreciationCell(result);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-        const searchQuery = context.searchQuery ?? (document.getElementById('searchInput')?.value || '');
+        const searchQuery = context.searchQuery ?? (appState.searchQuery || '');
         const currentClassName = context.currentClassName || Utils.getCurrentClassName();
         const originClass = Utils.getOriginClass(result, currentClassName);
         tr.innerHTML = `
@@ -128,7 +128,7 @@ export const ListViewRenderer = {
         const identityWrapper = row.querySelector('.student-identity-wrapper');
         if (identityWrapper) {
             const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-            const searchQuery = document.getElementById('searchInput')?.value || '';
+            const searchQuery = appState.searchQuery || '';
             const currentClassName = Utils.getCurrentClassName();
             const originClass = Utils.getOriginClass(result, currentClassName);
             identityWrapper.innerHTML = `
@@ -284,7 +284,7 @@ export const ListViewRenderer = {
 
         const activePeriodKey = (periods && periods[currentPeriodIndex]) || appState.currentPeriod || 'S1';
         const activePeriodLabel = Utils.getPeriodLabel(activePeriodKey, false) || activePeriodKey;
-        const searchQuery = document.getElementById('searchInput')?.value || '';
+        const searchQuery = appState.searchQuery || '';
         const wasInlineSearchActive = Boolean(
             searchQuery ||
             container?.querySelector?.('#inlineSearchContainer.active')

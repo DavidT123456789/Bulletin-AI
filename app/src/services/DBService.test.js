@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DBService } from './DBService.js';
 import { appState } from '../state/State.js';
 import { StorageManager } from '../managers/StorageManager.js';
-import { SingleStudentManager } from '../managers/SingleStudentManager.js';
+import { StudentDataManager } from '../managers/StudentDataManager.js';
 import { ResultsUIManager } from '../managers/ResultsUIManager.js';
 
 vi.mock('../managers/ListViewManager.js', () => ({
@@ -34,10 +34,6 @@ describe('DBService (T-01 & Lot 10 — BulletinAssistantDB v2, Migration v1->v2 
         appState.generatedResults = [];
         appState.filteredResults = [];
 
-        SingleStudentManager.init(
-            { updateActionButtonsState: vi.fn(), checkAndShowWelcomeState: vi.fn() },
-            {}
-        );
         ResultsUIManager.init(
             {},
             {
@@ -68,7 +64,7 @@ describe('DBService (T-01 & Lot 10 — BulletinAssistantDB v2, Migration v1->v2 
         expect(await DBService.getAll('generatedResults')).toEqual([]);
     });
 
-    it('T-01 (Bug A-02) : supprime effectivement les élèves dans IndexedDB lors de SingleStudentManager.delete et ResultsUIManager.clearAllResults (aucun élève zombie)', async () => {
+    it('T-01 (Bug A-02) : supprime effectivement les élèves dans IndexedDB lors de StudentDataManager.deleteStudent et ResultsUIManager.clearAllResults (aucun élève zombie)', async () => {
         const initialStudents = [
             { id: 's1', classId: 'c1', studentData: { prenom: 'Alice', nom: 'Martin' } },
             { id: 's2', classId: 'c1', studentData: { prenom: 'Bob', nom: 'Dupont' } },
@@ -79,9 +75,9 @@ describe('DBService (T-01 & Lot 10 — BulletinAssistantDB v2, Migration v1->v2 
         appState.generatedResults = initialStudents.map(s => ({ ...s }));
         appState.filteredResults = initialStudents.map(s => ({ ...s }));
 
-        // 1. Suppression individuelle de s1 via SingleStudentManager.delete
-        SingleStudentManager.delete('s1');
-        await StorageManager._saveQueue;
+        // 1. Suppression individuelle de s1 via StudentDataManager.deleteStudent + sauvegarde
+        await StudentDataManager.deleteStudent('s1');
+        await StorageManager.saveAppState();
 
         const afterSingleDelete = await DBService.getAll('generatedResults');
         expect(afterSingleDelete.map(s => s.id)).toEqual(['s2', 's3']);

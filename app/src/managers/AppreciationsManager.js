@@ -8,7 +8,6 @@ import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
 import { AppreciationService } from '../services/AppreciationService.js';
 import { ExportManager } from './ExportManager.js';
-import { SingleStudentManager } from './SingleStudentManager.js';
 import { StatsService } from '../services/StatsService.js';
 import { PromptService } from '../services/PromptService.js';
 import { StudentDataManager } from './StudentDataManager.js';
@@ -27,7 +26,6 @@ export const AppreciationsManager = {
         App = appInstance;
         UI = uiManager;
         ExportManager.init(appInstance);
-        SingleStudentManager.init(appInstance, this);
         ResultsUIManager.init(this, UI);
 
         MassImportManager.init(this, appInstance, UI);
@@ -255,32 +253,12 @@ export const AppreciationsManager = {
         return text.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
     },
 
-    async generateSingleAppreciation() {
-        return SingleStudentManager.generateAppreciation();
-    },
-
     _prepareStudentListForImport(lines, formatMap, importMode) {
         return StudentDataManager._prepareStudentListForImport(lines, formatMap, importMode);
     },
 
     async processMassImport(studentsToProcess, ignoredCount) {
         return MassImportManager.processMassImport(studentsToProcess, ignoredCount);
-    },
-
-    resetForm(forNext = false) {
-        SingleStudentManager.resetForm(forNext);
-    },
-
-    editAppreciation(id) {
-        SingleStudentManager.edit(id);
-    },
-
-    loadStudentIntoForm(id) {
-        SingleStudentManager.loadIntoForm(id);
-    },
-
-    deleteAppreciation(id) {
-        SingleStudentManager.delete(id);
     },
 
     copyAppreciation(id, buttonEl) {

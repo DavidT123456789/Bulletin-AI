@@ -100,10 +100,6 @@ describe('AppreciationsManager', () => {
         it('should have copyAppreciation method', () => {
             expect(AppreciationsManager.copyAppreciation).toBeDefined();
         });
-
-        it('should have deleteAppreciation method', () => {
-            expect(AppreciationsManager.deleteAppreciation).toBeDefined();
-        });
     });
 
     describe('analyserEvolution()', () => {

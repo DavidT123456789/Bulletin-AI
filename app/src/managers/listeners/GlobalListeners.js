@@ -4,7 +4,6 @@
  */
 
 import { appState } from '../../state/State.js';
-import { CONSTS } from '../../config/Config.js';
 import { MODEL_SHORT_NAMES } from '../../config/models.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
@@ -119,26 +118,9 @@ export const GlobalListeners = {
                 }
             } else if (!UI.isAnyModalOpen() && !FocusPanelManager.isOpen?.()) {
                 // Global keyboard shortcuts when no modal is open
-
-                // Ctrl+Shift+Enter to generate and go to next
-                if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
-                    e.preventDefault();
-                    if (appState.currentInputMode === CONSTS.INPUT_MODE.SINGLE) {
-                        DOM.generateAndNextBtn?.click();
-                    } else {
-                        DOM.importGenerateBtn?.click();
-                    }
-                    return;
-                }
-
-                // Ctrl+Enter or Ctrl+G to generate
                 if (e.ctrlKey && (e.key === 'g' || e.key === 'G' || e.key === 'Enter')) {
                     e.preventDefault();
-                    if (appState.currentInputMode === CONSTS.INPUT_MODE.MASS) {
-                        DOM.importGenerateBtn?.click();
-                    } else {
-                        DOM.generateAppreciationBtn?.click();
-                    }
+                    DOM.importGenerateBtn?.click();
                     return;
                 }
             }
@@ -404,14 +386,7 @@ export const GlobalListeners = {
 
     _setupBodyClickListener() {
         document.body.addEventListener('click', e => {
-            const isStartingEdit = e.target.closest('[data-action="edit"]');
-
-            if (appState.currentEditingId && !isStartingEdit && !e.target.closest('#inputSection') && !e.target.closest('.modal')) {
-                AppreciationsManager.resetForm(false);
-                return;
-            }
-
-            if (appState.activeStatFilter && !e.target.closest('.stats-container') && !e.target.closest('.appreciation-result') && !e.target.closest('.output-toolbar') && !e.target.closest('.modal')) {
+            if (appState.activeStatFilter && !e.target.closest('.stats-container') && !e.target.closest('.appreciation-result') && !e.target.closest('.modal')) {
                 EventHandlersManager.handleStatFilterClick(null);
             }
 

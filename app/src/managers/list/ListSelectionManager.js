@@ -17,6 +17,7 @@ import { TooltipsUI } from '../TooltipsManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 
 export const ListSelectionManager = {
     selectedIds: new Set(),
@@ -404,7 +405,6 @@ export const ListSelectionManager = {
             ClassUIManager?.updateStudentCount?.();
             ResultsUIManager?.updateGenerateButtonState?.();
 
-            UI?.populateLoadStudentSelect?.();
             UI?.updateStats?.();
             UI?.updateControlButtons?.();
             UI?.updateAIButtonsState?.();
@@ -414,15 +414,12 @@ export const ListSelectionManager = {
     },
 
     async bulkMove(ids) {
-        const { ClassUIManager } = await import('../ClassUIManager.js');
         ClassUIManager.showMoveStudentsModal(ids, () => {
             this.clearSelections();
         });
     },
 
     async bulkRegenerate(ids) {
-        const { FocusPanelManager } = await import('../FocusPanelManager.js').catch(() => ({ FocusPanelManager: null }));
-
         const batchClassId = appState.currentClassId;
         const batchPeriod = appState.currentPeriod;
 

@@ -1359,7 +1359,6 @@ export const SettingsModalListeners = {
         const updatePreRestoreCard = async () => {
             if (!preRestoreCard) return;
             try {
-                const { StorageManager } = await import('../../managers/StorageManager.js');
                 const snapshot = await StorageManager.getPreRestoreSnapshot();
                 if (snapshot && snapshot.generatedResults?.length > 0) {
                     const count = snapshot.generatedResults.length;
@@ -1395,7 +1394,6 @@ export const SettingsModalListeners = {
 
         if (restoreSnapshotBtn) {
             restoreSnapshotBtn.addEventListener('click', async () => {
-                const { StorageManager } = await import('../../managers/StorageManager.js');
                 const snapshot = await StorageManager.getPreRestoreSnapshot();
                 if (!snapshot) {
                     UI.showNotification('Aucune copie de sécurité disponible.', 'warning');
@@ -1421,7 +1419,6 @@ export const SettingsModalListeners = {
 
         if (discardSnapshotBtn) {
             discardSnapshotBtn.addEventListener('click', async () => {
-                const { StorageManager } = await import('../../managers/StorageManager.js');
                 await StorageManager.clearPreRestoreSnapshot();
                 updatePreRestoreCard();
                 UI.showNotification('Copie de sécurité supprimée.', 'info');

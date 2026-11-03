@@ -17,6 +17,7 @@ import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ListViewManager } from './ListViewManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { Utils } from '../utils/Utils.js';
@@ -2902,17 +2903,12 @@ export const ClassUIManager = {
             this.updateStudentCount();
             this.renderClassList();
 
-            import('./ListViewManager.js').then(({ ListViewManager }) => {
-                ListViewManager?.prepareImportReveal?.({
-                    newIds: copiedStudents.map(s => s.id),
-                    updatedIds: []
-                });
-                AppreciationsManager.renderResults();
-                UI?.updateStats?.();
-            }).catch(() => {
-                AppreciationsManager.renderResults();
-                UI?.updateStats?.();
+            ListViewManager?.prepareImportReveal?.({
+                newIds: copiedStudents.map(s => s.id),
+                updatedIds: []
             });
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.();
 
             closeModal();
 

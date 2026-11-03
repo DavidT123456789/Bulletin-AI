@@ -14,6 +14,7 @@ import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { ClassManager } from './ClassManager.js';
+import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { getPreviousPeriod, computeGradeDistributionMap } from '../config/academicConstants.js';
 
 /**
@@ -1076,7 +1077,6 @@ ${stats.appreciationsList.map((a, idx) => {
         const { systemPrompt, userPrompt } = this.buildAIPrompt(this.cachedStats);
         const combined = `=== SYSTEM PROMPT ===\n${systemPrompt}\n\n=== USER PROMPT ===\n${userPrompt}`;
 
-        const { FocusPanelRefinement } = await import('./FocusPanelRefinement.js');
         await FocusPanelRefinement.displayPromptModal(combined, 'Prévisualisation du Prompt');
     },
 

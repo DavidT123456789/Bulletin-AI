@@ -62,8 +62,7 @@ vi.mock('./UIManager.js', () => ({
 vi.mock('./AppreciationsManager.js', () => ({
     AppreciationsManager: {
         init: vi.fn(),
-        renderResults: vi.fn(),
-        resetForm: vi.fn()
+        renderResults: vi.fn()
     }
 }));
 

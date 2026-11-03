@@ -1,5 +1,5 @@
 import { appState, UIState } from '../state/State.js';
-import { CONFIG, CONSTS, APP_VERSION } from '../config/Config.js';
+import { CONFIG, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
@@ -22,6 +22,10 @@ import { HistoryManager } from './HistoryManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { ModelSelectionManager } from './ModelSelectionManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
+import { ImportWizardManager } from './ImportWizardManager.js';
+import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { SeatingChartManager } from './SeatingChartManager.js';
+import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -111,25 +115,21 @@ export const App = {
             FocusPanelManager.init(AppreciationsManager, ListViewManager);
         });
 
-        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard) chargés dynamiquement
-        await this._safeInit('ImportWizardManager', async () => {
-            const { ImportWizardManager } = await import('./ImportWizardManager.js');
+        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard)
+        await this._safeInit('ImportWizardManager', () => {
             window.ImportWizardManager = ImportWizardManager;
             ImportWizardManager.init();
         });
-        await this._safeInit('TrombinoscopeManager', async () => {
-            const { TrombinoscopeManager } = await import('./TrombinoscopeManager.js');
+        await this._safeInit('TrombinoscopeManager', () => {
             window.TrombinoscopeManager = TrombinoscopeManager;
             TrombinoscopeManager.init();
         });
-        await this._safeInit('SeatingChartManager', async () => {
-            const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        await this._safeInit('SeatingChartManager', () => {
             window.SeatingChartManager = SeatingChartManager;
             SeatingChartManager.init();
             SeatingChartManager.restoreActiveView();
         });
-        await this._safeInit('ClassDashboardManager', async () => {
-            const { ClassDashboardManager } = await import('./ClassDashboardManager.js');
+        await this._safeInit('ClassDashboardManager', () => {
             window.ClassDashboardManager = ClassDashboardManager;
             ClassDashboardManager.init();
         });
@@ -159,14 +159,12 @@ export const App = {
         }
 
         this.updateUIOnLoad();
-        const { SeatingChartManager } = await import('./SeatingChartManager.js');
         if (SeatingChartManager) {
             SeatingChartManager.restoreActiveView?.();
         }
         if (FocusPanelManager?.closePanel) {
             FocusPanelManager.closePanel();
         }
-        const { ClassDashboardManager } = await import('./ClassDashboardManager.js');
         if (ClassDashboardManager?.restoreOrResetAISection) {
             try {
                 ClassDashboardManager.restoreOrResetAISection();
@@ -193,7 +191,6 @@ export const App = {
 
         UI.updateGenerateButtonState();
         AppreciationsManager.renderResults();
-        AppreciationsManager.resetForm(false);
         ClassUIManager.updateHeaderDisplay();
         UI.updateHeaderPremiumLook();
         UI.updateStatsTooltips();
@@ -316,39 +313,10 @@ export const App = {
 
     // --- Core Logic Delegations ---
 
-    // Handlers conservés car ils ont une logique spécifique liée à l'UI principale ou sont appelés dynamiquement
-
-    handleGenerateClick() {
-        const mode = appState.currentInputMode;
-        if (mode === CONSTS.INPUT_MODE.SINGLE) AppreciationsManager.generateSingleAppreciation();
-    },
-
-    handleClearClick() {
-        if (confirm('Voulez-vous vraiment effacer tous les champs du formulaire ?')) {
-            AppreciationsManager.resetForm(true);
-        }
-    },
-
     handleHelpButtonClick() {
         UI.openModal(DOM.helpModal, { isStacked: true });
         // Peupler les exemples de format d'import
         UI.updateHelpImportFormat();
-    },
-
-    // Gestion des événements d'input (reste ici pour l'instant car très lié au DOM spécifique)
-    handleInputFieldChange(e) {
-        if (appState.currentInputMode === CONSTS.INPUT_MODE.SINGLE) {
-            UI.updateGenerateButtonState();
-
-            // Auto-sauvegarde de l'état du formulaire si nécessaire
-            // (Implémentation future possible)
-        }
-    },
-
-    handleInputEnterKey(e) {
-        if (appState.currentInputMode === CONSTS.INPUT_MODE.SINGLE) {
-            // Focus next input or generate
-        }
     },
 
     handleAiModelSelectChange() {

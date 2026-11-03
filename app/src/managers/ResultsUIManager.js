@@ -39,7 +39,7 @@ export const ResultsUIManager = {
 
     renderResults(highlightId = null, highlightType = 'new') {
         if (document.activeElement?.contentEditable === 'true') return;
-        const term = DOM.searchInput?.value?.toLowerCase() ?? '';
+        const term = (appState.searchQuery || '').toLowerCase();
 
         const filter = appState.activeStatFilter;
         const activePeriod = appState.currentPeriod;
@@ -395,7 +395,6 @@ export const ResultsUIManager = {
             }
         }
         UI?.updateStats?.(); UI?.updateControlButtons?.(); UI?.updateAIButtonsState?.(); StorageManager.saveAppState();
-        UI?.populateLoadStudentSelect?.();
         UI?.updateActiveFilterInfo?.();
         UI?.updateHeaderContext?.();
 
@@ -543,11 +542,6 @@ export const ResultsUIManager = {
                 updateBtn.classList.remove('loading');
                 updateBtn.disabled = false;
             }
-        }
-
-        // === ANALYZE BUTTON ===
-        if (DOM.analyzeClassBtn) {
-            DOM.analyzeClassBtn.disabled = sourceResults.length === 0;
         }
 
         // === SEATING CHART VIEW TOGGLE ===

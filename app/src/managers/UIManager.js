@@ -492,17 +492,6 @@ export const UI = {
             this.updateGlider(DOM.mainPeriodSelector);
         }
 
-        // Update sidebar period indicators
-        if (DOM.sidebarPeriodContext) {
-            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(validPeriod, true);
-        }
-        if (DOM.currentPeriodLabel) {
-            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(validPeriod, true);
-        }
-        if (DOM.contextPeriodLabel) {
-            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(validPeriod, false)})`;
-        }
-
         // Refresh list results and stats in-place (ZERO black flash, solid background preserved)
         AppreciationsManager?.renderResults();
 
@@ -614,19 +603,6 @@ export const UI = {
             // On initialise le glider car c'est un nouveau DOM
             this.initGliders();
         }
-
-        if (DOM.sidebarPeriodContext) {
-            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(appState.currentPeriod, true);
-        }
-
-        // Option G: Update current period labels in sidebar card
-        if (DOM.currentPeriodLabel) {
-            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, true);
-        }
-        if (DOM.contextPeriodLabel) {
-            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(appState.currentPeriod, false)})`;
-        }
-
     },
 
     updateGenerateButtonState() {
@@ -635,7 +611,7 @@ export const UI = {
         const isOfflineCloud = !navigator.onLine && !isOllama;
         const hasKey = this.checkAPIKeyPresence(true);
         const isAIAvailable = hasKey && !isOfflineCloud;
-        const buttons = [DOM.importGenerateBtn, DOM.generateAppreciationBtn, DOM.generateAndNextBtn];
+        const buttons = [DOM.importGenerateBtn];
 
         // Déterminer le message approprié selon le provider et l'état réseau
         const warningTooltip = isOfflineCloud
@@ -686,13 +662,6 @@ export const UI = {
     },
     updateAIButtonsState() {
         const isAIAvailable = this.checkAPIKeyPresence(true);
-        // Le bouton Analyser reste toujours actif car il affiche des statistiques calculées localement
-        // Seule la génération de synthèse IA nécessite une clé API (géré dans ClassDashboardManager)
-        if (DOM.analyzeClassBtn) {
-            DOM.analyzeClassBtn.disabled = false;
-            DOM.analyzeClassBtn.classList.remove('ai-disabled');
-            DOM.analyzeClassBtn.setAttribute('data-tooltip', "Ouvrir le tableau de bord de classe avec statistiques détaillées et analyse IA.");
-        }
         document.querySelectorAll('.appreciation-result').forEach(card => {
             [{ el: card.querySelector('[data-action="details"]'), title: "Analyser" }, { el: card.querySelector('[data-action="variations"], [data-action="undo-variation"]'), title: "Variation / Annuler" }].forEach(btn => {
                 if (btn.el) {
@@ -1217,85 +1186,34 @@ export const UI = {
     },
 
     getGradeClass(grade) { return Utils.getGradeClass(grade); },
-    populateLoadStudentSelect() {
-        if (!DOM.loadStudentSelect) return;
-
-        // CORRECTIF: Utiliser filteredResults pour afficher seulement la classe courante
-        const students = [...appState.filteredResults].sort((a, b) =>
-            `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)
-        );
-
-        const currentSelection = DOM.loadStudentSelect.value;
-        DOM.loadStudentSelect.innerHTML = `<option value="">-- Nouvel élève --</option>`;
-
-        students.forEach(s => {
-            const option = document.createElement('option');
-            option.value = s.id;
-            option.textContent = `${s.nom} ${s.prenom}`;
-            DOM.loadStudentSelect.appendChild(option);
-        });
-
-        // Garder la sélection si l'élève est dans la classe courante
-        if (students.some(s => s.id === currentSelection)) {
-            DOM.loadStudentSelect.value = currentSelection;
-        }
-
-        // Refresh custom dropdown if enhanced
-        DropdownManager.refresh('loadStudentSelect');
-    },
     updateActiveFilterInfo() {
         // Remove any existing close buttons from previous filters
         document.querySelectorAll('.filter-close-btn').forEach(btn => btn.remove());
 
-        if (!DOM.activeFilterInfo) return;
+        if (!appState.activeStatFilter) return;
 
-        if (appState.activeStatFilter) {
-            // Restore visual active filter class on corresponding DOM element if not present
-            const targetEl = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
-            if (targetEl && !targetEl.classList.contains('active-filter')) {
-                document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
-                targetEl.classList.add('active-filter');
-            }
+        // Restore visual active filter class on corresponding DOM element if not present
+        const targetEl = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
+        if (targetEl && !targetEl.classList.contains('active-filter')) {
+            document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
+            targetEl.classList.add('active-filter');
+        }
 
-            const filterLabels = {
-                'minGrade': 'Moyenne la plus basse',
-                'maxGrade': 'Moyenne la plus haute',
-                'gradeRange_0-4': 'Notes 0-4',
-                'gradeRange_4-8': 'Notes 4-8',
-                'gradeRange_8-12': 'Notes 8-12',
-                'gradeRange_12-16': 'Notes 12-16',
-                'gradeRange_16-20': 'Notes 16-20',
-                'progressCount': 'Élèves en progression',
-                'stableCount': 'Élèves stables',
-                'regressionCount': 'Élèves en régression'
-            };
+        // Add close button on the active element
+        const activeElement = document.querySelector('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter');
+        if (activeElement) {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'filter-close-btn';
+            closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
+            closeBtn.setAttribute('aria-label', 'Retirer le filtre');
+            activeElement.style.position = 'relative';
+            activeElement.appendChild(closeBtn);
 
-            const card = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
-            const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
-
-            // Show overlay banner
-            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-linear"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="ph:x"></iconify-icon> Retirer</button>`;
-            DOM.activeFilterInfo.classList.add('show');
-
-            // Also add close button on the active element
-            const activeElement = document.querySelector('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter');
-            if (activeElement) {
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'filter-close-btn';
-                closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
-                closeBtn.setAttribute('aria-label', 'Retirer le filtre');
-                activeElement.style.position = 'relative';
-                activeElement.appendChild(closeBtn);
-
-                closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    EventHandlersManager.handleStatFilterClick(null);
-                });
-            }
-        } else {
-            DOM.activeFilterInfo.classList.remove('show');
-            DOM.activeFilterInfo.innerHTML = '';
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                EventHandlersManager.handleStatFilterClick(null);
+            });
         }
     },
 

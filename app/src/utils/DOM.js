@@ -39,11 +39,7 @@ export function initDOM() {
     DOM.dashCancelBtn = document.getElementById('dashCancelBtn');
 
     DOM.inputSection = document.getElementById('inputSection');
-    DOM.massImportTab = document.getElementById('massImportTab');
-    DOM.singleStudentTab = document.getElementById('singleStudentTab');
     DOM.massImportSection = document.getElementById('massImportSection');
-    DOM.singleStudentFormDiv = document.getElementById('singleStudentFormDiv');
-    DOM.actualSingleStudentForm = document.getElementById('actualSingleStudentForm');
     DOM.massData = document.getElementById('massData');
     DOM.massImportPreview = document.getElementById('massImportPreview');
     // Old progress area removed - now using headerGenerationStatus chip
@@ -52,26 +48,9 @@ export function initDOM() {
     DOM.loadSampleDataLink = document.getElementById('loadSampleDataLink');
     DOM.dropZone = document.getElementById('dropZone');
     DOM.importFileBtn = document.getElementById('importFileBtn');
-    DOM.nomInput = document.getElementById('nom');
-    DOM.prenomInput = document.getElementById('prenom');
-    DOM.singleStudentPeriodInputs = document.getElementById('singleStudentPeriodInputs');
-
-
-    // Option G: Période courante + Accordéon Historique
-    DOM.currentPeriodLabel = document.getElementById('currentPeriodLabel');
-    DOM.currentPeriodGrade = document.getElementById('currentPeriodGrade');
-    DOM.contextPeriodLabel = document.getElementById('contextPeriodLabel');
-    DOM.historyAccordion = document.getElementById('historyAccordion');
-    DOM.historyToggle = document.getElementById('historyToggle');
-
-    DOM.generateAppreciationBtn = document.getElementById('generateAppreciationBtn');
-    DOM.generateAndNextBtn = document.getElementById('generateAndNextBtn');
-    DOM.resetFormBtn = document.getElementById('resetFormBtn');
-    DOM.cancelEditBtn = document.getElementById('cancelEditBtn');
     DOM.statsContainer = document.getElementById('statsContainer');
     DOM.outputHeader = document.getElementById('outputHeader');
     DOM.resultsDiv = document.getElementById('outputList');
-    DOM.searchInput = document.getElementById('searchInput');
     DOM.avgWordsChip = document.getElementById('avgWordsChip');
     DOM.classEvolutionCard = document.getElementById('evolutionCard');
     DOM.classEvolutionAverageStat = document.getElementById('classEvolutionAverageStat');
@@ -200,7 +179,6 @@ export function initDOM() {
     DOM.welcomeSkipApiKeyBtn = document.getElementById('welcomeSkipApiKeyBtn');
     DOM.actionsIrreversiblesContainer = document.getElementById('actions-irreversibles-container');
     DOM.addStudentFab = document.getElementById('addStudentFab');
-    DOM.analyzeClassBtn = document.getElementById('analyzeClassBtn');
     DOM.importHubDemoAlert = document.getElementById('importHubDemoAlert');
     DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');
 
@@ -230,10 +208,5 @@ export function initDOM() {
     DOM.settingsPrivacyAnonymizeToggle = document.getElementById('settingsPrivacyAnonymizeToggle');
 
     DOM.massImportApiKeyWarning = document.getElementById('massImportApiKeyWarning');
-    DOM.loadStudentSelect = document.getElementById('loadStudentSelect');
-    DOM.activeFilterInfo = document.getElementById('activeFilterInfo');
-    DOM.singleStudentActions = document.getElementById('singleStudentActions');
-
     DOM.massImportActions = document.getElementById('massImportActions');
-
 }

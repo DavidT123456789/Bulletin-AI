@@ -60,7 +60,6 @@ vi.mock('../state/State.js', () => {
             currentSubject: 'Français',
             currentSettingsSubject: 'Français',
             currentInputMode: 'single',
-            currentEditingId: null,
             currentRefiningAppreciationId: null,
             activeStatFilter: null,
             modalNav: { currentIndex: -1 },

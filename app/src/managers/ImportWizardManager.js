@@ -9,6 +9,8 @@ import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular } from '../utils/ImportUtils.js';
 import { autoConvertPdf } from '../utils/PdfParsers.js';
+import { extractTextFromPdf } from '../utils/PdfUtils.js';
+import { DBService } from '../services/DBService.js';
 import { UI } from './UIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassManager } from './ClassManager.js';
@@ -758,7 +760,6 @@ export const ImportWizardManager = {
             try {
                 setLoading(true, 'Extraction du PDF...');
 
-                const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
                 const textContent = await extractTextFromPdf(file);
 
                 // Détection intelligente : PDF Trombinoscope déposé par erreur
@@ -2058,7 +2059,6 @@ export const ImportWizardManager = {
 
             // Delete from IndexedDB (putAll is non-destructive upsert, won't remove records)
             if (idsToDelete.length > 0) {
-                const { DBService } = await import('../services/DBService.js');
                 await Promise.all(idsToDelete.map(id => DBService.delete('generatedResults', id)));
             }
         }

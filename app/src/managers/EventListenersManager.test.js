@@ -19,13 +19,6 @@ vi.mock('./listeners/GeneralListeners.js', () => ({
     }
 }));
 
-vi.mock('./listeners/InputListeners.js', () => ({
-    InputListeners: {
-        init: vi.fn(),
-        setup: vi.fn()
-    }
-}));
-
 vi.mock('./listeners/OutputListeners.js', () => ({
     OutputListeners: {
         setup: vi.fn()
@@ -55,7 +48,6 @@ vi.mock('./listeners/GlobalListeners.js', () => ({
 import { EventListenersManager } from './EventListenersManager.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
-import { InputListeners } from './listeners/InputListeners.js';
 import { OutputListeners } from './listeners/OutputListeners.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { OtherModalsListeners } from './listeners/OtherModalsListeners.js';
@@ -80,11 +72,6 @@ describe('EventListenersManager', () => {
             expect(GeneralListeners.init).toHaveBeenCalledWith(mockApp);
         });
 
-        it('should initialize InputListeners', () => {
-            EventListenersManager.init(mockApp);
-            expect(InputListeners.init).toHaveBeenCalledWith(mockApp);
-        });
-
         it('should initialize SettingsModalListeners', () => {
             EventListenersManager.init(mockApp);
             expect(SettingsModalListeners.init).toHaveBeenCalledWith(mockApp);
@@ -105,11 +92,6 @@ describe('EventListenersManager', () => {
         it('should call GeneralListeners.setup', () => {
             EventListenersManager.setupEventListeners();
             expect(GeneralListeners.setup).toHaveBeenCalledWith(expect.any(Function));
-        });
-
-        it('should call InputListeners.setup', () => {
-            EventListenersManager.setupEventListeners();
-            expect(InputListeners.setup).toHaveBeenCalledWith(expect.any(Function));
         });
 
         it('should call OutputListeners.setup', () => {

@@ -3,6 +3,7 @@
  * Handles FLIP animations and complex DOM transitions for the List View
  */
 
+import { appState } from '../../state/State.js';
 import { ListViewRenderer } from './ListViewRenderer.js';
 import { Utils } from '../../utils/Utils.js';
 
@@ -89,7 +90,7 @@ export const ListViewAnimations = {
             // Reorder rows IN-PLACE
             const orderedIds = newResults.map(r => r.id);
             let previousNode = null;
-            const searchQuery = document.getElementById('searchInput')?.value || '';
+            const searchQuery = appState.searchQuery || '';
             const currentClassName = Utils.getCurrentClassName();
             const renderContext = { searchQuery, currentClassName };
 
