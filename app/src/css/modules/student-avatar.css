@@ -260,6 +260,7 @@
 
 .student-list-table tbody tr:hover .student-origin-class-tag,
 .sc-student-chip:hover .student-origin-class-tag,
+.sc-cross-action:hover .student-origin-class-tag,
 .pick-student-row:hover:not(.already-present) .student-origin-class-tag {
     color: var(--text-secondary);
     background: var(--bg-tertiary);

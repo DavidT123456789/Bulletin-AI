@@ -714,5 +714,25 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
 
         expect(ctrlFEv.defaultPrevented).toBe(true);
         expect(document.activeElement).toBe(searchInput);
+
+        // 4. Pressing Escape in List view while search input is blurred performs two-step Escape (1st clears text, 2nd closes search)
+        searchInput.value = 'lucas';
+        SeatingChartManager._handleSearchInput('lucas', { immediate: true });
+        searchInput.blur();
+
+        const esc1 = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+        document.dispatchEvent(esc1);
+        expect(esc1.defaultPrevented).toBe(true);
+        expect(searchInput.value).toBe('');
+        expect(searchContainer.classList.contains('open')).toBe(true);
+
+        searchInput.blur();
+        const esc2 = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+        document.dispatchEvent(esc2);
+        expect(esc2.defaultPrevented).toBe(true);
+        expect(searchContainer.classList.contains('open')).toBe(false);
+        // original check:
+        searchInput.focus();
+        expect(document.activeElement).toBe(searchInput);
     });
 });

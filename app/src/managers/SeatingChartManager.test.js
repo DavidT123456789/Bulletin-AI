@@ -2747,7 +2747,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const suggestions = document.getElementById('scFloatingSearchSuggestions');
             expect(suggestions.style.display).toBe('block');
             expect(suggestions.innerHTML).toContain('3ème A');
-            expect(suggestions.innerHTML).toContain('Emma LAMBERT');
+            expect(suggestions.textContent).toContain('Emma LAMBERT');
+            expect(suggestions.innerHTML).toContain('<mark class="search-highlight">LAMBERT</mark>');
         });
 
         it('devrait ouvrir le FocusPanel sur Entrée en mode consultation (verrouillé)', () => {

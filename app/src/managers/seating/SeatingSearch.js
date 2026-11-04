@@ -271,11 +271,18 @@ export const SeatingSearch = {
 
                 const buttonsHtml = items.map(({ group, student }) => {
                     const fullName = `${(student.prenom || '').trim()} ${(student.nom || '').trim()}`.trim();
+                    const highlightedName = Utils.highlightMatch(fullName, cleaned);
+                    const originClass = Utils.getOriginClass(student, group.className);
+                    const displayOrigin = originClass ? Utils.formatClassDisplayName(originClass) : '';
+                    const escapedOrigin = displayOrigin ? Utils.escapeHtml(displayOrigin) : '';
+                    const originBadge = escapedOrigin
+                        ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${escapedOrigin}">${escapedOrigin}</span>`
+                        : '';
                     const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm', false, false);
                     return `
                         <button class="sc-cross-action" type="button" data-class-id="${group.classId}" data-student-id="${student.id || ''}">
                             ${avatarHtml}
-                            <span class="sc-cross-action-label">${Utils.escapeHtml(fullName)}</span>
+                            <span class="sc-cross-action-label"><span class="sc-cross-name-text">${highlightedName}</span>${originBadge}</span>
                             <span class="sc-cross-action-class">${Utils.escapeHtml(group.className)}</span>
                             <iconify-icon icon="solar:alt-arrow-right-linear" class="sc-cross-arrow"></iconify-icon>
                         </button>

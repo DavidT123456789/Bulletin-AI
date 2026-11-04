@@ -8,6 +8,7 @@ import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
+import { ListSelectionManager } from '../list/ListSelectionManager.js';
 
 export const SeatingEvents = {
     /**
@@ -117,6 +118,12 @@ export const SeatingEvents = {
 
         floatingSearchInput?.addEventListener('input', (e) => {
             this._handleSearchInput(e.target.value);
+        });
+
+        floatingSearchInput?.addEventListener('focus', () => {
+            if (floatingSearchInput.value.trim()) {
+                this._updateSearchCountAndSuggestions(floatingSearchInput.value);
+            }
         });
 
         floatingSearchInput?.addEventListener('keydown', (e) => {
@@ -602,13 +609,16 @@ export const SeatingEvents = {
             document.addEventListener('click', (e) => {
                 if (this._isSearchOpen()) {
                     const searchWrap = document.getElementById('scFloatingSearch');
-                    if (searchWrap && !searchWrap.contains(e.target)) {
+                    if (searchWrap && !searchWrap.contains(e.target) && !e.target.closest?.('#viewToggle')) {
                         const input = document.getElementById('scFloatingSearchInput');
                         if (!input || !input.value.trim()) {
                             this._closeSearch();
                         } else {
                             const sug = document.getElementById('scFloatingSearchSuggestions');
-                            if (sug) sug.style.display = 'none';
+                            if (sug) {
+                                sug.classList.remove('visible');
+                                sug.style.display = 'none';
+                            }
                         }
                     }
                 }
@@ -666,6 +676,19 @@ export const SeatingEvents = {
 
                 // En vue Liste (Tableau) : Flèche Droite (avec ou sans Ctrl) -> Plan (Cours), Ctrl + Flèches Haut/Bas -> Classe précédente/suivante
                 if (!this._isActive) {
+                    if (e.key === 'Escape' && this._isSearchOpen()) {
+                        const hasHigherPriorityState = Boolean(
+                            ListSelectionManager.selectedIds.size > 0 ||
+                            appState.activeStatFilter ||
+                            ClassUIManager?._isDropdownOpen ||
+                            document.querySelector('.action-dropdown-menu.open, .global-actions-dropdown-menu.open, #headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open')
+                        );
+                        if (!hasHigherPriorityState) {
+                            e.preventDefault();
+                            this._handleSearchEscape();
+                            return;
+                        }
+                    }
                     if (isArrowKey &&
                         !isTyping &&
                         !ClassUIManager?._isDropdownOpen &&

@@ -315,6 +315,12 @@ export const SeatingChartManager = {
 
     refreshStudents() {
         if (!this._isActive) {
+            if (this._isSearchOpen()) {
+                const activeQuery = (appState.searchQuery || this._activeSearchTerm || '').trim();
+                if (activeQuery) {
+                    this._updateSearchCountAndSuggestions(activeQuery);
+                }
+            }
             if (!FocusPanelManager.isOpen?.() && !UI.isAnyModalOpen() && (!document.activeElement || document.activeElement === document.body)) {
                 this._focusListScrollContainer();
             }

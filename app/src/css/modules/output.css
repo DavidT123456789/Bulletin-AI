@@ -80,7 +80,8 @@
    sans boîte de fond ni soulignement qui cassent le crénage.
    ==================================================================== */
 .student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-nom,
-.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-prenom {
+.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-prenom,
+.sc-cross-action-label:has(.search-highlight) .sc-cross-name-text {
     color: color-mix(in srgb, var(--text-primary) 42%, transparent);
 }
 

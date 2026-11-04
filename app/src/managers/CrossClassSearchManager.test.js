@@ -225,5 +225,62 @@ describe('CrossClassSearchManager', () => {
 
         switchSpy.mockRestore();
     });
+
+    it('devrait surligner la correspondance, afficher le badge de classe d\'origine uniquement en groupe et gérer clic extérieur / focus / refreshStudents', async () => {
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        SeatingChartManager._isActive = false;
+        SeatingChartManager._globalListenersInitialized = false;
+        document.body.innerHTML = `
+            <div class="header-actions">
+                <div id="viewToggle"><button class="view-toggle-btn" data-view="plan">Plan</button></div>
+                <div id="headerGenWrapper"></div>
+            </div>
+            <div id="seatingChartView"></div>
+            <div id="outsideArea"></div>
+        `;
+        SeatingChartManager._injectHeaderSearch();
+        SeatingChartManager._setupEventListeners();
+
+        vi.spyOn(ClassManager, 'getClassById').mockImplementation(id => {
+            if (id === 'class-other-group') return { id: 'class-other-group', name: 'Groupe Techno G2' };
+            if (id === 'class-3e2') return { id: 'class-3e2', name: '3e2' };
+            return null;
+        });
+        vi.spyOn(SeatingChartManager, '_getCurrentClassStudents').mockImplementation(() =>
+            appState.generatedResults.filter(s => s.classId === appState.currentClassId)
+        );
+
+        // Élève s1 est dans 'Groupe Techno G2' avec originClass '3e1' (différent -> badge affiché)
+        SeatingChartManager._openSearch();
+        const searchInput = document.getElementById('scFloatingSearchInput');
+        searchInput.value = 'bouk';
+        SeatingChartManager._handleSearchInput('bouk', { immediate: true });
+
+        const suggestions = document.getElementById('scFloatingSearchSuggestions');
+        expect(suggestions.classList.contains('visible')).toBe(true);
+        expect(suggestions.querySelector('.search-highlight')?.textContent).toBe('BOUK');
+        expect(suggestions.querySelector('.student-origin-class-tag')?.textContent).toBe('3ᵉ1');
+
+        // Clic sur #viewToggle ne doit PAS fermer le popover
+        document.querySelector('#viewToggle .view-toggle-btn').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(suggestions.classList.contains('visible')).toBe(true);
+
+        // Clic extérieur : retire .visible et masque le popover sans fermer la recherche (car input non vide)
+        document.getElementById('outsideArea').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(suggestions.classList.contains('visible')).toBe(false);
+        expect(suggestions.style.display).toBe('none');
+        expect(SeatingChartManager._isSearchOpen()).toBe(true);
+
+        // Re-focus sur l'input : ré-affiche le popover si toujours 0 match dans la classe active
+        searchInput.dispatchEvent(new FocusEvent('focus'));
+        expect(suggestions.classList.contains('visible')).toBe(true);
+        expect(suggestions.style.display).toBe('block');
+
+        // Si s1 rejoint la classe active et refreshStudents() est appelé en vue Liste : le compteur passe à 1 et le popover se ferme
+        appState.generatedResults[0].classId = 'class-group-1';
+        SeatingChartManager.refreshStudents();
+        expect(document.getElementById('scFloatingSearchCount').textContent).toBe('1');
+        expect(suggestions.classList.contains('visible')).toBe(false);
+    });
 });
 

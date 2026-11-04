@@ -408,6 +408,7 @@ export const ListSelectionManager = {
             UI?.updateStats?.();
             UI?.updateControlButtons?.();
             UI?.updateAIButtonsState?.();
+            window.dispatchEvent(new CustomEvent('student-updated'));
 
             UI?.showNotification(`${ids.length} élève${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}.`, 'success');
         }

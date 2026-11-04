@@ -310,6 +310,7 @@ export const ListViewManager = {
         UI?.updateAIButtonsState?.();
 
         ResultsUIManager?.updateGenerateButtonState?.();
+        window.dispatchEvent(new CustomEvent('student-updated'));
 
         // Notify user
         UI?.showNotification(`${studentName} supprimé`, 'success');
