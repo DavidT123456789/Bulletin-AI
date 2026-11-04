@@ -891,18 +891,18 @@ export const ClassDashboardManager = {
             : `Tu es un conseiller principal d'éducation ou un professeur principal. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel global pour le conseil de classe du ${periodLabel}.`;
 
         const systemPrompt = `${roleText}
-Tu devez extraire de l'analyse globale et qualitative de la classe : une synthèse globale, les points forts, les points de vigilance, et des recommandations collectives concrètes.
+Tu dois extraire de l'analyse globale et qualitative de la classe : une synthèse globale, les points forts, les points de vigilance, et des recommandations collectives concrètes.
 
 RÈGLES D'ÉCRITURE :
-- Synthèse Globale : Rédige 2-4 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe dans cette matière. Vise une longueur STRICTEMENT comprise entre 40 et 90 mots.
+- Synthèse Globale : Rédige 2-4 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe dans cette matière. Vise environ 40 à 90 mots.
 - Points forts : Identifie 2 points forts collectifs (max 15 mots par point).
 - Points de vigilance : Identifie 1 à 2 points de vigilance collectifs (max 15 mots par point). Ne cite pas de prénoms d'élèves spécifiques pour les aspects négatifs de comportement.
 - Recommandations : Formule 2 actions ou pistes collectives concrètes (max 20 mots par action).
-- N'utilise JAMAIS de clichés scolaires vides ("élève sérieux", "peut mieux faire", "continuer ainsi", "poursuivre ses efforts", "doit persévérer"). A la place, décris des dynamiques concrètes et des leviers d'action réels.
+- Écris dans un style naturel et précis, sans formules scolaires toutes faites : décris des dynamiques de groupe concrètes et des leviers d'action réels.
 - Utilise un ton professionnel et constructif.${styleInstructionText}
 
 FORMAT DE RÉPONSE OBLIGATOIRE :
-Tu devez répondre uniquement sous le format d'un objet JSON strict avec la structure suivante :
+Tu dois répondre uniquement sous le format d'un objet JSON strict avec la structure suivante :
 {
   "synthesis": "Texte de la synthèse générale...",
   "strengths": [

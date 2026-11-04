@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PromptService } from './PromptService.js';
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { DOM } from '../utils/DOM.js';
 import { StatsService } from './StatsService.js';
 
 // Mock dependencies
@@ -35,13 +34,7 @@ vi.mock('../utils/Utils.js', async (importOriginal) => ({
         getPeriodLabel: vi.fn(),
         countWords: vi.fn(s => s ? s.split(' ').length : 0),
         cleanMarkdown: vi.fn(s => s),
-        detectGender: vi.fn(() => 'indéterminé')
-    }
-}));
-
-vi.mock('../utils/DOM.js', () => ({
-    DOM: {
-        refinementContext: { value: 'context' }
+        detectGender: vi.fn(() => 'neutre')
     }
 }));
 
@@ -84,6 +77,10 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain("Rédige l'appréciation de l'élève [PRÉNOM]");
             // tone 3 = free mode, no explicit 'Adopte un ton'
             expect(prompts.appreciation).toContain("première personne du singulier"); // voice je
+            expect(prompts.appreciation).toContain("Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »)");
+            expect(prompts.appreciation).toContain("ne compare pas explicitement l'élève à la classe");
+            expect(prompts.appreciation).not.toContain("Si la période courante n'a pas de moyenne");
+            expect(prompts.appreciation).not.toContain("appréciations des périodes précédentes");
         });
 
         it('should apply override config with different tone', () => {
@@ -116,8 +113,9 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain("Ne pas mentionner le bavardage");
         });
 
-        it('should include historic data', () => {
+        it('should include historic data and evolution in coherence instruction', () => {
             Utils.getPeriods.mockReturnValue(['T1', 'T2']);
+            StatsService.analyserEvolution.mockReturnValue([{ periode: 'T1-T2', valeur: 4, type: 'very-positive' }]);
             const dataWithHistory = {
                 ...mockStudentData,
                 currentPeriod: 'T2',
@@ -128,6 +126,24 @@ describe('PromptService', () => {
             };
             const prompts = PromptService.getAllPrompts(dataWithHistory);
             expect(prompts.appreciation).toContain('10,0');
+            expect(prompts.appreciation).toContain('suggéré par la moyenne et son évolution');
+            expect(prompts.appreciation).toContain('ne les recopie pas et ne les paraphrase pas');
+        });
+
+        it('should include gender guidance for epicene names (detectGender === "neutre") even when anonymizeData is false', () => {
+            const prevAnon = appState.anonymizeData;
+            try {
+                appState.anonymizeData = false;
+                Utils.detectGender.mockReturnValueOnce('neutre');
+                const epicenePrompts = PromptService.getAllPrompts({ ...mockStudentData, prenom: 'Sacha' });
+                expect(epicenePrompts.appreciationUser).toContain('Élève : Sacha (non déterminé');
+
+                Utils.detectGender.mockReturnValueOnce('masculin');
+                const knownGenderPrompts = PromptService.getAllPrompts({ ...mockStudentData, prenom: 'Thomas' });
+                expect(knownGenderPrompts.appreciationUser).toContain('Élève : Thomas\n');
+            } finally {
+                appState.anonymizeData = prevAnon;
+            }
         });
 
         it('should use override config if provided', () => {
@@ -153,6 +169,7 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(dataWithNoData);
             
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
+            expect(prompts.appreciation).not.toContain("Ne cite ni les moyennes");
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
         });
 
@@ -173,6 +190,7 @@ describe('PromptService', () => {
             
             expect(prompts.appreciation).not.toContain("aucune donnée d'évaluation");
             expect(prompts.appreciation).toContain("cohérente avec le niveau de réussite");
+            expect(prompts.appreciation).toContain("Si la période courante n'a pas de moyenne");
         });
 
         it('should trigger absence when ALL periods lack grades even with generated past appreciations', () => {
@@ -192,6 +210,20 @@ describe('PromptService', () => {
             
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
+            expect(prompts.appreciation).not.toContain("Ne cite ni les moyennes");
+        });
+
+        it('should keep the current appreciation as analysis reference when the period is not in the active period system', () => {
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            const prompts = PromptService.getAllPrompts({
+                nom: 'DOE',
+                prenom: 'John',
+                statuses: [],
+                periods: { T2: { grade: 12, appreciation: 'Bonne dynamique de travail.' } },
+                currentPeriod: 'T2'
+            });
+
+            expect(prompts.sw).toContain('Appréciation de référence : "Bonne dynamique de travail."');
         });
 
         it('should calculate and include class statistics in periods info when enough data exists', () => {
@@ -270,8 +302,35 @@ describe('PromptService', () => {
         });
     });
 
+    describe('getAllPrompts — fidélité de l\'aperçu', () => {
+        it('l\'aperçu (appreciation) est strictement la concaténation du system et du user envoyés à l\'API', () => {
+            const studentData = {
+                nom: 'DOE',
+                prenom: 'John',
+                statuses: [],
+                periods: { 'T1': { grade: 12, appreciation: '' } },
+                currentPeriod: 'T1'
+            };
+            const prompts = PromptService.getAllPrompts(studentData, { tone: 2, enableTone: true, voice: 'neutre', length: 60 });
+
+            expect(prompts.appreciation).toBe(`${prompts.appreciationSystem}\n\n${prompts.appreciationUser}`);
+            expect(prompts.appreciationSystem).toContain('INSTRUCTIONS DE STYLE');
+            expect(prompts.appreciationSystem).not.toContain("Ne t'adresse pas directement à l'élève");
+            expect(prompts.appreciationUser).toContain("DONNÉES DE L'ÉLÈVE");
+            expect(prompts.appreciationUser).not.toContain('INSTRUCTIONS DE STYLE');
+        });
+    });
+
     describe('getRefinementPrompt', () => {
         const originalText = "Ceci est une bonne appréciation.";
+
+        it('should keep the original grammatical person and avoid word-count arithmetic', () => {
+            for (const type of ['polish', 'variations', 'detailed', 'concise', 'encouraging']) {
+                const p = PromptService.getRefinementPrompt(type, originalText);
+                expect(p).toContain('Conserve la personne grammaticale');
+                expect(p).not.toMatch(/\d+ mots/);
+            }
+        });
 
         it('should generate polish prompt', () => {
             const p = PromptService.getRefinementPrompt('polish', originalText);
@@ -307,6 +366,56 @@ describe('PromptService', () => {
             periods: { 'T1': { grade: 12, appreciation: 'Good' } },
             currentPeriod: 'T1'
         };
+
+        it('should prefix the hash with the current format version', () => {
+            expect(PromptService.getPromptHash(mockStudentData)).toMatch(new RegExp(`^${PromptService.PROMPT_HASH_PREFIX}`));
+        });
+
+        it('should change when student data or style settings change', () => {
+            appState.useSubjectPersonalization = false;
+            const genericConfig = appState.subjects['Générique'].iaConfig;
+            const baseHash = PromptService.getPromptHash(mockStudentData);
+
+            const dataHash = PromptService.getPromptHash({
+                ...mockStudentData,
+                periods: { 'T1': { grade: 12, appreciation: 'Good', context: 'Nouvelle observation' } }
+            });
+            expect(dataHash).not.toBe(baseHash);
+
+            const originalLength = genericConfig.length;
+            genericConfig.length = originalLength + 30;
+            try {
+                expect(PromptService.getPromptHash(mockStudentData)).not.toBe(baseHash);
+            } finally {
+                genericConfig.length = originalLength;
+            }
+            expect(PromptService.getPromptHash(mockStudentData)).toBe(baseHash);
+        });
+
+        it('should ignore settings that do not change the prompt (disabled tone, empty custom instructions)', () => {
+            appState.useSubjectPersonalization = false;
+            const genericConfig = appState.subjects['Générique'].iaConfig;
+            const snapshot = { ...genericConfig };
+            try {
+                Object.assign(genericConfig, { tone: 1, enableTone: false, styleInstructions: '', enableStyleInstructions: true });
+                const baseHash = PromptService.getPromptHash(mockStudentData);
+
+                Object.assign(genericConfig, { tone: 5, enableStyleInstructions: false });
+                expect(PromptService.getPromptHash(mockStudentData)).toBe(baseHash);
+
+                genericConfig.enableTone = true;
+                expect(PromptService.getPromptHash(mockStudentData)).not.toBe(baseHash);
+            } finally {
+                Object.keys(genericConfig).forEach(key => delete genericConfig[key]);
+                Object.assign(genericConfig, snapshot);
+            }
+        });
+
+        it('should return null when prompt building fails', () => {
+            vi.spyOn(PromptService, 'getAllPrompts').mockImplementationOnce(() => { throw new Error('boom'); });
+            vi.spyOn(console, 'warn').mockImplementationOnce(() => {});
+            expect(PromptService.getPromptHash(mockStudentData)).toBeNull();
+        });
 
         it('should generate stable hash when other students grades change', () => {
             appState.currentClassId = 'class-A';

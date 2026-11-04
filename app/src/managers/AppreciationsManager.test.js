@@ -285,7 +285,7 @@ describe('AppreciationsManager', () => {
             expect(result).toContain('Travail sérieux.');
         });
 
-        it('should generate concise prompt with 15% reduction', () => {
+        it('should generate concise prompt without word-count arithmetic', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'concise',
                 'Un deux trois quatre cinq six sept huit neuf dix.',
@@ -293,7 +293,7 @@ describe('AppreciationsManager', () => {
             );
 
             expect(result).toContain('concis');
-            expect(result).toContain('8 mots');
+            expect(result).not.toMatch(/\d+ mots/);
         });
 
         it('should generate encouraging prompt', () => {
@@ -317,7 +317,7 @@ describe('AppreciationsManager', () => {
             expect(result).toContain('Reformule');
         });
 
-        it('should generate detailed prompt with 15% more words', () => {
+        it('should generate detailed prompt', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'detailed',
                 'Bon travail cette période.',

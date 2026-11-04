@@ -37,6 +37,7 @@ vi.mock('./JournalManager.js', () => ({
 
 vi.mock('../services/PromptService.js', () => ({
     PromptService: {
+        PROMPT_HASH_PREFIX: 'hash_',
         getPromptHash: vi.fn((data) => {
             if (data.context === 'MODIFIED') return 'hash_new';
             return 'hash_initial';
@@ -272,6 +273,24 @@ describe('FocusPanelStatus', () => {
             const status = FocusPanelStatus.getAppreciationStatus(student, 'T1');
             expect(status.state).toBe('uptodate');
             expect(status.isDirty).toBe(false);
+        });
+
+        it('ne devrait pas signaler dirty une empreinte d\'ancien format (migration du prompt sans fausse alerte)', () => {
+            const student = {
+                id: 'student-1',
+                promptHash: '1a2b3c4d',
+                generationPeriod: 'T1',
+                appreciation: 'Texte généré avant la mise à jour du prompt.',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: {
+                        T1: { appreciation: 'Texte généré avant la mise à jour du prompt.' }
+                    }
+                }
+            };
+
+            expect(FocusPanelStatus.checkDirtyState(student)).toBe(false);
+            expect(FocusPanelStatus.getAppreciationStatus(student, 'T1').state).toBe('uptodate');
         });
     });
 });

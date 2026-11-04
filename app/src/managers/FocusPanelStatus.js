@@ -217,6 +217,9 @@ export const FocusPanelStatus = {
             return false;
         }
 
+        // Empreinte d'un format antérieur : non comparable, pas d'alerte jusqu'à la prochaine génération
+        if (!result.promptHash.startsWith(PromptService.PROMPT_HASH_PREFIX)) return false;
+
         // Only check for the period the appreciation was generated for
         const currentPeriod = appState.currentPeriod;
         if (result.generationPeriod && result.generationPeriod !== currentPeriod) {
