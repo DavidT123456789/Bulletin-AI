@@ -952,10 +952,9 @@
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Generate button — wide airy pill with generous breathing room */
-.focus-appreciation-actions #focusGenerateBtn {
-    flex: 1;
-    max-width: none;
+/* Generate button — wide airy pill with generous breathing room (shared with #refreshPreviewBtn in Style Lab) */
+.focus-appreciation-actions #focusGenerateBtn,
+#refreshPreviewBtn {
     height: 34px;
     border-radius: var(--radius-pill, 100px);
     display: inline-flex;
@@ -971,15 +970,34 @@
     user-select: none;
 }
 
+.focus-appreciation-actions #focusGenerateBtn {
+    flex: 1;
+    max-width: none;
+}
+
+#refreshPreviewBtn {
+    height: 32px;
+    padding: 0 14px;
+    flex-shrink: 0;
+}
+
 /* AI Primary active button state (Empty state) */
-.focus-appreciation-actions #focusGenerateBtn.btn-ai {
+.focus-appreciation-actions #focusGenerateBtn.btn-ai,
+#refreshPreviewBtn.btn-ai {
     background: var(--primary-color);
     color: #ffffff;
     border: none;
     box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.28);
 }
 
-.focus-appreciation-actions #focusGenerateBtn.btn-ai:hover {
+.focus-appreciation-actions #focusGenerateBtn.btn-ai::before,
+#refreshPreviewBtn.btn-ai::before {
+    display: none;
+}
+
+.focus-appreciation-actions #focusGenerateBtn.btn-ai:hover:not(:disabled),
+#refreshPreviewBtn.btn-ai:hover:not(:disabled) {
+    background: var(--primary-color);
     filter: brightness(1.08);
     box-shadow: 0 6px 18px rgba(var(--primary-color-rgb), 0.36);
 }
@@ -987,7 +1005,8 @@
 /* Shared Neutral Tonal Pill State (Copy & Régénérer) */
 .btn.btn-neutral,
 .focus-appreciation-actions #focusCopyBtn,
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral {
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral,
+#refreshPreviewBtn.btn-neutral {
     background: var(--tonal-bg);
     border: 1px solid transparent;
     color: var(--text-secondary);
@@ -999,13 +1018,15 @@
 .btn.btn-neutral i,
 .btn.btn-neutral iconify-icon,
 .focus-appreciation-actions #focusGenerateBtn.btn-neutral i,
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral iconify-icon {
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral iconify-icon,
+#refreshPreviewBtn.btn-neutral iconify-icon {
     color: inherit;
 }
 
 .btn.btn-neutral:hover:not(:disabled):not(.disabled),
 .focus-appreciation-actions #focusCopyBtn:hover:not(:disabled):not(.disabled),
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral:hover:not(:disabled):not(.disabled) {
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral:hover:not(:disabled):not(.disabled),
+#refreshPreviewBtn.btn-neutral:hover:not(:disabled):not(.disabled) {
     background: var(--tonal-hover-bg);
     border-color: transparent;
     color: var(--text-primary);
@@ -1013,24 +1034,28 @@
 }
 
 /* Warning / Dirty state */
-.focus-appreciation-actions #focusGenerateBtn.btn-warning {
+.focus-appreciation-actions #focusGenerateBtn.btn-warning,
+#refreshPreviewBtn.btn-warning {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
     border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
     color: var(--warning-color);
     box-shadow: none;
 }
 
-.focus-appreciation-actions #focusGenerateBtn.btn-warning:hover {
+.focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled),
+#refreshPreviewBtn.btn-warning:hover:not(:disabled) {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
     box-shadow: none;
 }
 
-[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning {
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning,
+[data-theme="dark"] #refreshPreviewBtn.btn-warning {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
     color: var(--color-amber-bright);
 }
 
-[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover {
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled),
+[data-theme="dark"] #refreshPreviewBtn.btn-warning:hover:not(:disabled) {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
 }
 
@@ -1070,9 +1095,11 @@
     color: inherit;
 }
 
-/* Disabled state (e.g. during voice dictation) */
+/* Disabled state (e.g. during voice dictation or AI loading) */
 .focus-appreciation-actions #focusGenerateBtn:disabled,
-.focus-appreciation-actions #focusGenerateBtn.disabled {
+.focus-appreciation-actions #focusGenerateBtn.disabled,
+#refreshPreviewBtn:disabled,
+#refreshPreviewBtn.disabled {
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: auto;

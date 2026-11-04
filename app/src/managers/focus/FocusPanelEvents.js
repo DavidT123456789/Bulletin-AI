@@ -520,10 +520,7 @@ export const FocusPanelEvents = {
         const wordCountBadge = document.getElementById('focusWordCount');
         if (wordCountBadge) {
             wordCountBadge.addEventListener('click', () => {
-                const personalizationModal = document.getElementById('personalizationModal');
-                if (personalizationModal) UI.openModal(personalizationModal);
-                SettingsModalListeners._updateStudentContextAndPrompt();
-                UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
+                SettingsModalListeners.openPersonalization('iaLengthSlider');
             });
         }
     },

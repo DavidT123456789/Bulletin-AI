@@ -1117,14 +1117,14 @@ export const UI = {
      * @param {boolean} [options.scrollIntoView=true] - Whether to scroll to the element
      * @param {number} [options.duration=2400] - Duration of the highlight in ms (3 iterations × 800ms)
      * @param {string} [options.tab] - Tab to switch to before highlighting (e.g., 'templates', 'advanced')
-     * @param {boolean} [options.useParentFormGroup=true] - Apply highlight to parent .form-group if available
+     * @param {string|null} [options.parentSelector='.form-group'] - Highlight the closest matching ancestor (null: the element itself)
      */
     highlightSettingsElement(elementOrId, options = {}) {
         const {
             scrollIntoView = true,
             duration = 2400,  // 3 iterations × 800ms animation
             tab = null,
-            useParentFormGroup = true
+            parentSelector = '.form-group'
         } = options;
 
         // Switch tab if specified
@@ -1140,12 +1140,8 @@ export const UI = {
 
             if (!element) return;
 
-            // Determine target element (parent form-group or element itself)
-            let target = element;
-            if (useParentFormGroup) {
-                const formGroup = element.closest('.form-group');
-                if (formGroup) target = formGroup;
-            }
+            // Determine target element (closest matching ancestor or element itself)
+            const target = (parentSelector && element.closest(parentSelector)) || element;
 
             // Scroll into view
             if (scrollIntoView) {

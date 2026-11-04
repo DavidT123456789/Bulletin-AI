@@ -88,7 +88,6 @@ export function initDOM() {
     DOM.settingsEvolutionThresholdPositive = document.getElementById('evolutionThresholdPositive');
     DOM.settingsEvolutionThresholdNegative = document.getElementById('evolutionThresholdNegative');
     DOM.resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
-    DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.enableApiFallbackToggle = document.getElementById('enableApiFallbackToggle');
     DOM.aiModelSelect = document.getElementById('aiModelSelect');
     DOM.openaiApiKey = document.getElementById('openaiApiKey');
@@ -191,7 +190,6 @@ export function initDOM() {
     DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');
 
     DOM.actionsDropdown = document.querySelector('.actions-dropdown');
-    DOM.iaStyleHeader = document.getElementById('iaStyleHeader');
     DOM.iaStyleInstructions = document.getElementById('iaStyleInstructions');
     DOM.iaStyleInstructionsToggle = document.getElementById('iaStyleInstructionsToggle');
     DOM.iaDiscipline = document.getElementById('iaDiscipline');
@@ -201,17 +199,15 @@ export function initDOM() {
     DOM.iaToneToggle = document.getElementById('iaToneToggle');
     DOM.iaToneSliderValue = document.getElementById('iaToneSliderValue');
     DOM.iaToneSliderContainer = document.getElementById('iaToneSliderContainer');
-    DOM.genericSubjectInfo = document.getElementById('genericSubjectInfo');
     DOM.previewStudentSelect = document.getElementById('previewStudentSelect');
     DOM.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
+    DOM.settingsPreviewResultGroup = document.getElementById('settingsPreviewResultGroup');
     DOM.settingsPreviewResult = document.getElementById('settingsPreviewResult');
     DOM.settingsPreviewPrompt = document.getElementById('settingsPreviewPrompt');
     DOM.settingsPreviewStudentData = document.getElementById('settingsPreviewStudentData');
     DOM.settingsPreviewWordCount = document.getElementById('settingsPreviewWordCount');
-    DOM.settingsPreviewTokenCount = document.getElementById('settingsPreviewTokenCount');
     DOM.previewMetaContainer = document.getElementById('previewMetaContainer');
-
-
+    DOM.previewModelBadge = document.getElementById('previewModelBadge');
     DOM.previewStatus = document.getElementById('previewStatus');
     DOM.settingsPrivacyAnonymizeToggle = document.getElementById('settingsPrivacyAnonymizeToggle');
 

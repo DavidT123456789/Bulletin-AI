@@ -73,8 +73,8 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdVeryNegative: { value: '-2' },
         settingsPrivacyAnonymizeToggle: { checked: false },
         settingsModal: {},
-        personalizationToggle: { checked: false },
-        genericSubjectInfo: { style: { display: 'none' }, innerHTML: '', classList: { add: vi.fn(), remove: vi.fn() } }
+        previewStatus: { hidden: true },
+        refreshPreviewBtn: { classList: { add: vi.fn(), remove: vi.fn() } }
     }
 }));
 
@@ -295,51 +295,46 @@ describe('SettingsUIManager', () => {
         });
     });
 
-    describe('updatePersonalizationState()', () => {
-        it('should update toggle checkbox state', () => {
-            appState.useSubjectPersonalization = true;
+    describe('getPersonalStyleConfig() & preview refresh hint', () => {
+        it('should return existing MonStyle iaConfig', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { length: 65, tone: 2 } };
 
-            SettingsUIManager.updatePersonalizationState();
+            const cfg = SettingsUIManager.getPersonalStyleConfig();
 
-            expect(DOM.personalizationToggle.checked).toBe(true);
+            expect(cfg).toBe(appState.subjects['MonStyle'].iaConfig);
+            expect(cfg.length).toBe(65);
         });
 
-        it('should remove collapsed class when personalization is disabled', () => {
-            appState.useSubjectPersonalization = false;
+        it('should initialize MonStyle iaConfig from DEFAULT_IA_CONFIG when missing', () => {
+            delete appState.subjects['MonStyle'];
 
-            SettingsUIManager.updatePersonalizationState();
+            const cfg = SettingsUIManager.getPersonalStyleConfig();
 
-            expect(DOM.genericSubjectInfo.classList.remove).toHaveBeenCalledWith('collapsed');
+            expect(appState.subjects['MonStyle']).toBeDefined();
+            expect(cfg).toEqual({ length: 50, tone: 3, styleInstructions: '', voice: 'neutral' });
         });
 
-        it('should add collapsed class when personalization is enabled', () => {
-            appState.useSubjectPersonalization = true;
+        it('should toggle previewStatus.hidden', () => {
+            SettingsUIManager.showPreviewRefreshHint();
+            expect(DOM.previewStatus.hidden).toBe(false);
 
-            SettingsUIManager.updatePersonalizationState();
-
-            expect(DOM.genericSubjectInfo.classList.add).toHaveBeenCalledWith('collapsed');
+            SettingsUIManager.hidePreviewRefreshHint();
+            expect(DOM.previewStatus.hidden).toBe(true);
         });
 
-        it('should sync tone toggle and slider display when tone is enabled', () => {
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
-            DOM.iaToneSlider.value = '3';
+        it('savePersonalStyle() should persist MonStyle changes and clear snapshot without closing settingsModal', () => {
+            UIState.settingsBeforeEdit = { subjects: {} };
+            DOM.iaLengthSlider.value = '65';
+            DOM.iaStyleInstructions.value = '  Consigne concise  ';
 
-            SettingsUIManager.updatePersonalizationState();
+            SettingsUIManager.savePersonalStyle();
 
-            expect(DOM.iaToneToggle.checked).toBe(true);
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', false);
-            expect(DOM.iaToneSliderValue.textContent).toBe('Neutre / Factuel');
-        });
-
-        it('should display Adaptatif (libre) and dim container when tone is disabled', () => {
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
-            DOM.iaToneSlider.value = '3';
-
-            SettingsUIManager.updatePersonalizationState();
-
-            expect(DOM.iaToneToggle.checked).toBe(false);
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', true);
-            expect(DOM.iaToneSliderValue.textContent).toBe('Adaptatif (libre)');
+            expect(appState.subjects['MonStyle'].iaConfig.length).toBe(65);
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Consigne concise');
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
+            expect(AppreciationsManager.renderResults).toHaveBeenCalled();
+            expect(UIState.settingsBeforeEdit).toEqual({});
+            expect(UI.closeModal).not.toHaveBeenCalled();
         });
     });
 

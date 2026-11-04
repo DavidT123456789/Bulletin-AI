@@ -322,8 +322,9 @@ export const ModalUI = {
                 }
             });
 
-            // Si le focus est déjà positionné sur un élément à l'intérieur de la modale (par ex. par UIManager), on le conserve
-            if (document.activeElement && modal.contains(document.activeElement) && document.activeElement !== modal) {
+            // Si le focus est déjà positionné sur un élément à l'intérieur de la modale (par ex. par UIManager), on le conserve.
+            // Pour la modale Personnalisation, conserver le focus sur le conteneur (tabindex="-1") évite d'illuminer le bouton '?' au premier appui sur ←/→.
+            if (modal.id === 'personalizationModal' || (document.activeElement && modal.contains(document.activeElement) && document.activeElement !== modal)) {
                 return;
             }
 

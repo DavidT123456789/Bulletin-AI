@@ -5,130 +5,20 @@
 
 @import 'settings-privacy.css';
 
-/* settings modal */
-.settings-layout-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-/* Ensure left column (controls) is above right column (preview) for dropdowns */
-.settings-layout-grid>*:first-child {
-    position: relative;
-    z-index: 10;
-}
-
-.settings-layout-grid>*:last-child {
-    position: relative;
-    z-index: 5;
-}
-
 /* ====================================================================
-   PERSONALIZATION MODAL: 3-Column Layout (Config | Preview | Inspector)
+   PERSONALIZATION MODAL — 2-Pane Laboratory Layout (Réglages | Aperçu & Prompt)
    ==================================================================== */
 
-/* Wider modal for personalization - base width for 2 columns */
 .personalization-modal-content {
     --modal-shell-width: 95%;
-    --modal-width: 940px;
+    --modal-width: 1040px;
+    --modal-height: min(720px, 90vh);
 }
 
-/* Expand modal when inspector is visible (3 columns) */
-.personalization-modal-content.inspector-visible {
-    --modal-width: 1240px;
+.personalization-modal-content .modal-header-actions {
+    gap: 6px;
 }
 
-/* 2-column grid when inspector is hidden (default) - equal 50/50 */
-.settings-layout-grid.personalization-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    /* Harmonized with modal-body padding */
-}
-
-/* Inspector visible: 3 equal columns - 33/33/33 */
-.settings-layout-grid.personalization-grid.inspector-visible {
-    grid-template-columns: 1fr 1fr 1fr;
-}
-
-/* Force columns to respect grid sizing (prevent content overflow) */
-.personalization-grid>* {
-    min-width: 0;
-}
-
-/* Inspector column - hidden by default */
-.settings-inspector-column {
-    display: none;
-    min-width: 0;
-    overflow: visible;
-    /* Changed from hidden to allow box-shadow to render */
-}
-
-/* Show inspector when grid has inspector-visible class */
-.personalization-grid.inspector-visible .settings-inspector-column {
-    display: block;
-    animation: slideInFromRight 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@keyframes slideInFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Inspector toggle button in header */
-.inspector-toggle-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--icon-btn-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 18px;
-}
-
-.inspector-toggle-btn iconify-icon {
-    font-size: 1em;
-    /* Inherit from button */
-}
-
-.inspector-toggle-btn:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-}
-
-/* Active state when inspector is visible - Clean neutral pill */
-.inspector-toggle-btn.active,
-#toggleInspectorBtn.active {
-    background: var(--item-active-bg) !important;
-    color: var(--text-primary) !important;
-}
-
-.inspector-toggle-btn.active:hover,
-#toggleInspectorBtn.active:hover {
-    background: var(--item-hover-bg) !important;
-    color: var(--text-primary) !important;
-}
-
-/* Header actions spacing - increased gap */
-.modal-header-actions.spaced {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Modal header action buttons */
 .personalization-modal-content .modal-header-actions .icon-button,
 .personalization-modal-content .modal-header-actions .close-button {
     width: 32px;
@@ -141,7 +31,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .personalization-modal-content .modal-header-actions .icon-button:hover,
@@ -150,196 +40,148 @@
     color: var(--text-primary);
 }
 
-.personalization-modal-content .modal-header-actions .icon-button.active {
-    background-color: var(--item-hover-bg);
-    color: var(--primary-color);
-}
-
-/* Cards in personalization grid - clean top alignment */
-.personalization-grid {
-    align-items: start;
-}
-
-.personalization-grid .settings-card {
-    height: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-.personalization-grid .settings-card-content {
+.lab-layout {
+    display: grid;
+    grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: visible;
-    overflow-x: hidden;
-    padding-right: 4px;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.personalization-grid .settings-controls-column .settings-card-content .form-group {
-    margin-bottom: 14px;
+.lab-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 22px 20px;
+    overflow-y: auto;
+    min-height: 0;
+    min-width: 0;
+    background: var(--modal-scene-bg, var(--bg-color));
+}
+
+.lab-pane--settings {
+    border-right: 1px solid var(--border-color);
+}
+
+.lab-pane--preview {
+    gap: 12px;
+}
+
+/* --- Left Pane: Field Rows & Controls --- */
+.settings-row.settings-row-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 0;
+}
+
+.settings-row-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.settings-row-head > .toggle-switch {
+    margin-top: 1px;
+}
+
+.settings-row-value {
+    font-size: 0.76rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    background: var(--tonal-bg);
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.35;
+}
+
+.settings-row-field .slider-container {
+    margin: 2px 0 0;
+}
+
+.lab-scale-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: -2px;
+    user-select: none;
+}
+
+.lab-scale-legend output {
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+#iaVoiceSelector {
+    width: 100%;
+    height: 34px;
+}
+
+[data-theme="dark"] .settings-group-card #iaVoiceSelector {
+    background: var(--bg-color);
+}
+
+#iaDiscipline,
+#iaStyleInstructions {
+    background-color: var(--modal-scene-bg, var(--bg-color));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-control);
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: none;
+}
+
+#iaDiscipline {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.88rem;
 }
 
 #iaStyleInstructions,
-.personalization-grid .style-instructions-textarea {
-    min-height: 52px;
-    max-height: 180px;
+.style-instructions-textarea {
+    min-height: 68px;
+    max-height: 160px;
     height: auto;
     resize: none;
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-    font-size: 0.88rem;
-    line-height: 1.45;
-    width: 100%;
-    box-sizing: border-box;
+    padding: 9px 12px;
+    font-size: 0.86rem;
+    line-height: 1.48;
 }
 
-/* Copy button styling in Inspector */
-#copyPromptBtn {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-color);
-    background: transparent;
-    color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 14px;
+#iaStyleInstructions:hover:not(:disabled):not(:focus),
+#iaDiscipline:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-color-strong);
 }
 
-#copyPromptBtn:hover {
-    background-color: var(--item-hover-bg);
-    color: var(--text-primary);
+#iaStyleInstructions:focus,
+#iaDiscipline:focus {
+    border-color: var(--border-color-hover);
+    background-color: var(--surface-color);
 }
 
-/* Prompt preview block in inspector - better sizing */
-.settings-inspector-column .prompt-preview-block {
-    max-height: none;
-    min-height: 200px;
-    font-size: 12px;
-    line-height: 1.5;
-    flex: 1;
+[data-theme="dark"] #iaStyleInstructions:focus,
+[data-theme="dark"] #iaDiscipline:focus {
+    background-color: var(--bg-color);
 }
 
-.settings-card {
-    background: var(--card-glass-bg);
-    backdrop-filter: blur(var(--glass-surface-blur));
-    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-md);
-    padding: 16px;
-    margin-bottom: 16px;
-    /* Restore spacing between cards */
-    height: auto;
-    /* Let it grow naturally */
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-sm);
-    /* Harmonize with Help Modal cards */
-    position: relative;
-    z-index: 1;
-}
-
-.settings-card:focus-within {
-    z-index: 100;
-}
-
-.settings-card.has-open-dropdown {
-    z-index: 500;
-}
-
-.settings-card-title {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.settings-card-title i {
-    color: currentColor;
-}
-
-[data-theme="dark"] .settings-card-title i {
-    color: var(--text-primary);
-}
-
-.settings-card-content {
-    flex: 1;
-    transition: opacity 0.3s ease, filter 0.3s ease;
-}
-
-/* "Mes consignes" - Clean natural layout without artificial flex stretch */
-.settings-card-content .form-group:last-child {
-    margin-bottom: 0;
+#iaStyleInstructions:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 /* Fix scrollbar overlapping rounded corners (scrollbar style inherited from base.css) */
 .style-instructions-textarea::-webkit-scrollbar-track {
     margin-block: 4px;
-}
-
-/* Default spacing for all form groups in cards */
-.settings-card .form-group {
-    margin-bottom: 24px;
-}
-
-/* Harmonized Input Field - Height adjusted to match sliders */
-.settings-input {
-    height: 36px;
-    padding: 0 12px;
-}
-
-.options-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-}
-
-/* Remove usage of duplicate margin definition */
-.options-grid .form-group {
-    margin-bottom: 0;
-    /* Let grid gap handle it, or keep 24px if layout demands, but base rule handles it now */
-}
-
-.options-grid+h3 {
-    margin-top: 32px;
-}
-
-/* Harmonized Labels for Input Fields */
-.settings-card .form-group label:not(.ui-segment) {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.settings-card .form-group label.toggle-switch,
-.settings-card .form-group label.toggle-switch-label,
-.settings-card .form-group label.toggle-label-text {
-    margin-bottom: 0;
-    display: inline-block;
-}
-
-.settings-card .form-group label small {
-    font-weight: 400;
-    opacity: 0.7;
-    font-size: 0.85em;
-    margin-left: 4px;
-}
-
-.label-with-icon {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .settings-evo-icon {
@@ -348,33 +190,14 @@
     text-align: center;
 }
 
-.settings-evo-icon.positive {
-    color: var(--success-color);
-}
-
+.settings-evo-icon.positive,
 .settings-evo-icon.very-positive {
     color: var(--success-color);
 }
 
-.settings-evo-icon.negative {
-    color: var(--error-color);
-}
-
+.settings-evo-icon.negative,
 .settings-evo-icon.very-negative {
     color: var(--error-color);
-}
-
-.settings-preview-panel {
-    background-color: var(--surface-color);
-    /* Harmonized with other cards */
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    border: 1px solid var(--border-color);
-}
-
-.settings-preview-panel h3 {
-    margin-top: 0;
-    font-size: 1.125rem;
 }
 
 
@@ -582,49 +405,10 @@
     cursor: pointer;
 }
 
-.slider-labels {
-    display: none;
-}
-
-.slider-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-}
-
-.slider-header-row label {
-    margin-bottom: 0;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.slider-header-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.slider-value-display {
-    font-size: 0.9em;
-    font-weight: 500;
-    color: var(--text-primary);
-    font-family: monospace;
-    opacity: 0.9;
-}
-
 .opacity-reduced {
     opacity: 0.45;
     transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
-
-.form-group label[for="iaLengthSlider"] {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
 
 .toggle-switch-container {
     display: flex;
@@ -712,145 +496,6 @@
         background: var(--toggle-track-on-hover);
         box-shadow: none;
     }
-}
-
-.settings-card .toggle-switch-label {
-    margin: 0;
-    font-weight: 500;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-
-
-
-/* État désactivé de la carte "Style de l'IA" */
-#settings-controls-panel.disabled {
-    position: relative;
-}
-
-#settings-controls-panel.disabled .settings-card-content {
-    opacity: 0.45;
-    pointer-events: none;
-    filter: grayscale(30%);
-    user-select: none;
-}
-
-#settings-controls-panel.disabled .settings-card-content * {
-    cursor: not-allowed !important;
-}
-
-/* Atténuer les sliders et labels */
-#settings-controls-panel.disabled .slider-container input[type="range"]::-webkit-slider-thumb {
-    background: var(--bg-secondary);
-    border-color: var(--text-tertiary);
-}
-
-#settings-controls-panel.disabled .slider-container input[type="range"]::-moz-range-thumb {
-    background: var(--bg-secondary);
-    border-color: var(--text-tertiary);
-}
-
-#settings-controls-panel.disabled .slider-value-display {
-    color: var(--text-secondary);
-}
-
-/* Icône de cadenas mise en avant */
-#settings-controls-panel.disabled .generic-lock-icon {
-    opacity: 1;
-    color: var(--text-secondary);
-}
-
-/* Info card reste visible pour expliquer l'état désactivé */
-#settings-controls-panel.disabled .generic-info-card {
-    opacity: 1;
-    filter: none;
-    pointer-events: auto;
-    user-select: auto;
-    cursor: default;
-}
-
-/* === System & Data Card Modernization (Nebula) === */
-
-.setting-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    gap: 20px;
-}
-
-.setting-info {
-    flex: 1;
-}
-
-.setting-subtitle {
-    margin: 0 0 2px 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.setting-subtitle i {
-    color: var(--text-secondary);
-    font-size: 0.9em;
-}
-
-.setting-description {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-.setting-actions-group {
-    display: flex;
-    gap: 10px;
-}
-
-.settings-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 8px 0;
-}
-
-.version-badge {
-    display: inline-block;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    padding: 4px 10px;
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
-    font-weight: 600;
-    font-family: monospace;
-    letter-spacing: 0.5px;
-    border: 1px solid var(--border-color);
-}
-
-/* === Utility Classes for Inline Style Migration === */
-
-/* Header row for settings card with session cost display */
-.settings-card-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--gap-sm);
-    padding-bottom: 10px;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] .settings-card-header-row {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Title reset when inside header row */
-.settings-card-header-row .settings-card-title {
-    margin: 0;
-    border: none;
-    padding: 0;
 }
 
 /* API key groups list & status badges */
@@ -1027,71 +672,9 @@
     width: 120px;
 }
 
-/* === Cloud Sync Section Styles === */
-
-.setting-row-column {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-}
-
-.setting-info-full {
-    width: 100%;
-}
-
-.settings-divider-light {
-    height: 1px;
-    background: var(--border-color);
-    opacity: 0.5;
-    margin: 12px 0;
-}
-
-
-
-/* === Personalization Toggle Animation === */
-.generic-info-card {
-    transition:
-        max-height 0.32s var(--ease-spring),
-        opacity 0.22s ease-out,
-        margin 0.32s var(--ease-spring),
-        padding 0.32s var(--ease-spring),
-        border-width 0.32s var(--ease-spring);
-    overflow: hidden;
-    max-height: 120px;
-    opacity: 1;
-    display: block;
-    color: var(--text-secondary);
-    font-weight: 500;
-
-    /* Standard Info Box Style */
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 12px 16px;
-    margin-bottom: 20px;
-}
-
-[data-theme="dark"] .generic-info-card {
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.04);
-    border-color: var(--border-color);
-}
-
-.generic-info-card.collapsed {
-    max-height: 0;
-    opacity: 0;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    border-top-width: 0 !important;
-    border-bottom-width: 0 !important;
-    pointer-events: none;
-}
-
 /* === Placeholder styling for settings inputs/textareas === */
 .style-instructions-textarea::placeholder,
-.settings-card-content input[type="text"]::placeholder {
+#iaDiscipline::placeholder {
     color: var(--text-tertiary);
     font-style: normal;
     opacity: 0.85;
@@ -1118,225 +701,289 @@
     }
 }
 
+/* --- Right Pane: Preview Toolbar, Student Data, Result Card & Prompt --- */
+.lab-preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
 
+.lab-preview-toolbar > .ui-segmented-control {
+    --sc-padding: 3px;
+    height: 36px;
+}
 
-/* Preview Model Badge - Shows AI model used for generation */
-.preview-model-badge {
+.lab-preview-toolbar > .ui-segmented-control .ui-segment {
+    padding: 0 13px;
+    font-size: 0.82rem;
+}
+
+.lab-student-nav {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    background: rgba(251, 191, 36, 0.1);
-    border-radius: var(--radius-pill);
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(251, 191, 36, 0.9);
-    cursor: help;
-    transition: all var(--transition-fast);
-    /* margin-right: auto; Removed for grouped look */
-}
-
-.preview-model-badge:hover {
-    background: rgba(251, 191, 36, 0.18);
-    color: rgb(251, 191, 36);
-    transform: scale(1.02);
-}
-
-.preview-model-badge i {
-    font-size: 10px;
-}
-
-[data-theme="dark"] .preview-model-badge {
-    background: rgba(251, 191, 36, 0.15);
-    color: rgb(251, 191, 36);
-}
-
-[data-theme="dark"] .preview-model-badge:hover {
-    background: rgba(251, 191, 36, 0.25);
-}
-
-/* Harmonize word count badge in preview */
-.preview-meta-container .word-count {
-    background: var(--bg-secondary);
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-left: auto;
-    /* Push word count to the right */
-}
-
-[data-theme="dark"] .preview-meta-container .word-count {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
-}
-
-/* === Refinement Group (Card containing Text + Meta Footer) === */
-.refinement-group {
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    padding: 3px 5px;
+    border-radius: var(--radius-pill);
+    min-width: 0;
+    flex: 1 1 220px;
+    max-width: 340px;
+    margin-left: auto;
+}
+
+.lab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 0 auto;
+}
+
+.lab-panel[data-lab-panel="prompt"],
+.lab-panel[data-lab-panel="prompt"] > .lab-section {
+    flex: 1;
+    min-height: 0;
+}
+
+.lab-panel[hidden] {
+    display: none !important;
+}
+
+.lab-student-data {
+    background: var(--surface-color);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.lab-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 0 auto;
+}
+
+.lab-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+
+.lab-section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.lab-panel[data-lab-panel="preview"] .lab-section-heading {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.lab-hint {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.35;
+}
+
+.lab-hint[hidden] {
+    display: none !important;
+}
+
+#previewStatus {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+[data-theme="dark"] #previewStatus {
+    color: var(--color-amber-bright);
+}
+
+.lab-result-card {
+    background: var(--surface-color);
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    transition: all var(--transition-base);
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
+    flex: 1 0 auto;
+    min-height: 136px;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
-.refinement-group.is-empty {
-    background: rgba(255, 255, 255, 0.015);
+.lab-result-card.is-empty {
+    background: transparent;
     border: 1.5px dashed var(--border-color);
-    box-shadow: none;
 }
 
-[data-theme="dark"] .refinement-group {
-    background: rgba(30, 30, 35, 0.6);
-}
-
-[data-theme="dark"] .refinement-group.is-empty {
-    background: rgba(255, 255, 255, 0.015);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.refinement-content {
-    padding: 16px 18px 12px 18px;
-    min-height: 90px;
-    font-size: 0.95rem;
-    line-height: 1.65;
+.lab-result-text {
+    padding: 14px 16px;
+    flex: 1 0 auto;
+    font-size: 0.92rem;
+    line-height: 1.58;
     color: var(--text-primary);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.refinement-content.placeholder {
-    padding: 6px 10px;
+.lab-result-text.placeholder,
+.lab-result-text.has-error {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 20px;
+    white-space: normal;
 }
 
-/* Empty State Canvas Inside Preview */
-.preview-empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 14px 12px;
-    user-select: none;
-    cursor: default;
-    width: 100%;
-    border-radius: inherit;
-}
-
-.preview-empty-icon-wrap {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    margin-bottom: 8px;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast);
-}
-
-[data-theme="dark"] .preview-empty-icon-wrap {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.preview-empty-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-    font-style: normal;
-}
-
-.preview-empty-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    max-width: 320px;
-    line-height: 1.4;
-    font-style: normal;
-}
-
-.preview-empty-subtitle strong {
-    color: var(--text-primary);
-}
-
-/* Adjust Preview Meta Container to fit inside the group */
-.preview-meta-container {
-    background: rgba(0, 0, 0, 0.02);
-    border-top: 1px solid var(--border-color);
-    margin-top: 0;
-    padding: 8px 12px;
+.lab-result-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border-subtle);
+    flex-shrink: 0;
 }
 
-.preview-meta-left {
+.lab-result-meta[hidden] {
+    display: none !important;
+}
+
+.lab-result-meta-info {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-[data-theme="dark"] .preview-meta-container {
-    background: rgba(255, 255, 255, 0.02);
-    border-top-color: rgba(255, 255, 255, 0.06);
+.lab-result-meta .word-count {
+    background: var(--tonal-bg);
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
 }
 
-#copyPreviewAppreciationBtn {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-color);
-    background: transparent;
-    color: var(--text-tertiary);
+.preview-model-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    background: var(--tonal-bg);
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: help;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.preview-model-badge[hidden] {
+    display: none !important;
+}
+
+.preview-model-badge:hover {
+    background: var(--tonal-hover-bg);
+    color: var(--text-primary);
+}
+
+.preview-empty-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 14px;
-    flex-shrink: 0;
+    text-align: center;
+    padding: 12px;
+    user-select: none;
+    max-width: 340px;
 }
 
-#copyPreviewAppreciationBtn:hover {
-    background-color: var(--item-hover-bg);
+.preview-empty-icon {
+    font-size: 24px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.preview-empty-title {
+    font-size: 0.88rem;
+    font-weight: 600;
     color: var(--text-primary);
-    border-color: var(--border-color);
+    margin-bottom: 4px;
 }
 
-/* === Button State: Regenerate (Discreet) === */
-#settingsPreviewRefreshBtn.btn-regenerate {
-    background: transparent;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    box-shadow: none;
+.preview-empty-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
 }
 
-#settingsPreviewRefreshBtn.btn-regenerate:hover {
-    background: var(--gradient-primary);
-    border-color: transparent;
-    color: white;
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
-    transform: translateY(-1px);
+.preview-empty-subtitle strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
-#settingsPreviewRefreshBtn.btn-regenerate:active {
-    transform: translateY(0);
+.preview-error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    max-width: 360px;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.preview-error-message strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--error-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.preview-error-message p {
+    margin: 0;
+}
+
+.preview-error-message small {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+}
+
+.lab-prompt-code {
+    margin: 0;
+    flex: 1;
+    min-height: 260px;
+    padding: 16px 18px;
+    background: var(--surface-color);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+}
+
+.lab-prompt-code.placeholder {
+    color: var(--text-tertiary);
 }
 
 /* ====================================================================
@@ -1837,6 +1484,7 @@ label.settings-row-title {
     border-top: 1px solid var(--border-subtle);
 }
 
+.settings-group-card > .settings-row.settings-focus-highlight,
 .settings-providers-card > .api-key-section.settings-focus-highlight {
     margin: 0 -10px;
     padding-left: 10px;
@@ -2114,15 +1762,5 @@ label.settings-row-title {
         margin-top: 2px;
         font-size: 0.8rem;
         line-height: 1.35;
-    }
-}
-
-@media (max-width: 600px) {
-    .modal-lab .modal-header-actions.spaced {
-        gap: 4px;
-    }
-
-    .modal-lab .modal-title-icon {
-        display: none;
     }
 }

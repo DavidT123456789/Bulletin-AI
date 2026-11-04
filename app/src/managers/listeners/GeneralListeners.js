@@ -225,10 +225,7 @@ export const GeneralListeners = {
             // If cancelling (not saving), restore the original state after animation (250ms)
             if (!isSave) {
                 setTimeout(() => {
-                    const restored = SettingsUIManager.restoreSnapshot();
-                    if (restored) {
-                        // Update UI to reflect restored state
-                        SettingsUIManager.updatePersonalizationState();
+                    if (SettingsUIManager.restoreSnapshot()) {
                         FormUI.updateSettingsFields();
                     }
                 }, 260);
@@ -242,7 +239,7 @@ export const GeneralListeners = {
         addClickListener(DOM.cancelPersonalizationBtn, () => closePersonalization(false));
 
         addClickListener(DOM.savePersonalizationBtn, () => {
-            SettingsUIManager.saveSettings(false); // Saves all settings including style
+            SettingsUIManager.savePersonalStyle();
             closePersonalization(true);
             UI.showNotification('Paramètres de personnalisation enregistrés', 'success');
         });

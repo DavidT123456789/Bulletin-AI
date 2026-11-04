@@ -182,7 +182,6 @@ export const App = {
         UI.updateDarkModeButtonIcon();
         UI.setPeriod(appState.currentPeriod || UI.getPeriods()[0]);
         UI.updatePeriodSystemUI();
-        SettingsUIManager.updatePersonalizationState();
 
         // Restaurer les champs des paramètres (clés API, modèle, curseurs) et le statut des API
         // avant le calcul des états de boutons et d'en-tête qui dépendent du modèle IA actif
@@ -330,7 +329,6 @@ export const App = {
         SettingsUIManager.updateHeaderAiModelDisplay();
         SettingsUIManager.renderProviderModelChips?.();
         UI.updateHeaderPremiumLook();
-        SettingsUIManager.updatePersonalizationState();
     },
 
     // --- Méthodes de délégation simples ---

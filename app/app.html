@@ -1695,7 +1695,7 @@
     </div>
 
     <!-- MODALES -->
-    <div id="personalizationModal" class="modal modal-lab" role="dialog" aria-modal="true"
+    <div id="personalizationModal" class="modal" role="dialog" aria-modal="true"
         aria-labelledby="personalizationModalTitle">
         <div class="modal-content personalization-modal-content">
             <div class="modal-header">
@@ -1704,84 +1704,76 @@
                             icon="solar:magic-stick-3-bold"></iconify-icon></span>
                     <span class="modal-title-text">Personnalisation du style</span>
                 </h2>
-                <div class="modal-header-actions spaced">
+                <div class="modal-header-actions">
                     <button type="button" class="icon-button tooltip"
                         onclick="window.openHelpTab('help-writing')"
-                        data-tooltip="Guide Rédaction & Style" aria-label="Ouvrir le guide Rédaction & Style">
+                        data-tooltip="Guide Rédaction &amp; Style" aria-label="Ouvrir le guide Rédaction &amp; Style">
                         <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
                     </button>
                     <button type="button" class="icon-button tooltip" id="resetLabStyleBtn"
                         data-tooltip="Réinitialiser les réglages" aria-label="Réinitialiser les réglages">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon>
                     </button>
-                    <button type="button" class="icon-button tooltip" id="toggleInspectorBtn"
-                        data-tooltip="Inspecteur de prompt" aria-label="Afficher l'inspecteur de prompt">
-                        <iconify-icon icon="solar:code-square-linear"></iconify-icon>
-                    </button>
                     <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             </div>
-            <div class="modal-body">
-                <div class="settings-layout-grid personalization-grid">
-                    <!-- CARTE 1: RÉGLAGES DE STYLE IA -->
-                    <div class="settings-controls-column">
-                        <div class="settings-card settings-card-full-height" id="settings-controls-panel">
-                            <div class="settings-card-header-row">
-                                <h3 class="settings-card-title" id="iaStyleHeader">
-                                    <iconify-icon class="iconify-inline" icon="solar:tuning-2-linear"></iconify-icon>
-                                    Style de Rédaction
-                                </h3>
+            <div class="modal-body modal-body-flex">
+                <div class="lab-layout">
+                    <!-- VOLET 1 : RÉGLAGES DU STYLE -->
+                    <section class="lab-pane lab-pane--settings" id="settings-controls-panel"
+                        aria-label="Réglages du style">
+                        <div class="settings-group">
+                            <div class="settings-group-header">
+                                <h4 class="settings-group-title">Cadre</h4>
                             </div>
-
-                            <div class="settings-card-content">
-
-                                <div class="form-group">
-                                    <label for="iaDiscipline">Ma discipline
-                                        <span class="tooltip"
-                                            data-tooltip="Adapte le vocabulaire et les compétences mobilisées à votre matière (ex. démarche scientifique, analyse de texte...). Laissez vide pour des appréciations polyvalentes.">
-                                            <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
-                                                style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
-                                        </span>
-                                    </label>
-                                    <input type="text" id="iaDiscipline"
-                                        placeholder="Ex: Mathématiques, Français, Histoire-Géographie..."
-                                        class="settings-input" maxlength="50">
+                            <div class="settings-group-card">
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-info">
+                                        <label for="iaDiscipline" class="settings-row-title">Discipline</label>
+                                        <span class="settings-row-desc">Adapte le vocabulaire et les compétences évoquées. Laissez vide pour un style polyvalent.</span>
+                                    </div>
+                                    <input type="text" id="iaDiscipline" maxlength="50"
+                                        placeholder="Ex. Mathématiques, Français, Histoire-Géographie…">
                                 </div>
 
-                                <div class="form-group">
-                                    <div class="slider-header-row">
-                                        <label for="iaLengthSlider">Cible de Mots</label>
-                                        <span id="iaLengthSliderValue" class="slider-value-display">~60 mots • ~390 car.</span>
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-head">
+                                        <div class="settings-row-info">
+                                            <label for="iaLengthSlider" class="settings-row-title">Longueur cible</label>
+                                            <span class="settings-row-desc">Nombre de mots visé par appréciation.</span>
+                                        </div>
+                                        <output id="iaLengthSliderValue" class="settings-row-value"
+                                            for="iaLengthSlider">~40 mots • ~260 car.</output>
                                     </div>
                                     <div class="slider-container">
-                                        <input type="range" id="iaLengthSlider" min="10" max="100" value="60" step="5">
+                                        <input type="range" id="iaLengthSlider" min="10" max="90" value="40" step="5">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div class="form-group" id="iaToneGroup">
-                                    <div class="slider-header-row">
-                                        <label for="iaToneSlider" style="margin-bottom: 0;">Ton de l'appréciation
-                                            <span class="tooltip"
-                                                data-tooltip="Laissez désactivé pour que l'IA adapte naturellement son style à chaque élève (félicitations, encouragements ou conseils). Activez pour imposer un ton uniforme (ex. neutre et factuel pour le livret officiel).">
-                                                <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
-                                                    style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
-                                            </span>
+                        <div class="settings-group">
+                            <div class="settings-group-header">
+                                <h4 class="settings-group-title">Style d'écriture</h4>
+                            </div>
+                            <div class="settings-group-card">
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-head">
+                                        <div class="settings-row-info">
+                                            <label for="iaToneToggle" class="settings-row-title">Ton imposé</label>
+                                            <span class="settings-row-desc">Désactivé, l'IA adapte le ton à chaque élève (félicitations, encouragements, conseils).</span>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" id="iaToneToggle">
+                                            <span class="slider"></span>
                                         </label>
-                                        <div class="slider-header-controls">
-                                             <span id="iaToneSliderValue" class="slider-value-display">Adaptatif (libre)</span>
-                                             <div class="toggle-switch-container compact" style="margin: 0;">
-                                                 <label class="toggle-switch small">
-                                                     <input type="checkbox" id="iaToneToggle" title="Activer / désactiver le filtre de ton">
-                                                     <span class="slider"></span>
-                                                 </label>
-                                             </div>
-                                         </div>
                                     </div>
                                     <div class="slider-container" id="iaToneSliderContainer">
-                                        <input type="range" id="iaToneSlider" min="1" max="5" value="3">
-                                        <div class="slider-ticks">
+                                        <input type="range" id="iaToneSlider" min="1" max="5" value="3"
+                                            aria-label="Ton de l'appréciation" aria-describedby="iaToneSliderValue">
+                                        <div class="slider-ticks" aria-hidden="true">
                                             <span class="tick"></span>
                                             <span class="tick"></span>
                                             <span class="tick"></span>
@@ -1789,15 +1781,24 @@
                                             <span class="tick"></span>
                                         </div>
                                     </div>
+                                    <div class="lab-scale-legend">
+                                        <span>Encourageant</span>
+                                        <output id="iaToneSliderValue" for="iaToneSlider">Adaptatif (libre)</output>
+                                        <span>Strict</span>
+                                    </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label>Voix du rédacteur</label>
-                                    <div class="ui-segmented-control" id="iaVoiceSelector">
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-info">
+                                        <span class="settings-row-title" id="iaVoiceLabel">Voix du rédacteur</span>
+                                        <span class="settings-row-desc">Personne grammaticale employée dans l'appréciation.</span>
+                                    </div>
+                                    <div class="ui-segmented-control" id="iaVoiceSelector" role="radiogroup"
+                                        aria-labelledby="iaVoiceLabel">
                                         <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
                                             checked>
                                         <label for="voiceDefault" class="ui-segment tooltip"
-                                            data-tooltip="L'IA varie naturellement les formulations (Je, Nous ou tournures impersonnelles).">Défaut</label>
+                                            data-tooltip="L'IA varie naturellement les formulations (Je, Nous ou tournures impersonnelles).">Auto</label>
                                         <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
                                         <label for="voiceJe" class="ui-segment tooltip"
                                             data-tooltip="Rédige à la première personne du singulier (« Je remarque », « J'encourage »).">Je</label>
@@ -1810,93 +1811,83 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <div class="slider-header-row">
-                                        <label for="iaStyleInstructions" style="margin-bottom: 0;">Consignes spécifiques
-                                            <span class="tooltip"
-                                                data-tooltip="Précisez vos directives clés (ex. valoriser l'oral, encourager l'autonomie, proscrire le vouvoiement). L'interrupteur permet de les suspendre temporairement sans effacer votre texte.">
-                                                <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"
-                                                    style="opacity: 0.6; margin-left: 4px;"></iconify-icon>
-                                            </span>
-                                        </label>
-                                        <div class="toggle-switch-container compact" style="margin: 0;">
-                                            <label class="toggle-switch small">
-                                                <input type="checkbox" id="iaStyleInstructionsToggle" checked>
-                                                <span class="slider"></span>
-                                            </label>
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-head">
+                                        <div class="settings-row-info">
+                                            <label for="iaStyleInstructionsToggle" class="settings-row-title">Consignes spécifiques</label>
+                                            <span class="settings-row-desc">Appliquées à chaque génération. L'interrupteur les suspend sans effacer le texte.</span>
                                         </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" id="iaStyleInstructionsToggle" checked>
+                                            <span class="slider"></span>
+                                        </label>
                                     </div>
-                                    <textarea id="iaStyleInstructions"
-                                        placeholder="Exemples : Mettre l'accent sur l'expression orale, encourager la participation, éviter le jargon..."
-                                        class="style-instructions-textarea"></textarea>
+                                    <textarea id="iaStyleInstructions" class="style-instructions-textarea" rows="3"
+                                        aria-label="Consignes spécifiques"
+                                        placeholder="Ex. Valoriser l'expression orale, encourager l'autonomie, éviter le jargon…"></textarea>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    <!-- CARTE 2: LABORATOIRE D'APERÇU -->
-                    <div class="settings-preview-column">
-                        <div class="settings-card settings-card-full-height">
-                            <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                    icon="solar:eye-linear"></iconify-icon> Aperçu en direct</h3>
-                            <div class="settings-card-content">
-                                <!-- Unified Data Card -->
-                                <div class="preview-unified-card">
-                                    <!-- Header: Student Selector -->
-                                    <div class="preview-card-header">
-                                        <div style="display:none!important;" aria-hidden="true">
-                                            <select id="previewStudentSelect"></select>
-                                        </div>
-                                        <button type="button" class="nav-arrow-custom" id="previewPrevStudentBtn"
-                                            aria-label="Élève précédent">
-                                            <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
-                                        </button>
-                                        <div class="header-student-info">
-                                            <span class="header-student-avatar" id="previewStudentAvatar" aria-hidden="true">
-                                                <iconify-icon icon="solar:user-bold"></iconify-icon>
-                                            </span>
-                                            <span class="header-student-name" id="previewStudentNameDisplay">Chargement...</span>
-                                            <span class="header-student-counter" id="previewStudentCounter" aria-label="Position de l'élève">1/8</span>
-                                        </div>
-                                        <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
-                                            aria-label="Élève suivant">
-                                            <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
-                                        </button>
-                                    </div>
+                    <!-- VOLET 2 : APERÇU EN DIRECT & PROMPT -->
+                    <section class="lab-pane lab-pane--preview" aria-label="Aperçu en direct">
+                        <div class="lab-preview-toolbar">
+                            <div class="ui-segmented-control" role="radiogroup" aria-label="Affichage du volet">
+                                <input type="radio" id="labTabPreview" name="labPreviewTab" value="preview" checked>
+                                <label for="labTabPreview" class="ui-segment">
+                                    <iconify-icon icon="solar:eye-linear"></iconify-icon> Aperçu
+                                </label>
+                                <input type="radio" id="labTabPrompt" name="labPreviewTab" value="prompt">
+                                <label for="labTabPrompt" class="ui-segment">
+                                    <iconify-icon icon="solar:code-square-linear"></iconify-icon> Prompt
+                                </label>
+                            </div>
 
-                                    <!-- Body: Context + Table -->
-                                    <div id="settingsPreviewStudentData" class="preview-card-body">
-                                    </div>
+                            <div class="lab-student-nav">
+                                <select id="previewStudentSelect" hidden aria-hidden="true"></select>
+                                <button type="button" class="nav-arrow-custom" id="previewPrevStudentBtn"
+                                    aria-label="Élève précédent">
+                                    <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
+                                </button>
+                                <div class="header-student-info">
+                                    <span class="header-student-avatar" id="previewStudentAvatar" aria-hidden="true">
+                                        <iconify-icon icon="solar:user-bold"></iconify-icon>
+                                    </span>
+                                    <span class="header-student-name" id="previewStudentNameDisplay">Chargement…</span>
+                                    <span class="header-student-counter" id="previewStudentCounter"
+                                        aria-label="Position de l'élève">1/8</span>
                                 </div>
+                                <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
+                                    aria-label="Élève suivant">
+                                    <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                                </button>
+                            </div>
+                        </div>
 
-                                <p id="previewStatus" class="preview-status" style="display: none;"></p>
+                        <div class="lab-panel" data-lab-panel="preview">
+                            <div id="settingsPreviewStudentData" class="lab-student-data"></div>
 
-                                <!-- Section Aperçu avec bouton de génération -->
-                                <div class="preview-result-header">
-                                    <div class="result-ia-title">Appréciation</div>
-                                    <button id="refreshPreviewBtn" class="btn btn-ai btn-small tooltip"
-                                        data-tooltip="Générer une appréciation avec l'IA"><iconify-icon
-                                            class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon>
-                                        Générer</button>
-                                </div>
-                                <div class="refinement-group is-empty" id="settingsPreviewResultGroup">
-                                    <div class="refinement-content placeholder" id="settingsPreviewResult">
-                                        <div class="preview-empty-state">
-                                            <div class="preview-empty-icon-wrap">
-                                                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                                            </div>
-                                            <div class="preview-empty-title">Prêt pour la prévisualisation</div>
-                                            <div class="preview-empty-subtitle">Ajustez vos réglages à gauche et cliquez sur <strong>« Générer »</strong> pour tester le rendu en direct.</div>
-                                        </div>
+                            <div class="lab-section">
+                                <div class="lab-section-header">
+                                    <div class="lab-section-heading">
+                                        <h4 class="settings-group-title">Appréciation générée</h4>
+                                        <p id="previewStatus" class="lab-hint" hidden>
+                                            <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                                            Réglages modifiés : régénérez pour voir leur effet.
+                                        </p>
                                     </div>
-                                    <div class="preview-meta-container" id="previewMetaContainer"
-                                        style="display: none;">
-                                        <div class="preview-meta-left">
-                                            <div class="preview-model-badge" id="previewModelBadge" style="display: none;">
-                                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> —
-                                            </div>
-                                            <div class="word-count" id="settingsPreviewTokenCount"></div>
-                                            <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
+                                    <button id="refreshPreviewBtn" class="btn btn-ai">
+                                        <iconify-icon class="iconify-inline"
+                                            icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer
+                                    </button>
+                                </div>
+                                <div class="lab-result-card is-empty" id="settingsPreviewResultGroup" aria-live="polite">
+                                    <div class="lab-result-text placeholder" id="settingsPreviewResult"></div>
+                                    <div class="lab-result-meta" id="previewMetaContainer" hidden>
+                                        <div class="lab-result-meta-info">
+                                            <span class="preview-model-badge tooltip" id="previewModelBadge" hidden></span>
+                                            <span class="word-count" id="settingsPreviewWordCount"></span>
                                         </div>
                                         <button type="button" class="btn-icon-small tooltip" id="copyPreviewAppreciationBtn"
                                             data-tooltip="Copier l'appréciation" aria-label="Copier l'appréciation">
@@ -1904,30 +1895,25 @@
                                         </button>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
-                    </div>
 
-                    <!-- CARTE 3: INSPECTEUR DE PROMPT (collapsible) -->
-                    <div class="settings-inspector-column" id="inspectorColumn">
-                        <div class="settings-card settings-card-full-height">
-                            <div class="settings-card-header-row">
-                                <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                        icon="solar:terminal-bold"></iconify-icon> Inspecteur de Prompt
-                                </h3>
-                                <button type="button" class="btn-icon-small tooltip" id="copyPromptBtn"
-                                    data-tooltip="Copier le prompt" aria-label="Copier le prompt">
-                                    <iconify-icon icon="solar:copy-bold"></iconify-icon>
-                                </button>
-                            </div>
-                            <div class="settings-card-content">
-                                <div id="settingsPreviewPrompt" class="help-code-block prompt-preview-block">
-                                    Le prompt s'affichera ici après avoir rafraîchi l'aperçu.
+                        <div class="lab-panel" data-lab-panel="prompt" hidden>
+                            <div class="lab-section">
+                                <div class="lab-section-header">
+                                    <div class="lab-section-heading">
+                                        <h4 class="settings-group-title">Prompt envoyé à l'IA</h4>
+                                        <p class="lab-hint">Mis à jour en direct selon vos réglages et l'élève affiché.</p>
+                                    </div>
+                                    <button type="button" class="btn-icon-small tooltip" id="copyPromptBtn"
+                                        data-tooltip="Copier le prompt" aria-label="Copier le prompt">
+                                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                                    </button>
                                 </div>
+                                <pre id="settingsPreviewPrompt" class="lab-prompt-code placeholder">Le prompt s'affichera ici dès qu'un élève est sélectionné.</pre>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
             <div class="modal-footer">

@@ -54,7 +54,6 @@ describe('DOM', () => {
                 <ul id="suggestionsList"></ul>
                 <button id="resetAllSettingsBtn"></button>
                 <div class="settings-tab"></div>
-                <input type="checkbox" id="personalizationToggle" />
                 <div id="templatesTabContent"></div>
                 <div id="optionsTabContent"></div>
                 <div id="advancedTabContent"></div>
@@ -159,25 +158,24 @@ describe('DOM', () => {
                 <div class="actions-dropdown">
                     <div class="actions-dropdown-content"></div>
                 </div>
-                <input id="iaStyleHeader" />
                 <textarea id="iaStyleInstructions"></textarea>
                 <input type="range" id="iaLengthSlider" />
                 <input type="range" id="iaToneSlider" />
                 <input type="checkbox" id="iaToneToggle" />
                 <span id="iaToneSliderValue"></span>
                 <div id="iaToneSliderContainer"></div>
-                <div id="genericSubjectInfo"></div>
                 <button id="deleteSubjectBtn"></button>
                 <button id="resetSubjectBtn"></button>
                 <button id="addSubjectBtn"></button>
                 <select id="settingsSubjectSelect"></select>
                 <select id="previewStudentSelect"></select>
                 <button id="refreshPreviewBtn"></button>
+                <div id="settingsPreviewResultGroup"></div>
                 <div id="settingsPreviewResult"></div>
                 <div id="settingsPreviewPrompt"></div>
                 <div id="settingsPreviewStudentData"></div>
                 <span id="settingsPreviewWordCount"></span>
-                <span id="settingsPreviewTokenCount"></span>
+                <span id="previewModelBadge"></span>
                 <div id="previewMetaContainer"></div>
                 <div id="subjectManagementList"></div>
                 <input id="newSubjectInput" />

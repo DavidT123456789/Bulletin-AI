@@ -95,34 +95,54 @@ export const SettingsUIManager = {
     },
 
     /**
-     * Sauvegarde les modifications du style personnalisé.
-     * @private
+     * Retourne la configuration IA du style personnel (MonStyle), en la créant si nécessaire.
+     * Point d'accès unique en écriture pour la modale « Personnalisation du style ».
+     * @returns {Object} Configuration IA mutable de MonStyle
      */
-    _savePersonalStyleChanges() {
-        // S'assurer que MonStyle existe avec structure correcte
+    getPersonalStyleConfig() {
         if (!appState.subjects['MonStyle']) {
             appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
         }
         if (!appState.subjects['MonStyle'].iaConfig) {
             appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
         }
+        return appState.subjects['MonStyle'].iaConfig;
+    },
 
-        const styleData = appState.subjects['MonStyle'];
+    /**
+     * Sauvegarde les modifications du style personnalisé.
+     * @private
+     */
+    _savePersonalStyleChanges() {
+        const iaConfig = this.getPersonalStyleConfig();
 
-        if (DOM.iaLengthSlider) styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
-        if (DOM.iaToneSlider) styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
-        if (DOM.iaToneToggle) styleData.iaConfig.enableTone = DOM.iaToneToggle.checked;
+        if (DOM.iaLengthSlider) iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
+        if (DOM.iaToneSlider) iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
+        if (DOM.iaToneToggle) iaConfig.enableTone = DOM.iaToneToggle.checked;
 
         if (DOM.iaStyleInstructions) {
-            styleData.iaConfig.styleInstructions = DOM.iaStyleInstructions.value.trim();
+            iaConfig.styleInstructions = DOM.iaStyleInstructions.value.trim();
         }
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
-        if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
-        if (DOM.iaDiscipline) styleData.iaConfig.discipline = DOM.iaDiscipline.value.trim();
+        if (selectedVoice) iaConfig.voice = selectedVoice.value;
+        if (DOM.iaDiscipline) iaConfig.discipline = DOM.iaDiscipline.value.trim();
 
         if (DOM.iaStyleInstructionsToggle) {
-            styleData.iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
+            iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
         }
+    },
+
+    /**
+     * Persiste les réglages de la modale « Personnalisation du style » et rafraîchit les vues.
+     */
+    savePersonalStyle() {
+        this._savePersonalStyleChanges();
+        StorageManager.saveAppState();
+        UIState.settingsBeforeEdit = {};
+        document.dispatchEvent(new CustomEvent('app-settings-changed', {
+            detail: { settings: appState }
+        }));
+        AppreciationsManager.renderResults();
     },
 
     /**
@@ -303,99 +323,11 @@ export const SettingsUIManager = {
      */
     resetPersonalStyle() {
         UI.showCustomConfirm("Tous les réglages du style (consignes, voix, ton et longueur de l'appréciation) seront restaurés aux valeurs par défaut.", () => {
-            appState.subjects['MonStyle'] = { iaConfig: JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG)) };
+            appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
             UI.updateSettingsPromptFields();
             UI.showNotification("Style réinitialisé.", "success");
             document.dispatchEvent(new CustomEvent('personalizationReset'));
         }, null, { title: 'Réinitialiser le style ?', compact: true });
-    },
-
-    /**
-     * Met à jour l'état de personnalisation.
-     */
-    updatePersonalizationState() {
-        const enabled = appState.useSubjectPersonalization;
-        if (DOM.personalizationToggle) {
-            DOM.personalizationToggle.checked = enabled;
-        }
-
-        // Get current config for specific toggle
-        const styleData = appState.subjects['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
-        const styleInstructionsEnabled = styleData.enableStyleInstructions !== false; // Default true
-        const toneEnabled = styleData.enableTone ?? (styleData.tone !== 3 && styleData.tone !== undefined);
-
-        if (DOM.iaStyleInstructionsToggle) {
-            DOM.iaStyleInstructionsToggle.checked = styleInstructionsEnabled;
-            DOM.iaStyleInstructionsToggle.disabled = false;
-        }
-
-        if (DOM.iaToneToggle) {
-            DOM.iaToneToggle.checked = toneEnabled;
-            DOM.iaToneToggle.disabled = false;
-        }
-
-        const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
-        if (toneContainer?.classList) {
-            toneContainer.classList.toggle('opacity-reduced', !toneEnabled);
-        }
-
-        if (DOM.iaToneSlider) {
-            const toneVal = parseInt(DOM.iaToneSlider.value, 10);
-            const toneLabels = {
-                1: 'Très encourageant',
-                2: 'Bienveillant',
-                3: 'Neutre / Factuel',
-                4: 'Exigeant',
-                5: 'Strict'
-            };
-            const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
-            if (toneDisplay) {
-                toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
-            }
-        }
-
-        if (DOM.genericSubjectInfo?.classList) {
-            if (enabled) {
-                DOM.genericSubjectInfo.classList.add('collapsed');
-            } else {
-                DOM.genericSubjectInfo.classList.remove('collapsed');
-            }
-        }
-
-        // Main style controls are always enabled
-        const inputsToToggle = [
-            DOM.iaLengthSlider,
-            DOM.iaToneSlider,
-            DOM.iaToneToggle,
-            DOM.iaDiscipline,
-            ...document.querySelectorAll('input[name="iaVoiceRadio"]')
-        ];
-
-        inputsToToggle.forEach(input => {
-            if (input) input.disabled = false;
-        });
-
-        // Specific logic for Style Instructions: Controlled by its dedicated toggle
-        if (DOM.iaStyleInstructions) {
-            DOM.iaStyleInstructions.disabled = !styleInstructionsEnabled;
-            if (DOM.iaStyleInstructions.disabled) {
-                DOM.iaStyleInstructions.classList.add('disabled-look');
-                DOM.iaStyleInstructions.parentElement.classList.add('opacity-reduced');
-            } else {
-                DOM.iaStyleInstructions.classList.remove('disabled-look');
-                DOM.iaStyleInstructions.parentElement.classList.remove('opacity-reduced');
-            }
-        }
-
-        const controlsPanel = document.getElementById('settings-controls-panel');
-        if (controlsPanel) {
-            controlsPanel.classList.remove('disabled');
-        }
-
-        const iaStyleHeader = document.getElementById('iaStyleHeader');
-        if (iaStyleHeader) {
-            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;
-        }
     },
 
     /**
@@ -668,37 +600,17 @@ export const SettingsUIManager = {
     },
 
     /**
-     * Affiche un indicateur visuel pour inviter à rafraîchir l'aperçu du Laboratoire.
-     * Ajoute une animation pulsing sur le bouton Rafraîchir et affiche un message.
+     * Invite à régénérer l'aperçu après une modification des réglages de style.
      */
     showPreviewRefreshHint() {
-        const previewStatus = document.getElementById('previewStatus');
-        const refreshBtn = document.getElementById('refreshPreviewBtn');
-
-        if (previewStatus) {
-            previewStatus.innerHTML = `<iconify-icon icon="solar:refresh-linear" style="margin-right: 6px;"></iconify-icon> Réglages modifiés. Cliquez sur <strong>Générer</strong> pour voir l'aperçu.`;
-            previewStatus.style.display = 'block';
-        }
-
-        if (refreshBtn) {
-            refreshBtn.classList.add('pulsing');
-        }
+        if (DOM.previewStatus) DOM.previewStatus.hidden = false;
     },
 
     /**
-     * Masque l'indicateur de rafraîchissement de l'aperçu du Laboratoire.
+     * Masque l'invitation à régénérer l'aperçu.
      */
     hidePreviewRefreshHint() {
-        const previewStatus = document.getElementById('previewStatus');
-        const refreshBtn = document.getElementById('refreshPreviewBtn');
-
-        if (previewStatus) {
-            previewStatus.style.display = 'none';
-        }
-
-        if (refreshBtn) {
-            refreshBtn.classList.remove('pulsing');
-        }
+        if (DOM.previewStatus) DOM.previewStatus.hidden = true;
     },
 
     /**

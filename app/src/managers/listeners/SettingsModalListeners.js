@@ -21,6 +21,17 @@ import { MODEL_SHORT_NAMES } from '../../config/models.js';
 
 let App = null;
 
+/** Clé de persistance de l'onglet actif du volet d'aperçu (Aperçu / Prompt). */
+const PREVIEW_TAB_STORAGE_KEY = 'labPreviewTab';
+
+/** États visuels du bouton de génération de l'aperçu (aligné sur #focusGenerateBtn). */
+const GENERATE_BUTTON_STATES = {
+    idle: { variant: 'btn-ai', icon: 'solar:magic-stick-3-bold-duotone', label: 'Générer', disabled: false },
+    done: { variant: 'btn-neutral', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
+    dirty: { variant: 'btn-warning', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
+    loading: { variant: 'btn-neutral', icon: 'ph:spinner-gap-bold', label: 'Génération…', disabled: true, spin: true }
+};
+
 export const SettingsModalListeners = {
     init(appInstance) {
         App = appInstance;
@@ -47,14 +58,27 @@ export const SettingsModalListeners = {
     },
 
     /**
+     * Ouvre la modale « Personnalisation du style » et met en évidence un réglage.
+     * Point d'entrée unique pour les raccourcis externes (statistiques, Focus, Guide).
+     * @param {string} [focusId] - ID du contrôle (ou du volet) à mettre en évidence
+     */
+    openPersonalization(focusId) {
+        UI.openModal(DOM.personalizationModal);
+        if (focusId) {
+            UI.highlightSettingsElement(focusId, { parentSelector: '.settings-row' });
+        }
+    },
+
+    /**
      * Configure les listeners de la modale des paramètres.
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
-        // Écouter l'ouverture de la modale de personnalisation pour créer un snapshot annulable
+        // Chaque ouverture démarre une session d'aperçu vierge, annulable via snapshot
         document.addEventListener('settings-modal-open', (e) => {
             if (e.detail?.modalId === 'personalizationModal') {
                 SettingsUIManager.createSnapshot();
+                this._resetPreviewSession();
                 this._updateNavArrowsState();
                 requestAnimationFrame(() => {
                     this._updateStudentContextAndPrompt();
@@ -72,16 +96,6 @@ export const SettingsModalListeners = {
                 setTimeout(() => this._updateStudentContextAndPrompt(), 100);
             });
         });
-
-        if (DOM.personalizationToggle) {
-            DOM.personalizationToggle.addEventListener('change', async (e) => {
-                appState.useSubjectPersonalization = e.target.checked;
-                SettingsUIManager.updatePersonalizationState();
-                FormUI.updateSettingsFields();
-                this._updateStudentContextAndPrompt();
-                this._autoResizeStyleInstructions();
-            });
-        }
 
         // Toggle pour le basculement automatique entre APIs (sauvegarde immédiate)
         if (DOM.enableApiFallbackToggle) {
@@ -150,106 +164,98 @@ export const SettingsModalListeners = {
         // Bouton pour ouvrir l'accordion des clés API
         this._setupApiKeysAccordion(addClickListener);
 
-
-
         // Configuration Ollama (IA locale)
         this._setupOllamaListeners(addClickListener);
 
-        // Listeners pour les sliders IA
+        // Listeners pour les réglages de style IA
         this._setupIASliders();
 
         // Settings modal interactions
         this._setupModalInteractions(addClickListener);
 
-        // Inspector toggle button for personalization modal
-        this._setupInspectorToggle();
+        // Volet d'aperçu : onglets Aperçu / Prompt et boutons de copie
+        this._setupPreviewPane();
 
         // Reset Lab Style button
         addClickListener(DOM.resetLabStyleBtn, () => SettingsUIManager.resetPersonalStyle());
 
         // Listen for reset events to update prompt preview
         document.addEventListener('personalizationReset', () => {
+            this._markPreviewCacheStale();
             this._updateStudentContextAndPrompt();
             this._autoResizeStyleInstructions();
         });
 
         // Re-calculate textarea size on window resize when modal is open
         window.addEventListener('resize', Utils.debounce(() => {
-            if (DOM.personalizationModal && (DOM.personalizationModal.classList.contains('show') || DOM.personalizationModal.style.display === 'flex')) {
+            if (this._isPersonalizationOpen()) {
                 this._autoResizeStyleInstructions();
             }
         }, 150));
     },
 
     /**
-     * Setup Inspector toggle button for the personalization modal
+     * @returns {boolean} true si la modale « Personnalisation du style » est affichée
      * @private
      */
-    _setupInspectorToggle() {
-        const toggleBtn = document.getElementById('toggleInspectorBtn');
-        const grid = document.querySelector('.personalization-grid');
-        const modalContent = document.querySelector('.personalization-modal-content');
+    _isPersonalizationOpen() {
+        return DOM.personalizationModal?.style.display === 'flex';
+    },
 
-        if (!toggleBtn || !grid) return;
+    /**
+     * Configure le volet d'aperçu : bascule Aperçu / Prompt (persistée) et boutons de copie.
+     * @private
+     */
+    _setupPreviewPane() {
+        const tabRadios = [...document.querySelectorAll('input[name="labPreviewTab"]')];
+        const panels = document.querySelectorAll('[data-lab-panel]');
 
-        // Restore state from localStorage (hidden by default)
-        const isVisible = localStorage.getItem('inspectorVisible') === 'true';
-        if (isVisible) {
-            grid.classList.add('inspector-visible');
-            modalContent?.classList.add('inspector-visible');
-            toggleBtn.classList.add('active');
+        const showPanel = (tab) => {
+            panels.forEach(panel => { panel.hidden = panel.dataset.labPanel !== tab; });
+        };
+
+        if (tabRadios.length) {
+            const savedTab = localStorage.getItem(PREVIEW_TAB_STORAGE_KEY);
+            const initialTab = tabRadios.some(radio => radio.value === savedTab) ? savedTab : tabRadios[0].value;
+            tabRadios.forEach(radio => {
+                radio.checked = radio.value === initialTab;
+                radio.addEventListener('change', () => {
+                    if (!radio.checked) return;
+                    showPanel(radio.value);
+                    localStorage.setItem(PREVIEW_TAB_STORAGE_KEY, radio.value);
+                });
+            });
+            showPanel(initialTab);
         }
 
-        toggleBtn.addEventListener('click', () => {
-            const nowVisible = grid.classList.toggle('inspector-visible');
-            modalContent?.classList.toggle('inspector-visible', nowVisible);
-            toggleBtn.classList.toggle('active', nowVisible);
-            localStorage.setItem('inspectorVisible', nowVisible);
-
-            if (nowVisible && window.innerWidth <= 900) {
-                const inspectorCol = document.getElementById('inspectorColumn');
-                setTimeout(() => {
-                    inspectorCol?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 50);
+        document.getElementById('copyPromptBtn')?.addEventListener('click', () => {
+            const promptEl = DOM.settingsPreviewPrompt;
+            if (!promptEl || promptEl.classList.contains('placeholder')) {
+                UI.showNotification('Sélectionnez un élève pour afficher le prompt.', 'warning');
+                return;
             }
+            this._copyToClipboard(promptEl.textContent.trim(), 'Prompt copié !');
         });
 
-        // Copy prompt button
-        const copyBtn = document.getElementById('copyPromptBtn');
-        const promptContainer = document.getElementById('settingsPreviewPrompt');
-        if (copyBtn && promptContainer) {
-            copyBtn.addEventListener('click', async () => {
-                const text = promptContainer.textContent?.trim();
-                if (!text || text === 'Le prompt s\'affichera ici après avoir rafraîchi l\'aperçu.') {
-                    UI.showNotification('Générez d\'abord un aperçu pour copier le prompt.', 'warning');
-                    return;
-                }
-                try {
-                    await navigator.clipboard.writeText(text);
-                    UI.showNotification('Prompt copié !', 'success');
-                } catch {
-                    UI.showNotification('Échec de la copie', 'error');
-                }
-            });
-        }
+        // Le bouton n'est visible qu'une fois une appréciation générée (pied de carte)
+        document.getElementById('copyPreviewAppreciationBtn')?.addEventListener('click', () => {
+            this._copyToClipboard(DOM.settingsPreviewResult?.textContent.trim(), 'Appréciation copiée !');
+        });
+    },
 
-        // Copy preview appreciation button
-        const copyPreviewBtn = document.getElementById('copyPreviewAppreciationBtn');
-        if (copyPreviewBtn) {
-            copyPreviewBtn.addEventListener('click', async () => {
-                const previewEl = document.getElementById('settingsPreviewResult');
-                const text = previewEl?.textContent?.trim();
-                if (!text || previewEl?.classList.contains('placeholder') || previewEl?.classList.contains('has-error')) {
-                    UI.showNotification('Générez d\'abord une appréciation pour la copier.', 'warning');
-                    return;
-                }
-                try {
-                    await navigator.clipboard.writeText(text);
-                    UI.showNotification('Appréciation copiée !', 'success');
-                } catch {
-                    UI.showNotification('Échec de la copie', 'error');
-                }
-            });
+    /**
+     * Copie un texte dans le presse-papiers avec retour utilisateur.
+     * @param {string} text - Texte à copier
+     * @param {string} successMessage - Notification affichée en cas de succès
+     * @private
+     */
+    async _copyToClipboard(text, successMessage) {
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            UI.showNotification(successMessage, 'success');
+        } catch {
+            UI.showNotification('Échec de la copie', 'error');
         }
     },
 
@@ -260,7 +266,7 @@ export const SettingsModalListeners = {
                 // Use centralized highlight utility
                 UI.highlightSettingsElement('apiKeysAccordion', {
                     tab: 'settings-engine',
-                    useParentFormGroup: false
+                    parentSelector: null
                 });
             });
         }
@@ -295,178 +301,80 @@ export const SettingsModalListeners = {
 
     },
 
+    /**
+     * Marque toutes les appréciations en cache comme obsolètes suite à un changement de réglages.
+     * @private
+     */
+    _markPreviewCacheStale() {
+        if (!this.previewCache) return;
+        Object.values(this.previewCache).forEach(entry => { entry.stale = true; });
+    },
 
+    /**
+     * Applique une modification de style en temps réel (appState → affichage → prompt).
+     * La génération utilise ainsi immédiatement la valeur courante.
+     * @param {Object} patch - Propriétés de MonStyle.iaConfig à mettre à jour
+     * @param {Object} [options]
+     * @param {boolean} [options.refreshPrompt=true] - Recalculer immédiatement le prompt affiché
+     * @private
+     */
+    _applyStyleChange(patch, { refreshPrompt = true } = {}) {
+        Object.assign(SettingsUIManager.getPersonalStyleConfig(), patch);
+        FormUI.syncStyleControls();
+        this._markPreviewCacheStale();
+        if (this.previewCache?.[DOM.previewStudentSelect?.value]) {
+            this._setGenerateButtonState('dirty');
+            SettingsUIManager.showPreviewRefreshHint();
+        }
+        if (refreshPrompt) {
+            this._refreshPromptPreview();
+        }
+    },
 
     _setupIASliders() {
-        if (DOM.iaLengthSlider) {
-            DOM.iaLengthSlider.addEventListener('input', (e) => {
-                const lengthVal = parseInt(e.target.value);
-                const approxChars = Math.round(lengthVal * 6.5);
-                const lengthDisplay = document.getElementById('iaLengthSliderValue');
-                if (lengthDisplay) lengthDisplay.textContent = `~${lengthVal} mots • ~${approxChars} car.`;
-
-                // [FIX] Update appState in real-time so generation uses current value immediately
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: {} };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = {};
-                }
-                appState.subjects['MonStyle'].iaConfig.length = lengthVal;
-
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt();
-            });
-        }
+        DOM.iaLengthSlider?.addEventListener('input', () => {
+            this._applyStyleChange({ length: parseInt(DOM.iaLengthSlider.value, 10) });
+        });
 
         if (DOM.iaToneSlider) {
-            DOM.iaToneSlider.addEventListener('input', (e) => {
-                const toneVal = parseInt(e.target.value, 10);
-                const toneLabels = {
-                    1: 'Très encourageant',
-                    2: 'Bienveillant',
-                    3: 'Neutre / Factuel',
-                    4: 'Exigeant',
-                    5: 'Strict'
-                };
-
-                // Auto-enable tone toggle if user interacts with the slider
-                if (DOM.iaToneToggle && !DOM.iaToneToggle.checked) {
-                    DOM.iaToneToggle.checked = true;
-                    const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
-                    if (toneContainer?.classList) {
-                        toneContainer.classList.remove('opacity-reduced');
-                    }
-                }
-
-                const toneEnabled = DOM.iaToneToggle ? DOM.iaToneToggle.checked : true;
-                const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
-                if (toneDisplay) {
-                    toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
-                }
-
-                // [FIX] Update appState in real-time so generation uses current value immediately
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
-                }
-                appState.subjects['MonStyle'].iaConfig.tone = toneVal;
-                appState.subjects['MonStyle'].iaConfig.enableTone = toneEnabled;
-
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt();
+            // Manipuler le curseur active implicitement le ton imposé
+            DOM.iaToneSlider.addEventListener('input', () => {
+                this._applyStyleChange({ tone: parseInt(DOM.iaToneSlider.value, 10), enableTone: true });
             });
 
             // Rendre les repères cliquables
-            const toneTicksContainer = DOM.iaToneSlider.nextElementSibling;
-            if (toneTicksContainer && toneTicksContainer.classList.contains('slider-ticks')) {
-                const ticks = toneTicksContainer.querySelectorAll('.tick');
-                ticks.forEach((tick, index) => {
-                    tick.addEventListener('click', () => {
-                        DOM.iaToneSlider.value = index + 1;
-                        DOM.iaToneSlider.dispatchEvent(new Event('input', { bubbles: true }));
-                    });
+            DOM.iaToneSliderContainer?.querySelectorAll('.tick').forEach((tick, index) => {
+                tick.addEventListener('click', () => {
+                    DOM.iaToneSlider.value = index + 1;
+                    DOM.iaToneSlider.dispatchEvent(new Event('input', { bubbles: true }));
                 });
-            }
-        }
-
-        if (DOM.iaToneToggle) {
-            DOM.iaToneToggle.addEventListener('change', () => {
-                // Ensure MonStyle structure exists
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
-                }
-                appState.subjects['MonStyle'].iaConfig.enableTone = DOM.iaToneToggle.checked;
-
-                SettingsUIManager.updatePersonalizationState();
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt();
-                StorageManager.saveAppState();
             });
         }
+
+        DOM.iaToneToggle?.addEventListener('change', () => {
+            this._applyStyleChange({ enableTone: DOM.iaToneToggle.checked });
+        });
 
         if (DOM.iaStyleInstructions) {
+            const refreshPromptDebounced = Utils.debounce(() => this._refreshPromptPreview(), 300);
             DOM.iaStyleInstructions.addEventListener('input', () => {
-                if (DOM.iaStyleInstructions.disabled) return;
                 this._autoResizeStyleInstructions();
-                // [FIX] Ensure MonStyle structure exists before updating
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
-                }
-                appState.subjects['MonStyle'].iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
-
-                SettingsUIManager.showPreviewRefreshHint();
-            });
-
-            DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
-                if (DOM.iaStyleInstructions.disabled) return;
-                this._updateStudentContextAndPrompt();
-            }, 300));
-
-            DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
-                if (DOM.iaStyleInstructions.disabled) return;
-                StorageManager.saveAppState();
-            }, 1500)); // Save 1.5s after last keystroke
-        }
-
-        if (DOM.iaStyleInstructionsToggle) {
-            DOM.iaStyleInstructionsToggle.addEventListener('change', () => {
-                // Ensure MonStyle structure exists
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
-                }
-                appState.subjects['MonStyle'].iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
-
-                SettingsUIManager.updatePersonalizationState();
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt();
-                StorageManager.saveAppState();
+                this._applyStyleChange({ styleInstructions: DOM.iaStyleInstructions.value }, { refreshPrompt: false });
+                refreshPromptDebounced();
             });
         }
 
-        // Discipline field listener (optional field for subject-specific vocabulary)
-        if (DOM.iaDiscipline) {
-            DOM.iaDiscipline.addEventListener('input', () => {
-                // Ensure MonStyle structure exists
-                if (!appState.subjects['MonStyle']) {
-                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
-                }
-                if (!appState.subjects['MonStyle'].iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
-                }
-                appState.subjects['MonStyle'].iaConfig.discipline = DOM.iaDiscipline.value;
+        DOM.iaStyleInstructionsToggle?.addEventListener('change', () => {
+            this._applyStyleChange({ enableStyleInstructions: DOM.iaStyleInstructionsToggle.checked });
+        });
 
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt();
-            });
-
-            // Auto-save with debounce
-            DOM.iaDiscipline.addEventListener('input', Utils.debounce(() => {
-                StorageManager.saveAppState();
-            }, 1500));
-        }
+        // Discipline (optionnelle) : vocabulaire propre à la matière
+        DOM.iaDiscipline?.addEventListener('input', () => {
+            this._applyStyleChange({ discipline: DOM.iaDiscipline.value });
+        });
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                // [FIX] Update appState in real-time so generation uses current value immediately
-                if (appState.subjects['MonStyle']?.iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig.voice = e.target.value;
-                }
-
-                SettingsUIManager.showPreviewRefreshHint();
-                this._updateStudentContextAndPrompt(); // Update prompt preview on voice change
-            });
+            radio.addEventListener('change', (e) => this._applyStyleChange({ voice: e.target.value }));
         });
 
         // Preview student selection - auto-update context and prompt (no AI call)
@@ -482,61 +390,48 @@ export const SettingsModalListeners = {
             }, 100);
         }
 
-        // Navigation arrow buttons for preview student
-        const prevBtn = document.getElementById('previewPrevStudentBtn');
-        const nextBtn = document.getElementById('previewNextStudentBtn');
+        // Navigation arrow buttons & keyboard (← / →) for preview student
+        const stepStudent = (delta) => {
+            const select = DOM.previewStudentSelect;
+            const nextIndex = (select?.selectedIndex ?? -1) + delta;
+            if (!select || nextIndex < 0 || nextIndex >= select.options.length) return;
+            if (document.activeElement && document.activeElement !== document.body && document.activeElement !== DOM.personalizationModal) {
+                document.activeElement.blur?.();
+            }
+            select.selectedIndex = nextIndex;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        document.getElementById('previewPrevStudentBtn')?.addEventListener('click', () => stepStudent(-1));
+        document.getElementById('previewNextStudentBtn')?.addEventListener('click', () => stepStudent(1));
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                const select = DOM.previewStudentSelect;
-                if (select && select.selectedIndex > 0) {
-                    select.selectedIndex = select.selectedIndex - 1;
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
+        document.addEventListener('keydown', (e) => {
+            if (!this._isPersonalizationOpen()) return;
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                const select = DOM.previewStudentSelect;
-                if (select && select.selectedIndex < select.options.length - 1) {
-                    select.selectedIndex = select.selectedIndex + 1;
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
+            const activeEl = document.activeElement;
+            const isTextInput = activeEl && (
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable ||
+                (activeEl.tagName === 'INPUT' && ['text', 'search', 'number', 'password', 'url', 'email'].includes(activeEl.type))
+            );
+            const isKeyboardSlider = activeEl?.tagName === 'INPUT' && activeEl.type === 'range' && activeEl.matches?.(':focus-visible');
+            if (isTextInput || isKeyboardSlider) return;
+
+            e.preventDefault();
+            stepStudent(e.key === 'ArrowLeft' ? -1 : 1);
+        });
 
         // Listen to main period changes to sync lab
         // [FIX] Use custom event dispatched by UI.setPeriod for reliable sync
         document.addEventListener('periodChanged', () => {
-            // Only update if personalization modal is visible (display:flex when open)
-            const modal = document.getElementById('personalizationModal');
-            if (modal && modal.style.display === 'flex') {
+            if (this._isPersonalizationOpen()) {
                 this._updateStudentContextAndPrompt();
             }
         });
 
-
-
         // Preview refresh button - only for AI generation
-        if (DOM.refreshPreviewBtn) {
-            DOM.refreshPreviewBtn.addEventListener('click', async () => {
-                await this._handlePreviewRefresh();
-            });
-        }
-
-        const initialEmptyTrigger = document.getElementById('previewEmptyStateTrigger');
-        if (initialEmptyTrigger) {
-            initialEmptyTrigger.addEventListener('click', () => {
-                DOM.refreshPreviewBtn?.click();
-            });
-            initialEmptyTrigger.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    DOM.refreshPreviewBtn?.click();
-                }
-            });
-        }
+        DOM.refreshPreviewBtn?.addEventListener('click', () => this._handlePreviewRefresh());
     },
 
     /**
@@ -544,59 +439,40 @@ export const SettingsModalListeners = {
      */
     _updateNavArrowsState() {
         const select = DOM.previewStudentSelect;
-        const prevBtn = document.getElementById('previewPrevStudentBtn');
-        const nextBtn = document.getElementById('previewNextStudentBtn');
+        if (!select || select.selectedIndex < 0) return;
+
+        const { selectedIndex, options } = select;
         const nameDisplay = document.getElementById('previewStudentNameDisplay');
-
-        if (!select) return;
-
-        // Sync text display
-        if (nameDisplay && select.selectedIndex >= 0) {
-            nameDisplay.textContent = select.options[select.selectedIndex].text;
-        }
+        if (nameDisplay) nameDisplay.textContent = options[selectedIndex].text;
 
         const counterDisplay = document.getElementById('previewStudentCounter');
-        if (counterDisplay && select.options.length > 0 && select.selectedIndex >= 0) {
-            counterDisplay.textContent = `${select.selectedIndex + 1}/${select.options.length}`;
-        }
+        if (counterDisplay) counterDisplay.textContent = `${selectedIndex + 1}/${options.length}`;
 
         // Sync student avatar with photo
         const avatarEl = document.getElementById('previewStudentAvatar');
-        if (avatarEl && select.selectedIndex >= 0) {
-            const studentId = select.options[select.selectedIndex].value;
-            const student = DEMO_STUDENT_PROFILES.find(s => s.id === studentId);
-            if (student) {
-                const photoUrl = student.photo || `./images/Demo/${student.nom.toLowerCase()}.jpg`;
-                const initials = `${student.prenom?.[0] || ''}${student.nom?.[0] || ''}`.toUpperCase();
-                avatarEl.innerHTML = `
-                    <img src="${photoUrl}" alt="${student.prenom} ${student.nom}" class="header-student-avatar-img"
-                        onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
-                    <span class="avatar-initials-fallback" style="display:none;">${initials}</span>
-                `;
-            }
+        const student = DEMO_STUDENT_PROFILES.find(s => s.id === options[selectedIndex].value);
+        if (avatarEl && student) {
+            const photoUrl = student.photo || `./images/Demo/${student.nom.toLowerCase()}.jpg`;
+            const initials = `${student.prenom?.[0] || ''}${student.nom?.[0] || ''}`.toUpperCase();
+            avatarEl.innerHTML = `
+                <img src="${photoUrl}" alt="${student.prenom} ${student.nom}" class="header-student-avatar-img"
+                    onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
+                <span class="avatar-initials-fallback" style="display:none;">${initials}</span>
+            `;
         }
 
-        // Sync arrow states
-        if (prevBtn) {
-            prevBtn.disabled = select.selectedIndex <= 0;
-            // Add aria-label for accessibility
-            if (!prevBtn.disabled) {
-                const prevName = select.options[select.selectedIndex - 1].text;
-                prevBtn.setAttribute('aria-label', `Élève précédent - ${prevName}`);
-            }
-        }
-        if (nextBtn) {
-            nextBtn.disabled = select.selectedIndex >= select.options.length - 1;
-            // Add aria-label for accessibility
-            if (!nextBtn.disabled) {
-                const nextName = select.options[select.selectedIndex + 1].text;
-                nextBtn.setAttribute('aria-label', `Élève suivant - ${nextName}`);
-            }
-        }
+        // Sync arrow states (+ accessible labels naming the target student)
+        const syncArrow = (btn, targetIndex, prefix) => {
+            if (!btn) return;
+            btn.disabled = targetIndex < 0 || targetIndex >= options.length;
+            if (!btn.disabled) btn.setAttribute('aria-label', `${prefix} - ${options[targetIndex].text}`);
+        };
+        syncArrow(document.getElementById('previewPrevStudentBtn'), selectedIndex - 1, 'Élève précédent');
+        syncArrow(document.getElementById('previewNextStudentBtn'), selectedIndex + 1, 'Élève suivant');
     },
 
     /**
-     * Auto-resizes the style instructions textarea to fit its text neatly without empty void
+     * Ajuste la hauteur des consignes à leur contenu, dans les bornes min/max définies en CSS.
      * @private
      */
     _autoResizeStyleInstructions(retryCount = 0) {
@@ -610,14 +486,66 @@ export const SettingsModalListeners = {
             return;
         }
 
-        textarea.rows = 1;
+        const { minHeight, maxHeight, borderTopWidth, borderBottomWidth } = getComputedStyle(textarea);
+        const min = parseFloat(minHeight) || 0;
+        const max = parseFloat(maxHeight) || Infinity;
+        const borders = parseFloat(borderTopWidth) + parseFloat(borderBottomWidth);
+
         textarea.style.height = 'auto';
-        const minHeight = 52;
-        const maxHeight = 180;
-        const borderOffset = 2;
-        const targetHeight = Math.min(Math.max(textarea.scrollHeight + borderOffset, minHeight), maxHeight);
+        const targetHeight = Math.min(Math.max(textarea.scrollHeight + borders, min), max);
         textarea.style.height = `${targetHeight}px`;
-        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+        textarea.style.overflowY = textarea.scrollHeight + borders > max ? 'auto' : 'hidden';
+    },
+
+    /**
+     * Démarre une session d'aperçu vierge (cache vidé, carte et bouton réinitialisés).
+     * @private
+     */
+    _resetPreviewSession() {
+        this.previewCache = {};
+        this.lastPreviewIndex = -1;
+        SettingsUIManager.hidePreviewRefreshHint();
+        this._renderPreviewEmptyState();
+    },
+
+    /**
+     * Résout la période affichée par le laboratoire selon le système périodique actif.
+     * @returns {{ periodKeys: string[], currentPeriod: string }}
+     * @private
+     */
+    _resolveLabPeriod() {
+        const isSemestres = appState.periodSystem === 'semestres';
+        const periodKeys = isSemestres ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
+        const defaultPeriod = periodKeys[periodKeys.length - 1];
+        const currentPeriod = periodKeys.includes(appState.currentPeriod) ? appState.currentPeriod : defaultPeriod;
+        return { periodKeys, currentPeriod };
+    },
+
+    /**
+     * Met à jour le bouton de génération de l'aperçu.
+     * @param {'idle'|'done'|'dirty'|'loading'} state
+     * @private
+     */
+    _setGenerateButtonState(state) {
+        const btn = DOM.refreshPreviewBtn;
+        if (!btn) return;
+        const { variant, icon, label, disabled, spin } = GENERATE_BUTTON_STATES[state];
+        btn.classList.remove('btn-ai', 'btn-neutral', 'btn-warning');
+        btn.classList.add(variant);
+        btn.innerHTML = `<iconify-icon class="iconify-inline${spin ? ' icon-spin' : ''}" icon="${icon}"></iconify-icon> ${label}`;
+        btn.disabled = disabled;
+    },
+
+    /**
+     * Applique l'état visuel de la carte d'appréciation.
+     * @param {'empty'|'loading'|'content'|'error'} state
+     * @private
+     */
+    _setResultState(state) {
+        DOM.settingsPreviewResultGroup?.classList.toggle('is-empty', state === 'empty');
+        DOM.settingsPreviewResult?.classList.toggle('placeholder', state === 'empty');
+        DOM.settingsPreviewResult?.classList.toggle('has-error', state === 'error');
+        if (DOM.previewMetaContainer) DOM.previewMetaContainer.hidden = state !== 'content';
     },
 
     /**
@@ -625,25 +553,111 @@ export const SettingsModalListeners = {
      * @private
      */
     _renderPreviewEmptyState() {
-        const previewResult = document.getElementById('settingsPreviewResult');
-        const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult?.closest('.refinement-group');
-        if (previewResult) {
-            previewResult.innerHTML = `
+        this._setResultState('empty');
+        this._setGenerateButtonState('idle');
+        if (DOM.settingsPreviewResult) {
+            DOM.settingsPreviewResult.innerHTML = `
                 <div class="preview-empty-state">
-                    <div class="preview-empty-icon-wrap">
-                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                    </div>
-                    <div class="preview-empty-title">Prêt pour la prévisualisation</div>
-                    <div class="preview-empty-subtitle">Ajustez vos réglages à gauche et cliquez sur <strong>« Générer »</strong> pour tester le rendu en direct.</div>
+                    <iconify-icon class="preview-empty-icon" icon="solar:magic-stick-3-linear"></iconify-icon>
+                    <div class="preview-empty-title">Prêt pour l'aperçu</div>
+                    <div class="preview-empty-subtitle">Ajustez vos réglages puis cliquez sur <strong>Générer</strong> pour tester le rendu sur cet élève.</div>
                 </div>
             `;
-            previewResult.classList.add('placeholder');
-            previewResult.classList.remove('has-error');
         }
-        if (groupEl) {
-            groupEl.classList.add('is-empty');
-            groupEl.classList.remove('has-content');
+    },
+
+    /**
+     * Affiche une erreur dans la carte d'appréciation.
+     * @param {string} title - Titre de l'erreur
+     * @param {string} message - Détail
+     * @param {string} [hint] - Piste de résolution
+     * @private
+     */
+    _renderPreviewError(title, message, hint = '') {
+        this._setResultState('error');
+        if (!DOM.settingsPreviewResult) return;
+        DOM.settingsPreviewResult.innerHTML = `
+            <div class="preview-error-message">
+                <strong><iconify-icon icon="solar:danger-circle-linear"></iconify-icon> ${title}</strong>
+                <p>${message}</p>
+                ${hint ? `<small>${hint}</small>` : ''}
+            </div>`;
+    },
+
+    /**
+     * Affiche une appréciation (depuis le cache ou une génération) et ses métadonnées.
+     * @param {{ appreciation: string, modelUsed: string, tokenUsage: Object }} entry
+     * @param {Object} [options]
+     * @param {boolean} [options.animate=false] - Révélation progressive du texte
+     * @private
+     */
+    async _renderPreviewResult(entry, { animate = false } = {}) {
+        const previewResult = DOM.settingsPreviewResult;
+        if (!previewResult) return;
+
+        const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(entry.appreciation)).trim();
+        this._setResultState('loading');
+        if (animate) {
+            await UI.animateHtmlReveal(previewResult, cleanText, { speed: 'fast' });
+        } else {
+            previewResult.innerHTML = cleanText;
         }
+
+        UI.updateWordCount('settingsPreviewWordCount', entry.appreciation);
+
+        if (DOM.previewModelBadge) {
+            const { tooltip } = Utils.getGenerationModeInfo({
+                studentData: { currentAIModel: entry.modelUsed },
+                tokenUsage: entry.tokenUsage
+            });
+            DOM.previewModelBadge.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> ${MODEL_SHORT_NAMES[entry.modelUsed] || entry.modelUsed}`;
+            DOM.previewModelBadge.setAttribute('data-tooltip', tooltip);
+            DOM.previewModelBadge.hidden = false;
+            UI.initTooltips();
+        }
+
+        this._setResultState('content');
+    },
+
+    /**
+     * Affiche le prompt qui sera envoyé à l'IA (aucun appel réseau).
+     * @param {Object} studentData - Données élève synchronisées sur la période du laboratoire
+     * @param {Object} settings - Réglages de style courants
+     * @private
+     */
+    _renderPromptPreview(studentData, settings) {
+        const promptEl = DOM.settingsPreviewPrompt;
+        if (!promptEl) return;
+        try {
+            promptEl.textContent = AppreciationsManager.getAllPrompts(studentData, settings).appreciation;
+            promptEl.classList.remove('placeholder');
+        } catch (promptError) {
+            promptEl.textContent = `Erreur lors de la génération du prompt : ${promptError.message}`;
+        }
+    },
+
+    /**
+     * Recalcule uniquement le prompt pour l'élève courant (sans reconstruire la carte élève).
+     * @private
+     */
+    _refreshPromptPreview() {
+        const studentId = DOM.previewStudentSelect?.value;
+        const studentResult = DEMO_STUDENT_PROFILES.find(r => r.id === studentId);
+        if (!studentResult?.studentData) return;
+        const { currentPeriod } = this._resolveLabPeriod();
+        this._renderPromptPreview({ ...studentResult.studentData, currentPeriod }, this._getCurrentSettings());
+    },
+
+    /**
+     * Rendu HTML du badge de statut d'appréciation pour la période courante du tableau.
+     * @param {boolean} hasGenerated - true si une appréciation est générée pour cet élève
+     * @returns {string}
+     * @private
+     */
+    _renderCurrentPeriodBadge(hasGenerated) {
+        return hasGenerated
+            ? '<span class="pending-app-badge is-generated"><iconify-icon icon="solar:check-circle-linear"></iconify-icon> Générée ci-dessous</span>'
+            : '<span class="pending-app-badge"><iconify-icon icon="solar:clock-circle-linear"></iconify-icon> En attente</span>';
     },
 
     /**
@@ -653,81 +667,18 @@ export const SettingsModalListeners = {
         const studentId = DOM.previewStudentSelect?.value;
         if (!studentId) return;
 
-        // Check cache for restoration
-        const previewResult = document.getElementById('settingsPreviewResult');
-        const metaContainer = document.getElementById('previewMetaContainer');
         const cached = this.previewCache?.[studentId];
-
         if (cached) {
-            // RESTORE FROM CACHE
-            if (previewResult) {
-                const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(cached.appreciation));
-                previewResult.innerHTML = cleanText;
-                previewResult.classList.remove('placeholder', 'has-error');
+            this._renderPreviewResult(cached);
+            this._setGenerateButtonState(cached.stale ? 'dirty' : 'done');
+            if (cached.stale) {
+                SettingsUIManager.showPreviewRefreshHint();
+            } else {
+                SettingsUIManager.hidePreviewRefreshHint();
             }
-
-            const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult?.closest('.refinement-group');
-            if (groupEl) {
-                groupEl.classList.remove('is-empty');
-                groupEl.classList.add('has-content');
-            }
-
-            // Restore Meta Badges
-            const wordCountEl = document.getElementById('settingsPreviewWordCount');
-            if (wordCountEl) {
-                const wordCount = Utils.countWords(cached.appreciation);
-                const charCount = Utils.countCharacters(cached.appreciation);
-                wordCountEl.textContent = `${wordCount} mot${wordCount !== 1 ? 's' : ''} • ${charCount} car.`;
-            }
-
-            const modelBadgeEl = document.getElementById('previewModelBadge');
-            if (modelBadgeEl) {
-                const modelName = MODEL_SHORT_NAMES[cached.modelUsed] || cached.modelUsed;
-
-                // [FIX] Synchronize tooltip with Standard Utils
-                const mockResult = {
-                    studentData: { currentAIModel: cached.modelUsed },
-                    tokenUsage: cached.tokenUsage // Now available in cache
-                };
-                const { tooltip } = Utils.getGenerationModeInfo(mockResult);
-
-                modelBadgeEl.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> ${modelName}`;
-                modelBadgeEl.setAttribute('data-tooltip', tooltip);
-                modelBadgeEl.removeAttribute('title');
-                modelBadgeEl.style.display = 'flex';
-                UI.initTooltips();
-            }
-
-            if (metaContainer) metaContainer.style.display = 'flex';
-
-            // Restore Button Style (Regenerate)
-            if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:refresh-bold"></iconify-icon> Régénérer';
-                DOM.refreshPreviewBtn.classList.add('btn-regenerate');
-            }
-
         } else {
-            // NO CACHE -> RESET TO INITIAL STATE
+            SettingsUIManager.hidePreviewRefreshHint();
             this._renderPreviewEmptyState();
-
-            if (metaContainer) {
-                metaContainer.style.display = 'none';
-            }
-
-            if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
-            }
-        }
-
-        // Determine period system and current period
-        const periodSystem = appState.periodSystem || 'trimestres';
-        const periodKeys = periodSystem === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
-        const defaultPeriod = periodSystem === 'semestres' ? 'S2' : 'T3';
-
-        let currentPeriod = appState.currentPeriod || defaultPeriod;
-        if (!periodKeys.includes(currentPeriod)) {
-            currentPeriod = defaultPeriod;
         }
 
         // Lab uses ONLY demo profiles for consistent, reliable testing
@@ -735,58 +686,44 @@ export const SettingsModalListeners = {
         if (!studentResult?.studentData) return;
 
         const data = studentResult.studentData;
-
-        const periodData = data.periods?.[currentPeriod];
-        const grade = periodData?.grade ?? '-';
-
-        let historyRows = '';
+        const { periodKeys, currentPeriod } = this._resolveLabPeriod();
         const currentPeriodIndex = periodKeys.indexOf(currentPeriod);
 
-        periodKeys.forEach((period, index) => {
-            // Show ALL periods up to current (History + Current)
-            if (index > currentPeriodIndex) return;
-
+        // Show ALL periods up to current (History + Current)
+        const historyRows = periodKeys.slice(0, currentPeriodIndex + 1).map(period => {
             const pData = data.periods?.[period];
             const pGrade = pData?.grade ?? null;
             const isCurrent = period === currentPeriod;
 
-            // Appreciation content
             let pApp;
+            let cellTitle = '';
             if (isCurrent) {
-                if (cached?.appreciation) {
-                    const shortApp = cached.appreciation.length > 70
-                        ? cached.appreciation.substring(0, 70) + '...'
-                        : cached.appreciation;
-                    pApp = `<span class="generated-preview-cell" title="Appréciation générée">${shortApp}</span>`;
-                } else {
-                    pApp = '<span class="pending-app-badge"><iconify-icon icon="solar:clock-circle-linear"></iconify-icon> En attente</span>';
-                }
+                pApp = this._renderCurrentPeriodBadge(Boolean(cached?.appreciation));
+            } else if (pData?.appreciation) {
+                pApp = pData.appreciation;
+                cellTitle = ` title="${pData.appreciation.replace(/"/g, '&quot;')}"`;
             } else {
-                pApp = pData?.appreciation ? (pData.appreciation.length > 60 ? pData.appreciation.substring(0, 60) + '...' : pData.appreciation) : '<span class="empty-val">-</span>';
+                pApp = '<span class="empty-val">-</span>';
             }
 
-            // Grade styling - use gold-standard grade-bubble with semantic range colors
-            let gradeHtml = '<span class="empty-val">-</span>';
-            if (pGrade !== null) {
-                const gradeClass = Utils.getGradeClass(pGrade);
-                gradeHtml = `<span class="grade-bubble ${gradeClass} ${isCurrent ? 'current-period-grade' : ''}">${pGrade.toFixed(1).replace('.', ',')}</span>`;
-            }
+            const gradeHtml = pGrade !== null
+                ? `<span class="grade-bubble ${Utils.getGradeClass(pGrade)}">${pGrade.toFixed(1).replace('.', ',')}</span>`
+                : '<span class="empty-val">-</span>';
 
-            historyRows += `
+            return `
                 <tr class="preview-row ${isCurrent ? 'is-current' : ''}">
                     <td class="period-cell"><span class="period-name">${period}</span>${isCurrent ? '<span class="current-badge">Actuel</span>' : ''}</td>
                     <td class="grade-cell">${gradeHtml}</td>
-                    <td class="appreciation-cell">${pApp}</td>
+                    <td class="lab-app-cell"${cellTitle}>${pApp}</td>
                 </tr>
             `;
-        });
+        }).join('');
 
         // Display student context
-        const studentDataEl = document.getElementById('settingsPreviewStudentData');
+        const studentDataEl = DOM.settingsPreviewStudentData;
         const nameDisplay = document.getElementById('previewStudentNameDisplay');
 
         if (studentDataEl) {
-            // Prepare new content
             const instructions = data.periods?.[currentPeriod]?.context || '';
             const statusBadges = data.statuses?.map(s => {
                 const info = Utils.getStatusBadgeInfo(s);
@@ -794,337 +731,154 @@ export const SettingsModalListeners = {
             }).join(' ') || '';
 
             const newContent = `
-                <div class="preview-context-header">
-                    ${statusBadges ? `<div class="preview-statuses">${statusBadges}</div>` : ''}
-                    ${instructions ? `
-                        <div class="preview-context-callout">
-                            <span class="preview-context-tag"><iconify-icon icon="solar:notes-linear"></iconify-icon> Contexte</span>
-                            <span class="preview-context-text">${instructions}</span>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <div class="preview-history-section">
-                    <table class="preview-history-table">
-                        <thead>
-                            <tr>
-                                <th class="col-period">Période</th>
-                                <th class="col-grade">Moyenne</th>
-                                <th class="col-app">Appréciation</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${historyRows}
-                        </tbody>
-                    </table>
-                </div>
+                ${statusBadges ? `<div class="preview-statuses">${statusBadges}</div>` : ''}
+                ${instructions ? `
+                    <div class="preview-context-callout">
+                        <span class="preview-context-tag"><iconify-icon icon="solar:notes-linear"></iconify-icon> Contexte</span>
+                        <span class="preview-context-text">${instructions}</span>
+                    </div>
+                ` : ''}
+                <table class="preview-history-table">
+                    <thead>
+                        <tr>
+                            <th class="col-period">Période</th>
+                            <th class="col-grade">Moyenne</th>
+                            <th>Appréciation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRows}
+                    </tbody>
+                </table>
             `;
 
-            // Animate transition with direction
-            const select = DOM.previewStudentSelect;
-            const currentIndex = select ? select.selectedIndex : 0;
-
-            // Determine direction (default to next/slide-left if unknown)
-            let slideOffset = 15; // Slide from right (Next)
-            if (this.lastPreviewIndex !== -1 && currentIndex < this.lastPreviewIndex) {
-                slideOffset = -15; // Slide from left (Prev)
-            }
+            const currentIndex = DOM.previewStudentSelect.selectedIndex;
+            const shouldAnimateSlide = this.lastPreviewIndex !== -1 && currentIndex !== this.lastPreviewIndex;
+            const slideOffset = currentIndex < this.lastPreviewIndex ? -15 : 15;
             this.lastPreviewIndex = currentIndex;
 
-            studentDataEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-            studentDataEl.style.opacity = '0';
-            studentDataEl.style.transform = `translateX(${slideOffset}px)`;
-
-            if (nameDisplay) {
-                nameDisplay.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                nameDisplay.style.opacity = '0.5';
-                nameDisplay.style.transform = `translateX(${slideOffset / 2}px)`;
-            }
-
-            setTimeout(() => {
+            if (!shouldAnimateSlide) {
                 studentDataEl.innerHTML = newContent;
-                studentDataEl.style.opacity = '1';
-                studentDataEl.style.transform = 'translateX(0)';
+                UI.initTooltips();
+            } else {
+                studentDataEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                studentDataEl.style.opacity = '0';
+                studentDataEl.style.transform = `translateX(${slideOffset}px)`;
 
                 if (nameDisplay) {
-                    nameDisplay.style.opacity = '1';
-                    nameDisplay.style.transform = 'translateX(0)';
+                    nameDisplay.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    nameDisplay.style.opacity = '0.5';
+                    nameDisplay.style.transform = `translateX(${slideOffset / 2}px)`;
                 }
 
-                UI.initTooltips();
-            }, 200);
-        }
+                setTimeout(() => {
+                    studentDataEl.innerHTML = newContent;
+                    studentDataEl.style.opacity = '1';
+                    studentDataEl.style.transform = 'translateX(0)';
 
-        // Display prompt preview (no AI call)
-        const currentSettings = this._getCurrentSettings();
+                    if (nameDisplay) {
+                        nameDisplay.style.opacity = '1';
+                        nameDisplay.style.transform = 'translateX(0)';
+                    }
 
-        const previewPromptEl = document.getElementById('settingsPreviewPrompt');
-        if (previewPromptEl) {
-            try {
-                // [FIX] Sync studentData.currentPeriod with appState.currentPeriod
-                // to ensure prompt inspector displays same period as table preview
-                const syncedStudentData = { ...studentResult.studentData, currentPeriod };
-                const prompts = AppreciationsManager.getAllPrompts(syncedStudentData, currentSettings);
-                previewPromptEl.textContent = prompts.appreciation;
-                previewPromptEl.classList.remove('placeholder');
-            } catch (promptError) {
-                previewPromptEl.textContent = 'Erreur lors de la génération du prompt : ' + promptError.message;
+                    UI.initTooltips();
+                }, 200);
             }
         }
+
+        // [FIX] Sync studentData.currentPeriod with the lab period so the prompt matches the table
+        this._renderPromptPreview({ ...data, currentPeriod }, this._getCurrentSettings());
+    },
+
+    /**
+     * Pistes de résolution selon le message d'erreur de génération.
+     * @param {string} message
+     * @returns {string}
+     * @private
+     */
+    _getGenerationErrorHint(message) {
+        if (/API|key|clé/.test(message)) return 'Vérifiez votre clé API dans Paramètres › IA & Clés.';
+        if (/quota|rate|limit/.test(message)) return 'Quota atteint : patientez quelques minutes ou changez de modèle.';
+        if (/network|fetch|connexion/.test(message)) return 'Vérifiez votre connexion internet.';
+        return 'Réessayez ou vérifiez vos paramètres.';
     },
 
     async _handlePreviewRefresh() {
         SettingsUIManager.hidePreviewRefreshHint();
-        let generationSuccess = false;
-        const previewResult = document.getElementById('settingsPreviewResult');
-        const previewStatus = document.getElementById('previewStatus');
         const studentId = DOM.previewStudentSelect?.value;
-
-        if (!studentId) {
-            if (previewResult) {
-                previewResult.innerHTML = '<span style="color:var(--warning-color);"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Sélectionnez un profil dans la liste.</span>';
-            }
-            return;
-        }
 
         // Lab uses ONLY demo profiles
         const studentResult = DEMO_STUDENT_PROFILES.find(r => r.id === studentId);
         if (!studentResult) {
-            if (previewResult) {
-                previewResult.innerHTML = '<span style="color:var(--error-color);"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon> Profil introuvable. Veuillez en sélectionner un autre.</span>';
-            }
+            this._renderPreviewError('Profil introuvable', 'Sélectionnez un autre élève de démonstration.');
             return;
-        }
-
-        // Context is already displayed by _updateStudentContextAndPrompt, no need to rebuild
-
-        // [FIX] Determine current period same as in _updateStudentContextAndPrompt
-        const periodSystem = appState.periodSystem || 'trimestres';
-        const periodKeys = periodSystem === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
-        const defaultPeriod = periodSystem === 'semestres' ? 'S2' : 'T3';
-        let currentPeriod = appState.currentPeriod || defaultPeriod;
-        if (!periodKeys.includes(currentPeriod)) {
-            currentPeriod = defaultPeriod;
         }
 
         // Vérifier qu'une clé API est configurée (ou Ollama activé)
-        const currentModel = appState.currentAIModel || 'gemini-3.6-flash';
-        const isOllama = currentModel.startsWith('ollama');
-        const hasApiKey = UI.checkAPIKeyPresence(true);
-
-        if (!hasApiKey) {
-            if (previewResult) {
-                if (isOllama) {
-                    previewResult.innerHTML = `<span style="color:var(--error-color);"><iconify-icon icon="solar:server-square-bold"></iconify-icon> <strong>Ollama non activé</strong><br><br>Activez Ollama dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu avec ce modèle local.</span>`;
-                } else {
-                    previewResult.innerHTML = `<span style="color:var(--error-color);"><iconify-icon icon="solar:key-minimalistic-square-bold"></iconify-icon> <strong>Clé API manquante</strong><br><br>Configurez une clé API dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu.</span>`;
-                }
-            }
-            const notifMsg = isOllama
-                ? 'Ollama non activé. Activez-le dans l\'onglet Avancé.'
-                : 'Clé API non configurée. Configurez-la dans l\'onglet Avancé.';
-            UI.showNotification(notifMsg, 'error');
-            SettingsUIManager.showPreviewRefreshHint();
-            if (previewStatus) {
-                const statusMsg = isOllama
-                    ? '<iconify-icon icon="solar:server-square-bold" style="margin-right: 6px;"></iconify-icon> Activez Ollama puis réessayez.'
-                    : '<iconify-icon icon="solar:key-minimalistic-square-bold" style="margin-right: 6px;"></iconify-icon> Configurez une clé API puis réessayez.';
-                previewStatus.innerHTML = statusMsg;
-            }
+        if (!UI.checkAPIKeyPresence(true)) {
+            const isOllama = (appState.currentAIModel || '').startsWith('ollama');
+            const title = isOllama ? 'Ollama non activé' : 'Clé API manquante';
+            const message = isOllama
+                ? 'Activez Ollama dans Paramètres › IA & Clés pour utiliser ce modèle local.'
+                : 'Configurez une clé API dans Paramètres › IA & Clés pour tester le rendu.';
+            this._renderPreviewError(title, message);
+            UI.showNotification(message, 'error');
             return;
         }
 
-        // Afficher le loading
-        DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon> Génération...';
-        DOM.refreshPreviewBtn.disabled = true;
-        if (previewResult) {
-            previewResult.innerHTML = '<div class="loading-state-centered"><div class="loading-spinner"></div><span>Génération en cours...</span></div>';
-            previewResult.classList.remove('placeholder');
-            const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
-            if (groupEl) {
-                groupEl.classList.remove('is-empty');
-                groupEl.classList.add('has-content');
-            }
+        this._setGenerateButtonState('loading');
+        this._setResultState('loading');
+        if (DOM.settingsPreviewResult) {
+            DOM.settingsPreviewResult.innerHTML = '<div class="loading-state-centered"><div class="loading-spinner"></div><span>Génération en cours…</span></div>';
         }
 
+        // [FIX] Sync studentData.currentPeriod with the lab period (prompt preview + AI generation)
+        const { currentPeriod } = this._resolveLabPeriod();
+        const syncedStudentData = { ...studentResult.studentData, currentPeriod };
+        const currentSettings = this._getCurrentSettings();
+        this._renderPromptPreview(syncedStudentData, currentSettings);
+
         try {
-            const currentSettings = this._getCurrentSettings();
-
-            // [FIX] Sync studentData.currentPeriod with appState.currentPeriod
-            // Used for both prompt preview and AI generation
-            const syncedStudentData = { ...studentResult.studentData, currentPeriod };
-
-            // Display the prompt that will be sent to the AI
-            const previewPromptEl = document.getElementById('settingsPreviewPrompt');
-            if (previewPromptEl) {
-                try {
-                    const prompts = AppreciationsManager.getAllPrompts(syncedStudentData, currentSettings);
-                    previewPromptEl.textContent = prompts.appreciation;
-                    previewPromptEl.classList.remove('placeholder');
-                } catch (promptError) {
-                    previewPromptEl.textContent = 'Erreur lors de la génération du prompt : ' + promptError.message;
-                }
-            }
-
             const result = await AppreciationsManager.generateAppreciation(syncedStudentData, true, currentSettings);
 
             // Save to session cache so it persists when navigating back to this student
-            this.previewCache[studentId] = {
+            const entry = {
                 appreciation: result.appreciation,
                 modelUsed: result.modelUsed || appState.currentAIModel,
                 tokenUsage: {
                     appreciation: result.usage,
                     generationTimeMs: result.generationTimeMs
-                },
-                timestamp: Date.now()
+                }
             };
+            this.previewCache[studentId] = entry;
 
-            if (previewResult) {
-                const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
-                previewResult.classList.remove('has-error', 'placeholder');
-                const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
-                if (groupEl) {
-                    groupEl.classList.remove('is-empty');
-                    groupEl.classList.add('has-content');
-                }
-                // Apply word-by-word reveal animation (compatible with HTML tags)
-                await UI.animateHtmlReveal(previewResult, cleanText, { speed: 'fast' });
-            }
+            // L'utilisateur a changé d'élève pendant la génération : résultat conservé en cache uniquement
+            if (DOM.previewStudentSelect?.value !== studentId) return;
 
-            const wordCountEl = document.getElementById('settingsPreviewWordCount');
-            if (wordCountEl) {
-                const wordCount = Utils.countWords(result.appreciation);
-                const charCount = Utils.countCharacters(result.appreciation);
-                wordCountEl.textContent = `${wordCount} mot${wordCount !== 1 ? 's' : ''} • ${charCount} car.`;
-            }
+            await this._renderPreviewResult(entry, { animate: true });
 
-            // Update current period table cell with newly generated text
-            const currentAppCell = document.querySelector('.preview-row.is-current .appreciation-cell');
+            // Update current period table cell with generated status badge
+            const currentAppCell = DOM.settingsPreviewStudentData?.querySelector('.preview-row.is-current .lab-app-cell');
             if (currentAppCell) {
-                const shortApp = result.appreciation.length > 70 
-                    ? result.appreciation.substring(0, 70) + '...' 
-                    : result.appreciation;
-                currentAppCell.innerHTML = `<span class="generated-preview-cell" title="Appréciation générée">${shortApp}</span>`;
+                currentAppCell.innerHTML = this._renderCurrentPeriodBadge(true);
             }
 
-            // Display the AI model used for this generation
-            const modelBadgeEl = document.getElementById('previewModelBadge');
-            if (modelBadgeEl) {
-                const modelUsed = result.modelUsed || appState.currentAIModel;
-                const modelDisplayName = MODEL_SHORT_NAMES[modelUsed] || modelUsed;
-
-                // [FIX] Enable Single Source of Truth for tooltip info
-                // Create a mock result object compatible with Utils.getGenerationModeInfo
-                // Preview 'result' has different structure ({usage, generationTimeMs}) than full result ({tokenUsage: {appreciation: ... }})
-                const mockResult = {
-                    studentData: { currentAIModel: modelUsed },
-                    tokenUsage: {
-                        appreciation: result.usage,
-                        generationTimeMs: result.generationTimeMs
-                    }
-                };
-
-                // Get standardized tooltip
-                const { tooltip } = Utils.getGenerationModeInfo(mockResult);
-
-                modelBadgeEl.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> ${modelDisplayName}`;
-                modelBadgeEl.setAttribute('data-tooltip', tooltip);
-                modelBadgeEl.removeAttribute('title'); // Remove native tooltip
-                modelBadgeEl.style.display = 'flex';
-
-                // Refresh tooltips to apply Tippy
-                UI.initTooltips();
-            }
-
-            const metaContainer = document.getElementById('previewMetaContainer');
-            if (metaContainer) metaContainer.style.display = 'flex';
-
-            generationSuccess = true;
-
+            this._setGenerateButtonState('done');
         } catch (error) {
-            console.error('Preview Error:', error);
-
-            let errorMessage = error.message || 'Erreur inconnue';
-            let errorExplanation = '';
-
-            if (errorMessage.includes('API') || errorMessage.includes('key') || errorMessage.includes('clé')) {
-                errorExplanation = 'Vérifiez votre clé API dans l\'onglet Avancé.';
-            } else if (errorMessage.includes('quota') || errorMessage.includes('rate') || errorMessage.includes('limit')) {
-                errorExplanation = 'Quota API dépassé. Attendez quelques minutes ou changez de modèle.';
-            } else if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('connexion')) {
-                errorExplanation = 'Vérifiez votre connexion internet.';
-            } else {
-                errorExplanation = 'Réessayez ou vérifiez vos paramètres.';
-            }
-
-            if (previewResult) {
-                const groupEl = document.getElementById('settingsPreviewResultGroup') || previewResult.closest('.refinement-group');
-                if (groupEl) {
-                    groupEl.classList.remove('is-empty');
-                    groupEl.classList.add('has-content');
-                }
-                previewResult.innerHTML = `
-                    <div class="preview-error-message">
-                        <strong><iconify-icon icon="solar:danger-circle-bold"></iconify-icon> Échec de la génération</strong>
-                        <p>${errorMessage}</p>
-                        <small>${errorExplanation}</small>
-                    </div>`;
-                previewResult.classList.add('has-error');
-                previewResult.classList.remove('placeholder');
-            }
-
+            const errorMessage = error.message || 'Erreur inconnue';
             UI.showNotification(`Erreur de génération : ${errorMessage}`, 'error');
-            SettingsUIManager.showPreviewRefreshHint();
-            if (previewStatus) {
-                previewStatus.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="margin-right: 6px; color: var(--error-color);"></iconify-icon> Échec. Corrigez le problème et réessayez.';
-            }
-
-        } finally {
-            if (generationSuccess) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:refresh-bold"></iconify-icon> Régénérer';
-                DOM.refreshPreviewBtn.classList.add('btn-regenerate');
-            } else {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
-            }
-            DOM.refreshPreviewBtn.disabled = false;
+            if (DOM.previewStudentSelect?.value !== studentId) return;
+            this._renderPreviewError('Échec de la génération', errorMessage, this._getGenerationErrorHint(errorMessage));
+            this._setGenerateButtonState('idle');
         }
     },
 
     _setupModalInteractions(addClickListener) {
-        // Clear preview cache and reset UI when closing the modal
-        const clearCache = () => {
-            this.previewCache = {};
-
-            // Reset UI State immediately
-            this._renderPreviewEmptyState();
-            const meta = document.getElementById('previewMetaContainer');
-            if (meta) meta.style.display = 'none';
-
-            if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
-            }
-        };
-
-        // Explicitly handle Personalization Modal (Lab context)
-        const personalizationModal = document.getElementById('personalizationModal');
-        if (personalizationModal) {
-            personalizationModal.addEventListener('click', (e) => {
-                if (e.target === personalizationModal) clearCache();
-            });
-            const pCloseBtns = personalizationModal.querySelectorAll('#cancelPersonalizationBtn, #savePersonalizationBtn, #closePersonalizationModalBtn, .close-button');
-            pCloseBtns.forEach(btn => btn.addEventListener('click', clearCache));
-        }
-
         DOM.settingsModal.addEventListener('click', (e) => {
             if (e.target === DOM.settingsModal) {
-                clearCache();
                 SettingsUIManager.saveSettings(false);
             }
         });
-
-
 
         // Gestion des boutons d'incrémentation/décrémentation personnalisés
         DOM.settingsModal.addEventListener('click', (e) => {
@@ -1154,18 +908,7 @@ export const SettingsModalListeners = {
         DOM.settingsModal.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 e.stopPropagation(); // Empêcher le handler global de recevoir cet événement
-                clearCache();
                 SettingsUIManager.saveSettings(false);
-            }
-        });
-
-        // Safeguard: Global Escape listener for Personalization Modal to ensure cache clear
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const pModal = document.getElementById('personalizationModal');
-                if (pModal && (pModal.style.display === 'flex' || pModal.style.display === 'block')) {
-                    clearCache();
-                }
             }
         });
 

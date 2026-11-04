@@ -1107,7 +1107,6 @@
 .modal .nebula-card:hover,
 .modal .card-content-wrapper:hover,
 .modal .stat-card:hover,
-.modal .settings-card:hover,
 .modal .ui-accordion:hover,
 .modal .sidebar-card:hover {
     box-shadow: var(--shadow-sm);
@@ -1609,63 +1608,6 @@
         min-width: 100%;
     }
 }
-
-/* === Styles pour la sÃƒÂ©lection de matiÃƒÂ¨re === */
-.subject-selection-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.subject-toggle-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.subject-toggle-group label {
-    font-weight: 500;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-/* Message inline "Personnalisation dÃƒÂ©sactivÃƒÂ©e" */
-.generic-info-inline {
-    display: none;
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    background: transparent;
-    padding: 0 0 0 8px;
-    border-left: 2px solid var(--border-color);
-    margin-left: 8px;
-    white-space: nowrap;
-    align-items: center;
-    gap: 6px;
-    font-style: italic;
-}
-
-.generic-info-inline i {
-    color: var(--primary-color);
-}
-
-/* === Cartes pleine hauteur pour la grille === */
-.settings-card-full-height {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.settings-card-full-height .settings-card-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    /* Fix: Prevent focus ring clipping by expanding the scroll container's bounds */
-    padding: 8px;
-    margin: -8px;
-}
-
 
 /* === Avertissement clÃƒÂ© manquante === */
 .missing-key-warning {

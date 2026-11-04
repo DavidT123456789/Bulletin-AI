@@ -39,10 +39,12 @@ input::-webkit-search-results-decoration {
 
 
 /* Premium Focus Outline System - Disabled on click/touch, enabled on keyboard navigation */
-*:focus {
+*:focus,
+.modal:focus-visible,
+[tabindex="-1"]:focus-visible {
     outline: none !important;
 }
-*:focus-visible {
+*:focus-visible:not(.modal):not([tabindex="-1"]) {
     outline: 2px solid var(--primary-color) !important;
     outline-offset: 2px !important;
 }

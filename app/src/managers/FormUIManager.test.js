@@ -32,6 +32,13 @@ vi.mock('../state/State.js', () => ({
 vi.mock('../config/Config.js', () => ({
     CONFIG: {},
     DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' },
+    IA_TONE_LABELS: {
+        1: 'Très encourageant',
+        2: 'Bienveillant',
+        3: 'Neutre / Factuel',
+        4: 'Exigeant',
+        5: 'Strict'
+    },
     MODEL_DESCRIPTIONS: {
         'gpt-4': 'Modèle GPT-4 puissant',
         'gemini-pro': 'Modèle Google Gemini'
@@ -46,10 +53,13 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdPositive: { value: '1' },
         settingsEvolutionThresholdNegative: { value: '-1' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
+        iaLengthSliderValue: { textContent: '' },
         iaToneSlider: { value: '3' },
         iaToneToggle: { checked: false, disabled: false },
         iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
-        iaStyleInstructions: { value: '' },
+        iaToneSliderValue: { textContent: '' },
+        iaStyleInstructions: { value: '', disabled: false, classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
+        iaStyleInstructionsToggle: { checked: true },
         iaDiscipline: { value: '' },
         aiModelSelect: { value: 'gpt-4' },
         openaiApiKey: { value: '' },
@@ -87,7 +97,7 @@ vi.mock('./AppreciationsManager.js', () => ({
 import { FormUI } from './FormUIManager.js';
 import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
-import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS } from '../config/Config.js';
 
 describe('FormUIManager', () => {
     let mockApp;
@@ -106,10 +116,6 @@ describe('FormUIManager', () => {
         // Mock getElementById for dynamic elements
         document.getElementById = vi.fn((id) => {
             if (id === 'aiModelDescription') return { innerHTML: '' };
-            if (id === 'iaStyleHeader') return { innerHTML: '' };
-            if (id === 'settings-controls-panel') return { classList: { toggle: vi.fn(), remove: vi.fn(), add: vi.fn() } };
-            if (id === 'iaLengthSliderValue') return { textContent: '' };
-            if (id === 'iaToneSliderValue') return { textContent: '' };
             if (id === 'missingApiKeyWarning') return { style: { display: '' } };
             if (id === 'missingKeyText') return { textContent: '' };
             return null;
@@ -183,25 +189,17 @@ describe('FormUIManager', () => {
         });
 
         it('should update tone slider, toggle, and display label properly', () => {
-            const toneDisplay = { textContent: '' };
-            const origGetElementById = document.getElementById;
-            document.getElementById = vi.fn((id) => {
-                if (id === 'iaToneSliderValue') return toneDisplay;
-                if (id === 'iaToneSliderContainer') return { classList: { toggle: vi.fn() } };
-                return origGetElementById(id);
-            });
-
             // When enableTone is true and tone is 3
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
             FormUI.updateSettingsFields();
             expect(DOM.iaToneToggle.checked).toBe(true);
-            expect(toneDisplay.textContent).toBe('Neutre / Factuel');
+            expect(DOM.iaToneSliderValue.textContent).toBe('Neutre / Factuel');
 
             // When enableTone is false
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
             FormUI.updateSettingsFields();
             expect(DOM.iaToneToggle.checked).toBe(false);
-            expect(toneDisplay.textContent).toBe('Adaptatif (libre)');
+            expect(DOM.iaToneSliderValue.textContent).toBe('Adaptatif (libre)');
         });
 
         it('should set style instructions from MonStyle when personalization enabled', () => {
@@ -232,6 +230,41 @@ describe('FormUIManager', () => {
             FormUI.updateSettingsFields();
             expect(DOM.iaStyleInstructions.value).toBe('Important teacher instructions');
             expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Important teacher instructions');
+        });
+    });
+
+    describe('syncStyleControls()', () => {
+        it('should format length display with words and estimated characters', () => {
+            DOM.iaLengthSlider.value = '40';
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, enableStyleInstructions: true } };
+
+            FormUI.syncStyleControls();
+
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~40 mots • ~260 car.');
+        });
+
+        it('should sync style instructions toggle and disabled state', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { enableTone: false, enableStyleInstructions: false } };
+
+            FormUI.syncStyleControls();
+
+            expect(DOM.iaStyleInstructionsToggle.checked).toBe(false);
+            expect(DOM.iaStyleInstructions.disabled).toBe(true);
+        });
+
+        it('should highlight active tone tick only when enableTone is true', () => {
+            const ticks = Array.from({ length: 5 }, () => ({ classList: { toggle: vi.fn() } }));
+            DOM.iaToneSliderContainer.querySelectorAll = vi.fn(() => ticks);
+            DOM.iaToneSlider.value = '4';
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: true } };
+            FormUI.syncStyleControls();
+            expect(ticks[3].classList.toggle).toHaveBeenCalledWith('active', true);
+            expect(ticks[0].classList.toggle).toHaveBeenCalledWith('active', false);
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: false } };
+            FormUI.syncStyleControls();
+            expect(ticks[3].classList.toggle).toHaveBeenLastCalledWith('active', false);
         });
     });
 

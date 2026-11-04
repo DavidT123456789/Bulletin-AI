@@ -8,6 +8,7 @@ import { UI } from '../UIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { getConfiguredProviders } from '../../config/providers.js';
 import { appState } from '../../state/State.js';
 
@@ -63,14 +64,7 @@ export const OtherModalsListeners = {
         const helpToPersonalizationBtn = document.getElementById('helpToPersonalizationBtn');
         helpToPersonalizationBtn?.addEventListener('click', () => {
             UI.closeAllModals();
-            setTimeout(() => {
-                const personalizationModal = document.getElementById('personalizationModal');
-                if (personalizationModal) UI.openModal(personalizationModal);
-                UI.highlightSettingsElement('settings-controls-panel', {
-                    tab: 'templates',
-                    useParentFormGroup: false
-                });
-            }, 300);
+            setTimeout(() => SettingsModalListeners.openPersonalization('settings-controls-panel'), 300);
         });
 
         addClickListener(DOM.relaunchWelcomeGuideBtn, (e) => WelcomeManager.handleRelaunchWelcomeGuide(e));

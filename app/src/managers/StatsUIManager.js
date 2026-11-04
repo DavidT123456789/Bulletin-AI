@@ -363,14 +363,7 @@ export const StatsUI = {
                 if (!avgWordsEl._clickListenerAdded) {
                     avgWordsEl.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent triggering parent header toggle
-                        const personalizationModal = document.getElementById('personalizationModal');
-                        if (personalizationModal) {
-                            UI.openModal(personalizationModal);
-                            // [FIX] Refresh Lab data on modal open to sync with current period
-                            SettingsModalListeners._updateStudentContextAndPrompt();
-                            // Use centralized highlight utility for length slider
-                            UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
-                        }
+                        SettingsModalListeners.openPersonalization('iaLengthSlider');
                     });
                     avgWordsEl._clickListenerAdded = true;
                 }

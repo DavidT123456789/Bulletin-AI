@@ -305,9 +305,6 @@ export const ModelSelectionManager = {
             SettingsUIManager.updateHeaderAiModelDisplay();
         }
         SettingsUIManager?.renderProviderModelChips?.();
-        if (SettingsUIManager?.updatePersonalizationState) {
-            SettingsUIManager.updatePersonalizationState();
-        }
         if (UI?.updateHeaderPremiumLook) {
             UI.updateHeaderPremiumLook();
         }

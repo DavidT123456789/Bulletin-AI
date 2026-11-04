@@ -68,7 +68,6 @@ vi.mock('./AppreciationsManager.js', () => ({
 
 vi.mock('./SettingsUIManager.js', () => ({
     SettingsUIManager: {
-        updatePersonalizationState: vi.fn(),
         updateApiStatusDisplay: vi.fn(),
         updateOllamaToggleDisplay: vi.fn(),
         updateHeaderAiModelDisplay: vi.fn()

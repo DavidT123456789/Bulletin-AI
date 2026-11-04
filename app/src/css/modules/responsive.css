@@ -28,24 +28,23 @@
     }
 
 
-    .settings-layout-grid {
+    /* Personalization modal: single column on tablet/mobile */
+    .personalization-modal-content {
+        --modal-height: auto;
+    }
+
+    .lab-layout {
         grid-template-columns: 1fr;
-        gap: 24px;
+        overflow-y: auto;
     }
 
-    /* Personalization modal: single column on tablet */
-    .settings-layout-grid.personalization-grid,
-    .settings-layout-grid.personalization-grid.inspector-visible {
-        grid-template-columns: 1fr;
-    }
-
-    .settings-layout-grid.personalization-grid .settings-card,
-    .settings-layout-grid.personalization-grid .settings-card-full-height {
-        height: auto;
-    }
-
-    .settings-layout-grid.personalization-grid .settings-card-full-height .settings-card-content {
+    .lab-pane {
         overflow-y: visible;
+    }
+
+    .lab-pane--settings {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
     }
 }
 

@@ -9,9 +9,12 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, MODEL_DESCRIPTIONS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
+
+/** Nombre moyen de caractères par mot, pour l'estimation affichée sous la cible de longueur. */
+const APPROX_CHARS_PER_WORD = 6.5;
 
 /** @type {import('./AppManager.js').App|null} */
 let App;
@@ -33,89 +36,24 @@ export const FormUI = {
      * Met à jour tous les champs des paramètres.
      */
     updateSettingsFields() {
-        const subjectName = "Mon Style";
-        const subjectData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
-        const iaConfig = subjectData?.iaConfig || DEFAULT_IA_CONFIG;
+        const iaConfig = appState.subjects?.['MonStyle']?.iaConfig
+            || appState.subjects?.['Générique']?.iaConfig
+            || DEFAULT_IA_CONFIG;
 
         DOM.periodSystemRadios.forEach(r => r.checked = r.value === appState.periodSystem);
         DOM.settingsEvolutionThresholdPositive.value = appState.evolutionThresholds.positive;
         DOM.settingsEvolutionThresholdNegative.value = appState.evolutionThresholds.negative;
 
-        if (DOM.iaLengthSlider) {
-            DOM.iaLengthSlider.min = "10";
-            DOM.iaLengthSlider.max = "90";
-            DOM.iaLengthSlider.value = iaConfig.length;
-        }
-        if (DOM.iaToneSlider) {
-            DOM.iaToneSlider.value = iaConfig.tone ?? 3;
-        }
-
-        // [FIX] Always preserve styleInstructions and discipline from MonStyle to prevent data loss
-        const monStyleIaConfig = appState.subjects?.['MonStyle']?.iaConfig || iaConfig || {};
-        const styleInstructionsValue = monStyleIaConfig.styleInstructions ?? '';
-        DOM.iaStyleInstructions.value = styleInstructionsValue;
-
-        // Load discipline field (optional, for subject-specific vocabulary)
-        const disciplineValue = monStyleIaConfig.discipline ?? '';
-        if (DOM.iaDiscipline) {
-            DOM.iaDiscipline.value = disciplineValue;
-        }
+        if (DOM.iaLengthSlider) DOM.iaLengthSlider.value = iaConfig.length;
+        if (DOM.iaToneSlider) DOM.iaToneSlider.value = iaConfig.tone ?? 3;
+        if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.value = iaConfig.styleInstructions ?? '';
+        if (DOM.iaDiscipline) DOM.iaDiscipline.value = iaConfig.discipline ?? '';
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
             radio.checked = radio.value === (iaConfig.voice || 'default');
         });
 
-        const iaStyleHeader = document.getElementById('iaStyleHeader');
-        if (iaStyleHeader) {
-            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;
-        }
-
-        const controlsToEnable = [
-            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaToneToggle, DOM.iaDiscipline,
-            ...document.querySelectorAll('#iaVoiceSelector input'),
-            ...document.querySelectorAll('#iaVoiceSelector label')
-        ];
-        controlsToEnable.forEach(el => { if (el) el.disabled = false; });
-
-        const controlsPanel = document.getElementById('settings-controls-panel');
-        if (controlsPanel?.classList?.toggle) {
-            controlsPanel.classList.toggle('disabled', false);
-        }
-
-        // Update slider display labels directly (dispatchEvent may fire before SettingsModal listeners are attached)
-        if (DOM.iaLengthSlider) {
-            const lengthVal = parseInt(DOM.iaLengthSlider.value);
-            const approxChars = Math.round(lengthVal * 6.5);
-            const lengthDisplay = document.getElementById('iaLengthSliderValue');
-            if (lengthDisplay) lengthDisplay.textContent = `~${lengthVal} mots • ~${approxChars} car.`;
-        }
-
-        const toneEnabled = monStyleIaConfig.enableTone ?? (monStyleIaConfig.tone !== 3 && monStyleIaConfig.tone !== undefined);
-        if (DOM.iaToneToggle) {
-            DOM.iaToneToggle.checked = toneEnabled;
-            DOM.iaToneToggle.disabled = false;
-        }
-
-        const toneContainer = document.getElementById('iaToneSliderContainer') || DOM.iaToneSliderContainer;
-        if (toneContainer?.classList) {
-            toneContainer.classList.toggle('opacity-reduced', !toneEnabled);
-        }
-
-        if (DOM.iaToneSlider) {
-            const toneVal = parseInt(DOM.iaToneSlider.value, 10);
-            const toneLabels = {
-                1: 'Très encourageant',
-                2: 'Bienveillant',
-                3: 'Neutre / Factuel',
-                4: 'Exigeant',
-                5: 'Strict'
-            };
-            const toneDisplay = document.getElementById('iaToneSliderValue') || DOM.iaToneSliderValue;
-            if (toneDisplay) {
-                toneDisplay.textContent = toneEnabled ? (toneLabels[toneVal] || 'Neutre / Factuel') : 'Adaptatif (libre)';
-            }
-        }
-
+        this.syncStyleControls();
 
         if (DOM.aiModelSelect) DOM.aiModelSelect.value = appState.currentAIModel;
         if (DOM.openaiApiKey) DOM.openaiApiKey.value = appState.openaiApiKey;
@@ -188,6 +126,37 @@ export const FormUI = {
     },
 
     /**
+     * Synchronise l'affichage des contrôles de style dépendants (libellés de longueur et de ton,
+     * interrupteurs, état des consignes) depuis MonStyle et la position des curseurs.
+     * Source unique d'affichage de la modale « Personnalisation du style ».
+     */
+    syncStyleControls() {
+        const config = appState.subjects?.['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
+        const toneEnabled = config.enableTone ?? (config.tone !== undefined && config.tone !== 3);
+        const instructionsEnabled = config.enableStyleInstructions !== false;
+
+        if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
+            const words = parseInt(DOM.iaLengthSlider.value, 10);
+            DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${Math.round(words * APPROX_CHARS_PER_WORD)} car.`;
+        }
+
+        if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;
+        DOM.iaToneSliderContainer?.classList.toggle('opacity-reduced', !toneEnabled);
+        const toneVal = parseInt(DOM.iaToneSlider?.value, 10) || 3;
+        DOM.iaToneSliderContainer?.querySelectorAll?.('.tick').forEach((tick, idx) => {
+            tick.classList.toggle('active', toneEnabled && idx + 1 === toneVal);
+        });
+        if (DOM.iaToneSliderValue) {
+            DOM.iaToneSliderValue.textContent = toneEnabled
+                ? (IA_TONE_LABELS[toneVal] || IA_TONE_LABELS[3])
+                : 'Adaptatif (libre)';
+        }
+
+        if (DOM.iaStyleInstructionsToggle) DOM.iaStyleInstructionsToggle.checked = instructionsEnabled;
+        if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.disabled = !instructionsEnabled;
+    },
+
+    /**
      * Met à jour la description du modèle IA sélectionné.
      */
     updateModelDescription() {
@@ -196,11 +165,6 @@ export const FormUI = {
             descEl.innerHTML = MODEL_DESCRIPTIONS[DOM.aiModelSelect.value] || "Description...";
         }
     },
-
-    /**
-     * Met à jour l'affichage des prompts IA dans les paramètres.
-     */
-
 
     // État pour les transitions d'onglets des paramètres
     _currentSettingsTab: 'templates',
