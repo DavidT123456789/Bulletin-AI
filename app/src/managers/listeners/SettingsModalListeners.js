@@ -24,14 +24,6 @@ let App = null;
 /** Clé de persistance de l'onglet actif du volet d'aperçu (Aperçu / Prompt). */
 const PREVIEW_TAB_STORAGE_KEY = 'labPreviewTab';
 
-/** États visuels du bouton de génération de l'aperçu (aligné sur #focusGenerateBtn). */
-const GENERATE_BUTTON_STATES = {
-    idle: { variant: 'btn-ai', icon: 'solar:magic-stick-3-bold-duotone', label: 'Générer', disabled: false },
-    done: { variant: 'btn-neutral', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
-    dirty: { variant: 'btn-warning', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
-    loading: { variant: 'btn-neutral', icon: 'ph:spinner-gap-bold', label: 'Génération…', disabled: true, spin: true }
-};
-
 export const SettingsModalListeners = {
     init(appInstance) {
         App = appInstance;
@@ -522,18 +514,12 @@ export const SettingsModalListeners = {
     },
 
     /**
-     * Met à jour le bouton de génération de l'aperçu.
+     * Met à jour le bouton de génération de l'aperçu via le socle unifié UI.
      * @param {'idle'|'done'|'dirty'|'loading'} state
      * @private
      */
     _setGenerateButtonState(state) {
-        const btn = DOM.refreshPreviewBtn;
-        if (!btn) return;
-        const { variant, icon, label, disabled, spin } = GENERATE_BUTTON_STATES[state];
-        btn.classList.remove('btn-ai', 'btn-neutral', 'btn-warning');
-        btn.classList.add(variant);
-        btn.innerHTML = `<iconify-icon class="iconify-inline${spin ? ' icon-spin' : ''}" icon="${icon}"></iconify-icon> ${label}`;
-        btn.disabled = disabled;
+        UI.setGenerateButtonState?.(DOM.refreshPreviewBtn, state);
     },
 
     /**

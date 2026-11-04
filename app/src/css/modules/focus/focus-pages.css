@@ -12,14 +12,6 @@
 }
 
 /* Individual Page */
-/* Utility: Small Button */
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 13px;
-    height: 32px;
-    min-width: auto;
-}
-
 .focus-page {
     min-width: 100%;
     width: 100%;
@@ -530,17 +522,6 @@
         width: 32px;
         height: 32px;
         font-size: 14px;
-    }
-}
-
-@keyframes shine-sweep {
-    0% {
-        left: -100%;
-    }
-
-    50%,
-    100% {
-        left: 100%;
     }
 }
 

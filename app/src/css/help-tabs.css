@@ -334,12 +334,16 @@
     color: var(--text-secondary);
 }
 
-.help-ui-pill.is-ai iconify-icon {
-    color: var(--color-blue);
+.help-ui-pill.is-ai {
+    background: var(--primary-color);
+    border-color: transparent;
+    border-radius: var(--radius-pill);
+    color: #ffffff;
+    padding: 1px 7px;
 }
 
-[data-theme="dark"] .help-ui-pill.is-ai iconify-icon {
-    color: var(--color-blue-bright);
+.help-ui-pill.is-ai iconify-icon {
+    color: inherit;
 }
 
 .help-ui-pill.is-emerald iconify-icon {

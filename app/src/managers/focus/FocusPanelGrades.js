@@ -8,6 +8,7 @@ import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { FocusPanelGenerator } from './FocusPanelGenerator.js';
 
 export const FocusPanelGrades = {
     /**
@@ -114,10 +115,7 @@ export const FocusPanelGrades = {
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) contextInput.value = '';
 
-        const generateBtn = document.getElementById('focusGenerateBtn');
-        if (generateBtn) {
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-        }
+        FocusPanelGenerator.updateGenerateButton(null);
 
         const prevGradesEl = document.getElementById('focusPreviousGrades');
         if (prevGradesEl) {

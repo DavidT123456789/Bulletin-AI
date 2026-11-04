@@ -776,5 +776,63 @@ describe('UIManager', () => {
             spy.mockRestore();
         });
     });
+
+    describe('setGenerateButtonState & showInlineSpinner (Boutons Générer / Régénérer / Actualiser)', () => {
+        it('applique les 4 états sémantiques (idle, done, dirty, loading) en nettoyant les classes précédentes', () => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-small btn-ai-outline';
+
+            UI.setGenerateButtonState(btn, 'idle');
+            expect(btn.classList.contains('btn-ai')).toBe(true);
+            expect(btn.classList.contains('btn-ai-outline')).toBe(false);
+            expect(btn.disabled).toBe(false);
+            expect(btn.innerHTML).toContain('solar:magic-stick-3-bold-duotone');
+            expect(btn.textContent.trim()).toBe('Générer');
+
+            UI.setGenerateButtonState(btn, 'done');
+            expect(btn.classList.contains('btn-neutral')).toBe(true);
+            expect(btn.classList.contains('btn-ai')).toBe(false);
+            expect(btn.innerHTML).toContain('solar:refresh-bold');
+            expect(btn.textContent.trim()).toBe('Régénérer');
+
+            UI.setGenerateButtonState(btn, 'dirty', { suffixHtml: '<kbd class="kbd-hint">Ctrl ↵</kbd>' });
+            expect(btn.classList.contains('btn-warning')).toBe(true);
+            expect(btn.classList.contains('btn-neutral')).toBe(false);
+            expect(btn.innerHTML).toContain('Actualiser');
+            expect(btn.innerHTML).toContain('<kbd class="kbd-hint">Ctrl ↵</kbd>');
+
+            UI.setGenerateButtonState(btn, 'loading');
+            expect(btn.classList.contains('btn-neutral')).toBe(true);
+            expect(btn.classList.contains('btn-warning')).toBe(false);
+            expect(btn.disabled).toBe(true);
+            expect(btn.classList.contains('disabled')).toBe(true);
+            expect(btn.innerHTML).toContain('ph:spinner-gap-bold');
+            expect(btn.textContent.trim()).toBe('Génération…');
+        });
+
+        it('gère les cas limites (bouton null/undefined, état inconnu en repli sur idle)', () => {
+            expect(() => UI.setGenerateButtonState(null, 'idle')).not.toThrow();
+            expect(() => UI.setGenerateButtonState(undefined, 'dirty')).not.toThrow();
+
+            const btn = document.createElement('button');
+            UI.setGenerateButtonState(btn, 'unknown-state');
+            expect(btn.classList.contains('btn-ai')).toBe(true);
+            expect(btn.textContent.trim()).toBe('Générer');
+        });
+
+        it('affiche bien "Génération..." dans showInlineSpinner lorsque le bouton est en état "Actualiser"', () => {
+            const btn = document.createElement('button');
+            btn.id = 'focusGenerateBtn';
+            UI.setGenerateButtonState(btn, 'dirty');
+
+            UI.showInlineSpinner(btn);
+            expect(btn.classList.contains('is-loading')).toBe(true);
+            expect(btn.innerHTML).toContain('Génération...');
+
+            UI.hideInlineSpinner(btn);
+            expect(btn.classList.contains('is-loading')).toBe(false);
+            expect(btn.innerHTML).toContain('Actualiser');
+        });
+    });
 });
 

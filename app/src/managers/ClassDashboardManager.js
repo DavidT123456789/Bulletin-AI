@@ -527,8 +527,8 @@ export const ClassDashboardManager = {
                     </div>
                     <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
                     <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
-                    <button class="btn btn-primary btn-ai" id="generateSynthesisPlaceholderBtn">
-                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Démarrer l'analyse
+                    <button class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
+                        <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Démarrer l'analyse
                     </button>
                 </div>
             `;
@@ -541,10 +541,9 @@ export const ClassDashboardManager = {
             }
         }
 
-        // Reset button text to "Générer"
+        // Reset button state to "Générer"
         if (generateBtn) {
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer';
-            generateBtn.className = 'btn btn-ai btn-small';
+            UI.setGenerateButtonState(generateBtn, 'idle');
         }
 
         // Hide copy button
@@ -632,8 +631,7 @@ export const ClassDashboardManager = {
 
         if (dataChanged || modelChanged || subjectChanged) {
             // Data is stale
-            generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Actualiser';
-            generateBtn.className = 'btn btn-warning btn-small';
+            UI.setGenerateButtonState(generateBtn, 'dirty');
             
             let reason = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
             if (modelChanged && subjectChanged) {
@@ -646,8 +644,7 @@ export const ClassDashboardManager = {
             generateBtn.title = reason;
         } else {
             // Data is fresh
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
-            generateBtn.className = 'btn btn-ai btn-small';
+            UI.setGenerateButtonState(generateBtn, 'done');
             generateBtn.title = "";
         }
     },
@@ -690,7 +687,7 @@ export const ClassDashboardManager = {
 
         // Update button to show "Régénérer" since synthesis exists
         if (generateBtn) {
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
+            UI.setGenerateButtonState(generateBtn, 'done');
         }
 
         // Toggle copy button display next to generate button
@@ -751,8 +748,7 @@ export const ClassDashboardManager = {
         `;
 
         if (generateBtn) {
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Génération...';
+            UI.setGenerateButtonState(generateBtn, 'loading');
         }
 
         const targetClassId = appState.currentClassId;
@@ -810,8 +806,11 @@ export const ClassDashboardManager = {
             }
         } finally {
             if (generateBtn && appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod) {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
+                const hasSynthesis = Boolean(this.cachedSynthesisHTML && this.cachedSynthesisClassId === targetClassId && this.cachedSynthesisPeriod === targetPeriod);
+                UI.setGenerateButtonState(generateBtn, hasSynthesis ? 'done' : 'idle');
+                if (hasSynthesis) {
+                    this._checkStaleData();
+                }
             }
         }
     },

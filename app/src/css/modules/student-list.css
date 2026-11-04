@@ -793,16 +793,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     height: 28px;
     padding: 0 11px 0 9px;
     border-radius: var(--radius-pill);
-    background: rgba(0, 0, 0, 0.03);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    border: 1px solid transparent;
     cursor: pointer;
     line-height: 1;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     pointer-events: auto;
     position: relative;
     user-select: none;
@@ -810,72 +808,18 @@
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .btn-smart-action-inline {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.btn-smart-action-inline:hover {
-    background: var(--item-hover-bg);
-    border-color: rgba(var(--primary-color-rgb), 0.35);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-smart-action-inline:active {
-    transform: scale(0.96);
-}
-
-/* Icon base transition */
+/* Icon & Badge inherit state color (couleurs .mode-generate / .mode-update mutualisées dans components.css) */
 .btn-smart-action-inline .smart-action-icon {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1;
+    color: currentColor;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color var(--transition-fast);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Mode Generate: Solar magic stick points upwards-right at 45° via rotate(90deg) */
-.btn-smart-action-inline.mode-generate .smart-action-icon {
-    color: currentColor;
-    transform: translate(0, 0) rotate(90deg);
-    transform-origin: center;
-}
-
-[data-theme="dark"] .btn-smart-action-inline.mode-generate .smart-action-icon {
-    color: currentColor;
-}
-
-/* Hover: thrust forward along wand axis (45° diagonal: +X right, -Y up) */
-.btn-smart-action-inline.mode-generate:hover .smart-action-icon {
-    transform: translate(2.5px, -2.5px) rotate(90deg) scale(1.12);
-    color: currentColor;
-}
-
-[data-theme="dark"] .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
-    color: currentColor;
-}
-
-/* Mode Update: Refresh icon */
-.btn-smart-action-inline.mode-update .smart-action-icon {
-    color: var(--warning-color);
-}
-
-[data-theme="dark"] .btn-smart-action-inline.mode-update .smart-action-icon {
-    color: var(--warning-bright);
-}
-
-.btn-smart-action-inline.mode-update:hover {
-    border-color: rgba(var(--warning-rgb), 0.35);
-}
-
-.btn-smart-action-inline.mode-update:hover .smart-action-icon {
-    transform: rotate(90deg);
-}
-
-/* Badge count - Inline typography with neutral color (strictly no purple) */
 .btn-smart-action-inline .smart-action-badge,
-.btn-smart-action-inline.mode-generate .smart-action-badge,
 .btn-smart-action-inline #generateBadgeInline,
 .btn-smart-action-inline #updateBadgeInline {
     position: static !important;
@@ -883,7 +827,7 @@
     font-weight: 600 !important;
     font-variant-numeric: tabular-nums !important;
     letter-spacing: -0.01em !important;
-    color: var(--text-secondary) !important;
+    color: currentColor !important;
     background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -891,14 +835,6 @@
     align-items: center !important;
     justify-content: center !important;
     line-height: 1 !important;
-    transition: color var(--transition-fast);
-}
-
-.btn-smart-action-inline:hover .smart-action-badge,
-.btn-smart-action-inline.mode-generate:hover .smart-action-badge,
-.btn-smart-action-inline:hover #generateBadgeInline,
-.btn-smart-action-inline:hover #updateBadgeInline {
-    color: var(--text-primary) !important;
 }
 
 /* Animation d'apparition */
@@ -927,16 +863,6 @@
     transform: none !important;
 }
 
-/* Animations spécifiques selon le mode - tap strictly along wand diagonal */
-@keyframes wand-tap {
-    0%, 100% {
-        transform: translate(0, 0) rotate(90deg) scale(1);
-    }
-    50% {
-        transform: translate(3px, -3px) rotate(90deg) scale(1.15);
-    }
-}
-
 .btn-smart-action-inline.loading.mode-update .smart-action-icon {
     display: inline-flex !important;
     align-items: center;
@@ -952,7 +878,7 @@
     justify-content: center;
     line-height: 1;
     transform-origin: center center;
-    animation: wand-tap 0.8s ease-in-out infinite !important;
+    animation: magic-polish 1s ease-in-out infinite !important;
 }
 
 /* ====================================================================

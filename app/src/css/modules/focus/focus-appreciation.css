@@ -887,23 +887,10 @@
     padding: 6px 16px 14px 16px;
 }
 
-/* Copy button — elegant pill button with text label */
+/* Copy button — shares .btn.btn-neutral base from components.css */
 .focus-appreciation-actions #focusCopyBtn {
-    height: 34px;
     padding: 0 14px;
-    border-radius: var(--radius-pill, 100px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform 0.25s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    white-space: nowrap;
-    user-select: none;
 }
 
 .focus-appreciation-actions #focusCopyBtn iconify-icon {
@@ -952,159 +939,10 @@
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Generate button — wide airy pill with generous breathing room (shared with #refreshPreviewBtn in Style Lab) */
-.focus-appreciation-actions #focusGenerateBtn,
-#refreshPreviewBtn {
-    height: 34px;
-    border-radius: var(--radius-pill, 100px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    letter-spacing: -0.01em;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    white-space: nowrap;
-    user-select: none;
-}
-
+/* Generate button — full-width layout inside Focus appreciation footer (styles unified in components.css) */
 .focus-appreciation-actions #focusGenerateBtn {
     flex: 1;
     max-width: none;
-}
-
-#refreshPreviewBtn {
-    height: 32px;
-    padding: 0 14px;
-    flex-shrink: 0;
-}
-
-/* AI Primary active button state (Empty state) */
-.focus-appreciation-actions #focusGenerateBtn.btn-ai,
-#refreshPreviewBtn.btn-ai {
-    background: var(--primary-color);
-    color: #ffffff;
-    border: none;
-    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.28);
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-ai::before,
-#refreshPreviewBtn.btn-ai::before {
-    display: none;
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-ai:hover:not(:disabled),
-#refreshPreviewBtn.btn-ai:hover:not(:disabled) {
-    background: var(--primary-color);
-    filter: brightness(1.08);
-    box-shadow: 0 6px 18px rgba(var(--primary-color-rgb), 0.36);
-}
-
-/* Shared Neutral Tonal Pill State (Copy & Régénérer) */
-.btn.btn-neutral,
-.focus-appreciation-actions #focusCopyBtn,
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral,
-#refreshPreviewBtn.btn-neutral {
-    background: var(--tonal-bg);
-    border: 1px solid transparent;
-    color: var(--text-secondary);
-    box-shadow: none;
-    animation: none !important;
-    font-weight: 500;
-}
-
-.btn.btn-neutral i,
-.btn.btn-neutral iconify-icon,
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral i,
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral iconify-icon,
-#refreshPreviewBtn.btn-neutral iconify-icon {
-    color: inherit;
-}
-
-.btn.btn-neutral:hover:not(:disabled):not(.disabled),
-.focus-appreciation-actions #focusCopyBtn:hover:not(:disabled):not(.disabled),
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral:hover:not(:disabled):not(.disabled),
-#refreshPreviewBtn.btn-neutral:hover:not(:disabled):not(.disabled) {
-    background: var(--tonal-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-    box-shadow: none;
-}
-
-/* Warning / Dirty state */
-.focus-appreciation-actions #focusGenerateBtn.btn-warning,
-#refreshPreviewBtn.btn-warning {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
-    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
-    color: var(--warning-color);
-    box-shadow: none;
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled),
-#refreshPreviewBtn.btn-warning:hover:not(:disabled) {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
-    box-shadow: none;
-}
-
-[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning,
-[data-theme="dark"] #refreshPreviewBtn.btn-warning {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
-    color: var(--color-amber-bright);
-}
-
-[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled),
-[data-theme="dark"] #refreshPreviewBtn.btn-warning:hover:not(:disabled) {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
-}
-
-/* Keyboard shortcut hint */
-.focus-appreciation-actions #focusGenerateBtn .kbd-hint {
-    margin-left: 5px;
-    padding: 1px 5px;
-    font-size: 10px;
-    font-weight: 500;
-    border-radius: var(--radius-xs, 4px);
-    letter-spacing: 0.02em;
-    line-height: 1.2;
-    pointer-events: none;
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-ai .kbd-hint {
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.26);
-    color: #ffffff;
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-neutral .kbd-hint {
-    background: rgba(0, 0, 0, 0.06);
-    border: none;
-    color: var(--text-tertiary);
-}
-
-[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-neutral .kbd-hint {
-    background: rgba(255, 255, 255, 0.06);
-    border: none;
-    color: var(--text-tertiary);
-}
-
-.focus-appreciation-actions #focusGenerateBtn.btn-warning .kbd-hint {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
-    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
-    color: inherit;
-}
-
-/* Disabled state (e.g. during voice dictation or AI loading) */
-.focus-appreciation-actions #focusGenerateBtn:disabled,
-.focus-appreciation-actions #focusGenerateBtn.disabled,
-#refreshPreviewBtn:disabled,
-#refreshPreviewBtn.disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    pointer-events: auto;
-    filter: grayscale(0.5);
-    box-shadow: none !important;
 }
 
 @media (max-width: 480px) {

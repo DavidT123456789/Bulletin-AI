@@ -212,8 +212,7 @@ iconify-icon.icon-spin,
     }
 }
 
-.btn.pulsing,
-#refreshPreviewBtn.pulsing {
+.btn.pulsing {
     position: relative;
     overflow: hidden;
     transform: none !important;
@@ -221,15 +220,11 @@ iconify-icon.icon-spin,
 }
 
 /* Disable hover effects that might cause movement while pulsing */
-.btn.pulsing:hover,
-#refreshPreviewBtn.pulsing:hover {
+.btn.pulsing:hover {
     transform: none !important;
-    /* Maintain the shadow from the animation, or let the hover shadow take over? 
-       Let's keep the pulsing shadow dominant or combine them. */
 }
 
-.btn.pulsing::before,
-#refreshPreviewBtn.pulsing::before {
+.btn.pulsing::before {
     content: '';
     position: absolute;
     top: 0;
@@ -242,8 +237,7 @@ iconify-icon.icon-spin,
     z-index: 1;
 }
 
-.btn.pulsing>*,
-#refreshPreviewBtn.pulsing>* {
+.btn.pulsing>* {
     position: relative;
     z-index: 2;
 }

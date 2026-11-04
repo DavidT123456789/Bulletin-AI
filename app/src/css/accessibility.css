@@ -112,11 +112,6 @@ button:focus:not(:focus-visible),
    Empêche le surlignement / relief fantôme de rester figé au tap tactile
    ==================================================================== */
 @media (hover: none) {
-    /* AI buttons sweep animation should not get stuck on mobile */
-    .btn-ai:hover:not(:active)::before {
-        animation: none !important;
-    }
-
     /* Smooth and fast return after touch tap */
     .btn,
     button,

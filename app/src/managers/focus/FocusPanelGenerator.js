@@ -455,8 +455,8 @@ export const FocusPanelGenerator = {
     },
 
     /**
-     * Met à jour l'état du bouton Générer (Générer / Mettre à jour / Régénérer)
-     * @param {Object} result - Données de l'élève
+     * Met à jour l'état du bouton Générer (Générer / Actualiser / Régénérer)
+     * @param {Object|null} result - Données de l'élève
      */
     updateGenerateButton(result) {
         const generateBtn = document.getElementById('focusGenerateBtn');
@@ -473,13 +473,9 @@ export const FocusPanelGenerator = {
             return;
         }
 
-        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
-        generateBtn.disabled = false;
-        generateBtn.classList.remove('disabled');
-
         const currentPeriod = appState.currentPeriod;
         const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
-        const hasAppreciation = periodAppreciation && periodAppreciation.trim().length > 0;
+        const hasAppreciation = Boolean(periodAppreciation && periodAppreciation.trim().length > 0);
         const wasGenerated = result?.wasGenerated === true;
         const isCurrentPeriodGenerated = result?.generationPeriod === currentPeriod;
         const isRegenerate = hasAppreciation && (wasGenerated && isCurrentPeriodGenerated);
@@ -488,20 +484,9 @@ export const FocusPanelGenerator = {
         const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
         const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
 
-        let tooltipAction = 'Générer';
-        if (!hasAppreciation) {
-            generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${shortcutKbd}`;
-            tooltipAction = 'Générer';
-        } else if (isDirty) {
-            generateBtn.classList.add('btn-warning');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour ${shortcutKbd}`;
-            tooltipAction = 'Mettre à jour';
-        } else {
-            generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer ${shortcutKbd}`;
-            tooltipAction = 'Régénérer';
-        }
+        const state = !hasAppreciation ? 'idle' : (isDirty ? 'dirty' : 'done');
+        const tooltipAction = UI?.setGenerateButtonState?.(generateBtn, state, { suffixHtml: shortcutKbd })
+            || (state === 'idle' ? 'Générer' : (state === 'dirty' ? 'Actualiser' : 'Régénérer'));
 
         const tooltipText = `${tooltipAction} l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>`;
         generateBtn.setAttribute('data-tooltip', tooltipText);

@@ -59,6 +59,14 @@ const NOTIF_ICONS = {
     prompt: '<iconify-icon icon="solar:magic-stick-3-bold-duotone" aria-hidden="true"></iconify-icon>'
 };
 
+/** États visuels unifiés pour tous les boutons Générer / Régénérer / Actualiser de l'application. */
+const GENERATE_BUTTON_STATES = {
+    idle: { variant: 'btn-ai', icon: 'solar:magic-stick-3-bold-duotone', label: 'Générer', disabled: false },
+    done: { variant: 'btn-neutral', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
+    dirty: { variant: 'btn-warning', icon: 'solar:refresh-bold', label: 'Actualiser', disabled: false },
+    loading: { variant: 'btn-neutral', icon: 'ph:spinner-gap-bold', label: 'Génération…', disabled: true, spin: true }
+};
+
 
 /**
  * Module de gestion de l'interface utilisateur.
@@ -686,12 +694,41 @@ export const UI = {
     //  LOADING, SPINNERS ET OVERLAYS
     // ====================================================================
 
+    /**
+     * Applique un état visuel unifié (idle / done / dirty / loading) à un bouton Générer / Régénérer / Actualiser.
+     * @param {HTMLElement|null} btn - Élément bouton cible
+     * @param {'idle'|'done'|'dirty'|'loading'} [state='idle'] - État sémantique
+     * @param {Object} [options={}] - Options complémentaires ({ label, suffixHtml, disabled })
+     * @returns {string} Le libellé appliqué
+     */
+    setGenerateButtonState(btn, state = 'idle', options = {}) {
+        const config = GENERATE_BUTTON_STATES[state] || GENERATE_BUTTON_STATES.idle;
+        const label = options.label || config.label;
+        if (!btn) return label;
+
+        const suffixHtml = options.suffixHtml ? ` ${options.suffixHtml}` : '';
+        const isDisabled = options.disabled ?? config.disabled;
+        const spinClass = config.spin ? ' icon-spin rotate-icon' : '';
+
+        btn.classList?.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
+        btn.classList?.add(config.variant);
+        btn.disabled = isDisabled;
+        if (isDisabled) {
+            btn.classList?.add('disabled');
+        } else {
+            btn.classList?.remove('disabled');
+        }
+        btn.innerHTML = `<iconify-icon class="iconify-inline${spinClass}" icon="${config.icon}"></iconify-icon> ${label}${suffixHtml}`;
+        return label;
+    },
+
     showInlineSpinner(el, label = '', options = {}) {
         if (!el) return;
         if (!el.dataset.originalContent) {
             el.dataset.originalContent = el.innerHTML;
         }
-        const textContent = label || (el.dataset.originalContent.includes('Générer') || el.dataset.originalContent.includes('Régénérer') ? 'Génération...' : '');
+        const orig = el.dataset.originalContent;
+        const textContent = label || (orig.includes('Générer') || orig.includes('Régénérer') || orig.includes('Actualiser') ? 'Génération...' : '');
         const isCancellable = options.canCancel ?? (el.id === 'focusGenerateBtn');
 
         if (isCancellable) {

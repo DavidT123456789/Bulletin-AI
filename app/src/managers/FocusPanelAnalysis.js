@@ -198,18 +198,8 @@ export const FocusPanelAnalysis = {
         const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (!generateBtn) return;
 
-        const hasAnalysis = result && (result.strengthsWeaknesses || result.nextSteps);
-
-        if (hasAnalysis) {
-            // Régénérer mode: outline style + sync icon
-            generateBtn.classList.add('btn-ai-outline');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
-        } else {
-            // Générer mode: standard AI button + sparkles icon
-            generateBtn.classList.remove('btn-ai-outline');
-            generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer`;
-        }
+        const hasAnalysis = Boolean(result && (result.strengthsWeaknesses || result.nextSteps));
+        UI.setGenerateButtonState(generateBtn, hasAnalysis ? 'done' : 'idle');
     },
 
     /**
