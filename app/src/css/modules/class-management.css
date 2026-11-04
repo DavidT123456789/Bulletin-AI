@@ -594,10 +594,14 @@
     transform: scale(0.94);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
+    .class-selector-wrapper {
+        gap: 2px;
+    }
+
     .header-class-note-btn {
-        width: 44px;
-        height: 44px;
+        width: 30px;
+        height: 34px;
     }
 }
 
@@ -1897,6 +1901,7 @@
    MOBILE TOUCH TARGETS (44px Rule)
    ==================================================================== */
 @media (max-width: 768px) {
+    .header-class-note-btn,
     .class-virtual-filter-btn,
     .inline-action-btn,
     .inline-delete-btn,
@@ -1906,6 +1911,7 @@
         position: relative;
     }
 
+    .header-class-note-btn::after,
     .class-virtual-filter-btn::after,
     .inline-action-btn::after,
     .manage-rename-btn::after,

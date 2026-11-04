@@ -390,15 +390,15 @@ export const ResultsUIManager = {
         // Count pending (empty/placeholder)
         const pendingCount = sourceResults.filter(r => Utils.isPendingForPeriod(r, currentPeriod)).length;
 
-        // Count needs update (dirty OR error)
+        // Count needs update (error OR untouched AI text with modified data)
         let errorUpdateCount = 0;
         let dirtyUpdateCount = 0;
         
         sourceResults.forEach(r => {
-            const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
-            if (hasError) {
+            if (!FocusPanelStatus.isBulkRefreshable(r, currentPeriod)) return;
+            if (r.errorMessage && r.errorPeriod === currentPeriod) {
                 errorUpdateCount++;
-            } else if (FocusPanelStatus.checkDirtyState(r)) {
+            } else {
                 dirtyUpdateCount++;
             }
         });
@@ -432,13 +432,19 @@ export const ResultsUIManager = {
 
             if (isGenerating && appState.activeMassAction === 'generate') {
                 generateBtn.classList.add('loading');
-                generateBtn.disabled = true;
+                generateBtn.classList.remove('disabled');
+                generateBtn.disabled = false;
+                generateBtn.dataset.tooltip = 'Cliquer pour annuler la génération';
             } else if (isGenerating) {
                 generateBtn.classList.remove('loading');
-                generateBtn.disabled = true;
-            } else {
-                generateBtn.classList.remove('loading');
+                generateBtn.classList.add('disabled');
                 generateBtn.disabled = false;
+            } else {
+                generateBtn.classList.remove('loading', 'disabled');
+                generateBtn.disabled = false;
+            }
+            if (generateBtn.dataset.tooltip) {
+                UI?.updateTooltip?.(generateBtn, generateBtn.dataset.tooltip);
             }
         }
 
@@ -474,13 +480,19 @@ export const ResultsUIManager = {
 
             if (isGenerating && appState.activeMassAction === 'update') {
                 updateBtn.classList.add('loading');
-                updateBtn.disabled = true;
+                updateBtn.classList.remove('disabled');
+                updateBtn.disabled = false;
+                updateBtn.dataset.tooltip = "Cliquer pour annuler l'actualisation";
             } else if (isGenerating) {
                 updateBtn.classList.remove('loading');
-                updateBtn.disabled = true;
-            } else {
-                updateBtn.classList.remove('loading');
+                updateBtn.classList.add('disabled');
                 updateBtn.disabled = false;
+            } else {
+                updateBtn.classList.remove('loading', 'disabled');
+                updateBtn.disabled = false;
+            }
+            if (updateBtn.dataset.tooltip) {
+                UI?.updateTooltip?.(updateBtn, updateBtn.dataset.tooltip);
             }
         }
 
@@ -490,8 +502,8 @@ export const ResultsUIManager = {
 
         // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
         UI?.updateDashboardCounts?.();
-        // Reinitialize tooltips to pick up updated data-tooltip on the update button
-        if (UI?.initTooltips) {
+        // Avoid full Tippy destroy/recreate during incremental batch countdown so active cancel tooltips never flicker
+        if ((!isGenerating || results !== undefined) && UI?.initTooltips) {
             UI.initTooltips();
         }
     },
@@ -653,7 +665,7 @@ export const ResultsUIManager = {
     },
 
     /**
-     * Regenerates appreciations that are dirty (data modified) or have errors
+     * Regenerates appreciations in error and untouched AI appreciations whose data changed
      * Used by the "Actualiser" button
      */
     async regenerateDirty() {
@@ -666,21 +678,15 @@ export const ResultsUIManager = {
 
         const sourceResults = ClassManager.getStudentsForClass(currentClassId);
 
-        // Find all results that need updating (dirty OR error), sorted by current visual order
-        const toRegen = Utils.sortResults(sourceResults.filter(r => {
-            const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
-            if (hasError) return true;
-
-            // Dirty state (data modified since creation - works for AI and manual)
-            return FocusPanelStatus.checkDirtyState(r);
-        }));
+        // Teacher-written, edited or imported texts are never overwritten, sorted by current visual order
+        const toRegen = Utils.sortResults(sourceResults.filter(r => FocusPanelStatus.isBulkRefreshable(r, currentPeriod)));
 
         if (toRegen.length === 0) {
             UI.showNotification("Aucune appréciation à actualiser.", "warning");
             return;
         }
 
-        const errorCount = toRegen.filter(r => r.errorMessage).length;
+        const errorCount = toRegen.filter(r => r.errorMessage && r.errorPeriod === currentPeriod).length;
         const dirtyCount = toRegen.length - errorCount;
 
         let dirtyTitle = `Actualiser ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
@@ -771,6 +777,8 @@ export const ResultsUIManager = {
                         appState.filteredResults[filteredIndex] = updatedResult;
                     }
 
+                    this.updateGenerateButtonState();
+
                     if (isSuccess) {
                         successCount++;
                         await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
@@ -780,18 +788,20 @@ export const ResultsUIManager = {
                 }
             }
 
+            appState.activeMassAction = null;
             MassImportManager.massImportAbortController = null;
-            UI.hideHeaderProgress(newErrorCount > 0);
+            UI.hideHeaderProgress(newErrorCount > 0 || wasAborted);
 
             if (wasAborted) {
-                UI.showNotification("Actualisation annulée.", "warning");
+                const abortMsg = successCount > 0
+                    ? `Actualisation interrompue (${successCount}/${total} actualisée${successCount > 1 ? 's' : ''}).`
+                    : 'Actualisation annulée.';
+                UI.showNotification(abortMsg, 'info');
                 this.renderResults();
             } else {
                 UI.showNotification(`${successCount}/${total} actualisée(s) avec succès.`, "success");
                 if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
             }
-
-            appState.activeMassAction = null;
             StorageManager.saveAppState();
             UI.updateStats();
             UI.updateControlButtons();

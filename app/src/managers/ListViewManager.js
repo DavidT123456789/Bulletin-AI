@@ -64,7 +64,6 @@ export const ListViewManager = {
 
     _lastRenderedClassId: null, // Track class changes to force fresh render
     _lastRenderedPeriod: null,  // Track period changes to force fresh render (header column count changes)
-    _activeFilterTimeout: null, // Track filter animation timeout to prevent race conditions
     _pendingImportReveal: null, // Pending progressive import reveal metadata
     _activeImportRenderGuard: false, // Prevents synchronous duplicate renderResults() calls from cancelling import animations
 
@@ -132,42 +131,13 @@ export const ListViewManager = {
         }
 
         const tbody = existingTable ? existingTable.querySelector('tbody') : null;
+        const currentClassId = appState.currentClassId;
 
-        // Handle empty results
+        // Handle completely empty class (no students in class at all)
         if (results.length === 0) {
-            const currentClassId = appState.currentClassId;
             const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
-
             if (remainingInClass === 0) {
                 AppreciationsManager?.renderResults?.();
-                return;
-            }
-
-            if (existingTable && tbody) {
-                const headerThs = existingTable.querySelectorAll('thead th');
-                const colCount = headerThs.length || 7;
-                const emptyRowHtml = `
-                    <tr class="empty-state-row">
-                        <td colspan="${colCount}">
-                            <div class="empty-state">
-                                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                                <span>Aucun élève trouvé</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-
-                // If table exists, just clear rows but KEEP structure (and search bar!)
-                const existingRows = tbody.querySelectorAll('.student-row');
-                if (existingRows.length > 0) {
-                    ListViewAnimations.animateRowsOut(existingRows, () => {
-                        tbody.innerHTML = emptyRowHtml;
-                    });
-                } else if (!tbody.querySelector('.empty-state-row')) {
-                    tbody.innerHTML = emptyRowHtml;
-                }
-
-                ResultsUIManager?.updateGenerateButtonState?.();
                 return;
             }
         }
@@ -179,7 +149,6 @@ export const ListViewManager = {
         // CRITICAL FIX: Force fresh render when class or period changes
         // Class change: ensures event listeners are properly attached
         // Period change: ensures header columns match data cells (T1/T2/T3 column count varies)
-        const currentClassId = appState.currentClassId;
         const previousPeriod = this._lastRenderedPeriod;
         const classChanged = this._lastRenderedClassId !== null && this._lastRenderedClassId !== currentClassId;
         const periodChanged = this._lastRenderedPeriod !== null && this._lastRenderedPeriod !== currentPeriod;
@@ -189,6 +158,7 @@ export const ListViewManager = {
 
         if (classChanged || periodChanged) {
             // Class or period changed - force fresh render to ensure header/cell alignment
+            ListViewAnimations.resetHeightTransition();
             this.clearSelections(); // Reset selections on class/period change
             const previousIndex = (periodChanged && previousPeriod) ? periods.indexOf(previousPeriod) : -1;
             const isRetreating = periodChanged && !classChanged && previousIndex !== -1 && currentPeriodIndex < previousIndex;
@@ -202,55 +172,61 @@ export const ListViewManager = {
                 previousIndex,
                 importReveal
             });
+            if (results.length === 0) {
+                ResultsUIManager?.updateGenerateButtonState?.();
+            }
             return;
         }
 
         // Check if this is a filter/sort transition (table already exists)
-        // existingTable is already defined above
         const existingRows = existingTable ? Array.from(existingTable.querySelectorAll('.student-row')) : [];
 
         existingTable?.closest('.student-list-view')?.classList.remove('table-fade-in');
 
-        // Clean up any stuck animation classes from previous animations
-        existingRows.forEach(row => {
-            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter', 'row-import-refresh', 'row-animate-in', 'row-stagger-enter');
-            row.style.transform = '';
-            row.style.transition = '';
-        });
-
         if (existingTable) {
             const existingIds = existingRows.map(r => r.dataset.studentId);
-            const newIds = results.map(r => r.id);
+            const newIdsSet = new Set(results.map(r => r.id));
 
-            // Check if there's any actual change
-            const hasIdChange = existingIds.length !== newIds.length ||
-                existingIds.some(id => !newIds.includes(id)) ||
-                newIds.some(id => !existingIds.includes(id));
+            // Clean up any stuck animation classes from previous animations
+            // Preserve 'row-exit' on rows that are still exiting to avoid a visible flash during rapid typing
+            existingRows.forEach(row => {
+                row.classList.remove('row-move', 'row-moving', 'row-filter-enter', 'row-import-refresh', 'row-animate-in', 'row-stagger-enter');
+                if (newIdsSet.has(row.dataset.studentId)) {
+                    row.classList.remove('row-exit');
+                }
+                row.style.transform = '';
+                row.style.transition = '';
+            });
 
-            const hasOrderChange = !hasIdChange &&
-                existingIds.some((id, i) => id !== newIds[i]);
+            const hasIdChange = existingIds.length !== newIdsSet.size ||
+                existingIds.some(id => !newIdsSet.has(id));
 
             if (hasIdChange) {
-                // Remove empty state row if present (important for 0 -> N transition)
-                const emptyRow = container.querySelector('.empty-state-row');
-                if (emptyRow) emptyRow.remove();
-
-                // Filter change: use FLIP animation
+                // Filter change (including N -> 0 and 0 -> N): use FLIP & height transition
                 ListViewAnimations.animateFilterTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
-                return;
-            } else if (hasOrderChange) {
-                // Sort change: use simple reorder
-                ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
-                return;
+            } else if (results.length === 0) {
+                // Already 0 student rows in DOM (0 -> 0): ensure empty-state-row is present
+                if (tbody && !tbody.querySelector('.empty-state-row')) {
+                    const headerThs = existingTable.querySelectorAll('thead th');
+                    const colCount = headerThs.length || 7;
+                    tbody.innerHTML = ListViewRenderer.getEmptyStateRowHTML(colCount);
+                }
             } else {
-                // Data updated but same IDs and order - Perform soft update to preserve DOM
+                // Sort or data update with identical student IDs: reorder & soft-update in place
                 ListViewAnimations.animateSortTransition(container, existingRows, results, periods, currentPeriodIndex, importReveal);
-                return;
             }
+
+            if (results.length === 0) {
+                ResultsUIManager?.updateGenerateButtonState?.();
+            }
+            return;
         }
 
         // === INITIAL RENDER (no existing table) ===
         this._renderFresh(container, results, periods, currentPeriodIndex, { importReveal });
+        if (results.length === 0) {
+            ResultsUIManager?.updateGenerateButtonState?.();
+        }
     },
 
     // ListViewAnimations methods extracted
@@ -329,6 +305,8 @@ export const ListViewManager = {
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (!appreciationCell) return;
 
+        ListViewRenderer.clearCellCollapseTimers(appreciationCell);
+
         const actionBtn = row.querySelector('.btn-action-menu');
 
         if (status === 'generating') {
@@ -365,11 +343,15 @@ export const ListViewManager = {
      * @param {boolean} [animate=false] - Whether to use the typewriter effect.
      */
     async updateRow(studentId, result, animate = false) {
+        ResultsUIManager?.updateGenerateButtonState?.();
+
         const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
         if (!row) return;
 
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (!appreciationCell) return;
+
+        ListViewRenderer.clearCellCollapseTimers(appreciationCell);
 
         const statusCell = row.querySelector('.status-cell');
 
@@ -399,6 +381,9 @@ export const ListViewManager = {
 
         // 2. Render content
         if (animate && cleanText) {
+            if (UI?.fadeOutSkeleton) {
+                await UI.fadeOutSkeleton(appreciationCell);
+            }
             // Create container for typewriter with expanded class for full text during animation
             appreciationCell.innerHTML = `<div class="appreciation-preview expanded"></div>`;
             const targetEl = appreciationCell.querySelector('.appreciation-preview');
@@ -418,7 +403,9 @@ export const ListViewManager = {
             setTimeout(() => row.classList.remove('just-generated'), 1000);
 
             // Smooth collapse - animate the CELL height for smooth row transition
-            setTimeout(() => {
+            appreciationCell._collapseTimer = setTimeout(() => {
+                appreciationCell._collapseTimer = null;
+                if (!targetEl.isConnected) return;
                 // 1. Capture current cell height (determines row height)
                 const cellExpandedHeight = appreciationCell.offsetHeight;
                 appreciationCell.style.height = cellExpandedHeight + 'px';
@@ -430,7 +417,9 @@ export const ListViewManager = {
                 targetEl.style.transition = 'opacity 0.4s ease-out';
 
                 // 3. After fade, switch content to compact and animate cell height
-                setTimeout(() => {
+                appreciationCell._collapseInnerTimer = setTimeout(() => {
+                    appreciationCell._collapseInnerTimer = null;
+                    if (!targetEl.isConnected) return;
                     // Switch to compact mode
                     targetEl.classList.remove('expanded');
                     targetEl.style.opacity = '1';
@@ -448,7 +437,8 @@ export const ListViewManager = {
                     appreciationCell.style.height = cellCompactHeight + 'px';
 
                     // Clean up after animation
-                    setTimeout(() => {
+                    appreciationCell._collapseCleanupTimer = setTimeout(() => {
+                        appreciationCell._collapseCleanupTimer = null;
                         appreciationCell.style.height = '';
                         appreciationCell.style.overflow = '';
                         appreciationCell.style.boxSizing = '';
@@ -537,4 +527,3 @@ ListViewEvents?.init?.({
     updateHeaderSortIcons: (v) => ListViewRenderer.updateHeaderSortIcons(v),
     hasSelections: () => ListSelectionManager.selectedIds.size > 0
 });
-

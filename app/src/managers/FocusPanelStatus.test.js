@@ -293,4 +293,69 @@ describe('FocusPanelStatus', () => {
             expect(FocusPanelStatus.getAppreciationStatus(student, 'T1').state).toBe('uptodate');
         });
     });
+
+    describe('isBulkRefreshable', () => {
+        it('devrait inclure les appréciations IA non retouchées dont les données ont changé et les erreurs de génération', () => {
+            const dirtyAiStudent = {
+                id: 'student-ai',
+                promptHash: 'hash_initial',
+                generationPeriod: 'T1',
+                appreciation: 'Texte généré par IA.',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: { T1: { appreciation: 'Texte généré par IA.' } }
+                }
+            };
+            const errorStudent = {
+                id: 'student-err',
+                errorMessage: 'Erreur réseau',
+                errorPeriod: 'T1',
+                studentData: { periods: { T1: { appreciation: '' } } }
+            };
+
+            expect(FocusPanelStatus.isBulkRefreshable(dirtyAiStudent, 'T1')).toBe(true);
+            expect(FocusPanelStatus.isBulkRefreshable(errorStudent, 'T1')).toBe(true);
+        });
+
+        it('devrait exclure de l\'actualisation de masse les appréciations manuelles, retouchées ou importées', () => {
+            const dirtyManualStudent = {
+                id: 'student-manual',
+                promptHash: 'hash_initial',
+                generationPeriod: 'T1',
+                appreciation: 'Texte retouché par le professeur.',
+                wasGenerated: false,
+                appreciationSource: 'manual',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: { T1: { appreciation: 'Texte retouché par le professeur.' } }
+                }
+            };
+            const dirtyImportedStudent = {
+                id: 'student-imported',
+                promptHash: 'hash_initial',
+                generationPeriod: 'T1',
+                appreciation: 'Texte importé depuis Pronote.',
+                wasGenerated: false,
+                appreciationSource: 'imported',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: { T1: { appreciation: 'Texte importé depuis Pronote.' } }
+                }
+            };
+            const manualOverOldError = {
+                ...dirtyManualStudent,
+                promptHash: 'hash_new',
+                errorMessage: 'Ancienne erreur IA',
+                errorPeriod: 'T1'
+            };
+
+            expect(FocusPanelStatus.checkDirtyState(dirtyManualStudent)).toBe(true);
+            expect(FocusPanelStatus.isBulkRefreshable(dirtyManualStudent, 'T1')).toBe(false);
+            expect(FocusPanelStatus.checkDirtyState(dirtyImportedStudent)).toBe(true);
+            expect(FocusPanelStatus.isBulkRefreshable(dirtyImportedStudent, 'T1')).toBe(false);
+            expect(FocusPanelStatus.isBulkRefreshable(manualOverOldError, 'T1')).toBe(false);
+        });
+    });
 });

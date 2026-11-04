@@ -957,6 +957,14 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         expect(DOM.headerClassNoteBtn.classList.contains('has-note')).toBe(true);
         expect(DOM.headerClassNoteBtn.querySelector('iconify-icon').getAttribute('icon')).toBe('solar:bookmark-bold');
         expect(DOM.headerClassNoteBtn.getAttribute('data-tooltip')).toBe('Séquence 4 commencée');
+
+        // 7. Bascule directe en un clic entre le menu « Mes classes » et la bulle Mémo
+        ClassUIManager.openDropdown();
+        expect(ClassUIManager._isDropdownOpen).toBe(true);
+        DOM.headerClassNoteBtn.click();
+        expect(ClassUIManager._isDropdownOpen).toBe(false);
+        expect(ClassUIManager._isNotePopoverOpen).toBe(true);
+        expect(DOM.headerClassNoteBtn.classList.contains('active')).toBe(true);
     });
 });
 

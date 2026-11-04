@@ -1012,29 +1012,32 @@ button > .icon-spin-wrapper {
         min-width: 0;
     }
 
+    .header .header-context-chip {
+        overflow: hidden;
+    }
+
     #headerClassName {
-        min-width: 24px;
-        max-width: 84px;
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .class-chip .class-virtual-tag {
+    .class-chip .class-virtual-tag,
+    .class-chip .class-chevron,
+    .header .class-chip .student-count-icon {
         display: none !important;
     }
 
-    .class-chip .student-count-badge,
-    .class-chip .class-chevron {
-        flex-shrink: 0;
-    }
-
     .header .class-chip .student-count-badge {
-        padding: 0 6.5px;
-        min-width: 22px;
-        height: 20px;
-        font-size: 0.75rem;
-        gap: 3.5px;
+        flex-shrink: 0;
+        padding: 0 5.5px;
+        min-width: 19px;
+        height: 19px;
+        font-size: 0.72rem;
+        margin-left: 0;
     }
 
     .header .header-context-chip,
@@ -1089,11 +1092,12 @@ button > .icon-spin-wrapper {
 
     .header .header-context-chip {
         padding: 0 8px;
-        gap: 5px;
+        gap: 4px;
+        font-size: 0.9rem;
     }
 
     #headerClassName {
-        max-width: 72px;
+        max-width: 118px;
     }
 
     .header-actions,
@@ -1101,19 +1105,25 @@ button > .icon-spin-wrapper {
         gap: 2px;
     }
 
+    .header-actions-pill .pill-segment,
+    .menu-btn {
+        width: 36px;
+        height: 36px;
+    }
+
     .ui-segmented-control.header-style .ui-segment {
-        min-width: 34px;
-        padding: 0 9px;
+        min-width: 32px;
+        padding: 0 8px;
     }
 
     .ui-segmented-control.header-style.view-toggle .ui-segment {
-        min-width: 36px;
-        padding: 0 9px;
+        min-width: 34px;
+        padding: 0 8px;
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
-        min-width: 31px;
-        padding: 0 7.5px;
+        min-width: 28px;
+        padding: 0 6.5px;
     }
 
     .section-title {

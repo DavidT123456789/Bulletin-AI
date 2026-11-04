@@ -6,6 +6,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { ListViewManager } from './ListViewManager.js';
+import { ResultsUIManager } from './ResultsUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
@@ -212,8 +213,9 @@ export const MassImportManager = {
                     appState.generatedResults.unshift(newResultObject);
                 }
 
-                // Mettre à jour la ligne avec l'animation Typewriter uniquement si la vue n'a pas changé
+                // Mettre à jour la ligne et le compteur du bouton uniquement si la vue n'a pas changé
                 if (newResultObject && (appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                    ResultsUIManager?.updateGenerateButtonState?.();
                     await ListViewManager.updateRow(resultId, newResultObject, true);
                 }
             }
@@ -246,7 +248,7 @@ export const MassImportManager = {
         } finally {
             const hasErrors = failedImports.length > 0;
             appState.activeMassAction = null;
-            UI.hideHeaderProgress(hasErrors);
+            UI.hideHeaderProgress(hasErrors || wasAborted);
             this.massImportAbortController = null;
             NotificationCoalescer.reset();
 

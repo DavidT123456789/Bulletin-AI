@@ -476,10 +476,7 @@ export const FocusPanelGenerator = {
         const currentPeriod = appState.currentPeriod;
         const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
         const hasAppreciation = Boolean(periodAppreciation && periodAppreciation.trim().length > 0);
-        const wasGenerated = result?.wasGenerated === true;
-        const isCurrentPeriodGenerated = result?.generationPeriod === currentPeriod;
-        const isRegenerate = hasAppreciation && (wasGenerated && isCurrentPeriodGenerated);
-        const isDirty = hasAppreciation && isRegenerate && FocusPanelStatus.checkDirtyState(result);
+        const isDirty = hasAppreciation && FocusPanelStatus.isBulkRefreshable(result, currentPeriod);
 
         const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
         const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;

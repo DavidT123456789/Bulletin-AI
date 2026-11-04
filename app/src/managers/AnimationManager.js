@@ -55,6 +55,7 @@ export const AnimationManager = {
         if (!container) return;
         const skeleton = container.querySelector('.appreciation-skeleton');
         const badge = container.querySelector('.generating-badge');
+        if (!skeleton && !badge) return;
 
         if (skeleton) {
             skeleton.style.transition = 'opacity 0.15s ease-out';

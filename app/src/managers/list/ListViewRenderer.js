@@ -70,6 +70,27 @@ export const ListViewRenderer = {
     },
 
     /**
+     * Génère le HTML de la ligne d'état vide lors d'une recherche sans résultat
+     * @param {number} [colCount=7] - Nombre de colonnes du tableau
+     * @param {string} [extraClass=''] - Classes CSS additionnelles (ex: animation d'entrée)
+     * @param {string} [styleAttr=''] - Attribut style optionnel
+     * @returns {string} HTML de la ligne .empty-state-row
+     */
+    getEmptyStateRowHTML(colCount = 7, extraClass = '', styleAttr = '') {
+        const cls = extraClass ? `empty-state-row ${extraClass}` : 'empty-state-row';
+        return `
+            <tr class="${cls}"${styleAttr}>
+                <td colspan="${colCount}">
+                    <div class="empty-state">
+                        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        <span>Aucun élève trouvé</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    },
+
+    /**
      * Génère le HTML du menu d'actions pour une ligne élève
      * @param {string} studentId - ID de l'élève
      * @returns {string} HTML du menu
@@ -108,10 +129,31 @@ export const ListViewRenderer = {
      * @param {Object} result - Nouvelles données
      * @private
      */
+    clearCellCollapseTimers(appreciationCell) {
+        if (!appreciationCell) return;
+        if (appreciationCell._collapseTimer) {
+            clearTimeout(appreciationCell._collapseTimer);
+            appreciationCell._collapseTimer = null;
+        }
+        if (appreciationCell._collapseInnerTimer) {
+            clearTimeout(appreciationCell._collapseInnerTimer);
+            appreciationCell._collapseInnerTimer = null;
+        }
+        if (appreciationCell._collapseCleanupTimer) {
+            clearTimeout(appreciationCell._collapseCleanupTimer);
+            appreciationCell._collapseCleanupTimer = null;
+        }
+        appreciationCell.style.height = '';
+        appreciationCell.style.overflow = '';
+        appreciationCell.style.boxSizing = '';
+        appreciationCell.style.transition = '';
+    },
+
     updateRowContent(row, result) {
         // Update appreciation cell
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (appreciationCell) {
+            this.clearCellCollapseTimers(appreciationCell);
             appreciationCell.innerHTML = this.getAppreciationCell(result);
         }
 
@@ -195,8 +237,9 @@ export const ListViewRenderer = {
                 const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
                 const shouldBeOnlyDirty = status.isDirty && !status.hasError;
 
-                if (appreciationCell && shouldBeOnlyDirty && !existingIndicator) {
-                    this.updateDirtyIndicatorOnly(appreciationCell, true);
+                const isErrorIndicator = existingIndicator?.classList.contains('error-indicator');
+                if (appreciationCell && !status.hasError && !isErrorIndicator && Boolean(existingIndicator) !== shouldBeOnlyDirty) {
+                    this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
                 } else {
                     this.updateRowContent(row, result);
                 }
@@ -213,16 +256,17 @@ export const ListViewRenderer = {
      * Optimized update for dirty indicator only (no flash, subtle animation)
      * @param {HTMLElement} cell - The appreciation-cell element
      * @param {boolean} shouldBeDirty - Whether dirty indicator should be shown
+     * @param {string} [tooltip=''] - Status tooltip from FocusPanelStatus.getAppreciationStatus
      * @private
      */
-    updateDirtyIndicatorOnly(cell, shouldBeDirty) {
+    updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération.\nActualisation recommandée.') {
         const existingIndicator = cell.querySelector('.dirty-indicator');
 
         if (shouldBeDirty && !existingIndicator) {
             // ADD dirty indicator with fade-in animation
             const indicator = document.createElement('span');
             indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';
-            indicator.setAttribute('data-tooltip', 'Données modifiées depuis la génération.\nActualisation recommandée.');
+            indicator.setAttribute('data-tooltip', tooltip);
             indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>';
 
             const wrapper = cell.querySelector('.appreciation-preview-wrapper');
@@ -314,10 +358,12 @@ export const ListViewRenderer = {
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">
                                 <iconify-icon icon="solar:stars-bold-duotone" class="smart-action-icon"></iconify-icon>
+                                <iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon>
                                 <span class="smart-action-badge" id="generateBadgeInline">0</span>
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})">
                                 <iconify-icon icon="solar:refresh-bold" class="smart-action-icon"></iconify-icon>
+                                <iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon>
                                 <span class="smart-action-badge" id="updateBadgeInline">0</span>
                             </button>
                         </div>
@@ -445,6 +491,10 @@ export const ListViewRenderer = {
                 `;
             }
         });
+
+        if (results.length === 0) {
+            tbodyContent = this.getEmptyStateRowHTML(headerPeriodCount * 2 + 3);
+        }
 
         const existingView = container?.querySelector?.('.student-list-view');
         const existingTable = existingView ? existingView.querySelector('.student-list-table') : null;

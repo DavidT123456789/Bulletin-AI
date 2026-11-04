@@ -9,14 +9,37 @@ import { Utils } from '../../utils/Utils.js';
 
 export const ListViewAnimations = {
 
-    // shared context state like _activeFilterTimeout is injected or managed
     state: {
-        activeFilterTimeout: null
+        activeFilterTimeout: null,
+        activeHeightTimeout: null,
+        activeHeightEndHandler: null,
+        activeHeightElement: null
     },
 
     callbacks: {
         renderFresh: () => { },
         updateHeaderSortIcons: () => { }
+    },
+
+    _clearPendingHeightCleanup() {
+        if (this.state.activeHeightTimeout) {
+            clearTimeout(this.state.activeHeightTimeout);
+            this.state.activeHeightTimeout = null;
+        }
+        if (this.state.activeHeightElement && this.state.activeHeightEndHandler) {
+            this.state.activeHeightElement.removeEventListener('transitionend', this.state.activeHeightEndHandler);
+        }
+        this.state.activeHeightEndHandler = null;
+        this.state.activeHeightElement = null;
+    },
+
+    resetHeightTransition(targetElement = this.state.activeHeightElement) {
+        this._clearPendingHeightCleanup();
+        if (targetElement) {
+            targetElement.style.height = '';
+            targetElement.style.transition = '';
+            targetElement.style.overflow = '';
+        }
     },
 
     init(callbacks) {
@@ -71,18 +94,21 @@ export const ListViewAnimations = {
 
         this.state.activeFilterTimeout = setTimeout(() => {
             this.state.activeFilterTimeout = null;
+            this._clearPendingHeightCleanup();
 
+            const measureHeight = (el) => el.getBoundingClientRect?.().height || el.offsetHeight;
             const viewElement = container.querySelector('.student-list-view');
             let initialHeight = 0;
             if (viewElement) {
-                initialHeight = viewElement.offsetHeight;
+                initialHeight = measureHeight(viewElement);
                 viewElement.style.height = `${initialHeight}px`;
                 viewElement.style.transition = 'none';
                 viewElement.style.overflow = 'hidden'; // Keep layout clipping clean during height changes
             }
 
-            // Remove exited rows from DOM
+            // Remove exited rows and any previous empty-state row from DOM (after initialHeight is captured)
             toExit.forEach(row => row.remove());
+            tbody.querySelectorAll('.empty-state-row').forEach(row => row.remove());
 
             // Build map of kept rows
             const keepMap = new Map(toKeep.map(r => [r.dataset.studentId, r]));
@@ -172,38 +198,47 @@ export const ListViewAnimations = {
                 }
             });
 
+            if (orderedIds.length === 0) {
+                const headerThs = container.querySelectorAll('.student-list-table thead th');
+                const colCount = headerThs.length || (currentPeriodIndex * 2 + 5);
+                tbody.innerHTML = ListViewRenderer.getEmptyStateRowHTML(
+                    colCount,
+                    'row-filter-enter',
+                    ` style="--enter-delay: ${baseDelay}ms"`
+                );
+            }
+
             // Measure final height and transition the container height in sync with rows
             let finalHeight = 0;
             if (viewElement) {
                 viewElement.style.height = '';
-                finalHeight = viewElement.offsetHeight;
+                finalHeight = measureHeight(viewElement);
                 viewElement.style.height = `${initialHeight}px`;
             }
 
             // Force layout recalculation
             void tbody.offsetHeight;
 
-            if (viewElement && finalHeight !== initialHeight) {
-                viewElement.style.transition = 'height 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                viewElement.style.height = `${finalHeight}px`;
+            if (viewElement) {
+                if (finalHeight !== initialHeight) {
+                    viewElement.style.transition = 'height 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                    viewElement.style.height = `${finalHeight}px`;
 
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'height') {
-                        viewElement.style.height = '';
-                        viewElement.style.transition = '';
-                        viewElement.style.overflow = '';
-                        viewElement.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                viewElement.addEventListener('transitionend', onTransitionEnd);
+                    const resetHeightStyles = () => this.resetHeightTransition(viewElement);
+                    const onTransitionEnd = (e) => {
+                        if (e.target === viewElement && e.propertyName === 'height') {
+                            resetHeightStyles();
+                        }
+                    };
 
-                setTimeout(() => {
-                    if (viewElement.style.height) {
-                        viewElement.style.height = '';
-                        viewElement.style.transition = '';
-                        viewElement.style.overflow = '';
-                    }
-                }, 550);
+                    this.state.activeHeightElement = viewElement;
+                    this.state.activeHeightEndHandler = onTransitionEnd;
+                    viewElement.addEventListener('transitionend', onTransitionEnd);
+
+                    this.state.activeHeightTimeout = setTimeout(resetHeightStyles, 550);
+                } else {
+                    this.resetHeightTransition(viewElement);
+                }
             }
 
             // *** LAST (batch reads) + INVERT (batch writes) + PLAY: Animate kept rows to their new positions ***
@@ -411,19 +446,5 @@ export const ListViewAnimations = {
         if (viewElement) {
             this.callbacks.updateHeaderSortIcons(viewElement);
         }
-    },
-
-    /**
-     * Anime la sortie de toutes les lignes
-     * @param {NodeList} rows - Lignes à animer
-     * @param {Function} callback - Callback après animation
-     * @private
-     */
-    animateRowsOut(rows, callback) {
-        rows.forEach((row, index) => {
-            row.style.setProperty('--row-delay', `${index * 15}ms`);
-            row.classList.add('row-exit');
-        });
-        setTimeout(callback, 300);
-    },
+    }
 };

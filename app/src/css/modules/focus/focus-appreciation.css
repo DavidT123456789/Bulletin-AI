@@ -1321,16 +1321,18 @@
     flex-shrink: 0;
 }
 
-/* Hover state during loading: clearly signals cancellation */
+/* Hover state during loading: clearly signals cancellation (Focus Panel & Inline Table Header pills) */
 #focusGenerateBtn.is-loading:hover,
-#focusGenerateBtn:has(.loading-spinner-svg):hover {
+#focusGenerateBtn:has(.loading-spinner-svg):hover,
+.btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.1) !important;
     color: var(--error-color, #ef4444) !important;
     border-color: rgba(239, 68, 68, 0.35) !important;
 }
 
 [data-theme="dark"] #focusGenerateBtn.is-loading:hover,
-[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg):hover {
+[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg):hover,
+[data-theme="dark"] .btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.18) !important;
     color: #fca5a5 !important;
     border-color: rgba(239, 68, 68, 0.45) !important;
@@ -1360,7 +1362,7 @@
     justify-content: center;
     color: var(--warning-color);
     font-size: 16px;
-    cursor: help;
+    cursor: pointer;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15));
     /* Premium transition for opacity/transform */
     transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),

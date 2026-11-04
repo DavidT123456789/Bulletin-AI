@@ -320,7 +320,7 @@ export const FocusPanelStatus = {
             tooltip = 'En attente';
         } else if (isDirty) {
             state = 'dirty';
-            const isAI = result?.wasGenerated === true;
+            const isAI = this._resolveSource(result) === 'ai';
             tooltip = isAI
                 ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
                 : 'Données modifiées depuis l\'écriture.\nCliquez pour marquer comme vérifiée.';
@@ -340,6 +340,37 @@ export const FocusPanelStatus = {
             isDirty,
             tooltip
         };
+    },
+
+    /**
+     * Indique si l'appréciation relève de l'action groupée « Actualiser » : échec de génération sur la période,
+     * ou texte IA non retouché dont les données de l'élève ont changé.
+     * Un texte rédigé, retouché ou importé par l'enseignant n'est jamais réécrit en masse :
+     * son indicateur invite seulement à le relire.
+     * @param {Object} result - Student result object
+     * @param {string} [period] - Target period (defaults to appState.currentPeriod)
+     * @returns {boolean}
+     */
+    isBulkRefreshable(result, period = appState.currentPeriod) {
+        const status = this.getAppreciationStatus(result, period);
+        return status.hasError || (status.isDirty && this._resolveSource(result) === 'ai');
+    },
+
+    /**
+     * Marque une appréciation manuelle, retouchée ou importée comme vérifiée
+     * en réalignant son empreinte sur les données actuelles de l'élève.
+     * @param {Object} result - Student result object
+     * @param {string} [period] - Target period (defaults to appState.currentPeriod)
+     */
+    markDirtyAsVerified(result, period = appState.currentPeriod) {
+        if (!result) return;
+        result.promptHash = PromptService.getPromptHash({
+            ...result.studentData,
+            id: result.id,
+            currentPeriod: period
+        });
+        result.generationPeriod = period;
+        result.generationSnapshot = null;
     },
 
     /**

@@ -371,48 +371,67 @@ describe('PromptService', () => {
             expect(PromptService.getPromptHash(mockStudentData)).toMatch(new RegExp(`^${PromptService.PROMPT_HASH_PREFIX}`));
         });
 
-        it('should change when student data or style settings change', () => {
-            appState.useSubjectPersonalization = false;
-            const genericConfig = appState.subjects['Générique'].iaConfig;
-            const baseHash = PromptService.getPromptHash(mockStudentData);
-
-            const dataHash = PromptService.getPromptHash({
+        it('should change when the student pedagogical data changes', () => {
+            Utils.getPeriods.mockReturnValue(['T1', 'T2']);
+            const base = {
                 ...mockStudentData,
-                periods: { 'T1': { grade: 12, appreciation: 'Good', context: 'Nouvelle observation' } }
-            });
-            expect(dataHash).not.toBe(baseHash);
+                currentPeriod: 'T2',
+                periods: { T1: { grade: 12, appreciation: 'Bon trimestre' }, T2: { grade: 13 } }
+            };
+            const baseHash = PromptService.getPromptHash(base);
 
-            const originalLength = genericConfig.length;
-            genericConfig.length = originalLength + 30;
-            try {
-                expect(PromptService.getPromptHash(mockStudentData)).not.toBe(baseHash);
-            } finally {
-                genericConfig.length = originalLength;
-            }
-            expect(PromptService.getPromptHash(mockStudentData)).toBe(baseHash);
+            const variants = [
+                { periods: { ...base.periods, T2: { grade: '14,5' } } },
+                { periods: { ...base.periods, T2: { grade: 13, evaluationCount: 4 } } },
+                { periods: { ...base.periods, T2: { grade: 13, context: 'Très bonne participation' } } },
+                { periods: { ...base.periods, T1: { grade: 12, appreciation: 'Trimestre fragile' } } },
+                { statuses: ['PPRE'] },
+                { journal: [{ note: 'Excellent exposé', period: 'T2' }] },
+                { prenom: 'Jon' }
+            ];
+            variants.forEach(variant => {
+                expect(PromptService.getPromptHash({ ...base, ...variant })).not.toBe(baseHash);
+            });
         });
 
-        it('should ignore settings that do not change the prompt (disabled tone, empty custom instructions)', () => {
+        it('should treat equivalent grade formats as identical', () => {
+            const asNumber = { ...mockStudentData, periods: { T1: { grade: 12.5 } } };
+            const asString = { ...mockStudentData, periods: { T1: { grade: '12,5' } } };
+            expect(PromptService.getPromptHash(asString)).toBe(PromptService.getPromptHash(asNumber));
+        });
+
+        it('should ignore the appreciation of the evaluated period (teacher edits)', () => {
+            const edited = { ...mockStudentData, periods: { T1: { grade: 12, appreciation: 'Texte retouché' } } };
+            expect(PromptService.getPromptHash(edited)).toBe(PromptService.getPromptHash(mockStudentData));
+        });
+
+        it('should ignore global settings (style, evolution labels, anonymization, class)', () => {
             appState.useSubjectPersonalization = false;
             const genericConfig = appState.subjects['Générique'].iaConfig;
-            const snapshot = { ...genericConfig };
+            const styleSnapshot = { ...genericConfig };
+            const stateSnapshot = { anonymizeData: appState.anonymizeData, classes: appState.classes, currentClassId: appState.currentClassId };
+            const baseHash = PromptService.getPromptHash(mockStudentData);
             try {
-                Object.assign(genericConfig, { tone: 1, enableTone: false, styleInstructions: '', enableStyleInstructions: true });
-                const baseHash = PromptService.getPromptHash(mockStudentData);
+                Object.assign(genericConfig, { length: 90, tone: 5, enableTone: true, voice: 'neutre', discipline: 'Histoire', styleInstructions: 'Sois bref.' });
+                appState.anonymizeData = false;
+                appState.classes = [{ id: 'class-B', name: '3e B', level: 'college' }];
+                appState.currentClassId = 'class-B';
+                StatsService.analyserEvolution.mockReturnValue([{ periode: 'T1-T2', valeur: 1, type: 'very-positive' }]);
 
-                Object.assign(genericConfig, { tone: 5, enableStyleInstructions: false });
                 expect(PromptService.getPromptHash(mockStudentData)).toBe(baseHash);
-
-                genericConfig.enableTone = true;
-                expect(PromptService.getPromptHash(mockStudentData)).not.toBe(baseHash);
             } finally {
                 Object.keys(genericConfig).forEach(key => delete genericConfig[key]);
-                Object.assign(genericConfig, snapshot);
+                Object.assign(genericConfig, styleSnapshot);
+                Object.assign(appState, stateSnapshot);
             }
         });
 
-        it('should return null when prompt building fails', () => {
-            vi.spyOn(PromptService, 'getAllPrompts').mockImplementationOnce(() => { throw new Error('boom'); });
+        it('should hash incomplete student data without throwing', () => {
+            expect(PromptService.getPromptHash({ currentPeriod: 'T1' })).toMatch(new RegExp(`^${PromptService.PROMPT_HASH_PREFIX}`));
+        });
+
+        it('should return null when fingerprint building fails', () => {
+            vi.spyOn(PromptService, '_extractJournalSynthesis').mockImplementationOnce(() => { throw new Error('boom'); });
             vi.spyOn(console, 'warn').mockImplementationOnce(() => {});
             expect(PromptService.getPromptHash(mockStudentData)).toBeNull();
         });

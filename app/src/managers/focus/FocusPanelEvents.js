@@ -485,18 +485,11 @@ export const FocusPanelEvents = {
                 const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
                 if (!result) return;
 
-                if (result.wasGenerated === true) {
+                if (FocusPanelStatus._resolveSource(result) === 'ai') {
                     const genBtn = document.getElementById('focusGenerateBtn');
                     genBtn?.click();
                 } else {
-                    result.promptHash = PromptService.getPromptHash({
-                        ...result.studentData,
-                        id: result.id,
-                        currentPeriod: appState.currentPeriod
-                    });
-                    result.generationPeriod = appState.currentPeriod;
-                    result.generationSnapshot = null;
-
+                    FocusPanelStatus.markDirtyAsVerified(result);
                     StorageManager.saveAppState();
                     panel._updateListRow(result);
                     FocusPanelStatus.updateSourceIndicator(result);

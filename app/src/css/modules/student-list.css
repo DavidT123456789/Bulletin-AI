@@ -390,7 +390,6 @@
     padding: 40px 20px;
     cursor: default;
     border-bottom: none;
-    transition: padding 0.25s var(--ease-spring);
 }
 
 .student-list-table tbody tr.empty-state-row .empty-state {
@@ -403,11 +402,18 @@
 }
 
 .student-list-table tbody tr.empty-state-row .empty-state iconify-icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     font-size: 28px;
     opacity: 0.7;
 }
 
 .student-list-table tbody tr.empty-state-row .empty-state span {
+    line-height: 1.4;
     font-weight: 500;
     font-size: 13px;
 }
@@ -828,17 +834,31 @@
     animation: inline-btn-appear 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
-/* Loading & disabled state */
-.btn-smart-action-inline.loading,
+/* Cancel icon (hidden unless loading + hovered) */
+.btn-smart-action-inline .cancel-svg {
+    display: none;
+    font-size: 13px;
+    line-height: 1;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+/* Disabled state (keeps pointer-events active to prevent header click fall-through & preserve tooltips) */
+.btn-smart-action-inline.disabled,
 .btn-smart-action-inline:disabled {
-    pointer-events: none !important;
-    opacity: 0.6 !important;
+    opacity: 0.55 !important;
     cursor: not-allowed !important;
     box-shadow: none !important;
     transform: none !important;
 }
 
-.btn-smart-action-inline.loading.mode-update .smart-action-icon {
+/* Active loading state: remains interactive so clicking cancels the batch */
+.btn-smart-action-inline.loading {
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.btn-smart-action-inline.loading.mode-update:not(:hover) .smart-action-icon {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
@@ -847,13 +867,23 @@
     animation: spin 1.2s linear infinite !important;
 }
 
-.btn-smart-action-inline.loading.mode-generate .smart-action-icon {
+.btn-smart-action-inline.loading.mode-generate:not(:hover) .smart-action-icon {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
     line-height: 1;
     transform-origin: center center;
     animation: magic-polish 1s ease-in-out infinite !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-smart-action-inline.loading:hover .smart-action-icon {
+        display: none !important;
+    }
+
+    .btn-smart-action-inline.loading:hover .cancel-svg {
+        display: inline-flex !important;
+    }
 }
 
 /* ====================================================================

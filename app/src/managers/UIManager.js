@@ -842,20 +842,18 @@ export const UI = {
         const updateBtn = document.getElementById('updateBtnInline');
         const generateBtn = document.getElementById('generateBtnInline');
         if (updateBtn) {
-            if (appState.activeMassAction === 'update') {
-                updateBtn.classList.add('loading');
-            } else {
-                updateBtn.classList.remove('loading');
-            }
-            updateBtn.disabled = true;
+            const isUpdating = appState.activeMassAction === 'update';
+            updateBtn.classList.toggle('loading', isUpdating);
+            updateBtn.classList.toggle('disabled', !isUpdating);
+            updateBtn.disabled = false;
+            if (isUpdating) this.updateTooltip(updateBtn, "Cliquer pour annuler l'actualisation");
         }
         if (generateBtn) {
-            if (appState.activeMassAction === 'generate') {
-                generateBtn.classList.add('loading');
-            } else {
-                generateBtn.classList.remove('loading');
-            }
-            generateBtn.disabled = true;
+            const isGeneratingBatch = appState.activeMassAction === 'generate';
+            generateBtn.classList.toggle('loading', isGeneratingBatch);
+            generateBtn.classList.toggle('disabled', !isGeneratingBatch);
+            generateBtn.disabled = false;
+            if (isGeneratingBatch) this.updateTooltip(generateBtn, 'Cliquer pour annuler la génération');
         }
 
         // Clear any pending progress hide timeouts
@@ -918,11 +916,11 @@ export const UI = {
             const updateBtn = document.getElementById('updateBtnInline');
             const generateBtn = document.getElementById('generateBtnInline');
             if (updateBtn) {
-                updateBtn.classList.remove('loading');
+                updateBtn.classList.remove('loading', 'disabled');
                 updateBtn.disabled = false;
             }
             if (generateBtn) {
-                generateBtn.classList.remove('loading');
+                generateBtn.classList.remove('loading', 'disabled');
                 generateBtn.disabled = false;
             }
         };

@@ -626,22 +626,11 @@ export const ClassDashboardManager = {
         if (!generateBtn || !this.cachedStats || !this.cachedSynthesisDataHash) return;
 
         const dataChanged = this.cachedStats.dataHash !== this.cachedSynthesisDataHash;
-        const modelChanged = this.cachedSynthesisModel && appState.currentAIModel !== this.cachedSynthesisModel;
-        const subjectChanged = this.cachedSynthesisSubject && appState.currentSubject !== this.cachedSynthesisSubject;
 
-        if (dataChanged || modelChanged || subjectChanged) {
+        if (dataChanged) {
             // Data is stale
             UI.setGenerateButtonState(generateBtn, 'dirty');
-            
-            let reason = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
-            if (modelChanged && subjectChanged) {
-                reason = "Le modèle d'IA et la matière active ont changé.";
-            } else if (modelChanged) {
-                reason = "Le modèle d'IA sélectionné a changé.";
-            } else if (subjectChanged) {
-                reason = "La matière active a changé.";
-            }
-            generateBtn.title = reason;
+            generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
         } else {
             // Data is fresh
             UI.setGenerateButtonState(generateBtn, 'done');

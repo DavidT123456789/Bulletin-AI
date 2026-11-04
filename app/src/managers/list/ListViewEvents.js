@@ -5,6 +5,8 @@
 
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { ListViewRenderer } from './ListViewRenderer.js';
 import { UI } from '../UIManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
@@ -83,20 +85,30 @@ export const ListViewEvents = {
             }
         }, { passive: false, signal });
 
-        // Generate Button (pending appreciations)
+        // Generate Button (pending appreciations, or cancel active generation)
         const generateBtn = listContainer.querySelector('#generateBtnInline');
         if (generateBtn) {
             generateBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                if (generateBtn.classList.contains('loading') && MassImportManager.massImportAbortController) {
+                    MassImportManager.cancelImport();
+                    return;
+                }
+                if (generateBtn.classList.contains('disabled') || MassImportManager.massImportAbortController) return;
                 await MassImportManager.generateAllPending();
             }, { signal });
         }
 
-        // Update Button (dirty/error appreciations)
+        // Update Button (dirty/error appreciations, or cancel active update)
         const updateBtn = listContainer.querySelector('#updateBtnInline');
         if (updateBtn) {
             updateBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                if (updateBtn.classList.contains('loading') && MassImportManager.massImportAbortController) {
+                    MassImportManager.cancelImport();
+                    return;
+                }
+                if (updateBtn.classList.contains('disabled') || MassImportManager.massImportAbortController) return;
                 await ResultsUIManager.regenerateDirty();
             }, { signal });
         }
@@ -344,6 +356,31 @@ export const ListViewEvents = {
                 }
                 e.stopPropagation();
                 this.callbacks.toggleAppreciationColumn(listContainer);
+                return;
+            }
+
+            // Dirty / Error indicator action in List View (regenerate AI/error or mark manual as verified)
+            const dirtyIndicator = target.closest('.dirty-indicator');
+            if (dirtyIndicator) {
+                e.stopPropagation();
+                closeAllMenus();
+                const row = target.closest('.student-row');
+                const studentId = row?.dataset.studentId;
+                const result = studentId ? appState.generatedResults.find(r => r.id === studentId) : null;
+                if (!result) return;
+
+                const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
+                if (status.hasError || FocusPanelStatus._resolveSource(result) === 'ai') {
+                    AppreciationsManager.regenerateFailedAppreciation(studentId);
+                } else if (status.isDirty) {
+                    FocusPanelStatus.markDirtyAsVerified(result);
+                    StorageManager.saveAppState();
+                    ListViewRenderer.updateStudentRow(studentId);
+                    if (FocusPanelManager.currentStudentId === studentId) {
+                        FocusPanelStatus.updateSourceIndicator(result);
+                        FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                    }
+                }
                 return;
             }
 

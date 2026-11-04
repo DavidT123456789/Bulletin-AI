@@ -157,8 +157,12 @@ export const ClassUIManager = {
             document.removeEventListener('click', this._boundOutsideClick, true);
         }
         this._boundOutsideClick = (e) => {
+            const isNoteBtnClick = Boolean(DOM.headerClassNoteBtn?.contains(e.target));
+            const isChipClick = Boolean(DOM.headerClassChip?.contains(e.target));
+
             if (this._isDropdownOpen &&
-                !DOM.headerClassChip?.contains(e.target) &&
+                !isChipClick &&
+                !isNoteBtnClick &&
                 !DOM.classDropdown?.contains(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -166,7 +170,8 @@ export const ClassUIManager = {
                 this.closeDropdown();
             }
             if (this._isNotePopoverOpen &&
-                !DOM.headerClassNoteBtn?.contains(e.target) &&
+                !isNoteBtnClick &&
+                !isChipClick &&
                 !DOM.classNotePopover?.contains(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -304,7 +309,7 @@ export const ClassUIManager = {
         if (!DOM.classDropdown) return;
 
         if (this._isNotePopoverOpen) {
-            this.closeNotePopover();
+            this.closeNotePopover({ replaceNext: true });
         }
 
         if (this._closeDropdownTimer) {
@@ -351,7 +356,7 @@ export const ClassUIManager = {
 
         // [UX Mobile] History Cleanup
         if (!options?.causedByHistory && this._isDropdownOpen) {
-            HistoryManager.handleManualClose('classDropdown');
+            HistoryManager.handleManualClose('classDropdown', { replaceNext: Boolean(options?.replaceNext) });
         }
 
         this._isDropdownOpen = false;
@@ -1095,7 +1100,7 @@ export const ClassUIManager = {
         if (!targetClass || ClassManager.isVirtualClass(targetClass.id)) return;
 
         if (this._isDropdownOpen) {
-            this.closeDropdown();
+            this.closeDropdown({ replaceNext: true });
         }
 
         if (this._closeNotePopoverTimer) {
@@ -1165,7 +1170,7 @@ export const ClassUIManager = {
         if (!popover) return;
 
         if (!options?.causedByHistory && this._isNotePopoverOpen) {
-            HistoryManager.handleManualClose('classNotePopover');
+            HistoryManager.handleManualClose('classNotePopover', { replaceNext: Boolean(options?.replaceNext) });
         }
 
         if (this._noteTypingBurstTimer) {

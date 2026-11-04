@@ -16,7 +16,7 @@ export const PromptService = {
      * ne sont pas comparables et ne doivent pas déclencher d'alerte « Mettre à jour ».
      * @constant {string}
      */
-    PROMPT_HASH_PREFIX: 'v2:',
+    PROMPT_HASH_PREFIX: 'v3:',
     /**
      * Placeholder utilisé pour anonymiser le prénom dans les prompts
      * @constant {string}
@@ -261,7 +261,7 @@ export const PromptService = {
     /**
      * Extrait les réglages de style qui modifient réellement le prompt
      * (ton désactivé et consignes personnalisées désactivées ou vides exclus).
-     * Source unique pour la construction du prompt et pour l'empreinte « Mettre à jour ».
+     * Source unique des réglages de style injectés dans le prompt.
      * @param {Object} [iaConfig={}] - Configuration IA effective
      * @returns {{tone: number|null, voice: string, length: number|null, styleInstructions: string, discipline: string}}
      * @private
@@ -276,6 +276,16 @@ export const PromptService = {
             styleInstructions: hasStyleInstructions ? iaConfig.styleInstructions : '',
             discipline: iaConfig.discipline || ''
         };
+    },
+
+    /**
+     * Convertit une moyenne saisie (nombre ou chaîne « 12,5 ») en nombre.
+     * @param {number|string|null|undefined} raw - Moyenne brute
+     * @returns {number} Moyenne numérique, ou NaN si absente ou invalide
+     * @private
+     */
+    _parseGrade(raw) {
+        return typeof raw === 'number' ? raw : parseFloat(String(raw ?? '').replace(',', '.'));
     },
 
     getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false) {
@@ -296,7 +306,7 @@ export const PromptService = {
         const hasGrades = relevantPeriods.some(p => {
             const d = periods?.[p] || {};
             const raw = d.grade;
-            const val = typeof raw === 'number' ? raw : parseFloat(String(raw || '').replace(',', '.'));
+            const val = this._parseGrade(raw);
             return !isNaN(val);
         });
 
@@ -312,7 +322,7 @@ export const PromptService = {
 
         const hasNoData = !hasGrades && !hasContext;
         const currentGradeRaw = periods?.[currentPeriod]?.grade;
-        const currentGradeVal = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
+        const currentGradeVal = this._parseGrade(currentGradeRaw);
         const hasCurrentGrade = !isNaN(currentGradeVal);
 
         const iaConfig = this._resolveIaConfig(overrideConfig);
@@ -431,7 +441,7 @@ export const PromptService = {
         const periodRows = relevantPeriods.map(p => {
             const d = periods[p] || {};
             const gradeRaw = d.grade;
-            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            const gradeVal = this._parseGrade(gradeRaw);
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
@@ -654,11 +664,7 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
             }
 
             const grades = classStudents
-                .map(r => {
-                    const gradeRaw = r.studentData?.periods?.[period]?.grade;
-                    if (gradeRaw === undefined || gradeRaw === null || gradeRaw === '') return NaN;
-                    return typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw).replace(',', '.'));
-                })
+                .map(r => PromptService._parseGrade(r.studentData?.periods?.[period]?.grade))
                 .filter(g => !isNaN(g));
 
             if (grades.length < 3) {
@@ -712,18 +718,30 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
     },
 
     /**
-     * Génère une empreinte des données de l'élève et des réglages de style pour détecter les changements
-     * Utilisé pour le dirty state: si l'empreinte change, les données ou les réglages ont changé.
-     * Le libellé des consignes est volontairement exclu : retravailler le prompt ne doit pas
-     * signaler toutes les appréciations comme obsolètes.
+     * Génère l'empreinte du dossier pédagogique de l'élève pour la période évaluée (statut « À rafraîchir »).
+     * Seule une évolution des données de l'élève l'invalide : prénom, moyennes et nombre d'évaluations,
+     * appréciations des périodes précédentes, contexte de la période, statuts actifs et journal de bord.
+     * Les réglages globaux (style, seuils d'évolution, anonymisation, classe) en sont volontairement exclus :
+     * ils s'appliquent aux prochaines générations sans remettre en cause les appréciations déjà validées.
      * @param {Object} studentData - Données de l'élève (comme dans getAllPrompts)
      * @returns {string|null} Empreinte préfixée par PROMPT_HASH_PREFIX (simple djb2 hash)
      */
     getPromptHash(studentData) {
         try {
-            const { appreciationUser } = this.getAllPrompts(studentData, null, true);
-            const styleSignature = JSON.stringify(this._getEffectiveStyle(this._resolveIaConfig()));
-            const source = `${appreciationUser}\n${styleSignature}`;
+            const { prenom, statuses, periods, currentPeriod } = studentData;
+            const allPeriods = Utils.getPeriods();
+            const relevantPeriods = allPeriods.slice(0, allPeriods.indexOf(currentPeriod) + 1);
+            const source = JSON.stringify({
+                prenom: (prenom || '').trim(),
+                currentPeriod,
+                periods: relevantPeriods.map(p => {
+                    const d = periods?.[p] || {};
+                    const text = p === currentPeriod ? d.context : d.appreciation;
+                    return [this._parseGrade(d.grade), d.evaluationCount ?? null, (text || '').trim()];
+                }),
+                statuses: Utils.getActiveStatuses(Array.isArray(statuses) ? statuses : [], currentPeriod).sort(),
+                journal: this._extractJournalSynthesis(studentData, currentPeriod)
+            });
 
             // Simple djb2 hash algorithm - fast and good distribution
             let hash = 5381;

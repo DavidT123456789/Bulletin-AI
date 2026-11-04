@@ -323,6 +323,67 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         vi.restoreAllMocks();
     });
 
+    it('ne devrait jamais écraser les appréciations manuelles ou importées lors d\'un regenerateDirty', async () => {
+        const { PromptService } = await import('../services/PromptService.js');
+        const cls = ClassManager.createClass('4ème A');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+        appState.currentPeriod = 'T1';
+
+        const initialData = { nom: 'MARTIN', prenom: 'Lucas', currentPeriod: 'T1', periods: { T1: { grade: 12 } } };
+        const initialHash = PromptService.getPromptHash(initialData);
+
+        appState.generatedResults = [
+            {
+                id: 'stu-manual',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                classId: cls.id,
+                appreciation: 'Appréciation rédigée par le professeur.',
+                wasGenerated: false,
+                appreciationSource: 'manual',
+                generationPeriod: 'T1',
+                promptHash: initialHash,
+                studentData: { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 16, appreciation: 'Appréciation rédigée par le professeur.' } } }
+            },
+            {
+                id: 'stu-ai',
+                nom: 'MOREAU',
+                prenom: 'Julie',
+                classId: cls.id,
+                appreciation: 'Appréciation générée par IA.',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                generationPeriod: 'T1',
+                promptHash: initialHash,
+                studentData: { nom: 'MOREAU', prenom: 'Julie', periods: { T1: { grade: 17, appreciation: 'Appréciation générée par IA.' } } }
+            }
+        ];
+
+        const { ListViewManager } = await import('./ListViewManager.js');
+        vi.spyOn(ListViewManager, 'setRowStatus').mockImplementation(() => {});
+        vi.spyOn(ListViewManager, 'updateRow').mockResolvedValue();
+
+        const processedNames = [];
+        mockAm.generateAppreciation = vi.fn().mockImplementation(async (sd) => {
+            processedNames.push(sd.nom);
+            return { nom: sd.nom, prenom: sd.prenom, appreciation: 'Nouvelle appréciation IA', wasGenerated: true, appreciationSource: 'ai', studentData: sd };
+        });
+        mockUI.showHeaderProgress = vi.fn();
+        mockUI.hideHeaderProgress = vi.fn();
+        let confirmPromise;
+        mockUI.showCustomConfirm = vi.fn((_msg, onConfirm) => {
+            confirmPromise = onConfirm();
+        });
+
+        await ResultsUIManager.regenerateDirty();
+        await confirmPromise;
+
+        expect(processedNames).toEqual(['MOREAU']);
+        expect(appState.generatedResults[0].appreciation).toBe('Appréciation rédigée par le professeur.');
+        vi.restoreAllMocks();
+    });
+
     it('devrait conserver et atténuer le texte existant (.is-queued) lors du passage en file d\'attente (pending-skeleton)', async () => {
         const { ListViewManager } = await import('./ListViewManager.js');
         document.body.innerHTML = `
@@ -354,6 +415,66 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         ListViewManager.setRowStatus('s-empty', 'pending-skeleton');
         const cellEmpty = document.querySelector('[data-student-id="s-empty"] .appreciation-cell');
         expect(cellEmpty.querySelector('.appreciation-skeleton')).not.toBeNull();
+    });
+
+    it('devrait décrémenter en temps réel le badge sur le bouton Actualiser au fil des régénérations', async () => {
+        const cls = ClassManager.createClass('3ème B');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+        appState.currentPeriod = 'T1';
+        appState.sortState = { field: 'name', direction: 'asc' };
+
+        document.body.insertAdjacentHTML('beforeend', `
+            <button id="updateBtnInline" style="display: none;">
+                <span class="smart-action-badge" id="updateBadgeInline">0</span>
+            </button>
+        `);
+
+        appState.generatedResults = [
+            { id: 'stu-1', nom: 'BERNARD', prenom: 'Thomas', classId: cls.id, errorMessage: 'Erreur IA', errorPeriod: 'T1', studentData: { nom: 'BERNARD', prenom: 'Thomas', periods: { T1: { grade: 15 } } } },
+            { id: 'stu-2', nom: 'DURAND', prenom: 'Sophie', classId: cls.id, errorMessage: 'Erreur IA', errorPeriod: 'T1', studentData: { nom: 'DURAND', prenom: 'Sophie', periods: { T1: { grade: 12 } } } }
+        ];
+
+        ResultsUIManager.updateGenerateButtonState();
+        const badge = document.getElementById('updateBadgeInline');
+        const updateBtn = document.getElementById('updateBtnInline');
+        expect(badge.textContent).toBe('2');
+        expect(updateBtn.style.display).toBe('inline-flex');
+
+        const { ListViewManager } = await import('./ListViewManager.js');
+        vi.spyOn(ListViewManager, 'setRowStatus').mockImplementation(() => {});
+        const observedCountsAfterEachRow = [];
+        vi.spyOn(ListViewManager, 'updateRow').mockImplementation(async () => {
+            observedCountsAfterEachRow.push({
+                badgeText: badge.textContent,
+                display: updateBtn.style.display
+            });
+        });
+
+        mockAm.generateAppreciation = vi.fn().mockImplementation(async (sd) => ({
+            nom: sd.nom,
+            prenom: sd.prenom,
+            appreciation: 'Appréciation corrigée',
+            wasGenerated: true,
+            appreciationSource: 'ai',
+            errorMessage: null,
+            studentData: sd
+        }));
+        mockUI.showHeaderProgress = vi.fn();
+        mockUI.hideHeaderProgress = vi.fn();
+        let confirmPromise;
+        mockUI.showCustomConfirm = vi.fn((_msg, onConfirm) => {
+            confirmPromise = onConfirm();
+        });
+
+        await ResultsUIManager.regenerateDirty();
+        await confirmPromise;
+
+        // Après le 1er élève : il ne reste plus qu'1 élève à actualiser
+        expect(observedCountsAfterEachRow[0]).toEqual({ badgeText: '1', display: 'inline-flex' });
+        // Après le 2e (dernier) élève : plus aucun élève à actualiser, le bouton se masque
+        expect(observedCountsAfterEachRow[1].display).toBe('none');
+        vi.restoreAllMocks();
     });
 });
 

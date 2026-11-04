@@ -1,9 +1,10 @@
 /**
- * @fileoverview Unit tests for the progressive import reveal of the List View
+ * @fileoverview Unit tests for the progressive import reveal and filter transitions of the List View
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ListViewManager } from '../ListViewManager.js';
+import { ClassManager } from '../ClassManager.js';
 import { appState } from '../../state/State.js';
 
 vi.mock('../../state/State.js', () => ({
@@ -134,3 +135,94 @@ describe('ListView - Progressive import reveal', () => {
     });
 });
 
+describe('ListView - Empty filter state transitions (1 <-> 0)', () => {
+    let container;
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+        appState.currentPeriod = 'S1';
+        appState.currentClassId = 'c1';
+        ListViewManager._lastRenderedClassId = 'c1';
+        ListViewManager._lastRenderedPeriod = 'S1';
+        ListViewManager._pendingImportReveal = null;
+        ListViewManager._activeImportRenderGuard = false;
+        vi.spyOn(ClassManager, 'getStudentsForClass').mockReturnValue(buildResults());
+        container = document.createElement('div');
+        document.body.appendChild(container);
+    });
+
+    it('should smoothly animate container height and empty-state row entrance when going from 1 student to 0', () => {
+        const singleStudent = [buildResults()[0]];
+        ListViewManager.render(singleStudent, container);
+
+        const listView = container.querySelector('.student-list-view');
+        const tbody = container.querySelector('tbody');
+
+        // Mock offsetHeight: 115px when 1 student row is present, 185px when empty-state-row is present
+        Object.defineProperty(listView, 'offsetHeight', {
+            configurable: true,
+            get() {
+                return tbody.querySelector('.empty-state-row') ? 185 : 115;
+            }
+        });
+
+        ListViewManager.render([], container);
+
+        // Exiting row gets .row-exit immediately
+        const exitingRow = tbody.querySelector('.student-row');
+        expect(exitingRow).not.toBeNull();
+        expect(exitingRow.classList.contains('row-exit')).toBe(true);
+
+        // After 250ms exit duration, empty state row enters with smooth height transition
+        vi.advanceTimersByTime(250);
+
+        const emptyRow = tbody.querySelector('.empty-state-row');
+        expect(emptyRow).not.toBeNull();
+        expect(emptyRow.classList.contains('row-filter-enter')).toBe(true);
+        expect(listView.style.transition).toBe('height 0.45s cubic-bezier(0.32, 0.72, 0, 1)');
+        expect(listView.style.height).toBe('185px');
+
+        vi.useRealTimers();
+    });
+
+    it('should preserve empty-state height until initialHeight is locked when going from 0 students back to 1', () => {
+        const singleStudent = [buildResults()[0]];
+        ListViewManager.render(singleStudent, container);
+        ListViewManager.render([], container);
+        vi.advanceTimersByTime(250);
+        vi.advanceTimersByTime(600); // Finish previous height cleanup
+
+        const listView = container.querySelector('.student-list-view');
+        const tbody = container.querySelector('tbody');
+
+        const recordedHeights = [];
+        Object.defineProperty(listView, 'offsetHeight', {
+            configurable: true,
+            get() {
+                const h = tbody.querySelector('.empty-state-row')
+                    ? 185
+                    : (tbody.querySelector('.student-row') ? 115 : 48);
+                recordedHeights.push(h);
+                return h;
+            }
+        });
+
+        // Transition 0 -> 1 student
+        ListViewManager.render(singleStudent, container);
+
+        // Before the 0ms timeout fires, .empty-state-row is NOT prematurely removed (avoiding a 48px collapse)
+        expect(tbody.querySelector('.empty-state-row')).not.toBeNull();
+
+        vi.advanceTimersByTime(0);
+
+        // First height read was 185px (with .empty-state-row), second was 115px (with .student-row), never 48px
+        expect(recordedHeights).toEqual([185, 115]);
+        expect(tbody.querySelector('.empty-state-row')).toBeNull();
+        expect(tbody.querySelectorAll('.student-row')).toHaveLength(1);
+        expect(listView.style.transition).toBe('height 0.45s cubic-bezier(0.32, 0.72, 0, 1)');
+        expect(listView.style.height).toBe('115px');
+
+        vi.useRealTimers();
+    });
+});
