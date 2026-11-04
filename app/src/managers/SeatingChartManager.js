@@ -94,6 +94,7 @@ export const SeatingChartManager = {
 
     _injectHeaderSearch() {
         const existing = document.getElementById('scFloatingSearch');
+        if (existing?.querySelector('#scFloatingSearchInput')) return;
         const parent = existing?.parentElement
             || document.querySelector('.header-actions')
             || document.getElementById('scFloatingActions');

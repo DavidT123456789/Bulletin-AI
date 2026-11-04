@@ -18,18 +18,22 @@
 /* ====================================================================
    UNIFIED HEADER SEARCH (.header-search / #scFloatingSearch)
    Shared across List View & Plan View inside .header-actions
+   Zero-reflow overlay: fixed flex footprint (38x38px) so sibling controls
+   and radio buttons never jump or shift when search opens/closes.
    ==================================================================== */
 .header-search.sc-floating-search {
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
     flex-shrink: 0;
 }
 
 .header-search .sc-search-toggle-btn {
-    width: 38px;
-    max-width: 38px;
-    height: 38px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     border: none;
     background: transparent;
@@ -43,11 +47,8 @@
     flex-shrink: 0;
     opacity: 1;
     transform: scale(1);
-    overflow: hidden;
-    transition: max-width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                opacity 0.2s ease,
-                transform 0.2s ease,
+    transition: opacity 0.18s ease,
+                transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
                 background-color var(--transition-fast),
                 color var(--transition-fast),
                 box-shadow var(--transition-fast);
@@ -73,18 +74,35 @@
 }
 
 .header-search.open .sc-search-toggle-btn {
-    max-width: 0;
-    width: 0;
     opacity: 0;
-    padding: 0 !important;
-    margin: 0 !important;
-    transform: scale(0.4);
+    transform: scale(0.72);
     pointer-events: none;
 }
 
 .header-search .sc-floating-search-input-box {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 220px;
     height: 38px;
+    padding: 0 8px 0 6px;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
     background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+    box-sizing: border-box;
+    transform: translateY(-50%) scaleX(0.88);
+    transform-origin: right center;
+    z-index: 10;
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+                transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="dark"] .header-search .sc-floating-search-input-box {
@@ -92,11 +110,9 @@
 }
 
 .header-search.open .sc-floating-search-input-box {
-    max-width: 230px;
-    width: 215px;
-    padding: 0 8px 0 6px;
-    border-color: var(--border-color);
-    box-shadow: var(--shadow-sm);
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-50%) scaleX(1);
 }
 
 /* Close / Magnifier button inside the open search box (Strict Neutral Contrast) */
@@ -160,66 +176,89 @@
 /* ====================================================================
    RESPONSIVE HEADER SEARCH
    ==================================================================== */
-@media (max-width: 1100px) and (min-width: 769px) {
-    .header:has(.header-search.open) #headerGenWrapper:not(:has(.header-gen-dashboard.generating)) {
-        display: none;
+.header-left,
+.header-center,
+#headerGenWrapper,
+.header-actions-pill {
+    transition: opacity 0.18s ease;
+}
+
+@media (max-width: 1200px) and (min-width: 769px) {
+    .header-actions:not(:has(.header-gen-dashboard.generating)) {
+        position: relative;
     }
 
-    .header-search.open .sc-floating-search-input-box {
-        max-width: 200px;
-        width: 190px;
+    .header-actions:not(:has(.header-gen-dashboard.generating)) .header-search.sc-floating-search {
+        position: static;
+    }
+
+    .header:has(.header-search.open) #headerGenWrapper:not(:has(.header-gen-dashboard.generating)) {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .header-actions:not(:has(.header-gen-dashboard.generating)) .header-search .sc-floating-search-input-box {
+        right: 54px;
+        width: 195px;
+        transform-origin: left center;
+    }
+
+    .header-actions:not(:has(.header-gen-dashboard.generating)) .header-search .sc-floating-search-suggestions {
+        right: 54px;
     }
 }
 
 @media (max-width: 768px) {
-    .header:has(.header-search.open) .header-left,
-    .header:has(.header-search.open) #headerGenWrapper:not(:has(.header-gen-dashboard.generating)),
-    .header:has(.header-search.open) .header-actions-pill {
-        display: none !important;
+    .header-actions,
+    .header-search.sc-floating-search {
+        position: static;
     }
 
-    .header:has(.header-search.open) .header-actions,
-    .header:has(.header-search.open) .header-search.open {
-        flex: 1 1 auto;
-        min-width: 0;
-        display: flex;
+    .header:has(.header-search.open) :is(.header-left, .header-center, #headerGenWrapper, .header-actions-pill) {
+        opacity: 0;
+        pointer-events: none;
     }
 
-    .header:has(.header-search.open) .header-search.open .sc-floating-search-input-box {
-        flex: 1 1 auto;
-        width: 100%;
-        max-width: none;
+    .header-search .sc-floating-search-input-box {
+        left: var(--space-3);
+        right: var(--space-3);
+        width: auto;
         height: 38px;
+        transform-origin: right center;
     }
 
     .header-search .sc-floating-search-suggestions {
-        left: 0;
-        right: 0;
+        left: var(--space-3);
+        right: var(--space-3);
         min-width: 0;
         max-width: none;
     }
 }
 
 @media (max-width: 600px) {
-    .header-search .sc-search-toggle-btn {
+    .header-search.sc-floating-search {
         width: 36px;
-        max-width: 36px;
         height: 36px;
     }
 
-    .header:has(.header-search.open) .header-search.open .sc-floating-search-input-box {
+    .header-search .sc-floating-search-input-box {
         height: 40px;
     }
 }
 
 @media (max-width: 480px) {
-    .header-search .sc-search-toggle-btn {
+    .header-search.sc-floating-search {
         width: 34px;
-        max-width: 34px;
         height: 34px;
     }
 
     .header-search .sc-search-toggle-btn iconify-icon {
         font-size: 18px;
+    }
+
+    .header-search .sc-floating-search-input-box,
+    .header-search .sc-floating-search-suggestions {
+        left: var(--space-2);
+        right: var(--space-2);
     }
 }
