@@ -381,6 +381,29 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(fab.dataset.mode).toBe('add');
         expect(fab.getAttribute('aria-label')).toBe('Compléter la classe');
         expect(fab.getAttribute('data-tooltip')).toBe('Compléter la classe');
+
+        // In plan view, FAB must stay in 'add' mode even if mainContent.scrollTop > 180
+        const wrapper = document.createElement('div');
+        wrapper.className = 'main-content-wrapper';
+        wrapper.dataset.view = 'list';
+        container.appendChild(wrapper);
+        wrapper.appendChild(mainContent);
+
+        mainContent.scrollTop = 320;
+        mainContent.dispatchEvent(new Event('scroll'));
+        expect(fab.dataset.mode).toBe('scroll-top');
+
+        wrapper.dataset.view = 'plan';
+        GlobalListeners.updateMainScrollAffordances();
+        expect(fab.classList.contains('is-scroll-top')).toBe(false);
+        expect(fab.dataset.mode).toBe('add');
+        expect(fab.getAttribute('aria-label')).toBe('Compléter la classe');
+
+        // Returning to list view while scrolled > 180 restores 'scroll-top' mode
+        wrapper.dataset.view = 'list';
+        GlobalListeners.updateMainScrollAffordances();
+        expect(fab.classList.contains('is-scroll-top')).toBe(true);
+        expect(fab.dataset.mode).toBe('scroll-top');
     });
 
     it('should update can-scroll-top and can-scroll-bottom affordances on .main-content-wrapper during scroll and disable them in plan view', async () => {
@@ -565,12 +588,22 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(globalMenu.classList.contains('open')).toBe(false);
     });
 
-    it('should open inline search on smartphone tap (mousedown followed by click) without immediately closing, and close cleanly via close button or Back gesture', async () => {
+    it('should open unified header search in List view, preserve state across period switches (renderFresh), and close cleanly via close button or Back gesture', async () => {
         const { appState } = await import('../../state/State.js');
         const { HistoryManager } = await import('../HistoryManager.js');
         const { ListViewRenderer } = await import('./ListViewRenderer.js');
+        const { SeatingChartManager } = await import('../SeatingChartManager.js');
         HistoryManager.destroy();
         appState.searchQuery = '';
+        SeatingChartManager._isActive = false;
+
+        const headerActions = document.createElement('div');
+        headerActions.className = 'header-actions';
+        headerActions.innerHTML = '<div id="headerGenWrapper"></div>';
+        container.appendChild(headerActions);
+
+        SeatingChartManager._injectHeaderSearch();
+        SeatingChartManager._setupEventListeners();
 
         const outputList = document.createElement('div');
         container.appendChild(outputList);
@@ -580,23 +613,20 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         });
 
         ListViewRenderer.renderFresh(outputList, [{ id: 's1', nom: 'BERNARD', prenom: 'Thomas', studentData: { periods: {} } }], ['S1', 'S2'], 0);
-        const view = outputList.querySelector('.student-list-view');
-        const searchTrigger = view.querySelector('#inlineSearchTrigger');
-        const searchContainer = view.querySelector('#inlineSearchContainer');
-        const searchInput = view.querySelector('#inlineSearchInput');
+        const searchTrigger = document.getElementById('scFloatingSearchBtn');
+        const searchContainer = document.getElementById('scFloatingSearch');
+        const searchInput = document.getElementById('scFloatingSearchInput');
+        const searchCloseBtn = document.getElementById('scFloatingSearchClose');
 
-        expect(searchContainer.classList.contains('active')).toBe(false);
+        expect(searchContainer.classList.contains('open')).toBe(false);
 
-        // Simulate mobile tap on #inlineSearchTrigger: mousedown followed immediately by click on the same target
-        searchTrigger.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
         searchTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
-        // Search bar MUST remain open and focused (not toggled off by the synthetic click)
-        expect(searchContainer.classList.contains('active')).toBe(true);
+        expect(searchContainer.classList.contains('open')).toBe(true);
         expect(document.activeElement).toBe(searchInput);
         expect(HistoryManager.isOpen('inlineSearch')).toBe(true);
 
-        // Type a query and switch period (renderFresh) -> inline search state, value, and Back callback must be preserved
+        // Type a query and switch period (renderFresh) -> header search state, value, and Back callback must be preserved
         searchInput.value = 'bernard';
         searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         expect(appState.searchQuery).toBe('bernard');
@@ -607,20 +637,16 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
             currentPeriod: 'S2'
         });
 
-        const updatedContainer = outputList.querySelector('#inlineSearchContainer');
-        const updatedInput = outputList.querySelector('#inlineSearchInput');
-        const updatedCloseBtn = outputList.querySelector('#inlineSearchClose');
-        expect(updatedContainer.classList.contains('active')).toBe(true);
-        expect(updatedContainer.classList.contains('has-value')).toBe(true);
-        expect(updatedInput.value).toBe('bernard');
+        expect(searchContainer.classList.contains('open')).toBe(true);
+        expect(searchContainer.classList.contains('has-value')).toBe(true);
+        expect(searchInput.value).toBe('bernard');
 
-        // Close via mobile tap on #inlineSearchClose (mousedown + click) -> idempotent close + input blur
+        // Close via #scFloatingSearchClose -> idempotent close + input reset
         const handleManualCloseSpy = vi.spyOn(HistoryManager, 'handleManualClose');
-        updatedCloseBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-        updatedCloseBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        searchCloseBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
-        expect(updatedContainer.classList.contains('active')).toBe(false);
-        expect(updatedInput.value).toBe('');
+        expect(searchContainer.classList.contains('open')).toBe(false);
+        expect(searchInput.value).toBe('');
         expect(appState.searchQuery).toBe('');
         expect(HistoryManager.isOpen('inlineSearch')).toBe(false);
         expect(handleManualCloseSpy).toHaveBeenCalledTimes(1);
@@ -646,5 +672,47 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(appState.activeStatFilter).toBeNull();
 
         filterSpy.mockRestore();
+    });
+
+    it('should activate unified header search on "/" and "Ctrl+F" in List view without intercepting "/" inside input', async () => {
+        const { HistoryManager } = await import('../HistoryManager.js');
+        const { appState } = await import('../../state/State.js');
+        const { SeatingChartManager } = await import('../SeatingChartManager.js');
+
+        HistoryManager.destroy();
+        appState.searchQuery = '';
+        SeatingChartManager._isActive = false;
+
+        const headerActions = document.createElement('div');
+        headerActions.className = 'header-actions';
+        headerActions.innerHTML = '<div id="headerGenWrapper"></div>';
+        container.appendChild(headerActions);
+
+        SeatingChartManager._injectHeaderSearch();
+        SeatingChartManager._setupEventListeners();
+
+        const searchContainer = document.getElementById('scFloatingSearch');
+        const searchInput = document.getElementById('scFloatingSearchInput');
+
+        // 1. Pressing "/" when not typing in an input activates header search
+        const slashEv = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+        document.dispatchEvent(slashEv);
+
+        expect(slashEv.defaultPrevented).toBe(true);
+        expect(searchContainer.classList.contains('open')).toBe(true);
+        expect(document.activeElement).toBe(searchInput);
+
+        // 2. Pressing "/" while already focused inside the input does NOT intercept typing
+        const typingSlashEv = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+        searchInput.dispatchEvent(typingSlashEv);
+        expect(typingSlashEv.defaultPrevented).toBe(false);
+
+        // 3. Pressing Ctrl+F while search is already open but blurred re-focuses input
+        searchInput.blur();
+        const ctrlFEv = new KeyboardEvent('keydown', { key: 'F', ctrlKey: true, bubbles: true, cancelable: true });
+        document.dispatchEvent(ctrlFEv);
+
+        expect(ctrlFEv.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(searchInput);
     });
 });

@@ -44,7 +44,7 @@ input::-webkit-search-results-decoration {
 [tabindex="-1"]:focus-visible {
     outline: none !important;
 }
-*:focus-visible:not(.modal):not([tabindex="-1"]) {
+*:focus-visible:not(:where(.modal, [tabindex="-1"], input, textarea, select, [contenteditable="true"])) {
     outline: 2px solid var(--primary-color) !important;
     outline-offset: 2px !important;
 }

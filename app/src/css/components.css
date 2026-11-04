@@ -678,7 +678,7 @@ label {
 /* --- Inputs & Forms (Nebula Style) --- */
 /* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
 input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)),
-textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input)),
+textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input, .class-note-textarea)),
 select {
     padding: 12.5px 14.5px;
     border: 1px solid var(--border-color);
@@ -701,7 +701,7 @@ select {
 
 /* --- Hover & Focus States: Calm, distraction-free text fields (iOS 2026) --- */
 input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)):focus,
-textarea:not(:where(.focus-context-textarea, .journal-note-input)):focus {
+textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input, .class-note-textarea)):focus {
     outline: none;
 }
 

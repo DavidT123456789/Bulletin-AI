@@ -1613,6 +1613,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-top-left-bar,
     .sc-status-pill,
     .sc-floating-actions,
+    .fab-add-student,
     .avatar-selection-overlay,
     .sc-floating-status,
     .sc-onboarding-hint,
@@ -1897,23 +1898,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         gap: 6px;
     }
 
-    /* ── Search: compact full width on mobile tray ── */
-    .sc-search-box {
-        flex: 1 1 auto;
-        min-width: 0;
-        height: 32px;
-        gap: 6px;
-        padding: 0 28px 0 10px;
-    }
-
-    .sc-search-box input {
-        font-size: 0.78rem;
-    }
-
-    .sc-search-box input::placeholder {
-        font-size: 0.78rem;
-    }
-
     /* ── Student List: horizontal scrollable strip ── */
     .sc-student-list {
         display: flex;
@@ -2170,7 +2154,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         height: 32px !important;
         padding: 0 11px;
         white-space: nowrap !important;
-        max-width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 84px) !important;
         display: inline-flex !important;
         align-items: center !important;
     }

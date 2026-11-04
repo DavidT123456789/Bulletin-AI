@@ -720,8 +720,16 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
     opacity: 1;
 }
 
-body:has(.selection-toolbar.active) .fab-add-student {
+body:has(.selection-toolbar.active, .sc-mobile-sheet-backdrop.active) .fab-add-student {
     transform: translateY(calc(100% + 32px)) scale(0.85);
     opacity: 0;
     pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .main-content-wrapper[data-view="plan"]:has(#seatingChartView[data-locked="false"]) .fab-add-student {
+        transform: translateY(calc(100% + 32px)) scale(0.85);
+        opacity: 0;
+        pointer-events: none;
+    }
 }

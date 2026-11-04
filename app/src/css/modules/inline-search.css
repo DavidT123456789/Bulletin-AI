@@ -1,9 +1,10 @@
 /* ====================================================================
-   HEADER NAME CELL WITH INTEGRATED SEARCH
+   HEADER NAME CELL & UNIFIED HEADER SEARCH (.header-search)
    ==================================================================== */
 .name-header-with-search {
     position: relative;
     min-width: 180px;
+    scroll-margin-top: 72px;
 }
 
 .name-header-with-search .header-content-wrapper {
@@ -11,271 +12,214 @@
     align-items: center;
     gap: var(--space-2);
     cursor: pointer;
-    margin: -14px -16px -14px -10px;
-    padding: 14px 16px 14px 10px;
-    width: calc(100% + 26px);
     box-sizing: border-box;
-    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1), transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.name-header-with-search:has(.inline-search-container.active) .header-content-wrapper {
-    opacity: 0;
-    transform: scale(0.96);
-    pointer-events: none;
-}
-
-.name-header-with-search:has(.inline-search-container.active) .inline-search-trigger-btn {
-    opacity: 0 !important;
-    pointer-events: none;
-    transition: opacity 0.1s ease !important;
-}
-
-/* Search trigger button - extends .header-action-trigger */
-.inline-search-trigger-btn {
-    left: 22px; /* Perfectly centered above the 36px avatar in normal view */
-    right: auto;
-    width: 24px;
-    height: 24px;
-    margin: 0;
-    transition: left 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
-}
-
-.inline-search-trigger-btn:hover {
-    background: var(--item-hover-bg); /* Subtle semi-transparent hover */
-    color: var(--icon-btn-hover) !important;
-    opacity: 1 !important;
-    transform: translateY(-50%) scale(1.1);
-}
-
-
-.inline-search-trigger-btn i,
-.inline-search-trigger-btn iconify-icon {
-    font-size: 0.9rem;
-}
-
-/* Parent hover reveals button */
-.name-header-with-search:hover .inline-search-trigger-btn {
-    opacity: 0.7;
-    color: var(--text-secondary);
-}
-
-.name-header-with-search:hover .inline-search-trigger-btn:hover {
-    opacity: 1;
-    color: var(--icon-btn-hover);
 }
 
 /* ====================================================================
-   SEARCH INPUT CONTAINER (Overlay style)
+   UNIFIED HEADER SEARCH (.header-search / #scFloatingSearch)
+   Shared across List View & Plan View inside .header-actions
    ==================================================================== */
-.inline-search-container {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    padding: 0 10px 0 5px;
-    background: var(--surface-color);
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    z-index: 50;
-    /* CRITICAL: High z-index to cover all header elements including generation buttons */
-    height: 36px;
-    box-sizing: border-box;
-    overflow: hidden;
-    white-space: nowrap;
-
-    /* Perfectly anchored on the 34px avatar / loupe axis — NO horizontal shifting */
-    left: 16px;
-    width: 36px;
-    opacity: 0;
-    pointer-events: none;
-    will-change: width, opacity;
-    transition:
-        width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        opacity 0.15s ease 0.1s,
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-.inline-search-container.active {
-    left: 16px;
-    width: calc(100% - 24px);
-    opacity: 1;
-    pointer-events: auto;
-    box-shadow: var(--shadow-md);
-    transition:
-        width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        opacity 0.05s ease,
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-.inline-search-container:hover:not(:focus-within) {
-    border-color: rgba(0, 0, 0, 0.12);
-}
-
-/* Search close button (exact clone of the trigger button on the 34px avatar axis) */
-.inline-search-close-btn {
+.header-search.sc-floating-search {
     position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    margin: 0 6px 0 0;
-    padding: 0;
+    flex-shrink: 0;
+}
+
+.header-search .sc-search-toggle-btn {
+    width: 38px;
+    max-width: 38px;
+    height: 38px;
+    border-radius: 50%;
     border: none;
     background: transparent;
-    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+    opacity: 1;
+    transform: scale(1);
+    overflow: hidden;
+    transition: max-width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.2s ease,
+                transform 0.2s ease,
+                background-color var(--transition-fast),
+                color var(--transition-fast),
+                box-shadow var(--transition-fast);
+}
+
+.header-search .sc-search-toggle-btn iconify-icon {
+    font-size: 19px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .header-search .sc-search-toggle-btn:hover {
+        background-color: var(--surface-color);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-elevation);
+        transform: translateY(-1px);
+    }
+}
+
+.header-search .sc-search-toggle-btn:active {
+    transform: scale(0.94);
+    box-shadow: none;
+}
+
+.header-search.open .sc-search-toggle-btn {
+    max-width: 0;
+    width: 0;
+    opacity: 0;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: scale(0.4);
+    pointer-events: none;
+}
+
+.header-search .sc-floating-search-input-box {
+    height: 38px;
+    background: var(--surface-color);
+}
+
+[data-theme="dark"] .header-search .sc-floating-search-input-box {
+    background: var(--surface-color);
+}
+
+.header-search.open .sc-floating-search-input-box {
+    max-width: 230px;
+    width: 215px;
+    padding: 0 8px 0 6px;
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Close / Magnifier button inside the open search box (Strict Neutral Contrast) */
+.sc-search-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
     flex-shrink: 0;
     outline: none;
-    z-index: 2;
-    transform: scale(1.1);
-    transform-origin: center center;
-    transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
-.inline-search-close-btn:hover {
-    color: var(--icon-btn-hover);
-    background-color: var(--item-hover-bg);
-}
-
-.inline-search-close-btn:active {
-    transform: scale(0.96);
-}
-
-.inline-search-container:focus-within .inline-search-close-btn,
-.inline-search-container.has-value .inline-search-close-btn {
-    color: var(--text-primary);
-}
-
-.inline-search-close-btn .inline-search-close-icon {
-    font-size: 0.9rem;
+.sc-search-close-btn .sc-search-field-icon {
+    color: inherit;
+    font-size: 0.95rem;
     pointer-events: none;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Search input field */
-.inline-search-input {
-    flex: 1;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    outline: none !important;
+.sc-search-close-btn:hover {
+    background-color: var(--item-hover-bg);
     color: var(--text-primary);
-    caret-color: var(--text-primary);
-    user-select: text !important;
-    -webkit-user-select: text !important;
-    font-size: 0.875rem;
-    font-weight: 500;
-    font-style: normal !important;
-    padding: 10px 0;
-    min-width: 120px;
 }
 
-.inline-search-input::placeholder {
-    color: var(--text-tertiary);
-    font-weight: 400;
-    font-style: normal !important;
-    opacity: 0.85;
+.sc-search-close-btn:active {
+    transform: scale(0.92);
 }
 
-/* Clear button */
-.inline-search-clear {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-pill);
-    color: var(--text-tertiary);
-    cursor: pointer;
-    font-size: 10px;
-    transition: all var(--transition-fast);
-    opacity: 0;
-    visibility: hidden;
-    flex-shrink: 0;
-}
-
-.inline-search-container.has-value .inline-search-clear {
-    opacity: 1;
-    visibility: visible;
-}
-
-.inline-search-clear:hover {
-    background: var(--bg-tertiary);
+.sc-floating-search-input-box:focus-within .sc-search-close-btn,
+.sc-floating-search.has-value .sc-search-close-btn {
     color: var(--text-primary);
-    transform: scale(1.1);
 }
 
-
-/* ====================================================================
-   DISABLE BROWSER AUTOCOMPLETE HIGHLIGHT
-   ==================================================================== */
-/* Chrome/WebKit browsers add a blue/yellow background on autofill */
-.inline-search-input:-webkit-autofill,
-.inline-search-input:-webkit-autofill:hover,
-.inline-search-input:-webkit-autofill:focus,
-.inline-search-input:-webkit-autofill:active {
+/* Disable browser autocomplete highlight */
+#scFloatingSearchInput:-webkit-autofill,
+#scFloatingSearchInput:-webkit-autofill:hover,
+#scFloatingSearchInput:-webkit-autofill:focus,
+#scFloatingSearchInput:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px var(--surface-color) inset !important;
     -webkit-text-fill-color: var(--text-primary) !important;
     transition: background-color 5000s ease-in-out 0s !important;
     caret-color: var(--text-primary) !important;
 }
 
-/* Firefox */
-.inline-search-input:-moz-autofill {
+#scFloatingSearchInput:-moz-autofill {
     background-color: var(--surface-color) !important;
     color: var(--text-primary) !important;
 }
 
 /* ====================================================================
-   DARK MODE
+   RESPONSIVE HEADER SEARCH
    ==================================================================== */
-[data-theme="dark"] .inline-search-container {
-    background: var(--surface-color);
-    border-color: var(--border-color);
+@media (max-width: 1100px) and (min-width: 769px) {
+    .header:has(.header-search.open) #headerGenWrapper:not(:has(.header-gen-dashboard.generating)) {
+        display: none;
+    }
+
+    .header-search.open .sc-floating-search-input-box {
+        max-width: 200px;
+        width: 190px;
+    }
 }
 
-[data-theme="dark"] .inline-search-container:hover:not(:focus-within) {
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-/* ====================================================================
-   RESPONSIVE
-   ==================================================================== */
 @media (max-width: 768px) {
-    .inline-search-container {
-        left: var(--space-2);
-        width: 44px;
-        height: 44px;
-        padding: 0 10px;
-        border-radius: var(--radius-md);
+    .header:has(.header-search.open) .header-left,
+    .header:has(.header-search.open) #headerGenWrapper:not(:has(.header-gen-dashboard.generating)),
+    .header:has(.header-search.open) .header-actions-pill {
+        display: none !important;
     }
 
-    .inline-search-container.active {
-        left: var(--space-2);
-        width: calc(100% - var(--space-4));
-        padding: 0 10px;
-        border-radius: var(--radius-md);
+    .header:has(.header-search.open) .header-actions,
+    .header:has(.header-search.open) .header-search.open {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
     }
 
-    .inline-search-input {
-        min-width: 80px;
-        font-size: 1rem;
+    .header:has(.header-search.open) .header-search.open .sc-floating-search-input-box {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: none;
+        height: 38px;
     }
 
-    .inline-search-clear {
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
+    .header-search .sc-floating-search-suggestions {
+        left: 0;
+        right: 0;
+        min-width: 0;
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .header-search .sc-search-toggle-btn {
+        width: 36px;
+        max-width: 36px;
+        height: 36px;
     }
 
+    .header:has(.header-search.open) .header-search.open .sc-floating-search-input-box {
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-search .sc-search-toggle-btn {
+        width: 34px;
+        max-width: 34px;
+        height: 34px;
+    }
+
+    .header-search .sc-search-toggle-btn iconify-icon {
+        font-size: 18px;
+    }
 }

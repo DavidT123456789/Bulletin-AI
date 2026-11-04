@@ -667,6 +667,16 @@
     transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
+.sc-cross-action .student-avatar {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    font-size: 0.65rem;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
 .sc-cross-action iconify-icon:first-child {
     font-size: 1rem;
     color: var(--text-tertiary);
@@ -827,13 +837,6 @@
     background: var(--bg-tertiary) !important;
     border-color: rgba(255, 255, 255, 0.7) !important;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), var(--shadow-sm) !important;
-}
-
-/* Responsive mobile safety: hide print button while search is open to prevent collision with status pill */
-@media (max-width: 480px) {
-    #seatingChartView .sc-floating-actions:has(.sc-floating-search.open) .sc-print-btn {
-        display: none !important;
-    }
 }
 
 /* ====================================================================

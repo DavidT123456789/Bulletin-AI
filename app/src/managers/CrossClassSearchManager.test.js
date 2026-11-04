@@ -79,27 +79,36 @@ describe('CrossClassSearchManager', () => {
         expect(results.groups).toEqual([]);
     });
 
-    it('devrait envelopper le rendu DOM dans .cross-class-results-inner pour l\'accordéon CSS Grid', () => {
-        document.body.innerHTML = '<div><div id="outputList"></div></div>';
-        CrossClassSearchManager.reset();
+    it('devrait afficher la pastille compteur et le popover #scFloatingSearchSuggestions (avec mini-avatar) uniquement si 0 résultat dans la classe active', async () => {
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        SeatingChartManager._isActive = false;
+        document.body.innerHTML = `
+            <div class="header-actions">
+                <div id="headerGenWrapper"></div>
+            </div>
+        `;
+        SeatingChartManager._injectHeaderSearch();
 
-        CrossClassSearchManager.updateCrossClassResults('boukhari');
-        const container = document.getElementById('crossClassResults');
-        expect(container).not.toBeNull();
-        expect(container.classList.contains('visible')).toBe(true);
-        expect(container.querySelector('.cross-class-results-inner')).not.toBeNull();
-        expect(container.querySelector('.cross-class-group-header')).not.toBeNull();
-        expect(container.querySelector('.cross-class-total-count')?.textContent).toBe('1');
-        expect(container.querySelector('.cross-class-result')).not.toBeNull();
+        // 0 résultat dans la classe courante ('boukhari' est dans class-other-group) -> compteur = 0 + popover visible
+        SeatingChartManager._updateSearchCountAndSuggestions('boukhari');
+        const countBadge = document.getElementById('scFloatingSearchCount');
+        const suggestions = document.getElementById('scFloatingSearchSuggestions');
+        expect(countBadge.textContent).toBe('0');
+        expect(countBadge.classList.contains('sc-count-zero')).toBe(true);
+        expect(suggestions.classList.contains('visible')).toBe(true);
+        expect(suggestions.querySelector('.sc-cross-action .student-avatar')).not.toBeNull();
+        expect(suggestions.querySelector('.sc-cross-action')?.dataset.studentId).toBe('s1');
 
-        CrossClassSearchManager.updateCrossClassResults('');
-        expect(container.classList.contains('visible')).toBe(false);
+        // 1 résultat dans la classe courante ('martin' est dans class-group-1) -> compteur = 1 + popover masqué
+        SeatingChartManager._updateSearchCountAndSuggestions('martin');
+        expect(countBadge.textContent).toBe('1');
+        expect(countBadge.classList.contains('sc-count-zero')).toBe(false);
+        expect(suggestions.classList.contains('visible')).toBe(false);
     });
 
     it('devrait débouncer proprement scheduleSearch et annuler les appels précédents', () => {
         vi.useFakeTimers();
-        document.body.innerHTML = '<div><div id="outputList"></div></div>';
-        CrossClassSearchManager.reset(true);
+        CrossClassSearchManager.reset();
 
         const filterSpy = vi.fn();
         CrossClassSearchManager.scheduleSearch('b', filterSpy, 100);
@@ -110,49 +119,55 @@ describe('CrossClassSearchManager', () => {
 
         vi.advanceTimersByTime(100);
         expect(filterSpy).toHaveBeenCalledTimes(1);
-        expect(document.getElementById('crossClassResults')?.classList.contains('visible')).toBe(true);
 
         vi.useRealTimers();
     });
 
-    it('devrait réinitialiser toute la recherche Liste via clearListSearch (appState.searchQuery, conteneur inline et résultats)', () => {
+    it('devrait réinitialiser toute la recherche via clearListSearch (appState.searchQuery, barre header, compteur et suggestions)', async () => {
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        SeatingChartManager._isActive = false;
         document.body.innerHTML = `
-            <div>
-                <div id="inlineSearchContainer" class="inline-search-container active has-value">
-                    <input id="inlineSearchInput" value="boukhari" />
-                </div>
-                <div id="outputList"></div>
+            <div class="header-actions">
+                <div id="headerGenWrapper"></div>
             </div>
         `;
+        SeatingChartManager._injectHeaderSearch();
+        const searchWrap = document.getElementById('scFloatingSearch');
+        const searchInput = document.getElementById('scFloatingSearchInput');
+        searchWrap.classList.add('open', 'has-value');
+        searchInput.value = 'boukhari';
         appState.searchQuery = 'boukhari';
-        CrossClassSearchManager.reset(true);
-        CrossClassSearchManager.updateCrossClassResults('boukhari');
 
-        const container = document.getElementById('crossClassResults');
-        expect(container.classList.contains('visible')).toBe(true);
+        SeatingChartManager._updateSearchCountAndSuggestions('boukhari');
+        const suggestions = document.getElementById('scFloatingSearchSuggestions');
+        expect(suggestions.classList.contains('visible')).toBe(true);
 
-        CrossClassSearchManager.clearListSearch({ renderList: false, immediate: true });
+        CrossClassSearchManager.clearListSearch({ renderList: false });
 
         expect(appState.searchQuery).toBe('');
-        expect(document.getElementById('inlineSearchInput').value).toBe('');
-        expect(document.getElementById('inlineSearchContainer').classList.contains('active')).toBe(false);
-        expect(document.getElementById('inlineSearchContainer').classList.contains('has-value')).toBe(false);
-        expect(container.classList.contains('visible')).toBe(false);
-        expect(container.innerHTML).toBe('');
+        expect(searchInput.value).toBe('');
+        expect(searchWrap.classList.contains('open')).toBe(false);
+        expect(searchWrap.classList.contains('has-value')).toBe(false);
+        expect(document.getElementById('scFloatingSearchCount').style.display).toBe('none');
+        expect(suggestions.classList.contains('visible')).toBe(false);
+        expect(suggestions.innerHTML).toBe('');
     });
 
-    it('devrait naviguer au clavier (ArrowDown / ArrowUp) entre les résultats inter-classes', () => {
+    it('devrait naviguer au clavier (ArrowDown / ArrowUp) entre les suggestions inter-classes du popover', async () => {
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        SeatingChartManager._isActive = false;
         document.body.innerHTML = `
-            <div>
-                <input id="inlineSearchInput" value="3" />
-                <div id="outputList"></div>
+            <div class="header-actions">
+                <div id="headerGenWrapper"></div>
             </div>
         `;
+        SeatingChartManager._injectHeaderSearch();
         appState.generatedResults[1].studentData.classe = '3 1';
-        CrossClassSearchManager.reset(true);
-        CrossClassSearchManager.updateCrossClassResults('3 1');
+        appState.generatedResults[2].studentData.classe = '4 2';
 
-        const results = document.querySelectorAll('.cross-class-result');
+        SeatingChartManager._updateSearchCountAndSuggestions('3 1');
+
+        const results = document.querySelectorAll('.sc-cross-action');
         expect(results.length).toBe(2);
 
         results[0].focus();
@@ -165,18 +180,19 @@ describe('CrossClassSearchManager', () => {
         expect(document.activeElement).toBe(results[0]);
 
         results[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-        expect(document.activeElement).toBe(document.getElementById('inlineSearchInput'));
+        expect(document.activeElement).toBe(document.getElementById('scFloatingSearchInput'));
     });
 
-    it('devrait permettre une nouvelle recherche inter-classes après avoir cliqué sur un élève d\'une autre classe', async () => {
+    it('devrait permettre une nouvelle recherche inter-classes après avoir cliqué sur un élève d\'une autre classe en vue Liste', async () => {
+        const { SeatingChartManager } = await import('./SeatingChartManager.js');
+        const { ClassUIManager } = await import('./ClassUIManager.js');
+        SeatingChartManager._isActive = false;
         document.body.innerHTML = `
-            <div>
-                <div id="inlineSearchContainer" class="inline-search-container active has-value">
-                    <input id="inlineSearchInput" value="boukhari" />
-                </div>
-                <div id="outputList"></div>
+            <div class="header-actions">
+                <div id="headerGenWrapper"></div>
             </div>
         `;
+        SeatingChartManager._injectHeaderSearch();
         appState.searchQuery = 'boukhari';
         vi.spyOn(ClassManager, 'getClassById').mockImplementation(id => {
             if (id === 'class-other-group') return { id: 'class-other-group', name: 'Groupe Techno G2' };
@@ -184,36 +200,28 @@ describe('CrossClassSearchManager', () => {
             return null;
         });
 
-        CrossClassSearchManager.reset(true);
-        CrossClassSearchManager.updateCrossClassResults('boukhari');
+        SeatingChartManager._updateSearchCountAndSuggestions('boukhari');
+        const suggestions = document.getElementById('scFloatingSearchSuggestions');
+        expect(suggestions.classList.contains('visible')).toBe(true);
 
-        const container = document.getElementById('crossClassResults');
-        expect(container.classList.contains('visible')).toBe(true);
-
-        // Simuler l'ajout d'une classe d'animation de sortie lors de la bascule de classe
-        container.classList.add('class-switch-out-down');
-
-        const { ClassUIManager } = await import('./ClassUIManager.js');
         const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockImplementation(async (targetClassId) => {
             appState.currentClassId = targetClassId;
-            CrossClassSearchManager.clearListSearch({ renderList: false, immediate: true });
+            CrossClassSearchManager.clearListSearch({ renderList: false });
         });
 
-        const firstResult = container.querySelector('.cross-class-result');
+        const firstResult = suggestions.querySelector('.sc-cross-action');
         firstResult.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(switchSpy).toHaveBeenCalledWith('class-other-group', 's1');
         expect(appState.currentClassId).toBe('class-other-group');
-        expect(container.classList.contains('visible')).toBe(false);
-        expect(container.classList.contains('class-switch-out-down')).toBe(false);
+        expect(suggestions.classList.contains('visible')).toBe(false);
 
         // Nouvelle recherche depuis la nouvelle classe vers un élève de l'ancienne classe (Martin dans class-group-1)
-        CrossClassSearchManager.updateCrossClassResults('martin');
+        SeatingChartManager._updateSearchCountAndSuggestions('martin');
 
-        expect(container.classList.contains('visible')).toBe(true);
-        expect(container.classList.contains('class-switch-out-down')).toBe(false);
-        expect(container.querySelector('.cross-class-result')?.dataset.studentId).toBe('s3');
+        expect(suggestions.classList.contains('visible')).toBe(true);
+        expect(suggestions.querySelector('.sc-cross-action')?.dataset.studentId).toBe('s3');
 
         switchSpy.mockRestore();
     });

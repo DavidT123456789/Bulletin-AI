@@ -153,45 +153,47 @@ export const GlobalListeners = {
     },
 
     /**
-     * Met à jour les brumes d'indication de défilement (scrims) de la vue principale via le helper mutualisé.
+     * Synchronise le mode du bouton flottant (#addStudentFab) entre 'add' (+) et 'scroll-top' (↑).
+     * @param {boolean} isScrollTop
      */
-    updateMainScrollAffordances() {
+    syncFabMode(isScrollTop) {
+        const fab = document.getElementById('addStudentFab') || DOM.addStudentFab;
+        if (!fab) return;
+        const wasScrollTop = fab.classList.contains('is-scroll-top');
+        if (wasScrollTop === isScrollTop && fab.dataset.mode) return;
+
+        fab.classList.toggle('is-scroll-top', isScrollTop);
+        fab.dataset.mode = isScrollTop ? 'scroll-top' : 'add';
+        const label = isScrollTop ? 'Retour en haut' : 'Compléter la classe';
+        fab.setAttribute('aria-label', label);
+        fab.setAttribute('data-tooltip', label);
+        TooltipsUI?.updateTooltip?.(fab, label);
+    },
+
+    /**
+     * Met à jour les brumes d'indication de défilement (scrims) et l'état du FAB de la vue principale.
+     * @param {number} [explicitScrollTop]
+     */
+    updateMainScrollAffordances(explicitScrollTop) {
         const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
         const wrapper = mainContent?.closest('.main-content-wrapper') || document.querySelector('.main-content-wrapper');
+        const isPlanView = wrapper?.dataset?.view === 'plan';
+        const currentScrollTop = typeof explicitScrollTop === 'number'
+            ? explicitScrollTop
+            : Math.max(window.scrollY || 0, mainContent?.scrollTop || 0);
+        this.syncFabMode(!isPlanView && currentScrollTop > 180);
         if (!mainContent || !wrapper) return;
         FocusPanelManager.updateScrollAffordances(mainContent, wrapper);
     },
 
     _setupScrollListeners() {
         const mainContent = document.getElementById('main-content') || document.querySelector('.main-content');
-        const getFab = () => document.getElementById('addStudentFab') || DOM.addStudentFab;
 
-        const syncFabMode = (isScrollTop) => {
-            const fab = getFab();
-            if (!fab) return;
-            const wasScrollTop = fab.classList.contains('is-scroll-top');
-            if (wasScrollTop === isScrollTop && fab.dataset.mode) return;
-
-            fab.classList.toggle('is-scroll-top', isScrollTop);
-            fab.dataset.mode = isScrollTop ? 'scroll-top' : 'add';
-            const label = isScrollTop ? 'Retour en haut' : 'Compléter la classe';
-            fab.setAttribute('aria-label', label);
-            fab.setAttribute('data-tooltip', label);
-            TooltipsUI?.updateTooltip?.(fab, label);
-        };
-
-        const handleScroll = (scrollTop) => {
-            syncFabMode(scrollTop > 180);
-            this.updateMainScrollAffordances();
-        };
-
-        window.addEventListener('scroll', () => handleScroll(window.scrollY), { passive: true });
-        mainContent?.addEventListener('scroll', () => handleScroll(mainContent.scrollTop), { passive: true });
+        window.addEventListener('scroll', () => this.updateMainScrollAffordances(window.scrollY), { passive: true });
+        mainContent?.addEventListener('scroll', () => this.updateMainScrollAffordances(mainContent.scrollTop), { passive: true });
 
         if (mainContent && typeof ResizeObserver !== 'undefined') {
             const resizeObserver = new ResizeObserver(() => {
-                const currentScrollTop = Math.max(window.scrollY || 0, mainContent.scrollTop || 0);
-                syncFabMode(currentScrollTop > 180);
                 this.updateMainScrollAffordances();
             });
             resizeObserver.observe(mainContent);
@@ -203,7 +205,7 @@ export const GlobalListeners = {
 
         this.updateMainScrollAffordances();
 
-        const fab = getFab();
+        const fab = document.getElementById('addStudentFab') || DOM.addStudentFab;
         fab?.addEventListener('click', (e) => {
             if (!fab.classList.contains('is-scroll-top') && fab.dataset.mode !== 'scroll-top') return;
             e.stopPropagation();

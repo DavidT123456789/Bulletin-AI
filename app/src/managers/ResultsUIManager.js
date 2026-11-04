@@ -339,9 +339,8 @@ export const ResultsUIManager = {
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
-            // Masquer les statistiques, dots et le header de liste quand il n'y a pas de données
+            // Masquer les statistiques et dots quand il n'y a pas de données
             if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
-            if (DOM.outputHeader) DOM.outputHeader.style.display = 'none';
             const statsPagination = document.getElementById('statsPagination');
             if (statsPagination) statsPagination.style.display = 'none';
         }
@@ -358,7 +357,6 @@ export const ResultsUIManager = {
                     this._animateStatsEntrance(DOM.statsContainer, importReveal.startDelay);
                 }
             }
-            if (DOM.outputHeader) DOM.outputHeader.style.display = '';
             const statsPagination = document.getElementById('statsPagination');
             if (statsPagination) statsPagination.style.display = '';
 

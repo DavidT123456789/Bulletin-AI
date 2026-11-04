@@ -3,7 +3,6 @@
  * Handles all DOM event listeners (click, keyboard, contextmenu, touch long-press) for the List View
  */
 
-import { CONFIG } from '../../config/Config.js';
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
@@ -16,7 +15,6 @@ import { MassImportManager } from '../MassImportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
-import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 
 export const ListViewEvents = {
@@ -67,13 +65,7 @@ export const ListViewEvents = {
         // Sort headers click (exclude appreciation toggle which has its own handler)
         listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
             header.addEventListener('click', (e) => {
-                // Ignorer les clics sur les boutons d'action et dans le conteneur de recherche
-                if (e.target.closest('.inline-search-container, .header-action-trigger')) return;
-
-                // Pour l'entête composite Nom (avec recherche intégrée), le tri est ciblé sur le libellé
-                if (header.classList.contains('name-header-with-search') && !e.target.closest('.header-content-wrapper')) {
-                    return;
-                }
+                if (e.target.closest('.header-action-trigger')) return;
 
                 e.stopPropagation();
                 EventHandlersManager.handleHeaderSortClick(header);
@@ -625,218 +617,5 @@ export const ListViewEvents = {
             const btn = listContainer.querySelector('#copyStudentNamesBtn');
             return ExportManager.copyStudentList(btn);
         });
-
-        // Attach inline search listeners
-        this.attachInlineSearchListeners(listContainer, signal);
-    },
-
-    /**
-     * Attache les listeners pour la recherche inline dans l'entête du tableau
-     * @param {HTMLElement} listContainer - Conteneur de la liste
-     * @param {AbortSignal} [signal] - Signal d'annulation
-     * @private
-     */
-    attachInlineSearchListeners(listContainer, signal) {
-        const nameHeader = listContainer.querySelector('.name-header-with-search');
-        const headerContent = listContainer.querySelector('#nameHeaderContent');
-        const searchContainer = listContainer.querySelector('#inlineSearchContainer');
-        const searchInput = listContainer.querySelector('#inlineSearchInput');
-        const searchClear = listContainer.querySelector('#inlineSearchClear');
-
-        if (!nameHeader || !searchContainer || !searchInput) return;
-
-        // Helper to reliably focus input and place caret
-        const _focusAndPositionCaret = () => {
-            searchInput.focus({ preventScroll: true });
-            try {
-                const len = searchInput.value.length;
-                searchInput.setSelectionRange(len, len);
-            } catch (_) {}
-        };
-
-        // Perform UI update for activation (without history push)
-        const _performActivateUI = () => {
-            searchContainer.classList.add('active');
-
-            // Sync with existing search value if any before positioning caret
-            if (appState.searchQuery) {
-                searchInput.value = appState.searchQuery;
-                searchContainer.classList.add('has-value');
-            }
-
-            _focusAndPositionCaret();
-            requestAnimationFrame(_focusAndPositionCaret);
-        };
-
-        // Helper to clear search input value and notify listeners immediately (0ms latency)
-        const _clearSearchInput = () => {
-            if (searchInput.value || appState.searchQuery || CrossClassSearchManager._lastTerm || CrossClassSearchManager._debounceTimer) {
-                CrossClassSearchManager.cancelPendingSearch();
-                searchInput.value = '';
-                searchContainer.classList.remove('has-value');
-                appState.searchQuery = '';
-                EventHandlersManager.handleSearchInput();
-                CrossClassSearchManager.updateCrossClassResults('');
-            }
-        };
-
-        // Perform UI update for deactivation (without history manipulation)
-        const _performDeactivateUI = () => {
-            searchContainer.classList.remove('active');
-            _clearSearchInput();
-            searchInput.blur();
-            searchTrigger?._tippy?.enable();
-        };
-
-        // Helper to activate search mode (With History Push)
-        const activateSearch = () => {
-            if (searchContainer.classList.contains('active')) return;
-
-            _performActivateUI();
-
-            // HISTORY PUSH: Use HistoryManager for safe navigation
-            HistoryManager.pushState('inlineSearch', () => {
-                _performDeactivateUI();
-            });
-        };
-
-        // Helper to deactivate search mode (With History Check)
-        const deactivateSearch = () => {
-            if (!searchContainer.classList.contains('active')) return;
-            _performDeactivateUI();
-            HistoryManager.handleManualClose('inlineSearch');
-        };
-
-        // Refresh history callback if inline search is already active after a fresh re-render (e.g. period switch)
-        if (searchContainer.classList.contains('active')) {
-            HistoryManager.pushState('inlineSearch', () => {
-                _performDeactivateUI();
-            });
-        }
-
-        // Click on search trigger button to activate search (unified desktop & mobile flow)
-        const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
-        if (searchTrigger) {
-            searchTrigger.addEventListener('mousedown', (e) => e.preventDefault(), { signal });
-            searchTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (searchTrigger._tippy) {
-                    searchTrigger._tippy.hide();
-                    searchTrigger._tippy.disable();
-                }
-                activateSearch();
-            }, { signal });
-        }
-
-        // Close search when clicking the search close button inside the active bar
-        const closeBtn = searchContainer.querySelector('#inlineSearchClose');
-        if (closeBtn) {
-            closeBtn.addEventListener('mousedown', (e) => e.preventDefault(), { signal });
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeBtn._tippy?.hide();
-                deactivateSearch();
-            }, { signal });
-        }
-
-        // Prevent clicks inside search container from bubbling
-        searchContainer.addEventListener('click', (e) => {
-            e.stopPropagation();
-        }, { signal });
-
-        // Also auto-focus the input when search container is clicked (except close/clear buttons)
-        searchContainer.addEventListener('mousedown', (e) => {
-            if (e.target.closest('#inlineSearchClose') || e.target.closest('.inline-search-clear')) {
-                return;
-            }
-            if (e.target !== searchInput) {
-                e.preventDefault();
-                _focusAndPositionCaret();
-            }
-        }, { signal });
-
-        // Input event - filter as user types
-        searchInput.addEventListener('input', (e) => {
-            const value = e.target.value;
-            searchContainer.classList.toggle('has-value', value.length > 0);
-            appState.searchQuery = value;
-
-            // Filtrage tableau + recherche inter-classes synchronisés via un debounce unique annulable
-            CrossClassSearchManager.scheduleSearch(
-                value,
-                () => EventHandlersManager.handleSearchInput(),
-                CONFIG.DEBOUNCE_TIME_MS
-            );
-        }, { signal });
-
-        // Clear button
-        if (searchClear) {
-            searchClear.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _clearSearchInput();
-                _focusAndPositionCaret();
-            }, { signal });
-        }
-
-        // Keyboard shortcuts: Escape (clear/close), Enter (open match or jump to cross-class), ArrowDown (navigate results)
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
-                if (!searchInput.value) {
-                    deactivateSearch();
-                } else {
-                    _clearSearchInput();
-                }
-            } else if (e.key === 'Enter') {
-                const query = searchInput.value.trim();
-                if (!query) return;
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Flush any pending search debounce so DOM is up to date
-                if (CrossClassSearchManager._debounceTimer) {
-                    CrossClassSearchManager.cancelPendingSearch();
-                    EventHandlersManager.handleSearchInput();
-                    CrossClassSearchManager.updateCrossClassResults(query);
-                }
-
-                const firstRow = listContainer.querySelector('.student-row');
-                if (firstRow?.dataset?.studentId) {
-                    FocusPanelManager.open(firstRow.dataset.studentId);
-                } else {
-                    CrossClassSearchManager.triggerFirstResult();
-                }
-            } else if (e.key === 'ArrowDown') {
-                const firstRow = listContainer.querySelector('.student-row');
-                const firstCrossResult = document.querySelector('#crossClassResults.visible .cross-class-result');
-                const target = firstRow || firstCrossResult;
-                if (target) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    target.focus();
-                }
-            }
-        }, { signal });
-
-        // Click outside to deactivate (if empty)
-        document.addEventListener('click', (e) => {
-            if (!nameHeader.contains(e.target) && !searchInput.value) {
-                if (searchContainer.classList.contains('active')) {
-                    deactivateSearch();
-                }
-            }
-        }, { signal });
-
-        // Ctrl+F keyboard shortcut to activate search
-        document.addEventListener('keydown', (e) => {
-            if (UI.isAnyModalOpen() || FocusPanelManager.isOpen?.()) return;
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                // Only intercept if the list view is visible
-                if (listContainer.offsetParent !== null) {
-                    e.preventDefault();
-                    activateSearch();
-                }
-            }
-        }, { signal });
     },
 };

@@ -18,11 +18,6 @@
 @media (max-width: 900px) {
     /* Header and .main-content padding managed in layout.css */
 
-    .output-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .form-row {
         grid-template-columns: 1fr;
     }
@@ -310,7 +305,6 @@
 
     /* --- Hide UI chrome (NOT .app-layout — it's the root wrapper) --- */
     .header,
-    .output-header,
     .stats-container,
     .appreciation-actions,
     .fab-add-student,
@@ -422,8 +416,6 @@
     .btn-action-menu-header,
     .global-actions-dropdown-menu,
     .action-dropdown,
-    .inline-search-trigger-btn,
-    .inline-search-container,
     .appreciation-header-actions,
     .header-action-trigger,
     .sort-icon-placeholder,

@@ -21,7 +21,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             <div id="empty-state-card" style="display: none;"></div>
             <p id="noResultsMessage" style="display: none;"></p>
             <div id="statsContainer"></div>
-            <div id="outputHeader"></div>
             <div id="statsPagination"></div>
             <div id="headerClassName"></div>
             <div id="classDropdownList"></div>
@@ -49,7 +48,6 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         DOM.emptyStateCard = document.getElementById('empty-state-card');
         DOM.noResultsMessage = document.getElementById('noResultsMessage');
         DOM.statsContainer = document.getElementById('statsContainer');
-        DOM.outputHeader = document.getElementById('outputHeader');
         DOM.headerClassName = document.getElementById('headerClassName');
         DOM.classDropdownList = document.getElementById('classDropdownList');
 

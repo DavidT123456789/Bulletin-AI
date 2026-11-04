@@ -5,7 +5,6 @@
  */
 
 import { appState } from '../../state/State.js';
-import { DOMHelper } from '../../utils/DOMHelper.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
@@ -90,14 +89,34 @@ export const SeatingEvents = {
             }
         });
 
-        document.getElementById('scFloatingSearchBtn')?.addEventListener('click', (e) => {
+        const searchBtn = document.getElementById('scFloatingSearchBtn');
+        searchBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        searchBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._openSearch();
         });
 
+        const searchCloseBtn = document.getElementById('scFloatingSearchClose');
+        searchCloseBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        searchCloseBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchCloseBtn._tippy?.hide?.();
+            this._closeSearch();
+        });
+
         const floatingSearchInput = document.getElementById('scFloatingSearchInput');
+        const searchBox = document.getElementById('scFloatingSearchBox');
+        searchBox?.addEventListener('click', (e) => e.stopPropagation());
+        searchBox?.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#scFloatingSearchClose, #scFloatingSearchClear')) return;
+            if (e.target !== floatingSearchInput) {
+                e.preventDefault();
+                floatingSearchInput?.focus({ preventScroll: true });
+            }
+        });
+
         floatingSearchInput?.addEventListener('input', (e) => {
-            this._applySearchHighlight(e.target.value);
+            this._handleSearchInput(e.target.value);
         });
 
         floatingSearchInput?.addEventListener('keydown', (e) => {
@@ -107,11 +126,23 @@ export const SeatingEvents = {
                 this._handleSearchEscape();
             } else if (e.key === 'Enter') {
                 e.preventDefault();
+                e.stopPropagation();
                 this._handleSearchEnter(e.target.value);
+            } else if (e.key === 'ArrowDown') {
+                const firstCrossAction = document.querySelector('#scFloatingSearchSuggestions.visible .sc-cross-action');
+                const firstRow = !this._isActive ? document.querySelector('#outputList .student-row') : null;
+                const target = firstCrossAction || firstRow;
+                if (target) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    target.focus();
+                }
             }
         });
 
-        document.getElementById('scFloatingSearchClear')?.addEventListener('click', (e) => {
+        const searchClearBtn = document.getElementById('scFloatingSearchClear');
+        searchClearBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        searchClearBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._handleSearchEscape();
         });
@@ -414,16 +445,6 @@ export const SeatingEvents = {
 
         window.addEventListener('pointerup', () => { isSliding = false; });
 
-        DOMHelper.bindSearchInput(
-            document.getElementById('scSearchInput'),
-            document.getElementById('scSearchClear'),
-            (val) => {
-                this._renderSidebar();
-                this._applySearchHighlight(val);
-            },
-            document.querySelector('.sc-search-box')
-        );
-
         document.getElementById('scQuickGroupBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._placeSelectedAsGroupInFirstFreeStation();
@@ -447,7 +468,7 @@ export const SeatingEvents = {
             let listReleaseTimer = null;
 
             const resolveListSwipeContainers = () => Array.from(
-                document.querySelectorAll('.stats-container, .output-header, #outputList, #empty-state-card, #statsPagination')
+                document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
             ).filter(el => {
                 const style = window.getComputedStyle(el);
                 return style.display !== 'none' && style.visibility !== 'hidden';
@@ -626,6 +647,15 @@ export const SeatingEvents = {
                 const isVerticalArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
                 const isArrowKey = isHorizontalArrow || isVerticalArrow;
 
+                // Open unified search on '/' (when not already typing) or Ctrl+F / Cmd+F in both List and Plan views
+                if ((e.key === '/' && !isTyping && hasNoModifier) || ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key?.toLowerCase() === 'f')) {
+                    if (document.getElementById('scFloatingSearch')) {
+                        e.preventDefault();
+                        this._openSearch();
+                        return;
+                    }
+                }
+
                 if (isArrowKey && (hasNoModifier || hasCtrlOnly) && !isTyping && !e.repeat) {
                     if (this._listViewAnimTimer && !this._isActive && appState.activeView === 'plan') {
                         this.switchToView('plan', { immediate: true });
@@ -656,7 +686,7 @@ export const SeatingEvents = {
                                 this._focusListScrollContainer();
                                 this._switchAdjacentClass(delta);
                             }
-                        } else if (isVerticalArrow && hasNoModifier && !document.querySelector('#crossClassResults.visible, .appreciation-result')) {
+                        } else if (isVerticalArrow && hasNoModifier && !document.querySelector('.appreciation-result')) {
                             const mainContent = document.querySelector('.main-content');
                             if (mainContent && activeEl !== mainContent) {
                                 e.preventDefault();
@@ -665,13 +695,6 @@ export const SeatingEvents = {
                             }
                         }
                     }
-                    return;
-                }
-
-                // Open search on '/' (when not already typing) or Ctrl+F / Cmd+F
-                if ((e.key === '/' && !isTyping) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) {
-                    e.preventDefault();
-                    this._openSearch();
                     return;
                 }
 

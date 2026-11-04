@@ -7,6 +7,7 @@ import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
+import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { MAX_ACTIVITY_GROUP_SIZE } from './SeatingState.js';
 
@@ -522,15 +523,17 @@ export const SeatingSidebar = {
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
         );
 
-        const searchInput = document.getElementById('scSearchInput');
-        let searchTerm = (searchInput?.value || '').trim();
+        const searchInput = document.getElementById('scFloatingSearchInput');
+        let searchTerm = (searchInput?.value || this._activeSearchTerm || appState.searchQuery || '').trim();
         const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
 
         if (returningId && searchTerm) {
             const returnedStudent = this._students.find(s => s.id === returningId);
             if (returnedStudent && !Utils.matchesStudent(returnedStudent, searchTerm, { currentClassName })) {
                 if (searchInput) searchInput.value = '';
-                document.getElementById('scSearchClear')?.classList.remove('visible');
+                document.getElementById('scFloatingSearch')?.classList.remove('open', 'has-value');
+                document.getElementById('scFloatingSearchClear')?.classList.remove('visible');
+                this._applySearchHighlight('');
                 searchTerm = '';
             }
         }

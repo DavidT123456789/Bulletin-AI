@@ -284,35 +284,13 @@ export const ListViewRenderer = {
 
         const activePeriodKey = (periods && periods[currentPeriodIndex]) || appState.currentPeriod || 'S1';
         const activePeriodLabel = Utils.getPeriodLabel(activePeriodKey, false) || activePeriodKey;
-        const searchQuery = appState.searchQuery || '';
-        const wasInlineSearchActive = Boolean(
-            searchQuery ||
-            container?.querySelector?.('#inlineSearchContainer.active')
-        );
-        const inlineSearchClasses = [
-            'inline-search-container',
-            wasInlineSearchActive ? 'active' : '',
-            searchQuery ? 'has-value' : ''
-        ].filter(Boolean).join(' ');
 
         const theadContent = `
             <tr>
-                <th class="name-header-with-search sortable-header" data-sort-field="name">
-                    <div class="header-content-wrapper" id="nameHeaderContent" data-tooltip="Trier par nom">
+                <th class="name-header-with-search sortable-header" data-sort-field="name" data-tooltip="Trier par nom">
+                    <div class="header-content-wrapper" id="nameHeaderContent">
                         Nom
                         <span class="sort-icon-placeholder name-sort-icon"></span>
-                    </div>
-                    <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" aria-label="Rechercher" data-tooltip="Rechercher (Ctrl+F)">
-                        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                    </button>
-                    <div class="${inlineSearchClasses}" id="inlineSearchContainer">
-                        <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
-                            <iconify-icon icon="solar:magnifer-linear" class="inline-search-close-icon"></iconify-icon>
-                        </button>
-                        <input type="text" class="inline-search-input custom-input" id="inlineSearchInput" placeholder="Rechercher..." value="${Utils.escapeHtml(searchQuery)}" autocomplete="off">
-                        <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
                     </div>
                 </th>
                 <th class="sortable-header status-header" data-sort-field="status" data-tooltip="Trier par statut">
@@ -407,6 +385,7 @@ export const ListViewRenderer = {
         `;
 
         const currentClassName = Utils.getCurrentClassName();
+        const searchQuery = appState.searchQuery || '';
         const importReveal = options.importReveal;
         const shouldAnimateEntrance = !isPeriodSwitch && Boolean(importReveal);
         const photoIds = importReveal?.photoIds;

@@ -29,10 +29,6 @@
     animation: appFadeInBlur 0.45s var(--ease-spring) 0.03s both;
 }
 
-.app-loading .output-header {
-    animation: appFadeInBlur 0.45s var(--ease-spring) 0.05s both;
-}
-
 .app-loading #outputList {
     animation: appFadeInBlur 0.48s var(--ease-spring) 0.08s both;
 }
@@ -60,7 +56,6 @@
     .app-loading .header,
     .app-loading .stats-container,
     .app-loading .stat-card,
-    .app-loading .output-header,
     .app-loading #outputList,
     .app-loading .fab-add-student {
         animation: none;
@@ -134,10 +129,10 @@ body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible
     cursor: default;
 }
 
-body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open)) :is(.output-section, #crossClassResults, .student-list-table thead *, #avgWordsChip, #mobileCompactToggleBtn, #seatingChartView, #seatingChartView *, .fab-add-student, .pwa-update-banner, .selection-toolbar, .header-center),
-body:is(.header-menu-open, :has(#headerMenuDropdown.open)) .header :is(.header-left, #headerGenWrapper),
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open)) :is(.output-section, .student-list-table thead *, #avgWordsChip, #mobileCompactToggleBtn, #seatingChartView, #seatingChartView *, .fab-add-student, .pwa-update-banner, .selection-toolbar, .header-center),
+body:is(.header-menu-open, :has(#headerMenuDropdown.open)) .header :is(.header-left, #scFloatingSearch, #headerGenWrapper),
 body:has(#classDropdown.visible, #classNotePopover.visible) .header :is(#mainPeriodSelector, .header-actions),
-body:has(#headerGenWrapper.open) .header :is(.header-left, .header-actions-pill) {
+body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .header-actions-pill) {
     pointer-events: none !important;
 }
 

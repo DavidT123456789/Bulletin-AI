@@ -57,7 +57,6 @@ export function initDOM() {
     DOM.dropZone = document.getElementById('dropZone');
     DOM.importFileBtn = document.getElementById('importFileBtn');
     DOM.statsContainer = document.getElementById('statsContainer');
-    DOM.outputHeader = document.getElementById('outputHeader');
     DOM.resultsDiv = document.getElementById('outputList');
     DOM.avgWordsChip = document.getElementById('avgWordsChip');
     DOM.classEvolutionCard = document.getElementById('evolutionCard');

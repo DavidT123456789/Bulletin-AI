@@ -28,13 +28,10 @@
 
 /* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */
 .main-content-wrapper[data-view="plan"] .stats-container,
-.main-content-wrapper[data-view="plan"] .output-header,
 .main-content-wrapper[data-view="plan"] #outputList,
-.main-content-wrapper[data-view="plan"] #crossClassResults,
 .main-content-wrapper[data-view="plan"] #skeletonContainer,
 .main-content-wrapper[data-view="plan"] #empty-state-card,
 .main-content-wrapper[data-view="plan"] #noResultsMessage,
-.main-content-wrapper[data-view="plan"] .fab-add-student,
 .main-content-wrapper[data-view="plan"] .stats-pagination {
     display: none !important;
 }

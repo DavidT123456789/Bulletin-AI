@@ -11,7 +11,9 @@ import { StorageManager } from './StorageManager.js';
 import { UI } from './UIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
+import { EventHandlersManager } from './EventHandlersManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { GlobalListeners } from './listeners/GlobalListeners.js';
 import { SeatingEvents } from './seating/SeatingEvents.js';
 import { SeatingAnimations } from './seating/SeatingAnimations.js';
 import { SeatingZoom } from './seating/SeatingZoom.js';
@@ -71,6 +73,7 @@ export const SeatingChartManager = {
     _pendingFoldTimestamp: 0,
     _activeMobileSheet: null,
     _activeSearchTerm: '',
+    _searchQueryAtPlanEnter: '',
     _searchMatchIndex: 0,
     _onboardingStep: null,
 
@@ -81,12 +84,52 @@ export const SeatingChartManager = {
     init() {
         this._injectViewToggle();
         this._injectView();
+        this._injectHeaderSearch();
         this._setupEventListeners();
     },
 
     // ========================================================================
     // HTML INJECTION
     // ========================================================================
+
+    _injectHeaderSearch() {
+        const existing = document.getElementById('scFloatingSearch');
+        const parent = existing?.parentElement
+            || document.querySelector('.header-actions')
+            || document.getElementById('scFloatingActions');
+        if (!parent) return;
+
+        const searchEl = document.createElement('div');
+        searchEl.className = 'sc-floating-search header-search';
+        searchEl.id = 'scFloatingSearch';
+        searchEl.innerHTML = `
+            <button type="button" class="pill-segment sc-action-btn sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+            </button>
+            <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
+                <button type="button" class="sc-search-close-btn" id="scFloatingSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
+                    <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
+                </button>
+                <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
+                <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
+                    <iconify-icon icon="ph:x"></iconify-icon>
+                </button>
+            </div>
+            <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
+        `;
+
+        if (existing) {
+            existing.replaceWith(searchEl);
+        } else {
+            const genWrapper = parent.querySelector('#headerGenWrapper');
+            if (genWrapper) {
+                parent.insertBefore(searchEl, genWrapper);
+            } else {
+                parent.insertBefore(searchEl, parent.firstChild);
+            }
+        }
+    },
 
     _injectViewToggle() {
         if (document.getElementById('viewToggle')) return;
@@ -118,6 +161,10 @@ export const SeatingChartManager = {
     _injectView() {
         const existing = document.getElementById('seatingChartView');
         if (existing) existing.remove();
+        if (this._activeSearchTerm) {
+            this._activeSearchTerm = '';
+            appState.searchQuery = '';
+        }
 
         const mainContent = document.querySelector('.main-content .output-section');
         if (!mainContent) return;
@@ -218,13 +265,6 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
                         <button type="button" class="sc-quick-group-btn" id="scQuickGroupBtn" style="display: none;"></button>
                         <span id="scFooterInfo" style="display: none;" aria-hidden="true"></span>
-                        <div class="sc-search-box">
-                            <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scSearchInput" class="custom-input" placeholder="Rechercher..." autocomplete="off">
-                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
-                                <iconify-icon icon="ph:x"></iconify-icon>
-                            </button>
-                        </div>
                     </div>
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
@@ -257,20 +297,6 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions Capsule (Top-Right) -->
                 <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
-                    <div class="sc-floating-search" id="scFloatingSearch">
-                        <button class="sc-action-btn sc-search-toggle-btn" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/) " data-tooltip="Rechercher (/)">
-                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                        </button>
-                        <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
-                            <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
-                            <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
-                            <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
-                                <iconify-icon icon="ph:x"></iconify-icon>
-                            </button>
-                        </div>
-                        <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
-                    </div>
                     <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
@@ -316,7 +342,6 @@ export const SeatingChartManager = {
         const { silent = false, immediate = false } = typeof options === 'boolean' ? { silent: options } : options;
         const wrapper = document.querySelector('.main-content-wrapper');
         const viewEl = document.getElementById('seatingChartView');
-        const fab = document.getElementById('addStudentFab');
         if (!wrapper || !viewEl) return;
 
         const isList = view === 'list';
@@ -394,11 +419,26 @@ export const SeatingChartManager = {
                 board?.style.removeProperty('transition');
                 wrapper.dataset.view = 'list';
                 viewEl.style.display = 'none';
-                if (fab) fab.style.display = '';
+                GlobalListeners?.updateMainScrollAffordances?.();
                 this._isActive = false;
                 this._onboardingStep = null;
                 this._clearSelection();
-                this._closeSearch();
+                const activeQuery = (appState.searchQuery || this._activeSearchTerm || '').trim();
+                const queryChangedInPlan = wasActive && activeQuery !== this._searchQueryAtPlanEnter;
+                if (activeQuery) {
+                    appState.searchQuery = activeQuery;
+                    this._activeSearchTerm = activeQuery;
+                    viewEl.classList.remove('sc-search-active');
+                    this._updateSearchCountAndSuggestions(activeQuery);
+                    if (queryChangedInPlan) {
+                        EventHandlersManager?.handleSearchInput?.();
+                    }
+                } else {
+                    this._closeSearch();
+                    if (queryChangedInPlan) {
+                        EventHandlersManager?.handleSearchInput?.();
+                    }
+                }
                 if (wasActive) {
                     this._restoreUnmodifiedClassLock();
                     this._savePositionsToState(true);
@@ -426,7 +466,22 @@ export const SeatingChartManager = {
             const finishPlan = (animateEnter = false) => {
                 this._clearListViewTransitionClasses();
                 wrapper.dataset.view = 'plan';
-                CrossClassSearchManager?.clearListSearch?.({ renderList: true, immediate: true });
+                const preservedQuery = (appState.searchQuery || document.getElementById('scFloatingSearchInput')?.value || '').trim();
+                this._searchQueryAtPlanEnter = preservedQuery;
+                this._activeSearchTerm = preservedQuery;
+                CrossClassSearchManager?.reset?.(true);
+                if (preservedQuery) {
+                    appState.searchQuery = preservedQuery;
+                    const searchWrap = document.getElementById('scFloatingSearch');
+                    const searchInput = document.getElementById('scFloatingSearchInput');
+                    if (searchWrap) searchWrap.classList.add('open', 'has-value');
+                    if (searchInput && searchInput.value !== preservedQuery) {
+                        searchInput.value = preservedQuery;
+                    }
+                    document.getElementById('scFloatingSearchClear')?.classList.add('visible');
+                } else if (this._isSearchOpen()) {
+                    this._closeSearch();
+                }
                 // [UX Mobile] History integration for plan view (Back returns to list)
                 if (!HistoryManager.isOpen('viewPlan')) {
                     HistoryManager.pushState('viewPlan', () => {
@@ -434,7 +489,7 @@ export const SeatingChartManager = {
                     });
                 }
                 viewEl.style.display = '';
-                if (fab) fab.style.display = 'none';
+                GlobalListeners?.updateMainScrollAffordances?.();
                 this._onboardingStep = null;
                 document.querySelector('.sc-onboarding-hint')?.remove();
                 if (this._planMode === 'activity' && !this._hasClassActivityPlan()) {

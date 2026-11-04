@@ -1470,7 +1470,7 @@ export const ClassUIManager = {
         const inClass = direction === 'down' ? 'class-switch-in-down' : 'class-switch-in-up';
         const headerOutClass = direction === 'down' ? 'header-class-out-down' : 'header-class-out-up';
         const headerInClass = direction === 'down' ? 'header-class-in-down' : 'header-class-in-up';
-        const selector = '.stats-container, #outputList, #crossClassResults.visible, .output-header, #seatingChartView, #empty-state-card, #statsPagination';
+        const selector = '.stats-container, #outputList, #seatingChartView, #empty-state-card, #statsPagination';
         const allAnimClasses = [
             'class-switch-out-down', 'class-switch-out-up',
             'class-switch-in-down', 'class-switch-in-up',
@@ -1481,7 +1481,6 @@ export const ClassUIManager = {
         this.closeDropdown();
         this.closeNotePopover();
 
-        document.getElementById('crossClassResults')?.classList.remove(...allAnimClasses);
         const outgoingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
             el.classList.remove(...allAnimClasses);
             const style = window.getComputedStyle(el);

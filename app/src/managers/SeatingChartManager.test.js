@@ -2686,6 +2686,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
         it('devrait mettre en évidence (spotlight) l’élève unique et atténuer les autres', () => {
             SeatingChartManager._applySearchHighlight('sophie');
+            expect(appState.searchQuery).toBe('sophie');
 
             const view = document.getElementById('seatingChartView');
             expect(view.classList.contains('sc-search-active')).toBe(true);
@@ -2700,6 +2701,9 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const cellDupont = document.querySelector('.sc-cell[data-result-id="s1"]');
             expect(cellDupont.classList.contains('sc-spotlight-dimmed')).toBe(true);
             expect(cellDupont.classList.contains('sc-spotlight-match')).toBe(false);
+
+            SeatingChartManager._closeSearch();
+            expect(appState.searchQuery).toBe('');
         });
 
         it('devrait gérer les correspondances multiples sans le pulse unique', () => {
@@ -2825,16 +2829,38 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             highlightSpy.mockRestore();
         });
 
-        it('devrait réinitialiser la recherche de la vue Liste et masquer Autres classes lors du passage en vue Plan', () => {
-            const clearListSpy = vi.spyOn(CrossClassSearchManager, 'clearListSearch');
+        it('devrait conserver la recherche active, la pastille compteur et le popover inter-classes entre la vue Liste et la vue Plan', () => {
+            const resetSpy = vi.spyOn(CrossClassSearchManager, 'reset');
+            const highlightSpy = vi.spyOn(SeatingChartManager, '_applySearchHighlight');
             const wrapper = document.querySelector('.main-content-wrapper');
             if (wrapper) wrapper.dataset.view = 'list';
             SeatingChartManager._isActive = false;
+            appState.searchQuery = 'dupont';
 
             SeatingChartManager.switchToView('plan', { immediate: true });
 
-            expect(clearListSpy).toHaveBeenCalledWith({ renderList: true, immediate: true });
-            clearListSpy.mockRestore();
+            expect(resetSpy).toHaveBeenCalledWith(true);
+            expect(appState.searchQuery).toBe('dupont');
+            expect(document.getElementById('scFloatingSearch').classList.contains('open')).toBe(true);
+            expect(document.getElementById('scFloatingSearchInput').value).toBe('dupont');
+            expect(document.getElementById('scFloatingSearchCount').textContent).toBe('1');
+            expect(highlightSpy).toHaveBeenCalledWith('dupont');
+
+            // Recherche d'un élève d'une autre classe ('lambert') en vue Plan puis retour en vue Liste
+            SeatingChartManager._handleSearchInput('lambert');
+            expect(appState.searchQuery).toBe('lambert');
+            expect(document.getElementById('scFloatingSearchCount').textContent).toBe('0');
+            expect(document.getElementById('scFloatingSearchSuggestions').classList.contains('visible')).toBe(true);
+
+            SeatingChartManager.switchToView('list', { immediate: true });
+
+            expect(appState.searchQuery).toBe('lambert');
+            expect(document.getElementById('scFloatingSearch').classList.contains('open')).toBe(true);
+            expect(document.getElementById('scFloatingSearchCount').textContent).toBe('0');
+            expect(document.getElementById('scFloatingSearchSuggestions').classList.contains('visible')).toBe(true);
+
+            resetSpy.mockRestore();
+            highlightSpy.mockRestore();
         });
     });
 
@@ -3106,8 +3132,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                         <div class="sc-sidebar-header">
                             <div id="scSidebarTitle"></div>
                             <span id="scFooterInfo"></span>
-                            <input type="text" id="scSearchInput" class="custom-input">
-                            <button id="scSearchClear"></button>
                         </div>
                         <div class="sc-student-list" id="scStudentList"></div>
                     </div>

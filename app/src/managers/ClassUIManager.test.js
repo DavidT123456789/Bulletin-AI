@@ -308,6 +308,7 @@ describe('ClassUIManager - Animations verticales directionnelles de changement d
     it('devrait appliquer les classes CSS directionnelles (out puis in) lors de handleClassSwitch', async () => {
         vi.useFakeTimers();
         const { AppreciationsManager } = await import('./AppreciationsManager.js');
+        const { CrossClassSearchManager } = await import('./CrossClassSearchManager.js');
         const renderSpy = vi.spyOn(AppreciationsManager, 'renderResults').mockImplementation(() => {});
 
         const class6A = ClassManager.createClass('6 1');
@@ -317,25 +318,20 @@ describe('ClassUIManager - Animations verticales directionnelles de changement d
         ClassUIManager.renderClassList();
 
         const outputList = document.getElementById('outputList');
-        const crossResults = document.createElement('div');
-        crossResults.id = 'crossClassResults';
-        crossResults.className = 'cross-class-results visible';
-        outputList.parentNode.appendChild(crossResults);
+        const clearSearchSpy = vi.spyOn(CrossClassSearchManager, 'clearListSearch');
 
         const switchPromise = ClassUIManager.handleClassSwitch(class6A.id);
 
         // Phase 1 : sortie vers le bas (car 6e est au-dessus de 5e)
         expect(outputList.classList.contains('class-switch-out-down')).toBe(true);
-        expect(crossResults.classList.contains('class-switch-out-down')).toBe(true);
         expect(DOM.headerClassName.classList.contains('header-class-out-down')).toBe(true);
 
         await vi.advanceTimersByTimeAsync(110);
         await switchPromise;
 
-        // Phase 2 : entrée depuis le haut vers le bas, et #crossClassResults nettoyé de class-switch-out-down
+        // Phase 2 : entrée depuis le haut vers le bas, et recherche réinitialisée
         expect(outputList.classList.contains('class-switch-in-down')).toBe(true);
-        expect(crossResults.classList.contains('visible')).toBe(false);
-        expect(crossResults.classList.contains('class-switch-out-down')).toBe(false);
+        expect(clearSearchSpy).toHaveBeenCalled();
         expect(DOM.headerClassName.classList.contains('header-class-in-down')).toBe(true);
 
         // Nettoyage après la fin de l'animation
@@ -343,6 +339,7 @@ describe('ClassUIManager - Animations verticales directionnelles de changement d
         expect(outputList.classList.contains('class-switch-in-down')).toBe(false);
         expect(DOM.headerClassName.classList.contains('header-class-in-down')).toBe(false);
 
+        clearSearchSpy.mockRestore();
         renderSpy.mockRestore();
         vi.useRealTimers();
     });

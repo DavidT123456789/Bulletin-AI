@@ -41,15 +41,6 @@
     pointer-events: none;
 }
 
-.output-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 0;
-    gap: 12px;
-}
-
 /* Badge spécifique pour le tableau - extends .header-action-trigger */
 #avgWordsChip {
     /* Position override - chip is on the right side */
@@ -89,9 +80,7 @@
    sans boîte de fond ni soulignement qui cassent le crénage.
    ==================================================================== */
 .student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-nom,
-.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-prenom,
-.cross-class-name:has(.search-highlight) .cross-class-nom,
-.cross-class-name:has(.search-highlight) .cross-class-prenom {
+.student-identity-wrapper .student-nom-prenom:has(.search-highlight) .student-prenom {
     color: color-mix(in srgb, var(--text-primary) 42%, transparent);
 }
 

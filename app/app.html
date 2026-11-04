@@ -154,8 +154,7 @@
         }
         html.is-first-visit #initialTableSkeleton,
         html.is-first-visit .stats-container,
-        html.is-first-visit #statsPagination,
-        html.is-first-visit #outputHeader {
+        html.is-first-visit #statsPagination {
             display: none !important;
         }
         @view-transition {
@@ -317,6 +316,24 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- Unified Global Search (List & Plan) -->
+                    <div class="sc-floating-search header-search" id="scFloatingSearch">
+                        <button type="button" class="pill-segment sc-action-btn sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        </button>
+                        <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
+                            <button type="button" class="sc-search-close-btn" id="scFloatingSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
+                                <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
+                            </button>
+                            <input type="text" id="scFloatingSearchInput" class="custom-input" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                            <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
+                            <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
+                        </div>
+                        <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
+                    </div>
+
                     <!-- Generation Dashboard & Fast AI Model Selector -->
                     <div class="header-gen-wrapper" id="headerGenWrapper">
                         <div id="headerGenDashboard" class="header-gen-dashboard tooltip" role="button" tabindex="0"
@@ -581,8 +598,6 @@
                     </div>
 
                     <!-- Progress and error UI moved to header chip (#headerGenerationStatus) -->
-
-                    <div class="output-header" id="outputHeader"></div>
 
                     <div id="outputList" role="region" aria-live="polite">
                         <div class="student-list-view skeleton-table-view" id="initialTableSkeleton" aria-hidden="true">
