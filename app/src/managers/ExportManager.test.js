@@ -60,6 +60,7 @@ vi.mock('../utils/Utils.js', () => ({
         decodeHtmlEntities: vi.fn(text => text),
         stripMarkdown: vi.fn(text => text),
         getRelevantEvolution: vi.fn(() => null),
+        sortResults: vi.fn(arr => arr),
         formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));

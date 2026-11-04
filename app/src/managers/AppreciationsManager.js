@@ -35,10 +35,6 @@ export const AppreciationsManager = {
         return ResultsUIManager.renderResults(highlightId, highlightType);
     },
 
-    async regenerateVisible(onlyErrors = false) {
-        return ResultsUIManager.regenerateVisible(onlyErrors);
-    },
-
     clearAllResults() {
         return ResultsUIManager.clearAllResults();
     },

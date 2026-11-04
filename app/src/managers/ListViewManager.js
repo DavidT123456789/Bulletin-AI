@@ -335,7 +335,21 @@ export const ListViewManager = {
             appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'Génération...', false);
             if (actionBtn) actionBtn.disabled = true;
         } else if (status === 'pending-skeleton') {
-            appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'En file', true);
+            const existingWrapper = appreciationCell.querySelector('.appreciation-preview-wrapper');
+            const hasExistingText = Boolean(existingWrapper?.querySelector('.appreciation-preview')?.textContent?.trim());
+
+            if (existingWrapper && hasExistingText) {
+                existingWrapper.classList.add('is-queued');
+                let badge = existingWrapper.querySelector('.generating-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    existingWrapper.appendChild(badge);
+                }
+                badge.className = 'generating-badge pending';
+                badge.innerHTML = `<iconify-icon icon="solar:clock-circle-linear"></iconify-icon> ${Utils.escapeHtml(label || 'En file')}`;
+            } else {
+                appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'En file', true);
+            }
             if (actionBtn) actionBtn.disabled = true;
         } else {
             // Revert to standard badge if needed (though usually updateRow is called next)

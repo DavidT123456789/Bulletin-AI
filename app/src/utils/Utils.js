@@ -1090,7 +1090,7 @@ export const Utils = {
     getSkeletonHTML(compact = false, label = 'Génération...', pending = false, showBadge = true) {
         const compactClass = compact ? ' compact' : '';
         const badgeClass = pending ? 'pending' : 'active';
-        const iconName = pending ? 'solar:clock-circle-bold' : 'ph:spinner-gap-bold';
+        const iconName = pending ? 'solar:clock-circle-linear' : 'ph:spinner-gap-bold';
         const spinClass = pending ? '' : 'rotate-icon';
         const badgeHtml = showBadge ? `<span class="generating-badge ${badgeClass}"><iconify-icon icon="${iconName}" class="${spinClass}"></iconify-icon> ${label}</span>` : '';
 
@@ -1210,6 +1210,97 @@ export const Utils = {
         }
 
         return true;
+    },
+
+    /**
+     * Trie une liste de résultats élèves selon l'état de tri visuel actif (sans muter le tableau source).
+     * En cas d'égalité sur un critère (note, évolution, statut, date), replie déterministement par ordre alphabétique (A-Z).
+     * @param {Array<Object>} results - Liste des résultats à trier
+     * @param {Object} [sortState=appState.sortState] - État du tri ({ field, direction, param })
+     * @param {string} [activePeriod=appState.currentPeriod] - Période active
+     * @returns {Array<Object>} Nouvelle liste triée
+     */
+    sortResults(results, sortState = appState.sortState, activePeriod = appState.currentPeriod) {
+        if (!Array.isArray(results)) return [];
+        if (results.length <= 1) return [...results];
+
+        const { field, direction, param } = sortState || { field: 'name', direction: 'asc' };
+        const dir = direction === 'asc' ? 1 : -1;
+        const p = param || activePeriod;
+
+        const compareNames = (a, b) =>
+            `${a.nom || ''} ${a.prenom || ''}`.localeCompare(`${b.nom || ''} ${b.prenom || ''}`, 'fr', { sensitivity: 'base' });
+
+        if (field === 'name') {
+            return [...results].sort((a, b) => compareNames(a, b) * dir);
+        }
+
+        if (field === 'recent') {
+            return [...results].sort((a, b) => {
+                const diff = (new Date(b.timestamp) - new Date(a.timestamp)) * dir;
+                return diff !== 0 && !isNaN(diff) ? diff : compareNames(a, b);
+            });
+        }
+
+        if (field === 'grade') {
+            const parseGrade = r => {
+                const raw = r.studentData?.periods?.[p]?.grade;
+                if (raw === null || raw === undefined || raw === '') return -1;
+                const num = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(',', '.'));
+                return isNaN(num) ? -1 : num;
+            };
+            return [...results].sort((a, b) => {
+                const gA = parseGrade(a);
+                const gB = parseGrade(b);
+                if (gA === -1 && gB !== -1) return 1;
+                if (gA !== -1 && gB === -1) return -1;
+                const diff = (gA - gB) * dir;
+                return diff !== 0 ? diff : compareNames(a, b);
+            });
+        }
+
+        if (field === 'evolution') {
+            const periodsList = this.getPeriods();
+            const pIndex = periodsList.indexOf(p);
+            const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
+
+            const getDiff = r => {
+                if (!prevP) return null;
+                const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
+                const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
+                const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw ?? '').replace(',', '.'));
+                const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw ?? '').replace(',', '.'));
+                return (!isNaN(currentGrade) && !isNaN(prevGrade)) ? (currentGrade - prevGrade) : null;
+            };
+
+            return [...results].sort((a, b) => {
+                const dA = getDiff(a);
+                const dB = getDiff(b);
+                if (dA === null && dB !== null) return 1;
+                if (dA !== null && dB === null) return -1;
+                if (dA === null && dB === null) return compareNames(a, b);
+                const diff = (dA - dB) * dir;
+                return diff !== 0 ? diff : compareNames(a, b);
+            });
+        }
+
+        if (field === 'status') {
+            const getStatusStr = r => {
+                if (r.errorMessage) return '!';
+                const statuses = this.getActiveStatuses(r, activePeriod);
+                if (statuses.length > 0) {
+                    return statuses.slice().sort().join(' ').toLowerCase();
+                }
+                return '\uFFFF';
+            };
+
+            return [...results].sort((a, b) => {
+                const diff = getStatusStr(a).localeCompare(getStatusStr(b)) * dir;
+                return diff !== 0 ? diff : compareNames(a, b);
+            });
+        }
+
+        return [...results];
     },
 
     /**

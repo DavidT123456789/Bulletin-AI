@@ -745,5 +745,61 @@ describe('Utils', () => {
             expect(Utils.isPendingForPeriod(null, 'T2')).toBe(false);
         });
     });
+
+    describe('sortResults', () => {
+        const sampleResults = [
+            { id: '3', nom: 'PETIT', prenom: 'Emma', timestamp: '2026-01-02T10:00:00Z', studentData: { statuses: [], periods: { T1: { grade: 12 }, T2: { grade: 10 } } } },
+            { id: '1', nom: 'BERNARD', prenom: 'Thomas', timestamp: '2026-01-03T10:00:00Z', studentData: { statuses: ['Délégué'], periods: { T1: { grade: 15 }, T2: { grade: 15.2 } } } },
+            { id: '2', nom: 'DURAND', prenom: 'Sophie', timestamp: '2026-01-01T10:00:00Z', studentData: { statuses: ['PPRE'], periods: { T1: { grade: 9 }, T2: { grade: 10.5 } } } },
+            { id: '4', nom: 'MARTIN', prenom: 'Lucas', timestamp: '2026-01-04T10:00:00Z', errorMessage: 'Erreur IA', studentData: { statuses: [], periods: { T1: { grade: null }, T2: { grade: null } } } }
+        ];
+
+        it('devrait gérer les cas limites (null, undefined, vide, 1 élément) sans muter la source', () => {
+            expect(Utils.sortResults(null)).toEqual([]);
+            expect(Utils.sortResults(undefined)).toEqual([]);
+            expect(Utils.sortResults([])).toEqual([]);
+
+            const single = [sampleResults[0]];
+            const res = Utils.sortResults(single);
+            expect(res).toEqual(single);
+            expect(res).not.toBe(single);
+        });
+
+        it('devrait trier par nom (asc / desc) sans muter le tableau original', () => {
+            const originalOrder = sampleResults.map(r => r.id);
+            const asc = Utils.sortResults(sampleResults, { field: 'name', direction: 'asc' }, 'T2');
+            expect(asc.map(r => r.nom)).toEqual(['BERNARD', 'DURAND', 'MARTIN', 'PETIT']);
+            expect(sampleResults.map(r => r.id)).toEqual(originalOrder);
+
+            const desc = Utils.sortResults(sampleResults, { field: 'name', direction: 'desc' }, 'T2');
+            expect(desc.map(r => r.nom)).toEqual(['PETIT', 'MARTIN', 'DURAND', 'BERNARD']);
+        });
+
+        it('devrait trier par note et maintenir les notes absentes en fin de liste', () => {
+            const asc = Utils.sortResults(sampleResults, { field: 'grade', direction: 'asc', param: 'T2' }, 'T2');
+            expect(asc.map(r => r.nom)).toEqual(['PETIT', 'DURAND', 'BERNARD', 'MARTIN']);
+
+            const desc = Utils.sortResults(sampleResults, { field: 'grade', direction: 'desc', param: 'T2' }, 'T2');
+            expect(desc.map(r => r.nom)).toEqual(['BERNARD', 'DURAND', 'PETIT', 'MARTIN']);
+        });
+
+        it('devrait trier par statut (erreurs en premier, puis tags A-Z, puis sans statut)', () => {
+            const asc = Utils.sortResults(sampleResults, { field: 'status', direction: 'asc' }, 'T2');
+            expect(asc.map(r => r.nom)).toEqual(['MARTIN', 'BERNARD', 'DURAND', 'PETIT']);
+        });
+
+        it('devrait départager les ex-aequo (même note ou aucun statut) par ordre alphabétique déterministe (A-Z)', () => {
+            const tied = [
+                { id: 'z', nom: 'ZOLA', prenom: 'Émile', studentData: { statuses: [], periods: { T2: { grade: 12 } } } },
+                { id: 'a', nom: 'ARAGON', prenom: 'Louis', studentData: { statuses: [], periods: { T2: { grade: 12 } } } },
+                { id: 'h', nom: 'HUGO', prenom: 'Victor', studentData: { statuses: [], periods: { T2: { grade: 12 } } } }
+            ];
+
+            expect(Utils.sortResults(tied, { field: 'grade', direction: 'desc', param: 'T2' }, 'T2').map(r => r.nom))
+                .toEqual(['ARAGON', 'HUGO', 'ZOLA']);
+            expect(Utils.sortResults(tied, { field: 'status', direction: 'asc' }, 'T2').map(r => r.nom))
+                .toEqual(['ARAGON', 'HUGO', 'ZOLA']);
+        });
+    });
 });
 

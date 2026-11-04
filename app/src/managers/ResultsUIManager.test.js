@@ -244,10 +244,14 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         appState.sortState = { field: 'evolution', direction: 'desc', param: 'T2' };
         ResultsUIManager.renderResults();
         expect(appState.filteredResults.map(r => r.id)).toEqual(['big-plus', 'small-plus', 'minus', 'no-grade']);
+        expect(Array.from(DOM.resultsDiv.querySelectorAll('.student-row')).map(tr => tr.dataset.studentId))
+            .toEqual(['big-plus', 'small-plus', 'minus', 'no-grade']);
 
         appState.sortState = { field: 'evolution', direction: 'asc', param: 'T2' };
         ResultsUIManager.renderResults();
         expect(appState.filteredResults.map(r => r.id)).toEqual(['minus', 'small-plus', 'big-plus', 'no-grade']);
+        expect(Array.from(DOM.resultsDiv.querySelectorAll('.student-row')).map(tr => tr.dataset.studentId))
+            .toEqual(['minus', 'small-plus', 'big-plus', 'no-grade']);
     });
 
     it('devrait filtrer les élèves via appState.searchQuery et gérer les filtres statistiques sans .output-toolbar', async () => {
@@ -280,6 +284,76 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         appState.activeStatFilter = null;
         UI.updateActiveFilterInfo();
         expect(bar.querySelector('.filter-close-btn')).toBeNull();
+    });
+
+    it('devrait traiter regenerateDirty dans l\'ordre de tri visuel actif et non dans l\'ordre brut de generatedResults', async () => {
+        const cls = ClassManager.createClass('3ème B');
+        appState.currentClassId = cls.id;
+        userSettings.academic.currentClassId = cls.id;
+        appState.currentPeriod = 'T1';
+        appState.sortState = { field: 'name', direction: 'asc' };
+
+        // Ordre brut non alphabétique (simulant le tri par ID aléatoire au chargement IndexedDB)
+        appState.generatedResults = [
+            { id: 'stu-z', nom: 'PETIT', prenom: 'Emma', classId: cls.id, errorMessage: 'Erreur IA', errorPeriod: 'T1', studentData: { nom: 'PETIT', prenom: 'Emma', periods: { T1: { grade: 10 } } } },
+            { id: 'stu-a', nom: 'BERNARD', prenom: 'Thomas', classId: cls.id, errorMessage: 'Erreur IA', errorPeriod: 'T1', studentData: { nom: 'BERNARD', prenom: 'Thomas', periods: { T1: { grade: 15 } } } },
+            { id: 'stu-m', nom: 'DURAND', prenom: 'Sophie', classId: cls.id, errorMessage: 'Erreur IA', errorPeriod: 'T1', studentData: { nom: 'DURAND', prenom: 'Sophie', periods: { T1: { grade: 12 } } } }
+        ];
+
+        const { ListViewManager } = await import('./ListViewManager.js');
+        vi.spyOn(ListViewManager, 'setRowStatus').mockImplementation(() => {});
+        vi.spyOn(ListViewManager, 'updateRow').mockResolvedValue();
+
+        const processedNames = [];
+        mockAm.generateAppreciation = vi.fn().mockImplementation(async (sd) => {
+            processedNames.push(sd.nom);
+            return { nom: sd.nom, prenom: sd.prenom, appreciation: 'OK', studentData: sd };
+        });
+        mockUI.showHeaderProgress = vi.fn();
+        mockUI.hideHeaderProgress = vi.fn();
+        let confirmPromise;
+        mockUI.showCustomConfirm = vi.fn((_msg, onConfirm) => {
+            confirmPromise = onConfirm();
+        });
+
+        await ResultsUIManager.regenerateDirty();
+        await confirmPromise;
+
+        expect(processedNames).toEqual(['BERNARD', 'DURAND', 'PETIT']);
+        vi.restoreAllMocks();
+    });
+
+    it('devrait conserver et atténuer le texte existant (.is-queued) lors du passage en file d\'attente (pending-skeleton)', async () => {
+        const { ListViewManager } = await import('./ListViewManager.js');
+        document.body.innerHTML = `
+            <table>
+                <tbody>
+                    <tr class="student-row" data-student-id="s-with-text">
+                        <td class="appreciation-cell">
+                            <div class="appreciation-preview-wrapper">
+                                <div class="appreciation-preview">Texte existant conservé</div>
+                            </div>
+                        </td>
+                        <td><button class="btn-action-menu"></button></td>
+                    </tr>
+                    <tr class="student-row" data-student-id="s-empty">
+                        <td class="appreciation-cell"><span class="status-badge pending">En attente</span></td>
+                        <td><button class="btn-action-menu"></button></td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+
+        ListViewManager.setRowStatus('s-with-text', 'pending-skeleton');
+        const cellWithText = document.querySelector('[data-student-id="s-with-text"] .appreciation-cell');
+        expect(cellWithText.querySelector('.appreciation-preview')?.textContent).toBe('Texte existant conservé');
+        expect(cellWithText.querySelector('.appreciation-preview-wrapper')?.classList.contains('is-queued')).toBe(true);
+        expect(cellWithText.querySelector('.generating-badge.pending')?.textContent).toContain('En file');
+        expect(cellWithText.querySelector('.appreciation-skeleton')).toBeNull();
+
+        ListViewManager.setRowStatus('s-empty', 'pending-skeleton');
+        const cellEmpty = document.querySelector('[data-student-id="s-empty"] .appreciation-cell');
+        expect(cellEmpty.querySelector('.appreciation-skeleton')).not.toBeNull();
     });
 });
 

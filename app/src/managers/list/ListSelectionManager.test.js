@@ -288,4 +288,28 @@ describe('ListSelectionManager', () => {
             expect(UI.showNotification).toHaveBeenCalled();
         });
     });
+
+    describe('bulkRegenerate', () => {
+        it('should process selected students following visual sort order instead of selection order', async () => {
+            appState.generatedResults = [
+                { id: 'student-1', nom: 'PETIT', prenom: 'Emma', studentData: { periods: { T1: { grade: 10 } } } },
+                { id: 'student-2', nom: 'BERNARD', prenom: 'Thomas', studentData: { periods: { T1: { grade: 15 } } } },
+                { id: 'student-3', nom: 'DURAND', prenom: 'Sophie', studentData: { periods: { T1: { grade: 12 } } } }
+            ];
+            appState.sortState = { field: 'name', direction: 'asc' };
+
+            const callOrder = [];
+            AppreciationsManager.generateAppreciation = vi.fn().mockImplementation(async (sd) => {
+                callOrder.push(sd.id);
+                return { id: sd.id, appreciation: 'Nouvelle appréciation', studentData: sd };
+            });
+            StudentDataManager.updateResult = vi.fn((orig, next) => ({ ...orig, ...next }));
+
+            // Pass IDs in non-alphabetical order (PETIT, DURAND, BERNARD)
+            await ListSelectionManager.bulkRegenerate(['student-1', 'student-3', 'student-2']);
+
+            // Expect calls in alphabetical order: BERNARD (student-2), DURAND (student-3), PETIT (student-1)
+            expect(callOrder).toEqual(['student-2', 'student-3', 'student-1']);
+        });
+    });
 });

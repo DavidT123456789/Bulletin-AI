@@ -183,9 +183,9 @@ export const ListViewRenderer = {
         if (result) {
             const appreciationCell = row.querySelector('.appreciation-cell');
 
-            // CRITICAL: If the cell shows a skeleton (generating/pending), always do a full update
+            // CRITICAL: If the cell shows a skeleton (generating/pending) or queued state, always do a full update
             // The dirty-only optimization would otherwise add an indicator on top of the skeleton
-            const hasSkeleton = !!appreciationCell?.querySelector('.appreciation-skeleton');
+            const hasSkeleton = !!appreciationCell?.querySelector('.appreciation-skeleton, .generating-badge, .is-queued');
 
             if (hasSkeleton) {
                 this.updateRowContent(row, result);

@@ -101,8 +101,8 @@ export const ResultsUIManager = {
         const currentClass = ClassManager.getCurrentClass();
         const currentClassName = currentClass?.name || Utils.getCurrentClassName();
 
-        const filteredAndSorted = viewableResults
-            .filter(r => {
+        const filteredAndSorted = Utils.sortResults(
+            viewableResults.filter(r => {
                 if (!Utils.matchesStudent(r, term, { includeAppreciation: true, currentClassName })) return false;
                 if (!filter) return true;
                 if (filter === 'totalCount') return true;
@@ -173,68 +173,10 @@ export const ResultsUIManager = {
                 }
 
                 return false;
-            })
-            .sort((a, b) => {
-                const { field, direction, param } = appState.sortState;
-                const dir = direction === 'asc' ? 1 : -1;
-
-                if (field === 'recent') return (new Date(b.timestamp) - new Date(a.timestamp)) * dir; // Usually desc is better for recent, but let's respect dir
-
-                if (field === 'name') {
-                    return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`) * dir;
-                }
-
-                if (field === 'grade') {
-                    const p = param || activePeriod;
-                    const gA = a.studentData?.periods[p]?.grade ?? -1;
-                    const gB = b.studentData?.periods[p]?.grade ?? -1;
-                    // Sort nulls/undefined to bottom always? Or respect direction?
-                    // Usually we want empty grades at bottom.
-                    if (gA === -1 && gB !== -1) return 1;
-                    if (gA !== -1 && gB === -1) return -1;
-                    return (gA - gB) * dir;
-                }
-
-                if (field === 'evolution') {
-                    const p = param || activePeriod;
-                    const periodsList = Utils.getPeriods();
-                    const pIndex = periodsList.indexOf(p);
-                    const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
-
-                    const getDiff = r => {
-                        if (!prevP) return null;
-                        const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
-                        const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
-                        const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw ?? '').replace(',', '.'));
-                        const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw ?? '').replace(',', '.'));
-                        return (!isNaN(currentGrade) && !isNaN(prevGrade)) ? (currentGrade - prevGrade) : null;
-                    };
-                    const dA = getDiff(a);
-                    const dB = getDiff(b);
-                    if (dA === null && dB !== null) return 1;
-                    if (dA !== null && dB === null) return -1;
-                    if (dA === null && dB === null) return 0;
-                    return (dA - dB) * dir;
-                }
-
-                if (field === 'status') {
-                    // Sort by student status tags (alphabetical)
-                    // Order: Errors -> Tags (A-Z) -> Empty
-                    const getStatusStr = (r) => {
-                        if (r.errorMessage) return '!'; // Errors first
-                        const statuses = Utils.getActiveStatuses(r, activePeriod);
-                        if (statuses.length > 0) {
-                            // Join tags to compare
-                            return statuses.slice().sort().join(' ').toLowerCase();
-                        }
-                        // Empty statuses last
-                        return '\uFFFF';
-                    };
-                    return getStatusStr(a).localeCompare(getStatusStr(b)) * dir;
-                }
-
-                return 0;
-            });
+            }),
+            appState.sortState,
+            activePeriod
+        );
 
         appState.filteredResults = filteredAndSorted;
 
@@ -710,130 +652,6 @@ export const ResultsUIManager = {
         });
     },
 
-    async regenerateVisible(onlyErrors = false) {
-        // Pour les erreurs, on cherche dans TOUS les résultats, pas seulement les filtrés
-        const sourceResults = onlyErrors ? appState.generatedResults : appState.filteredResults;
-        const toRegen = sourceResults.filter(r => !onlyErrors || r.errorMessage);
-        if (toRegen.length === 0) {
-            UI.showNotification(onlyErrors ? "Aucune erreur à corriger." : "Aucune appréciation à régénérer.", "warning");
-            return;
-        }
-
-        const regenTitle = onlyErrors
-            ? `Corriger ${toRegen.length} erreur${toRegen.length > 1 ? 's' : ''} ?`
-            : `Régénérer ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
-
-        UI.showCustomConfirm('Les appréciations existantes seront remplacées par de nouvelles générations.', async () => {
-            appState.activeMassAction = 'generate';
-            // Create new abort controller for this regeneration
-            MassImportManager.massImportAbortController = new AbortController();
-            const signal = MassImportManager.massImportAbortController.signal;
-
-            let successCount = 0;
-            let errorCount = 0;
-            let wasAborted = false;
-            const total = toRegen.length;
-
-            // Afficher "En file" (skeleton pending) sur toutes les lignes concernées immédiatement
-            toRegen.forEach(resultToRegen => {
-                ListViewManager.setRowStatus(resultToRegen.id, 'pending-skeleton');
-            });
-
-            // Traitement séquentiel pour un effet visuel progressif
-            for (let i = 0; i < toRegen.length; i++) {
-                // Check for cancellation
-                if (signal.aborted) {
-                    wasAborted = true;
-                    break;
-                }
-
-                const resultToRegen = toRegen[i];
-                const studentName = `${resultToRegen.prenom || ''} ${resultToRegen.nom || ''}`.trim();
-
-                // Update header progress chip
-                UI.showHeaderProgress(i + 1, total, studentName);
-
-                try {
-                    // Passer l'état à "Génération" (skeleton actif) juste pour celui-ci
-                    ListViewManager.setRowStatus(resultToRegen.id, 'generating');
-
-                    const updatedStudentData = Utils.deepClone(resultToRegen.studentData);
-                    updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
-                    updatedStudentData.currentAIModel = appState.currentAIModel;
-
-                    const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
-                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
-                    if (resultIndex > -1) {
-                        // Use centralized updateResult to preserve user data (photo, journal, history)
-                        const updatedResult = StudentDataManager.updateResult(
-                            appState.generatedResults[resultIndex],
-                            newResult
-                        );
-                        successCount++;
-
-                        // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
-                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
-                        if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = updatedResult;
-                        }
-
-                        // Mettre à jour la ligne avec animation typewriter
-                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
-                    }
-                } catch (e) {
-                    // Check if aborted
-                    if (e.name === 'AbortError' || signal.aborted) {
-                        wasAborted = true;
-                        break;
-                    }
-
-                    errorCount++;
-                    const msg = Utils.translateErrorMessage(e.message);
-                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, resultToRegen.appreciation || '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
-                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
-                    if (resultIndex > -1) {
-                        // Use centralized updateResult to preserve user data
-                        const updatedResult = StudentDataManager.updateResult(
-                            appState.generatedResults[resultIndex],
-                            errorResult
-                        );
-
-                        // CORRECTIF: Synchroniser filteredResults aussi en cas d'erreur
-                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
-                        if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = updatedResult;
-                        }
-
-                        // Mettre à jour la ligne pour afficher l'erreur
-                        ListViewManager.updateRow(updatedResult.id, updatedResult, false);
-                    }
-                }
-            }
-
-            // Cleanup abort controller
-            MassImportManager.massImportAbortController = null;
-
-            // Hide progress and show errors if any
-            UI.hideHeaderProgress(errorCount > 0);
-
-            if (wasAborted) {
-                UI.showNotification("Régénération annulée.", "warning");
-                // Re-render to restore all rows to their proper state
-                this.renderResults();
-            } else {
-                UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
-                if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
-            }
-
-            appState.activeMassAction = null;
-            StorageManager.saveAppState();
-
-            // Pas besoin de re-render complet, les lignes sont mises à jour individuellement
-            UI.updateStats();
-            UI.updateControlButtons();
-        }, null, { title: regenTitle, isDanger: false });
-    },
-
     /**
      * Regenerates appreciations that are dirty (data modified) or have errors
      * Used by the "Actualiser" button
@@ -848,14 +666,14 @@ export const ResultsUIManager = {
 
         const sourceResults = ClassManager.getStudentsForClass(currentClassId);
 
-        // Find all results that need updating (dirty OR error)
-        const toRegen = sourceResults.filter(r => {
+        // Find all results that need updating (dirty OR error), sorted by current visual order
+        const toRegen = Utils.sortResults(sourceResults.filter(r => {
             const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
             if (hasError) return true;
 
             // Dirty state (data modified since creation - works for AI and manual)
             return FocusPanelStatus.checkDirtyState(r);
-        });
+        }));
 
         if (toRegen.length === 0) {
             UI.showNotification("Aucune appréciation à actualiser.", "warning");
@@ -875,6 +693,9 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm('Les appréciations concernées seront régénérées avec les données actuelles.', async () => {
+            if (MassImportManager.massImportAbortController) {
+                MassImportManager.massImportAbortController.abort();
+            }
             appState.activeMassAction = 'update';
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
@@ -889,7 +710,7 @@ export const ResultsUIManager = {
                 ListViewManager.setRowStatus(resultToRegen.id, 'pending-skeleton');
             });
 
-            for (let i = 0; i < toRegen.length; i++) {
+            for (let i = 0; i < total; i++) {
                 if (signal.aborted) {
                     wasAborted = true;
                     break;
@@ -900,30 +721,23 @@ export const ResultsUIManager = {
 
                 UI.showHeaderProgress(i + 1, total, studentName);
 
+                let nextResult = null;
+                let isSuccess = false;
+
                 try {
                     ListViewManager.setRowStatus(resultToRegen.id, 'generating');
 
                     const updatedStudentData = Utils.deepClone(resultToRegen.studentData);
+                    updatedStudentData.id = resultToRegen.id;
+                    updatedStudentData.classId = resultToRegen.classId ?? currentClassId;
+                    updatedStudentData.currentPeriod = currentPeriod;
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
 
-                    const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
-                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
-                    if (resultIndex > -1) {
-                        // Use centralized updateResult to preserve user data
-                        const updatedResult = StudentDataManager.updateResult(
-                            appState.generatedResults[resultIndex],
-                            newResult
-                        );
-                        successCount++;
-
-                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
-                        if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = updatedResult;
-                        }
-
-                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
-                    }
+                    nextResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
+                    nextResult.classId = resultToRegen.classId ?? currentClassId;
+                    nextResult.generationPeriod = currentPeriod;
+                    isSuccess = true;
                 } catch (e) {
                     if (e.name === 'AbortError' || signal.aborted) {
                         wasAborted = true;
@@ -932,20 +746,35 @@ export const ResultsUIManager = {
 
                     newErrorCount++;
                     const msg = Utils.translateErrorMessage(e.message);
-                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, resultToRegen.appreciation || '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
-                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
-                    if (resultIndex > -1) {
-                        // Use centralized updateResult to preserve user data
-                        const updatedResult = StudentDataManager.updateResult(
-                            appState.generatedResults[resultIndex],
-                            errorResult
-                        );
+                    nextResult = Am.createResultObject(
+                        resultToRegen.nom,
+                        resultToRegen.prenom,
+                        resultToRegen.appreciation || '',
+                        resultToRegen.evolutions,
+                        { ...resultToRegen.studentData, currentPeriod },
+                        {},
+                        {},
+                        `Erreur IA : ${msg}.`
+                    );
+                    nextResult.classId = resultToRegen.classId ?? currentClassId;
+                }
 
-                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
-                        if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = updatedResult;
-                        }
+                const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
+                if (resultIndex > -1 && nextResult) {
+                    const updatedResult = StudentDataManager.updateResult(
+                        appState.generatedResults[resultIndex],
+                        nextResult
+                    );
 
+                    const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
+                    if (filteredIndex > -1) {
+                        appState.filteredResults[filteredIndex] = updatedResult;
+                    }
+
+                    if (isSuccess) {
+                        successCount++;
+                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
+                    } else {
                         ListViewManager.updateRow(updatedResult.id, updatedResult, false);
                     }
                 }

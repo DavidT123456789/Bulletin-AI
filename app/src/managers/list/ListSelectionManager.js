@@ -424,6 +424,14 @@ export const ListSelectionManager = {
         const batchClassId = appState.currentClassId;
         const batchPeriod = appState.currentPeriod;
 
+        const idSet = new Set(ids);
+        const sortedIds = Utils.sortResults(
+            (appState.generatedResults || []).filter(r => idSet.has(r.id))
+        ).map(r => r.id);
+        if (sortedIds.length > 0) {
+            ids = sortedIds;
+        }
+
         // 1. Initialize AbortController for global cancellation (Cancel button in header)
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();

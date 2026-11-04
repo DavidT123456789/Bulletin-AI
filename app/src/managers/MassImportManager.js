@@ -380,63 +380,13 @@ export const MassImportManager = {
         }
 
         // Trier les résultats en attente selon l'ordre d'affichage actuel (tri visuel)
-        const { field, direction, param } = appState.sortState || { field: 'name', direction: 'asc' };
-        const dir = direction === 'asc' ? 1 : -1;
-        const activePeriod = appState.currentPeriod;
-
-        pendingResults.sort((a, b) => {
-            if (field === 'recent') {
-                return (new Date(b.timestamp) - new Date(a.timestamp)) * dir;
-            }
-            if (field === 'name') {
-                return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`) * dir;
-            }
-            if (field === 'grade') {
-                const p = param || activePeriod;
-                const gA = a.studentData?.periods?.[p]?.grade ?? -1;
-                const gB = b.studentData?.periods?.[p]?.grade ?? -1;
-                if (gA === -1 && gB !== -1) return 1;
-                if (gA !== -1 && gB === -1) return -1;
-                return (gA - gB) * dir;
-            }
-            if (field === 'evolution') {
-                const p = param || activePeriod;
-                const periodsList = Utils.getPeriods();
-                const pIndex = periodsList.indexOf(p);
-                const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
-
-                const getDiff = r => {
-                    if (!prevP) return null;
-                    const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
-                    const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
-                    const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw ?? '').replace(',', '.'));
-                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw ?? '').replace(',', '.'));
-                    return (!isNaN(currentGrade) && !isNaN(prevGrade)) ? (currentGrade - prevGrade) : null;
-                };
-                const dA = getDiff(a);
-                const dB = getDiff(b);
-                if (dA === null && dB !== null) return 1;
-                if (dA !== null && dB === null) return -1;
-                if (dA === null && dB === null) return 0;
-                return (dA - dB) * dir;
-            }
-            if (field === 'status') {
-                const getStatusStr = r => {
-                    if (r.errorMessage) return '!';
-                    const statuses = Utils.getActiveStatuses(r, activePeriod);
-                    if (statuses.length > 0) return statuses.slice().sort().join(' ').toLowerCase();
-                    return '\uFFFF';
-                };
-                return getStatusStr(a).localeCompare(getStatusStr(b)) * dir;
-            }
-            return 0;
-        });
+        const sortedPendingResults = Utils.sortResults(pendingResults);
 
         // Convertir les résultats pending en format étudiant pour processMassImport
         // IMPORTANT: Utiliser appState.currentPeriod (période AFFICHÉE) pour la génération
         // CRITICAL FIX: Preserve studentPhoto, journal and other user data
         const targetPeriod = appState.currentPeriod;
-        const studentsToProcess = pendingResults.map(r => ({
+        const studentsToProcess = sortedPendingResults.map(r => ({
             nom: r.nom,
             prenom: r.prenom,
             periods: r.studentData?.periods || {},

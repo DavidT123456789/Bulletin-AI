@@ -316,7 +316,8 @@ export const ExportManager = {
         if (!ids || ids.length === 0) return 0;
 
         const currentPeriod = appState.currentPeriod;
-        const resultsToCopy = appState.generatedResults.filter(r => ids.includes(r.id));
+        const idSet = new Set(ids);
+        const resultsToCopy = Utils.sortResults(appState.generatedResults.filter(r => idSet.has(r.id)));
         const activeResults = resultsToCopy.filter(r => {
             const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
             return appreciation?.trim();
