@@ -217,7 +217,7 @@ export const TrombiCropExporter = {
                             const studentLabel = (newAssignedCount === 1 && newStudentObj)
                                 ? `Ajouter ${Utils.formatStudentName(newStudentObj.nom, newStudentObj.prenom)}`
                                 : `Ajouter ${newAssignedCount > 1 ? `les ${newAssignedCount} nouveaux élèves` : `le nouvel élève`}`;
-                            confirmBtn.innerHTML = `<iconify-icon icon="ph:user-plus-bold"></iconify-icon> ${studentLabel}`;
+                            confirmBtn.innerHTML = `<svg aria-hidden="true"><use href="#icon-user-plus"></use></svg> ${studentLabel}`;
                         } else {
                             confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}${realPhotoCount > 0 ? `, ${realPhotoCount} photo${realPhotoCount > 1 ? 's' : ''}` : ''})`;
                         }

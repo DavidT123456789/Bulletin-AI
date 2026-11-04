@@ -56,7 +56,7 @@ export const userSettings = {
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',
-        albertApiKey: '',      // Albert API (État français / DINUM)
+        albertApiKey: '',      // Albert API (Gouv.fr / DINUM)
         groqApiKey: '',
         openrouterApiKey: '',
         anthropicApiKey: '',   // Claude (Anthropic)

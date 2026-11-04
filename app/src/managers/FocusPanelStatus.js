@@ -602,7 +602,7 @@ export const FocusPanelStatus = {
 
         switch (source) {
             case 'ai': {
-                sourceIndicator.innerHTML = '✨';
+                sourceIndicator.innerHTML = '<iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>';
                 sourceIndicator.style.display = 'inline-flex';
                 sourceIndicator.classList.add('source-ai');
                 const { tooltip } = Utils.getGenerationModeInfo(result);

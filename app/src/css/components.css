@@ -23,14 +23,18 @@
 
 /* Harmonization: Icons inherit text color */
 .btn i,
-.btn iconify-icon {
+.btn iconify-icon,
+.btn svg:not(.loading-spinner-svg) {
     color: inherit;
     font-size: 1.15em;
+    width: 1em;
+    height: 1em;
     opacity: 0.95;
+    flex-shrink: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .btn:hover:not(:disabled) {
+    .btn:not(.btn-ai):hover:not(:disabled) {
         background-color: var(--primary-color);
         background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     }
@@ -273,22 +277,83 @@
     flex-shrink: 0;
 }
 
-/* État 1 : Générer (Primaire plein + élévation douce) */
+/* État 1 : Générer (Satin Subtil — identité IA fixe via tokens --ai-* de variables.css) */
 .btn-ai,
-.btn-smart-action-inline.mode-generate {
-    background: var(--primary-color);
-    color: #ffffff;
+.btn-smart-action-inline.mode-generate,
+.help-ui-pill.is-ai,
+.ai-placeholder-icon:not(.is-error) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
     border: 1px solid transparent;
-    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.28);
+    background: var(--ai-satin-bg);
+    color: var(--ai-satin-text);
+    box-shadow: var(--ai-satin-shadow);
+}
+
+/* Grand bouton Focus : Compromis Doux (surface et liseré calibrés pour grande largeur) */
+#focusGenerateBtn.btn-ai {
+    background: var(--ai-satin-wide-bg);
+}
+
+/* Icône Étoiles IA : lueur optique pure sans décalage géométrique */
+:is(.btn-ai:not(.is-loading), .btn-smart-action-inline.mode-generate, .help-ui-pill.is-ai, .ai-placeholder-icon:not(.is-error)) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {
+    color: var(--ai-icon-color);
+    opacity: 1;
+    position: relative;
+    z-index: 3;
+    transition: filter 0.25s ease, color 0.25s ease;
+}
+
+/* Reflet spéculaire au survol (petites pilules vs grand bouton Focus) */
+.btn-ai::after,
+.btn-smart-action-inline.mode-generate::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 55%;
+    height: 100%;
+    background: var(--ai-satin-shine-small);
+    transform: skewX(-20deg) translateX(-180%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+#focusGenerateBtn.btn-ai::after {
+    width: 32%;
+    background: var(--ai-satin-shine-wide);
+    transform: skewX(-20deg) translateX(-140%);
+}
+
+:is(.btn-ai, .btn-smart-action-inline.mode-generate):is(:disabled, .disabled, .loading, .is-loading, :has(.loading-spinner-svg))::after {
+    display: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .btn-ai:hover:not(:disabled):not(.disabled):not(.loading),
+    .btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)),
     .btn-smart-action-inline.mode-generate:hover:not(:disabled):not(.loading) {
-        background: var(--primary-color);
-        filter: brightness(1.08);
-        box-shadow: 0 6px 18px rgba(var(--primary-color-rgb), 0.36);
+        background: var(--ai-satin-hover-bg);
+        color: var(--ai-satin-hover-text);
+        box-shadow: var(--ai-satin-hover-shadow);
         transform: translateY(-1px);
+    }
+
+    #focusGenerateBtn.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)) {
+        background: var(--ai-satin-wide-hover-bg);
+    }
+
+    :is(.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)), .btn-smart-action-inline.mode-generate:hover:not(:disabled):not(.loading)) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {
+        color: var(--ai-icon-hover-color);
+        filter: var(--ai-icon-hover-filter);
+    }
+
+    :is(.btn-ai:not(#focusGenerateBtn):hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)), .btn-smart-action-inline.mode-generate:hover:not(:disabled):not(.loading))::after {
+        animation: ai-shine-small 1.35s ease-in-out infinite;
+    }
+
+    #focusGenerateBtn.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg))::after {
+        animation: ai-shine-wide 2.3s ease-in-out infinite;
     }
 }
 
@@ -348,6 +413,29 @@
     }
 }
 
+/* Animations de reflet spéculaire au survol des boutons Générer (.btn-ai) */
+@keyframes ai-shine-small {
+    0% {
+        transform: skewX(-20deg) translateX(-160%);
+    }
+
+    55%,
+    100% {
+        transform: skewX(-20deg) translateX(220%);
+    }
+}
+
+@keyframes ai-shine-wide {
+    0% {
+        transform: skewX(-20deg) translateX(-140%);
+    }
+
+    65%,
+    100% {
+        transform: skewX(-20deg) translateX(360%);
+    }
+}
+
 /* ====================================================================
    BTN-GHOST - Boutons tertiaires (Précédent, Fermer)
    ==================================================================== */
@@ -391,9 +479,11 @@
 }
 
 .btn-ai .kbd-hint {
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.26);
-    color: #ffffff;
+    position: relative;
+    z-index: 3;
+    background: var(--ai-kbd-bg);
+    border: 1px solid var(--ai-kbd-border);
+    color: var(--ai-kbd-color);
 }
 
 .btn-neutral .kbd-hint {

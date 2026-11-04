@@ -100,7 +100,7 @@ export function initDOM() {
     DOM.googleApiKeyError = document.getElementById('googleApiKeyError');
     DOM.googleApiKeyValidationIcon = document.getElementById('googleApiKeyValidationIcon');
     DOM.validateGoogleApiKeyBtn = document.getElementById('validateGoogleApiKeyBtn');
-    // Albert API (État français / DINUM)
+    // Albert API (Gouv.fr / DINUM)
     DOM.albertApiKey = document.getElementById('albertApiKey');
     DOM.albertApiKeyGroup = document.getElementById('albertApiKeyGroup');
     DOM.albertApiKeyError = document.getElementById('albertApiKeyError');

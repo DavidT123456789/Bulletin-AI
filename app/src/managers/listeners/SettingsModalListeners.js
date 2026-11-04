@@ -544,7 +544,7 @@ export const SettingsModalListeners = {
         if (DOM.settingsPreviewResult) {
             DOM.settingsPreviewResult.innerHTML = `
                 <div class="preview-empty-state">
-                    <iconify-icon class="preview-empty-icon" icon="solar:magic-stick-3-linear"></iconify-icon>
+                    <iconify-icon class="preview-empty-icon" icon="solar:stars-line-duotone"></iconify-icon>
                     <div class="preview-empty-title">Prêt pour l'aperçu</div>
                     <div class="preview-empty-subtitle">Ajustez vos réglages puis cliquez sur <strong>Générer</strong> pour tester le rendu sur cet élève.</div>
                 </div>
@@ -596,7 +596,7 @@ export const SettingsModalListeners = {
                 studentData: { currentAIModel: entry.modelUsed },
                 tokenUsage: entry.tokenUsage
             });
-            DOM.previewModelBadge.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> ${MODEL_SHORT_NAMES[entry.modelUsed] || entry.modelUsed}`;
+            DOM.previewModelBadge.innerHTML = `<iconify-icon icon="solar:stars-line-duotone"></iconify-icon> ${MODEL_SHORT_NAMES[entry.modelUsed] || entry.modelUsed}`;
             DOM.previewModelBadge.setAttribute('data-tooltip', tooltip);
             DOM.previewModelBadge.hidden = false;
             UI.initTooltips();

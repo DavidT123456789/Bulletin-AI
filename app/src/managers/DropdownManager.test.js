@@ -197,12 +197,17 @@ describe('DropdownManager', () => {
             expect(formatted).toContain('provider-google');
             expect(formatted).toContain('Google Gemini');
             expect(formatted).not.toContain('Quota gratuit');
+
+            const albertFormatted = DropdownManager.formatGroupLabel('Albert API (Gouv.fr) — QUOTA GRATUIT');
+            expect(albertFormatted).toContain('provider-albert');
+            expect(albertFormatted).toContain('Albert API (Gouv.fr)');
+            expect(albertFormatted).not.toContain('QUOTA GRATUIT');
         });
 
         it('devrait harmoniser #aiModelSelect (trigger sans qualificatif, badge sans parenthèses, coche à gauche alignée sur l\'icône fournisseur)', () => {
             document.body.innerHTML = `
                 <select id="aiModelSelect">
-                    <optgroup label="Albert API (État) — QUOTA GRATUIT">
+                    <optgroup label="Albert API (Gouv.fr) — QUOTA GRATUIT">
                         <option value="albert-large" selected>Mistral Small 3.2 24B (Recommandé)</option>
                     </optgroup>
                     <optgroup label="OpenRouter — PAYANT">

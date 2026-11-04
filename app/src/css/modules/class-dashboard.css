@@ -843,7 +843,7 @@
     text-align: center;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.02) 0%, rgba(var(--accent-rgb), 0.02) 100%);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.02) 0%, rgba(99, 102, 241, 0.02) 100%);
     border-radius: var(--radius-md);
     border: 1px dashed var(--border-color);
 }
@@ -853,7 +853,7 @@
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--primary-color-rgb), 0.08) 0%, rgba(var(--accent-rgb), 0.05) 50%, transparent 100%);
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 100%);
     filter: blur(40px);
     top: 50%;
     left: 50%;
@@ -862,19 +862,23 @@
     pointer-events: none;
 }
 
+/* Surface Satin Subtil et couleur d'icône mutualisées avec .btn-ai dans components.css */
 .ai-placeholder-icon {
-    width: 72px;
-    height: 72px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15) 0%, rgba(var(--accent-rgb), 0.15) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
-    color: var(--primary-color);
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+    font-size: 1.75rem;
     z-index: 1;
+}
+
+.ai-placeholder-icon.is-error {
+    background: var(--error-light);
+    border: 1px solid rgba(var(--error-rgb, 239, 68, 68), 0.25);
+    color: var(--error-color);
+    box-shadow: none;
 }
 
 .ai-placeholder-title {

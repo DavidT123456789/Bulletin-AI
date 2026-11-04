@@ -30,7 +30,7 @@ export const AI_PROVIDERS = {
     },
     albert: {
         id: 'albert',
-        name: 'Albert API (État)',
+        name: 'Albert API (Gouv.fr)',
         shortLabel: 'Albert',
         icon: 'solar:shield-check-bold',
         class: 'provider-albert',
@@ -38,7 +38,7 @@ export const AI_PROVIDERS = {
         keyProperty: 'albertApiKey',
         domKey: 'albertApiKey',
         apiBaseUrl: 'https://albert.api.etalab.gouv.fr/v1',
-        description: '<strong>Albert API (État français / DINUM — Recommandé)</strong> : passerelle souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants et agents publics via ProConnect.'
+        description: '<strong>Albert API (Gouv.fr / DINUM — Recommandé)</strong> : passerelle gouvernementale souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants et agents publics via ProConnect.'
     },
     groq: {
         id: 'groq',
@@ -210,19 +210,19 @@ export const AI_MODELS = {
         description: "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés."
     },
 
-    // 1b. ALBERT API (ÉTAT FRANÇAIS / DINUM — OPENWEIGHT ALIASES)
+    // 1b. ALBERT API (GOUV.FR / DINUM — OPENWEIGHT ALIASES)
     'albert-openweight-medium': {
         id: 'albert-openweight-medium',
         providerId: 'albert',
         apiModelId: 'openweight-medium',
         shortName: 'Mistral Small 3.2 24B',
         qualifier: 'Recommandé',
-        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: false,
         timeoutMs: 25000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⭐ Recommandé (Albert Medium).</strong> Mistral Small 3.2 24B hébergé sur l'infrastructure souveraine de l'État (DINUM). Français irréprochable et rapide."
+        description: "<strong>⭐ Recommandé (Albert Medium).</strong> Mistral Small 3.2 24B hébergé sur l'infrastructure gouvernementale souveraine (Gouv.fr / DINUM). Français irréprochable et rapide."
     },
     'albert-openweight-small': {
         id: 'albert-openweight-small',
@@ -230,7 +230,7 @@ export const AI_MODELS = {
         apiModelId: 'openweight-small',
         shortName: 'Ministral 3 8B',
         qualifier: 'Ultra-rapide',
-        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: false,
         timeoutMs: 20000,
@@ -243,7 +243,7 @@ export const AI_MODELS = {
         apiModelId: 'openweight-large',
         shortName: 'GPT-OSS 120B',
         qualifier: 'Synthèses',
-        selectorGroup: 'Albert API (État) — QUOTA GRATUIT',
+        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: true,
         timeoutMs: 40000,
@@ -626,7 +626,7 @@ export const AI_MODELS = {
 };
 
 const SELECTOR_GROUP_ORDER = [
-    'Albert API (État) — QUOTA GRATUIT',
+    'Albert API (Gouv.fr) — QUOTA GRATUIT',
     'Google Gemini — QUOTA GRATUIT',
     'Groq Cloud — QUOTA GRATUIT',
     'Mistral AI — PAY-AS-YOU-GO',

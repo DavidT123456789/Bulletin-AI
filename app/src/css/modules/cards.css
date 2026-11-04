@@ -701,7 +701,7 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 }
 
 .fab-add-student .fab-icon-add {
-    transform: translate(-0.5px, -0.5px) scale(1);
+    transform: translateX(0.5px) scale(1);
     opacity: 1;
 }
 
@@ -711,7 +711,7 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 }
 
 .fab-add-student.is-scroll-top .fab-icon-add {
-    transform: translate(-0.5px, -18px) scale(0.75);
+    transform: translate(0.5px, -18px) scale(0.75);
     opacity: 0;
 }
 

@@ -1158,7 +1158,7 @@ export const Utils = {
         // Fallback si aucune métadonnée disponible
         const tip = parts.length > 1 ? parts.join(' • ') : `${modelName} • Généré par IA`;
 
-        return { icon: '✨', tooltip: tip };
+        return { icon: '<iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>', tooltip: tip };
     },
 
     /**

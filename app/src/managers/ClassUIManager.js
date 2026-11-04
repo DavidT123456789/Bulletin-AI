@@ -3265,7 +3265,7 @@ export const ClassUIManager = {
                 <div class="modal-footer pick-students-modal-footer">
                     <button type="button" class="btn btn-secondary close-pick-modal-cancel">Annuler</button>
                     <button type="button" class="btn btn-primary" id="confirmPickStudentsBtn" disabled>
-                        <iconify-icon icon="solar:user-plus-bold"></iconify-icon>
+                        <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
                         <span id="confirmPickStudentsLabel">Sélectionnez des élèves</span>
                     </button>
                 </div>

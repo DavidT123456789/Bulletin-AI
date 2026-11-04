@@ -291,10 +291,7 @@ export const GeneralListeners = {
             e && e.stopPropagation(); // Prevent opening settings
 
             // 1. Cancel mass import if running
-            if (MassImportManager.massImportAbortController) {
-                MassImportManager.massImportAbortController.abort();
-                MassImportManager.massImportAbortController = null;
-            }
+            MassImportManager.cancelImport();
 
             // 2. Cancel Focus Panel active generations (refinements)
             if (FocusPanelManager._activeGenerations && FocusPanelManager._activeGenerations.size > 0) {

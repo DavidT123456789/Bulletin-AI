@@ -1,6 +1,6 @@
 /**
  * @fileoverview Relais Cloudflare Pages Function sans état (stateless pass-through)
- * vers la passerelle souveraine Albert API de l'État (https://albert.api.etalab.gouv.fr/v1).
+ * vers la passerelle gouvernementale souveraine Albert API (Gouv.fr / https://albert.api.etalab.gouv.fr/v1).
  *
  * Raison d'être :
  * Le serveur OpenGateLLM d'Etalab ne renvoie pas les en-têtes CORS (Access-Control-Allow-Origin)

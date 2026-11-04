@@ -901,6 +901,11 @@
     color: var(--text-primary);
 }
 
+.preview-model-badge iconify-icon {
+    color: var(--ai-icon-color);
+    font-size: 0.85rem;
+}
+
 .preview-empty-state {
     display: flex;
     flex-direction: column;

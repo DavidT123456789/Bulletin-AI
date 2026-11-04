@@ -438,7 +438,7 @@ export const FocusPanelHistory = {
         if (source === 'concise') {
             return {
                 title: 'Version concise',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Raffinement IA - Plus concise${modelInfo}`
             };
@@ -447,7 +447,7 @@ export const FocusPanelHistory = {
         if (source === 'detailed') {
             return {
                 title: 'Version détaillée',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Raffinement IA - Plus détaillée${modelInfo}`
             };
@@ -456,7 +456,7 @@ export const FocusPanelHistory = {
         if (source === 'encouraging') {
             return {
                 title: 'Version encourageante',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Raffinement IA - Plus encourageante${modelInfo}`
             };
@@ -465,7 +465,7 @@ export const FocusPanelHistory = {
         if (source === 'variation') {
             return {
                 title: 'Variation IA',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Variation générée par IA${modelInfo}`
             };
@@ -474,7 +474,7 @@ export const FocusPanelHistory = {
         if (source === 'regenerate') {
             return {
                 title: 'Régénération IA',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Régénéré par IA${modelInfo}`
             };
@@ -483,7 +483,7 @@ export const FocusPanelHistory = {
         if (sourceType === 'ai') {
             return {
                 title: isOriginal ? 'Génération initiale' : 'Génération IA',
-                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
                 typeClass: 'source-ai',
                 tooltip: `Généré par IA${modelInfo}`
             };

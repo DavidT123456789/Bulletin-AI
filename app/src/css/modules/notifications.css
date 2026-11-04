@@ -19,7 +19,7 @@
 
 /* Base Notification - Premium Solid Design */
 .notification {
-    padding: 16px 20px;
+    padding: 14px 16px;
     border-radius: var(--radius-md);
     font-weight: 500;
     transform: translateX(450px) scale(1);
@@ -30,18 +30,19 @@
         margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
         padding-top 0.35s cubic-bezier(0.16, 1, 0.3, 1),
         padding-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.2s ease,
         box-shadow 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     pointer-events: auto;
-    font-size: 14px;
+    font-size: 13.5px;
     background: var(--surface-color);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-default);
     box-shadow: var(--shadow-lg);
     box-sizing: border-box;
-    max-height: 150px; /* High enough for coalescing or multi-line toasts */
+    max-height: 160px; /* High enough for coalescing or multi-line toasts */
     overflow: hidden;
     position: relative;
     opacity: 0;
@@ -54,17 +55,17 @@
     transition: 
         transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         opacity 0.3s ease,
+        border-color 0.2s ease,
         box-shadow 0.3s ease;
 }
 
 /* Micro-interactions & Springs */
 .notification.show:hover {
-    transform: translateX(0) scale(1.02);
-    box-shadow: var(--shadow-xl);
+    border-color: var(--border-color-strong);
 }
 
-.notification.show:active {
-    transform: translateX(0) scale(0.97);
+.notification.show:active:not(:has(button:active)) {
+    transform: translateX(0) scale(0.985);
 }
 
 /* Elegant collapse transition to prevent Cumulative Layout Shift (CLS) */
@@ -80,7 +81,6 @@
 }
 
 /* Strong formatting within notification text */
-.notification > span:not(.notification-spinner):not(.notification-coalesce-badge),
 .notification .notification-message {
     line-height: 1.4;
     flex: 1;
@@ -173,9 +173,8 @@
     100% { transform: scale(1); }
 }
 
-/* Notification Icon Container - Supports iconify-icon and i */
-.notification > iconify-icon:first-child,
-.notification > i:first-child {
+/* Notification Icon Container */
+.notification > iconify-icon:first-child {
     width: 28px;
     height: 28px;
     display: flex;
@@ -188,36 +187,31 @@
 }
 
 /* Success - Solid with Emerald Accent */
-.notification.success > iconify-icon:first-child,
-.notification.success > i:first-child {
-    background: rgba(var(--success-rgb), 0.1);
+.notification.success > iconify-icon:first-child {
+    background: rgba(var(--success-rgb), 0.12);
     color: var(--success-color);
 }
 
 /* Error - Solid with Red Accent */
-.notification.error > iconify-icon:first-child,
-.notification.error > i:first-child {
-    background: rgba(var(--error-rgb), 0.1);
+.notification.error > iconify-icon:first-child {
+    background: rgba(var(--error-rgb), 0.12);
     color: var(--error-color);
 }
 
 /* Warning - Solid with Orange Accent */
-.notification.warning > iconify-icon:first-child,
-.notification.warning > i:first-child {
-    background: rgba(var(--warning-rgb), 0.1);
+.notification.warning > iconify-icon:first-child {
+    background: rgba(var(--warning-rgb), 0.12);
     color: var(--warning-color);
 }
 
 /* Info - Solid with Blue Accent */
-.notification.info > iconify-icon:first-child,
-.notification.info > i:first-child {
-    background: rgba(var(--info-rgb), 0.1);
+.notification.info > iconify-icon:first-child {
+    background: rgba(var(--info-rgb), 0.12);
     color: var(--info-color);
 }
 
 /* Prompt - Premium Solid Purple Accent (AI features) */
-.notification.prompt > iconify-icon:first-child,
-.notification.prompt > i:first-child {
+.notification.prompt > iconify-icon:first-child {
     background: var(--purple-light);
     color: var(--purple-color);
 }
@@ -244,8 +238,8 @@
 }
 
 [data-theme="dark"] .notification-spinner {
-    border-color: rgba(125, 211, 252, 0.2);
-    border-top-color: var(--color-sky-bright, #7dd3fc);
+    border-color: rgba(var(--primary-bright-rgb), 0.22);
+    border-top-color: var(--primary-bright);
 }
 
 @keyframes notificationSpin {
@@ -257,182 +251,81 @@
     }
 }
 
-.notification.loading > iconify-icon:first-child,
-.notification.loading > i:first-child {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    color: var(--primary-color);
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    min-height: 20px;
-    max-width: 20px;
-    max-height: 20px;
-    aspect-ratio: 1;
-    margin: 4px;
-    font-size: 20px;
-    animation: notificationSpin 0.75s linear infinite;
-    box-sizing: border-box;
-    flex: 0 0 20px !important;
-    will-change: transform;
-}
-
-[data-theme="dark"] .notification.loading > iconify-icon:first-child,
-[data-theme="dark"] .notification.loading > i:first-child {
-    color: var(--color-sky-bright, #7dd3fc);
-}
-
-/* Actionable (clickable) notifications */
-.notification.actionable {
-    cursor: pointer;
-}
-
-.notification.actionable u {
-    text-decoration-style: dotted;
-}
-
 /* Undo Notification - Action toast with countdown progress */
 .notification.notification-undo {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    min-width: 320px;
-    cursor: pointer;
-    max-height: 160px;
-    border-radius: var(--radius-md);
-    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+    padding-bottom: 16px;
 }
 
-.notification.notification-undo > iconify-icon:first-child,
-.notification.notification-undo > i:first-child {
-    width: 36px;
-    height: 36px;
-    font-size: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    align-self: center;
-}
-
-.notification.notification-undo.success > iconify-icon:first-child,
-.notification.notification-undo.success > i:first-child {
-    background: rgba(var(--success-rgb), 0.1);
-    color: var(--success-color);
-    border: 1px solid rgba(var(--success-rgb), 0.16);
-}
-
-.notification-undo-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    justify-content: center;
-}
-
-.notification-undo-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    line-height: 1.25;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-}
-
-.notification-undo-message {
-    font-size: 12.5px;
-    font-weight: 400;
-    line-height: 1.35;
-    color: var(--text-secondary);
-    word-break: break-word;
-}
-
-/* Action button (Annuler) — Matches app secondary button standards */
-.notification-undo-btn {
+/* Action & Undo Buttons — Unified neutral capsule button (SSOT) */
+.notification-undo-btn,
+.notification-action-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid var(--border-color-strong);
     color: var(--text-primary);
     font-weight: 500;
     font-size: 13px;
-    padding: 6px 14px;
+    padding: 6px 13px;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    white-space: nowrap;
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-fast);
     flex-shrink: 0;
     margin-left: auto;
     text-transform: none;
     line-height: 1.2;
 }
 
-[data-theme="dark"] .notification-undo-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.notification-undo-btn iconify-icon {
+.notification-undo-btn iconify-icon,
+.notification-action-btn iconify-icon {
     font-size: 14px;
     color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
-.notification-undo-btn:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--text-quaternary);
+.notification-undo-btn:hover,
+.notification-action-btn:hover {
+    background: var(--tonal-hover-bg);
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
 }
 
-[data-theme="dark"] .notification-undo-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
+.notification-undo-btn:hover iconify-icon,
+.notification-action-btn:hover iconify-icon {
+    color: var(--text-primary);
 }
 
-.notification-undo-btn:active {
-    transform: scale(0.97);
+.notification-undo-btn:active,
+.notification-action-btn:active {
+    transform: scale(0.96);
 }
 
-/* Warning undo button */
-.notification.warning .notification-undo-btn {
-    background: rgba(var(--warning-rgb), 0.08);
-    border: 1px solid var(--warning-color);
-    color: var(--warning-color);
-}
-
-.notification.warning .notification-undo-btn:hover {
-    background: rgba(var(--warning-rgb), 0.16);
-    color: var(--warning-color);
-    border-color: var(--warning-color);
-}
-
-/* Edge-to-edge docked progress bar */
+/* Inset bottom countdown progress bar (respects 16px corner curvature without double border) */
 .notification-undo-progress {
     position: absolute;
     bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 3px;
-    background: var(--bg-secondary);
+    left: 14px;
+    right: 14px;
+    height: 2.5px;
+    background: transparent;
+    border-radius: var(--radius-pill);
     overflow: hidden;
     margin: 0;
-}
-
-[data-theme="dark"] .notification-undo-progress {
-    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
 }
 
 .notification-undo-progress-fill {
     height: 100%;
     width: 100%;
     background: var(--warning-color);
-    opacity: 0.95;
+    border-radius: var(--radius-pill);
+    opacity: 0.9;
 }
 
 .notification.success .notification-undo-progress-fill {
@@ -440,52 +333,15 @@
 }
 
 .notification.info .notification-undo-progress-fill {
-    background: var(--primary-color);
+    background: var(--info-color);
 }
 
 .notification.error .notification-undo-progress-fill {
     background: var(--error-color);
 }
 
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-xs);
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg,
-            rgba(var(--primary-color-rgb), 0.8) 0%,
-            rgba(var(--primary-color-rgb), 0.8) 25%,
-            var(--glow-highlight) 50%,
-            rgba(var(--primary-color-rgb), 0.8) 75%,
-            rgba(var(--primary-color-rgb), 0.8) 100%);
-    background-size: 200% 100%;
-    border-radius: var(--radius-xs);
-    transition: width var(--transition-base);
-    width: 0%;
-    animation: shimmer-progress 2s ease-in-out infinite;
-}
-
-@keyframes shimmer-progress {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
-}
-
-.progress-text {
-    text-align: center;
-    margin-top: 8px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-weight: 500;
+.notification.prompt .notification-undo-progress-fill {
+    background: var(--purple-color);
 }
 
 .loading-overlay {
@@ -570,12 +426,8 @@
         transform: translateY(0) scale(1);
     }
 
-    .notification.show:hover {
-        transform: translateY(0) scale(1.02);
-    }
-
-    .notification.show:active {
-        transform: translateY(0) scale(0.97);
+    .notification.show:active:not(:has(button:active)) {
+        transform: translateY(0) scale(0.985);
     }
 
     .notification:not(.show) {
@@ -586,32 +438,4 @@
         padding-bottom: 0 !important;
         opacity: 0 !important;
     }
-}
-
-/* ── Notification Action Button (Gold Standard Mobile Undo) ── */
-.notification-action-btn {
-    margin-left: auto;
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s ease, transform 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-.notification-action-btn:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-}
-
-.notification-action-btn:active {
-    transform: scale(0.96);
 }

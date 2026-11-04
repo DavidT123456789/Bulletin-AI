@@ -56,12 +56,12 @@ const NOTIF_ICONS = {
     warning: '<iconify-icon icon="solar:danger-circle-bold" aria-hidden="true"></iconify-icon>',
     info: '<iconify-icon icon="solar:info-circle-bold" aria-hidden="true"></iconify-icon>',
     loading: '<span class="notification-spinner" aria-hidden="true"></span>',
-    prompt: '<iconify-icon icon="solar:magic-stick-3-bold-duotone" aria-hidden="true"></iconify-icon>'
+    prompt: '<iconify-icon icon="solar:stars-bold-duotone" aria-hidden="true"></iconify-icon>'
 };
 
 /** États visuels unifiés pour tous les boutons Générer / Régénérer / Actualiser de l'application. */
 const GENERATE_BUTTON_STATES = {
-    idle: { variant: 'btn-ai', icon: 'solar:magic-stick-3-bold-duotone', label: 'Générer', disabled: false },
+    idle: { variant: 'btn-ai', icon: 'solar:stars-bold-duotone', label: 'Générer', disabled: false },
     done: { variant: 'btn-neutral', icon: 'solar:refresh-bold', label: 'Régénérer', disabled: false },
     dirty: { variant: 'btn-warning', icon: 'solar:refresh-bold', label: 'Actualiser', disabled: false },
     loading: { variant: 'btn-neutral', icon: 'ph:spinner-gap-bold', label: 'Génération…', disabled: true, spin: true }
@@ -117,18 +117,119 @@ export const UI = {
     // ====================================================================
 
     /**
+     * Retourne (ou crée) le conteneur global des notifications toast.
+     * @returns {HTMLElement}
+     * @private
+     */
+    _getNotificationContainer() {
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    },
+
+    /**
+     * Extrait optionnellement un couple { title, subtitle } depuis un message structuré ("Titre : Détail").
+     * @param {string} message
+     * @param {string|null} [explicitTitle=null]
+     * @returns {{ title: string|null, subtitle: string }}
+     * @private
+     */
+    _parseNotificationContent(message, explicitTitle = null) {
+        let title = explicitTitle || null;
+        let subtitle = message ?? '';
+
+        if (!title && typeof message === 'string' && !message.includes('<div') && !message.includes('<br>')) {
+            const match = message.match(/^([^/:<>]{2,32}?)\s*:\s+(.+)$/);
+            if (match) {
+                const potentialTitle = match[1].trim();
+                const potentialSubtitle = match[2].trim();
+                if (!potentialTitle.includes('http') && potentialSubtitle.length > 0) {
+                    title = potentialTitle;
+                    subtitle = potentialSubtitle;
+                }
+            }
+        }
+        return { title, subtitle };
+    },
+
+    /**
+     * Construit le HTML interne du corps d'un toast (1 ligne directe en blanc ou 2 lignes Titre + Sous-titre).
+     * @param {string} message
+     * @param {string|null} [explicitTitle=null]
+     * @returns {string}
+     * @private
+     */
+    _buildNotificationBodyHtml(message, explicitTitle = null) {
+        const { title, subtitle } = this._parseNotificationContent(message, explicitTitle);
+        return title
+            ? `<div class="notification-content"><div class="notification-title">${title}</div><div class="notification-subtitle">${subtitle}</div></div>`
+            : `<span class="notification-message">${subtitle}</span>`;
+    },
+
+    /**
+     * Masque et retire proprement un toast du DOM ainsi que le conteneur s'il devient vide.
+     * @param {HTMLElement} notif
+     * @private
+     */
+    _dismissNotification(notif) {
+        if (!notif || notif.dataset.removing) return;
+        notif.dataset.removing = 'true';
+        if (notif._timeoutId) {
+            clearTimeout(notif._timeoutId);
+            notif._timeoutId = null;
+        }
+        NotificationCoalescer.unregister?.(notif);
+        notif.classList.remove('show');
+
+        setTimeout(() => {
+            const container = notif.parentNode;
+            notif.remove();
+            if (container && container.id === 'notification-container' && container.children.length === 0) {
+                container.remove();
+            }
+        }, 300);
+    },
+
+    /**
+     * Crée et attache le bouton d'action d'un toast s'il est défini dans les options.
+     * @param {HTMLElement} notif
+     * @param {{ label?: string, onClick?: Function }|undefined} action
+     * @param {Function} onDismiss
+     * @private
+     */
+    _attachNotificationActionButton(notif, action, onDismiss) {
+        notif.querySelector('.notification-action-btn')?.remove();
+        if (!action?.label) return;
+
+        const actionBtn = document.createElement('button');
+        actionBtn.className = 'notification-action-btn';
+        actionBtn.type = 'button';
+        actionBtn.textContent = action.label;
+        actionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try {
+                action.onClick?.();
+            } catch (err) {
+                console.error('[Notification] Action error:', err);
+            }
+            onDismiss();
+        });
+        notif.appendChild(actionBtn);
+    },
+
+    /**
      * Affiche une notification toast temporaire.
      * @param {string} message - Le message à afficher
-     * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
+     * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info, prompt, loading)
      * @param {number} [duration=4000] - Durée d'affichage en ms
+     * @param {Object} [coalescingOptions={}] - Options de regroupement, titre, icône ou bouton d'action
      */
     showNotification(message, type = 'success', duration = 4000, coalescingOptions = {}) {
-        const container = document.getElementById('notification-container') || (() => {
-            const c = document.createElement('div');
-            c.id = 'notification-container';
-            document.body.appendChild(c);
-            return c;
-        })();
+        const container = this._getNotificationContainer();
 
         // Prevent exact duplicate notifications (debounce 1s for same message)
         const timestamp = Date.now();
@@ -143,63 +244,33 @@ export const UI = {
         // Intelligent coalescing: evaluate if we should show, group, or queue
         const evaluation = NotificationCoalescer.evaluate(message, type, coalescingOptions);
 
-        if (evaluation.action === 'queue') return;
-        if (evaluation.action === 'skip') return;
+        if (evaluation.action === 'queue' || evaluation.action === 'skip') return;
 
         if (evaluation.action === 'coalesce' && evaluation.existingElement) {
             const el = evaluation.existingElement;
-            const groupKey = coalescingOptions.group || `${type}:${NotificationCoalescer._normalizeMessage(message)}`;
-            const groupData = NotificationCoalescer._activeGroups.get(groupKey);
-            if (groupData?.timeoutId) clearTimeout(groupData.timeoutId);
+            if (el._timeoutId) {
+                clearTimeout(el._timeoutId);
+                el._timeoutId = null;
+            }
+
+            const removeExisting = () => this._dismissNotification(el);
 
             if (coalescingOptions.replaceExisting) {
-                const titleEl = el.querySelector('.notification-title');
-                const subtitleEl = el.querySelector('.notification-subtitle');
-                const span = el.querySelector('.notification-message') || el.querySelector('span:not(.notification-spinner):not(.notification-coalesce-badge)');
-
-                if (coalescingOptions.title && titleEl) {
-                    titleEl.textContent = coalescingOptions.title;
-                    if (subtitleEl) subtitleEl.innerHTML = message;
-                } else if (subtitleEl) {
-                    subtitleEl.innerHTML = message;
-                } else if (span) {
-                    span.innerHTML = message;
+                const targetNode = el.querySelector('.notification-content, .notification-message');
+                if (targetNode) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = this._buildNotificationBodyHtml(message, coalescingOptions.title);
+                    targetNode.replaceWith(temp.firstElementChild);
                 }
-                const badge = el.querySelector('.notification-coalesce-badge');
-                if (badge) badge.remove();
 
-                const existingBtn = el.querySelector('.notification-action-btn');
-                if (existingBtn) existingBtn.remove();
-                if (coalescingOptions?.action?.label) {
-                    const actionBtn = document.createElement('button');
-                    actionBtn.className = 'notification-action-btn';
-                    actionBtn.type = 'button';
-                    actionBtn.textContent = coalescingOptions.action.label;
-                    actionBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        try {
-                            coalescingOptions.action.onClick?.();
-                        } catch (err) {
-                            console.error('[Notification] Action error:', err);
-                        }
-                        removeExisting();
-                    };
-                    el.appendChild(actionBtn);
-                }
+                el.querySelector('.notification-coalesce-badge')?.remove();
+                this._attachNotificationActionButton(el, coalescingOptions.action, removeExisting);
             } else {
                 NotificationCoalescer.updateBadge(el, evaluation.count);
             }
 
-            const removeExisting = () => {
-                if (el.dataset.removing) return;
-                el.dataset.removing = 'true';
-                el.classList.remove('show');
-                setTimeout(() => el.remove(), 300);
-            };
-
-            if (duration > 0 && duration !== Infinity) {
-                const newTimeout = setTimeout(removeExisting, duration);
-                if (groupData) groupData.timeoutId = newTimeout;
+            if (duration > 0 && duration !== Infinity && !el._isHovered) {
+                el._timeoutId = setTimeout(removeExisting, duration);
             }
             return { dismiss: removeExisting, element: el };
         }
@@ -221,75 +292,31 @@ export const UI = {
             ? `<iconify-icon icon="${coalescingOptions.icon}" aria-hidden="true"></iconify-icon>`
             : (NOTIF_ICONS[type] || NOTIF_ICONS.info);
 
-        let title = coalescingOptions?.title;
-        let subtitle = message;
+        const bodyHtml = this._buildNotificationBodyHtml(message, coalescingOptions?.title);
+        notif.innerHTML = `${iconHtml} ${bodyHtml}`;
 
-        // Auto-extract title from structured messages (e.g., "Erreur : ...", "Échec pour Thomas : ...", "Fichier invalide : ...")
-        if (!title && typeof message === 'string' && !message.includes('<div') && !message.includes('<br>')) {
-            const colonIndex = message.indexOf(' : ');
-            if (colonIndex > 0 && colonIndex <= 30) {
-                const potentialTitle = message.substring(0, colonIndex).trim();
-                const potentialSubtitle = message.substring(colonIndex + 3).trim();
-                if (!potentialTitle.includes('/') && !potentialTitle.includes('http') && potentialSubtitle.length > 0) {
-                    title = potentialTitle;
-                    subtitle = potentialSubtitle;
-                }
-            }
-        }
-
-        const bodyHtml = title
-            ? `<div class="notification-content"><div class="notification-title">${title}</div><div class="notification-subtitle">${subtitle}</div></div>`
-            : `<span class="notification-message">${message}</span>`;
-
-        const actionBtnHtml = coalescingOptions?.action?.label
-            ? `<button class="notification-action-btn" type="button">${coalescingOptions.action.label}</button>`
-            : '';
-
-        notif.innerHTML = `${iconHtml} ${bodyHtml} ${actionBtnHtml}`;
-
-        if (coalescingOptions?.action?.onClick) {
-            const actionBtn = notif.querySelector('.notification-action-btn');
-            if (actionBtn) {
-                actionBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    try {
-                        coalescingOptions.action.onClick();
-                    } catch (err) {
-                        console.error('[Notification] Action error:', err);
-                    }
-                    removeNotification();
-                });
-            }
-        }
+        const removeNotification = () => this._dismissNotification(notif);
+        this._attachNotificationActionButton(notif, coalescingOptions?.action, removeNotification);
 
         // Interaction: Click to dismiss
         notif.style.cursor = 'pointer';
         notif.onclick = () => removeNotification();
 
         // Interaction: Pause on hover
-        let timeoutId;
-
-        const removeNotification = () => {
-            if (notif.dataset.removing) return;
-            notif.dataset.removing = 'true';
-
-            notif.classList.remove('show');
-            setTimeout(() => {
-                if (notif.parentNode === container) container.removeChild(notif);
-                if (container.children.length === 0 && container.parentNode === document.body) {
-                    if (document.body.contains(container)) document.body.removeChild(container);
-                }
-            }, 300);
-        };
-
         const startTimer = () => {
+            notif._isHovered = false;
             if (duration > 0 && duration !== Infinity) {
-                timeoutId = setTimeout(removeNotification, duration);
+                if (notif._timeoutId) clearTimeout(notif._timeoutId);
+                notif._timeoutId = setTimeout(removeNotification, duration);
             }
         };
 
         const pauseTimer = () => {
-            if (timeoutId) clearTimeout(timeoutId);
+            notif._isHovered = true;
+            if (notif._timeoutId) {
+                clearTimeout(notif._timeoutId);
+                notif._timeoutId = null;
+            }
         };
 
         notif.addEventListener('mouseenter', pauseTimer);
@@ -301,7 +328,7 @@ export const UI = {
         requestAnimationFrame(() => {
             notif.classList.add('show');
             startTimer();
-            NotificationCoalescer.register(message, type, notif, timeoutId, coalescingOptions);
+            NotificationCoalescer.register(message, type, notif, coalescingOptions);
         });
 
         return { dismiss: removeNotification, element: notif };
@@ -313,40 +340,36 @@ export const UI = {
      * @param {string} message - Message affiché dans le toast
      * @param {Function} onUndo - Callback appelé si l'utilisateur annule
      * @param {Object} [options] - Options
-     * @param {number} [options.duration=8000] - Durée avant disparition (ms)
+     * @param {number} [options.duration=7000] - Durée avant disparition (ms)
      * @param {string} [options.type='warning'] - Type de notification
-     * @returns {{ cancel: Function }} Objet avec méthode cancel pour annuler programmatiquement
+     * @param {string|null} [options.title=null] - Titre optionnel au-dessus du message
+     * @returns {{ cancel: Function, dismiss: Function, element: HTMLElement }}
      */
     showUndoNotification(message, onUndo, options = {}) {
         const { duration = 7000, type = 'warning', title = null } = options;
+        const container = this._getNotificationContainer();
 
-        const container = document.getElementById('notification-container') || (() => {
-            const c = document.createElement('div');
-            c.id = 'notification-container';
-            document.body.appendChild(c);
-            return c;
-        })();
-
-        // Ensure only one undo notification exists at a time
-        container.querySelectorAll('.notification-undo').forEach(el => el.remove());
+        // Ensure only one undo notification exists at a time (clear any pending timer)
+        container.querySelectorAll('.notification-undo').forEach(el => {
+            if (el._timeoutId) clearTimeout(el._timeoutId);
+            el.remove();
+        });
 
         const notif = document.createElement('div');
         notif.className = `notification ${type} notification-undo`;
         notif.title = 'Cliquer pour masquer';
+        notif.style.cursor = 'pointer';
 
         // Accessibility (A11y) Roles
         notif.setAttribute('role', 'alert');
         notif.setAttribute('aria-live', 'assertive');
 
-        const titleHtml = title ? `<div class="notification-undo-title">${title}</div>` : '';
+        const bodyHtml = this._buildNotificationBodyHtml(message, title);
 
         notif.innerHTML = `
             ${NOTIF_ICONS[type] || NOTIF_ICONS.warning}
-            <div class="notification-undo-content">
-                ${titleHtml}
-                <div class="notification-undo-message">${message}</div>
-            </div>
-            <button class="notification-undo-btn" title="Annuler cette action">
+            ${bodyHtml}
+            <button class="notification-undo-btn" type="button" title="Annuler cette action">
                 <iconify-icon icon="solar:undo-left-round-linear" aria-hidden="true"></iconify-icon>
                 <span>Annuler</span>
             </button>
@@ -359,33 +382,29 @@ export const UI = {
 
         const progressFill = notif.querySelector('.notification-undo-progress-fill');
         let undone = false;
-        let timeoutId;
         let startTime;
         let remaining = duration;
 
-        const removeNotification = () => {
-            if (notif.dataset.removing) return;
-            notif.dataset.removing = 'true';
-            notif.classList.remove('show');
-            setTimeout(() => {
-                if (notif.parentNode === container) container.removeChild(notif);
-                if (container.children.length === 0 && container.parentNode === document.body) {
-                    if (document.body.contains(container)) document.body.removeChild(container);
-                }
-            }, 300);
-        };
+        const removeNotification = () => this._dismissNotification(notif);
 
         const startCountdown = () => {
+            if (undone || notif.dataset.removing) return;
+            void progressFill.offsetWidth;
             startTime = Date.now();
             progressFill.style.transition = `width ${remaining}ms linear`;
             progressFill.style.width = '0%';
-            timeoutId = setTimeout(() => {
+            if (notif._timeoutId) clearTimeout(notif._timeoutId);
+            notif._timeoutId = setTimeout(() => {
                 if (!undone) removeNotification();
             }, remaining);
         };
 
         const pauseCountdown = () => {
-            if (timeoutId) clearTimeout(timeoutId);
+            if (notif._timeoutId) {
+                clearTimeout(notif._timeoutId);
+                notif._timeoutId = null;
+            }
+            if (!startTime) return;
             const elapsed = Date.now() - startTime;
             remaining = Math.max(0, remaining - elapsed);
             const pct = (remaining / duration) * 100;
@@ -396,7 +415,10 @@ export const UI = {
         const handleUndo = () => {
             if (undone) return;
             undone = true;
-            if (timeoutId) clearTimeout(timeoutId);
+            if (notif._timeoutId) {
+                clearTimeout(notif._timeoutId);
+                notif._timeoutId = null;
+            }
             removeNotification();
             onUndo();
         };
@@ -420,7 +442,7 @@ export const UI = {
             requestAnimationFrame(() => startCountdown());
         });
 
-        return { cancel: handleUndo };
+        return { cancel: handleUndo, dismiss: removeNotification, element: notif };
     },
     /**
      * Affiche une modale de confirmation personnalisée.
@@ -976,7 +998,7 @@ export const UI = {
             }
             if (DOM.headerGenDashboard) {
                 DOM.headerGenDashboard.classList.add('unconfigured');
-                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (IA de l'État) ou Gemini (100% gratuit)</span>`;
+                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100% gratuit)</span>`;
                 if (TooltipsUI && TooltipsUI.updateTooltip) {
                     TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
                 } else {

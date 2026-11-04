@@ -29,6 +29,7 @@ export const MassImportManager = {
         const batchPeriod = appState.currentPeriod;
 
         this.massImportAbortController = new AbortController();
+        const signal = this.massImportAbortController.signal;
         appState.importJustCompleted = false;
         appState.activeMassAction = 'generate';
 
@@ -39,6 +40,7 @@ export const MassImportManager = {
         const pendingCards = this._createPendingCards(studentsToProcess, batchClassId);
 
         const failedImports = [];
+        let successCount = 0;
         let wasAborted = false;
 
         try {
@@ -51,7 +53,7 @@ export const MassImportManager = {
             UI.showHeaderProgress(0, studentsToProcess.length, 'Démarrage...');
 
             for (const [index, studentData] of studentsToProcess.entries()) {
-                if (this.massImportAbortController.signal.aborted) {
+                if (signal.aborted) {
                     wasAborted = true;
                     break;
                 }
@@ -79,7 +81,8 @@ export const MassImportManager = {
                 };
 
                 try {
-                    newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, this.massImportAbortController.signal);
+                    newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, signal);
+                    successCount++;
 
                     // Calculer et afficher le temps de génération
                     const generationTime = ((performance.now() - generationStartTime) / 1000).toFixed(1);
@@ -88,7 +91,7 @@ export const MassImportManager = {
                 } catch (e) {
                     // Vérifier si c'est une annulation (AbortError, signal aborted, ou message spécifique)
                     const isAborted = e.name === 'AbortError' ||
-                        this.massImportAbortController?.signal?.aborted ||
+                        signal.aborted ||
                         e.message?.toLowerCase().includes('annulé');
 
                     if (isAborted) {
@@ -120,7 +123,7 @@ export const MassImportManager = {
 
                         try {
                             if (AIService?.sleep) {
-                                await AIService.sleep(waitTime, this.massImportAbortController.signal);
+                                await AIService.sleep(waitTime, signal);
                             }
                         } catch (sleepError) {
                             if (sleepError.name === 'AbortError') {
@@ -215,9 +218,9 @@ export const MassImportManager = {
                 }
             }
 
+            const totalProcessed = studentsToProcess.length;
             if (!wasAborted) {
-                const totalProcessed = studentsToProcess.length;
-                let successMessage = `${totalProcessed - failedImports.length}/${totalProcessed} élèves traités.`;
+                let successMessage = `${successCount}/${totalProcessed} élèves traités.`;
                 if (ignoredCount > 0) successMessage += ` ${ignoredCount} ligne(s) ignorée(s).`;
 
                 if (failedImports.length > 0) {
@@ -225,14 +228,16 @@ export const MassImportManager = {
                 } else {
                     UI.showNotification(successMessage, 'success');
                 }
-                if (totalProcessed - failedImports.length > 0) {
+                if (successCount > 0) {
                     UI?.recordSupportMilestone?.('batch-complete');
                 }
                 appState.importJustCompleted = true;
                 if (DOM.massData) DOM.massData.value = '';
             } else {
-                // Notification d'annulation si pas déjà affichée
-                UI.showNotification("Import annulé par l'utilisateur.", 'warning');
+                const abortMsg = successCount > 0
+                    ? `Génération interrompue (${successCount}/${totalProcessed} générée${successCount > 1 ? 's' : ''}).`
+                    : 'Génération annulée.';
+                UI.showNotification(abortMsg, 'info');
             }
 
         } catch (e) {

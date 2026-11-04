@@ -321,7 +321,7 @@
     .selection-toolbar,
     #period-mismatch-container,
     .pwa-install-prompt,
-    .notification-container {
+    #notification-container {
         display: none !important;
     }
 

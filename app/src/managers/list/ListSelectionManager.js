@@ -775,77 +775,75 @@ export const ListSelectionManager = {
             await StorageManager.saveAppState();
             UI?.updateStats?.();
             const parts = [];
-            if (counts.appreciation > 0) parts.push(`${counts.appreciation} appréciation${counts.appreciation > 1 ? 's' : ''}`);
-            if (counts.journal > 0) parts.push(`${counts.journal} ${counts.journal > 1 ? 'journaux' : 'journal'}`);
-            if (counts.context > 0) parts.push(`${counts.context} contexte${counts.context > 1 ? 's' : ''}`);
-            if (counts.photo > 0) parts.push(`${counts.photo} photo${counts.photo > 1 ? 's' : ''}`);
+            const singleMessages = [];
+            if (counts.appreciation > 0) {
+                const s = counts.appreciation > 1 ? 's' : '';
+                parts.push(`${counts.appreciation} appréciation${s}`);
+                singleMessages.push(`${counts.appreciation} appréciation${s} effacée${s}.`);
+            }
+            if (counts.journal > 0) {
+                const isPlural = counts.journal > 1;
+                parts.push(`${counts.journal} ${isPlural ? 'journaux' : 'journal'}`);
+                singleMessages.push(`${counts.journal} ${isPlural ? 'journaux effacés' : 'journal effacé'}.`);
+            }
+            if (counts.context > 0) {
+                const s = counts.context > 1 ? 's' : '';
+                parts.push(`${counts.context} contexte${s}`);
+                singleMessages.push(`${counts.context} contexte${s} effacé${s}.`);
+            }
+            if (counts.photo > 0) {
+                const s = counts.photo > 1 ? 's' : '';
+                parts.push(`${counts.photo} photo${s}`);
+                singleMessages.push(`${counts.photo} photo${s} effacée${s}.`);
+            }
+
+            const undoMessage = parts.length === 1 ? singleMessages[0] : `${parts.join(', ')}.`;
+            const undoTitle = parts.length > 1 ? 'Données effacées' : null;
 
             // Show undo toast instead of simple notification
             UI?.showUndoNotification(
-                `Effacé : ${parts.join(', ')}.`,
+                undoMessage,
                 async () => {
                     // Restore snapshot
                     for (const [id, snap] of snapshots) {
                         const student = results.find(r => r.id === id);
                         if (!student) continue;
 
-                        if (clearAppreciation) {
-                            student.appreciation = snap.appreciation;
-                            if (student.studentData?.periods?.[currentPeriod]) {
-                                student.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
-                                student.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
-                            }
-                            student._lastModified = snap.lastModified;
-                            student.copied = snap.copied;
-                            student.promptHash = snap.promptHash;
-                            student.generationSnapshot = snap.generationSnapshot;
-                            student.generationPeriod = snap.generationPeriod;
-                            student.wasGenerated = snap.wasGenerated;
-                            student.historyState = snap.historyState;
-                            student.appreciationSource = snap.appreciationSource;
-                        }
-
-                        if (clearJournal) {
-                            student.journal = snap.journal;
-                        }
-
-                        if (clearContext && student.studentData?.periods?.[currentPeriod]) {
-                            student.studentData.periods[currentPeriod].context = snap.context;
-                        }
-
-                        if (clearPhoto) {
-                            student.studentPhoto = snap.studentPhoto;
-                            student._lastModified = snap.lastModified;
-                        }
-
-                        // Sync with appState.filteredResults in undo
-                        const filteredStudent = appState.filteredResults?.find(r => r.id === id);
-                        if (filteredStudent) {
+                        const restoreStudentFields = (target) => {
                             if (clearAppreciation) {
-                                filteredStudent.appreciation = snap.appreciation;
-                                if (filteredStudent.studentData?.periods?.[currentPeriod]) {
-                                    filteredStudent.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
-                                    filteredStudent.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
+                                target.appreciation = snap.appreciation;
+                                if (target.studentData?.periods?.[currentPeriod]) {
+                                    target.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
+                                    target.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
                                 }
-                                filteredStudent._lastModified = snap.lastModified;
-                                filteredStudent.copied = snap.copied;
-                                filteredStudent.promptHash = snap.promptHash;
-                                filteredStudent.generationSnapshot = snap.generationSnapshot;
-                                filteredStudent.generationPeriod = snap.generationPeriod;
-                                filteredStudent.wasGenerated = snap.wasGenerated;
-                                filteredStudent.historyState = snap.historyState;
-                                filteredStudent.appreciationSource = snap.appreciationSource;
+                                target._lastModified = snap.lastModified;
+                                target.copied = snap.copied;
+                                target.promptHash = snap.promptHash;
+                                target.generationSnapshot = snap.generationSnapshot;
+                                target.generationPeriod = snap.generationPeriod;
+                                target.wasGenerated = snap.wasGenerated;
+                                target.historyState = snap.historyState;
+                                target.appreciationSource = snap.appreciationSource;
                             }
+
                             if (clearJournal) {
-                                filteredStudent.journal = snap.journal;
+                                target.journal = snap.journal;
                             }
-                            if (clearContext && filteredStudent.studentData?.periods?.[currentPeriod]) {
-                                filteredStudent.studentData.periods[currentPeriod].context = snap.context;
+
+                            if (clearContext && target.studentData?.periods?.[currentPeriod]) {
+                                target.studentData.periods[currentPeriod].context = snap.context;
                             }
+
                             if (clearPhoto) {
-                                filteredStudent.studentPhoto = snap.studentPhoto;
-                                filteredStudent._lastModified = snap.lastModified;
+                                target.studentPhoto = snap.studentPhoto;
+                                target._lastModified = snap.lastModified;
                             }
+                        };
+
+                        restoreStudentFields(student);
+                        const filteredStudent = appState.filteredResults?.find(r => r.id === id);
+                        if (filteredStudent && filteredStudent !== student) {
+                            restoreStudentFields(filteredStudent);
                         }
 
                         this.callbacks.updateStudentRow(id);
@@ -855,7 +853,7 @@ export const ListSelectionManager = {
                     UI?.updateStats?.();
                     UI?.showNotification('Effacement annulé.', 'success');
                 },
-                { type: 'warning' }
+                { type: 'warning', title: undoTitle }
             );
         }
 

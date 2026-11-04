@@ -207,6 +207,16 @@
     <!-- Skip Link pour accessibilité WCAG -->
     <a href="#main-content" class="skip-link">Aller au contenu principal</a>
 
+    <!-- Sprite SVG partagé (icônes vectorielles mutualisées) -->
+    <svg style="display: none;" aria-hidden="true">
+        <symbol id="icon-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9.5" cy="6.25" r="3.75"></circle>
+            <path d="M17 17.25C17 19.6 17 21.5 9.5 21.5C2 21.5 2 19.6 2 17.25C2 14.9 5.36 13 9.5 13C13.64 13 17 14.9 17 17.25Z"></path>
+            <path d="M19.25 7.5V13M16.5 10.25H22"></path>
+        </symbol>
+    </svg>
+
     <!-- NOUVELLE STRUCTURE DE MISE EN PAGE PRINCIPALE -->
     <!-- Liste + Focus: Sidebar collapsed by default -->
     <div class="app-layout sidebar-collapsed app-loading">
@@ -377,7 +387,7 @@
                                 </button>
                                 <div class="menu-separator"></div>
                                 <button id="personalizationBtn" class="menu-item">
-                                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Personnalisation
+                                    <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Personnalisation
                                 </button>
                                 <button id="settingsButton" class="menu-item">
                                     <iconify-icon icon="solar:settings-linear"></iconify-icon> Paramètres
@@ -733,7 +743,9 @@
             <button id="addStudentFab" class="fab-add-student" data-mode="add" data-tooltip="Compléter la classe"
                 aria-label="Compléter la classe">
                 <span class="fab-icon-stack" aria-hidden="true">
-                    <iconify-icon class="fab-icon fab-icon-add" icon="solar:user-plus-linear"></iconify-icon>
+                    <svg class="fab-icon fab-icon-add" aria-hidden="true">
+                        <use href="#icon-user-plus"></use>
+                    </svg>
                     <iconify-icon class="fab-icon fab-icon-top" icon="solar:arrow-up-linear"></iconify-icon>
                 </span>
             </button>
@@ -977,7 +989,7 @@
                                 <span id="focusWordCount" class="word-count">0 mots</span>
                                 <!-- AI Indicator: Shows if AI-generated, with model/token details -->
                                 <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;">
-                                    ✨
+                                    <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                                 </span>
                                 <!-- Status Badge: Shows freshness state (generated, modified, pending) -->
                                 <span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>
@@ -1021,7 +1033,7 @@
                             </button>
                             <button id="focusGenerateBtn" class="btn btn-ai tooltip"
                                 data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
-                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <kbd class="kbd-hint">Ctrl ↵</kbd>
+                                <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Générer <kbd class="kbd-hint">Ctrl ↵</kbd>
                             </button>
                         </div>
                     </div>
@@ -1045,7 +1057,7 @@
                     <!-- RIGHT ZONE: Generate + Nav + Close -->
                     <div class="focus-analysis-header-right">
                         <button id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn">
-                            <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer
+                            <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                         </button>
 
                         <!-- Navigation Add -->
@@ -1490,7 +1502,7 @@
                 <!-- Individual Student Card -->
                 <div class="import-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
                     <div class="import-hub-icon">
-                        <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
+                        <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
                     </div>
                     <h3 class="import-hub-card-title">Individuel</h3>
                     <p class="import-hub-card-desc">Saisie manuelle</p>
@@ -1701,7 +1713,7 @@
             <div class="modal-header">
                 <h2 class="modal-title" id="personalizationModalTitle">
                     <span class="modal-title-icon"><iconify-icon
-                            icon="solar:magic-stick-3-bold"></iconify-icon></span>
+                            icon="solar:stars-bold-duotone"></iconify-icon></span>
                     <span class="modal-title-text">Personnalisation du style</span>
                 </h2>
                 <div class="modal-header-actions">
@@ -1879,7 +1891,7 @@
                                     </div>
                                     <button id="refreshPreviewBtn" class="btn btn-ai btn-small">
                                         <iconify-icon class="iconify-inline"
-                                            icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer
+                                            icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                     </button>
                                 </div>
                                 <div class="lab-result-card is-empty" id="settingsPreviewResultGroup" aria-live="polite">
@@ -2056,7 +2068,7 @@
                                                         <span class="api-key-provider"><iconify-icon
                                                                 class="iconify-inline provider-albert"
                                                                 icon="solar:shield-check-bold"
-                                                                style="color: var(--color-blue);"></iconify-icon> Albert API (État)</span>
+                                                                style="color: var(--color-blue);"></iconify-icon> Albert API (Gouv.fr)</span>
                                                         <span class="provider-status-badge status-unconfigured" id="albertStatusBadge">
                                                             <span class="status-dot"></span>
                                                             <span class="status-text">Non configuré</span>
@@ -2080,7 +2092,7 @@
                                                 <div class="api-key-actions">
                                                     <div class="api-key-input-container">
                                                         <input type="text" id="albertApiKey"
-                                                            placeholder="sk-..." aria-label="Clé API Albert (État français)">
+                                                            placeholder="sk-..." aria-label="Clé API Albert (Gouv.fr)">
                                                         <span id="albertApiKeyValidationIcon"
                                                             class="api-key-validation-icon"></span>
                                                     </div>
@@ -2877,7 +2889,7 @@
                                                 </span>
                                             </div>
                                             <div class="help-step-footer-row">
-                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Albert API</strong> (IA souveraine de l'État via ProConnect), <strong>Google Gemini</strong> ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
+                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Albert API</strong> (IA souveraine Gouv.fr via ProConnect), <strong>Google Gemini</strong> ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
                                                 <div class="help-btn-row">
                                                     <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                         <iconify-icon class="iconify-inline" icon="solar:shield-check-linear"></iconify-icon> Clé Albert (ProConnect)
@@ -2930,10 +2942,10 @@
                                             <div class="help-step3-grid">
                                                 <div class="help-step3-box">
                                                     <div class="help-step3-label">
-                                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                                        <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                                                         <span>En série ou élève par élève</span>
                                                     </div>
-                                                    <p>Baguette <span class="help-ui-pill is-ai"><iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> 28</span> en haut de liste pour toute la classe, ou clic sur un élève pour sa fiche.</p>
+                                                    <p>Bouton <span class="help-ui-pill is-ai"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> 28</span> en haut de liste pour toute la classe, ou clic sur un élève pour sa fiche.</p>
                                                 </div>
                                                 <div class="help-step3-box">
                                                     <div class="help-step3-label is-emerald">
@@ -2968,7 +2980,7 @@
                             <div class="help-interactive-demo" id="helpRefineDemo">
                                 <div class="help-demo-top">
                                     <div class="help-demo-title-group">
-                                        <span class="help-demo-eyebrow"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Panneau Focus · Essayez en direct</span>
+                                        <span class="help-demo-eyebrow"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Panneau Focus · Essayez en direct</span>
                                         <h3 class="help-demo-title">Cliquez sur une retouche pour tester son effet</h3>
                                     </div>
                                     <button type="button" class="help-demo-reset-pill" id="helpRefineResetBtn" hidden title="Revenir au premier jet">
@@ -3485,7 +3497,7 @@
                             <span class="welcome-title-gradient">Activez votre Assistant</span>
                         </h3>
                         <p class="welcome-subtitle-premium">
-                            Démarrage rapide avec <strong>Albert</strong> (IA souveraine de l'État via ProConnect) ou <strong>Gemini</strong>. Les moteurs locaux (Ollama) ou payants restent accessibles dans les Paramètres.
+                            Démarrage rapide avec <strong>Albert</strong> (IA souveraine Gouv.fr via ProConnect) ou <strong>Gemini</strong>. Les moteurs locaux (Ollama) ou payants restent accessibles dans les Paramètres.
                         </p>
                     </div>
 
@@ -3926,7 +3938,7 @@
         <div class="empty-state-hub">
             <div class="empty-state-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
                 <div class="empty-state-hub-icon">
-                    <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
+                    <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Individuel</h4>
@@ -4023,7 +4035,7 @@
                                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                                 </button>
                                 <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
-                                    <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer
+                                    <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                 </button>
                             </div>
                         </div>
@@ -4031,17 +4043,17 @@
                             <div class="ai-placeholder">
                                 <div class="ai-placeholder-glow"></div>
                                 <div class="ai-placeholder-icon">
-                                    <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                    <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                                 </div>
                                 <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
                                 <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
                                 <button class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
-                                    <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Démarrer l'analyse
+                                    <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
                                 </button>
                             </div>
                         </div>
                         <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;">
-                            <span class="refinement-label"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Affiner :</span>
+                            <span class="refinement-label"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Affiner :</span>
                             <button class="btn-refinement" data-refine-type="summarize">
                                 <iconify-icon icon="solar:document-text-linear"></iconify-icon> Résumer
                             </button>

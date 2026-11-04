@@ -523,12 +523,12 @@ export const ClassDashboardManager = {
                 <div class="ai-placeholder">
                     <div class="ai-placeholder-glow"></div>
                     <div class="ai-placeholder-icon">
-                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                        <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                     </div>
                     <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
                     <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
                     <button class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
-                        <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Démarrer l'analyse
+                        <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
                     </button>
                 </div>
             `;
@@ -799,7 +799,7 @@ export const ClassDashboardManager = {
             if (appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod) {
                 content.innerHTML = `
                     <div class="ai-placeholder">
-                        <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
+                        <div class="ai-placeholder-icon is-error"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
                         <p class="ai-placeholder-text">Erreur lors de la génération : ${Utils.escapeHtml(error.message)}</p>
                     </div>
                 `;

@@ -334,16 +334,10 @@
     color: var(--text-secondary);
 }
 
+/* Surface et icône mutualisées avec .btn-ai dans components.css */
 .help-ui-pill.is-ai {
-    background: var(--primary-color);
-    border-color: transparent;
     border-radius: var(--radius-pill);
-    color: #ffffff;
     padding: 1px 7px;
-}
-
-.help-ui-pill.is-ai iconify-icon {
-    color: inherit;
 }
 
 .help-ui-pill.is-emerald iconify-icon {

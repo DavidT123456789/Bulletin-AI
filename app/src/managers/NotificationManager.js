@@ -16,7 +16,7 @@ const COALESCE_WINDOW_MS = 5000;
 const VISIBILITY_SUMMARY_DELAY_MS = 300;
 
 export const NotificationCoalescer = {
-    /** @type {Map<string, {count: number, element: HTMLElement, timeoutId: number, lastMessage: string}>} */
+    /** @type {Map<string, {count: number, element: HTMLElement, cleanupTimerId: number, lastMessage: string}>} */
     _activeGroups: new Map(),
 
     /** @type {Array<{group: string, type: string, message: string, timestamp: number}>} */
@@ -51,22 +51,27 @@ export const NotificationCoalescer = {
      */
     evaluate(message, type, options = {}) {
         const group = options.group || `${type}:${this._normalizeMessage(message)}`;
+        const isPersistentLoading = type === 'loading';
 
-        if (this._tabHidden && !options.bypassCoalescing) {
+        if (this._tabHidden && !options.bypassCoalescing && !isPersistentLoading) {
             this._hiddenQueue.push({ group, type, message, timestamp: Date.now() });
             return { action: 'queue' };
         }
 
         const existing = this._activeGroups.get(group);
         if (existing && !options.bypassCoalescing) {
-            existing.count++;
-            existing.lastMessage = message;
-            return { action: 'coalesce', existingElement: existing.element, count: existing.count };
+            if (existing.element?.dataset?.removing || (existing.element && !existing.element.isConnected)) {
+                this._activeGroups.delete(group);
+            } else {
+                existing.count++;
+                existing.lastMessage = message;
+                return { action: 'coalesce', existingElement: existing.element, count: existing.count };
+            }
         }
 
         const container = document.getElementById('notification-container');
-        const visibleCount = container?.querySelectorAll('.notification.show')?.length || 0;
-        if (visibleCount >= MAX_VISIBLE_NOTIFICATIONS && !options.bypassCoalescing) {
+        const visibleCount = container?.querySelectorAll('.notification.show:not([data-removing])')?.length || 0;
+        if (visibleCount >= MAX_VISIBLE_NOTIFICATIONS && !options.bypassCoalescing && !isPersistentLoading) {
             this._hiddenQueue.push({ group, type, message, timestamp: Date.now() });
             return { action: 'queue' };
         }
@@ -79,26 +84,41 @@ export const NotificationCoalescer = {
      * @param {string} message - Original message
      * @param {string} type - Notification type
      * @param {HTMLElement} element - The DOM element
-     * @param {number} timeoutId - The auto-dismiss timeout ID
      * @param {Object} [options]
      * @param {string} [options.group] - Custom group key
      */
-    register(message, type, element, timeoutId, options = {}) {
+    register(message, type, element, options = {}) {
         if (!element) return;
         const group = options.group || `${type}:${this._normalizeMessage(message)}`;
 
+        const cleanup = () => {
+            const current = this._activeGroups.get(group);
+            if (current && current.element === element) {
+                this._activeGroups.delete(group);
+            }
+        };
+
+        const cleanupTimerId = setTimeout(cleanup, COALESCE_WINDOW_MS + 5000);
         this._activeGroups.set(group, {
             count: 1,
             element,
-            timeoutId,
+            cleanupTimerId,
             lastMessage: message
         });
+    },
 
-        const cleanup = () => this._activeGroups.delete(group);
-        element.addEventListener('transitionend', () => {
-            if (!element.classList.contains('show')) cleanup();
-        });
-        setTimeout(cleanup, COALESCE_WINDOW_MS + 5000);
+    /**
+     * Immediately unregisters a notification element when it begins dismissal.
+     * @param {HTMLElement} element - The notification element being dismissed
+     */
+    unregister(element) {
+        if (!element) return;
+        for (const [group, data] of this._activeGroups.entries()) {
+            if (data.element === element) {
+                if (data.cleanupTimerId) clearTimeout(data.cleanupTimerId);
+                this._activeGroups.delete(group);
+            }
+        }
     },
 
     /**
@@ -111,7 +131,12 @@ export const NotificationCoalescer = {
         if (!badge) {
             badge = document.createElement('span');
             badge.className = 'notification-coalesce-badge';
-            element.appendChild(badge);
+            const actionBtn = element.querySelector('.notification-action-btn, .notification-undo-btn');
+            if (actionBtn) {
+                element.insertBefore(badge, actionBtn);
+            } else {
+                element.appendChild(badge);
+            }
         }
 
         badge.textContent = `×${count}`;
@@ -171,7 +196,7 @@ export const NotificationCoalescer = {
      * @private
      */
     _normalizeMessage(message) {
-        return message
+        return String(message ?? '')
             .replace(/<[^>]*>/g, '')
             .replace(/\d+([.,]\d+)?/g, '#')
             .replace(/\s+/g, ' ')

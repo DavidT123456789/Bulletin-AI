@@ -86,6 +86,7 @@ const mockUI = {
 };
 
 import { MassImportManager } from './MassImportManager.js';
+import { ListViewManager } from './ListViewManager.js';
 import { appState } from '../state/State.js';
 
 describe('MassImportManager', () => {
@@ -191,6 +192,63 @@ describe('MassImportManager', () => {
             await MassImportManager.processMassImport(students, 0);
 
             expect(mockAm.renderResults).toHaveBeenCalled();
+        });
+
+        it('should handle user cancellation during row typewriter animation without throwing an error notification', async () => {
+            const students = [
+                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] },
+                { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 12 } }, statuses: [] }
+            ];
+
+            mockAm.generateAppreciation.mockImplementation(async (sd) => ({
+                id: 'gen-' + sd.nom,
+                appreciation: `Appréciation pour ${sd.prenom}`,
+                studentData: { ...sd, periods: { T1: { grade: sd.periods.T1.grade, appreciation: `Appréciation pour ${sd.prenom}` } } },
+                evolutions: []
+            }));
+
+            vi.spyOn(ListViewManager, 'updateRow').mockImplementation(async () => {
+                // L'utilisateur clique sur "Annuler" pendant l'animation typewriter du 1er élève
+                MassImportManager.cancelImport();
+            });
+
+            await MassImportManager.processMassImport(students, 0);
+
+            expect(mockAm.generateAppreciation).toHaveBeenCalledTimes(1);
+            expect(mockUI.showNotification).not.toHaveBeenCalledWith(
+                expect.stringContaining('erreur inattendue'),
+                'error'
+            );
+            expect(mockUI.showNotification).toHaveBeenCalledWith(
+                'Génération interrompue (1/2 générée).',
+                'info'
+            );
+            const lucas = appState.generatedResults.find(r => r.nom === 'MARTIN');
+            expect(lucas?.appreciation).toBe('Appréciation pour Lucas');
+        });
+
+        it('should display "Génération annulée." when cancelled during the first student generation', async () => {
+            const students = [
+                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
+            ];
+
+            mockAm.generateAppreciation.mockImplementation(async (_sd, _preview, _cfg, signal) => {
+                MassImportManager.cancelImport();
+                const abortErr = new Error('Opération annulée');
+                abortErr.name = 'AbortError';
+                if (signal?.aborted) throw abortErr;
+            });
+
+            await MassImportManager.processMassImport(students, 0);
+
+            expect(mockUI.showNotification).not.toHaveBeenCalledWith(
+                expect.stringContaining('erreur inattendue'),
+                'error'
+            );
+            expect(mockUI.showNotification).toHaveBeenCalledWith(
+                'Génération annulée.',
+                'info'
+            );
         });
     });
 

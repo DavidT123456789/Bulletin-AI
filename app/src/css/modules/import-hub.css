@@ -261,6 +261,13 @@
     margin-bottom: 10px;
 }
 
+.import-hub-icon svg,
+.empty-state-hub-icon svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+}
+
 /* === SEMANTIC ACCENTS (Pastille teintée au repos, carte Zinc neutre) === */
 .import-hub-card[data-action="individual"],
 .empty-state-hub-card[data-action="individual"] {

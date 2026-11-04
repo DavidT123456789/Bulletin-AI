@@ -9,7 +9,7 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <title>Bulletin AI | L'assistant numérique des enseignants</title>
     <meta name="description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. Compatible Albert (IA souveraine de l'État), gratuit et respectueux du RGPD.">
+        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. Compatible Albert (IA souveraine Gouv.fr), gratuit et respectueux du RGPD.">
 
     <meta property="og:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta property="og:description"
@@ -865,7 +865,7 @@
                         </li>
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:shield-star-linear" class="text-emerald-600 text-sm"></iconify-icon>
-                            Compatible IA de l'État (Albert)
+                            Compatible IA Gouv.fr (Albert)
                         </li>
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:check-circle-linear" class="text-emerald-600 text-sm"></iconify-icon>
@@ -990,7 +990,7 @@
                         </div>
                         <div class="text-center px-4">
                             <h3 class="text-lg font-semibold text-zinc-800 mb-2">Générez en un clic</h3>
-                            <p class="text-sm text-zinc-500 leading-relaxed">L'IA (Albert / État, Gemini, Mistral ou Ollama) rédige l'appréciation à partir de données pseudonymisées à la volée.</p>
+                            <p class="text-sm text-zinc-500 leading-relaxed">L'IA (Albert / Gouv.fr, Gemini, Mistral ou Ollama) rédige l'appréciation à partir de données pseudonymisées à la volée.</p>
                         </div>
                     </div>
 
@@ -1066,7 +1066,7 @@
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
                                     Les données sensibles (identités des élèves, notes brutes, photos) sont stockées
                                     <strong>exclusivement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, sans serveur intermédiaire, avec sauvegarde optionnelle sur votre propre Google Drive (clés API isolées). L'application
-                                    applique par défaut une <strong>pseudonymisation à la volée</strong> (masquage des noms/prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres) avant tout appel vers l'IA — compatible avec <strong>Albert API</strong> (infrastructure souveraine de l'État / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
+                                    applique par défaut une <strong>pseudonymisation à la volée</strong> (masquage des noms/prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres) avant tout appel vers l'IA — compatible avec <strong>Albert API</strong> (infrastructure gouvernementale souveraine Gouv.fr / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
                                 </div>
                             </div>
                         </div>
@@ -1086,7 +1086,7 @@
                         <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA souveraine de l'État français / DINUM, gratuite pour les enseignants via ProConnect), <strong>Mistral AI</strong>, <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi qu'OpenAI, Claude et
+                                    Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA gouvernementale souveraine Gouv.fr / DINUM, gratuite pour les enseignants via ProConnect), <strong>Mistral AI</strong>, <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi qu'OpenAI, Claude et
                                     OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
                                     100% hors ligne (Air-Gapped).
                                 </div>
@@ -1336,7 +1336,7 @@
             { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
             { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en cours, binômes ou îlots d\'activité et export PDF.', label: 'Spatial' },
             { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
-            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA de l\'État via ProConnect), Gemini, Groq, Mistral ou Ollama en local.', label: 'Flexible' },
+            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama en local.', label: 'Flexible' },
             { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
             { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },
             { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Sauvegarde Cloud', desc: 'Archivez vos bulletins (manuel). Zéro synchronisation cachée.', label: 'Stockage' }

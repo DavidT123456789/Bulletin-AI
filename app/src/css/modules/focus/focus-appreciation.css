@@ -524,8 +524,8 @@
 }
 
 .history-source-icon.source-ai {
-    color: var(--color-amber, #f59e0b);
-    background: rgba(245, 158, 11, 0.12);
+    color: var(--ai-icon-color);
+    background: var(--ai-icon-tint-bg);
 }
 
 .history-source-icon.source-manual {
@@ -726,25 +726,16 @@
     background: transparent;
     border: none;
     border-radius: 50%;
-    font-size: 13px;
+    font-size: 14px;
     cursor: help;
     transition: all var(--transition-fast);
-    color: rgba(251, 191, 36, 0.85);
+    color: var(--ai-icon-color);
     flex-shrink: 0;
 }
 
 .ai-indicator:hover {
     background: var(--item-hover-bg);
-    color: rgb(251, 191, 36);
-}
-
-[data-theme="dark"] .ai-indicator {
-    color: rgba(251, 191, 36, 0.9);
-}
-
-[data-theme="dark"] .ai-indicator:hover {
-    background: var(--item-hover-bg);
-    color: rgb(251, 191, 36);
+    color: var(--ai-icon-hover-color);
 }
 
 /* Source Indicator - Manual Edit (Pencil) */

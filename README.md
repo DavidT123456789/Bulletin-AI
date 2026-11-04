@@ -18,7 +18,7 @@ Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour
 
 ## ✨ Fonctionnalités
 
-- 🤖 **Génération IA multi-moteurs** — Compatible **Albert API** (IA souveraine de l'État / DINUM via ProConnect), Google Gemini, Groq Cloud, Mistral AI, OpenAI, Claude, OpenRouter et **Ollama** (100 % hors-ligne)
+- 🤖 **Génération IA multi-moteurs** — Compatible **Albert API** (IA souveraine Gouv.fr / DINUM via ProConnect), Google Gemini, Groq Cloud, Mistral AI, OpenAI, Claude, OpenRouter et **Ollama** (100 % hors-ligne)
 - 🛡️ **Pseudonymisation RGPD à la volée** — Masquage par défaut des prénoms (`[PRÉNOM]`), exclusion systématique des noms de famille et des photos, et traduction locale des statuts médico-scolaires (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`) en consignes pédagogiques neutres
 - 📊 **Import en masse** — Copier-coller depuis Pronote/Excel ou import de fichiers PDF/CSV
 - 🎨 **Personnalisation par matière** — Ton, longueur, voix, vocabulaire spécifique
@@ -81,7 +81,7 @@ npm run dev
 
 Chaque enseignant utilise sa propre clé personnelle (stockée uniquement dans son navigateur) :
 
-1. **Albert API — IA souveraine de l'État (recommandé, 100 % gratuit 🇫🇷)** :
+1. **Albert API — IA souveraine Gouv.fr (recommandé, 100 % gratuit 🇫🇷)** :
    - Se connecter via **ProConnect** (adresse académique) sur [albert.playground.etalab.gouv.fr](https://albert.playground.etalab.gouv.fr)
    - Générer une clé API personnelle (`sk-...`) et la coller dans l'application
 

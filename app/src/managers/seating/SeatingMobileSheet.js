@@ -193,7 +193,7 @@ export const SeatingMobileSheet = {
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                         </div>
-                        <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:user-plus-linear"></iconify-icon> Associer</span>
+                        <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Associer</span>
                     </button>
                 `).join('')}
             </div>

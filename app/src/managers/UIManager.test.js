@@ -214,6 +214,68 @@ describe('UIManager', () => {
             actionBtn.click();
             expect(actionClick).toHaveBeenCalled();
         });
+
+        it('should auto-extract title and subtitle for structured messages with colon (with or without space before colon)', () => {
+            document.body.innerHTML = '';
+            const first = UI.showNotification('Erreur : Connexion interrompue', 'error');
+            expect(first.element.querySelector('.notification-title')?.textContent).toBe('Erreur');
+            expect(first.element.querySelector('.notification-subtitle')?.textContent).toBe('Connexion interrompue');
+            first.dismiss();
+
+            const second = UI.showNotification('Erreur PDF: Fichier corrompu', 'error');
+            expect(second.element.querySelector('.notification-title')?.textContent).toBe('Erreur PDF');
+            expect(second.element.querySelector('.notification-subtitle')?.textContent).toBe('Fichier corrompu');
+            second.dismiss();
+        });
+
+        it('should not coalesce into a notification that is currently being dismissed', async () => {
+            const { NotificationCoalescer } = await import('./NotificationManager.js');
+            NotificationCoalescer.reset();
+            document.body.innerHTML = '';
+
+            const first = UI.showNotification('Action groupée 1', 'info', 4000, { group: 'batch-op' });
+            vi.runAllTimers();
+            first.dismiss();
+            expect(first.element.dataset.removing).toBe('true');
+
+            const second = UI.showNotification('Action groupée 2', 'info', 4000, { group: 'batch-op' });
+            expect(second.element).not.toBe(first.element);
+            expect(second.element.querySelector('.notification-coalesce-badge')).toBeNull();
+            second.dismiss();
+        });
+    });
+
+    describe('showUndoNotification', () => {
+        it('should render single-line message in primary .notification-message when no title is given', () => {
+            document.body.innerHTML = '';
+            const onUndo = vi.fn();
+            const handle = UI.showUndoNotification('19 appréciations effacées.', onUndo, { type: 'warning' });
+
+            expect(handle.element.classList.contains('notification-undo')).toBe(true);
+            expect(handle.element.classList.contains('warning')).toBe(true);
+            expect(handle.element.querySelector('.notification-message')?.textContent).toBe('19 appréciations effacées.');
+            expect(handle.element.querySelector('.notification-title')).toBeNull();
+
+            const undoBtn = handle.element.querySelector('.notification-undo-btn');
+            expect(undoBtn).not.toBeNull();
+            undoBtn.click();
+            expect(onUndo).toHaveBeenCalledTimes(1);
+            expect(handle.element.dataset.removing).toBe('true');
+        });
+
+        it('should render hierarchical .notification-title and .notification-subtitle when title is provided and keep only one undo toast active', () => {
+            document.body.innerHTML = '';
+            UI.showUndoNotification('Premier effacement.', vi.fn());
+            const second = UI.showUndoNotification('19 appréciations, 2 photos.', vi.fn(), {
+                type: 'warning',
+                title: 'Données effacées'
+            });
+
+            const allUndoToasts = document.querySelectorAll('.notification-undo');
+            expect(allUndoToasts.length).toBe(1);
+            expect(second.element.querySelector('.notification-title')?.textContent).toBe('Données effacées');
+            expect(second.element.querySelector('.notification-subtitle')?.textContent).toBe('19 appréciations, 2 photos.');
+        });
     });
 
     describe('showCustomConfirm', () => {
@@ -786,7 +848,7 @@ describe('UIManager', () => {
             expect(btn.classList.contains('btn-ai')).toBe(true);
             expect(btn.classList.contains('btn-ai-outline')).toBe(false);
             expect(btn.disabled).toBe(false);
-            expect(btn.innerHTML).toContain('solar:magic-stick-3-bold-duotone');
+            expect(btn.innerHTML).toContain('solar:stars-bold-duotone');
             expect(btn.textContent.trim()).toBe('Générer');
 
             UI.setGenerateButtonState(btn, 'done');

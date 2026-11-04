@@ -335,7 +335,7 @@ export const ListViewRenderer = {
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">
-                                <iconify-icon icon="solar:magic-stick-3-bold-duotone" class="smart-action-icon"></iconify-icon>
+                                <iconify-icon icon="solar:stars-bold-duotone" class="smart-action-icon"></iconify-icon>
                                 <span class="smart-action-badge" id="generateBadgeInline">0</span>
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})">

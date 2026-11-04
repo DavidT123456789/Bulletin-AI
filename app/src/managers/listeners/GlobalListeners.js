@@ -251,10 +251,13 @@ export const GlobalListeners = {
                 if (shortReason.length > 60) shortReason = shortReason.substring(0, 60) + '…';
 
                 UI.showNotification(
-                    `⚡ <strong>Fallback</strong> • ${shortOriginal} → ${shortUsed}<br>📋 <strong>Raison</strong> • ${shortReason}`,
+                    shortReason,
                     'warning',
                     4000,
-                    { group: 'fallback' }
+                    {
+                        group: 'fallback',
+                        title: `Modèle de repli : ${shortOriginal} → ${shortUsed}`
+                    }
                 );
             }
 
