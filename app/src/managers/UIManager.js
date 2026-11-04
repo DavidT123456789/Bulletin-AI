@@ -93,7 +93,7 @@ export const UI = {
         // Initialize animated gliders
         this.initGliders();
         if (!this._periodMediaQueryBound && typeof window !== 'undefined' && window.matchMedia) {
-            const mq = window.matchMedia('(max-width: 600px)');
+            const mq = window.matchMedia(this._compactPeriodMediaQuery);
             if (typeof mq?.addEventListener === 'function') {
                 mq.addEventListener('change', () => this.updatePeriodLabels());
                 this._periodMediaQueryBound = true;
@@ -545,8 +545,9 @@ export const UI = {
     /**
      * Met à jour le texte des labels de période (court pour inactif, complet pour sélectionné)
      */
+    _compactPeriodMediaQuery: '(max-width: 900px)',
     _isCompactMobilePeriod() {
-        return typeof window !== 'undefined' && Boolean(window.matchMedia?.('(max-width: 600px)')?.matches);
+        return typeof window !== 'undefined' && Boolean(window.matchMedia?.(this._compactPeriodMediaQuery)?.matches);
     },
     updatePeriodLabels() {
         const isCompactMobile = this._isCompactMobilePeriod();

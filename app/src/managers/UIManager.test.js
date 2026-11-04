@@ -719,8 +719,8 @@ describe('UIManager', () => {
         });
     });
 
-    describe('updatePeriodLabels - mobile compact labels (<= 600px)', () => {
-        it('should use short period labels (S1/T1) even for active period on compact mobile viewports', async () => {
+    describe('updatePeriodLabels - compact labels on mobile & small tablet (<= 900px)', () => {
+        it('should use short period labels (S1/T1) even for active period on compact viewports (<= 900px)', async () => {
             const { DOM } = await import('../utils/DOM.js');
             const selector = document.createElement('div');
             selector.id = 'mainPeriodSelector';
@@ -740,9 +740,9 @@ describe('UIManager', () => {
 
             const origMatchMedia = window.matchMedia;
             try {
-                // Simulate mobile viewport <= 600px
+                // Simulate mobile / small tablet viewport <= 900px
                 window.matchMedia = vi.fn().mockImplementation((query) => ({
-                    matches: query === '(max-width: 600px)',
+                    matches: query === '(max-width: 900px)',
                     addEventListener: vi.fn(),
                     removeEventListener: vi.fn()
                 }));

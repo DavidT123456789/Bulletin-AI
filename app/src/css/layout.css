@@ -229,8 +229,12 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     display: flex;
     align-items: center;
     gap: var(--space-4);
-    flex-shrink: 0;
+    flex-shrink: 1;
     min-width: 0;
+}
+
+#mainPeriodSelector {
+    flex-shrink: 0;
 }
 
 /* --- Zone Centrale : Perspective / Mode de visualisation (Liste ↔ Plan) --- */
@@ -244,6 +248,11 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     align-items: center;
     z-index: 2;
     pointer-events: auto;
+    flex-shrink: 0;
+}
+
+.header-center:not(:has(.view-toggle.visible)) {
+    display: none;
 }
 
 /* --- Zone Droite : Services IA, Outils & Menu Système --- */
@@ -272,7 +281,8 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     transition: all var(--transition-fast);
     box-shadow: none;
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+    min-width: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -356,6 +366,7 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     color: var(--text-tertiary);
     transition: transform var(--transition-fast), color var(--transition-fast);
     margin-left: 2px;
+    flex-shrink: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -914,9 +925,26 @@ button > .icon-spin-wrapper {
    Responsive Breakpoints
    ==================================================================== */
 
-/* Tablette Large (max-width: 1200px) - Sidebar removed */
+/* Tablette Large & Paysage (max-width: 1200px) */
+@media (max-width: 1200px) {
+    .header {
+        gap: 8px;
+    }
 
+    .header-left {
+        gap: var(--space-3);
+    }
 
+    .header-center {
+        position: static;
+        transform: none;
+        gap: 4px;
+    }
+
+    #headerClassName {
+        max-width: 170px;
+    }
+}
 
 /* Tablette Small / Phablet (max-width: 768px) */
 @media (max-width: 768px) {
@@ -955,7 +983,6 @@ button > .icon-spin-wrapper {
         flex-wrap: nowrap;
     }
 
-    .header-left,
     .header-center,
     .header-actions,
     .header-gen-dashboard,
@@ -965,23 +992,19 @@ button > .icon-spin-wrapper {
 
     .header-left {
         gap: 6px;
-        min-width: 0;
-    }
-
-    .header .class-selector-wrapper,
-    .header .header-context-chip {
-        min-width: 0;
-    }
-
-    .header-center {
-        position: static;
-        transform: none;
-        gap: 4px;
     }
 
     .header .header-context-chip {
         padding: 0 10px;
         gap: 6px;
+    }
+
+    #headerClassName {
+        max-width: 150px;
+    }
+
+    .class-chip .class-virtual-tag {
+        display: none !important;
     }
 
     .section-title {
@@ -1005,34 +1028,12 @@ button > .icon-spin-wrapper {
 }
 
 @media (max-width: 600px) {
-    .header-left,
-    .header .class-selector-wrapper,
-    .header .header-context-chip {
-        flex-shrink: 1;
-        min-width: 0;
-    }
-
-    .header .header-context-chip {
-        overflow: hidden;
-    }
-
-    #headerClassName {
-        flex: 1 1 auto;
-        min-width: 0;
-        max-width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .class-chip .class-virtual-tag,
     .class-chip .class-chevron,
     .header .class-chip .student-count-icon {
         display: none !important;
     }
 
     .header .class-chip .student-count-badge {
-        flex-shrink: 0;
         padding: 0 5.5px;
         min-width: 19px;
         height: 19px;
@@ -1211,6 +1212,12 @@ button > .icon-spin-wrapper {
 /* Header Class Chip Name Odometer Roll */
 #headerClassName {
     display: inline-block;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 @keyframes header-class-out-down {
