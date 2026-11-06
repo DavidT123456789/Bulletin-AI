@@ -765,12 +765,6 @@
     align-items: center;
 }
 
-.sync-toggle-label .toggle-switch input:focus-visible + .slider,
-.trombi-exclude-toggle-wrapper .toggle-switch input:focus-visible + .slider {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
 /* Panneau d'association restructuré avec header, liste flex et summary sticky */
 /* .trombi-assignment-panel definition moved to .trombi-split-view section for layout logic */
 

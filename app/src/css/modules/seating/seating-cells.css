@@ -10,8 +10,8 @@
     border: 1.5px dashed var(--border-color);
     border-radius: var(--sc-cell-radius, var(--radius-md));
     background: var(--bg-secondary);
-    transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease,
-                transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast),
+                transform 0.15s var(--ease-spring), box-shadow var(--transition-fast);
     cursor: default;
 }
 
@@ -957,10 +957,10 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     user-select: none;
     cursor: pointer;
     box-shadow: var(--shadow-sm);
-    transition: background 0.2s ease,
-                color 0.2s ease,
+    transition: background var(--transition-fast),
+                color var(--transition-fast),
                 transform 0.25s var(--ease-spring),
-                box-shadow 0.2s ease;
+                box-shadow var(--transition-fast);
 }
 
 .sc-desk:hover {
@@ -1108,8 +1108,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 @media (hover: hover) {
     .sc-onboarding-btn.primary:hover {
-        background-color: var(--primary-color);
-        background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+        background-color: color-mix(in srgb, var(--primary-color), white 9%);
         transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
     }
@@ -2555,10 +2554,10 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     position: relative;
     width: var(--toggle-width-small);
     height: var(--toggle-height-small);
-    background: var(--bg-secondary);
+    background: var(--toggle-track-off, var(--bg-secondary));
     border-radius: var(--radius-full);
     cursor: pointer;
-    transition: background 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: background-color var(--transition-fast);
     outline: none;
     padding: 0;
 }
@@ -2575,10 +2574,11 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     left: var(--toggle-inset-small);
     width: var(--toggle-knob-size-small);
     height: var(--toggle-knob-size-small);
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: var(--toggle-knob-off, #ffffff);
+    border-radius: var(--radius-pill, 50%);
+    box-shadow: var(--toggle-knob-shadow);
+    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.16s ease;
 }
 
 /* Checked/ON state knob position */
@@ -2587,14 +2587,32 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     background: var(--toggle-knob-on);
 }
 
+/* Micro-interaction haptique au clic/maintien (:active) */
+.sc-toggle-switch:active .sc-toggle-knob {
+    width: calc(var(--toggle-knob-size-small) + 2px);
+}
+
+.sc-toggle-switch[aria-checked="true"]:active .sc-toggle-knob {
+    transform: translateX(calc(var(--toggle-translate-small) - 2px));
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .sc-toggle-switch:hover {
+        background-color: var(--toggle-track-off-hover);
+    }
+    .sc-toggle-switch[aria-checked="true"]:hover {
+        background-color: var(--toggle-track-on-hover);
+    }
+}
+
 [data-theme="dark"] .sc-toggle-switch {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    background: var(--toggle-track-off, rgba(255, 255, 255, 0.12));
+    box-shadow: none;
 }
 
 [data-theme="dark"] .sc-toggle-switch[aria-checked="true"] {
     background: var(--toggle-track-on);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+    box-shadow: none;
 }
 
 /* Sidebar Actions */

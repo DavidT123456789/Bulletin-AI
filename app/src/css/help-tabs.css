@@ -1563,17 +1563,16 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 12px;
+    padding: 7px 13px;
     border-radius: var(--radius-full);
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     font-size: 0.84rem;
     font-weight: 500;
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
-    opacity: 0.78;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
     box-shadow: none;
     outline: none;
 }
@@ -1586,10 +1585,17 @@
     pointer-events: none;
 }
 
-.seating-dot-option:hover {
-    opacity: 1;
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    .seating-dot-option:hover {
+        color: var(--text-primary);
+    }
+    .seating-dot-option:not(.active):not(:has(input:checked)):hover {
+        background: var(--item-hover-bg-elevated, var(--bg-tertiary));
+    }
+}
+
+.seating-dot-option:active {
+    transform: scale(0.97);
 }
 
 /* Only show focus outline on keyboard navigation, never on mouse click */
@@ -1600,19 +1606,11 @@
 
 .seating-dot-option.active,
 .seating-dot-option:has(input:checked) {
-    opacity: 1;
-    background: var(--surface-color);
-    border-color: var(--text-tertiary);
+    background: var(--tonal-active-bg);
+    border-color: transparent;
     color: var(--text-primary);
     font-weight: 600;
-    box-shadow: none;
-}
-
-[data-theme="dark"] .seating-dot-option.active,
-[data-theme="dark"] .seating-dot-option:has(input:checked) {
-    background: var(--bg-tertiary);
-    border-color: rgba(255, 255, 255, 0.24);
-    box-shadow: none;
+    box-shadow: var(--shadow-sm);
 }
 
 .seating-dot-preview {
@@ -1620,15 +1618,27 @@
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    opacity: 0.75;
+    transition: opacity 0.18s ease;
+}
+
+[data-theme="dark"] .seating-dot-preview {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.seating-dot-option:hover .seating-dot-preview,
+.seating-dot-option.active .seating-dot-preview,
+.seating-dot-option:has(input:checked) .seating-dot-preview {
+    opacity: 1;
 }
 
 .seating-dot-preview--movements {
-    background: linear-gradient(135deg, var(--color-sky, #0ea5e9) 50%, var(--color-amber, #f59e0b) 50%);
+    background: linear-gradient(135deg, var(--color-sky, #0ea5e9) 49.5%, var(--color-amber, #f59e0b) 50.5%);
 }
 
 .seating-dot-preview--devices {
-    background: linear-gradient(135deg, var(--purple-color, #9333ea) 50%, var(--color-rose, #f43f5e) 50%);
+    background: linear-gradient(135deg, var(--purple-color, #9333ea) 49.5%, var(--color-rose, #f43f5e) 50.5%);
 }
 
 .seating-dot-preview--delegates {
@@ -1644,6 +1654,12 @@
     font-weight: 400;
     color: var(--text-tertiary);
     margin-left: 2px;
+    transition: color 0.18s ease;
+}
+
+.seating-dot-option.active .seating-dot-label small,
+.seating-dot-option:has(input:checked) .seating-dot-label small {
+    color: var(--text-secondary);
 }
 
 .seating-dot-check {
@@ -1651,7 +1667,7 @@
     color: var(--text-primary);
     opacity: 0;
     width: 0;
-    margin-left: -4px;
+    margin-left: -8px;
     transform: scale(0.6);
     transition: opacity 0.18s ease, width 0.18s ease, margin-left 0.18s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;

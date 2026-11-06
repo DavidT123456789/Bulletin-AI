@@ -314,8 +314,7 @@
 }
 
 .welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
-    background-color: var(--brand-primary);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+    background-color: color-mix(in srgb, var(--brand-primary), white 9%);
 }
 
 /* État "validé" : clé confirmée */

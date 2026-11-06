@@ -20,7 +20,7 @@
     padding: var(--space-6);
     /* Uniform padding on all 4 sides */
     box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
     position: relative;
     overflow: hidden;
     backface-visibility: hidden;
@@ -573,10 +573,9 @@
     padding: 0;
     border-radius: 50%;
     background-color: var(--primary-color);
-    background-image: linear-gradient(0deg, var(--primary-color), var(--primary-color));
     border: none;
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16), 0 2px 4px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -586,18 +585,17 @@
     overflow: hidden;
     forced-color-adjust: none;
     transition:
-        transform 0.35s var(--ease-spring),
-        background-color 0.25s var(--ease-material),
-        color 0.25s var(--ease-material),
-        box-shadow 0.25s var(--ease-material),
-        opacity 0.25s var(--ease-material);
+        transform 0.25s var(--ease-spring),
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
     z-index: 100;
 }
 
 [data-theme="dark"] .fab-add-student {
     --fab-primary-dark: color-mix(in srgb, var(--primary-color) 88%, #09090b);
     background-color: var(--fab-primary-dark);
-    background-image: linear-gradient(0deg, var(--fab-primary-dark), var(--fab-primary-dark));
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
@@ -610,23 +608,21 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 @media (hover: hover) and (pointer: fine) {
     .fab-add-student:hover {
         transform: translateY(-2px) scale(1.03);
-        background-color: var(--primary-hover);
-        background-image: linear-gradient(0deg, var(--primary-hover), var(--primary-hover));
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.20), 0 3px 6px rgba(15, 23, 42, 0.10);
+        background-color: color-mix(in srgb, var(--primary-color), white 9%);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16);
         color: #ffffff;
         outline: none;
     }
 
     [data-theme="dark"] .fab-add-student:hover {
         background-color: var(--primary-color);
-        background-image: linear-gradient(0deg, var(--primary-color), var(--primary-color));
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.50), 0 2px 4px rgba(0, 0, 0, 0.32);
     }
 }
 
 .fab-add-student:focus-visible {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.20), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
     outline: none;
 }
 
@@ -636,7 +632,7 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 
 .fab-add-student:active {
     transform: translateY(0) scale(0.95);
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
 }
 
 [data-theme="dark"] .fab-add-student:active {
@@ -646,15 +642,13 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 /* Morphed State: Scroll to Top (Matte Elevated Surface - Material 3 / One UI) */
 .fab-add-student.is-scroll-top {
     background-color: var(--surface-color);
-    background-image: linear-gradient(0deg, var(--surface-color), var(--surface-color));
     color: var(--text-primary);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.08), inset 0 0 0 1px var(--border-default);
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.12);
 }
 
 [data-theme="dark"] .fab-add-student.is-scroll-top {
     --fab-neutral-dark: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 12%);
     background-color: var(--fab-neutral-dark);
-    background-image: linear-gradient(0deg, var(--fab-neutral-dark), var(--fab-neutral-dark));
     color: var(--text-primary);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.28);
 }
@@ -662,14 +656,13 @@ body:has(.global-actions-dropdown.open) .fab-add-student {
 @media (hover: hover) and (pointer: fine) {
     .fab-add-student.is-scroll-top:hover {
         background-color: var(--bg-secondary);
-        background-image: linear-gradient(0deg, var(--bg-secondary), var(--bg-secondary));
         color: var(--text-primary);
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16);
     }
 
     [data-theme="dark"] .fab-add-student.is-scroll-top:hover {
         --fab-neutral-dark-hover: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 18%);
         background-color: var(--fab-neutral-dark-hover);
-        background-image: linear-gradient(0deg, var(--fab-neutral-dark-hover), var(--fab-neutral-dark-hover));
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.50), 0 2px 4px rgba(0, 0, 0, 0.32);
     }
 }

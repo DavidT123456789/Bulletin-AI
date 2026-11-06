@@ -74,7 +74,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-tertiary);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-subtle, var(--border-color));
     background: transparent;
 }
 
@@ -118,11 +118,17 @@
     transition: background-color var(--transition-fast);
 }
 
-.preview-row:hover {
-    background: var(--item-idle-bg);
+.preview-row td:first-child {
+    border-top-left-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
 }
 
-.preview-row.is-current {
+.preview-row td:last-child {
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+.preview-row:hover {
     background: var(--item-idle-bg);
 }
 
@@ -140,12 +146,17 @@
     font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    background: var(--tonal-bg);
-    color: var(--text-secondary);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-bright);
     border: none;
     margin-left: 6px;
     vertical-align: middle;
     line-height: 1.3;
+}
+
+[data-theme="dark"] .current-badge {
+    background: rgba(var(--primary-color-rgb), 0.18);
+    color: var(--primary-bright);
 }
 
 .pending-app-badge {

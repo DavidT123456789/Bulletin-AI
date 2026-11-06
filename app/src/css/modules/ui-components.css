@@ -12,7 +12,7 @@
     border-radius: var(--radius-md);
     margin-bottom: 16px;
     box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .ui-accordion:last-of-type {
@@ -784,5 +784,138 @@
     .period-mismatch-action .btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   UI TOGGLE SWITCH (iOS 2026 / Minimalist Tonal)
+   ========================================================================== */
+
+.toggle-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle-switch-container.compact {
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.toggle-switch-container label {
+    margin-bottom: 0;
+}
+
+.toggle-label-text {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin: 0;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: var(--toggle-width-default);
+    height: var(--toggle-height-default);
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.toggle-switch:has(input:disabled) {
+    cursor: not-allowed;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--toggle-track-off);
+    transition: background-color var(--transition-fast, 0.2s ease);
+    border-radius: var(--radius-xl);
+}
+
+.toggle-switch input:disabled + .slider {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.toggle-switch input:focus-visible + .slider {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.toggle-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: var(--toggle-knob-size-default);
+    width: var(--toggle-knob-size-default);
+    left: var(--toggle-inset-default);
+    bottom: var(--toggle-inset-default);
+    background: var(--toggle-knob-off, #ffffff);
+    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.16s ease;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--toggle-knob-shadow);
+}
+
+.toggle-switch input:checked + .slider {
+    background: var(--toggle-track-on);
+}
+
+.toggle-switch input:checked + .slider:before {
+    transform: translateX(var(--toggle-translate-default));
+    background: var(--toggle-knob-on, #ffffff);
+}
+
+/* Micro-interaction haptique au clic/maintien (:active) */
+.toggle-switch:active:not(:has(input:disabled)) .slider:before {
+    width: calc(var(--toggle-knob-size-default) + 3px);
+}
+
+.toggle-switch:active:not(:has(input:disabled)) input:checked + .slider:before {
+    transform: translateX(calc(var(--toggle-translate-default) - 3px));
+}
+
+/* --- Variante Small --- */
+.toggle-switch.small {
+    width: var(--toggle-width-small);
+    height: var(--toggle-height-small);
+    margin-right: 0;
+}
+
+.toggle-switch.small .slider:before {
+    height: var(--toggle-knob-size-small);
+    width: var(--toggle-knob-size-small);
+    left: var(--toggle-inset-small);
+    bottom: var(--toggle-inset-small);
+}
+
+.toggle-switch.small input:checked + .slider:before {
+    transform: translateX(var(--toggle-translate-small));
+}
+
+.toggle-switch.small:active:not(:has(input:disabled)) .slider:before {
+    width: calc(var(--toggle-knob-size-small) + 2px);
+}
+
+.toggle-switch.small:active:not(:has(input:disabled)) input:checked + .slider:before {
+    transform: translateX(calc(var(--toggle-translate-small) - 2px));
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .toggle-switch:hover:not(:has(input:disabled)) .slider {
+        background-color: var(--toggle-track-off-hover);
+    }
+    .toggle-switch:hover:not(:has(input:disabled)) input:checked + .slider {
+        background-color: var(--toggle-track-on-hover);
     }
 }

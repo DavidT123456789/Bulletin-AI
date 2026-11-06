@@ -54,10 +54,12 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdNegative: { value: '-1' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
         iaLengthSliderValue: { textContent: '' },
-        iaToneSlider: { value: '3' },
+        iaLengthSliderContainer: { style: { setProperty: vi.fn() } },
+        iaToneSlider: { min: '1', max: '5', value: '3' },
         iaToneToggle: { checked: false, disabled: false },
-        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
-        iaToneSliderValue: { textContent: '' },
+        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() }, style: { setProperty: vi.fn() } },
+        iaToneCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
+        iaToneSliderValue: { textContent: '', classList: { toggle: vi.fn() } },
         iaStyleInstructions: { value: '', disabled: false, classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaStyleInstructionsToggle: { checked: true },
         iaDiscipline: { value: '' },
@@ -266,6 +268,55 @@ describe('FormUIManager', () => {
             FormUI.syncStyleControls();
             expect(ticks[3].classList.toggle).toHaveBeenLastCalledWith('active', false);
         });
+
+        it('should calculate and set --slider-ratio for length slider', () => {
+            DOM.iaLengthSlider.value = '50';
+            DOM.iaLengthSlider.min = '10';
+            DOM.iaLengthSlider.max = '90';
+
+            FormUI.syncStyleControls();
+
+            // ratio = (50 - 10) / (90 - 10) = 40 / 80 = 0.5
+            expect(DOM.iaLengthSliderContainer.style.setProperty).toHaveBeenCalledWith('--slider-ratio', '0.5');
+        });
+
+        it('should mark passed ticks prior to the active tone tick when enableTone is true', () => {
+            const ticks = Array.from({ length: 5 }, () => ({ classList: { toggle: vi.fn() } }));
+            DOM.iaToneSliderContainer.querySelectorAll = vi.fn(() => ticks);
+            DOM.iaToneSlider.value = '4';
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: true } };
+            FormUI.syncStyleControls();
+
+            // Tone 4 means ticks 0, 1, 2 are passed
+            expect(ticks[0].classList.toggle).toHaveBeenCalledWith('passed', true);
+            expect(ticks[1].classList.toggle).toHaveBeenCalledWith('passed', true);
+            expect(ticks[2].classList.toggle).toHaveBeenCalledWith('passed', true);
+            expect(ticks[3].classList.toggle).toHaveBeenCalledWith('passed', false);
+            expect(ticks[4].classList.toggle).toHaveBeenCalledWith('passed', false);
+        });
+
+        it('should toggle disabled on tone container based on enableTone', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('disabled', true);
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', true);
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('disabled', false);
+            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', false);
+        });
+
+        it('should toggle open class on iaToneCollapsible based on enableTone', () => {
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', false);
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
+        });
     });
 
     describe('updateModelDescription()', () => {
@@ -289,6 +340,71 @@ describe('FormUIManager', () => {
             DOM.aiModelSelect.value = 'unknown-model';
             FormUI.updateModelDescription();
             expect(descEl.innerHTML).toBe('Description...');
+        });
+    });
+
+    describe('updateSpinnerBounds()', () => {
+        let decBtn;
+        let incBtn;
+        let input;
+        let wrapper;
+
+        beforeEach(() => {
+            decBtn = { disabled: false };
+            incBtn = { disabled: false };
+            wrapper = {
+                querySelector: vi.fn((selector) => {
+                    if (selector.includes('decrement')) return decBtn;
+                    if (selector.includes('increment')) return incBtn;
+                    return null;
+                })
+            };
+            input = {
+                value: '0.5',
+                min: '0',
+                max: '5',
+                closest: vi.fn(() => wrapper)
+            };
+        });
+
+        it('should enable both buttons when value is strictly between min and max', () => {
+            FormUI.updateSpinnerBounds(input);
+            expect(decBtn.disabled).toBe(false);
+            expect(incBtn.disabled).toBe(false);
+        });
+
+        it('should disable decrement button when value is <= min', () => {
+            input.value = '0';
+            FormUI.updateSpinnerBounds(input);
+            expect(decBtn.disabled).toBe(true);
+            expect(incBtn.disabled).toBe(false);
+        });
+
+        it('should disable increment button when value is >= max', () => {
+            input.value = '5';
+            FormUI.updateSpinnerBounds(input);
+            expect(decBtn.disabled).toBe(false);
+            expect(incBtn.disabled).toBe(true);
+        });
+
+        it('should handle negative bounds for recul stepper', () => {
+            input.value = '0';
+            input.min = '-5';
+            input.max = '0';
+            FormUI.updateSpinnerBounds(input);
+            expect(decBtn.disabled).toBe(false);
+            expect(incBtn.disabled).toBe(true);
+
+            input.value = '-5';
+            FormUI.updateSpinnerBounds(input);
+            expect(decBtn.disabled).toBe(true);
+            expect(incBtn.disabled).toBe(false);
+        });
+
+        it('should safely do nothing if input or wrapper is null', () => {
+            expect(() => FormUI.updateSpinnerBounds(null)).not.toThrow();
+            expect(() => FormUI.updateSpinnerBounds({ closest: () => null })).not.toThrow();
+            expect(() => FormUI.updateSpinnerBounds({})).not.toThrow();
         });
     });
 });

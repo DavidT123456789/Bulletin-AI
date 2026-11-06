@@ -1255,9 +1255,9 @@
     align-items: center;
     justify-content: center;
     padding: 2px 8px;
-    background: var(--bg-tertiary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     font-size: 0.85em;
     font-weight: 600;
     cursor: help;
@@ -1265,7 +1265,7 @@
 }
 
 .fallback-more-badge:hover {
-    background: var(--border-color);
+    background: var(--tonal-hover-bg);
     color: var(--text-primary);
 }
 
@@ -1863,6 +1863,7 @@
     font-weight: 500;
     border-radius: var(--radius-md);
     margin: 0 !important;
+    background-color: var(--modal-scene-bg, var(--bg-color));
 }
 
 .btn-icon-only,
@@ -1901,30 +1902,7 @@
     margin-bottom: -10px;
 }
 
-.toggle-switch.small {
-    width: var(--toggle-width-small);
-    height: var(--toggle-height-small);
-    margin-right: 0;
-}
 
-.toggle-switch.small .slider:before {
-    height: var(--toggle-knob-size-small);
-    width: var(--toggle-knob-size-small);
-    left: var(--toggle-inset-small);
-    bottom: var(--toggle-inset-small);
-}
-
-.toggle-switch.small input:checked+.slider:before {
-    transform: translateX(var(--toggle-translate-small));
-}
-
-.toggle-label-text {
-    font-size: 0.8em;
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    margin: 0;
-}
 
 .fallback-info {
     flex: 1;
@@ -2240,7 +2218,7 @@
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition: all 0.2s var(--ease-material);
+    transition: all var(--transition-fast);
     font-family: inherit;
     color: inherit;
 }

@@ -108,18 +108,25 @@ export const SettingsModalListeners = {
 
         const syncEvolutionThresholds = () => {
             if (DOM.settingsEvolutionThresholdPositive) {
-                const pos = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
-                if (!Number.isNaN(pos)) {
-                    appState.evolutionThresholds.positive = pos;
-                    appState.evolutionThresholds.veryPositive = pos * 4;
+                let pos = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
+                if (Number.isNaN(pos)) {
+                    pos = appState.evolutionThresholds?.positive ?? 0.5;
                 }
+                pos = Math.max(0, Math.round(pos * 10) / 10);
+                DOM.settingsEvolutionThresholdPositive.value = pos;
+                appState.evolutionThresholds.positive = pos;
+                appState.evolutionThresholds.veryPositive = Math.round(pos * 4 * 10) / 10;
+                FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdPositive);
             }
             if (DOM.settingsEvolutionThresholdNegative) {
-                const neg = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
-                if (!Number.isNaN(neg)) {
-                    appState.evolutionThresholds.negative = neg;
-                    appState.evolutionThresholds.veryNegative = neg * 4;
+                let neg = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
+                if (Number.isNaN(neg)) {
+                    neg = appState.evolutionThresholds?.negative ?? -0.5;
                 }
+                neg = Math.min(0, Math.round(neg * 10) / 10);
+                DOM.settingsEvolutionThresholdNegative.value = neg;
+                appState.evolutionThresholds.veryNegative = Math.round(neg * 4 * 10) / 10;
+                FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdNegative);
             }
             StorageManager.saveAppState();
             AppreciationsManager.renderResults();
@@ -866,10 +873,18 @@ export const SettingsModalListeners = {
             }
         });
 
+        // Empêche la prise de focus persistante à la souris sur les boutons du stepper
+        DOM.settingsModal.addEventListener('mousedown', (e) => {
+            if (e.target.closest?.('.number-spinner-btn')) {
+                e.preventDefault();
+            }
+        });
+
         // Gestion des boutons d'incrémentation/décrémentation personnalisés
         DOM.settingsModal.addEventListener('click', (e) => {
             const spinnerBtn = e.target.closest('.number-spinner-btn');
-            if (!spinnerBtn) return;
+            if (!spinnerBtn || spinnerBtn.disabled) return;
+            spinnerBtn.blur();
 
             const wrapper = spinnerBtn.closest('.number-input-wrapper');
             const input = wrapper?.querySelector('input[type="number"]');
@@ -887,8 +902,15 @@ export const SettingsModalListeners = {
             }
 
             input.value = Math.round(currentValue * 10) / 10;
+            FormUI.updateSpinnerBounds(input);
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        DOM.settingsModal.addEventListener('input', (e) => {
+            if (e.target?.matches?.('.number-input-wrapper input[type="number"]')) {
+                FormUI.updateSpinnerBounds(e.target);
+            }
         });
 
         DOM.settingsModal.addEventListener('keydown', (e) => {

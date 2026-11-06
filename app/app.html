@@ -1774,8 +1774,12 @@
                                         <output id="iaLengthSliderValue" class="settings-row-value"
                                             for="iaLengthSlider">~40 mots • ~260 car.</output>
                                     </div>
-                                    <div class="slider-container">
+                                    <div class="slider-container" id="iaLengthSliderContainer">
                                         <input type="range" id="iaLengthSlider" min="10" max="90" value="40" step="5">
+                                    </div>
+                                    <div class="lab-scale-legend">
+                                        <span>10 mots</span>
+                                        <span>90 mots</span>
                                     </div>
                                 </div>
                             </div>
@@ -1789,7 +1793,11 @@
                                 <div class="settings-row settings-row-field">
                                     <div class="settings-row-head">
                                         <div class="settings-row-info">
-                                            <label for="iaToneToggle" class="settings-row-title">Ton imposé</label>
+                                            <div class="settings-row-title-wrap">
+                                                <label for="iaToneToggle" class="settings-row-title">Ton imposé</label>
+                                                <output id="iaToneSliderValue" class="settings-row-value"
+                                                    for="iaToneSlider">Adaptatif (libre)</output>
+                                            </div>
                                             <span class="settings-row-desc">Désactivé, l'IA adapte le ton à chaque élève (félicitations, encouragements, conseils).</span>
                                         </div>
                                         <label class="toggle-switch small">
@@ -1797,21 +1805,17 @@
                                             <span class="slider"></span>
                                         </label>
                                     </div>
-                                    <div class="slider-container" id="iaToneSliderContainer">
-                                        <input type="range" id="iaToneSlider" min="1" max="5" value="3"
-                                            aria-label="Ton de l'appréciation" aria-describedby="iaToneSliderValue">
-                                        <div class="slider-ticks" aria-hidden="true">
-                                            <span class="tick"></span>
-                                            <span class="tick"></span>
-                                            <span class="tick"></span>
-                                            <span class="tick"></span>
-                                            <span class="tick"></span>
+                                    <div class="settings-collapsible-control" id="iaToneCollapsible">
+                                        <div class="settings-collapsible-inner">
+                                            <div class="slider-container" id="iaToneSliderContainer">
+                                                <input type="range" id="iaToneSlider" min="1" max="5" value="3"
+                                                    aria-label="Ton de l'appréciation" aria-describedby="iaToneSliderValue">
+                                            </div>
+                                            <div class="lab-scale-legend">
+                                                <span>Encourageant</span>
+                                                <span>Strict</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="lab-scale-legend">
-                                        <span>Encourageant</span>
-                                        <output id="iaToneSliderValue" for="iaToneSlider">Adaptatif (libre)</output>
-                                        <span>Strict</span>
                                     </div>
                                 </div>
 
@@ -2064,17 +2068,13 @@
                                 <small id="aiModelDescription" style="display: none;">Description du modèle sélectionné...</small>
                                 <form class="api-keys-container" action="javascript:void(0)" autocomplete="off">
                                     
-                                    <!-- CATÉGORIE 1: GRATUITS SANS CARTE BANCAIRE -->
+                                    <!-- CATÉGORIE 1: IA SOUVERAINE GOUV.FR -->
                                     <div class="settings-group">
                                         <div class="settings-group-header">
                                             <h4 class="settings-group-title">
-                                                Clés API — Gratuits & Recommandés
-                                                <span class="settings-group-tag">Sans carte bancaire</span>
+                                                IA Souveraine
+                                                <span class="settings-group-tag">Gouv.fr • ProConnect</span>
                                             </h4>
-                                            <button type="button" class="help-context-trigger" onclick="window.openHelpTab('help-data', 'help-faq-quota')">
-                                                <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
-                                                Aide & Quotas
-                                            </button>
                                         </div>
                                         <div class="settings-group-card settings-providers-card">
                                             <div class="api-key-section" id="albertApiKeyGroup">
@@ -2118,7 +2118,18 @@
                                                     style="display: none;">
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
 
+                                    <!-- CATÉGORIE 2: CLOUD RECOMMANDÉ SANS CARTE BANCAIRE -->
+                                    <div class="settings-group">
+                                        <div class="settings-group-header">
+                                            <h4 class="settings-group-title">
+                                                Cloud Recommandé
+                                                <span class="settings-group-tag">Sans carte bancaire</span>
+                                            </h4>
+                                        </div>
+                                        <div class="settings-group-card settings-providers-card">
                                             <div class="api-key-section" id="googleApiKeyGroup">
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
@@ -2539,7 +2550,7 @@
                                             <span class="settings-row-title">Pastilles de statut sur le plan</span>
                                             <span class="settings-row-desc">Choisissez les catégories signalées par un point coloré sur les photos du plan de classe.</span>
                                         </div>
-                                        <div class="seating-dots-selector" id="seatingStatusDotsSelector">
+                                        <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
                                             <label class="seating-dot-option active">
                                                 <input type="checkbox" data-dot-category="movements" checked>
                                                 <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
@@ -2715,11 +2726,11 @@
                                         </div>
                                         <div class="data-action-buttons">
                                             <button type="button" class="btn btn-primary btn-small tooltip" id="cloudSaveBtn" data-tooltip="Enregistrer les données locales sur Google Drive">
-                                                <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                                                <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
                                                 Sauvegarder
                                             </button>
                                             <button type="button" class="btn btn-secondary btn-small tooltip" id="cloudLoadBtn" data-tooltip="Récupérer et restaurer la sauvegarde depuis Google Drive">
-                                                <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                                                <iconify-icon icon="solar:cloud-download-linear"></iconify-icon>
                                                 Restaurer
                                             </button>
                                         </div>

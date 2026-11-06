@@ -88,7 +88,7 @@
     cursor: pointer;
     border-radius: var(--radius-pill);
     opacity: 0.5;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: all var(--transition-fast);
     z-index: 2;
 }
 
@@ -104,7 +104,7 @@
     cursor: pointer;
     user-select: none;
     position: relative;
-    transition: color 0.25s ease;
+    transition: color var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1691,7 +1691,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         justify-content: center;
         opacity: 1 !important;
         color: var(--text-secondary) !important;
-        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
+        transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
     }
 
     /* Actions line (Generate, Update) */

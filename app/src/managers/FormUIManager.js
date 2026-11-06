@@ -41,8 +41,14 @@ export const FormUI = {
             || DEFAULT_IA_CONFIG;
 
         DOM.periodSystemRadios.forEach(r => r.checked = r.value === appState.periodSystem);
-        DOM.settingsEvolutionThresholdPositive.value = appState.evolutionThresholds.positive;
-        DOM.settingsEvolutionThresholdNegative.value = appState.evolutionThresholds.negative;
+        if (DOM.settingsEvolutionThresholdPositive) {
+            DOM.settingsEvolutionThresholdPositive.value = appState.evolutionThresholds.positive;
+            this.updateSpinnerBounds(DOM.settingsEvolutionThresholdPositive);
+        }
+        if (DOM.settingsEvolutionThresholdNegative) {
+            DOM.settingsEvolutionThresholdNegative.value = appState.evolutionThresholds.negative;
+            this.updateSpinnerBounds(DOM.settingsEvolutionThresholdNegative);
+        }
 
         if (DOM.iaLengthSlider) DOM.iaLengthSlider.value = iaConfig.length;
         if (DOM.iaToneSlider) DOM.iaToneSlider.value = iaConfig.tone ?? 3;
@@ -138,12 +144,27 @@ export const FormUI = {
         if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
             const words = parseInt(DOM.iaLengthSlider.value, 10);
             DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${Math.round(words * APPROX_CHARS_PER_WORD)} car.`;
+            const min = parseInt(DOM.iaLengthSlider.min, 10) || 10;
+            const max = parseInt(DOM.iaLengthSlider.max, 10) || 90;
+            const ratio = max > min ? (words - min) / (max - min) : 0;
+            const lengthContainer = DOM.iaLengthSliderContainer || DOM.iaLengthSlider.closest?.('.slider-container');
+            lengthContainer?.style?.setProperty?.('--slider-ratio', String(ratio));
         }
 
         if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;
-        DOM.iaToneSliderContainer?.classList.toggle('opacity-reduced', !toneEnabled);
         const toneVal = parseInt(DOM.iaToneSlider?.value, 10) || 3;
+        if (DOM.iaToneSlider) {
+            const tMin = parseInt(DOM.iaToneSlider.min, 10) || 1;
+            const tMax = parseInt(DOM.iaToneSlider.max, 10) || 5;
+            const tRatio = tMax > tMin ? (toneVal - tMin) / (tMax - tMin) : 0.5;
+            const toneContainer = DOM.iaToneSliderContainer || DOM.iaToneSlider.closest?.('.slider-container');
+            toneContainer?.style?.setProperty?.('--slider-ratio', String(tRatio));
+        }
+        DOM.iaToneSliderContainer?.classList.toggle('opacity-reduced', !toneEnabled);
+        DOM.iaToneSliderContainer?.classList.toggle('disabled', !toneEnabled);
+        DOM.iaToneCollapsible?.classList.toggle('open', toneEnabled);
         DOM.iaToneSliderContainer?.querySelectorAll?.('.tick').forEach((tick, idx) => {
+            tick.classList.toggle('passed', toneEnabled && idx + 1 < toneVal);
             tick.classList.toggle('active', toneEnabled && idx + 1 === toneVal);
         });
         if (DOM.iaToneSliderValue) {
@@ -268,6 +289,23 @@ export const FormUI = {
             this._currentSettingsTab = tabName;
             onTransitionComplete();
         }, 400);
+    },
+
+    /**
+     * Met à jour l'état activé/désactivé des boutons d'un stepper selon les bornes min/max.
+     * @param {HTMLInputElement} input - Champ numérique dans le wrapper
+     */
+    updateSpinnerBounds(input) {
+        if (!input || typeof input.closest !== 'function') return;
+        const wrapper = input.closest('.number-input-wrapper');
+        if (!wrapper) return;
+        const val = parseFloat(input.value);
+        const min = input.min !== '' && input.min !== undefined ? parseFloat(input.min) : -Infinity;
+        const max = input.max !== '' && input.max !== undefined ? parseFloat(input.max) : Infinity;
+        const decBtn = wrapper.querySelector('.number-spinner-btn.decrement');
+        const incBtn = wrapper.querySelector('.number-spinner-btn.increment');
+        if (decBtn) decBtn.disabled = !Number.isNaN(val) && val <= min;
+        if (incBtn) incBtn.disabled = !Number.isNaN(val) && val >= max;
     },
 
 };

@@ -441,7 +441,7 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
 .menu-btn iconify-icon,
 .menu-btn i {
     font-size: 20px;
-    transition: color 0.2s ease, transform 0.2s ease;
+    transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {

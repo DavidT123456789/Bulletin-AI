@@ -690,7 +690,7 @@
     font-size: 12px;
     font-weight: 500;
     line-height: 1;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: all var(--transition-fast);
     cursor: pointer; /* Clickable: opens settings & length config */
     display: inline-flex;
     align-items: center;
@@ -958,7 +958,7 @@
     border-radius: 100px;
     font-size: 12px;
     font-weight: 500;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     gap: 7px;
