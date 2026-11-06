@@ -9,6 +9,7 @@ import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
+import { StudentDataManager } from '../StudentDataManager.js';
 
 export const ListViewRenderer = {
 
@@ -97,6 +98,7 @@ export const ListViewRenderer = {
      * @private
      */
     generateActionMenuHTML(studentId) {
+        const deleteMeta = StudentDataManager.getDeleteActionMeta(studentId);
         return `
             <div class="action-dropdown-menu">
                 <h5 class="dropdown-header">Appréciation</h5>
@@ -109,19 +111,40 @@ export const ListViewRenderer = {
                 
                 <h5 class="dropdown-header">Élève</h5>
                 <button class="action-dropdown-item" data-action="move-student">
-                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer / Copier
+                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Copier / Déplacer…
                 </button>
-                <button class="action-dropdown-item warning" data-action="reset-student">
-                    <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer...
+                <button class="action-dropdown-item" data-action="reset-student">
+                    <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer le contenu…
                 </button>
+                <div class="dropdown-divider" role="separator"></div>
                 <button class="action-dropdown-item danger" data-action="delete-student">
-                    <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> Supprimer
+                    <iconify-icon icon="${deleteMeta.menuIcon}"></iconify-icon> <span class="delete-action-label">${Utils.escapeHtml(deleteMeta.menuLabel)}</span>
                 </button>
             </div>
         `;
     },
 
+    /**
+     * Met à jour dynamiquement le libellé et l'icône de l'action de suppression/retrait
+     * juste avant l'ouverture du menu (ex: si l'élève vient d'être copié vers un groupe).
+     * @param {HTMLElement} menu - Élément `.action-dropdown-menu`
+     * @param {string} studentId - ID de l'élève
+     */
+    refreshDeleteMenuItem(menu, studentId) {
+        if (!menu || !studentId) return;
+        const deleteBtn = menu.querySelector('[data-action="delete-student"]');
+        if (!deleteBtn) return;
 
+        const meta = StudentDataManager.getDeleteActionMeta(studentId);
+        const iconEl = deleteBtn.querySelector('iconify-icon');
+        if (iconEl && meta.menuIcon) {
+            iconEl.setAttribute('icon', meta.menuIcon);
+        }
+        const labelEl = deleteBtn.querySelector('.delete-action-label');
+        if (labelEl) {
+            labelEl.textContent = meta.menuLabel;
+        }
+    },
 
     /**
      * Met à jour le contenu d'une ligne existante
@@ -201,10 +224,14 @@ export const ListViewRenderer = {
             statusCell.insertAdjacentHTML('afterend', newGradeCellsHtml);
         }
 
-        // Re-enable action button if it was disabled during generation
+        // Re-enable action button if it was disabled during generation and refresh delete label
         const actionBtn = row.querySelector('.btn-action-menu');
         if (actionBtn) {
             actionBtn.disabled = false;
+        }
+        const menu = row.querySelector('.action-dropdown-menu');
+        if (menu) {
+            this.refreshDeleteMenuItem(menu, result.id);
         }
     },
 

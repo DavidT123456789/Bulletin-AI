@@ -704,6 +704,57 @@ export const Utils = {
     },
 
     /**
+     * Génère la clé d'identité unique d'une personne (nom + prénom normalisés, insensible aux accents).
+     * Retourne une chaîne vide si nom et prénom sont absents.
+     * @param {string} nom - Nom de famille
+     * @param {string} prenom - Prénom
+     * @returns {string}
+     */
+    getStudentIdentityKey(nom, prenom) {
+        const rawNom = (nom || '').trim();
+        const rawPrenom = (prenom || '').trim();
+        if (!rawNom && !rawPrenom) return '';
+        return this.normalizeName(rawNom, rawPrenom)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    },
+
+    /**
+     * Compte le nombre d'élèves distincts (personnes uniques) à travers toutes les classes et groupes,
+     * afin de ne pas sur-compter un élève inscrit à la fois dans sa classe et dans un groupe.
+     * Les entrées anonymes (ex: stubs de test sans nom/prénom) sont comptées individuellement.
+     * @param {Array<Object>} results - Liste des fiches élèves (`generatedResults`)
+     * @param {Array<Object>|null} [classes=null] - Liste optionnelle des classes pour isoler la classe démo
+     * @returns {number}
+     */
+    countUniqueStudents(results, classes = null) {
+        if (!Array.isArray(results) || results.length === 0) return 0;
+
+        const demoClassIds = new Set();
+        if (Array.isArray(classes)) {
+            for (const cls of classes) {
+                if (cls?.id && (cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple')) {
+                    demoClassIds.add(cls.id);
+                }
+            }
+        }
+
+        const uniqueKeys = new Set();
+        for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            if (!r) continue;
+            const identityKey = this.getStudentIdentityKey(r.nom, r.prenom);
+            if (identityKey) {
+                const scope = (r.classId && demoClassIds.has(r.classId)) ? 'demo' : 'real';
+                uniqueKeys.add(`${scope}:${identityKey}`);
+            } else {
+                uniqueKeys.add(`anon:${r.id ?? i}`);
+            }
+        }
+        return uniqueKeys.size;
+    },
+
+    /**
      * Normalise un nom de classe pour comparaison tolérante (ex: "5°1", "5 1", "5ème 1", "5-1" -> "51")
      * @param {string} name - Nom de la classe
      * @returns {string} Nom normalisé

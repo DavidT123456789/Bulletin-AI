@@ -189,11 +189,6 @@
         color: var(--text-primary);
     }
 
-    .btn-selection-action.warning:hover {
-        background: var(--warning-light);
-        color: var(--color-amber);
-    }
-
     .btn-selection-action.danger:hover {
         background: var(--error-light);
         color: var(--error-color);

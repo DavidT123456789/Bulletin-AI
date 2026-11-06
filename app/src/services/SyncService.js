@@ -10,6 +10,7 @@ import { StorageManager } from '../managers/StorageManager.js';
 import { SettingsModalListeners } from '../managers/listeners/SettingsModalListeners.js';
 import { APP_VERSION } from '../config/Config.js';
 import { bus, EVENTS } from '../core/EventBus.js';
+import { Utils } from '../utils/Utils.js';
 
 /** @type {boolean} Enable debug logs (set to false for production) */
 const DEBUG = false;
@@ -403,12 +404,238 @@ export const SyncService = {
     _DRIFT_TOLERANCE_MS: 5000,
 
     /**
+     * Construit une empreinte compacte des affectations élèves/classes pour différencier
+     * un nouvel élève d'une simple inscription à un groupe ou d'un déplacement.
+     * @param {Array<Object>} [results=[]]
+     * @param {Array<Object>} [classes=[]]
+     * @returns {{ v: number, classes: Object<string, { name: string, isGroup: boolean, isDemo: boolean }>, entries: Array<[string, string]> }}
+     */
+    buildRosterSnapshot(results = [], classes = []) {
+        const safeResults = Array.isArray(results) ? results : [];
+        const safeClasses = Array.isArray(classes) ? classes : [];
+
+        const classesMeta = {};
+        const demoClassIds = new Set();
+
+        for (const cls of safeClasses) {
+            if (!cls?.id || String(cls.id).startsWith('virtual_')) continue;
+            const isDemo = cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
+            if (isDemo) demoClassIds.add(cls.id);
+            classesMeta[cls.id] = {
+                name: cls.name || '',
+                isGroup: Boolean(cls.isGroup || cls.type === 'group' || Utils.isGroupClassName(cls.name)),
+                isDemo
+            };
+        }
+
+        const entries = [];
+        const seen = new Set();
+
+        for (let i = 0; i < safeResults.length; i++) {
+            const r = safeResults[i];
+            if (!r) continue;
+            const classId = r.classId || '';
+            const identityKey = Utils.getStudentIdentityKey(r.nom, r.prenom);
+            let studentKey;
+            if (identityKey) {
+                const scope = (classId && demoClassIds.has(classId)) ? 'demo' : 'real';
+                studentKey = `${scope}:${identityKey}`;
+            } else {
+                studentKey = `anon:${r.id ?? i}`;
+            }
+            const pairKey = `${classId}\0${studentKey}`;
+            if (!seen.has(pairKey)) {
+                seen.add(pairKey);
+                entries.push([classId, studentKey]);
+            }
+        }
+
+        return { v: 1, classes: classesMeta, entries };
+    },
+
+    /**
+     * Compte le nombre d'élèves uniques dans un snapshot d'effectif.
+     * @param {Object|null} roster
+     * @returns {number}
+     */
+    countRosterUniqueStudents(roster) {
+        if (!roster || !Array.isArray(roster.entries)) return 0;
+        const keys = new Set();
+        for (const entry of roster.entries) {
+            if (Array.isArray(entry) && entry[1]) keys.add(entry[1]);
+        }
+        return keys.size;
+    },
+
+    /**
+     * Compare deux snapshots d'effectif (`baseRoster` -> `targetRoster`) et distingue :
+     * - les nouveaux élèves / élèves définitivement supprimés (personnes uniques),
+     * - les ajouts / retraits d'affectation à une classe ou un groupe (élèves déjà existants),
+     * - les déplacements d'une classe vers une autre,
+     * - les classes ou groupes créés / supprimés.
+     * @param {Object|null} baseRoster
+     * @param {Object|null} targetRoster
+     * @returns {Object|null}
+     */
+    diffRoster(baseRoster, targetRoster) {
+        if (!baseRoster || !targetRoster || !Array.isArray(baseRoster.entries) || !Array.isArray(targetRoster.entries)) {
+            return null;
+        }
+
+        const baseClasses = baseRoster.classes || {};
+        const targetClasses = targetRoster.classes || {};
+        const resolveClassInfo = (id) => targetClasses[id] || baseClasses[id] || { name: id || 'Sans classe', isGroup: false, isDemo: false };
+
+        const addedClasses = [];
+        const removedClasses = [];
+        const removedClassIds = new Set();
+
+        for (const [id, info] of Object.entries(targetClasses)) {
+            if (!baseClasses[id] && !info?.isDemo) {
+                addedClasses.push({ id, name: info?.name || id, isGroup: Boolean(info?.isGroup) });
+            }
+        }
+        for (const [id, info] of Object.entries(baseClasses)) {
+            if (!targetClasses[id] && !info?.isDemo) {
+                removedClasses.push({ id, name: info?.name || id, isGroup: Boolean(info?.isGroup) });
+                removedClassIds.add(id);
+            }
+        }
+
+        const baseByStudent = new Map();
+        for (const entry of baseRoster.entries) {
+            if (!Array.isArray(entry) || !entry[1]) continue;
+            const [classId, studentKey] = entry;
+            if (!baseByStudent.has(studentKey)) baseByStudent.set(studentKey, new Set());
+            if (classId) baseByStudent.get(studentKey).add(classId);
+        }
+
+        const targetByStudent = new Map();
+        for (const entry of targetRoster.entries) {
+            if (!Array.isArray(entry) || !entry[1]) continue;
+            const [classId, studentKey] = entry;
+            if (!targetByStudent.has(studentKey)) targetByStudent.set(studentKey, new Set());
+            if (classId) targetByStudent.get(studentKey).add(classId);
+        }
+
+        const hasRealTargetStudents = Array.from(targetByStudent.keys()).some(k => !k.startsWith('demo:'));
+
+        let newStudents = 0;
+        let removedStudents = 0;
+
+        for (const key of targetByStudent.keys()) {
+            if (!baseByStudent.has(key) && !key.startsWith('demo:')) {
+                newStudents++;
+            }
+        }
+        for (const key of baseByStudent.keys()) {
+            if (!targetByStudent.has(key)) {
+                if (!(key.startsWith('demo:') && hasRealTargetStudents)) {
+                    removedStudents++;
+                }
+            }
+        }
+
+        const addedByClass = new Map();
+        const removedByClass = new Map();
+        const movedByTarget = new Map();
+
+        for (const [studentKey, targetSet] of targetByStudent.entries()) {
+            const baseSet = baseByStudent.get(studentKey);
+            if (!baseSet || studentKey.startsWith('demo:')) continue;
+
+            const gained = [];
+            const lost = [];
+            for (const cId of targetSet) {
+                if (!baseSet.has(cId)) gained.push(cId);
+            }
+            for (const cId of baseSet) {
+                if (!targetSet.has(cId)) lost.push(cId);
+            }
+
+            if (gained.length === 1 && lost.length === 1) {
+                const toId = gained[0];
+                movedByTarget.set(toId, (movedByTarget.get(toId) || 0) + 1);
+            } else {
+                for (const cId of gained) {
+                    addedByClass.set(cId, (addedByClass.get(cId) || 0) + 1);
+                }
+                for (const cId of lost) {
+                    if (!removedClassIds.has(cId)) {
+                        removedByClass.set(cId, (removedByClass.get(cId) || 0) + 1);
+                    }
+                }
+            }
+        }
+
+        const addedEnrollments = Array.from(addedByClass.entries()).map(([classId, count]) => {
+            const info = resolveClassInfo(classId);
+            return { classId, className: info.name || classId, isGroup: Boolean(info.isGroup), count };
+        });
+
+        const removedEnrollments = Array.from(removedByClass.entries()).map(([classId, count]) => {
+            const info = resolveClassInfo(classId);
+            return { classId, className: info.name || classId, isGroup: Boolean(info.isGroup), count };
+        });
+
+        const movedEnrollments = Array.from(movedByTarget.entries()).map(([toClassId, count]) => {
+            const info = resolveClassInfo(toClassId);
+            return { toClassId, toClassName: info.name || toClassId, isGroup: Boolean(info.isGroup), count };
+        });
+
+        const hasAnyChange = newStudents > 0 ||
+            removedStudents > 0 ||
+            addedEnrollments.length > 0 ||
+            removedEnrollments.length > 0 ||
+            movedEnrollments.length > 0 ||
+            addedClasses.length > 0 ||
+            removedClasses.length > 0;
+
+        return {
+            newStudents,
+            removedStudents,
+            addedEnrollments,
+            removedEnrollments,
+            movedEnrollments,
+            addedClasses,
+            removedClasses,
+            hasAnyChange
+        };
+    },
+
+    /**
+     * Persiste le compteur d'élèves uniques, le nombre de classes et le snapshot d'affectations
+     * de la dernière synchronisation Cloud.
+     * @param {Array<Object>} [results=[]]
+     * @param {Array<Object>} [classes=[]]
+     * @private
+     */
+    _saveSyncRosterSnapshot(results = [], classes = []) {
+        const safeResults = Array.isArray(results) ? results : [];
+        const safeClasses = Array.isArray(classes)
+            ? classes.filter(c => c?.id && !String(c.id).startsWith('virtual_'))
+            : [];
+        const uniqueStudents = Utils.countUniqueStudents(safeResults, safeClasses);
+        const snapshot = this.buildRosterSnapshot(safeResults, safeClasses);
+
+        localStorage.setItem('bulletin_last_sync_students', uniqueStudents.toString());
+        localStorage.setItem('bulletin_last_sync_classes', safeClasses.length.toString());
+        try {
+            localStorage.setItem('bulletin_last_sync_roster', JSON.stringify(snapshot));
+        } catch (e) {
+            console.warn('[SyncService] Could not persist sync roster snapshot:', e);
+        }
+    },
+
+    /**
      * Compute sync state from 3 timestamps.
      * @returns {'in-sync'|'local-changes'|'cloud-changes'|'conflict'}
      * @private
      */
     _computeSyncState() {
-        const localStudentCount = runtimeState.data?.generatedResults?.length || 0;
+        const localResults = runtimeState.data?.generatedResults || [];
+        const localClasses = userSettings.academic?.classes || [];
+        const localStudentCount = Utils.countUniqueStudents(localResults, localClasses);
         const lastSyncStudents = this.getLastSyncStudentCount() || 0;
         if (runtimeState._dataPurgeDetected || (localStudentCount === 0 && lastSyncStudents > 0)) {
             return 'cloud-changes';
@@ -427,8 +654,14 @@ export const SyncService = {
                 lMod = lSync;
                 localStorage.setItem('bulletin_last_modified', lSync.toString());
             }
+            if (!localStorage.getItem('bulletin_last_sync_roster') && localResults.length > 0) {
+                this._saveSyncRosterSnapshot(localResults, localClasses);
+            }
         } else if (!syncHash && lSync > 0 && lMod <= lSync) {
             localStorage.setItem('bulletin_last_sync_hash', currentHash);
+            if (!localStorage.getItem('bulletin_last_sync_roster') && localResults.length > 0) {
+                this._saveSyncRosterSnapshot(localResults, localClasses);
+            }
         }
 
         const isHashChanged = Boolean(syncHash) && currentHash !== syncHash;
@@ -671,8 +904,7 @@ export const SyncService = {
         await this._provider.write(localData);
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
-        const studentCount = Array.isArray(localData.generatedResults) ? localData.generatedResults.length : 0;
-        localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
+        this._saveSyncRosterSnapshot(localData.generatedResults, localData.classes);
 
         // Update remote time since we just wrote the file
         this.remoteSyncTime = this.lastSyncTime;
@@ -700,13 +932,16 @@ export const SyncService = {
                 silent: true,
                 skipSnapshot: true
             });
-            importedCount = importRes?.stats?.imported ?? (remoteData.generatedResults?.length || 0);
+            importedCount = importRes?.stats?.imported ?? Utils.countUniqueStudents(remoteData?.generatedResults, remoteData?.classes);
         }
 
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
-        const downloadedStudents = Array.isArray(remoteData?.generatedResults) ? remoteData.generatedResults.length : importedCount;
-        localStorage.setItem('bulletin_last_sync_students', downloadedStudents.toString());
+        if (Array.isArray(remoteData?.generatedResults)) {
+            this._saveSyncRosterSnapshot(remoteData.generatedResults, remoteData.classes);
+        } else {
+            localStorage.setItem('bulletin_last_sync_students', importedCount.toString());
+        }
 
         // Update remote time to match since local is now strictly aligned with remote
         this.remoteSyncTime = this.lastSyncTime;
@@ -735,7 +970,7 @@ export const SyncService = {
     /**
      * Récupère un résumé de la sauvegarde Cloud distante sans l'appliquer.
      * Permet à l'interface d'afficher un comparatif avant confirmation.
-     * @returns {Promise<{success: boolean, remoteData?: Object, studentCount?: number, classCount?: number, timestamp?: number|null, providerLabel?: string}>}
+     * @returns {Promise<{success: boolean, remoteData?: Object, remoteRoster?: Object, studentCount?: number, classCount?: number, timestamp?: number|null, providerLabel?: string}>}
      */
     async getRemoteBackupSummary() {
         if (!this._provider) throw new Error('Aucun provider connecté');
@@ -745,8 +980,13 @@ export const SyncService = {
             return { success: false };
         }
 
-        const studentCount = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults.length : 0;
-        const classCount = Array.isArray(remoteData.classes) ? remoteData.classes.length : 0;
+        const remoteResults = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults : [];
+        const remoteClasses = Array.isArray(remoteData.classes)
+            ? remoteData.classes.filter(c => c?.id && !String(c.id).startsWith('virtual_'))
+            : [];
+        const studentCount = Utils.countUniqueStudents(remoteResults, remoteClasses);
+        const classCount = remoteClasses.length;
+        const remoteRoster = this.buildRosterSnapshot(remoteResults, remoteClasses);
 
         let timestamp = null;
         if (remoteData._meta?.exportedAt) {
@@ -759,13 +999,14 @@ export const SyncService = {
 
         const providerLabel = this.currentProviderName === 'google' ? 'Google Drive' : 'Cloud';
 
-        if (typeof studentCount === 'number' && studentCount > 0) {
+        if (typeof studentCount === 'number' && studentCount > 0 && !localStorage.getItem('bulletin_last_sync_roster')) {
             localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
         }
 
         return {
             success: true,
             remoteData,
+            remoteRoster,
             studentCount,
             classCount,
             timestamp,
@@ -774,12 +1015,38 @@ export const SyncService = {
     },
 
     /**
-     * Retourne le nombre d'élèves connu lors de la dernière synchronisation Cloud.
+     * Retourne le nombre d'élèves uniques connu lors de la dernière synchronisation Cloud.
      * @returns {number|null}
      */
     getLastSyncStudentCount() {
         const val = localStorage.getItem('bulletin_last_sync_students');
         return val ? parseInt(val, 10) : null;
+    },
+
+    /**
+     * Retourne le nombre de classes connu lors de la dernière synchronisation Cloud.
+     * @returns {number|null}
+     */
+    getLastSyncClassCount() {
+        const val = localStorage.getItem('bulletin_last_sync_classes');
+        if (val === null) return null;
+        const parsed = parseInt(val, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+    },
+
+    /**
+     * Retourne le snapshot d'affectations de la dernière synchronisation Cloud.
+     * @returns {Object|null}
+     */
+    getLastSyncRoster() {
+        const raw = localStorage.getItem('bulletin_last_sync_roster');
+        if (!raw) return null;
+        try {
+            const parsed = JSON.parse(raw);
+            return (parsed && Array.isArray(parsed.entries)) ? parsed : null;
+        } catch {
+            return null;
+        }
     },
 
     /**

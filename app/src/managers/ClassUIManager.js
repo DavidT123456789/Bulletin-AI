@@ -1640,7 +1640,7 @@ export const ClassUIManager = {
         }
 
         // UPDATE "Mes classes" title with class count & total students tooltip
-        const totalStudents = appState.generatedResults?.length || 0;
+        const totalStudents = Utils.countUniqueStudents(appState.generatedResults, allClasses);
         const classesCount = allClasses.length;
 
         const titleEl = DOM.classDropdownTitle || document.getElementById('classDropdownTitle');
@@ -1914,6 +1914,7 @@ export const ClassUIManager = {
         }
 
         const classes = ClassManager.getAllClasses();
+        const initialStudentCount = Utils.countUniqueStudents(appState.generatedResults, classes);
 
         const modalEl = document.createElement('div');
         modalEl.className = 'modal modal-small';
@@ -1925,7 +1926,7 @@ export const ClassUIManager = {
                         <span class="modal-title-icon"><iconify-icon icon="solar:layers-linear"></iconify-icon></span>
                         <div class="modal-title-text-col">
                             <h2 class="modal-title-main">Mes classes</h2>
-                            <span class="modal-subtitle">${classes.length} classe${classes.length > 1 ? 's' : ''} • ${appState.generatedResults?.length || 0} élève${(appState.generatedResults?.length || 0) > 1 ? 's' : ''}</span>
+                            <span class="modal-subtitle">${classes.length} classe${classes.length > 1 ? 's' : ''} • ${initialStudentCount} élève${initialStudentCount > 1 ? 's' : ''}</span>
                         </div>
                     </div>
                     <div class="modal-header-actions">
@@ -2614,7 +2615,7 @@ export const ClassUIManager = {
                 e.stopPropagation();
                 moreMenu.classList.remove('open');
 
-                const totalStudents = appState.generatedResults?.length || 0;
+                const totalStudents = Utils.countUniqueStudents(appState.generatedResults, currentClasses);
                 const classLabel = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''}`;
                 const studentPart = totalStudents > 0
                     ? ` ainsi que les <strong>${totalStudents} élève${totalStudents > 1 ? 's' : ''}</strong> associés`
@@ -2656,7 +2657,7 @@ export const ClassUIManager = {
             const allSameYear = currentClasses.length > 0 && currentClasses.every(c => (c.year || primaryYear) === primaryYear);
 
             if (subtitle) {
-                const studentCount = appState.generatedResults?.length || 0;
+                const studentCount = Utils.countUniqueStudents(appState.generatedResults, currentClasses);
                 const baseSubtitle = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''} • ${studentCount} élève${studentCount > 1 ? 's' : ''}`;
                 subtitle.textContent = allSameYear ? `${baseSubtitle} • ${primaryYear}` : baseSubtitle;
             }

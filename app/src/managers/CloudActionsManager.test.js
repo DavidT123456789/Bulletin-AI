@@ -14,6 +14,11 @@ const SyncServiceMock = vi.hoisted(() => ({
     _lastSyncState: 'local-changes',
     currentProviderName: 'google',
     lastSyncTime: 1000,
+    getLastSyncClassCount: vi.fn(() => null),
+    getLastSyncRoster: vi.fn(() => null),
+    countRosterUniqueStudents: vi.fn(),
+    buildRosterSnapshot: vi.fn(),
+    diffRoster: vi.fn(),
     remoteSyncTime: 2000
 }));
 
@@ -44,6 +49,7 @@ vi.mock('./RestoreTransitionManager.js', () => ({
 vi.mock('../utils/DOM.js', () => ({ DOM: { headerMenuBtn: null } }));
 
 vi.mock('../state/State.js', () => ({
+    appState: { classes: [], generatedResults: [] },
     runtimeState: { data: { generatedResults: [] }, _dataPurgeDetected: false },
     userSettings: { academic: { classes: [] } }
 }));
@@ -279,6 +285,72 @@ describe('CloudActionsManager', () => {
             expect(await CloudActionsManager.restore()).toBe(true);
             expect(SyncServiceMock.connect).toHaveBeenCalledWith('google');
             expect(SyncServiceMock.getRemoteBackupSummary).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('shared group students (unique count & rosterDiff)', () => {
+        it('should count shared students once and pass rosterDiff without false shrinkage when saving or restoring', async () => {
+            userSettings.academic.classes = [
+                { id: 'c-31', name: '3°1', isGroup: false },
+                { id: 'g-papd', name: 'PAPD', isGroup: true }
+            ];
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                { id: 's2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g-papd' },
+                { id: 's3', nom: 'BARE', prenom: 'Timéo', classId: 'c-31' }
+            ];
+
+            const fakeRoster = {
+                v: 1,
+                classes: { 'c-31': { name: '3°1', isGroup: false }, 'g-papd': { name: 'PAPD', isGroup: true } },
+                entries: [['c-31', 'real:mirzai-brikhna'], ['c-31', 'real:bare-timeo']]
+            };
+            const fakeDiff = {
+                newStudents: 0,
+                removedStudents: 0,
+                addedEnrollments: [{ classId: 'g-papd', className: 'PAPD', isGroup: true, count: 1 }],
+                removedEnrollments: [],
+                movedEnrollments: [],
+                addedClasses: [],
+                removedClasses: [],
+                hasAnyChange: true
+            };
+
+            SyncServiceMock.getLastSyncRoster.mockReturnValue(fakeRoster);
+            SyncServiceMock.getLastSyncClassCount.mockReturnValue(2);
+            SyncServiceMock.countRosterUniqueStudents.mockReturnValue(2);
+            SyncServiceMock.buildRosterSnapshot.mockReturnValue({ entries: [] });
+            SyncServiceMock.diffRoster.mockReturnValue(fakeDiff);
+
+            await CloudActionsManager.save();
+
+            expect(UI.showSaveConfirmationModal).toHaveBeenCalledWith(expect.objectContaining({
+                localStudentCount: 2,
+                localClassCount: 2,
+                remoteStudentCount: 2,
+                remoteClassCount: 2,
+                rosterDiff: fakeDiff,
+                isInSync: false
+            }));
+
+            SyncServiceMock.getRemoteBackupSummary.mockResolvedValueOnce(summary({
+                studentCount: 2,
+                classCount: 2,
+                remoteRoster: fakeRoster
+            }));
+
+            await CloudActionsManager.restore();
+
+            expect(UI.showRestoreConfirmationModal).toHaveBeenCalledWith(expect.objectContaining({
+                localStudentCount: 2,
+                localClassCount: 2,
+                remoteStudentCount: 2,
+                remoteClassCount: 2,
+                rosterDiff: fakeDiff
+            }));
+
+            SyncServiceMock.getLastSyncRoster.mockReturnValue(null);
+            SyncServiceMock.getLastSyncClassCount.mockReturnValue(null);
         });
     });
 

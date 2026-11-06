@@ -164,6 +164,12 @@ export const ListViewEvents = {
                 clearTimeout(parseInt(menu.dataset.closeTimeout));
                 delete menu.dataset.closeTimeout;
             }
+            if (dropdown?.classList.contains('action-dropdown')) {
+                const studentId = dropdown.closest('.student-row')?.dataset.studentId;
+                if (studentId) {
+                    ListViewRenderer.refreshDeleteMenuItem?.(menu, studentId);
+                }
+            }
             menu.style.maxHeight = availableSpace > 120 ? `${Math.floor(availableSpace)}px` : '';
             menu.scrollTop = 0;
             menu.classList.add('open');
@@ -341,7 +347,7 @@ export const ListViewEvents = {
                 closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
-                if (studentId) this.callbacks.deleteStudent(studentId, row);
+                if (studentId) this.callbacks.deleteStudent(studentId);
                 return;
             }
 

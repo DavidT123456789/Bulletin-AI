@@ -1233,7 +1233,7 @@ export const StorageManager = {
      * Uses Hard Confirm modal (user must type SUPPRIMER).
      */
     async factoryReset() {
-        const studentCount = appState.generatedResults?.length || 0;
+        const studentCount = Utils.countUniqueStudents(appState.generatedResults, appState.classes);
         const classCount = appState.classes?.length || 0;
 
         const confirmed = await ModalUIManager.showHardConfirmModal({
@@ -1315,7 +1315,7 @@ export const StorageManager = {
         const results = backup.generatedResults || [];
         const classes = backup.classes || [];
         const journalCount = results.reduce((n, r) => n + (r.journal?.length || 0), 0);
-        const photoCount = results.filter(r => r.studentPhoto?.data).length;
+        const photoCount = Utils.countUniqueStudents(results.filter(r => r.studentPhoto?.data), classes);
         const classNoteCount = classes.filter(c => typeof c?.classNote === 'string' && c.classNote.trim()).length;
 
         const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(settings[k])).length;
@@ -1328,7 +1328,7 @@ export const StorageManager = {
             categories: {
                 settings: { available: !!settings.subjects, count: subjectCount, label: 'Paramètres', description: 'Matières, thème, seuils, modèle IA' },
                 classes: { available: classes.length > 0, count: classes.length, label: 'Classes', description: `Structure des classes et listes d'élèves${classNoteCount > 0 ? `, ${classNoteCount} mémo${classNoteCount > 1 ? 's' : ''}` : ''}` },
-                students: { available: results.length > 0, count: results.length, label: 'Données élèves', description: `Notes, appréciations, statuts, contexte${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
+                students: { available: results.length > 0, count: Utils.countUniqueStudents(results, classes), label: 'Données élèves', description: `Notes, appréciations, statuts, contexte${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
                 journal: { available: journalCount > 0, count: journalCount, label: 'Journal de bord', description: 'Observations et notes de suivi', parent: 'students' },
                 apiKeys: { available: hasApiKeys, count: apiKeyCount, label: 'Clés API', description: 'Clés d\'accès aux services IA' }
             }
@@ -1355,7 +1355,7 @@ export const StorageManager = {
                 _lastModified: result._lastModified || Date.now()
             }))
         };
-        const count = dataToExport.generatedResults.length;
+        const count = Utils.countUniqueStudents(dataToExport.generatedResults, dataToExport.classes);
         this._downloadFile(JSON.stringify(dataToExport, null, 2), `bulletin-ai_backup_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
         UI.showNotification(`Sauvegarde exportée (${count} élève${count > 1 ? 's' : ''}).`, 'success');
     },
@@ -1924,7 +1924,7 @@ export const StorageManager = {
                     cleanResults = Utils.deduplicateResults(cleanResults);
                     runtimeState.data.generatedResults = cleanResults;
                     await this._persistGeneratedResults(cleanResults);
-                    stats.imported = cleanResults.length;
+                    stats.imported = Utils.countUniqueStudents(cleanResults, userSettings.academic?.classes);
                 } else {
                     runtimeState.data.generatedResults = [];
                     await DBService.clear('generatedResults');

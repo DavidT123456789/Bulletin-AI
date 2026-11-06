@@ -580,6 +580,100 @@ describe('StudentDataManager', () => {
         });
     });
 
+    describe('Bug H (homonymes), getOtherEnrollments & getDeleteActionMeta', () => {
+        beforeEach(async () => {
+            const stateMod = await import('../state/State.js');
+            stateMod.userSettings.academic.classes = [
+                { id: 'cls-31', name: '3°1', isGroup: false, isDemo: false },
+                { id: 'grp-papd', name: 'PAPD', isGroup: true, isDemo: false },
+                { id: 'cls-demo', name: 'Classe Exemple', isGroup: false, isDemo: true }
+            ];
+            stateMod.userSettings.academic.currentClassId = 'grp-papd';
+            appState.classes = stateMod.userSettings.academic.classes;
+            appState.currentClassId = 'grp-papd';
+        });
+
+        it('ne devrait jamais mélanger les profils de deux homonymes portant le même nom de famille (Bug H)', () => {
+            appState.generatedResults = [
+                {
+                    id: 'stu-lucas',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    classId: 'cls-31',
+                    originClass: '3°1',
+                    studentPhoto: { data: 'photo-lucas' },
+                    studentData: { classe: '3°1', statuses: ['PPRE'] }
+                }
+            ];
+
+            expect(StudentDataManager.findExistingStudentProfile('MARTIN', 'Emma', 'grp-papd')).toBeNull();
+            expect(StudentDataManager.findExistingStudentProfile('MARTIN', 'Lucas', 'grp-papd')?.sourceStudent?.id).toBe('stu-lucas');
+
+            const emmaPending = StudentDataManager.createPendingResult(
+                { nom: 'MARTIN', prenom: 'Emma', statuses: [], periods: {} },
+                'grp-papd'
+            );
+            expect(emmaPending.studentPhoto).toBeNull();
+            expect(emmaPending.studentData.statuses).toEqual([]);
+        });
+
+        it('devrait retourner les autres inscriptions hors démo via getOtherEnrollments et gérer les cas limites', () => {
+            appState.generatedResults = [
+                { id: 's-31', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'cls-31', studentData: {} },
+                { id: 's-papd', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd', studentData: {} },
+                { id: 's-demo', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'cls-demo', studentData: {} }
+            ];
+
+            const others = StudentDataManager.getOtherEnrollments('s-papd');
+            expect(others).toHaveLength(1);
+            expect(others[0]).toMatchObject({ classId: 'cls-31', className: '3°1', isGroup: false });
+
+            expect(StudentDataManager.getOtherEnrollments(null)).toEqual([]);
+            expect(StudentDataManager.getOtherEnrollments('unknown-id')).toEqual([]);
+        });
+
+        it('devrait distinguer Retirer (élève partagé / classe virtuelle) de Supprimer (élève unique / sélection mixte)', () => {
+            appState.generatedResults = [
+                { id: 's-31', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'cls-31', studentData: { classe: '3°1' } },
+                { id: 's-papd', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd', studentData: { classe: '3°1' } },
+                { id: 's-unique', nom: 'MOLET', prenom: 'Nolan', classId: 'grp-papd', studentData: { classe: '3°1' } }
+            ];
+
+            // 1. Élève partagé dans le groupe PAPD -> Retirer de PAPD
+            const removeMeta = StudentDataManager.getDeleteActionMeta(['s-papd'], { currentClassId: 'grp-papd' });
+            expect(removeMeta.hasPermanentDeletion).toBe(false);
+            expect(removeMeta.menuLabel).toBe('Retirer de PAPD');
+            expect(removeMeta.menuIcon).toBe('solar:user-minus-linear');
+            expect(removeMeta.confirmText).toBe('Retirer');
+            expect(removeMeta.message).toContain('3ᵉ1');
+
+            // 2. Élève unique présent nulle part ailleurs -> Supprimer l'élève
+            const deleteMeta = StudentDataManager.getDeleteActionMeta(['s-unique'], { currentClassId: 'grp-papd' });
+            expect(deleteMeta.hasPermanentDeletion).toBe(true);
+            expect(deleteMeta.menuLabel).toBe('Supprimer l\'élève');
+            expect(deleteMeta.menuIcon).toBe('solar:trash-bin-trash-linear');
+            expect(deleteMeta.message).toContain('définitivement supprimées');
+
+            // 3. Classe reconstituée virtual_31 -> nomme explicitement le groupe d'origine PAPD
+            const virtualRemove = StudentDataManager.getDeleteActionMeta(['s-papd'], { currentClassId: 'virtual_31' });
+            expect(virtualRemove.hasPermanentDeletion).toBe(false);
+            expect(virtualRemove.menuLabel).toBe('Retirer de PAPD');
+
+            const virtualDelete = StudentDataManager.getDeleteActionMeta(['s-unique'], { currentClassId: 'virtual_31' });
+            expect(virtualDelete.hasPermanentDeletion).toBe(true);
+            expect(virtualDelete.menuLabel).toBe('Retirer de PAPD');
+            expect(virtualDelete.confirmText).toBe('Supprimer');
+
+            // 4. Sélection multiple mixte (1 partagé + 1 unique)
+            const mixedMeta = StudentDataManager.getDeleteActionMeta(['s-papd', 's-unique'], { currentClassId: 'grp-papd' });
+            expect(mixedMeta.hasPermanentDeletion).toBe(true);
+            expect(mixedMeta.message).toContain('définitivement supprimé');
+
+            // 5. Cas limite vide
+            expect(StudentDataManager.getDeleteActionMeta([])).toMatchObject({ students: [] });
+        });
+    });
+
     describe('deleteStudent', () => {
         beforeEach(() => {
             appState.generatedResults = [

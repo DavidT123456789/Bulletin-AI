@@ -746,6 +746,44 @@ describe('Utils', () => {
         });
     });
 
+    describe('getStudentIdentityKey & countUniqueStudents', () => {
+        it('devrait générer une clé d\'identité normalisée insensible aux accents, à la casse et aux annotations de classe', () => {
+            expect(Utils.getStudentIdentityKey('BOUKHARI (3 1)', 'Sami')).toBe('boukhari-sami');
+            expect(Utils.getStudentIdentityKey('boukhari', 'SAMI')).toBe('boukhari-sami');
+            expect(Utils.getStudentIdentityKey('DÉPRÉ', 'Élise')).toBe('depre-elise');
+            expect(Utils.getStudentIdentityKey('', '')).toBe('');
+            expect(Utils.getStudentIdentityKey(null, undefined)).toBe('');
+        });
+
+        it('devrait compter une seule fois un élève partagé entre sa classe et un groupe, tout en distinguant les homonymes', () => {
+            const classes = [
+                { id: 'c-31', name: '3°1', isGroup: false },
+                { id: 'c-32', name: '3°2', isGroup: false },
+                { id: 'g-papd', name: 'PAPD', isGroup: true },
+                { id: 'c-demo', name: 'Classe Exemple', isDemo: true }
+            ];
+            const results = [
+                { id: '1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                { id: '2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g-papd' },
+                { id: '3', nom: 'MARTIN', prenom: 'Lucas', classId: 'c-31' },
+                { id: '4', nom: 'MARTIN', prenom: 'Emma', classId: 'c-32' },
+                // Même nom dans la classe démo : isolé du périmètre réel
+                { id: '5', nom: 'MARTIN', prenom: 'Lucas', classId: 'c-demo' }
+            ];
+
+            expect(Utils.countUniqueStudents(results, classes)).toBe(4);
+            // Sans la classe démo : 3 élèves réels uniques pour 4 fiches
+            expect(Utils.countUniqueStudents(results.slice(0, 4), classes)).toBe(3);
+        });
+
+        it('devrait gérer les cas limites (null, vide, entrées anonymes)', () => {
+            expect(Utils.countUniqueStudents(null)).toBe(0);
+            expect(Utils.countUniqueStudents(undefined)).toBe(0);
+            expect(Utils.countUniqueStudents([])).toBe(0);
+            expect(Utils.countUniqueStudents([null, { id: 's1' }, { id: 's2' }])).toBe(2);
+        });
+    });
+
     describe('sortResults', () => {
         const sampleResults = [
             { id: '3', nom: 'PETIT', prenom: 'Emma', timestamp: '2026-01-02T10:00:00Z', studentData: { statuses: [], periods: { T1: { grade: 12 }, T2: { grade: 10 } } } },

@@ -15,6 +15,7 @@ import { ExportManager } from '../ExportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { HistoryManager } from '../HistoryManager.js';
+import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
@@ -190,10 +191,29 @@ export const ListSelectionManager = {
                 this._removeTimeout = null;
             }
 
-            if (!toolbar) {
+            const isNewToolbar = !toolbar;
+            if (isNewToolbar) {
                 toolbar = this.createSelectionToolbar();
                 document.body.appendChild(toolbar);
+            }
 
+            const deleteBtn = toolbar.querySelector('[data-bulk-action="delete"]');
+            if (deleteBtn) {
+                const deleteMeta = StudentDataManager.getDeleteActionMeta(Array.from(this.selectedIds));
+                const deleteIcon = deleteBtn.querySelector('iconify-icon');
+                if (deleteIcon && deleteMeta.toolbarIcon) {
+                    deleteIcon.setAttribute('icon', deleteMeta.toolbarIcon);
+                }
+                if (deleteMeta.toolbarTooltip) {
+                    deleteBtn.setAttribute('data-tooltip', deleteMeta.toolbarTooltip);
+                    deleteBtn.setAttribute('aria-label', deleteMeta.toolbarTooltip);
+                    if (!isNewToolbar) {
+                        TooltipsUI?.updateTooltip?.(deleteBtn, deleteMeta.toolbarTooltip);
+                    }
+                }
+            }
+
+            if (isNewToolbar) {
                 // Initialize tooltips for the new toolbar
                 TooltipsUI.initTooltips();
 
@@ -282,7 +302,7 @@ export const ListSelectionManager = {
                             <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
                         </button>
                         <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Copier ou déplacer les élèves vers une autre classe / groupe">
-                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer / Copier</span>
+                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Copier / Déplacer</span>
                         </button>
                     </div>
 
@@ -290,7 +310,7 @@ export const ListSelectionManager = {
 
                     <!-- Groupe Nettoyage & Suppression (Icône seule) -->
                     <div class="selection-action-group" data-group="danger" aria-label="Actions de nettoyage et suppression">
-                        <button class="btn-selection-action icon-only warning tooltip" data-bulk-action="reset" data-tooltip="Effacer du contenu (appréciations, journal...)" aria-label="Effacer du contenu">
+                        <button class="btn-selection-action icon-only tooltip" data-bulk-action="reset" data-tooltip="Effacer le contenu (appréciations, journal…)" aria-label="Effacer le contenu">
                             <iconify-icon icon="solar:eraser-linear"></iconify-icon>
                         </button>
                         <button class="btn-selection-action icon-only danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves sélectionnés" aria-label="Supprimer les élèves sélectionnés">
@@ -350,68 +370,113 @@ export const ListSelectionManager = {
         }
     },
 
-    async bulkDelete(ids) {
-        const results = appState.generatedResults || [];
-        const students = ids.map(id => results.find(r => r.id === id)).filter(Boolean);
+    /**
+     * Point d'entrée unique de confirmation et suppression/retrait d'une ou plusieurs fiches élèves.
+     * Distingue clairement le retrait d'un groupe/classe (élève inscrit ailleurs) de la suppression définitive.
+     * @param {string|Array<string>} studentIds
+     * @returns {Promise<boolean>} true si confirmé et exécuté
+     */
+    async confirmAndDeleteStudents(studentIds) {
+        const ids = (Array.isArray(studentIds) ? studentIds : [studentIds]).filter(Boolean);
+        if (ids.length === 0) return false;
 
-        let title = `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`;
-        let message = 'Cette action est irréversible et supprimera toutes les données associées.';
+        const meta = StudentDataManager.getDeleteActionMeta(ids);
+        if (meta.students.length === 0) return false;
 
-        if (students.length === 1) {
-            const singleName = Utils.escapeHtml(Utils.formatStudentName(students[0].nom, students[0].prenom));
-            if (singleName) title = `Supprimer ${singleName} ?`;
-        } else if (students.length > 1) {
-            const formattedNames = students.map(s =>
-                `<strong>${Utils.escapeHtml(Utils.formatStudentName(s.nom, s.prenom))}</strong>`
-            );
-            const namesSummary = formattedNames.length <= 3
-                ? `${formattedNames.slice(0, -1).join(', ')} et ${formattedNames[formattedNames.length - 1]}`
-                : `${formattedNames.slice(0, 2).join(', ')} et <strong>${formattedNames.length - 2} autres élèves</strong>`;
-            message = `Cette action est irréversible et supprimera ${namesSummary} ainsi que toutes leurs données.`;
-        }
+        const fallbackOwnerClassId = meta.students[0]?.classId || null;
 
         const confirmed = await ModalUIManager.showCustomConfirm(
-            message,
+            meta.message,
             null,
             null,
             {
-                title,
-                confirmText: 'Supprimer',
+                title: meta.title,
+                confirmText: meta.confirmText,
+                cancelText: 'Annuler',
                 isDanger: true
             }
         );
 
-        if (confirmed) {
-            for (const id of ids) {
-                await StudentDataManager.deleteStudent(id);
+        if (!confirmed) return false;
+
+        const deletedSet = new Set();
+        for (const student of meta.students) {
+            const ok = await StudentDataManager.deleteStudent(student.id);
+            if (ok !== false) deletedSet.add(student.id);
+        }
+
+        if (FocusPanelManager?.isOpen && FocusPanelManager.currentStudentId && deletedSet.has(FocusPanelManager.currentStudentId)) {
+            FocusPanelManager.close?.();
+        }
+
+        try { navigator?.vibrate?.([25, 40, 25]); } catch (_) { }
+
+        await StorageManager.saveAppState();
+
+        if (this.selectedIds.size > 0) {
+            const allSelectedDeleted = Array.from(this.selectedIds).every(id => deletedSet.has(id));
+            if (allSelectedDeleted) {
+                this.clearSelections();
+            } else {
+                let removedAny = false;
+                deletedSet.forEach(id => {
+                    if (this.selectedIds.delete(id)) removedAny = true;
+                });
+                if (removedAny) this.updateToolbarState();
             }
-            try { navigator?.vibrate?.([25, 40, 25]); } catch (_) { }
+        }
 
-            await StorageManager.saveAppState();
+        const currentClassId = appState.currentClassId;
+        const isVirtual = Boolean(
+            ClassManager?.isVirtualClass?.(currentClassId)
+            || (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_'))
+        );
 
-            this.clearSelections();
-
-            const currentClassId = appState.currentClassId;
-            const remainingInClass = (appState.generatedResults || []).filter(
-                r => !currentClassId || r.classId === currentClassId
-            ).length;
+        if (isVirtual) {
+            const remainingVirtualStudents = ClassManager?.getStudentsForClass
+                ? ClassManager.getStudentsForClass(currentClassId)
+                : [];
+            if (remainingVirtualStudents.length === 0) {
+                const allRealClasses = ClassManager?.getAllClasses?.() || [];
+                const fallbackClassId = (fallbackOwnerClassId && allRealClasses.some(c => c.id === fallbackOwnerClassId))
+                    ? fallbackOwnerClassId
+                    : (allRealClasses[0]?.id || null);
+                if (fallbackClassId && ClassUIManager?.handleClassSwitch) {
+                    await ClassUIManager.handleClassSwitch(fallbackClassId);
+                } else {
+                    AppreciationsManager?.renderResults?.();
+                }
+            } else {
+                await ClassManager?._filterResultsByClass?.(currentClassId);
+                AppreciationsManager?.renderResults?.();
+            }
+        } else {
+            const remainingInClass = ClassManager?.getStudentsForClass
+                ? ClassManager.getStudentsForClass(currentClassId).length
+                : (appState.generatedResults || []).filter(r => !currentClassId || r.classId === currentClassId).length;
 
             if (remainingInClass === 0) {
-                AppreciationsManager.renderResults();
+                AppreciationsManager?.renderResults?.();
             } else {
                 this.callbacks.renderList();
             }
-
-            ClassUIManager?.updateStudentCount?.();
-            ResultsUIManager?.updateGenerateButtonState?.();
-
-            UI?.updateStats?.();
-            UI?.updateControlButtons?.();
-            UI?.updateAIButtonsState?.();
-            window.dispatchEvent(new CustomEvent('student-updated'));
-
-            UI?.showNotification(`${ids.length} élève${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}.`, 'success');
         }
+
+        ClassUIManager?.updateStudentCount?.();
+        ClassUIManager?.renderClassList?.();
+        ResultsUIManager?.updateGenerateButtonState?.();
+
+        UI?.updateStats?.();
+        UI?.updateControlButtons?.();
+        UI?.updateAIButtonsState?.();
+        window.dispatchEvent(new CustomEvent('student-updated'));
+
+        UI?.showNotification?.(meta.toastMessage, 'success');
+        return true;
+    },
+
+    async bulkDelete(ids) {
+        return this.confirmAndDeleteStudents(ids);
     },
 
     async bulkMove(ids) {
@@ -608,6 +673,14 @@ export const ListSelectionManager = {
         const withContext = students.filter(s => s.studentData?.periods?.[currentPeriod]?.context).length;
         const withPhoto = students.filter(s => s.studentPhoto?.data).length;
 
+        if (withAppreciation === 0 && withJournal === 0 && withContext === 0 && withPhoto === 0) {
+            UI?.showNotification?.(
+                isSingle ? 'Aucun contenu à effacer sur cette fiche.' : 'Aucun contenu à effacer pour la sélection.',
+                'info'
+            );
+            return;
+        }
+
         const choices = [
             {
                 id: 'appreciation',
@@ -647,12 +720,15 @@ export const ListSelectionManager = {
             }
         ];
 
+        const singleDisplayName = Utils.escapeHtml(
+            `${students[0]?.prenom || ''} ${students[0]?.nom || ''}`.trim()
+        );
         const studentLabel = isSingle
-            ? `<strong>${students[0]?.prenom} ${students[0]?.nom}</strong>`
+            ? `<strong>${singleDisplayName}</strong>`
             : `<strong>${ids.length} élèves</strong>`;
 
         const { confirmed, values } = await ModalUIManager.showChoicesModal(
-            'Effacer du contenu',
+            'Effacer le contenu',
             `Choisissez les données à effacer pour ${studentLabel} :`,
             choices,
             {

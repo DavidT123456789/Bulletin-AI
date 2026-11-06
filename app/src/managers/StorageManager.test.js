@@ -1543,5 +1543,23 @@ describe('StorageManager', () => {
             }));
             expect(parsed.categories.classes.description).toContain('3 mémos');
         });
+
+        it('devrait compter les personnes uniques (et photos uniques) dans parseBackupFile quand un élève est partagé entre sa classe et un groupe', () => {
+            const parsed = StorageManager.parseBackupFile(JSON.stringify({
+                _meta: { exportType: 'full_backup' },
+                settings: { subjects: {} },
+                classes: [
+                    { id: 'c1', name: '3°1', isGroup: false },
+                    { id: 'g1', name: 'PAPD', isGroup: true }
+                ],
+                generatedResults: [
+                    { id: 's1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c1', studentPhoto: { data: 'img1' } },
+                    { id: 's2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g1', studentPhoto: { data: 'img1' } },
+                    { id: 's3', nom: 'BARE', prenom: 'Timéo', classId: 'c1' }
+                ]
+            }));
+            expect(parsed.categories.students.count).toBe(2);
+            expect(parsed.categories.students.description).toContain('1 photo');
+        });
     });
 });

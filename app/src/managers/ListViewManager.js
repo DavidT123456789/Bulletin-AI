@@ -10,7 +10,6 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 // ResultCardsUI removed - logic moved to Utils
-import { ClassUIManager } from './ClassUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ListSelectionManager } from './list/ListSelectionManager.js';
@@ -18,9 +17,7 @@ import { ListViewRenderer } from './list/ListViewRenderer.js';
 import { ListViewAnimations } from './list/ListViewAnimations.js';
 import { ListViewEvents } from './list/ListViewEvents.js';
 import { UI } from './UIManager.js';
-import { ModalUI } from './ModalUIManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
-import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
@@ -234,63 +231,6 @@ export const ListViewManager = {
     // ListViewRenderer methods extracted
 
     // ListViewEvents methods extracted
-
-    /**
-     * Supprime un élève avec confirmation
-     * @param {string} studentId - ID de l'élève
-     * @param {HTMLElement} row - Ligne du tableau
-     * @private
-     */
-    async _deleteStudent(studentId, row) {
-        const student = appState.generatedResults.find(r => r.id === studentId);
-        if (!student) return;
-
-        const studentName = Utils.formatStudentName(student.nom, student.prenom);
-
-        // Confirmation via modale personnalisée
-        const confirmed = await ModalUI.showCustomConfirm(
-            'Cette action est irréversible et supprimera toutes les données associées.',
-            null,
-            null,
-            {
-                title: `Supprimer ${Utils.escapeHtml(studentName)} ?`,
-                confirmText: 'Supprimer',
-                cancelText: 'Annuler',
-                isDanger: true
-            }
-        );
-
-        if (!confirmed) return;
-
-        // Use standard data manager
-        await StudentDataManager.deleteStudent(studentId);
-        try { navigator?.vibrate?.([25, 40, 25]); } catch (_) { }
-
-        // Save state
-        await StorageManager.saveAppState();
-
-        // Render with standard FLIP animation or transition to empty state
-        const currentClassId = appState.currentClassId;
-        const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
-
-        if (remainingInClass === 0) {
-            AppreciationsManager?.renderResults?.();
-        } else {
-            this.render(appState.filteredResults, document.getElementById('outputList'));
-        }
-
-        // Update global UI
-        ClassUIManager.updateStudentCount();
-        UI?.updateStats?.();
-        UI?.updateControlButtons?.();
-        UI?.updateAIButtonsState?.();
-
-        ResultsUIManager?.updateGenerateButtonState?.();
-        window.dispatchEvent(new CustomEvent('student-updated'));
-
-        // Notify user
-        UI?.showNotification(`${studentName} supprimé`, 'success');
-    },
 
     /**
      * Updates the status of a specific row (e.g., to show a skeleton loader).
@@ -518,7 +458,7 @@ ListViewAnimations?.init?.({
 ListViewEvents?.init?.({
     copySingleAppreciation: (id) => ListViewManager._copySingleAppreciation(id),
     bulkReset: (ids) => ListViewManager._bulkReset(ids),
-    deleteStudent: (id, row) => ListViewManager._deleteStudent(id, row),
+    deleteStudent: (id) => ListSelectionManager.confirmAndDeleteStudents([id]),
     toggleAppreciationColumn: (c) => ListViewManager._toggleAppreciationColumn(c),
     handleSelectionInteraction: (id, e) => ListSelectionManager.handleSelectionInteraction(id, e),
     clearSelections: () => ListSelectionManager.clearSelections(),

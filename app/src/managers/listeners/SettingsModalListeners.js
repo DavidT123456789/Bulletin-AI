@@ -1090,7 +1090,7 @@ export const SettingsModalListeners = {
             try {
                 const snapshot = await StorageManager.getPreRestoreSnapshot();
                 if (snapshot && snapshot.generatedResults?.length > 0) {
-                    const count = snapshot.generatedResults.length;
+                    const count = Utils.countUniqueStudents(snapshot.generatedResults, snapshot.classes);
                     const dateStr = snapshot.createdAt
                         ? new Date(snapshot.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                         : '';
@@ -1129,7 +1129,7 @@ export const SettingsModalListeners = {
                     updatePreRestoreCard();
                     return;
                 }
-                const count = snapshot.generatedResults?.length || 0;
+                const count = Utils.countUniqueStudents(snapshot.generatedResults, snapshot.classes);
                 const confirmed = await UI.showCustomConfirm(
                     `Restaurer l'état précédent (<strong>${count} élève${count > 1 ? 's' : ''}</strong>) ?<br><br>Vos données actuelles seront remplacées par cette copie.`,
                     null, null,

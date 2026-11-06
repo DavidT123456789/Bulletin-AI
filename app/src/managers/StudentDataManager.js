@@ -54,6 +54,11 @@ export const StudentDataManager = {
         return result;
     },
 
+    _isDemoClass(cls) {
+        if (!cls) return false;
+        return cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
+    },
+
     /**
      * Recherche un profil existant pour le même élève dans les autres classes (hors démo)
      * afin de mutualiser photo, statuts pédagogiques et classe d'origine.
@@ -64,23 +69,19 @@ export const StudentDataManager = {
      * @returns {Object|null} Profil consolidé { studentPhoto, statuses, originClass, sourceStudent } ou null
      */
     findExistingStudentProfile(nom, prenom, excludeClassId = null) {
-        if (!nom && !prenom) return null;
+        const targetKey = Utils.getStudentIdentityKey(nom, prenom);
+        if (!targetKey) return null;
+
         const allResults = appState.generatedResults || [];
         const classes = userSettings?.academic?.classes || [];
         const classMap = new Map(classes.map(c => [c.id, c]));
-
-        const isDemoClassId = (classId) => {
-            if (!classId) return false;
-            const cls = classMap.get(classId);
-            if (!cls) return false;
-            return cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
-        };
+        const isDemoClassId = (classId) => Boolean(classId && this._isDemoClass(classMap.get(classId)));
 
         const matches = allResults.filter(r => {
             if (!r) return false;
             if (excludeClassId && r.classId === excludeClassId) return false;
             if (isDemoClassId(r.classId)) return false;
-            return Utils.matchesStudent(r, nom, prenom);
+            return Utils.getStudentIdentityKey(r.nom, r.prenom) === targetKey;
         });
 
         if (matches.length === 0) return null;
@@ -204,24 +205,24 @@ export const StudentDataManager = {
         for (const r of allResults) {
             if (!r) continue;
             if (r.id) resultsById.set(r.id, r);
-            const rKey = Utils.normalizeName(r.nom, r.prenom);
+            const rKey = Utils.getStudentIdentityKey(r.nom, r.prenom) || Utils.normalizeName(r.nom, r.prenom);
             if (r.classId === targetClassId) {
                 targetExistingKeys.add(rKey);
             }
             if (r.studentPhoto?.data && !photoByKey.has(rKey)) {
                 const cls = r.classId ? classMap.get(r.classId) : null;
-                if (cls && !cls.isDemo && cls.name?.toLowerCase() !== 'classe exemple') {
+                if (cls && !this._isDemoClass(cls)) {
                     photoByKey.set(rKey, r.studentPhoto);
                 }
             }
         }
 
-        // Dédupliquer les élèves sources par nom normalisé (en privilégiant la fiche principale)
+        // Dédupliquer les élèves sources par identité normalisée (en privilégiant la fiche principale)
         const uniqueSources = new Map();
         for (const id of ids) {
             const student = resultsById.get(id);
             if (!student) continue;
-            const key = Utils.normalizeName(student.nom, student.prenom);
+            const key = Utils.getStudentIdentityKey(student.nom, student.prenom) || Utils.normalizeName(student.nom, student.prenom);
             if (!uniqueSources.has(key) || (!student.isCopiedProfile && uniqueSources.get(key).isCopiedProfile)) {
                 uniqueSources.set(key, student);
             }
@@ -575,6 +576,278 @@ export const StudentDataManager = {
         }
 
         return true;
+    },
+
+    /**
+     * Retourne la liste des autres classes ou groupes (hors démo) dans lesquels
+     * le même élève possède une fiche distincte.
+     *
+     * @param {string|Object} studentOrId - ID de la fiche ou objet élève
+     * @returns {Array<{ studentId: string, classId: string, className: string, displayName: string, isGroup: boolean }>}
+     */
+    getOtherEnrollments(studentOrId) {
+        if (!studentOrId) return [];
+        const allResults = appState.generatedResults || [];
+        const student = typeof studentOrId === 'string'
+            ? allResults.find(r => r?.id === studentOrId)
+            : studentOrId;
+        if (!student) return [];
+
+        const classes = userSettings?.academic?.classes || appState?.classes || [];
+        const classMap = new Map(classes.map(c => [c.id, c]));
+        const isDemoClassId = (classId) => Boolean(classId && this._isDemoClass(classMap.get(classId)));
+
+        if (isDemoClassId(student.classId)) return [];
+
+        const targetKey = Utils.getStudentIdentityKey(student.nom, student.prenom);
+        if (!targetKey) return [];
+
+        const seenClassIds = new Set();
+        const enrollments = [];
+
+        for (const r of allResults) {
+            if (!r || r.id === student.id) continue;
+            if (!r.classId || r.classId === student.classId) continue;
+            if (isDemoClassId(r.classId) || seenClassIds.has(r.classId)) continue;
+            if (Utils.getStudentIdentityKey(r.nom, r.prenom) !== targetKey) continue;
+
+            seenClassIds.add(r.classId);
+            const cls = classMap.get(r.classId);
+            const rawName = (cls?.name || '').trim();
+            const displayName = rawName ? Utils.formatClassDisplayName(rawName) : 'Autre classe';
+            const isGroup = Boolean(cls?.isGroup || cls?.type === 'group' || Utils.isGroupClassName(rawName));
+
+            enrollments.push({
+                studentId: r.id,
+                classId: r.classId,
+                className: rawName || displayName,
+                displayName,
+                isGroup,
+                isCopiedProfile: Boolean(r.isCopiedProfile)
+            });
+        }
+
+        enrollments.sort((a, b) => {
+            if (a.isGroup !== b.isGroup) return Number(a.isGroup) - Number(b.isGroup);
+            return Number(a.isCopiedProfile) - Number(b.isCopiedProfile);
+        });
+
+        return enrollments.map(({ isCopiedProfile: _ignored, ...rest }) => rest);
+    },
+
+    /**
+     * Calcule les libellés contextuels (menu, barre de sélection, modale de confirmation, toast)
+     * pour le retrait d'une fiche de groupe/classe vs la suppression définitive d'un élève.
+     *
+     * @param {string|Object|Array<string|Object>} studentIds - ID(s) ou objet(s) élève(s)
+     * @param {Object} [options={}]
+     * @param {string|null} [options.currentClassId] - ID de la classe affichée (physique ou `virtual_*`)
+     * @returns {Object} Métadonnées d'affichage et de confirmation
+     */
+    getDeleteActionMeta(studentIds, options = {}) {
+        const rawList = Array.isArray(studentIds) ? studentIds : (studentIds ? [studentIds] : []);
+        const allResults = appState.generatedResults || [];
+        const classes = userSettings?.academic?.classes || appState?.classes || [];
+        const classMap = new Map(classes.map(c => [c.id, c]));
+
+        const seenIds = new Set();
+        const students = [];
+        for (const entry of rawList) {
+            const resolved = typeof entry === 'string'
+                ? allResults.find(r => r?.id === entry)
+                : entry;
+            if (resolved?.id && !seenIds.has(resolved.id)) {
+                seenIds.add(resolved.id);
+                students.push(resolved);
+            }
+        }
+
+        const effectiveClassId = options.currentClassId !== undefined
+            ? options.currentClassId
+            : (appState?.currentClassId || userSettings?.academic?.currentClassId || null);
+        const isVirtualView = typeof effectiveClassId === 'string' && effectiveClassId.startsWith('virtual_');
+
+        const getOwnerDisplayName = (s) => {
+            const cls = s?.classId ? classMap.get(s.classId) : null;
+            const rawName = (cls?.name || s?.sourceGroupName || '').trim();
+            return rawName ? Utils.formatClassDisplayName(rawName) : '';
+        };
+
+        const truncateLabel = (str, max = 22) => (
+            str.length > max ? `${str.slice(0, max - 1).trimEnd()}…` : str
+        );
+
+        const formatClassListHtml = (names) => {
+            if (names.length === 0) return '';
+            if (names.length === 1) return `<strong>${Utils.escapeHtml(names[0])}</strong>`;
+            if (names.length === 2) {
+                return `<strong>${Utils.escapeHtml(names[0])}</strong> et <strong>${Utils.escapeHtml(names[1])}</strong>`;
+            }
+            const remaining = names.length - 2;
+            return `<strong>${Utils.escapeHtml(names[0])}</strong>, <strong>${Utils.escapeHtml(names[1])}</strong> et ${remaining} autre${remaining > 1 ? 's' : ''}`;
+        };
+
+        if (students.length === 0) {
+            return {
+                students: [],
+                menuLabel: "Supprimer l'élève",
+                menuIcon: 'solar:trash-bin-trash-linear',
+                toolbarIcon: 'solar:trash-bin-trash-linear',
+                toolbarTooltip: 'Supprimer la sélection (Suppr)',
+                title: 'Supprimer ?',
+                message: 'Cette action est irréversible.',
+                confirmText: 'Supprimer',
+                toastMessage: 'Élève supprimé.',
+                isVirtualView,
+                hasPermanentDeletion: true
+            };
+        }
+
+        if (students.length === 1) {
+            const student = students[0];
+            const studentName = Utils.formatStudentName(student.nom, student.prenom) || 'cet élève';
+            const safeStudentName = Utils.escapeHtml(studentName);
+            const ownerName = getOwnerDisplayName(student);
+            const safeOwner = Utils.escapeHtml(ownerName);
+            const compactOwner = ownerName ? truncateLabel(ownerName, 22) : '';
+            const others = this.getOtherEnrollments(student);
+            const hasOthers = others.length > 0;
+
+            if (hasOthers) {
+                const otherListHtml = formatClassListHtml(others.map(o => o.displayName));
+                return {
+                    students,
+                    menuLabel: compactOwner ? `Retirer de ${compactOwner}` : 'Retirer de la classe',
+                    menuIcon: 'solar:user-minus-linear',
+                    toolbarIcon: 'solar:user-minus-linear',
+                    toolbarTooltip: ownerName ? `Retirer de ${ownerName} (Suppr)` : 'Retirer de la classe (Suppr)',
+                    title: ownerName ? `Retirer ${safeStudentName} de ${safeOwner} ?` : `Retirer ${safeStudentName} de cette classe ?`,
+                    message: `${ownerName ? `Sa fiche dans <strong>${safeOwner}</strong>` : 'Sa fiche dans cette classe'} (notes, appréciations, journal) sera supprimée. Cet élève reste inscrit dans ${otherListHtml}.`,
+                    confirmText: 'Retirer',
+                    toastMessage: ownerName ? `Fiche de ${studentName} retirée de « ${ownerName} ».` : `Fiche de ${studentName} retirée.`,
+                    isVirtualView,
+                    hasPermanentDeletion: false
+                };
+            }
+
+            if (isVirtualView && ownerName) {
+                return {
+                    students,
+                    menuLabel: `Retirer de ${compactOwner}`,
+                    menuIcon: 'solar:user-minus-linear',
+                    toolbarIcon: 'solar:trash-bin-trash-linear',
+                    toolbarTooltip: `Retirer de ${ownerName} (Suppr)`,
+                    title: `Retirer ${safeStudentName} de ${safeOwner} ?`,
+                    message: `Cet élève n'est inscrit dans aucune autre classe : sa fiche dans <strong>${safeOwner}</strong> et toutes ses données associées seront définitivement supprimées.`,
+                    confirmText: 'Supprimer',
+                    toastMessage: `${studentName} supprimé de « ${ownerName} ».`,
+                    isVirtualView,
+                    hasPermanentDeletion: true
+                };
+            }
+
+            return {
+                students,
+                menuLabel: "Supprimer l'élève",
+                menuIcon: 'solar:trash-bin-trash-linear',
+                toolbarIcon: 'solar:trash-bin-trash-linear',
+                toolbarTooltip: 'Supprimer définitivement (Suppr)',
+                title: `Supprimer ${safeStudentName} ?`,
+                message: `Cet élève n'est inscrit dans aucune autre classe : sa fiche${ownerName ? ` dans <strong>${safeOwner}</strong>` : ''} et toutes ses données associées seront définitivement supprimées.`,
+                confirmText: 'Supprimer',
+                toastMessage: `${studentName} supprimé.`,
+                isVirtualView,
+                hasPermanentDeletion: true
+            };
+        }
+
+        const count = students.length;
+        const deletingIds = new Set(students.map(s => s.id));
+        const items = students.map(s => ({
+            student: s,
+            ownerName: getOwnerDisplayName(s),
+            others: this.getOtherEnrollments(s).filter(e => !deletingIds.has(e.studentId))
+        }));
+
+        const keptCount = items.filter(i => i.others.length > 0).length;
+        const foreverCount = count - keptCount;
+        const ownerNames = [...new Set(items.map(i => i.ownerName).filter(Boolean))];
+        const singleOwner = ownerNames.length === 1 ? ownerNames[0] : '';
+        const safeSingleOwner = Utils.escapeHtml(singleOwner);
+        const ownerListHtml = formatClassListHtml(ownerNames);
+
+        if (foreverCount === 0) {
+            const scopeHtml = singleOwner
+                ? `<strong>${safeSingleOwner}</strong>`
+                : (ownerListHtml || 'cette classe');
+            return {
+                students,
+                menuLabel: singleOwner ? `Retirer de ${truncateLabel(singleOwner, 22)}` : 'Retirer de la classe',
+                menuIcon: 'solar:user-minus-linear',
+                toolbarIcon: 'solar:user-minus-linear',
+                toolbarTooltip: singleOwner ? `Retirer ${count} élèves de ${singleOwner} (Suppr)` : `Retirer ${count} élèves (Suppr)`,
+                title: singleOwner ? `Retirer ${count} élèves de ${safeSingleOwner} ?` : `Retirer ${count} élèves ?`,
+                message: `Leurs fiches dans ${scopeHtml} (notes, appréciations, journal) seront supprimées. Tous ces élèves restent inscrits dans une autre classe.`,
+                confirmText: 'Retirer',
+                toastMessage: singleOwner ? `${count} fiches retirées de « ${singleOwner} ».` : `${count} fiches retirées.`,
+                isVirtualView,
+                hasPermanentDeletion: false
+            };
+        }
+
+        if (keptCount === 0) {
+            if (isVirtualView && ownerNames.length > 0) {
+                return {
+                    students,
+                    menuLabel: singleOwner ? `Retirer de ${truncateLabel(singleOwner, 22)}` : 'Retirer des groupes',
+                    menuIcon: 'solar:user-minus-linear',
+                    toolbarIcon: 'solar:trash-bin-trash-linear',
+                    toolbarTooltip: 'Supprimer définitivement la sélection (Suppr)',
+                    title: singleOwner ? `Retirer ${count} élèves de ${safeSingleOwner} ?` : `Supprimer ${count} élèves ?`,
+                    message: `Aucun de ces élèves n'est inscrit ailleurs : leurs fiches dans ${ownerListHtml} et toutes leurs données associées seront définitivement supprimées.`,
+                    confirmText: 'Supprimer',
+                    toastMessage: `${count} élèves supprimés.`,
+                    isVirtualView,
+                    hasPermanentDeletion: true
+                };
+            }
+
+            return {
+                students,
+                menuLabel: 'Supprimer les élèves',
+                menuIcon: 'solar:trash-bin-trash-linear',
+                toolbarIcon: 'solar:trash-bin-trash-linear',
+                toolbarTooltip: 'Supprimer définitivement la sélection (Suppr)',
+                title: `Supprimer ${count} élèves ?`,
+                message: `Aucun de ces élèves n'est inscrit dans une autre classe : leurs fiches${singleOwner ? ` dans <strong>${safeSingleOwner}</strong>` : ''} et toutes leurs données associées seront définitivement supprimées.`,
+                confirmText: 'Supprimer',
+                toastMessage: `${count} élèves supprimés.`,
+                isVirtualView,
+                hasPermanentDeletion: true
+            };
+        }
+
+        const keptLabel = keptCount === 1
+            ? '1 élève reste inscrit dans une autre classe'
+            : `${keptCount} élèves restent inscrits dans une autre classe`;
+        const foreverLabel = foreverCount === 1
+            ? '<strong>1 élève sera définitivement supprimé</strong> (inscrit nulle part ailleurs)'
+            : `<strong>${foreverCount} élèves seront définitivement supprimés</strong> (inscrits nulle part ailleurs)`;
+        const scopePrefix = ownerListHtml && !singleOwner ? `Fiches concernées dans ${ownerListHtml} :<br>` : '';
+
+        return {
+            students,
+            menuLabel: singleOwner ? `Retirer de ${truncateLabel(singleOwner, 22)}` : 'Retirer',
+            menuIcon: 'solar:user-minus-linear',
+            toolbarIcon: 'solar:user-minus-linear',
+            toolbarTooltip: singleOwner ? `Retirer ${count} élèves de ${singleOwner} (Suppr)` : `Retirer / supprimer ${count} élèves (Suppr)`,
+            title: singleOwner ? `Retirer ${count} élèves de ${safeSingleOwner} ?` : `Retirer ${count} élèves ?`,
+            message: `${scopePrefix}• ${keptLabel}<br>• ${foreverLabel}`,
+            confirmText: 'Retirer',
+            toastMessage: `${keptCount} ${keptCount > 1 ? 'fiches retirées' : 'fiche retirée'}, ${foreverCount} ${foreverCount > 1 ? 'élèves supprimés' : 'élève supprimé'}.`,
+            isVirtualView,
+            hasPermanentDeletion: true
+        };
     },
 
     /**

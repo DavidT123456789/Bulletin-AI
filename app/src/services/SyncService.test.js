@@ -25,6 +25,115 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
         GoogleDriveProvider._needsReconnect = false;
     });
 
+    describe('Roster Snapshot & Diff (shared group students vs unique headcount)', () => {
+        const classes = [
+            { id: 'c-31', name: '3°1', isGroup: false, isDemo: false },
+            { id: 'c-32', name: '3°2', isGroup: false, isDemo: false },
+            { id: 'g-papd', name: 'PAPD', isGroup: true, isDemo: false }
+        ];
+
+        it('should count unique students and report group enrollment additions without false +N new students', () => {
+            const baseResults = [
+                { id: '1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                { id: '2', nom: 'BARE', prenom: 'Timéo', classId: 'c-32' }
+            ];
+            const targetResults = [
+                ...baseResults,
+                // Existing students copied to group PAPD
+                { id: '3', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g-papd' },
+                { id: '4', nom: 'BARE', prenom: 'Timéo', classId: 'g-papd' }
+            ];
+
+            const baseSnap = SyncService.buildRosterSnapshot(baseResults, classes);
+            const targetSnap = SyncService.buildRosterSnapshot(targetResults, classes);
+
+            expect(SyncService.countRosterUniqueStudents(baseSnap)).toBe(2);
+            expect(SyncService.countRosterUniqueStudents(targetSnap)).toBe(2);
+
+            const diff = SyncService.diffRoster(baseSnap, targetSnap);
+            expect(diff.newStudents).toBe(0);
+            expect(diff.removedStudents).toBe(0);
+            expect(diff.addedEnrollments).toEqual([
+                { classId: 'g-papd', className: 'PAPD', isGroup: true, count: 2 }
+            ]);
+            expect(diff.hasAnyChange).toBe(true);
+        });
+
+        it('should report group removal without false removedStudents shrinkage, and detect moves and real deletions', () => {
+            const baseSnap = SyncService.buildRosterSnapshot([
+                { id: '1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                { id: '2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g-papd' },
+                { id: '3', nom: 'BARE', prenom: 'Timéo', classId: 'c-31' },
+                { id: '4', nom: 'GONE', prenom: 'Paul', classId: 'c-32' }
+            ], classes);
+
+            const targetSnap = SyncService.buildRosterSnapshot([
+                // MIRZAI removed from PAPD, kept in 3°1
+                { id: '1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                // BARE moved from 3°1 to 3°2
+                { id: '3', nom: 'BARE', prenom: 'Timéo', classId: 'c-32' },
+                // NEW student added (while GONE Paul was permanently deleted)
+                { id: '5', nom: 'NOUVEAU', prenom: 'Léa', classId: 'c-31' }
+            ], classes);
+
+            const diff = SyncService.diffRoster(baseSnap, targetSnap);
+            expect(diff.newStudents).toBe(1);
+            expect(diff.removedStudents).toBe(1);
+            expect(diff.removedEnrollments).toEqual([
+                { classId: 'g-papd', className: 'PAPD', isGroup: true, count: 1 }
+            ]);
+            expect(diff.movedEnrollments).toEqual([
+                { toClassId: 'c-32', toClassName: '3°2', isGroup: false, count: 1 }
+            ]);
+        });
+
+        it('should ignore demo class eviction when real students exist and handle null/invalid inputs safely', () => {
+            const demoClasses = [{ id: 'demo', name: 'Classe Exemple', isDemo: true }];
+            const baseSnap = SyncService.buildRosterSnapshot([
+                { id: 'd1', nom: 'DEMO', prenom: 'Un', classId: 'demo' }
+            ], demoClasses);
+            const targetSnap = SyncService.buildRosterSnapshot([
+                { id: 'r1', nom: 'REEL', prenom: 'Élève', classId: 'c-31' }
+            ], classes);
+
+            const diff = SyncService.diffRoster(baseSnap, targetSnap);
+            expect(diff.removedStudents).toBe(0);
+            expect(diff.removedClasses).toEqual([]);
+            expect(diff.newStudents).toBe(1);
+
+            expect(SyncService.diffRoster(null, targetSnap)).toBeNull();
+            expect(SyncService.diffRoster({}, {})).toBeNull();
+            expect(SyncService.countRosterUniqueStudents(null)).toBe(0);
+        });
+
+        it('should persist unique student count and roster snapshot on forceUpload and getRemoteBackupSummary', async () => {
+            const { runtimeState, userSettings } = await import('../state/State.js');
+            userSettings.academic.classes = classes;
+            runtimeState.data.generatedResults = [
+                { id: '1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c-31' },
+                { id: '2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g-papd' }
+            ];
+            SyncService._provider = {
+                write: vi.fn(() => Promise.resolve()),
+                read: vi.fn(() => Promise.resolve({
+                    classes,
+                    generatedResults: runtimeState.data.generatedResults
+                }))
+            };
+            vi.spyOn(SyncService, '_updateCloudIndicator').mockImplementation(() => {});
+
+            await SyncService.forceUpload();
+            expect(SyncService.getLastSyncStudentCount()).toBe(1);
+            expect(SyncService.getLastSyncClassCount()).toBe(3);
+            expect(SyncService.getLastSyncRoster()?.entries).toHaveLength(2);
+
+            const summary = await SyncService.getRemoteBackupSummary();
+            expect(summary.studentCount).toBe(1);
+            expect(summary.classCount).toBe(3);
+            expect(summary.remoteRoster?.entries).toHaveLength(2);
+        });
+    });
+
     describe('SyncService.isConnected()', () => {
         it('should return false if no provider is set', () => {
             expect(SyncService.isConnected()).toBe(false);

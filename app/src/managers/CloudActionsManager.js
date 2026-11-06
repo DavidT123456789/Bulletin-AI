@@ -11,6 +11,7 @@ import { StorageManager } from './StorageManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { DOM } from '../utils/DOM.js';
 import { runtimeState, userSettings } from '../state/State.js';
+import { Utils } from '../utils/Utils.js';
 
 /** @type {boolean} Verrou global : une seule action Cloud à la fois */
 let busy = false;
@@ -152,8 +153,10 @@ export const CloudActionsManager = {
     async _save({ onProgress = noop, onBeforePrompt = noop }) {
         try {
             const SyncService = await loadSyncService();
-            const studentCount = runtimeState.data.generatedResults?.length || 0;
-            const classCount = userSettings.academic.classes?.length || 0;
+            const localResults = runtimeState.data.generatedResults || [];
+            const localClasses = userSettings.academic.classes || [];
+            const studentCount = Utils.countUniqueStudents(localResults, localClasses);
+            const classCount = localClasses.length;
 
             if (studentCount === 0) {
                 onBeforePrompt();
@@ -183,13 +186,50 @@ export const CloudActionsManager = {
                 if (mode === 'cancel') return 'cancelled';
                 if (mode === 'restore') return 'restore';
             } else {
-                const remoteStudentCount = SyncService.getLastSyncStudentCount();
-                const hasShrinkage = Boolean(remoteStudentCount && studentCount < remoteStudentCount);
+                const lastSyncRoster = SyncService.getLastSyncRoster?.() || null;
+                const rawSyncCount = SyncService.getLastSyncStudentCount();
+                let remoteStudentCount = rawSyncCount;
+                let remoteClassCount = SyncService.getLastSyncClassCount?.() ?? null;
+                let rosterDiff = null;
+                let hasShrinkage = false;
+                let legacyRosterChanged = false;
+
+                if (lastSyncRoster) {
+                    remoteStudentCount = SyncService.countRosterUniqueStudents?.(lastSyncRoster) ?? rawSyncCount;
+                    if (remoteClassCount === null && lastSyncRoster.classes) {
+                        remoteClassCount = Object.keys(lastSyncRoster.classes).length;
+                    }
+                    const localRoster = SyncService.buildRosterSnapshot
+                        ? SyncService.buildRosterSnapshot(localResults, localClasses)
+                        : null;
+                    rosterDiff = (localRoster && SyncService.diffRoster)
+                        ? SyncService.diffRoster(lastSyncRoster, localRoster)
+                        : null;
+                    hasShrinkage = rosterDiff
+                        ? rosterDiff.removedStudents > 0
+                        : Boolean(remoteStudentCount && studentCount < remoteStudentCount);
+                } else if (rawSyncCount !== null && localResults.length > studentCount) {
+                    if (localResults.length >= rawSyncCount) {
+                        remoteStudentCount = rawSyncCount <= studentCount ? rawSyncCount : studentCount;
+                        hasShrinkage = false;
+                        legacyRosterChanged = localResults.length !== rawSyncCount;
+                    } else {
+                        remoteStudentCount = null;
+                        hasShrinkage = false;
+                        legacyRosterChanged = true;
+                    }
+                } else {
+                    hasShrinkage = Boolean(remoteStudentCount && studentCount < remoteStudentCount);
+                }
+
                 const isAlreadySynced = syncState === 'in-sync' && Boolean(SyncService.lastSyncTime || SyncService.remoteSyncTime);
                 const confirmed = await UI.showSaveConfirmationModal({
                     localStudentCount: studentCount,
                     localClassCount: classCount,
                     remoteStudentCount,
+                    remoteClassCount,
+                    rosterDiff,
+                    legacyRosterChanged,
                     lastSyncTime: SyncService.lastSyncTime || SyncService.remoteSyncTime,
                     providerName: this._providerName(SyncService),
                     isInSync: isAlreadySynced && !hasShrinkage
@@ -258,16 +298,34 @@ export const CloudActionsManager = {
                 return false;
             }
 
+            const localResults = runtimeState.data.generatedResults || [];
+            const localClasses = userSettings.academic.classes || [];
+            const localStudentCount = Utils.countUniqueStudents(localResults, localClasses);
+            const localClassCount = localClasses.length;
+
+            const remoteRoster = summary.remoteRoster || (
+                summary.remoteData && SyncService.buildRosterSnapshot
+                    ? SyncService.buildRosterSnapshot(summary.remoteData.generatedResults, summary.remoteData.classes)
+                    : null
+            );
+            const localRoster = (remoteRoster && SyncService.buildRosterSnapshot)
+                ? SyncService.buildRosterSnapshot(localResults, localClasses)
+                : null;
+            const rosterDiff = (remoteRoster && localRoster && SyncService.diffRoster)
+                ? SyncService.diffRoster(remoteRoster, localRoster)
+                : null;
+
             const confirmed = await UI.showRestoreConfirmationModal({
                 remoteDate: summary.timestamp,
                 remoteStudentCount: summary.studentCount,
                 remoteClassCount: summary.classCount,
-                localStudentCount: runtimeState.data.generatedResults?.length || 0,
-                localClassCount: userSettings.academic.classes?.length || 0,
+                localStudentCount,
+                localClassCount,
                 localDate: parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null,
                 lastSyncTime: SyncService.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || null,
                 providerName: this._providerName(SyncService),
-                syncState: SyncService._lastSyncState || SyncService._computeSyncState()
+                syncState: SyncService._lastSyncState || SyncService._computeSyncState(),
+                rosterDiff
             });
             if (!confirmed) return false;
 

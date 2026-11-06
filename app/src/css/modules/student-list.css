@@ -1425,16 +1425,6 @@
     transition: color var(--transition-fast);
 }
 
-.action-dropdown-item.warning:hover,
-.action-dropdown-item.warning:hover i,
-.action-dropdown-item.warning:hover iconify-icon {
-    color: var(--color-amber);
-}
-
-.action-dropdown-item.warning:hover {
-    background: var(--warning-light);
-}
-
 .action-dropdown-item.danger:hover,
 .action-dropdown-item.danger:hover i,
 .action-dropdown-item.danger:hover iconify-icon {

@@ -4,10 +4,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ListSelectionManager } from './ListSelectionManager.js';
-import { appState } from '../../state/State.js';
+import { appState, userSettings } from '../../state/State.js';
 import { ModalUI } from '../ModalUIManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
+import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { UI } from '../UIManager.js';
 
@@ -20,12 +22,28 @@ vi.mock('../../state/State.js', () => ({
             { id: 'student-3', nom: 'BERNARD', prenom: 'Lucas', studentData: {} }
         ],
         filteredResults: [],
+        classes: [],
+        currentClassId: null,
         currentPeriod: 'T1'
+    },
+    userSettings: {
+        academic: {
+            classes: [],
+            currentClassId: null
+        }
+    },
+    runtimeState: {
+        data: {
+            deletedItems: { students: [], classes: [] }
+        }
     }
 }));
 
 vi.mock('../FocusPanelManager.js', () => ({
     FocusPanelManager: {
+        isOpen: false,
+        currentStudentId: null,
+        close: vi.fn(),
         handleExternalGenerationStart: vi.fn(),
         handleExternalGenerationComplete: vi.fn()
     }
@@ -57,9 +75,20 @@ vi.mock('../AppreciationsManager.js', () => ({
     }
 }));
 
+vi.mock('../ClassManager.js', () => ({
+    ClassManager: {
+        getVirtualClasses: vi.fn(() => []),
+        getAllClasses: vi.fn(() => []),
+        setCurrentClass: vi.fn()
+    }
+}));
+
 vi.mock('../ClassUIManager.js', () => ({
     ClassUIManager: {
-        updateStudentCount: vi.fn()
+        updateStudentCount: vi.fn(),
+        renderClassList: vi.fn(),
+        updateHeaderDisplay: vi.fn(),
+        handleClassSwitch: vi.fn()
     }
 }));
 
@@ -73,8 +102,9 @@ vi.mock('../ExportManager.js', () => ({
     ExportManager: {}
 }));
 
-vi.mock('../StudentDataManager.js', () => ({
+vi.mock('../StudentDataManager.js', async (importOriginal) => ({
     StudentDataManager: {
+        ...(await importOriginal()).StudentDataManager,
         deleteStudent: vi.fn()
     }
 }));
@@ -310,6 +340,89 @@ describe('ListSelectionManager', () => {
 
             // Expect calls in alphabetical order: BERNARD (student-2), DURAND (student-3), PETIT (student-1)
             expect(callOrder).toEqual(['student-2', 'student-3', 'student-1']);
+        });
+    });
+
+    describe('confirmAndDeleteStudents & bulkReset (shared students & empty content guard)', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+            userSettings.academic.classes = [
+                { id: 'cls-31', name: '3°1', isGroup: false },
+                { id: 'grp-papd', name: 'PAPD', isGroup: true }
+            ];
+            userSettings.academic.currentClassId = 'grp-papd';
+            appState.classes = userSettings.academic.classes;
+            appState.currentClassId = 'grp-papd';
+            FocusPanelManager.isOpen = false;
+            FocusPanelManager.currentStudentId = null;
+        });
+
+        it('should use contextual "Retirer de PAPD" wording and preserve other class enrollments when student is shared', async () => {
+            appState.generatedResults = [
+                { id: 's-31', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'cls-31', studentData: {} },
+                { id: 's-papd', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd', studentData: {} },
+                { id: 's-other', nom: 'MOLET', prenom: 'Nolan', classId: 'grp-papd', studentData: {} }
+            ];
+            appState.filteredResults = appState.generatedResults.filter(r => r.classId === 'grp-papd');
+            ModalUI.showCustomConfirm.mockResolvedValueOnce(true);
+            StudentDataManager.deleteStudent.mockImplementation(async (id) => {
+                appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+                appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
+                return true;
+            });
+
+            const confirmed = await ListSelectionManager.confirmAndDeleteStudents(['s-papd']);
+
+            expect(confirmed).toBe(true);
+            expect(ModalUI.showCustomConfirm).toHaveBeenCalledWith(
+                expect.stringContaining('3ᵉ1'),
+                null,
+                null,
+                expect.objectContaining({
+                    title: 'Retirer MIRZAI Brikhna de PAPD ?',
+                    confirmText: 'Retirer',
+                    isDanger: true
+                })
+            );
+            // Only the PAPD ficha is deleted; 3°1 ficha remains untouched
+            expect(StudentDataManager.deleteStudent).toHaveBeenCalledTimes(1);
+            expect(StudentDataManager.deleteStudent).toHaveBeenCalledWith('s-papd');
+            expect(appState.generatedResults.find(r => r.id === 's-31')).toBeDefined();
+            expect(UI.showNotification).toHaveBeenCalledWith('Fiche de MIRZAI Brikhna retirée de « PAPD ».', 'success');
+        });
+
+        it('should close FocusPanel if open on deleted student and fall back to real class when virtual class becomes empty', async () => {
+            userSettings.academic.currentClassId = 'virtual_31';
+            appState.currentClassId = 'virtual_31';
+            appState.generatedResults = [
+                { id: 's-papd', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd', studentData: { classe: '3°1' } }
+            ];
+            appState.filteredResults = [...appState.generatedResults];
+            FocusPanelManager.isOpen = true;
+            FocusPanelManager.currentStudentId = 's-papd';
+            ClassManager.getAllClasses.mockReturnValue([{ id: 'grp-papd', name: 'PAPD' }]);
+            ModalUI.showCustomConfirm.mockResolvedValueOnce(true);
+            StudentDataManager.deleteStudent.mockImplementation(async (id) => {
+                appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+                appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
+                return true;
+            });
+
+            await ListSelectionManager.confirmAndDeleteStudents(['s-papd']);
+
+            expect(FocusPanelManager.close).toHaveBeenCalledTimes(1);
+            expect(ClassUIManager.handleClassSwitch).toHaveBeenCalledWith('grp-papd');
+        });
+
+        it('should show an early info toast instead of opening an empty choices modal when student has zero content to erase', async () => {
+            appState.generatedResults = [
+                { id: 's-empty', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd', isPending: true, studentPhoto: null, journal: [], studentData: { periods: {} } }
+            ];
+
+            await ListSelectionManager.bulkReset(['s-empty']);
+
+            expect(ModalUI.showChoicesModal).not.toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalledWith('Aucun contenu à effacer sur cette fiche.', 'info');
         });
     });
 });

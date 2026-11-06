@@ -768,6 +768,152 @@ describe('ModalUIManager', () => {
             document.getElementById('saveConfirmCancelBtn').click();
             expect(await promise).toBe(false);
         });
+
+        it('should display symmetrical sub-stats and group enrollment diff without false +N students or false appreciation counts when existing students are copied to a group', async () => {
+            const syncTime = Date.now() - 3600000;
+            window.appState = {
+                classes: [
+                    { id: 'c1', name: '3°2', isGroup: false },
+                    { id: 'g1', name: 'PAPD', isGroup: true }
+                ]
+            };
+            window.runtimeState = {
+                data: {
+                    generatedResults: [
+                        // Blank pending ficha created by copyStudentsToClass with fresh _lastModified
+                        { id: 'copy-1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g1', isPending: true, appreciation: null, _lastModified: Date.now(), studentData: { periods: {} } }
+                    ]
+                }
+            };
+
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 318,
+                localClassCount: 15,
+                remoteStudentCount: 318,
+                remoteClassCount: 15,
+                lastSyncTime: syncTime,
+                rosterDiff: {
+                    newStudents: 0,
+                    removedStudents: 0,
+                    addedEnrollments: [{ classId: 'g1', className: 'PAPD', isGroup: true, count: 4 }],
+                    removedEnrollments: [],
+                    movedEnrollments: [],
+                    addedClasses: [],
+                    removedClasses: [],
+                    hasAnyChange: true
+                }
+            });
+
+            const modal = document.getElementById('saveConfirmationModal');
+            const cloudSubStat = modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat')?.textContent.trim();
+            const localSubStat = modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat')?.textContent.trim();
+            expect(cloudSubStat).toBe('318 élèves · 15 classes');
+            expect(localSubStat).toBe('318 élèves · 15 classes');
+
+            const impactText = modal.querySelector('.restore-impact-box')?.textContent || '';
+            expect(impactText).toContain('4 élèves ajoutés à PAPD');
+            expect(impactText).not.toContain('par rapport au Cloud');
+            expect(impactText).not.toContain('appréciations ou notes éditées');
+            expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
+
+            document.getElementById('saveConfirmCancelBtn').click();
+            await promise;
+            delete window.appState;
+            delete window.runtimeState;
+        });
+
+        it('should not show false shrinkage warning when removing a shared student from a group, but warn when a student is permanently deleted', async () => {
+            // 1. Removal from PAPD while student stays in 3°1 -> removedStudents: 0
+            const p1 = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 318,
+                localClassCount: 15,
+                remoteStudentCount: 318,
+                remoteClassCount: 15,
+                lastSyncTime: Date.now() - 1000,
+                rosterDiff: {
+                    newStudents: 0,
+                    removedStudents: 0,
+                    addedEnrollments: [],
+                    removedEnrollments: [{ classId: 'g1', className: 'PAPD', isGroup: true, count: 1 }],
+                    movedEnrollments: [],
+                    addedClasses: [],
+                    removedClasses: [],
+                    hasAnyChange: true
+                }
+            });
+            const m1 = document.getElementById('saveConfirmationModal');
+            expect(m1.querySelector('.restore-safety-notice.warning')).toBeNull();
+            expect(m1.textContent).toContain('1 élève retiré de PAPD');
+            document.getElementById('saveConfirmCancelBtn').click();
+            await p1;
+
+            // 2. 1 student permanently deleted + 1 brand-new student added -> totals both 318, removedStudents: 1
+            const p2 = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 318,
+                localClassCount: 15,
+                remoteStudentCount: 318,
+                remoteClassCount: 15,
+                lastSyncTime: Date.now() - 1000,
+                rosterDiff: {
+                    newStudents: 1,
+                    removedStudents: 1,
+                    addedEnrollments: [],
+                    removedEnrollments: [],
+                    movedEnrollments: [],
+                    addedClasses: [],
+                    removedClasses: [],
+                    hasAnyChange: true
+                }
+            });
+            const m2 = document.getElementById('saveConfirmationModal');
+            const warning = m2.querySelector('.restore-safety-notice.warning');
+            expect(warning).not.toBeNull();
+            expect(warning.textContent).toContain('Attention (suppression d\'élève)');
+            expect(document.activeElement).toBe(document.getElementById('saveConfirmCancelBtn'));
+            document.getElementById('saveConfirmCancelBtn').click();
+            await p2;
+        });
+    });
+
+    describe('showChoicesModal', () => {
+        it('should disable #choicesOkBtn and ignore Enter when zero checkboxes are checked, and enable when checked', async () => {
+            const promise = ModalUI.showChoicesModal(
+                'Effacer le contenu',
+                'Choisissez :',
+                [
+                    { id: 'appreciations', label: 'Appréciations', description: 'Aucune', checked: false, disabled: true },
+                    { id: 'photos', label: 'Photos', description: '1 photo', checked: false, disabled: false }
+                ],
+                { confirmText: 'Effacer', isDanger: true }
+            );
+
+            const okBtn = document.getElementById('choicesOkBtn');
+            const photoCheckbox = document.getElementById('choice_photos');
+            expect(okBtn.disabled).toBe(true);
+
+            // Enter or click while disabled should not resolve
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            okBtn.click();
+            expect(document.getElementById('customChoicesModal')).not.toBeNull();
+
+            // Check photo -> enables OK button
+            photoCheckbox.checked = true;
+            photoCheckbox.dispatchEvent(new Event('change'));
+            expect(okBtn.disabled).toBe(false);
+
+            // Uncheck photo -> disables OK button again
+            photoCheckbox.checked = false;
+            photoCheckbox.dispatchEvent(new Event('change'));
+            expect(okBtn.disabled).toBe(true);
+
+            // Check again and confirm
+            photoCheckbox.checked = true;
+            photoCheckbox.dispatchEvent(new Event('change'));
+            okBtn.click();
+
+            const result = await promise;
+            expect(result).toEqual({ confirmed: true, values: { appreciations: false, photos: true } });
+        });
     });
 
     describe('isAnyModalOpen & Focus Isolation', () => {
