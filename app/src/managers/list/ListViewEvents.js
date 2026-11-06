@@ -144,6 +144,7 @@ export const ListViewEvents = {
                         menu.style.left = '';
                         menu.style.right = '';
                         menu.style.width = '';
+                        menu.style.marginTop = '';
                         menu.style.zIndex = '';
                         menu.style.maxHeight = '';
                     }
@@ -159,7 +160,7 @@ export const ListViewEvents = {
         };
 
         // Shared helper to activate a dropdown menu, constrain its height to the viewport, and push history state
-        const activateMenu = (menu, dropdown, triggerBtn, availableSpace) => {
+        const activateMenu = (menu, dropdown, triggerBtn, availableSpace, { focusFirstItem = false } = {}) => {
             if (menu.dataset.closeTimeout) {
                 clearTimeout(parseInt(menu.dataset.closeTimeout));
                 delete menu.dataset.closeTimeout;
@@ -170,16 +171,26 @@ export const ListViewEvents = {
                     ListViewRenderer.refreshDeleteMenuItem?.(menu, studentId);
                 }
             }
+            if (!menu.hasAttribute('tabindex')) {
+                menu.tabIndex = -1;
+            }
+            menu._triggerBtn = triggerBtn || null;
             menu.style.maxHeight = availableSpace > 120 ? `${Math.floor(availableSpace)}px` : '';
             menu.scrollTop = 0;
             menu.classList.add('open');
             dropdown?.classList.add('open');
             triggerBtn?.setAttribute('aria-expanded', 'true');
             HistoryManager.pushState('listActionMenu', (opts) => closeAllMenus(opts));
+
+            if (focusFirstItem) {
+                menu.querySelector('.action-dropdown-item:not(:disabled), [role="menuitem"]:not(:disabled)')?.focus({ preventScroll: true });
+            } else {
+                menu.focus?.({ preventScroll: true });
+            }
         };
 
         // Open a row actions menu anchored to its 3-dots button (auto dropup near the viewport bottom)
-        const openRowMenu = (menuBtn) => {
+        const openRowMenu = (menuBtn, options = {}) => {
             const dropdown = menuBtn.closest('.action-dropdown');
             const menu = dropdown?.querySelector('.action-dropdown-menu');
             if (!menu) return;
@@ -191,6 +202,7 @@ export const ListViewEvents = {
             menu.style.left = '';
             menu.style.right = '';
             menu.style.width = '';
+            menu.style.marginTop = '';
             menu.style.zIndex = '';
 
             // Inversion automatique vers le haut si trop proche du bas de l'écran
@@ -200,7 +212,7 @@ export const ListViewEvents = {
             const openUp = spaceBelow < 240 && spaceAbove > spaceBelow;
             dropdown.classList.toggle('dropup', openUp);
 
-            activateMenu(menu, dropdown, menuBtn, openUp ? spaceAbove : spaceBelow);
+            activateMenu(menu, dropdown, menuBtn, openUp ? spaceAbove : spaceBelow, options);
         };
 
         // Close open menus on scroll (outside the menu itself, including mobile touch gestures inside the menu)
@@ -499,22 +511,48 @@ export const ListViewEvents = {
                 if (!menu) return;
 
                 closeAllMenus();
+                dropdown.classList.remove('dropup');
 
-                // Position at mouse cursor [USER REQUEST]
-                // Use absolute positioning relative to parent so it follows scroll
                 const rect = dropdown.getBoundingClientRect();
-                const relX = e.clientX - rect.left;
-                const relY = e.clientY - rect.top;
+                const vw = window.innerWidth || 1024;
+                const vh = window.innerHeight || 768;
+                const MARGIN = 12;
+                const HEADER_CLEARANCE = 64;
 
                 menu.style.position = 'absolute';
-                menu.style.top = `${relY}px`;
-                menu.style.left = `${relX}px`;
-                // CRITICAL FIX: Override 'right: 0' from CSS to prevent stretching
                 menu.style.right = 'auto';
                 menu.style.width = 'max-content';
+                menu.style.marginTop = '0';
                 menu.style.zIndex = '9999';
 
-                activateMenu(menu, dropdown, menuBtn, window.innerHeight - e.clientY - 16);
+                const maxVerticalSpace = Math.max(vh - e.clientY - MARGIN, e.clientY - HEADER_CLEARANCE);
+                activateMenu(menu, dropdown, menuBtn, maxVerticalSpace);
+
+                const menuRect = menu.getBoundingClientRect();
+                const menuW = menuRect.width || menu.offsetWidth || 188;
+                const menuH = menuRect.height || menu.offsetHeight || 240;
+
+                let targetX = e.clientX;
+                let targetY = e.clientY;
+
+                if (targetX + menuW > vw - MARGIN) {
+                    targetX = Math.max(MARGIN, vw - menuW - MARGIN);
+                } else {
+                    targetX = Math.max(MARGIN, targetX);
+                }
+
+                if (targetY + menuH > vh - MARGIN) {
+                    if (e.clientY - menuH >= HEADER_CLEARANCE) {
+                        targetY = e.clientY - menuH;
+                    } else {
+                        targetY = Math.max(HEADER_CLEARANCE, vh - menuH - MARGIN);
+                    }
+                } else {
+                    targetY = Math.max(MARGIN, targetY);
+                }
+
+                menu.style.left = `${Math.round(targetX - rect.left)}px`;
+                menu.style.top = `${Math.round(targetY - rect.top)}px`;
             }
         }, { signal });
 

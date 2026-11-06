@@ -262,7 +262,8 @@
     z-index: 4;
 }
 
-.student-list-table tbody tr.focus-active td {
+.student-list-table tbody tr.focus-active td,
+.student-list-table tbody tr:has(.action-dropdown-menu.open) td {
     background-color: var(--row-spotlight-bg-peak);
     box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
                 inset 0 -1px 0 0 var(--row-spotlight-border);
@@ -1361,7 +1362,9 @@
     margin-top: 4px;
     min-width: 172px;
     width: max-content;
-    transform: translateY(-8px) scale(0.95);
+    outline: none;
+    will-change: transform, opacity;
+    transform: translateZ(0) translateY(-8px) scale(0.95);
     transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 100;
@@ -1371,7 +1374,7 @@
     display: flex;
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0) scale(1);
+    transform: translateZ(0) translateY(0) scale(1);
 }
 
 .action-dropdown.dropup .action-dropdown-menu {
@@ -1404,7 +1407,9 @@
     border-radius: var(--dropdown-item-radius);
 }
 
-.action-dropdown-item:hover {
+.action-dropdown-item:hover,
+.action-dropdown-item:focus-visible {
+    outline: none;
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
@@ -1426,18 +1431,25 @@
 }
 
 .action-dropdown-item.danger:hover,
+.action-dropdown-item.danger:focus-visible,
 .action-dropdown-item.danger:hover i,
-.action-dropdown-item.danger:hover iconify-icon {
+.action-dropdown-item.danger:focus-visible i,
+.action-dropdown-item.danger:hover iconify-icon,
+.action-dropdown-item.danger:focus-visible iconify-icon {
     color: var(--error-color);
 }
 
 [data-theme="dark"] .action-dropdown-item.danger:hover,
+[data-theme="dark"] .action-dropdown-item.danger:focus-visible,
 [data-theme="dark"] .action-dropdown-item.danger:hover i,
-[data-theme="dark"] .action-dropdown-item.danger:hover iconify-icon {
+[data-theme="dark"] .action-dropdown-item.danger:focus-visible i,
+[data-theme="dark"] .action-dropdown-item.danger:hover iconify-icon,
+[data-theme="dark"] .action-dropdown-item.danger:focus-visible iconify-icon {
     color: var(--error-bright);
 }
 
-.action-dropdown-item.danger:hover {
+.action-dropdown-item.danger:hover,
+.action-dropdown-item.danger:focus-visible {
     background: var(--error-light);
 }
 

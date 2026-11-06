@@ -64,9 +64,7 @@ export const SeatingEvents = {
         });
 
         viewEl?.addEventListener('contextmenu', (e) => {
-            if (!this._isLocked || e.target.closest?.('.sc-student-chip')) {
-                e.preventDefault();
-            }
+            this._handlePlanContextMenu?.(e);
         });
 
         viewEl?.addEventListener('dragover', (e) => {
@@ -606,6 +604,26 @@ export const SeatingEvents = {
         if (!this._globalListenersInitialized) {
             this._globalListenersInitialized = true;
 
+            document.addEventListener('pointerdown', (e) => {
+                if (this._activeContextMenu && e.button !== 2 && !e.target?.closest?.('#scContextMenu')) {
+                    this._dismissedContextMenuOnPointerDown = true;
+                    this._closeContextMenu();
+                } else {
+                    this._dismissedContextMenuOnPointerDown = false;
+                }
+            }, { capture: true, passive: true });
+
+            document.addEventListener('click', (e) => {
+                if (this._dismissedContextMenuOnPointerDown) {
+                    this._dismissedContextMenuOnPointerDown = false;
+                    if (!e.target?.closest?.('#scContextMenu')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }
+                }
+            }, true);
+
             document.addEventListener('click', (e) => {
                 if (this._isSearchOpen()) {
                     const searchWrap = document.getElementById('scFloatingSearch');
@@ -622,6 +640,9 @@ export const SeatingEvents = {
                         }
                     }
                 }
+                if (this._activeContextMenu && !e.target.closest('#scContextMenu')) {
+                    this._closeContextMenu();
+                }
                 if (this._configPopoverOpen && !e.target.closest('.sc-config-wrapper')) {
                     this._closeConfigPopover();
                 }
@@ -632,6 +653,7 @@ export const SeatingEvents = {
                     !e.target.closest('.sc-student-chip') &&
                     !e.target.closest('.sc-cell') &&
                     !e.target.closest('#scQuickGroupBtn') &&
+                    !e.target.closest('#scContextMenu') &&
                     !e.target.closest('.sc-mobile-sheet') &&
                     !e.target.closest('.sc-mobile-sheet-backdrop')) {
                     this._clearSelection();
@@ -640,6 +662,10 @@ export const SeatingEvents = {
 
             document.addEventListener('keydown', (e) => {
                 if (FocusPanelManager.isOpen?.() || UI.isAnyModalOpen()) return;
+
+                if (this._activeContextMenu && this._handleContextMenuKeydown?.(e)) {
+                    return;
+                }
 
                 const activeEl = document.activeElement;
 

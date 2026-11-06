@@ -2372,6 +2372,7 @@ export const ClassUIManager = {
                     const originalContent = row.innerHTML;
                     const cls = ClassManager.getClassById(classId);
                     const displayName = this._escapeHtml(Utils.formatClassDisplayName(cls?.name || ''));
+                    const deleteSubtext = this._escapeHtml(StudentDataManager.getClassDeleteSubtext(classId));
                     let isDeleting = false;
 
                     row.innerHTML = `
@@ -2380,7 +2381,7 @@ export const ClassUIManager = {
                         </div>
                         <div class="class-management-info delete-confirm-info">
                             <span class="delete-confirm-title">Supprimer « <strong>${displayName}</strong> » ?</span>
-                            <span class="delete-confirm-subtext">Ses élèves et données seront définitivement effacés.</span>
+                            <span class="delete-confirm-subtext">${deleteSubtext}</span>
                         </div>
                         <div class="delete-confirm-actions">
                             <button type="button" class="inline-delete-btn cancel cancel-delete-btn">
@@ -3018,6 +3019,10 @@ export const ClassUIManager = {
                 let movedCount = 0;
                 const now = Date.now();
                 students.forEach(student => {
+                    if (student.classId !== targetClassId) {
+                        delete student.seatingPosition;
+                        delete student.seatingActivityPosition;
+                    }
                     student.classId = targetClassId;
                     student._lastModified = now;
 

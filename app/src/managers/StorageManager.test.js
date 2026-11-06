@@ -582,6 +582,35 @@ describe('StorageManager', () => {
             expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['student_1']);
             expect(userSettings.academic.classes.map(c => c.id)).toEqual(['class_a']);
         });
+
+        it('should distinguish addedStudents (unique persons) from addedEnrollments (existing students copied to a group)', async () => {
+            userSettings.academic.classes = [
+                { id: 'c_32', name: '3°2' },
+                { id: 'g_papd', name: 'PAPD', isGroup: true }
+            ];
+            runtimeState.data.generatedResults = [
+                { id: 's_khaalid_32', nom: 'AHMED MOHAMUD', prenom: 'Khaalid', classId: 'c_32', _lastModified: 1000, studentData: {} }
+            ];
+            runtimeState.data.deletedItems = { students: [], classes: [] };
+
+            const remoteData = {
+                classes: [
+                    { id: 'c_32', name: '3°2' },
+                    { id: 'g_papd', name: 'PAPD', isGroup: true }
+                ],
+                generatedResults: [
+                    { id: 's_khaalid_32', nom: 'AHMED MOHAMUD', prenom: 'Khaalid', classId: 'c_32', _lastModified: 1000, studentData: {} },
+                    { id: 's_khaalid_papd', nom: 'AHMED MOHAMUD', prenom: 'Khaalid', classId: 'g_papd', _lastModified: 2000, studentData: {} },
+                    { id: 's_new_32', nom: 'MOLET', prenom: 'Nolan', classId: 'c_32', _lastModified: 2000, studentData: {} }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.addedStudents).toBe(1);
+            expect(result.stats.addedEnrollments).toBe(1);
+        });
     });
 
     describe('PreRestoreSnapshot', () => {

@@ -192,6 +192,7 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._closeContextMenu?.();
         this._closeMobileSheet(true);
         this._closeConfigPopover();
         this._closePlacementPopover();
@@ -368,6 +369,7 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._closeContextMenu?.();
         this._closeMobileSheet();
         if (this._isLocked) {
             this._closeConfigPopover();

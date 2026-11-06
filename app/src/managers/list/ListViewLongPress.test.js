@@ -166,4 +166,21 @@ describe('ListView - Touch long-press opens the row actions menu', () => {
         expect(menu.style.position).toBe('absolute');
         expect(row.querySelector('.action-dropdown').classList.contains('open')).toBe(true);
     });
+
+    it('flips and clamps the right-click context menu inside the viewport when clicking near the bottom-right edge', () => {
+        Object.defineProperty(window, 'innerWidth', { value: 1000, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { value: 700, configurable: true });
+
+        const dropdown = row.querySelector('.action-dropdown');
+        dropdown.getBoundingClientRect = () => ({ left: 900, top: 640, right: 940, bottom: 676, width: 40, height: 36 });
+        menu.getBoundingClientRect = () => ({ left: 950, top: 680, right: 1140, bottom: 920, width: 190, height: 240 });
+
+        const ctx = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 950, clientY: 680 });
+        nameCell.dispatchEvent(ctx);
+
+        // targetX clamped to 1000 - 190 - 12 = 798 -> relX = 798 - 900 = -102px
+        // targetY flipped above cursor: 680 - 240 = 440 -> relY = 440 - 640 = -200px
+        expect(menu.style.left).toBe('-102px');
+        expect(menu.style.top).toBe('-200px');
+    });
 });

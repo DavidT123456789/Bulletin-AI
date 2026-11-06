@@ -92,34 +92,51 @@ export const ListViewRenderer = {
     },
 
     /**
+     * Génère la section HTML partagée « Élève » (Liste + menu contextuel du Plan).
+     * @param {string|string[]} studentIds - ID ou tableau d'IDs d'élèves ciblés
+     * @param {Object} [options={}]
+     * @param {string} [options.headerLabel='Élève'] - Titre de section
+     * @param {string} [options.countSuffix=''] - Suffixe optionnel ex. " (3)"
+     * @param {boolean} [options.deferDeleteMeta=false] - Évite le calcul d'affectations au rendu initial d'un menu fermé (rafraîchi à l'ouverture)
+     * @returns {string} HTML des entrées de gestion de l'élève
+     */
+    generateStudentMenuSectionHTML(studentIds, options = {}) {
+        const { headerLabel = 'Élève', countSuffix = '', deferDeleteMeta = false } = options;
+        const deleteMeta = deferDeleteMeta
+            ? { menuIcon: 'solar:trash-bin-trash-linear', menuLabel: "Supprimer l'élève" }
+            : StudentDataManager.getDeleteActionMeta(studentIds);
+        const escapedSuffix = Utils.escapeHtml(countSuffix);
+        return `
+                <h5 class="dropdown-header">${Utils.escapeHtml(headerLabel)}</h5>
+                <button type="button" class="action-dropdown-item" role="menuitem" data-action="move-student">
+                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Copier / Déplacer${escapedSuffix}…
+                </button>
+                <button type="button" class="action-dropdown-item" role="menuitem" data-action="reset-student">
+                    <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer le contenu${escapedSuffix}…
+                </button>
+                <div class="dropdown-divider" role="separator"></div>
+                <button type="button" class="action-dropdown-item danger" role="menuitem" data-action="delete-student">
+                    <iconify-icon icon="${deleteMeta.menuIcon}"></iconify-icon> <span class="delete-action-label">${Utils.escapeHtml(deleteMeta.menuLabel)}</span>
+                </button>`;
+    },
+
+    /**
      * Génère le HTML du menu d'actions pour une ligne élève
      * @param {string} studentId - ID de l'élève
      * @returns {string} HTML du menu
      * @private
      */
     generateActionMenuHTML(studentId) {
-        const deleteMeta = StudentDataManager.getDeleteActionMeta(studentId);
         return `
-            <div class="action-dropdown-menu">
+            <div class="action-dropdown-menu" role="menu" tabindex="-1">
                 <h5 class="dropdown-header">Appréciation</h5>
-                <button class="action-dropdown-item" data-action="regenerate-student">
+                <button type="button" class="action-dropdown-item" role="menuitem" data-action="regenerate-student">
                     <iconify-icon icon="solar:refresh-linear"></iconify-icon> Régénérer
                 </button>
-                <button class="action-dropdown-item" data-action="copy-appreciation">
+                <button type="button" class="action-dropdown-item" role="menuitem" data-action="copy-appreciation">
                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                 </button>
-                
-                <h5 class="dropdown-header">Élève</h5>
-                <button class="action-dropdown-item" data-action="move-student">
-                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Copier / Déplacer…
-                </button>
-                <button class="action-dropdown-item" data-action="reset-student">
-                    <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer le contenu…
-                </button>
-                <div class="dropdown-divider" role="separator"></div>
-                <button class="action-dropdown-item danger" data-action="delete-student">
-                    <iconify-icon icon="${deleteMeta.menuIcon}"></iconify-icon> <span class="delete-action-label">${Utils.escapeHtml(deleteMeta.menuLabel)}</span>
-                </button>
+                ${this.generateStudentMenuSectionHTML(studentId, { deferDeleteMeta: true })}
             </div>
         `;
     },
@@ -230,7 +247,7 @@ export const ListViewRenderer = {
             actionBtn.disabled = false;
         }
         const menu = row.querySelector('.action-dropdown-menu');
-        if (menu) {
+        if (menu?.classList.contains('open')) {
             this.refreshDeleteMenuItem(menu, result.id);
         }
     },

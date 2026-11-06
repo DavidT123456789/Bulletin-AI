@@ -1557,6 +1557,7 @@ export const StorageManager = {
         } = {}
     ) {
         let addedStudents = 0;
+        let addedEnrollments = 0;
         let updatedStudents = 0;
         let skippedStudents = 0;
         let addedJournalEntries = 0;
@@ -1573,6 +1574,26 @@ export const StorageManager = {
 
         const safeIncoming = Array.isArray(incomingResults) ? incomingResults : [];
         const localMap = new Map(localResults.map(r => [r.id, r]));
+
+        const demoClassIds = new Set();
+        for (const c of [...(userSettings.academic?.classes || []), ...incomingClasses]) {
+            if (c?.id && (c.isDemo === true || c.name?.toLowerCase() === 'classe exemple')) {
+                demoClassIds.add(c.id);
+            }
+        }
+        const resolveIdentityKey = (r) => {
+            const ik = Utils.getStudentIdentityKey(r?.nom, r?.prenom);
+            if (!ik) return `id:${r?.id || ''}`;
+            const scope = (r?.classId && demoClassIds.has(r.classId)) ? 'demo' : 'real';
+            return `${scope}:${ik}`;
+        };
+        const knownStudentKeys = new Set();
+        const knownClassStudentPairs = new Set();
+        for (const r of localResults) {
+            const sKey = resolveIdentityKey(r);
+            knownStudentKeys.add(sKey);
+            knownClassStudentPairs.add(`${r.classId || ''}\0${sKey}`);
+        }
 
         safeIncoming.forEach(rawRemoteStudent => {
             const remoteStudent = this._ensureStudentId(rawRemoteStudent);
@@ -1593,7 +1614,16 @@ export const StorageManager = {
                     ...remoteStudent,
                     _lastModified: remoteStudent._lastModified || Date.now()
                 });
-                addedStudents++;
+                const sKey = resolveIdentityKey(remoteStudent);
+                const pairKey = `${remoteStudent.classId || ''}\0${sKey}`;
+                if (!knownStudentKeys.has(sKey)) {
+                    knownStudentKeys.add(sKey);
+                    knownClassStudentPairs.add(pairKey);
+                    addedStudents++;
+                } else if (!knownClassStudentPairs.has(pairKey)) {
+                    knownClassStudentPairs.add(pairKey);
+                    addedEnrollments++;
+                }
             } else {
                 let hasStudentUpdates = false;
                 const localTime = localStudent._lastModified || (localStudent.timestamp ? new Date(localStudent.timestamp).getTime() : 0) || 0;
@@ -1764,7 +1794,7 @@ export const StorageManager = {
         runtimeState.data.generatedResults = cleanResults;
         await this._persistGeneratedResults(cleanResults);
 
-        return { addedStudents, updatedStudents, skippedStudents, addedJournalEntries };
+        return { addedStudents, addedEnrollments, updatedStudents, skippedStudents, addedJournalEntries };
     },
 
     /**
@@ -1912,6 +1942,7 @@ export const StorageManager = {
                             incomingClasses: backup.classes || []
                         });
                         stats.imported = mergeRes.addedStudents;
+                        stats.addedEnrollments = mergeRes.addedEnrollments || 0;
                         stats.updated = mergeRes.updatedStudents;
                         stats.skipped = mergeRes.skippedStudents;
                     }
@@ -1946,8 +1977,11 @@ export const StorageManager = {
             if (App && App.updateUIOnLoad) App.updateUIOnLoad();
 
             if (!options.silent) {
+                const enrollPart = stats.addedEnrollments > 0
+                    ? ` (+${stats.addedEnrollments} affectation${stats.addedEnrollments > 1 ? 's' : ''})`
+                    : '';
                 const message = options.mergeData
-                    ? `Importé: ${stats.imported} nouveaux, ${stats.updated} mis à jour, ${stats.skipped} ignorés.`
+                    ? `Importé: ${stats.imported} nouveaux${enrollPart}, ${stats.updated} mis à jour, ${stats.skipped} ignorés.`
                     : `Restauré: ${stats.imported} élèves.`;
                 UI.showNotification(message, 'success');
             }
@@ -2001,6 +2035,7 @@ export const StorageManager = {
 
         const stats = {
             addedStudents: 0,
+            addedEnrollments: 0,
             updatedStudents: 0,
             addedJournalEntries: 0,
             addedClasses: 0
@@ -2052,6 +2087,7 @@ export const StorageManager = {
             incomingClasses: remoteData.classes || []
         });
         stats.addedStudents = mergeStudentRes.addedStudents;
+        stats.addedEnrollments = mergeStudentRes.addedEnrollments;
         stats.updatedStudents = mergeStudentRes.updatedStudents;
         stats.addedJournalEntries = mergeStudentRes.addedJournalEntries;
 

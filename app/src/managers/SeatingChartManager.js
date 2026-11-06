@@ -29,6 +29,7 @@ import { SeatingRenderer } from './seating/SeatingRenderer.js';
 import { SeatingSidebar } from './seating/SeatingSidebar.js';
 import { SeatingDragDrop } from './seating/SeatingDragDrop.js';
 import { SeatingMobileSheet } from './seating/SeatingMobileSheet.js';
+import { SeatingContextMenu } from './seating/SeatingContextMenu.js';
 import { SeatingPrintExporter } from './seating/SeatingPrintExporter.js';
 
 export const SeatingChartManager = {
@@ -72,6 +73,7 @@ export const SeatingChartManager = {
     _pendingFoldDirection: null,
     _pendingFoldTimestamp: 0,
     _activeMobileSheet: null,
+    _activeContextMenu: null,
     _activeSearchTerm: '',
     _searchQueryAtPlanEnter: '',
     _searchMatchIndex: 0,
@@ -327,13 +329,44 @@ export const SeatingChartManager = {
             }
             return;
         }
+        this._closeContextMenu?.();
         this._students = this._getCurrentClassStudents();
+        if (this._students.length === 0) {
+            this.updateToggleVisibility(false);
+            this._closeMobileSheet?.(true);
+            this.switchToView('list', { silent: true, immediate: true });
+            return;
+        }
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
+        if (Array.isArray(this._gridState)) {
+            for (let r = 0; r < this._gridState.length; r++) {
+                const row = this._gridState[r];
+                if (!Array.isArray(row)) continue;
+                for (let c = 0; c < row.length; c++) {
+                    const val = row[c];
+                    if (Array.isArray(val)) {
+                        const filtered = val.filter(id => id && this._studentMap.has(id));
+                        row[c] = filtered.length === 0 ? null : (filtered.length === 1 ? filtered[0] : filtered);
+                    } else if (val && !this._studentMap.has(val)) {
+                        row[c] = null;
+                    }
+                }
+            }
+        }
         if (this._selectedChipIds.length > 0) {
             this._selectedChipIds = this._selectedChipIds.filter(id => {
                 const st = this._studentMap.get(id);
                 return st && !this._isStudentDeparted(st);
             });
+        }
+        if (!this._isVirtualClass() && this._isLocked && this._getPlacedIds().size === 0) {
+            const currentClass = this._getCurrentClass();
+            const lockKey = this._getActiveClassLockKey();
+            if (currentClass) {
+                currentClass[lockKey] = false;
+                StorageManager?.saveAppState?.();
+            }
+            this._applyLockState(false, { skipSmartFit: true });
         }
         this._render();
         window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
@@ -405,6 +438,7 @@ export const SeatingChartManager = {
             if (HistoryManager.isOpen('viewPlan')) HistoryManager.handleManualClose('viewPlan');
             if (HistoryManager.isOpen('seatingChartEdit')) HistoryManager.handleManualClose('seatingChartEdit');
             if (HistoryManager.isOpen('scMobileSheet')) HistoryManager.handleManualClose('scMobileSheet');
+            if (HistoryManager.isOpen('scContextMenu')) HistoryManager.handleManualClose('scContextMenu');
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
             if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
 
@@ -451,6 +485,7 @@ export const SeatingChartManager = {
                     this._savePositionsToState(true);
                     this._saveGridConfig();
                 }
+                this._closeContextMenu?.();
                 this._closeConfigPopover();
                 this._closePlacementPopover();
 
@@ -567,6 +602,7 @@ export const SeatingChartManager = {
         this._cleanupModeCarousel();
         this._cleanupFoldContinuum();
         this._clearSelection();
+        this._closeContextMenu?.();
         this._closeMobileSheet(true);
         this._closeSearch();
         this._closeConfigPopover();
@@ -625,5 +661,6 @@ export const SeatingChartManager = {
     ...SeatingSidebar,
     ...SeatingDragDrop,
     ...SeatingMobileSheet,
+    ...SeatingContextMenu,
     ...SeatingPrintExporter
 };

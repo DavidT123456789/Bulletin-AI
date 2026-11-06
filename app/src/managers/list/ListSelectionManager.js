@@ -479,9 +479,10 @@ export const ListSelectionManager = {
         return this.confirmAndDeleteStudents(ids);
     },
 
-    async bulkMove(ids) {
+    async bulkMove(ids, onComplete = null) {
         ClassUIManager.showMoveStudentsModal(ids, () => {
             this.clearSelections();
+            onComplete?.();
         });
     },
 
@@ -859,6 +860,7 @@ export const ListSelectionManager = {
         if (totalCleared > 0) {
             await StorageManager.saveAppState();
             UI?.updateStats?.();
+            window.dispatchEvent(new CustomEvent('student-updated'));
             const parts = [];
             const singleMessages = [];
             if (counts.appreciation > 0) {
@@ -936,6 +938,7 @@ export const ListSelectionManager = {
 
                     await StorageManager.saveAppState();
                     UI?.updateStats?.();
+                    window.dispatchEvent(new CustomEvent('student-updated'));
                     UI?.showNotification('Effacement annulé.', 'success');
                 },
                 { type: 'warning', title: undoTitle }
@@ -943,5 +946,6 @@ export const ListSelectionManager = {
         }
 
         if (ids.length > 1) this.clearSelections();
+        return totalCleared > 0;
     },
 };

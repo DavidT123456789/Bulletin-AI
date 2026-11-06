@@ -1084,7 +1084,7 @@ export const SyncService = {
             if (!remoteData || (!remoteData.generatedResults && !remoteData.classes && !remoteData.settings)) {
                 await this.forceUpload();
                 this._setStatus('idle');
-                return { success: true, stats: { addedStudents: 0, updatedStudents: 0, addedJournalEntries: 0, addedClasses: 0 } };
+                return { success: true, stats: { addedStudents: 0, addedEnrollments: 0, updatedStudents: 0, addedJournalEntries: 0, addedClasses: 0 } };
             }
 
             const mergeResult = await StorageManager.mergeRemoteData(remoteData, { skipSnapshot: true });

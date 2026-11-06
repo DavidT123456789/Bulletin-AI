@@ -672,6 +672,39 @@ describe('StudentDataManager', () => {
             // 5. Cas limite vide
             expect(StudentDataManager.getDeleteActionMeta([])).toMatchObject({ students: [] });
         });
+
+        it('devrait générer un sous-texte rassurant et fidèle lors de la suppression d’un groupe ou d’une classe (getClassDeleteSubtext)', () => {
+            appState.generatedResults = [
+                { id: 's1-31', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'cls-31' },
+                { id: 's2-32', nom: 'BARE', prenom: 'Timéo', classId: 'cls-32' },
+                { id: 's1-papd', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'grp-papd' },
+                { id: 's2-papd', nom: 'BARE', prenom: 'Timéo', classId: 'grp-papd' }
+            ];
+
+            // 1. Groupe dont tous les élèves existent ailleurs -> rassure sur leur conservation
+            expect(StudentDataManager.getClassDeleteSubtext('grp-papd')).toBe(
+                'Données du groupe effacées · les 2 élèves restent dans leurs classes.'
+            );
+
+            // 2. Ajout d'un élève présent uniquement dans PAPD -> décompte mixte exact
+            appState.generatedResults.push({ id: 's3-only', nom: 'MOLET', prenom: 'Nolan', classId: 'grp-papd' });
+            expect(StudentDataManager.getClassDeleteSubtext('grp-papd')).toBe(
+                '2 élèves conservés ailleurs · 1 supprimé définitivement.'
+            );
+
+            // 3. Classe principale dont aucun élève n'est inscrit ailleurs -> avertissement complet
+            appState.generatedResults = [
+                { id: 's-4a-1', nom: 'DUPONT', prenom: 'Emma', classId: 'cls-4a' },
+                { id: 's-4a-2', nom: 'MARTIN', prenom: 'Lucas', classId: 'cls-4a' }
+            ];
+            expect(StudentDataManager.getClassDeleteSubtext('cls-4a')).toBe(
+                'Ses élèves et données seront définitivement effacés.'
+            );
+
+            // 4. Groupe ou classe vide
+            expect(StudentDataManager.getClassDeleteSubtext('grp-papd')).toBe('Ce groupe est vide.');
+            expect(StudentDataManager.getClassDeleteSubtext('cls-31')).toBe('Cette classe est vide.');
+        });
     });
 
     describe('deleteStudent', () => {

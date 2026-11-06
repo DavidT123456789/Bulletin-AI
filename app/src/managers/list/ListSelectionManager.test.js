@@ -424,5 +424,41 @@ describe('ListSelectionManager', () => {
             expect(ModalUI.showChoicesModal).not.toHaveBeenCalled();
             expect(UI.showNotification).toHaveBeenCalledWith('Aucun contenu à effacer sur cette fiche.', 'info');
         });
+
+        it('should dispatch student-updated when bulkReset clears data and when Undo restores it', async () => {
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [
+                {
+                    id: 's-photo',
+                    nom: 'MIRZAI',
+                    prenom: 'Brikhna',
+                    classId: 'grp-papd',
+                    studentPhoto: { data: 'data:image/png;base64,abc' },
+                    journal: [],
+                    studentData: { periods: { T1: {} } }
+                }
+            ];
+            ModalUI.showChoicesModal.mockResolvedValueOnce({ confirmed: true, values: { photo: true } });
+
+            let undoCallback = null;
+            UI.showUndoNotification = vi.fn((_msg, onUndo) => {
+                undoCallback = onUndo;
+            });
+
+            const updatedSpy = vi.fn();
+            window.addEventListener('student-updated', updatedSpy);
+            try {
+                await ListSelectionManager.bulkReset(['s-photo']);
+                expect(appState.generatedResults[0].studentPhoto).toBeNull();
+                expect(updatedSpy).toHaveBeenCalledTimes(1);
+
+                expect(typeof undoCallback).toBe('function');
+                await undoCallback();
+                expect(appState.generatedResults[0].studentPhoto).toEqual({ data: 'data:image/png;base64,abc' });
+                expect(updatedSpy).toHaveBeenCalledTimes(2);
+            } finally {
+                window.removeEventListener('student-updated', updatedSpy);
+            }
+        });
     });
 });

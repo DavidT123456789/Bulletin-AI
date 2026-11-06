@@ -1481,3 +1481,73 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     }
 }
 
+/* ---------- FLOATING CONTEXT MENU (Right-Click in Plan View) ---------- */
+.action-dropdown-menu.sc-context-menu {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    margin-top: 0;
+    min-width: 196px;
+    max-width: min(280px, calc(100vw - 16px));
+    z-index: 1250;
+    outline: none;
+    will-change: transform, opacity;
+    transform: translateZ(0) scale(0.96);
+}
+
+.action-dropdown-menu.sc-context-menu.open {
+    transform: translateZ(0) scale(1);
+}
+
+/* Target spotlight & background hover freeze while context menu is open */
+.sc-cell.occupied.sc-context-target {
+    border-color: var(--row-spotlight-border) !important;
+    box-shadow: 0 0 0 2px var(--row-spotlight-border), var(--shadow-md) !important;
+    z-index: 25 !important;
+}
+
+.sc-cell.sc-context-target-parent {
+    z-index: 25 !important;
+}
+
+.sc-stacked-member.sc-context-target,
+.sc-stacked-avatar.sc-context-target {
+    box-shadow: 0 0 0 2px var(--row-spotlight-border);
+    border-radius: var(--radius-sm);
+}
+
+.sc-student-chip.sc-context-target {
+    border-color: var(--row-spotlight-border) !important;
+    background: var(--item-hover-bg) !important;
+    box-shadow: 0 0 0 1.5px var(--row-spotlight-border) !important;
+}
+
+body:has(#scContextMenu.open) #seatingChartView,
+body:has(#scContextMenu.open) #seatingChartView .sc-cell,
+body:has(#scContextMenu.open) #seatingChartView .sc-student-chip {
+    cursor: default !important;
+}
+
+body:has(#scContextMenu.open) #seatingChartView :is(.sc-top-left-bar, .sc-floating-actions, #scDesk, #scStatusPill) {
+    pointer-events: none !important;
+}
+
+body:has(#scContextMenu.open) #seatingChartView .sc-cell.occupied:not(.sc-context-target):not(.sc-chip-selected):hover {
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+body:has(#scContextMenu.open) #seatingChartView .sc-cell.occupied .sc-cell-remove,
+body:has(#scContextMenu.open) #seatingChartView .sc-cell.occupied:not(.pinned) .sc-cell-pin {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+@media (pointer: coarse) {
+    .action-dropdown-menu.sc-context-menu .action-dropdown-item {
+        min-height: 44px;
+    }
+}
+

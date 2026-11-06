@@ -352,6 +352,11 @@ describe('CloudActionsManager', () => {
             SyncServiceMock.getLastSyncRoster.mockReturnValue(null);
             SyncServiceMock.getLastSyncClassCount.mockReturnValue(null);
         });
+
+        it('should format merge stats distinguishing new unique students from group enrollments', () => {
+            expect(CloudActionsManager._formatMergeStats({ addedStudents: 0, addedEnrollments: 4 })).toBe('+4 affectations');
+            expect(CloudActionsManager._formatMergeStats({ addedStudents: 1, addedEnrollments: 2, addedClasses: 1 })).toBe('+1 élève · +2 affectations · +1 classe');
+        });
     });
 
     describe('undoRestore() & reconnect()', () => {

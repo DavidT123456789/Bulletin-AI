@@ -13,6 +13,8 @@ import { Utils } from '../../utils/Utils.js';
 import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { HistoryManager } from '../HistoryManager.js';
+import { StudentDataManager } from '../StudentDataManager.js';
+import { ListSelectionManager } from '../list/ListSelectionManager.js';
 import {
     MIN_COLS,
     MAX_COLS,
@@ -79,6 +81,7 @@ export const SeatingMobileSheet = {
             this._cleanupModeCarousel();
             this._closeConfigPopover();
             this._closePlacementPopover();
+            this._closeContextMenu?.();
             this._closeMobileSheet(true);
             TooltipsUI?.hideAll?.();
             this._applySmartFit(true);
@@ -100,7 +103,90 @@ export const SeatingMobileSheet = {
         this._animateFoldContinuum(isUnfolding);
         return true;
     },
+    _getStudentSheetActionsHTML(student) {
+        if (!student) return '';
+        const deleteMeta = StudentDataManager.getDeleteActionMeta(student.id);
+        let deleteHint = 'Supprime définitivement cette fiche';
+        if (!deleteMeta.hasPermanentDeletion) {
+            const others = deleteMeta.otherEnrollments || [];
+            if (others.length === 1 && others[0]?.displayName) {
+                deleteHint = `Conserve sa fiche dans ${Utils.escapeHtml(others[0].displayName)}`;
+            } else if (others.length > 1) {
+                deleteHint = `Conserve ses fiches (${others.length} autres classes)`;
+            } else {
+                deleteHint = 'Conserve sa fiche dans ses autres classes';
+            }
+        }
+
+        return `
+            <div class="sc-sheet-section-title">Élève</div>
+            <div class="sc-sheet-actions">
+                <button class="sc-sheet-action-btn" data-action="profile" type="button">
+                    <div class="sc-sheet-action-icon sc-icon-secondary">
+                        <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                    </div>
+                    <div class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-label">Voir la fiche élève</span>
+                        <span class="sc-sheet-action-hint">Notes, observations et historique</span>
+                    </div>
+                </button>
+                <button class="sc-sheet-action-btn" data-action="move-student" type="button">
+                    <div class="sc-sheet-action-icon sc-icon-secondary">
+                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                    </div>
+                    <div class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-label">Copier / Déplacer…</span>
+                        <span class="sc-sheet-action-hint">Affecter à un groupe ou changer de classe</span>
+                    </div>
+                </button>
+                <button class="sc-sheet-action-btn" data-action="reset-student" type="button">
+                    <div class="sc-sheet-action-icon sc-icon-secondary">
+                        <iconify-icon icon="solar:eraser-linear"></iconify-icon>
+                    </div>
+                    <div class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-label">Effacer le contenu…</span>
+                        <span class="sc-sheet-action-hint">Appréciation, journal, notes ou photo</span>
+                    </div>
+                </button>
+                <button class="sc-sheet-action-btn sc-action-danger" data-action="delete-student" type="button">
+                    <div class="sc-sheet-action-icon sc-icon-danger">
+                        <iconify-icon icon="${deleteMeta.menuIcon}"></iconify-icon>
+                    </div>
+                    <div class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-label">${Utils.escapeHtml(deleteMeta.menuLabel)}</span>
+                        <span class="sc-sheet-action-hint">${deleteHint}</span>
+                    </div>
+                </button>
+            </div>
+        `;
+    },
+
+    _bindStudentSheetActions(sheet, studentId, close) {
+        if (!sheet || !studentId) return;
+        sheet.querySelector('[data-action="profile"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            FocusPanelManager.open(studentId);
+        });
+        sheet.querySelector('[data-action="move-student"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            ListSelectionManager.bulkMove([studentId]);
+        });
+        sheet.querySelector('[data-action="reset-student"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            ListSelectionManager.bulkReset([studentId]);
+        });
+        sheet.querySelector('[data-action="delete-student"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            ListSelectionManager.confirmAndDeleteStudents([studentId]);
+        });
+    },
+
     _openOccupiedCellSheet(row, col, student, cellStudents = null) {
+        this._closeContextMenu?.();
         this._closeMobileSheet(true);
         if (!HistoryManager.isOpen('scMobileSheet')) {
             HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
@@ -175,9 +261,14 @@ export const SeatingMobileSheet = {
                             <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                             ${memberStatusBadge}
                         </button>
-                        <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${s.prenom || s.nom}">
-                            <iconify-icon icon="ph:x"></iconify-icon> Retirer
-                        </button>
+                        <div class="sc-sheet-member-actions">
+                            <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du poste">
+                                <iconify-icon icon="solar:logout-3-linear"></iconify-icon> Retirer
+                            </button>
+                            <button class="sc-sheet-member-more-btn" data-member-actions-id="${s.id}" type="button" aria-label="Actions pour ${Utils.escapeHtml(s.prenom || s.nom)}">
+                                <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
+                            </button>
+                        </div>
                     </div>
                 `;
                 }).join('')}
@@ -216,6 +307,7 @@ export const SeatingMobileSheet = {
             <div class="sc-sheet-content">
                 ${membersSectionHTML}
                 ${addTeammateSectionHTML}
+                <div class="sc-sheet-section-title">Plan</div>
                 <div class="sc-sheet-actions">
                     <button class="sc-sheet-action-btn" data-action="move" type="button">
                         <div class="sc-sheet-action-icon sc-icon-primary">
@@ -235,27 +327,17 @@ export const SeatingMobileSheet = {
                             <span class="sc-sheet-action-hint">${isPinned ? 'Le poste redeviendra mobile' : 'Fige ce poste lors des réagencements'}</span>
                         </div>
                     </button>
-                    <button class="sc-sheet-action-btn sc-action-danger" data-action="remove" type="button">
-                        <div class="sc-sheet-action-icon sc-icon-danger">
-                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                    <button class="sc-sheet-action-btn" data-action="remove" type="button">
+                        <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <iconify-icon icon="solar:logout-3-linear"></iconify-icon>
                         </div>
                         <div class="sc-sheet-action-text">
                             <span class="sc-sheet-action-label">${isMulti ? 'Libérer tout le poste' : 'Retirer du plan'}</span>
                             <span class="sc-sheet-action-hint">Renvoie ${isMulti ? 'les élèves' : "l'élève"} dans les non placés</span>
                         </div>
                     </button>
-                    ${!isMulti ? `
-                        <button class="sc-sheet-action-btn" data-action="profile" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-secondary">
-                                <iconify-icon icon="solar:user-id-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
-                                <span class="sc-sheet-action-label">Voir la fiche élève</span>
-                                <span class="sc-sheet-action-hint">Notes, observations et historique</span>
-                            </div>
-                        </button>
-                    ` : ''}
                 </div>
+                ${!isMulti ? this._getStudentSheetActionsHTML(primary) : ''}
             </div>
         `;
 
@@ -290,6 +372,17 @@ export const SeatingMobileSheet = {
             });
         });
 
+        sheet.querySelectorAll('[data-member-actions-id]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const mid = btn.dataset.memberActionsId;
+                const member = students.find(s => String(s.id) === String(mid));
+                if (member) {
+                    this._openMemberActionsSheet(row, col, member, students);
+                }
+            });
+        });
+
         sheet.querySelectorAll('[data-join-student-id]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -320,11 +413,95 @@ export const SeatingMobileSheet = {
             this._removeFromCell(row, col);
         });
 
-        sheet.querySelector('[data-action="profile"]')?.addEventListener('click', (e) => {
+        if (!isMulti) {
+            this._bindStudentSheetActions(sheet, primary.id, close);
+        }
+    },
+
+    _openMemberActionsSheet(row, col, member, allCellStudents = []) {
+        if (!member) return;
+        this._closeContextMenu?.();
+        this._closeMobileSheet(true);
+        if (!HistoryManager.isOpen('scMobileSheet')) {
+            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
+        }
+
+        const stationNum = this._isActivityMode() ? this._getStationNumber(row, col) : null;
+        const locationLabel = stationNum
+            ? `Poste #${stationNum} • Rangée ${row + 1}, Col ${col + 1}`
+            : `Rangée ${row + 1} • Table ${col + 1}`;
+        const classInfo = this._getStudentContextualClassInfo(member);
+        const statuses = [...(classInfo?.tooltipLabel ? [classInfo.tooltipLabel] : []), ...this._getStudentStatusLabels(member)];
+        const statusSuffix = statuses.length > 0 ? ` • ${statuses.join(' • ')}` : '';
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sc-mobile-sheet-backdrop';
+        backdrop.id = 'scMobileSheetBackdrop';
+
+        const sheet = document.createElement('div');
+        sheet.className = 'sc-mobile-sheet';
+        sheet.id = 'scMobileSheet';
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+
+        sheet.innerHTML = `
+            <div class="sc-sheet-handle"></div>
+            <div class="sc-sheet-header">
+                <button class="sc-sheet-back-btn" id="scSheetBackBtn" aria-label="Retour au poste" type="button">
+                    <iconify-icon icon="ph:arrow-left-bold"></iconify-icon>
+                </button>
+                <div class="sc-sheet-entity-info">
+                    ${StudentPhotoManager.getAvatarHTML(member, 'md')}
+                    <div class="sc-sheet-entity-text">
+                        <h3 class="sc-sheet-entity-name">${Utils.escapeHtml(`${member.prenom || ''} ${member.nom || ''}`.trim())}</h3>
+                        <p class="sc-sheet-entity-meta">${locationLabel}${statusSuffix}</p>
+                    </div>
+                </div>
+                <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
+                    <iconify-icon icon="ph:x"></iconify-icon>
+                </button>
+            </div>
+            <div class="sc-sheet-content">
+                ${!this._isLocked ? `
+                    <div class="sc-sheet-section-title">Plan</div>
+                    <div class="sc-sheet-actions">
+                        <button class="sc-sheet-action-btn" data-action="remove-member" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <iconify-icon icon="solar:logout-3-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Retirer du poste</span>
+                                <span class="sc-sheet-action-hint">Renvoie l'élève dans les non placés</span>
+                            </div>
+                        </button>
+                    </div>
+                ` : ''}
+                ${this._getStudentSheetActionsHTML(member)}
+            </div>
+        `;
+
+        document.body.appendChild(backdrop);
+        document.body.appendChild(sheet);
+        this._activeMobileSheet = { backdrop, sheet };
+
+        requestAnimationFrame(() => {
+            backdrop.classList.add('active');
+            sheet.classList.add('active');
+        });
+
+        const close = () => this._closeMobileSheet();
+        backdrop.addEventListener('click', close);
+        sheet.querySelector('#scSheetCloseBtn')?.addEventListener('click', close);
+        sheet.querySelector('#scSheetBackBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._openOccupiedCellSheet(row, col, allCellStudents[0] || member, allCellStudents);
+        });
+        sheet.querySelector('[data-action="remove-member"]')?.addEventListener('click', (e) => {
             e.stopPropagation();
             close();
-            FocusPanelManager.open(primary.id);
+            this._removeStudentFromCell(row, col, member.id);
         });
+        this._bindStudentSheetActions(sheet, member.id, close);
     },
 
     _openEmptyCellSheet(row, col, special) {

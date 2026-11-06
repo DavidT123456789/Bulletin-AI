@@ -8,6 +8,7 @@ import { ClassUIManager } from './ClassUIManager';
 import { CrossClassSearchManager } from './CrossClassSearchManager';
 import { TooltipsUI } from './TooltipsManager';
 import { UI } from './UIManager';
+import { ListSelectionManager } from './list/ListSelectionManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -5111,5 +5112,297 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(0, 3)).toEqual([]);
             expect(SeatingChartManager._getCellStudentIds(0, 4)).toEqual([]);
         });
+    });
+});
+
+describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève & synchronisation des suppressions', () => {
+    let classMain, groupPapd;
+
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div class="header-center"></div>
+            <div class="header-actions"></div>
+            <div class="main-content-wrapper" data-view="plan">
+                <main class="main-content">
+                    <div class="output-section"></div>
+                </main>
+            </div>
+        `;
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        userSettings.academic.seatingGrid = { rows: 4, cols: 5, locked: false, specialLayout: {} };
+        userSettings.academic.seatingActivityGrid = { rows: 4, cols: 5, locked: false, specialLayout: {} };
+        appState.classes = userSettings.academic.classes;
+        appState.seatingGrid = userSettings.academic.seatingGrid;
+        appState.seatingActivityGrid = userSettings.academic.seatingActivityGrid;
+
+        classMain = ClassManager.createClass('3°1');
+        groupPapd = ClassManager.createClass('PAPD');
+        groupPapd.isGroup = true;
+
+        appState.currentClassId = groupPapd.id;
+        userSettings.academic.currentClassId = groupPapd.id;
+
+        // s1 est inscrit à la fois en 3°1 et dans le groupe PAPD ; s2 n'est inscrit que dans PAPD ; s3 est non placé
+        appState.generatedResults = [
+            { id: 's1-31', nom: 'MIRZAI', prenom: 'Brikhna', classId: classMain.id, studentData: {} },
+            {
+                id: 's1-papd',
+                nom: 'MIRZAI',
+                prenom: 'Brikhna',
+                classId: groupPapd.id,
+                seatingPosition: { row: 0, col: 0, pinned: false },
+                seatingActivityPosition: { row: 0, col: 0, order: 0, pinned: false },
+                studentData: {}
+            },
+            {
+                id: 's2-papd',
+                nom: 'MOLET',
+                prenom: 'Nolan',
+                classId: groupPapd.id,
+                seatingPosition: { row: 0, col: 1, pinned: false },
+                seatingActivityPosition: { row: 0, col: 0, order: 1, pinned: false },
+                studentData: {}
+            },
+            {
+                id: 's3-papd',
+                nom: 'BARE',
+                prenom: 'Timéo',
+                classId: groupPapd.id,
+                studentData: {}
+            }
+        ];
+
+        SeatingChartManager._globalListenersInitialized = false;
+        SeatingChartManager.init();
+        SeatingChartManager._planMode = 'course';
+        SeatingChartManager.switchToView('plan', { silent: true, immediate: true });
+    });
+
+    it('devrait ouvrir le menu contextuel au clic droit en mode Consultation (sans section Plan) et en mode Édition (avec section Plan et icône neutre sur Retirer du plan)', () => {
+        // En ouverture sur un plan ayant des élèves placés, _isLocked === true
+        expect(SeatingChartManager._isLocked).toBe(true);
+
+        const cellS1 = document.querySelector('#scGridContainer .sc-cell.occupied[data-row="0"][data-col="0"]');
+        expect(cellS1).not.toBeNull();
+
+        const ctxLocked = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 180, clientY: 200 });
+        cellS1.dispatchEvent(ctxLocked);
+        expect(ctxLocked.defaultPrevented).toBe(true);
+
+        let menu = document.getElementById('scContextMenu');
+        expect(menu).not.toBeNull();
+        expect(menu.getAttribute('role')).toBe('menu');
+        // En mode verrouillé : Voir la fiche + section Élève, mais PAS d'actions Plan
+        expect(menu.querySelector('[data-action="open-profile"]')).not.toBeNull();
+        expect(menu.querySelector('[data-action="toggle-pin"]')).toBeNull();
+        expect(menu.querySelector('[data-action="unplace-student"]')).toBeNull();
+        // s1-papd existe aussi en 3°1 -> libellé contextuel « Retirer de PAPD »
+        const deleteItemLocked = menu.querySelector('[data-action="delete-student"]');
+        expect(deleteItemLocked?.textContent).toContain('Retirer de PAPD');
+        expect(deleteItemLocked?.classList.contains('danger')).toBe(true);
+
+        // Passage en mode Édition (_isLocked = false) : ferme le menu précédent
+        SeatingChartManager._toggleLock();
+        expect(document.getElementById('scContextMenu')).toBeNull();
+        expect(SeatingChartManager._isLocked).toBe(false);
+
+        // Clic droit sur s2-papd (inscrit uniquement dans PAPD) -> Plan + « Supprimer l'élève »
+        const cellS2 = document.querySelector('#scGridContainer .sc-cell.occupied[data-row="0"][data-col="1"]');
+        cellS2.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 240, clientY: 210 }));
+
+        menu = document.getElementById('scContextMenu');
+        expect(menu).not.toBeNull();
+        const unplaceBtn = menu.querySelector('[data-action="unplace-student"]');
+        expect(unplaceBtn).not.toBeNull();
+        expect(unplaceBtn.classList.contains('danger')).toBe(false);
+        expect(unplaceBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:logout-3-linear');
+        expect(menu.querySelector('[data-action="toggle-pin"]')).not.toBeNull();
+        expect(menu.querySelector('[data-action="delete-student"]')?.textContent).toContain("Supprimer l'élève");
+
+        // Clic droit sur une puce non placée (s3-papd) : pas de section Plan, section Élève présente
+        const chipS3 = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s3-papd"]');
+        expect(chipS3).not.toBeNull();
+        chipS3.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 80, clientY: 300 }));
+
+        menu = document.getElementById('scContextMenu');
+        expect(menu).not.toBeNull();
+        expect(menu.querySelector('[data-action="unplace-student"]')).toBeNull();
+        expect(menu.querySelector('[data-action="move-student"]')).not.toBeNull();
+        expect(menu.querySelector('[data-action="reset-student"]')).not.toBeNull();
+
+        SeatingChartManager._closeContextMenu();
+    });
+
+    it('ne doit jamais ouvrir le menu contextuel ordinateur lors d’un appui long tactile (réservé au glisser-déposer)', () => {
+        SeatingChartManager._toggleLock();
+        SeatingChartManager._isTouchActive = true;
+        SeatingChartManager._lastTouchTime = Date.now();
+
+        const cellS1 = document.querySelector('#scGridContainer .sc-cell.occupied[data-row="0"][data-col="0"]');
+        const touchCtx = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 150, clientY: 160 });
+        cellS1.dispatchEvent(touchCtx);
+
+        expect(touchCtx.defaultPrevented).toBe(true);
+        expect(document.getElementById('scContextMenu')).toBeNull();
+
+        SeatingChartManager._isTouchActive = false;
+        SeatingChartManager._lastTouchTime = 0;
+    });
+
+    it('devrait gérer la navigation clavier ARIA (ArrowDown, ArrowUp, Escape) et déclencher les actions partagées avec ListSelectionManager', () => {
+        const moveSpy = vi.spyOn(ListSelectionManager, 'bulkMove').mockImplementation(() => {});
+        const resetSpy = vi.spyOn(ListSelectionManager, 'bulkReset').mockImplementation(() => {});
+        const deleteSpy = vi.spyOn(ListSelectionManager, 'confirmAndDeleteStudents').mockResolvedValue(true);
+        const profileSpy = vi.spyOn(FocusPanelManager, 'open').mockImplementation(() => {});
+
+        try {
+            const cellS1 = document.querySelector('#scGridContainer .sc-cell.occupied[data-row="0"][data-col="0"]');
+            cellS1.tabIndex = 0;
+            cellS1.focus();
+
+            cellS1.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 160, clientY: 160 }));
+            const menu = document.getElementById('scContextMenu');
+            const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+            expect(items.length).toBe(4); // Voir la fiche, Copier / Déplacer…, Effacer le contenu…, Retirer de PAPD
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+            expect(document.activeElement).toBe(items[0]);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+            expect(document.activeElement).toBe(items[items.length - 1]);
+
+            // Escape ferme le menu et restaure le focus sur le déclencheur
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            expect(document.getElementById('scContextMenu')).toBeNull();
+            expect(document.activeElement).toBe(cellS1);
+
+            // Exécution des actions Élève depuis le menu contextuel
+            cellS1.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 160, clientY: 160 }));
+            document.querySelector('#scContextMenu [data-action="move-student"]').click();
+            expect(moveSpy).toHaveBeenCalledWith(['s1-papd']);
+            expect(document.getElementById('scContextMenu')).toBeNull();
+
+            cellS1.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 160, clientY: 160 }));
+            document.querySelector('#scContextMenu [data-action="reset-student"]').click();
+            expect(resetSpy).toHaveBeenCalledWith(['s1-papd']);
+
+            cellS1.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 160, clientY: 160 }));
+            document.querySelector('#scContextMenu [data-action="delete-student"]').click();
+            expect(deleteSpy).toHaveBeenCalledWith(['s1-papd']);
+
+            cellS1.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 160, clientY: 160 }));
+            document.querySelector('#scContextMenu [data-action="open-profile"]').click();
+            expect(profileSpy).toHaveBeenCalledWith('s1-papd');
+        } finally {
+            moveSpy.mockRestore();
+            resetSpy.mockRestore();
+            deleteSpy.mockRestore();
+            profileSpy.mockRestore();
+        }
+    });
+
+    it('devrait en mode Activité cibler directement un membre d’un poste partagé ou proposer le sélecteur de membres du poste', () => {
+        SeatingChartManager.switchPlanMode('activity', { animate: false });
+        SeatingChartManager._toggleLock(); // Mode édition
+
+        const stackedCell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="0"]');
+        expect(stackedCell).not.toBeNull();
+
+        // 1. Clic droit précis sur le badge membre de Nolan (s2-papd)
+        const memberEl = stackedCell.querySelector('.sc-stacked-member[data-result-id="s2-papd"]');
+        memberEl.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 200, clientY: 200 }));
+
+        let menu = document.getElementById('scContextMenu');
+        expect(menu.textContent).toContain('Retirer du poste');
+        expect(menu.textContent).toContain('MOLET Nolan');
+        expect(menu.querySelector('[data-action="delete-student"]')?.textContent).toContain("Supprimer l'élève");
+
+        // 2. Clic droit sur le fond du poste partagé -> sélecteur des membres + bascule sur Brikhna
+        stackedCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 200, clientY: 200 }));
+        menu = document.getElementById('scContextMenu');
+        const pickBrikhna = menu.querySelector('[data-pick-member-id="s1-papd"]');
+        expect(pickBrikhna).not.toBeNull();
+        pickBrikhna.click();
+
+        expect(menu.querySelector('[data-action="delete-student"]')?.textContent).toContain('Retirer de PAPD');
+        SeatingChartManager._closeContextMenu();
+    });
+
+    it('devrait dans la feuille mobile afficher une action neutre Retirer du plan et la section Élève complète (y compris par membre sur un poste partagé)', () => {
+        const s1 = SeatingChartManager._studentMap.get('s1-papd');
+        SeatingChartManager._openOccupiedCellSheet(0, 0, s1);
+
+        const sheet = document.getElementById('scMobileSheet');
+        expect(sheet).not.toBeNull();
+
+        const removePlanBtn = sheet.querySelector('[data-action="remove"]');
+        expect(removePlanBtn.classList.contains('sc-action-danger')).toBe(false);
+        expect(removePlanBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:logout-3-linear');
+
+        expect(sheet.querySelector('[data-action="move-student"]')).not.toBeNull();
+        expect(sheet.querySelector('[data-action="reset-student"]')).not.toBeNull();
+        const deleteStudentBtn = sheet.querySelector('[data-action="delete-student"]');
+        expect(deleteStudentBtn?.classList.contains('sc-action-danger')).toBe(true);
+        expect(deleteStudentBtn?.textContent).toContain('Retirer de PAPD');
+        expect(deleteStudentBtn?.querySelector('.sc-sheet-action-hint')?.textContent).toContain('Conserve sa fiche dans 3ᵉ1');
+
+        // Poste partagé (2 élèves) -> bouton "..." par membre ouvrant la feuille individuelle avec retour au poste
+        const s2 = SeatingChartManager._studentMap.get('s2-papd');
+        SeatingChartManager._openOccupiedCellSheet(0, 0, s1, [s1, s2]);
+        const multiSheet = document.getElementById('scMobileSheet');
+        const memberMoreBtn = multiSheet.querySelector('[data-member-actions-id="s2-papd"]');
+        expect(memberMoreBtn).not.toBeNull();
+        memberMoreBtn.click();
+
+        const memberSheet = document.getElementById('scMobileSheet');
+        expect(memberSheet.querySelector('#scSheetBackBtn')).not.toBeNull();
+        const memberDeleteBtn = memberSheet.querySelector('[data-action="delete-student"]');
+        expect(memberDeleteBtn?.textContent).toContain("Supprimer l'élève");
+        expect(memberDeleteBtn?.querySelector('.sc-sheet-action-hint')?.textContent).toBe('Supprime définitivement cette fiche');
+
+        SeatingChartManager._closeMobileSheet(true);
+    });
+
+    it('devrait focaliser automatiquement le premier item quand le menu contextuel est ouvert au clavier (Shift+F10 / ContextMenu)', () => {
+        const cell = document.querySelector('#scGridContainer .sc-cell.occupied[data-row="0"][data-col="0"]');
+        cell.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            detail: 0,
+            clientX: 0,
+            clientY: 0
+        }));
+
+        const menu = document.getElementById('scContextMenu');
+        expect(menu).not.toBeNull();
+        const firstItem = menu.querySelector('[role="menuitem"]:not(:disabled)');
+        expect(document.activeElement).toBe(firstItem);
+
+        SeatingChartManager._closeContextMenu();
+    });
+
+    it('devrait purger _gridState lors de la suppression d’élèves placés et revenir en vue Liste si le dernier élève de la classe est supprimé', () => {
+        expect(SeatingChartManager._getPlacedIds().has('s1-papd')).toBe(true);
+        expect(SeatingChartManager._getPlacedIds().has('s2-papd')).toBe(true);
+        expect(SeatingChartManager._isLocked).toBe(true);
+
+        // 1. Suppression des 2 élèves placés (il reste s3-papd non placé) : _gridState est purgé et le plan se déverrouille
+        appState.generatedResults = appState.generatedResults.filter(r => r.id !== 's1-papd' && r.id !== 's2-papd');
+        SeatingChartManager.refreshStudents();
+
+        expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+        expect(SeatingChartManager._gridState[0][0]).toBeNull();
+        expect(SeatingChartManager._gridState[0][1]).toBeNull();
+        expect(SeatingChartManager._isLocked).toBe(false);
+        expect(SeatingChartManager._isActive).toBe(true);
+
+        // 2. Suppression du dernier élève de PAPD (s3-papd) : bascule automatique en vue Liste
+        appState.generatedResults = appState.generatedResults.filter(r => r.id !== 's3-papd');
+        SeatingChartManager.refreshStudents();
+
+        expect(SeatingChartManager._isActive).toBe(false);
+        expect(document.querySelector('.main-content-wrapper')?.dataset.view).toBe('list');
     });
 });

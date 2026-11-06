@@ -205,7 +205,8 @@ export const StudentDataManager = {
         for (const r of allResults) {
             if (!r) continue;
             if (r.id) resultsById.set(r.id, r);
-            const rKey = Utils.getStudentIdentityKey(r.nom, r.prenom) || Utils.normalizeName(r.nom, r.prenom);
+            const rKey = Utils.getStudentIdentityKey(r.nom, r.prenom);
+            if (!rKey) continue;
             if (r.classId === targetClassId) {
                 targetExistingKeys.add(rKey);
             }
@@ -222,7 +223,7 @@ export const StudentDataManager = {
         for (const id of ids) {
             const student = resultsById.get(id);
             if (!student) continue;
-            const key = Utils.getStudentIdentityKey(student.nom, student.prenom) || Utils.normalizeName(student.nom, student.prenom);
+            const key = Utils.getStudentIdentityKey(student.nom, student.prenom) || `id:${student.id}`;
             if (!uniqueSources.has(key) || (!student.isCopiedProfile && uniqueSources.get(key).isCopiedProfile)) {
                 uniqueSources.set(key, student);
             }
@@ -579,37 +580,83 @@ export const StudentDataManager = {
     },
 
     /**
+     * Construit en une seule passe O(N) les tables d'indexation des classes et des clés d'identité
+     * pour accélérer les calculs groupés d'affectations multiples.
+     * @param {Array<Object>} [allResults]
+     * @param {Array<Object>} [classes]
+     * @returns {{ classMap: Map<string, Object>, demoClassIds: Set<string>, resultsById: Map<string, Object>, recordsByKey: Map<string, Array<Object>> }}
+     * @private
+     */
+    _buildEnrollmentIndex(
+        allResults = appState.generatedResults || [],
+        classes = userSettings?.academic?.classes || appState?.classes || []
+    ) {
+        const classMap = new Map();
+        const demoClassIds = new Set();
+        for (const c of classes) {
+            if (!c?.id) continue;
+            classMap.set(c.id, c);
+            if (this._isDemoClass(c)) demoClassIds.add(c.id);
+        }
+
+        const resultsById = new Map();
+        const recordsByKey = new Map();
+        for (const r of allResults) {
+            if (!r) continue;
+            if (r.id) resultsById.set(r.id, r);
+            if (!r.classId || demoClassIds.has(r.classId)) continue;
+            const key = Utils.getStudentIdentityKey(r.nom, r.prenom);
+            if (!key) continue;
+            let bucket = recordsByKey.get(key);
+            if (!bucket) {
+                bucket = [];
+                recordsByKey.set(key, bucket);
+            }
+            bucket.push(r);
+        }
+
+        return { classMap, demoClassIds, resultsById, recordsByKey };
+    },
+
+    /**
      * Retourne la liste des autres classes ou groupes (hors démo) dans lesquels
      * le même élève possède une fiche distincte.
      *
      * @param {string|Object} studentOrId - ID de la fiche ou objet élève
+     * @param {Object|null} [precomputedIndex=null] - Index optionnel issu de `_buildEnrollmentIndex`
      * @returns {Array<{ studentId: string, classId: string, className: string, displayName: string, isGroup: boolean }>}
      */
-    getOtherEnrollments(studentOrId) {
+    getOtherEnrollments(studentOrId, precomputedIndex = null) {
         if (!studentOrId) return [];
         const allResults = appState.generatedResults || [];
         const student = typeof studentOrId === 'string'
-            ? allResults.find(r => r?.id === studentOrId)
+            ? (precomputedIndex ? precomputedIndex.resultsById.get(studentOrId) : allResults.find(r => r?.id === studentOrId))
             : studentOrId;
         if (!student) return [];
 
         const classes = userSettings?.academic?.classes || appState?.classes || [];
-        const classMap = new Map(classes.map(c => [c.id, c]));
-        const isDemoClassId = (classId) => Boolean(classId && this._isDemoClass(classMap.get(classId)));
+        const classMap = precomputedIndex ? precomputedIndex.classMap : new Map(classes.map(c => [c.id, c]));
+        const isDemoClassId = precomputedIndex
+            ? (classId) => Boolean(classId && precomputedIndex.demoClassIds.has(classId))
+            : (classId) => Boolean(classId && this._isDemoClass(classMap.get(classId)));
 
         if (isDemoClassId(student.classId)) return [];
 
         const targetKey = Utils.getStudentIdentityKey(student.nom, student.prenom);
         if (!targetKey) return [];
 
+        const candidates = precomputedIndex
+            ? (precomputedIndex.recordsByKey.get(targetKey) || [])
+            : allResults;
+
         const seenClassIds = new Set();
         const enrollments = [];
 
-        for (const r of allResults) {
+        for (const r of candidates) {
             if (!r || r.id === student.id) continue;
             if (!r.classId || r.classId === student.classId) continue;
             if (isDemoClassId(r.classId) || seenClassIds.has(r.classId)) continue;
-            if (Utils.getStudentIdentityKey(r.nom, r.prenom) !== targetKey) continue;
+            if (!precomputedIndex && Utils.getStudentIdentityKey(r.nom, r.prenom) !== targetKey) continue;
 
             seenClassIds.add(r.classId);
             const cls = classMap.get(r.classId);
@@ -636,6 +683,47 @@ export const StudentDataManager = {
     },
 
     /**
+     * Génère le sous-texte contextuel de confirmation lors de la suppression
+     * d'une classe ou d'un groupe dans « Gérer les classes ».
+     * @param {string} classId
+     * @returns {string}
+     */
+    getClassDeleteSubtext(classId) {
+        const allResults = appState.generatedResults || [];
+        const classes = userSettings?.academic?.classes || appState?.classes || [];
+        const index = this._buildEnrollmentIndex(allResults, classes);
+        const cls = index.classMap.get(classId);
+        const isGroup = Boolean(cls?.isGroup || cls?.type === 'group' || Utils.isGroupClassName(cls?.name || ''));
+
+        const classStudents = allResults.filter(r => r?.classId === classId);
+        if (classStudents.length === 0) {
+            return isGroup ? 'Ce groupe est vide.' : 'Cette classe est vide.';
+        }
+
+        let keptCount = 0;
+        for (const s of classStudents) {
+            if (this.getOtherEnrollments(s, index).length > 0) {
+                keptCount++;
+            }
+        }
+        const total = classStudents.length;
+        const foreverCount = total - keptCount;
+
+        if (foreverCount === 0) {
+            const scopePrefix = isGroup ? 'Données du groupe effacées · ' : 'Données effacées · ';
+            return total === 1
+                ? `${scopePrefix}l'élève reste dans son autre classe.`
+                : `${scopePrefix}les ${total} élèves restent dans leurs classes.`;
+        }
+
+        if (keptCount > 0) {
+            return `${keptCount} élève${keptCount > 1 ? 's' : ''} conservé${keptCount > 1 ? 's' : ''} ailleurs · ${foreverCount} supprimé${foreverCount > 1 ? 's' : ''} définitivement.`;
+        }
+
+        return 'Ses élèves et données seront définitivement effacés.';
+    },
+
+    /**
      * Calcule les libellés contextuels (menu, barre de sélection, modale de confirmation, toast)
      * pour le retrait d'une fiche de groupe/classe vs la suppression définitive d'un élève.
      *
@@ -648,13 +736,14 @@ export const StudentDataManager = {
         const rawList = Array.isArray(studentIds) ? studentIds : (studentIds ? [studentIds] : []);
         const allResults = appState.generatedResults || [];
         const classes = userSettings?.academic?.classes || appState?.classes || [];
-        const classMap = new Map(classes.map(c => [c.id, c]));
+        const index = rawList.length > 1 ? this._buildEnrollmentIndex(allResults, classes) : null;
+        const classMap = index ? index.classMap : new Map(classes.map(c => [c.id, c]));
 
         const seenIds = new Set();
         const students = [];
         for (const entry of rawList) {
             const resolved = typeof entry === 'string'
-                ? allResults.find(r => r?.id === entry)
+                ? (index ? index.resultsById.get(entry) : allResults.find(r => r?.id === entry))
                 : entry;
             if (resolved?.id && !seenIds.has(resolved.id)) {
                 seenIds.add(resolved.id);
@@ -690,6 +779,7 @@ export const StudentDataManager = {
         if (students.length === 0) {
             return {
                 students: [],
+                otherEnrollments: [],
                 menuLabel: "Supprimer l'élève",
                 menuIcon: 'solar:trash-bin-trash-linear',
                 toolbarIcon: 'solar:trash-bin-trash-linear',
@@ -710,13 +800,14 @@ export const StudentDataManager = {
             const ownerName = getOwnerDisplayName(student);
             const safeOwner = Utils.escapeHtml(ownerName);
             const compactOwner = ownerName ? truncateLabel(ownerName, 22) : '';
-            const others = this.getOtherEnrollments(student);
+            const others = this.getOtherEnrollments(student, index);
             const hasOthers = others.length > 0;
 
             if (hasOthers) {
                 const otherListHtml = formatClassListHtml(others.map(o => o.displayName));
                 return {
                     students,
+                    otherEnrollments: others,
                     menuLabel: compactOwner ? `Retirer de ${compactOwner}` : 'Retirer de la classe',
                     menuIcon: 'solar:user-minus-linear',
                     toolbarIcon: 'solar:user-minus-linear',
@@ -733,6 +824,7 @@ export const StudentDataManager = {
             if (isVirtualView && ownerName) {
                 return {
                     students,
+                    otherEnrollments: [],
                     menuLabel: `Retirer de ${compactOwner}`,
                     menuIcon: 'solar:user-minus-linear',
                     toolbarIcon: 'solar:trash-bin-trash-linear',
@@ -748,6 +840,7 @@ export const StudentDataManager = {
 
             return {
                 students,
+                otherEnrollments: [],
                 menuLabel: "Supprimer l'élève",
                 menuIcon: 'solar:trash-bin-trash-linear',
                 toolbarIcon: 'solar:trash-bin-trash-linear',
@@ -766,7 +859,7 @@ export const StudentDataManager = {
         const items = students.map(s => ({
             student: s,
             ownerName: getOwnerDisplayName(s),
-            others: this.getOtherEnrollments(s).filter(e => !deletingIds.has(e.studentId))
+            others: this.getOtherEnrollments(s, index).filter(e => !deletingIds.has(e.studentId))
         }));
 
         const keptCount = items.filter(i => i.others.length > 0).length;

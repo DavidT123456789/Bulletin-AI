@@ -178,7 +178,7 @@ export const SeatingRenderer = {
                 </div>
                 <span class="sc-cell-name${nameInfo.modifierClass}${groupBadgeHTML ? ' has-group-tag' : ''}">${groupBadgeHTML ? `<span class="sc-cell-name-text${nameInfo.modifierClass}">${nameInfo.html}</span>${groupBadgeHTML}` : nameInfo.html}</span>
                 ${stationBadgeHTML}
-                <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
+                <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer du plan" data-tooltip="Retirer du plan">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
                 <button class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">

@@ -364,8 +364,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--error-color);
-    color: white;
+    background: var(--text-secondary);
+    color: var(--surface-color);
     border: none;
     display: flex;
     align-items: center;

@@ -465,6 +465,7 @@ export const CloudActionsManager = {
     _formatMergeStats(stats = {}) {
         const parts = [];
         if (stats.addedStudents > 0) parts.push(`+${plural(stats.addedStudents, 'élève')}`);
+        if (stats.addedEnrollments > 0) parts.push(`+${plural(stats.addedEnrollments, 'affectation')}`);
         if (stats.addedJournalEntries > 0) parts.push(`+${plural(stats.addedJournalEntries, 'note')} journal`);
         if (stats.addedClasses > 0) parts.push(`+${plural(stats.addedClasses, 'classe')}`);
         return parts.length > 0 ? parts.join(' · ') : 'Données synchronisées';
