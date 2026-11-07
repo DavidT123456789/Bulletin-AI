@@ -1231,9 +1231,38 @@
         gap: var(--space-2);
     }
 
+    /* Suppression de l'effet "boîte dans boîte" sur smartphone :
+       les sous-métriques (Min/Médiane/Max & Progrès/Stables/Régression)
+       reposent directement sur la surface de la carte avec de fins filets séparateurs */
+    .performance-card .performance-details {
+        border-top: 1px solid var(--border-color);
+        padding-top: 8px;
+    }
+
     .performance-card .detail-item,
     .evolution-card .legend-item {
-        padding: 8px 6px;
+        padding: 6px 6px 2px;
+        background: transparent;
+    }
+
+    .performance-card .detail-item:not(:first-child)::before,
+    .evolution-card .legend-item:not(:first-child)::before {
+        content: '';
+        position: absolute;
+        left: calc(-1 * var(--space-2) / 2);
+        top: 18%;
+        height: 64%;
+        width: 1px;
+        background: var(--border-color);
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .performance-card .detail-item.active-filter::before,
+    .performance-card .detail-item.active-filter + .detail-item::before,
+    .evolution-card .legend-item.active-filter::before,
+    .evolution-card .legend-item.active-filter + .legend-item::before {
+        opacity: 0;
     }
 
     .performance-card .detail-item .detail-value,

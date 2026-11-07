@@ -1589,10 +1589,12 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         display: block;
     }
 
-    .student-list-view {
+    .student-list-view,
+    .student-list-view.skeleton-table-view {
         background: transparent;
         border: none;
         box-shadow: none;
+        border-radius: 0;
     }
 
     .student-list-table,
@@ -1618,11 +1620,11 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         flex-wrap: nowrap !important;
         gap: var(--space-2);
         align-items: center;
-        background: var(--surface-color);
-        padding: var(--space-2);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--card-glass-border);
+        background: transparent;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
         pointer-events: auto;
         position: relative;
         width: 100%;
@@ -1684,14 +1686,15 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         width: 44px;
         height: 44px;
         border-radius: var(--radius-md);
-        background: var(--item-hover-bg);
-        border: none;
+        background: var(--surface-color);
+        border: 1px solid var(--card-glass-border);
+        box-shadow: var(--shadow-sm);
         display: flex !important;
         align-items: center;
         justify-content: center;
         opacity: 1 !important;
         color: var(--text-secondary) !important;
-        transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+        transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
     }
 
     /* Actions line (Generate, Update) */
@@ -1746,19 +1749,25 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         font-size: 1.2rem;
     }
 
-    .expanded-view #mobileCompactToggleBtn {
-        background: var(--item-active-bg);
-        color: var(--text-primary) !important;
+    .expanded-view #mobileCompactToggleBtn,
+    #mobileCompactToggleBtn:active,
+    .global-actions-dropdown.open .btn-action-menu-header,
+    .global-actions-dropdown .btn-action-menu-header:active {
+        background: var(--bg-tertiary) !important;
+        color: var(--icon-btn-hover) !important;
+        opacity: 1 !important;
     }
 
-    [data-theme="dark"] .expanded-view #mobileCompactToggleBtn {
-        background: rgba(255, 255, 255, 0.12);
-        color: var(--text-primary) !important;
+    [data-theme="dark"] :is(
+        .expanded-view #mobileCompactToggleBtn,
+        #mobileCompactToggleBtn:active,
+        .global-actions-dropdown.open .btn-action-menu-header,
+        .global-actions-dropdown .btn-action-menu-header:active
+    ) {
+        background: rgba(255, 255, 255, 0.14) !important;
     }
 
     #mobileCompactToggleBtn:active {
-        background: var(--item-active-bg);
-        color: var(--icon-btn-hover) !important;
         transform: scale(0.95) !important;
     }
 
@@ -1768,15 +1777,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         order: 3;
     }
 
-    .global-actions-dropdown.open .btn-action-menu-header {
-        background: var(--item-active-bg) !important;
-        color: var(--icon-btn-hover) !important;
-        opacity: 1 !important;
-    }
-
     .global-actions-dropdown .btn-action-menu-header:active {
-        background: var(--item-active-bg) !important;
-        color: var(--icon-btn-hover) !important;
         transform: scale(0.92) !important;
     }
 
@@ -1818,7 +1819,8 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         margin-bottom: 0;
     }
 
-    [data-theme="dark"] .student-list-table thead tr,
+    [data-theme="dark"] #mobileCompactToggleBtn,
+    [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header,
     [data-theme="dark"] .student-list-table tbody tr {
         box-shadow: none;
     }
@@ -2133,5 +2135,52 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .student-list-table:not(.appreciation-full-view) tbody tr.empty-state-row,
     .student-list-table:not(.appreciation-full-view) tbody tr.error-row {
         grid-column: 1 / -1;
+    }
+}
+
+/* Smartphone (≤600px) : Flux continu Edge-to-Edge (style Liste native iOS / YouTube)
+   Surface continue bord à bord, filets séparateurs 1px, zéro boîte par élève */
+@media (max-width: 600px) {
+    .student-list-table tbody {
+        width: calc(100% + (var(--content-padding-x) * 2));
+        margin-inline: calc(-1 * var(--content-padding-x));
+    }
+
+    .student-list-table tbody tr {
+        border-radius: 0;
+        margin-bottom: 0;
+        box-shadow: none;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px var(--space-4);
+    }
+
+    .student-list-table tbody tr:first-child {
+        border-top: 1px solid var(--border-color);
+    }
+
+    .student-list-table tbody tr:active {
+        transform: none;
+        background-color: var(--item-active-bg);
+    }
+
+    .student-list-table tbody tr.row-moving {
+        border-radius: 0;
+    }
+
+    .student-list-table tbody tr.focus-active,
+    .student-list-table tbody tr:has(.action-dropdown-menu.open) {
+        background-color: var(--row-spotlight-bg-peak) !important;
+        border-color: var(--row-spotlight-border) !important;
+        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
+                    inset 0 -1px 0 0 var(--row-spotlight-border);
+    }
+
+    .student-list-table tbody tr.highlight-new {
+        animation: row-spotlight-cell-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .student-list-table tbody tr.focus-closed-flash {
+        animation: row-spotlight-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 }
