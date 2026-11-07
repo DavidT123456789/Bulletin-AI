@@ -132,12 +132,10 @@ export const SeatingRenderer = {
 
         const posKey = this._getActivePositionKey();
         const isActivity = this._isActivityMode();
-        const special = this._getCellSpecial(row, col);
-        const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
-        const stationBadgeHTML = stationNum ? `<span class="sc-station-badge" aria-hidden="true">#${stationNum}</span>` : '';
-
         const studentIds = this._getCellStudentIds(row, col);
         const students = studentIds.map(id => this._studentMap?.get(id)).filter(Boolean);
+        const stationNum = (isActivity && students.length > 0) ? this._getStationNumber(row, col) : null;
+        const stationBadgeHTML = stationNum ? `<span class="sc-station-badge" aria-hidden="true">#${stationNum}</span>` : '';
 
         if (students.length === 1) {
             const student = students[0];
@@ -292,6 +290,7 @@ export const SeatingRenderer = {
             this._attachMemberHoverEcho(cell);
         } else {
             cell.classList.add('empty');
+            const special = this._getCellSpecial(row, col);
             
             if (special) {
                 cell.classList.add(`sc-cell-special-${special.type}`);
@@ -315,8 +314,6 @@ export const SeatingRenderer = {
                         <span class="sc-cell-scope-badge ${isClassScope ? 'scope-class' : 'scope-global'}" data-tooltip="${scopeTooltip}">${scopeLabel}</span>
                     `;
                 }
-            } else if (stationBadgeHTML) {
-                cell.innerHTML = stationBadgeHTML;
             }
 
             const totalRows = this._getRows();

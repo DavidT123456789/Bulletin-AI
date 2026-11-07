@@ -371,7 +371,10 @@
     [data-theme="dark"] .student-avatar:hover .student-avatar__img,
     [data-theme="dark"] .pick-student-row:hover:not(.already-present) .student-avatar .student-avatar__img,
     [data-theme="dark"] .student-list-table tbody tr:hover .student-avatar .student-avatar__img,
-    [data-theme="dark"] .sc-cell.occupied:hover .student-avatar .student-avatar__img {
+    [data-theme="dark"] .sc-student-chip:hover .student-avatar .student-avatar__img,
+    [data-theme="dark"] .sc-cell.occupied:not(.sc-cell-stacked):hover .student-avatar .student-avatar__img,
+    [data-theme="dark"] .sc-stacked-avatar:hover .student-avatar .student-avatar__img,
+    [data-theme="dark"] .sc-stacked-avatar.is-member-hovered .student-avatar .student-avatar__img {
         opacity: 1;
         filter: none;
     }

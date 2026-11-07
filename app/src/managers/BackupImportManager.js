@@ -75,7 +75,7 @@ export const BackupImportManager = {
         <div class="modal-content modal-content-backup-import">
             <div class="modal-header">
                 <h2 class="modal-title">
-                    <span class="modal-title-icon"><iconify-icon icon="solar:import-linear"></iconify-icon></span>
+                    <span class="modal-title-icon"><iconify-icon icon="lucide:download"></iconify-icon></span>
                     <span class="modal-title-text">Importer la sauvegarde</span>
                 </h2>
                 <button class="close-button" aria-label="Fermer" id="backupImportCloseBtn">

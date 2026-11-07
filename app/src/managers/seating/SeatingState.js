@@ -504,13 +504,15 @@ export const SeatingState = {
     },
 
     _getStationNumber(targetRow, targetCol) {
-        if (this._isSpecialSpot(targetRow, targetCol)) return null;
+        if (this._getCellStudentIds(targetRow, targetCol).length === 0 || this._isSpecialSpot(targetRow, targetCol)) {
+            return null;
+        }
         const rows = this._gridState?.length || this._getRows();
         const cols = this._gridState?.[0]?.length || this._getCols();
         let count = 0;
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (this._isSpecialSpot(r, c)) continue;
+                if (this._getCellStudentIds(r, c).length === 0 || this._isSpecialSpot(r, c)) continue;
                 count++;
                 if (r === targetRow && c === targetCol) return count;
             }

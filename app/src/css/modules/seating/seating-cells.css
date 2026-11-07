@@ -86,6 +86,15 @@
         box-shadow: var(--shadow-md);
         transform: translateY(-2px);
     }
+
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:not(.sc-cell-stacked):hover .sc-cell-name,
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:not(.sc-cell-stacked):hover .sc-stacked-group-tag {
+        color: var(--text-primary);
+    }
+
+    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:not(.sc-cell-stacked):hover .sc-cell-initial {
+        color: var(--text-secondary);
+    }
 }
 
 .sc-cell.occupied:active {
@@ -111,6 +120,10 @@
 .sc-cell.sc-chip-selected .sc-stacked-name-text {
     color: var(--text-primary) !important;
     font-weight: 700;
+}
+
+.sc-cell.sc-chip-selected .sc-cell-initial {
+    color: var(--text-secondary) !important;
 }
 
 .sc-cell.sc-chip-selected .student-avatar .student-avatar__img {
@@ -312,7 +325,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-touch-ghost .sc-student-chip-name {
     font-size: 0.74rem;
     font-weight: 560;
-    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
+    color: color-mix(in srgb, var(--text-primary) 50%, var(--text-secondary));
     max-width: 78px;
     white-space: nowrap;
     overflow: hidden;
@@ -321,6 +334,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     margin-top: 5px;
     line-height: 1.2;
     letter-spacing: -0.01em;
+    transition: color var(--transition-fast);
 }
 
 .sc-cell-name.is-long-name,
@@ -354,6 +368,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-weight: 450;
     color: var(--text-tertiary);
     margin-left: 0;
+    transition: color var(--transition-fast);
 }
 
 /* ────────── CELL ACTIONS (Remove / Pin) ────────── */
@@ -612,17 +627,13 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     background: rgba(38, 38, 40, 0.45) !important;
 }
 
-.sc-cell.occupied.sc-cell-departed .student-avatar,
-.sc-stacked-avatar.sc-member-departed .student-avatar {
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over):not(:hover) .student-avatar,
+.sc-stacked-avatar.sc-member-departed:not(:hover):not(.is-member-hovered) .student-avatar {
+    opacity: 0.78;
     filter: saturate(0.8);
 }
 
-.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) .student-avatar,
-.sc-stacked-avatar.sc-member-departed:not(:hover):not(.is-member-hovered) .student-avatar {
-    opacity: 0.78;
-}
-
-.sc-cell.occupied.sc-cell-departed .sc-cell-name,
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over):not(:hover) .sc-cell-name,
 .sc-stacked-member.sc-member-departed:not(:hover):not(.is-member-hovered) .sc-stacked-name-text {
     opacity: 0.72;
 }

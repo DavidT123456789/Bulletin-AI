@@ -284,7 +284,7 @@ export const SyncService = {
 
         const config = {
             connected: {
-                icon: 'solar:cloud-upload-linear',
+                icon: 'lucide:cloud-upload',
                 label: 'Sauvegarder',
                 tooltip: 'Envoyer vos données vers le Cloud'
             },
@@ -300,7 +300,7 @@ export const SyncService = {
                 tooltip: 'Synchronisation en cours…'
             },
             local: {
-                icon: 'solar:cloud-upload-linear',
+                icon: 'lucide:cloud-upload',
                 label: 'Sauvegarder',
                 tooltip: 'Mode hors-ligne'
             }

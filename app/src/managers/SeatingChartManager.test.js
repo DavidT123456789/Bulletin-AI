@@ -3534,17 +3534,32 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             smartFitSpy.mockRestore();
         });
 
-        it('devrait numéroter séquentiellement les postes actifs (#1, #2...) en ignorant les allées et places condamnées', () => {
+        it('devrait numéroter séquentiellement uniquement les groupes occupés (#1, #2...) sans décalage lié aux cases vides ou condamnées', () => {
             SeatingChartManager.switchPlanMode('activity');
             SeatingChartManager._isLocked = false;
 
+            // Cases vides -> aucun numéro ni badge
+            expect(SeatingChartManager._getStationNumber(0, 0)).toBeNull();
+            expect(SeatingChartManager._getStationNumber(0, 1)).toBeNull();
+
+            // Placer 3 groupes avec des cases vides et condamnées intercalées (ex. îlots espacés sur 2 lignes)
+            SeatingChartManager._setCellStudentIds(0, 0, ['u1', 'u2']);
+            SeatingChartManager._setCellStudentIds(0, 1, ['u3']);
+            // (0, 2)..(0, 4) restent vides en bout de 1re ligne
+            SeatingChartManager._setCellSpecialType(1, 0, 'blocked');
+            SeatingChartManager._setCellStudentIds(1, 1, ['u4']);
+            SeatingChartManager._renderGrid();
+
             expect(SeatingChartManager._getStationNumber(0, 0)).toBe(1);
             expect(SeatingChartManager._getStationNumber(0, 1)).toBe(2);
+            expect(SeatingChartManager._getStationNumber(0, 2)).toBeNull();
+            expect(SeatingChartManager._getStationNumber(1, 0)).toBeNull();
+            expect(SeatingChartManager._getStationNumber(1, 1)).toBe(3);
 
-            // Si (0, 0) devient une allée, (0, 0) n'a plus de numéro et (0, 1) devient le Poste #1
-            SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
-            expect(SeatingChartManager._getStationNumber(0, 0)).toBeNull();
-            expect(SeatingChartManager._getStationNumber(0, 1)).toBe(1);
+            const emptyCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="2"]');
+            const group3Cell = document.querySelector('#scGridContainer .sc-cell[data-row="1"][data-col="1"]');
+            expect(emptyCell?.querySelector('.sc-station-badge')).toBeNull();
+            expect(group3Cell?.querySelector('.sc-station-badge')?.textContent).toBe('#3');
         });
 
         it('devrait toujours afficher le mode Activité dans le sens naturel (#1 en haut à gauche) même si le mode Cours est en Vue Élèves, et restaurer la Vue Élèves au retour en mode Cours', () => {
@@ -3561,6 +3576,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // 2. Basculer en mode Activité : la grille des groupes reste en lecture naturelle (0,0 = #1 en haut à gauche)
             SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._setCellStudentIds(0, 0, ['u1']);
+            SeatingChartManager._renderGrid();
             expect(view.dataset.orientation).toBe('teacher');
             expect(SeatingChartManager._isStudentOrientation()).toBe(false);
             cells = document.querySelectorAll('#scGridContainer .sc-cell');

@@ -422,7 +422,7 @@ export const FocusPanelStatus = {
                 }, 2000);
                 break;
             case 'dictating':
-                badge.innerHTML = '<iconify-icon icon="solar:microphone-3-linear"></iconify-icon><span class="badge-text">Dictée...</span>';
+                badge.innerHTML = '<iconify-icon icon="lucide:mic"></iconify-icon><span class="badge-text">Dictée...</span>';
                 badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':

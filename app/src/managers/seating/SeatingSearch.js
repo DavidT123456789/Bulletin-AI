@@ -58,10 +58,6 @@ export const SeatingSearch = {
     _closeSearch({ fromHistory = false } = {}) {
         const wrap = document.getElementById('scFloatingSearch');
         const input = document.getElementById('scFloatingSearchInput');
-        const btn = document.getElementById('scFloatingSearchBtn');
-        const clearBtn = document.getElementById('scFloatingSearchClear');
-        const countBadge = document.getElementById('scFloatingSearchCount');
-        const sug = document.getElementById('scFloatingSearchSuggestions');
 
         const hadActiveSearch = Boolean(
             wrap?.classList.contains('open') ||
@@ -71,30 +67,7 @@ export const SeatingSearch = {
             CrossClassSearchManager._debounceTimer
         );
 
-        if (wrap) {
-            wrap.classList.remove('open', 'has-value');
-        }
-        if (input) {
-            input.value = '';
-            input.blur?.();
-        }
-        clearBtn?.classList.remove('visible');
-        btn?._tippy?.enable?.();
-
-        if (countBadge) {
-            countBadge.textContent = '';
-            countBadge.classList.remove('sc-count-zero');
-            countBadge.style.display = 'none';
-        }
-        if (sug) {
-            sug.classList.remove('visible');
-            sug.style.display = 'none';
-            sug.innerHTML = '';
-        }
-
-        if (!fromHistory && HistoryManager.isOpen('inlineSearch')) {
-            HistoryManager.handleManualClose('inlineSearch');
-        }
+        CrossClassSearchManager.resetHeaderSearchUI({ fromHistory });
 
         if (hadActiveSearch) {
             CrossClassSearchManager.cancelPendingSearch();
@@ -204,12 +177,7 @@ export const SeatingSearch = {
             const firstGroup = crossData.groups[0];
             const targetClassId = firstGroup.classId;
             const targetStudentId = firstGroup.students?.[0]?.id;
-            const sug = document.getElementById('scFloatingSearchSuggestions');
-            if (sug) {
-                sug.classList.remove('visible');
-                sug.style.display = 'none';
-                sug.innerHTML = '';
-            }
+            CrossClassSearchManager.hideSuggestions();
             await this._switchClassFromSearch(targetClassId, targetStudentId, cleaned);
         }
     },
@@ -230,11 +198,7 @@ export const SeatingSearch = {
                 countBadge.classList.remove('sc-count-zero');
                 countBadge.style.display = 'none';
             }
-            if (suggestionsEl) {
-                suggestionsEl.classList.remove('visible');
-                suggestionsEl.style.display = 'none';
-                suggestionsEl.innerHTML = '';
-            }
+            CrossClassSearchManager.hideSuggestions(suggestionsEl);
             return { matchedStudentIds: new Set(), matchCount: 0 };
         }
 
@@ -308,9 +272,7 @@ export const SeatingSearch = {
                         const targetClassId = actionBtn.dataset.classId;
                         const targetStudentId = actionBtn.dataset.studentId;
                         if (targetClassId) {
-                            suggestionsEl.classList.remove('visible');
-                            suggestionsEl.style.display = 'none';
-                            suggestionsEl.innerHTML = '';
+                            CrossClassSearchManager.hideSuggestions(suggestionsEl);
                             await this._switchClassFromSearch(targetClassId, targetStudentId, this._activeSearchTerm || cleaned);
                         }
                     });
@@ -335,14 +297,10 @@ export const SeatingSearch = {
                     });
                 });
             } else {
-                suggestionsEl.classList.remove('visible');
-                suggestionsEl.style.display = 'none';
-                suggestionsEl.innerHTML = '';
+                CrossClassSearchManager.hideSuggestions(suggestionsEl);
             }
-        } else if (suggestionsEl) {
-            suggestionsEl.classList.remove('visible');
-            suggestionsEl.style.display = 'none';
-            suggestionsEl.innerHTML = '';
+        } else {
+            CrossClassSearchManager.hideSuggestions(suggestionsEl);
         }
 
         return { matchedStudentIds, matchCount };

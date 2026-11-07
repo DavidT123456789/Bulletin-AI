@@ -151,6 +151,10 @@
     [data-theme="dark"] #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover {
         background: var(--bg-tertiary);
     }
+
+    #seatingChartView:not([data-dragging="true"]) .sc-student-chip:hover .sc-student-chip-name .student-nom {
+        color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
+    }
 }
 
 .sc-student-chip:active:not(:has(.sc-chip-profile-btn:active)) {

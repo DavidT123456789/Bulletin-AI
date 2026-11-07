@@ -121,27 +121,28 @@ export const CrossClassSearchManager = {
     },
 
     /**
-     * Réinitialise proprement toute la recherche (état, barre unifiée du header,
-     * historique mobile et popover inter-classes)
-     * @param {Object} [options={}]
-     * @param {boolean} [options.renderList=false] - Si true et qu'une recherche filtrait la liste, relance le rendu de la classe
+     * Masque et vide le popover de suggestions inter-classes
+     * @param {HTMLElement|null} [sugEl] - Élément DOM optionnel déjà résolu
      */
-    clearListSearch({ renderList = false } = {}) {
-        this.cancelPendingSearch();
+    hideSuggestions(sugEl = document.getElementById('scFloatingSearchSuggestions')) {
+        if (sugEl) {
+            sugEl.classList.remove('visible');
+            sugEl.style.display = 'none';
+            sugEl.innerHTML = '';
+        }
+    },
 
+    /**
+     * Réinitialise le DOM et l'historique mobile de la barre de recherche unifiée
+     * @param {Object} [options={}]
+     * @param {boolean} [options.fromHistory=false] - Si true, ne déclenche pas handleManualClose sur HistoryManager
+     */
+    resetHeaderSearchUI({ fromHistory = false } = {}) {
         const headerInput = document.getElementById('scFloatingSearchInput');
         const headerContainer = document.getElementById('scFloatingSearch');
         const headerTrigger = document.getElementById('scFloatingSearchBtn');
         const headerClear = document.getElementById('scFloatingSearchClear');
         const headerCount = document.getElementById('scFloatingSearchCount');
-        const headerSug = document.getElementById('scFloatingSearchSuggestions');
-
-        const hadSearchValue = Boolean(
-            appState.searchQuery ||
-            headerInput?.value
-        );
-
-        appState.searchQuery = '';
 
         if (headerInput) {
             headerInput.value = '';
@@ -156,16 +157,31 @@ export const CrossClassSearchManager = {
             headerCount.classList.remove('sc-count-zero');
             headerCount.style.display = 'none';
         }
-        if (headerSug) {
-            headerSug.classList.remove('visible');
-            headerSug.style.display = 'none';
-            headerSug.innerHTML = '';
-        }
+        this.hideSuggestions();
         headerTrigger?._tippy?.enable?.();
 
-        if (HistoryManager?.isOpen?.('inlineSearch')) {
+        if (!fromHistory && HistoryManager?.isOpen?.('inlineSearch')) {
             HistoryManager.handleManualClose('inlineSearch');
         }
+    },
+
+    /**
+     * Réinitialise proprement toute la recherche (état, barre unifiée du header,
+     * historique mobile et popover inter-classes)
+     * @param {Object} [options={}]
+     * @param {boolean} [options.renderList=false] - Si true et qu'une recherche filtrait la liste, relance le rendu de la classe
+     */
+    clearListSearch({ renderList = false } = {}) {
+        this.cancelPendingSearch();
+
+        const headerInput = document.getElementById('scFloatingSearchInput');
+        const hadSearchValue = Boolean(
+            appState.searchQuery ||
+            headerInput?.value
+        );
+
+        appState.searchQuery = '';
+        this.resetHeaderSearchUI();
 
         if (renderList && hadSearchValue) {
             EventHandlersManager?.handleSearchInput?.();
@@ -177,11 +193,6 @@ export const CrossClassSearchManager = {
      */
     reset() {
         this.cancelPendingSearch();
-        const headerSug = document.getElementById('scFloatingSearchSuggestions');
-        if (headerSug) {
-            headerSug.classList.remove('visible');
-            headerSug.style.display = 'none';
-            headerSug.innerHTML = '';
-        }
+        this.hideSuggestions();
     }
 };

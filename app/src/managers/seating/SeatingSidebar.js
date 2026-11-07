@@ -5,6 +5,7 @@
 
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
 import { appState } from '../../state/State.js';
@@ -530,9 +531,7 @@ export const SeatingSidebar = {
         if (returningId && searchTerm) {
             const returnedStudent = this._students.find(s => s.id === returningId);
             if (returnedStudent && !Utils.matchesStudent(returnedStudent, searchTerm, { currentClassName })) {
-                if (searchInput) searchInput.value = '';
-                document.getElementById('scFloatingSearch')?.classList.remove('open', 'has-value');
-                document.getElementById('scFloatingSearchClear')?.classList.remove('visible');
+                CrossClassSearchManager.resetHeaderSearchUI();
                 this._applySearchHighlight('');
                 searchTerm = '';
             }

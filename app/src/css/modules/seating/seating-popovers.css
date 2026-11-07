@@ -745,8 +745,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     line-height: 1;
     padding: 1.5px 5px;
     border-radius: var(--radius-pill);
-    color: var(--text-tertiary);
-    background: rgba(var(--text-secondary-rgb, 113, 113, 122), 0.1);
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
     pointer-events: none;
     user-select: none;
     letter-spacing: -0.01em;
@@ -754,19 +754,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     transition: color 0.2s ease, background 0.2s ease, opacity 0.18s ease, top 0.18s ease;
 }
 
-.sc-cell.occupied .sc-station-badge {
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .sc-cell.occupied .sc-station-badge {
-    color: var(--text-secondary);
+[data-theme="dark"] .sc-station-badge {
     background: rgba(255, 255, 255, 0.08);
-}
-
-.sc-classroom-board[data-locked="true"] .sc-cell.empty .sc-station-badge,
-#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty .sc-station-badge {
-    opacity: 0.45;
 }
 
 /* In Activity Consultation mode: hide empty non-special stations, condemned stations, and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
@@ -966,7 +955,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s var(--ease-spring), z-index 0.2s, opacity 0.2s ease;
+    transition: transform 0.25s var(--ease-bounce), z-index 0.2s, opacity 0.2s ease;
     cursor: pointer;
 }
 
@@ -996,7 +985,6 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     border: 2px solid var(--surface-color, #ffffff);
     box-shadow: var(--shadow-xs);
     border-radius: 50%;
-    transition: transform 0.2s var(--ease-spring);
 }
 
 [data-theme="dark"] .sc-stacked-avatar .student-avatar,
@@ -1064,7 +1052,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     font-weight: 560;
     line-height: 1.24;
     letter-spacing: -0.01em;
-    color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary));
+    color: color-mix(in srgb, var(--text-primary) 50%, var(--text-secondary));
     max-width: 100%;
     white-space: nowrap;
     overflow: visible;
@@ -1196,19 +1184,24 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     flex-shrink: 0;
     pointer-events: none;
     user-select: none;
+    transition: color var(--transition-fast);
 }
 
 [data-theme="dark"] .sc-stacked-group-tag {
-    color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.09);
 }
 
 @media (hover: hover) {
-    .sc-stacked-member:hover .sc-stacked-name,
-    .sc-stacked-member.is-member-hovered .sc-stacked-name,
-    .sc-stacked-name:hover,
-    .sc-stacked-name.is-member-hovered {
+    #seatingChartView:not([data-dragging="true"]) .sc-stacked-name:hover,
+    .sc-stacked-name.is-member-hovered,
+    #seatingChartView:not([data-dragging="true"]) .sc-stacked-member:hover .sc-stacked-group-tag,
+    .sc-stacked-member.is-member-hovered .sc-stacked-group-tag {
         color: var(--text-primary);
+    }
+
+    #seatingChartView:not([data-dragging="true"]) .sc-stacked-name:hover .sc-cell-initial,
+    .sc-stacked-name.is-member-hovered .sc-cell-initial {
+        color: var(--text-secondary);
     }
 }
 

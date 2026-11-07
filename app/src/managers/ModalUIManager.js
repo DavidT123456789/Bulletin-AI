@@ -841,13 +841,13 @@ export const ModalUI = {
                 },
                 overwrite: {
                     id: 'conflictChoiceOverwrite',
-                    icon: 'solar:cloud-upload-linear',
+                    icon: 'lucide:cloud-upload',
                     title: 'Écraser la version Cloud',
                     desc: 'Remplace le Cloud par cet appareil. Les modifications enregistrées depuis un autre appareil seront perdues.'
                 },
                 restore: {
                     id: 'conflictChoiceRestore',
-                    icon: 'solar:cloud-download-linear',
+                    icon: 'lucide:cloud-download',
                     title: isConflict ? 'Remplacer par la version Cloud' : 'Récupérer la version Cloud',
                     desc: isConflict
                         ? 'Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).'
@@ -961,7 +961,7 @@ export const ModalUI = {
             google: { label: 'Google Drive', icon: 'logos:google-drive' },
             dropbox: { label: 'Dropbox', icon: 'logos:dropbox' }
         };
-        const fallback = meta[providerName] ?? { label: 'Cloud', icon: 'solar:cloud-upload-linear' };
+        const fallback = meta[providerName] ?? { label: 'Cloud', icon: 'lucide:cloud-upload' };
         return {
             label: providerLabel ?? fallback.label,
             icon: providerIcon ?? fallback.icon
@@ -1306,7 +1306,7 @@ export const ModalUI = {
         const localCardHtml = renderCard({
             type: 'local',
             roleClass: localRoleClass,
-            icon: 'solar:monitor-linear',
+            icon: 'lucide:laptop-minimal',
             label: 'Session locale',
             mainStat: localMainStatText,
             exactDate: localExactDateText,
@@ -1321,7 +1321,7 @@ export const ModalUI = {
                     <div class="restore-comparison-grid${isInSync ? ' is-in-sync' : ''}">
                         ${sourceCardHtml}
                         <div class="restore-flow-connector" aria-hidden="true">
-                            <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
+                            <iconify-icon icon="lucide:arrow-right"></iconify-icon>
                         </div>
                         ${targetCardHtml}
                     </div>`;
@@ -1511,7 +1511,7 @@ export const ModalUI = {
                 ? null
                 : `
                     <div class="restore-safety-notice warning">
-                        <iconify-icon icon="solar:cloud-download-linear"></iconify-icon>
+                        <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                         <div>
                             ${isMissingLocalStudents
                                 ? `<strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.`
@@ -1522,7 +1522,7 @@ export const ModalUI = {
         return this._openCloudConfirmModal({
             modalId: 'restoreConfirmationModal',
             variant: 'restore',
-            headerIcon: 'solar:cloud-download-linear',
+            headerIcon: 'lucide:cloud-download',
             title: 'Restaurer depuis le Cloud',
             subtitle: isInSync
                 ? 'Aucune modification depuis votre dernière synchronisation.'
@@ -1628,7 +1628,7 @@ export const ModalUI = {
                 ? null
                 : this._renderImpactBox({
                     isWarning: false,
-                    icon: 'solar:cloud-upload-linear',
+                    icon: 'lucide:cloud-upload',
                     title: 'Modifications à enregistrer :',
                     items: isFirstSync && lStudentCount > 0
                         ? [{ icon: 'solar:users-group-rounded-linear', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
@@ -1644,7 +1644,7 @@ export const ModalUI = {
         return this._openCloudConfirmModal({
             modalId: 'saveConfirmationModal',
             variant: 'save',
-            headerIcon: 'solar:cloud-upload-linear',
+            headerIcon: 'lucide:cloud-upload',
             title: 'Sauvegarder vers le Cloud',
             subtitle: effectiveIsInSync
                 ? 'Aucune modification depuis votre dernière synchronisation.'

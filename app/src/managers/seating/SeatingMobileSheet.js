@@ -532,7 +532,6 @@ export const SeatingMobileSheet = {
         sheet.setAttribute('aria-modal', 'true');
 
         const isActivity = this._isActivityMode();
-        const stationNum = (isActivity && !special) ? this._getStationNumber(row, col) : null;
         let statusLabel = isActivity ? 'Poste libre' : 'Place libre';
         let deskIcon = 'solar:chair-linear';
         if (special?.type === 'aisle') {
@@ -547,9 +546,7 @@ export const SeatingMobileSheet = {
         }
 
         const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
-        const headerEntityName = stationNum
-            ? `Poste #${stationNum} • Rangée ${row + 1}, Col ${col + 1}`
-            : `Rangée ${row + 1} • Table ${col + 1}`;
+        const headerEntityName = `Rangée ${row + 1} • ${isActivity ? 'Col' : 'Table'} ${col + 1}`;
 
         sheet.innerHTML = `
             <div class="sc-sheet-handle"></div>
