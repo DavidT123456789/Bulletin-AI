@@ -2092,11 +2092,11 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 tEnd.changedTouches = [{ clientX: 210, clientY: 200 }];
                 gridArea.dispatchEvent(tEnd);
 
-                // Atteint le bord gauche (scrollLeft = 0) via la courbe d'approche d'impact
+                // Atteint le bord gauche (scrollLeft = 0) sans freiner avant l'impact (p2y < 1) et en temps physique court
                 expect(gridArea.scrollLeft).toBe(0);
-                expect(board.style.transition).toContain('cubic-bezier(0.22, 0.68, 0.38, 1)');
+                expect(board.style.transition).toMatch(/transform [0-9]+ms cubic-bezier\(0\.33, 0\.[0-9]+, 0\.67, 0\.[0-9]+\)/);
 
-                // À la fin de la glissade jusqu'au bord, le rebond d'impact élastique est déclenché
+                // Dès l'impact au bord, le rebond élastique est déclenché sans délai
                 const transEnd = new Event('transitionend');
                 Object.defineProperty(transEnd, 'propertyName', { value: 'transform' });
                 board.dispatchEvent(transEnd);

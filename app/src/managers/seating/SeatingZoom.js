@@ -728,8 +728,8 @@ export const SeatingZoom = {
 
         const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
 
-        const calcImpactBounce = (speed, scaleComp) =>
-            Math.round((Math.min(22, Math.max(7, Math.abs(speed) * 16)) / scaleComp) * 10) / 10;
+        const calcImpactBounce = (speed, scaleComp, minBounce = 7) =>
+            Math.round((Math.min(22, Math.max(minBounce, Math.abs(speed) * 16)) / scaleComp) * 10) / 10;
 
         const sampleCubicBezierY = (p1x, p1y, p2x, p2y, timeProgress) => {
             if (timeProgress <= 0) return 0;
@@ -901,19 +901,28 @@ export const SeatingZoom = {
             let targetY = startY;
             let hitEdgeX = 0;
             let hitEdgeY = 0;
+            let impactVx = 0;
+            let impactVy = 0;
+            let edgeTimeX = Infinity;
+            let edgeTimeY = Infinity;
 
             if (maxX > 0 && Math.abs(initialVx) > 0.02) {
                 const rawTargetX = startX - initialVx * inertiaTauMs;
                 if (rawTargetX <= 0) {
-                    const impactVx = initialVx - startX / inertiaTauMs;
-                    if (startX > 0.5 && impactVx > 0.42) {
-                        hitEdgeX = calcImpactBounce(impactVx, scaleComp);
+                    const remVx = initialVx - startX / inertiaTauMs;
+                    if (startX > 0.5 && remVx > 0.15) {
+                        impactVx = remVx;
+                        hitEdgeX = calcImpactBounce(remVx, scaleComp, 3.5);
+                        edgeTimeX = (2 * startX) / (Math.abs(initialVx) + remVx);
                     }
                     targetX = 0;
                 } else if (rawTargetX >= maxX) {
-                    const impactSpeedX = Math.abs(initialVx) - (maxX - startX) / inertiaTauMs;
-                    if (startX < maxX - 0.5 && impactSpeedX > 0.42) {
-                        hitEdgeX = -calcImpactBounce(impactSpeedX, scaleComp);
+                    const distToMaxX = maxX - startX;
+                    const remVx = Math.abs(initialVx) - distToMaxX / inertiaTauMs;
+                    if (startX < maxX - 0.5 && remVx > 0.15) {
+                        impactVx = remVx;
+                        hitEdgeX = -calcImpactBounce(remVx, scaleComp, 3.5);
+                        edgeTimeX = (2 * distToMaxX) / (Math.abs(initialVx) + remVx);
                     }
                     targetX = maxX;
                 } else {
@@ -924,20 +933,45 @@ export const SeatingZoom = {
             if (maxY > 0 && Math.abs(initialVy) > 0.02) {
                 const rawTargetY = startY - initialVy * inertiaTauMs;
                 if (rawTargetY <= 0) {
-                    const impactVy = initialVy - startY / inertiaTauMs;
-                    if (startY > 0.5 && impactVy > 0.42) {
-                        hitEdgeY = calcImpactBounce(impactVy, scaleComp);
+                    const remVy = initialVy - startY / inertiaTauMs;
+                    if (startY > 0.5 && remVy > 0.15) {
+                        impactVy = remVy;
+                        hitEdgeY = calcImpactBounce(remVy, scaleComp, 3.5);
+                        edgeTimeY = (2 * startY) / (Math.abs(initialVy) + remVy);
                     }
                     targetY = 0;
                 } else if (rawTargetY >= maxY) {
-                    const impactSpeedY = Math.abs(initialVy) - (maxY - startY) / inertiaTauMs;
-                    if (startY < maxY - 0.5 && impactSpeedY > 0.42) {
-                        hitEdgeY = -calcImpactBounce(impactSpeedY, scaleComp);
+                    const distToMaxY = maxY - startY;
+                    const remVy = Math.abs(initialVy) - distToMaxY / inertiaTauMs;
+                    if (startY < maxY - 0.5 && remVy > 0.15) {
+                        impactVy = remVy;
+                        hitEdgeY = -calcImpactBounce(remVy, scaleComp, 3.5);
+                        edgeTimeY = (2 * distToMaxY) / (Math.abs(initialVy) + remVy);
                     }
                     targetY = maxY;
                 } else {
                     targetY = Math.round(rawTargetY);
                 }
+            }
+
+            if (hitEdgeX !== 0 && hitEdgeY !== 0) {
+                if (edgeTimeX < edgeTimeY * 0.65) {
+                    hitEdgeY = 0;
+                    impactVy = 0;
+                } else if (edgeTimeY < edgeTimeX * 0.65) {
+                    hitEdgeX = 0;
+                    impactVx = 0;
+                }
+            }
+
+            if (hitEdgeX !== 0 && hitEdgeY === 0 && maxY > 0 && Math.abs(initialVy) > 0.02 && Number.isFinite(edgeTimeX)) {
+                const r = clamp(edgeTimeX / inertiaTauMs, 0, 1);
+                const fracY = r * (1 - 0.5 * r);
+                targetY = Math.round(clamp(startY - initialVy * inertiaTauMs * fracY, 0, maxY));
+            } else if (hitEdgeY !== 0 && hitEdgeX === 0 && maxX > 0 && Math.abs(initialVx) > 0.02 && Number.isFinite(edgeTimeY)) {
+                const r = clamp(edgeTimeY / inertiaTauMs, 0, 1);
+                const fracX = r * (1 - 0.5 * r);
+                targetX = Math.round(clamp(startX - initialVx * inertiaTauMs * fracX, 0, maxX));
             }
 
             if (this._zoomAnimCleanup) {
@@ -991,14 +1025,26 @@ export const SeatingZoom = {
             const ty0 = Math.round((dy / boardScale) * 100) / 100;
             const hasEdgeImpact = hitEdgeX !== 0 || hitEdgeY !== 0;
 
-            const p1x = hasEdgeImpact ? 0.22 : 0.25;
-            const p1y = hasEdgeImpact ? 0.68 : 0.6;
-            const p2x = hasEdgeImpact ? 0.38 : 0.36;
-            const p2y = 1;
-            const initialCurveSlope = p1y / p1x;
-            const durationMs = Math.round(
-                clamp((actualDist * initialCurveSlope) / speed, hasEdgeImpact ? 90 : 220, hasEdgeImpact ? 480 : 780)
-            );
+            let p1x = 0.25;
+            let p1y = 0.6;
+            let p2x = 0.36;
+            let p2y = 1;
+            let durationMs;
+
+            if (hasEdgeImpact) {
+                const impactSpeed = Math.min(speed, Math.max(0.15, Math.hypot(impactVx, impactVy)));
+                const avgSpeed = (speed + impactSpeed) * 0.5;
+                const s0 = speed / avgSpeed;
+                const s1 = impactSpeed / avgSpeed;
+                p1x = 0.33;
+                p1y = Math.round(clamp(0.33 * s0, 0.33, 0.66) * 100) / 100;
+                p2x = 0.67;
+                p2y = Math.round(clamp(1 - 0.33 * s1, 0.67, 0.95) * 100) / 100;
+                durationMs = Math.round(clamp(actualDist / avgSpeed, 24, 340));
+            } else {
+                const initialCurveSlope = p1y / p1x;
+                durationMs = Math.round(clamp((actualDist * initialCurveSlope) / speed, 220, 780));
+            }
 
             state.tx0 = tx0;
             state.ty0 = ty0;
@@ -1030,8 +1076,6 @@ export const SeatingZoom = {
                     state.onTransEnd = null;
                 }
                 board.classList.remove('sc-lock-sliding');
-                board.style.removeProperty('transform');
-                board.style.removeProperty('transition');
                 if (panInertiaState === state) {
                     panInertiaState = null;
                 }
@@ -1041,7 +1085,10 @@ export const SeatingZoom = {
                 if ((hitEdgeX !== 0 || hitEdgeY !== 0) && this._isActive && !this._isPinching && !isTouching && !this._isFitted) {
                     lastBounceTime = performance.now();
                     this._triggerEdgeImpactBounce(hitEdgeX, hitEdgeY);
+                    return;
                 }
+                board.style.removeProperty('transform');
+                board.style.removeProperty('transition');
             };
 
             state.onTransEnd = (e) => {
@@ -1050,7 +1097,7 @@ export const SeatingZoom = {
                 }
             };
             board.addEventListener('transitionend', state.onTransEnd);
-            state.timer = setTimeout(completeInertia, durationMs + 40);
+            state.timer = setTimeout(completeInertia, durationMs + (hasEdgeImpact ? 8 : 40));
             this._zoomAnimCleanup = stopPanInertia;
         };
 
