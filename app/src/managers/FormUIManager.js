@@ -84,24 +84,6 @@ export const FormUI = {
                 cb.checked = isChecked;
                 cb.closest('.seating-dot-option')?.classList.toggle('active', isChecked);
             });
-
-            if (!seatingDotsSelector._listenerAttached) {
-                seatingDotsSelector._listenerAttached = true;
-                seatingDotsSelector.addEventListener('change', (e) => {
-                    const cb = e.target.closest('input[type="checkbox"][data-dot-category]');
-                    if (!cb) return;
-                    const cat = cb.getAttribute('data-dot-category');
-                    cb.closest('.seating-dot-option')?.classList.toggle('active', cb.checked);
-                    appState.seatingStatusDots = {
-                        ...DEFAULT_SEATING_STATUS_DOTS,
-                        ...(appState.seatingStatusDots || {}),
-                        [cat]: cb.checked
-                    };
-                    document.dispatchEvent(new CustomEvent('app-settings-changed', {
-                        detail: { settings: appState }
-                    }));
-                });
-            }
         }
 
         // Confidentialité
@@ -144,29 +126,13 @@ export const FormUI = {
         if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
             const words = parseInt(DOM.iaLengthSlider.value, 10);
             DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${Math.round(words * APPROX_CHARS_PER_WORD)} car.`;
-            const min = parseInt(DOM.iaLengthSlider.min, 10) || 10;
-            const max = parseInt(DOM.iaLengthSlider.max, 10) || 90;
-            const ratio = max > min ? (words - min) / (max - min) : 0;
-            const lengthContainer = DOM.iaLengthSliderContainer || DOM.iaLengthSlider.closest?.('.slider-container');
-            lengthContainer?.style?.setProperty?.('--slider-ratio', String(ratio));
         }
 
         if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;
-        const toneVal = parseInt(DOM.iaToneSlider?.value, 10) || 3;
-        if (DOM.iaToneSlider) {
-            const tMin = parseInt(DOM.iaToneSlider.min, 10) || 1;
-            const tMax = parseInt(DOM.iaToneSlider.max, 10) || 5;
-            const tRatio = tMax > tMin ? (toneVal - tMin) / (tMax - tMin) : 0.5;
-            const toneContainer = DOM.iaToneSliderContainer || DOM.iaToneSlider.closest?.('.slider-container');
-            toneContainer?.style?.setProperty?.('--slider-ratio', String(tRatio));
-        }
-        DOM.iaToneSliderContainer?.classList.toggle('opacity-reduced', !toneEnabled);
-        DOM.iaToneSliderContainer?.classList.toggle('disabled', !toneEnabled);
+        if (DOM.iaToneSlider) DOM.iaToneSlider.disabled = !toneEnabled;
         DOM.iaToneCollapsible?.classList.toggle('open', toneEnabled);
-        DOM.iaToneSliderContainer?.querySelectorAll?.('.tick').forEach((tick, idx) => {
-            tick.classList.toggle('passed', toneEnabled && idx + 1 < toneVal);
-            tick.classList.toggle('active', toneEnabled && idx + 1 === toneVal);
-        });
+
+        const toneVal = parseInt(DOM.iaToneSlider?.value, 10) || 3;
         if (DOM.iaToneSliderValue) {
             DOM.iaToneSliderValue.textContent = toneEnabled
                 ? (IA_TONE_LABELS[toneVal] || IA_TONE_LABELS[3])

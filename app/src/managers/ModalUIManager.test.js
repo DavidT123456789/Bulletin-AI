@@ -471,6 +471,16 @@ describe('ModalUIManager', () => {
             expect(modal.textContent).toContain('280 élèves');
             expect(modal.textContent).toContain('Google Drive');
 
+            // Flow Source (Cloud) -> Target (Local) without warning when no unsaved local changes
+            const cards = modal.querySelectorAll('.restore-comparison-card');
+            expect(cards).toHaveLength(2);
+            expect(cards[0].classList.contains('cloud')).toBe(true);
+            expect(cards[0].classList.contains('is-source')).toBe(true);
+            expect(cards[1].classList.contains('local')).toBe(true);
+            expect(cards[1].classList.contains('is-target')).toBe(true);
+            expect(cards[1].classList.contains('is-warning')).toBe(false);
+            expect(modal.querySelector('.restore-flow-connector')).not.toBeNull();
+
             const okBtn = document.getElementById('restoreConfirmOkBtn');
             expect(okBtn).not.toBeNull();
             okBtn.click();
@@ -557,9 +567,10 @@ describe('ModalUIManager', () => {
             expect(impactBox.textContent).not.toContain('appréciations ou notes éditées');
             expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
 
-            // Two-line date display: relative stat and exact timestamp
+            // Two-line date display: relative stat and exact timestamp, plus amber target highlight on Local card
             expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-exact-date')).not.toBeNull();
             expect(modal.querySelector('.restore-comparison-card.local .restore-card-exact-date')).not.toBeNull();
+            expect(modal.querySelector('.restore-comparison-card.local.is-target.is-warning')).not.toBeNull();
 
             // Primary button has no duplicate icon
             const okBtn = document.getElementById('restoreConfirmOkBtn');
@@ -650,6 +661,16 @@ describe('ModalUIManager', () => {
             expect(modal.textContent).toContain('Modifications à enregistrer');
             expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
 
+            // Flow Source (Local) -> Target (Cloud) without warning on normal save
+            const cards = modal.querySelectorAll('.restore-comparison-card');
+            expect(cards).toHaveLength(2);
+            expect(cards[0].classList.contains('local')).toBe(true);
+            expect(cards[0].classList.contains('is-source')).toBe(true);
+            expect(cards[1].classList.contains('cloud')).toBe(true);
+            expect(cards[1].classList.contains('is-target')).toBe(true);
+            expect(cards[1].classList.contains('is-warning')).toBe(false);
+            expect(modal.querySelector('.restore-flow-connector')).not.toBeNull();
+
             const okBtn = document.getElementById('saveConfirmOkBtn');
             expect(okBtn).not.toBeNull();
             okBtn.click();
@@ -668,7 +689,7 @@ describe('ModalUIManager', () => {
             const modal = document.getElementById('saveConfirmationModal');
             expect(modal).not.toBeNull();
             expect(modal.textContent).toContain('Google Drive');
-            expect(modal.querySelector('.restore-card-badge span').textContent).toBe('Google Drive');
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-badge span').textContent).toBe('Google Drive');
             expect(modal.textContent).toContain('Aucune sauvegarde');
             expect(modal.textContent).toContain('Première synchronisation');
             expect(modal.textContent).not.toContain('Date inconnue');
@@ -730,6 +751,7 @@ describe('ModalUIManager', () => {
             expect(warningEl.textContent).toContain('Attention (réduction de données)');
             expect(warningEl.textContent).toContain('305 élèves');
             expect(warningEl.textContent).toContain('20 élèves');
+            expect(modal.querySelector('.restore-comparison-card.cloud.is-target.is-warning')).not.toBeNull();
 
             const okBtn = document.getElementById('saveConfirmOkBtn');
             okBtn.click();
@@ -1044,6 +1066,33 @@ describe('ModalUIManager', () => {
             tabsContent.dispatchEvent(new Event('scroll'));
             expect(tabsContent.classList.contains('can-scroll-top')).toBe(true);
             expect(tabsContent.classList.contains('can-scroll-bottom')).toBe(true);
+        });
+
+        it('should set is-initial-focus on openModal to suppress phantom button ring and clear it on Tab / Arrow keys', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: Date.now() - 3600000,
+                localDate: Date.now(),
+                remoteStudentCount: 25,
+                localStudentCount: 25,
+                syncState: 'local-changes'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+
+            expect(modal.classList.contains('is-initial-focus')).toBe(true);
+            expect(document.activeElement).toBe(cancelBtn);
+
+            // Non-navigation keys keep initial programmatic focus suppression
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', bubbles: true }));
+            expect(modal.classList.contains('is-initial-focus')).toBe(true);
+
+            // Real keyboard navigation reveals :focus-visible rings
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+            expect(modal.classList.contains('is-initial-focus')).toBe(false);
+
+            cancelBtn.click();
+            await promise;
         });
     });
 });

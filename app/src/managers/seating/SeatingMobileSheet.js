@@ -187,16 +187,16 @@ export const SeatingMobileSheet = {
 
     _openOccupiedCellSheet(row, col, student, cellStudents = null) {
         this._closeContextMenu?.();
-        this._closeMobileSheet(true);
-        if (!HistoryManager.isOpen('scMobileSheet')) {
-            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
-        }
-
         const students = Array.isArray(cellStudents) && cellStudents.length > 0
             ? cellStudents
             : (this._getCellStudentIds(row, col).map(id => this._studentMap?.get(id)).filter(Boolean));
         const primary = students[0] || student;
         if (!primary) return;
+
+        this._closeMobileSheet(true, { silentHistory: true });
+        if (!HistoryManager.isOpen('scMobileSheet') || HistoryManager.getStack().at(-1)?.id === 'scMobileSheet') {
+            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true, { silentHistory: true }));
+        }
 
         const isMulti = students.length > 1;
         const posKey = this._getActivePositionKey();
@@ -225,7 +225,7 @@ export const SeatingMobileSheet = {
 
         const headerTitle = isMulti
             ? (students.length === 2 ? `Binôme (${students.length} élèves)` : `Groupe (${students.length} élèves)`)
-            : `${primary.prenom || ''} ${primary.nom || ''}`;
+            : Utils.escapeHtml(`${primary.prenom || ''} ${primary.nom || ''}`.trim());
 
         const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
         const primaryClassInfo = !isMulti ? this._getStudentContextualClassInfo(primary) : null;
@@ -233,7 +233,7 @@ export const SeatingMobileSheet = {
             ? [...(primaryClassInfo?.tooltipLabel ? [primaryClassInfo.tooltipLabel] : []), ...this._getStudentStatusLabels(primary)]
             : [];
         const primaryStatusSuffix = primaryStatuses.length > 0
-            ? ` • ${primaryStatuses.join(' • ')}`
+            ? ` • ${Utils.escapeHtml(primaryStatuses.join(' • '))}`
             : '';
 
         const headerAvatarHTML = isMulti
@@ -244,6 +244,7 @@ export const SeatingMobileSheet = {
             <div class="sc-sheet-section-title">Membres du poste (${students.length}/${MAX_ACTIVITY_GROUP_SIZE})</div>
             <div class="sc-sheet-picker-list sc-sheet-members-list">
                 ${students.map(s => {
+                    const escapedId = Utils.escapeHtml(String(s.id));
                     const memberStatusBadge = this._getStudentStatusLabels(s).map(label => {
                         const badgeClass = label === 'Départ'
                             ? 'sc-chip-badge-depart'
@@ -255,17 +256,17 @@ export const SeatingMobileSheet = {
                         return `<span class="sc-chip-badge ${badgeClass}">${Utils.escapeHtml(label)}</span>`;
                     }).join('');
                     return `
-                    <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${s.id}">
-                        <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${s.id}" type="button">
+                    <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${escapedId}">
+                        <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${escapedId}" type="button">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
                             ${memberStatusBadge}
                         </button>
                         <div class="sc-sheet-member-actions">
-                            <button class="sc-sheet-member-remove-btn" data-remove-member-id="${s.id}" type="button" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du poste">
+                            <button class="sc-sheet-member-remove-btn" data-remove-member-id="${escapedId}" type="button" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du poste">
                                 <iconify-icon icon="solar:logout-3-linear"></iconify-icon> Retirer
                             </button>
-                            <button class="sc-sheet-member-more-btn" data-member-actions-id="${s.id}" type="button" aria-label="Actions pour ${Utils.escapeHtml(s.prenom || s.nom)}">
+                            <button class="sc-sheet-member-more-btn" data-member-actions-id="${escapedId}" type="button" aria-label="Actions pour ${Utils.escapeHtml(s.prenom || s.nom)}">
                                 <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
                             </button>
                         </div>
@@ -279,7 +280,7 @@ export const SeatingMobileSheet = {
             <div class="sc-sheet-section-title">Associer un élève sur ce poste (${students.length}/${MAX_ACTIVITY_GROUP_SIZE})</div>
             <div class="sc-sheet-picker-list sc-sheet-compact-picker" id="scSheetJoinList">
                 ${unplaced.map(s => `
-                    <button class="sc-sheet-picker-item" data-join-student-id="${s.id}" type="button">
+                    <button class="sc-sheet-picker-item" data-join-student-id="${Utils.escapeHtml(String(s.id))}" type="button">
                         <div class="sc-sheet-picker-user">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
@@ -421,9 +422,15 @@ export const SeatingMobileSheet = {
     _openMemberActionsSheet(row, col, member, allCellStudents = []) {
         if (!member) return;
         this._closeContextMenu?.();
-        this._closeMobileSheet(true);
-        if (!HistoryManager.isOpen('scMobileSheet')) {
-            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
+        this._closeMobileSheet(true, { silentHistory: true });
+        if (!HistoryManager.isOpen('scMobileSheet') || HistoryManager.getStack().at(-1)?.id === 'scMobileSheet') {
+            HistoryManager.pushState('scMobileSheet', () => {
+                if (allCellStudents.length > 1) {
+                    this._openOccupiedCellSheet(row, col, allCellStudents[0] || member, allCellStudents);
+                } else {
+                    this._closeMobileSheet(true, { silentHistory: true });
+                }
+            });
         }
 
         const stationNum = this._isActivityMode() ? this._getStationNumber(row, col) : null;
@@ -432,7 +439,7 @@ export const SeatingMobileSheet = {
             : `Rangée ${row + 1} • Table ${col + 1}`;
         const classInfo = this._getStudentContextualClassInfo(member);
         const statuses = [...(classInfo?.tooltipLabel ? [classInfo.tooltipLabel] : []), ...this._getStudentStatusLabels(member)];
-        const statusSuffix = statuses.length > 0 ? ` • ${statuses.join(' • ')}` : '';
+        const statusSuffix = statuses.length > 0 ? ` • ${Utils.escapeHtml(statuses.join(' • '))}` : '';
 
         const backdrop = document.createElement('div');
         backdrop.className = 'sc-mobile-sheet-backdrop';
@@ -505,9 +512,10 @@ export const SeatingMobileSheet = {
     },
 
     _openEmptyCellSheet(row, col, special) {
-        this._closeMobileSheet(true);
-        if (!HistoryManager.isOpen('scMobileSheet')) {
-            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
+        this._closeContextMenu?.();
+        this._closeMobileSheet(true, { silentHistory: true });
+        if (!HistoryManager.isOpen('scMobileSheet') || HistoryManager.getStack().at(-1)?.id === 'scMobileSheet') {
+            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true, { silentHistory: true }));
         }
         const unplaced = [...this._getUnplacedStudents()].sort((a, b) =>
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
@@ -567,7 +575,7 @@ export const SeatingMobileSheet = {
                     </div>
                     <div class="sc-sheet-picker-list" id="scSheetPickerList">
                         ${unplaced.map(s => `
-                            <button class="sc-sheet-picker-item" data-student-id="${s.id}" type="button">
+                            <button class="sc-sheet-picker-item" data-student-id="${Utils.escapeHtml(String(s.id))}" type="button">
                                 <div class="sc-sheet-picker-user">
                                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                                     <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
@@ -695,8 +703,9 @@ export const SeatingMobileSheet = {
         });
     },
 
-    _closeMobileSheet(immediate = false) {
-        if (HistoryManager.isOpen('scMobileSheet')) {
+    _closeMobileSheet(immediate = false, options = {}) {
+        const { silentHistory = false } = options;
+        if (!silentHistory && HistoryManager.isOpen('scMobileSheet')) {
             HistoryManager.handleManualClose('scMobileSheet');
         }
 

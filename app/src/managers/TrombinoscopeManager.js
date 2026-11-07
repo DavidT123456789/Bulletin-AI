@@ -863,7 +863,6 @@ export const TrombinoscopeManager = {
     _createGrid(cols, rows, preserveReference = false, silent = false, initialRef = null) { return TrombiZoneEditor.createGrid(this, cols, rows, preserveReference, silent, initialRef); },
     _createGridSilent(cols, rows, initialRef = null) { return TrombiZoneEditor.createGridSilent(this, cols, rows, initialRef); },
     _updateSizeSliderValue() { return TrombiZoneEditor.updateSizeSliderValue(this); },
-    _setupSizeSlider() { return TrombiZoneEditor.setupSizeSlider(this); },
     _addZoneAtClick(e) { return TrombiZoneEditor.addZoneAtClick(this, e); },
     _removeZone(zoneId) { return TrombiZoneEditor.removeZone(this, zoneId); },
     _renderZones(explicitW, explicitH) { return TrombiZoneEditor.renderZones(this, explicitW, explicitH); },

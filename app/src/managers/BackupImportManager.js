@@ -10,11 +10,11 @@ import { UI } from './UIManager.js';
 import { ModalUI } from './ModalUIManager.js';
 
 const CATEGORY_ICONS = {
-    settings: 'solar:settings-bold-duotone',
-    classes: 'solar:users-group-rounded-bold-duotone',
-    students: 'solar:document-text-bold-duotone',
-    journal: 'solar:notebook-bold-duotone',
-    apiKeys: 'solar:key-minimalistic-square-bold-duotone'
+    settings: 'solar:settings-linear',
+    classes: 'solar:users-group-rounded-linear',
+    students: 'solar:document-text-linear',
+    journal: 'solar:notebook-linear',
+    apiKeys: 'solar:key-linear'
 };
 
 export const BackupImportManager = {
@@ -45,7 +45,7 @@ export const BackupImportManager = {
             .filter(([, info]) => info.available)
             .map(([key, info]) => {
                 const isChild = !!info.parent;
-                const icon = CATEGORY_ICONS[key] || 'solar:document-bold';
+                const icon = CATEGORY_ICONS[key] || 'solar:document-text-linear';
                 const countLabel = this._formatCount(key, info.count);
 
                 return `
@@ -68,16 +68,16 @@ export const BackupImportManager = {
             }).join('');
 
         const metaLine = exportDate
-            ? `<div class="backup-meta-line"><iconify-icon icon="solar:calendar-bold-duotone"></iconify-icon> ${exportDate}${version ? ` · v${version}` : ''}</div>`
+            ? `<div class="backup-meta-line"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${exportDate}${version ? ` · v${version}` : ''}</div>`
             : '';
 
         modal.innerHTML = `
         <div class="modal-content modal-content-backup-import">
             <div class="modal-header">
-                <h3 class="modal-title">
-                    <iconify-icon icon="solar:import-bold-duotone" class="modal-title-icon"></iconify-icon>
-                    Importer la sauvegarde
-                </h3>
+                <h2 class="modal-title">
+                    <span class="modal-title-icon"><iconify-icon icon="solar:import-linear"></iconify-icon></span>
+                    <span class="modal-title-text">Importer la sauvegarde</span>
+                </h2>
                 <button class="close-button" aria-label="Fermer" id="backupImportCloseBtn">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -89,22 +89,19 @@ export const BackupImportManager = {
                 </div>
                 <div class="backup-import-mode-row">
                     <label class="toggle-switch small" id="backupMergeToggle">
-                        <input type="checkbox" checked>
+                        <input type="checkbox" id="backupMergeCheckbox" checked>
                         <span class="slider"></span>
                     </label>
-                    <span class="backup-mode-label" id="backupModeLabel">Fusionner avec les données existantes</span>
+                    <label class="backup-mode-label" id="backupModeLabel" for="backupMergeCheckbox">Fusionner avec les données existantes</label>
                 </div>
                 <div class="backup-import-warning" id="backupImportWarning">
-                    <iconify-icon icon="solar:info-circle-bold" style="color: var(--primary-color);"></iconify-icon>
+                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                     <span>Les nouvelles données seront ajoutées. Les entrées existantes plus récentes seront conservées.</span>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="backupImportCancelBtn">Annuler</button>
-                <button class="btn btn-primary" id="backupImportConfirmBtn">
-                    <iconify-icon icon="solar:import-bold"></iconify-icon>
-                    Importer
-                </button>
+                <button class="btn btn-primary" id="backupImportConfirmBtn">Importer</button>
             </div>
         </div>`;
 
@@ -118,10 +115,6 @@ export const BackupImportManager = {
     _bindModalEvents(modal, fileContent, categories) {
         const closeModal = () => {
             ModalUI.closeModal(modal);
-            // Clean up dynamically created modal after animation
-            setTimeout(() => {
-                if (modal.parentNode) modal.remove();
-            }, 300);
         };
 
         modal.querySelector('#backupImportCloseBtn')?.addEventListener('click', closeModal);
@@ -130,7 +123,11 @@ export const BackupImportManager = {
             if (e.target === modal) closeModal();
         });
         modal.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal();
+            }
         });
 
         // Merge/Overwrite toggle
@@ -144,9 +141,9 @@ export const BackupImportManager = {
                 ? 'Fusionner avec les données existantes'
                 : 'Écraser les données existantes';
             warningEl.innerHTML = isMerge
-                ? `<iconify-icon icon="solar:info-circle-bold" style="color: var(--primary-color);"></iconify-icon>
+                ? `<iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                    <span>Les nouvelles données seront ajoutées. Les entrées existantes plus récentes seront conservées.</span>`
-                : `<iconify-icon icon="solar:danger-triangle-bold" style="color: var(--warning-color);"></iconify-icon>
+                : `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                    <span>Les données existantes seront <strong>remplacées</strong> pour les catégories sélectionnées.</span>`;
             warningEl.classList.toggle('warning', !isMerge);
         });
@@ -210,7 +207,7 @@ export const BackupImportManager = {
                 this._showRichFeedback(result.stats, selectedCategories, isMerge, categories);
             } catch (error) {
                 btn.disabled = false;
-                btn.innerHTML = '<iconify-icon icon="solar:import-bold"></iconify-icon> Importer';
+                btn.textContent = 'Importer';
                 UI.showNotification(`Erreur d'import : ${error.message}`, 'error');
             }
         });

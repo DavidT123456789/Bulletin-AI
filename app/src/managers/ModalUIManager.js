@@ -115,6 +115,11 @@ export const ModalUI = {
                 document.querySelector('#trombiWizardModal.visible, #importHubBackdrop.active, #focusPanel.open');
             if (!activeTrapTarget) return;
 
+            if (activeTrapTarget.classList?.contains('is-initial-focus') &&
+                (e.key === 'Tab' || e.key.startsWith('Arrow'))) {
+                activeTrapTarget.classList.remove('is-initial-focus');
+            }
+
             if (e.key === 'Escape') {
                 const hub = document.getElementById('importHubBackdrop');
                 if (hub && hub.classList.contains('active') && activeTrapTarget === hub) {
@@ -249,6 +254,7 @@ export const ModalUI = {
             });
         }
         modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show');
+        modal.classList.add('is-initial-focus');
         if (isTrombiModal) {
             modal.classList.add('visible');
         }
@@ -401,7 +407,7 @@ export const ModalUI = {
             this._animTimeouts.delete(modal);
             this._modalHooks.delete(modal);
             modal.style.display = isTrombiModal ? '' : 'none';
-            modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show', 'visible');
+            modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show', 'visible', 'is-initial-focus');
             options.onClosed?.();
             if (hooks?.onClosed && hooks.onClosed !== options.onClosed) {
                 hooks.onClosed();
@@ -653,8 +659,7 @@ export const ModalUI = {
             const {
                 confirmText = 'Confirmer',
                 cancelText = 'Annuler',
-                isDanger = true,
-                iconClass = 'solar:checklist-minimalistic-linear'
+                isDanger = true
             } = options;
 
             const modalId = 'customChoicesModal';
@@ -667,7 +672,6 @@ export const ModalUI = {
             if (isDanger) modal.classList.add('modal-danger');
 
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
-            const iconColorVar = isDanger ? 'var(--error-color)' : 'var(--primary-color)';
 
             // Generate checkboxes HTML
             const choicesHTML = choices.map(choice => {
@@ -679,7 +683,7 @@ export const ModalUI = {
                         <div class="modal-choice-checkbox-wrapper">
                             <input type="checkbox" id="choice_${choice.id}" ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                             <div class="custom-checkbox-display">
-                                <iconify-icon icon="ph:check"></iconify-icon>
+                                <iconify-icon icon="ph:check-bold"></iconify-icon>
                             </div>
                         </div>
                         <div class="modal-choice-text">
@@ -814,19 +818,19 @@ export const ModalUI = {
             const choices = {
                 merge: {
                     id: 'conflictChoiceMerge',
-                    icon: 'solar:magic-stick-3-bold-duotone',
+                    icon: 'solar:magic-stick-3-linear',
                     title: 'Fusionner les deux versions',
                     desc: 'Combine vos ajouts locaux et les données distantes <strong>sans perte</strong> (nouveaux élèves, entrées de journal de bord, appréciations).'
                 },
                 overwrite: {
                     id: 'conflictChoiceOverwrite',
-                    icon: 'solar:cloud-upload-bold',
+                    icon: 'lucide:cloud-upload',
                     title: 'Écraser la version Cloud',
                     desc: 'Remplace le Cloud par cet appareil. Les modifications enregistrées depuis un autre appareil seront perdues.'
                 },
                 restore: {
                     id: 'conflictChoiceRestore',
-                    icon: 'solar:cloud-download-bold',
+                    icon: 'lucide:cloud-download',
                     title: isConflict ? 'Remplacer par la version Cloud' : 'Récupérer la version Cloud',
                     desc: isConflict
                         ? 'Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).'
@@ -1006,13 +1010,13 @@ export const ModalUI = {
             (c.seatingActivityValidatedAt && c.seatingActivityValidatedAt > lastSync)
         );
         if (seatingChanged) {
-            items.push({ icon: 'solar:chair-bold', text: 'Plan de classe réorganisé' });
+            items.push({ icon: 'solar:chair-linear', text: 'Plan de classe réorganisé' });
         }
 
         const modifiedClassNotes = classes.filter(c => c.classNoteUpdatedAt && c.classNoteUpdatedAt > lastSync).length;
         if (modifiedClassNotes > 0) {
             items.push({
-                icon: 'solar:bookmark-bold',
+                icon: 'solar:bookmark-linear',
                 text: modifiedClassNotes > 1 ? `${modifiedClassNotes} mémos de classe mis à jour` : 'Mémo de classe mis à jour'
             });
         }
@@ -1036,7 +1040,7 @@ export const ModalUI = {
         const modifiedStudents = Utils.countUniqueStudents(modifiedRecords, classes);
         if (modifiedStudents > 0) {
             items.push({
-                icon: 'solar:document-text-bold',
+                icon: 'solar:document-text-linear',
                 text: `${modifiedStudents} élève${modifiedStudents > 1 ? 's' : ''} avec appréciations ou notes éditées`
             });
         }
@@ -1046,7 +1050,7 @@ export const ModalUI = {
             Array.isArray(s.journal) && s.journal.some(e => e?._lastModified && e._lastModified > lastSync)
         );
         if (journalChanged) {
-            items.push({ icon: 'solar:notebook-bold', text: 'Journal de bord mis à jour' });
+            items.push({ icon: 'solar:notebook-linear', text: 'Journal de bord mis à jour' });
         }
 
         // 4. Différence d'effectif / d'affectations (personnes uniques vs inscriptions de groupe)
@@ -1056,13 +1060,13 @@ export const ModalUI = {
             if (addedCls.length > 0 && addedCls.length <= 2) {
                 addedCls.forEach(cls => {
                     items.push({
-                        icon: 'solar:users-group-rounded-bold',
+                        icon: 'solar:users-group-rounded-linear',
                         text: `${cls.isGroup ? 'Nouveau groupe' : 'Nouvelle classe'} : ${Utils.escapeHtml(cls.name)}`
                     });
                 });
             } else if (addedCls.length > 2) {
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${addedCls.length} nouvelles classes ou groupes créés`
                 });
             }
@@ -1071,13 +1075,13 @@ export const ModalUI = {
             if (removedCls.length > 0 && removedCls.length <= 2) {
                 removedCls.forEach(cls => {
                     items.push({
-                        icon: 'solar:users-group-rounded-bold',
+                        icon: 'solar:users-group-rounded-linear',
                         text: `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} supprimé${cls.isGroup ? '' : 'e'}`
                     });
                 });
             } else if (removedCls.length > 2) {
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${removedCls.length} classes ou groupes supprimés`
                 });
             }
@@ -1085,7 +1089,7 @@ export const ModalUI = {
             if (rosterDiff.newStudents > 0) {
                 const n = rosterDiff.newStudents;
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `+${n} ${n > 1 ? 'nouveaux élèves' : 'nouvel élève'}`
                 });
             }
@@ -1093,7 +1097,7 @@ export const ModalUI = {
             if (rosterDiff.removedStudents > 0) {
                 const n = rosterDiff.removedStudents;
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${n} élève${n > 1 ? 's supprimés' : ' supprimé'}`
                 });
             }
@@ -1102,14 +1106,14 @@ export const ModalUI = {
             if (addedEnr.length > 0 && addedEnr.length <= 3) {
                 addedEnr.forEach(({ className, count }) => {
                     items.push({
-                        icon: 'solar:users-group-rounded-bold',
+                        icon: 'solar:users-group-rounded-linear',
                         text: `${count} élève${count > 1 ? 's ajoutés' : ' ajouté'} à ${Utils.escapeHtml(className)}`
                     });
                 });
             } else if (addedEnr.length > 3) {
                 const total = addedEnr.reduce((acc, e) => acc + e.count, 0);
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${total} inscription${total > 1 ? 's ajoutées' : ' ajoutée'} dans ${addedEnr.length} classes/groupes`
                 });
             }
@@ -1117,7 +1121,7 @@ export const ModalUI = {
             const movedEnr = rosterDiff.movedEnrollments || [];
             movedEnr.forEach(({ toClassName, count }) => {
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${count} élève${count > 1 ? 's déplacés' : ' déplacé'} vers ${Utils.escapeHtml(toClassName)}`
                 });
             });
@@ -1126,20 +1130,20 @@ export const ModalUI = {
             if (removedEnr.length > 0 && removedEnr.length <= 3) {
                 removedEnr.forEach(({ className, count }) => {
                     items.push({
-                        icon: 'solar:users-group-rounded-bold',
+                        icon: 'solar:users-group-rounded-linear',
                         text: `${count} élève${count > 1 ? 's retirés' : ' retiré'} de ${Utils.escapeHtml(className)}`
                     });
                 });
             } else if (removedEnr.length > 3) {
                 const total = removedEnr.reduce((acc, e) => acc + e.count, 0);
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${total} retrait${total > 1 ? 's' : ''} dans ${removedEnr.length} classes/groupes`
                 });
             }
         } else if (options.legacyRosterChanged) {
             items.push({
-                icon: 'solar:users-group-rounded-bold',
+                icon: 'solar:users-group-rounded-linear',
                 text: 'Affectations élèves mises à jour'
             });
         } else {
@@ -1149,7 +1153,7 @@ export const ModalUI = {
                 const diff = lCount - rCount;
                 const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
                 items.push({
-                    icon: 'solar:users-group-rounded-bold',
+                    icon: 'solar:users-group-rounded-linear',
                     text: `${diffStr} élève${Math.abs(diff) > 1 ? 's' : ''} par rapport au Cloud`
                 });
             }
@@ -1157,19 +1161,21 @@ export const ModalUI = {
 
         // Fallback si modifications détectées mais aucun timestamp individuel spécifique (ex. tables, contraintes, réglages IA)
         if (items.length === 0) {
-            items.push({ icon: 'solar:pen-new-square-bold', text: 'Modifications récentes de la session locale' });
+            items.push({ icon: 'solar:pen-new-square-linear', text: 'Modifications récentes de la session locale' });
         }
 
         return items;
     },
 
     /**
-     * Génère la grille comparative à 2 cartes (Cloud vs Session locale) partagée par Sauvegarder et Restaurer.
+     * Génère la grille comparative orientée Source → Cible partagée par Sauvegarder et Restaurer.
      * @param {Object} params
      * @returns {string}
      * @private
      */
     _renderCloudComparisonGrid({
+        direction = 'cloud-to-local',
+        isTargetWarning = false,
         remoteDate = null,
         localDate = null,
         rStudentCount = null,
@@ -1229,10 +1235,13 @@ export const ModalUI = {
                     ? 'Parfaitement synchronisée'
                     : (localDateParts ? localDateParts.absolute : 'Écart avec le Cloud');
 
-        return `
-                    <div class="restore-comparison-grid">
-                        <!-- Carte Cloud -->
-                        <div class="restore-comparison-card cloud">
+        const isLocalSource = direction === 'local-to-cloud';
+        const targetRoleClass = `is-target${isTargetWarning ? ' is-warning' : ''}`;
+        const cloudRoleClass = isLocalSource ? targetRoleClass : 'is-source';
+        const localRoleClass = isLocalSource ? 'is-source' : targetRoleClass;
+
+        const cloudCardHtml = `
+                        <div class="restore-comparison-card cloud ${cloudRoleClass}">
                             <div class="restore-card-badge">
                                 <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
                                 <span>${resolvedProviderLabel}</span>
@@ -1242,12 +1251,12 @@ export const ModalUI = {
                             </div>
                             ${cloudExactDateHtml}
                             ${cloudSubStatHtml}
-                        </div>
+                        </div>`;
 
-                        <!-- Carte Locale -->
-                        <div class="restore-comparison-card local">
+        const localCardHtml = `
+                        <div class="restore-comparison-card local ${localRoleClass}">
                             <div class="restore-card-badge">
-                                <iconify-icon icon="solar:laptop-linear"></iconify-icon>
+                                <iconify-icon icon="lucide:laptop-minimal"></iconify-icon>
                                 <span>Session locale</span>
                             </div>
                             <div class="restore-card-main-stat">
@@ -1257,7 +1266,19 @@ export const ModalUI = {
                                 ${localExactDateText}
                             </div>
                             ${localSubStatHtml}
+                        </div>`;
+
+        const [sourceCardHtml, targetCardHtml] = isLocalSource
+            ? [localCardHtml, cloudCardHtml]
+            : [cloudCardHtml, localCardHtml];
+
+        return `
+                    <div class="restore-comparison-grid">
+                        ${sourceCardHtml}
+                        <div class="restore-flow-connector" aria-hidden="true">
+                            <iconify-icon icon="lucide:arrow-right"></iconify-icon>
                         </div>
+                        ${targetCardHtml}
                     </div>`;
     },
 
@@ -1345,6 +1366,8 @@ export const ModalUI = {
 
             const diffItems = hasLocalChanges ? this._getLocalDiffDetails(options) : [];
             const comparisonGridHtml = this._renderCloudComparisonGrid({
+                direction: 'cloud-to-local',
+                isTargetWarning: hasLocalChanges,
                 remoteDate,
                 localDate,
                 rStudentCount,
@@ -1369,7 +1392,7 @@ export const ModalUI = {
                 <div class="modal-alert-body">
                     <h3 class="modal-alert-title has-header-icon">
                         <div class="modal-alert-header-icon cloud">
-                            <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                            <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                         </div>
                         <span>Restaurer depuis le Cloud</span>
                     </h3>
@@ -1396,7 +1419,7 @@ export const ModalUI = {
                     </div>
                     ` : `
                     <div class="restore-safety-notice warning">
-                        <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                        <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                         <div>
                             ${isMissingLocalStudents
                                 ? `<strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.`
@@ -1485,7 +1508,7 @@ export const ModalUI = {
 
             const diffItems = (!hasDataShrinkageWarning && hasLocalChanges)
                 ? (isFirstSync && lStudentCount > 0
-                    ? [{ icon: 'solar:users-group-rounded-bold', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
+                    ? [{ icon: 'solar:users-group-rounded-linear', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
                     : this._getLocalDiffDetails({
                         lastSyncTime,
                         remoteStudentCount: rStudentCount,
@@ -1496,6 +1519,8 @@ export const ModalUI = {
                 : [];
 
             const comparisonGridHtml = this._renderCloudComparisonGrid({
+                direction: 'local-to-cloud',
+                isTargetWarning: hasDataShrinkageWarning,
                 remoteDate: lastSyncTime,
                 localDate,
                 rStudentCount,
@@ -1526,7 +1551,7 @@ export const ModalUI = {
                 <div class="modal-alert-body">
                     <h3 class="modal-alert-title has-header-icon">
                         <div class="modal-alert-header-icon cloud">
-                            <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                            <iconify-icon icon="lucide:cloud-upload"></iconify-icon>
                         </div>
                         <span>Sauvegarder vers le Cloud</span>
                     </h3>
@@ -1554,7 +1579,7 @@ export const ModalUI = {
                     </div>
                     ` : this._renderImpactBox({
                         isWarning: false,
-                        icon: 'solar:cloud-upload-bold',
+                        icon: 'lucide:cloud-upload',
                         title: 'Modifications à enregistrer :',
                         items: diffItems
                     })}

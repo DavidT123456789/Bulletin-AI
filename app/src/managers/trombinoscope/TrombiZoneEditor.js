@@ -529,32 +529,6 @@ export const TrombiZoneEditor = {
         if (sizeValue) sizeValue.textContent = percent + '%';
     },
 
-    setupSizeSlider(manager) {
-        const container = document.querySelector('.trombi-image-panel');
-        if (!container || container.querySelector('.size-slider-container')) return;
-
-        const minSize = Math.min(manager._imageNaturalWidth, manager._imageNaturalHeight);
-        const minR = minSize * 0.03;
-        const maxR = minSize * 0.25;
-        const currentR = manager._globalRadius;
-
-        const sliderHtml = `
-            <div class="size-slider-container">
-                <label>Taille</label>
-                <input type="range" class="control-slider size-slider" 
-                       min="${minR}" max="${maxR}" value="${currentR}" step="1">
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', sliderHtml);
-
-        const slider = container.querySelector('.size-slider');
-        slider.addEventListener('input', e => {
-            manager._globalRadius = parseFloat(e.target.value);
-            manager._renderZones();
-            manager._updateLivePreviews();
-        });
-    },
-
     addZoneAtClick(manager, e) {
         manager._saveState();
         const overlay = document.getElementById('trombiZonesOverlay');

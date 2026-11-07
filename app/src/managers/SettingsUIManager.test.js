@@ -55,7 +55,6 @@ vi.mock('../utils/DOM.js', () => ({
         iaLengthSlider: { value: '50', disabled: false },
         iaToneSlider: { value: '3', disabled: false },
         iaToneToggle: { checked: false, disabled: false },
-        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaToneSliderValue: { textContent: '' },
         iaStyleInstructions: { value: '', disabled: false, classList: { add: vi.fn(), remove: vi.fn() }, parentElement: { classList: { add: vi.fn(), remove: vi.fn() } } },
         iaStyleInstructionsToggle: { checked: true, disabled: false },
@@ -218,14 +217,84 @@ describe('SettingsUIManager', () => {
             expect(appState.googleApiKey).toBe('google-key');
         });
 
-        it('should save evolution thresholds with veryPositive as 4x positive', () => {
-            DOM.settingsEvolutionThresholdPositive.value = '1.5';
-            DOM.settingsEvolutionThresholdNegative.value = '-1';
+        it('should save positive and negative evolution thresholds with 4x multipliers and 0.1 rounding', () => {
+            DOM.settingsEvolutionThresholdPositive.value = '0.3';
+            DOM.settingsEvolutionThresholdNegative.value = '-0.3';
 
             SettingsUIManager.saveSettings();
 
-            expect(appState.evolutionThresholds.positive).toBe(1.5);
-            expect(appState.evolutionThresholds.veryPositive).toBe(6);
+            expect(appState.evolutionThresholds.positive).toBe(0.3);
+            expect(appState.evolutionThresholds.veryPositive).toBe(1.2);
+            expect(appState.evolutionThresholds.negative).toBe(-0.3);
+            expect(appState.evolutionThresholds.veryNegative).toBe(-1.2);
+        });
+
+        it('should clamp out-of-bounds evolution thresholds and fallback on invalid inputs', () => {
+            appState.evolutionThresholds = { positive: 0.5, veryPositive: 2, negative: -0.5, veryNegative: -2 };
+            DOM.settingsEvolutionThresholdPositive.value = '-1.2';
+            DOM.settingsEvolutionThresholdNegative.value = '0.8';
+
+            SettingsUIManager.syncEvolutionThresholdsFromDOM();
+
+            expect(appState.evolutionThresholds.positive).toBe(0);
+            expect(appState.evolutionThresholds.veryPositive).toBe(0);
+            expect(DOM.settingsEvolutionThresholdPositive.value).toBe(0);
+            expect(appState.evolutionThresholds.negative).toBe(0);
+            expect(appState.evolutionThresholds.veryNegative).toBe(0);
+            expect(DOM.settingsEvolutionThresholdNegative.value).toBe(0);
+
+            appState.evolutionThresholds = { positive: 0.6, veryPositive: 2.4, negative: -0.4, veryNegative: -1.6 };
+            DOM.settingsEvolutionThresholdPositive.value = '';
+            DOM.settingsEvolutionThresholdNegative.value = 'abc';
+
+            SettingsUIManager.syncEvolutionThresholdsFromDOM();
+
+            expect(appState.evolutionThresholds.positive).toBe(0.6);
+            expect(appState.evolutionThresholds.veryPositive).toBe(2.4);
+            expect(appState.evolutionThresholds.negative).toBe(-0.4);
+            expect(appState.evolutionThresholds.veryNegative).toBe(-1.6);
+        });
+
+        it('should sync seatingStatusDots from DOM, toggle .active classes and avoid duplicate event on saveSettings', () => {
+            const selector = document.createElement('div');
+            selector.id = 'seatingStatusDotsSelector';
+            selector.innerHTML = `
+                <label class="seating-dot-option active"><input type="checkbox" data-dot-category="movements" checked></label>
+                <label class="seating-dot-option"><input type="checkbox" data-dot-category="devices" checked></label>
+                <label class="seating-dot-option active"><input type="checkbox" data-dot-category="delegates"></label>
+            `;
+            document.body.appendChild(selector);
+
+            const events = [];
+            const onSettingsChanged = (e) => events.push(e);
+            document.addEventListener('app-settings-changed', onSettingsChanged);
+
+            try {
+                appState.seatingStatusDots = { movements: true, devices: false, delegates: true };
+                const movCb = selector.querySelector('[data-dot-category="movements"]');
+                movCb.checked = false;
+
+                SettingsUIManager.syncSeatingStatusDotsFromDOM();
+
+                expect(appState.seatingStatusDots).toEqual({ movements: false, devices: true, delegates: false });
+                expect(movCb.closest('.seating-dot-option').classList.contains('active')).toBe(false);
+                expect(selector.querySelector('[data-dot-category="devices"]').closest('.seating-dot-option').classList.contains('active')).toBe(true);
+                expect(events.length).toBe(1);
+
+                // saveSettings() ne doit émettre qu'un seul événement app-settings-changed
+                events.length = 0;
+                SettingsUIManager.saveSettings(false);
+                expect(events.length).toBe(1);
+            } finally {
+                document.removeEventListener('app-settings-changed', onSettingsChanged);
+                selector.remove();
+            }
+        });
+
+        it('should safely no-op syncSeatingStatusDotsFromDOM when selector is absent', () => {
+            appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
+            expect(() => SettingsUIManager.syncSeatingStatusDotsFromDOM()).not.toThrow();
+            expect(appState.seatingStatusDots).toEqual({ movements: true, devices: false, delegates: false });
         });
 
         it('should call StorageManager.saveAppState', () => {

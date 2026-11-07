@@ -24,9 +24,9 @@
     outline: none;
 }
 
-/* Focus visible - styles clairs pour navigation clavier */
+/* Focus visible - styles clairs pour navigation clavier (indépendants de la couleur d'accentuation) */
 :focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--highlight-standard-border);
     outline-offset: 2px;
 }
 
@@ -35,10 +35,11 @@ button:focus-visible,
 .btn:focus-visible,
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible,
-.btn-icon:focus-visible {
-    outline: 2px solid var(--primary-color);
+.btn-icon:focus-visible,
+.icon-button:focus-visible {
+    outline: 2px solid var(--highlight-standard-border);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: 0 0 0 4px var(--highlight-standard-glow);
 }
 
 /* Inputs */
@@ -85,8 +86,9 @@ input[type="radio"]:focus-visible+label::before {
 }
 
 /* Modal close buttons */
-.close-modal-btn:focus-visible {
-    outline: 2px solid var(--primary-color);
+.close-modal-btn:focus-visible,
+.close-button:focus-visible {
+    outline: 2px solid var(--highlight-standard-border);
     outline-offset: 2px;
     border-radius: 50%;
 }
@@ -102,7 +104,15 @@ button:focus:not(:focus-visible),
 .btn-primary:focus:not(:focus-visible),
 .btn-secondary:focus:not(:focus-visible),
 .btn-icon:focus:not(:focus-visible),
+.icon-button:focus:not(:focus-visible),
 .custom-dropdown-trigger:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Masque l'anneau de focus programmatique initial à l'ouverture d'une modale
+   jusqu'à la première navigation clavier réelle (Tab / Flèches) */
+.modal.is-initial-focus :is(button, .btn, [role="button"]):focus-visible {
     outline: none;
     box-shadow: none;
 }

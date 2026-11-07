@@ -107,34 +107,16 @@ export const SettingsModalListeners = {
         }
 
         const syncEvolutionThresholds = () => {
-            if (DOM.settingsEvolutionThresholdPositive) {
-                let pos = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
-                if (Number.isNaN(pos)) {
-                    pos = appState.evolutionThresholds?.positive ?? 0.5;
-                }
-                pos = Math.max(0, Math.round(pos * 10) / 10);
-                DOM.settingsEvolutionThresholdPositive.value = pos;
-                appState.evolutionThresholds.positive = pos;
-                appState.evolutionThresholds.veryPositive = Math.round(pos * 4 * 10) / 10;
-                FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdPositive);
-            }
-            if (DOM.settingsEvolutionThresholdNegative) {
-                let neg = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
-                if (Number.isNaN(neg)) {
-                    neg = appState.evolutionThresholds?.negative ?? -0.5;
-                }
-                neg = Math.min(0, Math.round(neg * 10) / 10);
-                DOM.settingsEvolutionThresholdNegative.value = neg;
-                appState.evolutionThresholds.veryNegative = Math.round(neg * 4 * 10) / 10;
-                FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdNegative);
-            }
+            SettingsUIManager.syncEvolutionThresholdsFromDOM();
             StorageManager.saveAppState();
             AppreciationsManager.renderResults();
         };
         DOM.settingsEvolutionThresholdPositive?.addEventListener('change', syncEvolutionThresholds);
         DOM.settingsEvolutionThresholdNegative?.addEventListener('change', syncEvolutionThresholds);
 
-        document.getElementById('seatingStatusDotsSelector')?.addEventListener('change', () => {
+        document.getElementById('seatingStatusDotsSelector')?.addEventListener('change', (e) => {
+            if (!e.target?.closest?.('input[type="checkbox"][data-dot-category]')) return;
+            SettingsUIManager.syncSeatingStatusDotsFromDOM();
             StorageManager.saveAppState();
         });
 
@@ -339,14 +321,6 @@ export const SettingsModalListeners = {
             // Manipuler le curseur active implicitement le ton imposé
             DOM.iaToneSlider.addEventListener('input', () => {
                 this._applyStyleChange({ tone: parseInt(DOM.iaToneSlider.value, 10), enableTone: true });
-            });
-
-            // Rendre les repères cliquables
-            DOM.iaToneSliderContainer?.querySelectorAll('.tick').forEach((tick, index) => {
-                tick.addEventListener('click', () => {
-                    DOM.iaToneSlider.value = index + 1;
-                    DOM.iaToneSlider.dispatchEvent(new Event('input', { bubbles: true }));
-                });
             });
         }
 

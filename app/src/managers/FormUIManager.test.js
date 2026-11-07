@@ -54,10 +54,8 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdNegative: { value: '-1' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
         iaLengthSliderValue: { textContent: '' },
-        iaLengthSliderContainer: { style: { setProperty: vi.fn() } },
-        iaToneSlider: { min: '1', max: '5', value: '3' },
+        iaToneSlider: { min: '1', max: '5', value: '3', disabled: false },
         iaToneToggle: { checked: false, disabled: false },
-        iaToneSliderContainer: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() }, style: { setProperty: vi.fn() } },
         iaToneCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaToneSliderValue: { textContent: '', classList: { toggle: vi.fn() } },
         iaStyleInstructions: { value: '', disabled: false, classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
@@ -254,67 +252,15 @@ describe('FormUIManager', () => {
             expect(DOM.iaStyleInstructions.disabled).toBe(true);
         });
 
-        it('should highlight active tone tick only when enableTone is true', () => {
-            const ticks = Array.from({ length: 5 }, () => ({ classList: { toggle: vi.fn() } }));
-            DOM.iaToneSliderContainer.querySelectorAll = vi.fn(() => ticks);
-            DOM.iaToneSlider.value = '4';
-
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: true } };
-            FormUI.syncStyleControls();
-            expect(ticks[3].classList.toggle).toHaveBeenCalledWith('active', true);
-            expect(ticks[0].classList.toggle).toHaveBeenCalledWith('active', false);
-
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: false } };
-            FormUI.syncStyleControls();
-            expect(ticks[3].classList.toggle).toHaveBeenLastCalledWith('active', false);
-        });
-
-        it('should calculate and set --slider-ratio for length slider', () => {
-            DOM.iaLengthSlider.value = '50';
-            DOM.iaLengthSlider.min = '10';
-            DOM.iaLengthSlider.max = '90';
-
-            FormUI.syncStyleControls();
-
-            // ratio = (50 - 10) / (90 - 10) = 40 / 80 = 0.5
-            expect(DOM.iaLengthSliderContainer.style.setProperty).toHaveBeenCalledWith('--slider-ratio', '0.5');
-        });
-
-        it('should mark passed ticks prior to the active tone tick when enableTone is true', () => {
-            const ticks = Array.from({ length: 5 }, () => ({ classList: { toggle: vi.fn() } }));
-            DOM.iaToneSliderContainer.querySelectorAll = vi.fn(() => ticks);
-            DOM.iaToneSlider.value = '4';
-
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 4, enableTone: true } };
-            FormUI.syncStyleControls();
-
-            // Tone 4 means ticks 0, 1, 2 are passed
-            expect(ticks[0].classList.toggle).toHaveBeenCalledWith('passed', true);
-            expect(ticks[1].classList.toggle).toHaveBeenCalledWith('passed', true);
-            expect(ticks[2].classList.toggle).toHaveBeenCalledWith('passed', true);
-            expect(ticks[3].classList.toggle).toHaveBeenCalledWith('passed', false);
-            expect(ticks[4].classList.toggle).toHaveBeenCalledWith('passed', false);
-        });
-
-        it('should toggle disabled on tone container based on enableTone', () => {
+        it('should toggle disabled state on iaToneSlider and open class on iaToneCollapsible based on enableTone', () => {
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
             FormUI.syncStyleControls();
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('disabled', true);
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', true);
-
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
-            FormUI.syncStyleControls();
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('disabled', false);
-            expect(DOM.iaToneSliderContainer.classList.toggle).toHaveBeenCalledWith('opacity-reduced', false);
-        });
-
-        it('should toggle open class on iaToneCollapsible based on enableTone', () => {
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
-            FormUI.syncStyleControls();
+            expect(DOM.iaToneSlider.disabled).toBe(true);
             expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', false);
 
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
             FormUI.syncStyleControls();
+            expect(DOM.iaToneSlider.disabled).toBe(false);
             expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
         });
     });

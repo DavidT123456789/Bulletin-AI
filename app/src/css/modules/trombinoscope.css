@@ -653,87 +653,10 @@
     margin: 0 2px;
 }
 
-.control-slider {
-    flex: 1;
-    height: var(--slider-track-height-default);
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-    /* Extend slider beyond visible bounds to eliminate dead zone */
+/* Extend shared .control-slider beyond visible bounds to eliminate edge dead zone */
+.slider-track .control-slider {
     margin: 0 -8px;
     width: calc(100% + 16px);
-}
-
-/* Custom slider track */
-.control-slider::-webkit-slider-runnable-track {
-    height: var(--slider-track-height-default);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-xs);
-    border: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: var(--slider-thumb-size-default);
-    height: var(--slider-thumb-size-default);
-    border-radius: var(--radius-full);
-    background: var(--slider-thumb-bg-default);
-    cursor: grab;
-    border: var(--slider-thumb-border-default);
-    box-shadow: var(--slider-thumb-shadow);
-    margin-top: calc((var(--slider-track-height-default) - var(--slider-thumb-size-default)) / 2);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.control-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: var(--shadow-md);
-}
-
-.control-slider:active::-webkit-slider-thumb {
-    cursor: grabbing;
-    transform: scale(1.15);
-}
-
-.control-slider::-moz-range-track {
-    height: var(--slider-track-height-default);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-xs);
-    border: none;
-}
-
-.control-slider::-moz-range-thumb {
-    width: var(--slider-thumb-size-default);
-    height: var(--slider-thumb-size-default);
-    border-radius: var(--radius-full);
-    background: var(--slider-thumb-bg-default);
-    cursor: grab;
-    border: var(--slider-thumb-border-default);
-    box-shadow: var(--slider-thumb-shadow);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.control-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: var(--shadow-md);
-}
-
-.control-slider:active::-moz-range-thumb {
-    cursor: grabbing;
-    transform: scale(1.15);
-}
-
-/* Accessibilité : Focus au clavier */
-.control-slider:focus-visible::-webkit-slider-thumb {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-.control-slider:focus-visible::-moz-range-thumb {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
 }
 
 /* Slider value - Clean tabular readout */

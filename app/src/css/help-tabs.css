@@ -1864,7 +1864,7 @@
     border: 2px solid var(--slider-thumb-color, var(--primary-color));
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: grab;
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
+    transition: transform 0.16s var(--ease-spring), border-color var(--transition-fast);
 }
 
 .picker-range-slider::-webkit-slider-thumb:hover {
@@ -1884,7 +1884,26 @@
     border: 2px solid var(--slider-thumb-color, var(--primary-color));
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: grab;
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
+    transition: transform 0.16s var(--ease-spring), border-color var(--transition-fast);
+}
+
+.picker-range-slider::-moz-range-thumb:hover {
+    transform: scale(1.12);
+}
+
+.picker-range-slider:active::-moz-range-thumb {
+    cursor: grabbing;
+    transform: scale(1.12);
+}
+
+.picker-range-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.picker-range-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 .hue-slider-track {

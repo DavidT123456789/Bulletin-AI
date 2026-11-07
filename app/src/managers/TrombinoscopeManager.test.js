@@ -141,8 +141,6 @@ describe('TrombinoscopeManager Selection & Multi-Drag', () => {
             <span id="rowsValue"></span>
             <span id="gapHValue"></span>
             <span id="gapVValue"></span>
-            <div class="size-slider-container"></div>
-            <input type="range" class="size-slider" />
         `;
 
         TrombinoscopeManager._selectedZoneIds.add(1);
@@ -182,7 +180,6 @@ describe('TrombinoscopeManager Selection & Multi-Drag', () => {
             <div id="trombiZonesOverlay"></div>
             <div id="trombiAssignmentGrid"></div>
             <img id="trombiStep2Image" style="width: 500px; height: 500px;" />
-            <input type="range" class="size-slider" />
         `;
 
         TrombinoscopeManager._currentStep = 2;
@@ -217,7 +214,6 @@ describe('TrombinoscopeManager Selection & Multi-Drag', () => {
                 <div class="trombi-zone" data-zone-id="3"></div>
             </div>
             <div id="trombiAssignmentGrid"></div>
-            <input type="range" class="size-slider" />
         `;
 
         TrombinoscopeManager._lastFocusedZoneId = 1;
@@ -249,7 +245,6 @@ describe('TrombinoscopeManager Selection & Multi-Drag', () => {
                 <div class="trombi-zone" data-zone-id="3"></div>
             </div>
             <div id="trombiAssignmentGrid"></div>
-            <input type="range" class="size-slider" />
         `;
 
         TrombinoscopeManager._groupedDrag = true;

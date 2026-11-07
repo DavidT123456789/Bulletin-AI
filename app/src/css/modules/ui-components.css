@@ -833,13 +833,26 @@
     height: 0;
 }
 
+.toggle-switch .slider,
+.sc-toggle-switch {
+    cursor: pointer;
+    background: var(--toggle-track-off);
+    transition: background-color 0.18s var(--ease-spring);
+    border-radius: var(--radius-full);
+}
+
 .toggle-switch .slider {
     position: absolute;
-    cursor: pointer;
     inset: 0;
-    background: var(--toggle-track-off);
-    transition: background-color var(--transition-fast, 0.2s ease);
-    border-radius: var(--radius-xl);
+}
+
+.sc-toggle-switch {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    outline: none;
 }
 
 .toggle-switch input:disabled + .slider {
@@ -848,32 +861,42 @@
     pointer-events: none;
 }
 
-.toggle-switch input:focus-visible + .slider {
+.toggle-switch input:focus-visible + .slider,
+.sc-toggle-switch:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
 
-.toggle-switch .slider:before {
+.toggle-switch .slider:before,
+.sc-toggle-knob {
     position: absolute;
     content: "";
-    height: var(--toggle-knob-size-default);
-    width: var(--toggle-knob-size-default);
-    left: var(--toggle-inset-default);
-    bottom: var(--toggle-inset-default);
     background: var(--toggle-knob-off, #ffffff);
-    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    transition: transform 0.24s var(--ease-spring),
                 width 0.16s ease;
     border-radius: var(--radius-pill);
     box-shadow: var(--toggle-knob-shadow);
 }
 
-.toggle-switch input:checked + .slider {
+.toggle-switch .slider:before {
+    height: var(--toggle-knob-size-default);
+    width: var(--toggle-knob-size-default);
+    left: var(--toggle-inset-default);
+    bottom: var(--toggle-inset-default);
+}
+
+.toggle-switch input:checked + .slider,
+.sc-toggle-switch[aria-checked="true"] {
     background: var(--toggle-track-on);
+}
+
+.toggle-switch input:checked + .slider:before,
+.sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
+    background: var(--toggle-knob-on, #ffffff);
 }
 
 .toggle-switch input:checked + .slider:before {
     transform: translateX(var(--toggle-translate-default));
-    background: var(--toggle-knob-on, #ffffff);
 }
 
 /* Micro-interaction haptique au clic/maintien (:active) */
@@ -885,37 +908,44 @@
     transform: translateX(calc(var(--toggle-translate-default) - 3px));
 }
 
-/* --- Variante Small --- */
-.toggle-switch.small {
+/* --- Variante Small & Switch ARIA du Plan --- */
+.toggle-switch.small,
+.sc-toggle-switch {
     width: var(--toggle-width-small);
     height: var(--toggle-height-small);
     margin-right: 0;
 }
 
-.toggle-switch.small .slider:before {
+.toggle-switch.small .slider:before,
+.sc-toggle-knob {
     height: var(--toggle-knob-size-small);
     width: var(--toggle-knob-size-small);
     left: var(--toggle-inset-small);
     bottom: var(--toggle-inset-small);
 }
 
-.toggle-switch.small input:checked + .slider:before {
+.toggle-switch.small input:checked + .slider:before,
+.sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
     transform: translateX(var(--toggle-translate-small));
 }
 
-.toggle-switch.small:active:not(:has(input:disabled)) .slider:before {
+.toggle-switch.small:active:not(:has(input:disabled)) .slider:before,
+.sc-toggle-switch:active .sc-toggle-knob {
     width: calc(var(--toggle-knob-size-small) + 2px);
 }
 
-.toggle-switch.small:active:not(:has(input:disabled)) input:checked + .slider:before {
+.toggle-switch.small:active:not(:has(input:disabled)) input:checked + .slider:before,
+.sc-toggle-switch[aria-checked="true"]:active .sc-toggle-knob {
     transform: translateX(calc(var(--toggle-translate-small) - 2px));
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .toggle-switch:hover:not(:has(input:disabled)) .slider {
+    .toggle-switch:hover:not(:has(input:disabled)) .slider,
+    .sc-toggle-switch:hover {
         background-color: var(--toggle-track-off-hover);
     }
-    .toggle-switch:hover:not(:has(input:disabled)) input:checked + .slider {
+    .toggle-switch:hover:not(:has(input:disabled)) input:checked + .slider,
+    .sc-toggle-switch[aria-checked="true"]:hover {
         background-color: var(--toggle-track-on-hover);
     }
 }

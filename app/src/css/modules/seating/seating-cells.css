@@ -2549,72 +2549,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     color: var(--text-primary);
 }
 
-/* Toggle Switch */
-.sc-toggle-switch {
-    position: relative;
-    width: var(--toggle-width-small);
-    height: var(--toggle-height-small);
-    background: var(--toggle-track-off, var(--bg-secondary));
-    border-radius: var(--radius-full);
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    outline: none;
-    padding: 0;
-}
-
-/* Checked/ON state (Edit Mode) */
-.sc-toggle-switch[aria-checked="true"] {
-    background: var(--toggle-track-on);
-    box-shadow: none;
-}
-
-.sc-toggle-knob {
-    position: absolute;
-    top: var(--toggle-inset-small);
-    left: var(--toggle-inset-small);
-    width: var(--toggle-knob-size-small);
-    height: var(--toggle-knob-size-small);
-    background: var(--toggle-knob-off, #ffffff);
-    border-radius: var(--radius-pill, 50%);
-    box-shadow: var(--toggle-knob-shadow);
-    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1),
-                width 0.16s ease;
-}
-
-/* Checked/ON state knob position */
-.sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
-    transform: translateX(var(--toggle-translate-small));
-    background: var(--toggle-knob-on);
-}
-
-/* Micro-interaction haptique au clic/maintien (:active) */
-.sc-toggle-switch:active .sc-toggle-knob {
-    width: calc(var(--toggle-knob-size-small) + 2px);
-}
-
-.sc-toggle-switch[aria-checked="true"]:active .sc-toggle-knob {
-    transform: translateX(calc(var(--toggle-translate-small) - 2px));
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .sc-toggle-switch:hover {
-        background-color: var(--toggle-track-off-hover);
-    }
-    .sc-toggle-switch[aria-checked="true"]:hover {
-        background-color: var(--toggle-track-on-hover);
-    }
-}
-
-[data-theme="dark"] .sc-toggle-switch {
-    background: var(--toggle-track-off, rgba(255, 255, 255, 0.12));
-    box-shadow: none;
-}
-
-[data-theme="dark"] .sc-toggle-switch[aria-checked="true"] {
-    background: var(--toggle-track-on);
-    box-shadow: none;
-}
-
 /* Sidebar Actions */
 .sc-sidebar-actions {
     display: flex;
@@ -2691,7 +2625,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 /* Accessibility focus rings */
-.sc-toggle-switch:focus-visible,
 .sc-action-btn:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;

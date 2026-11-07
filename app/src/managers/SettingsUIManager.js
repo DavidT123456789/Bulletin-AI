@@ -12,6 +12,7 @@ import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOT
 import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
+import { FormUI } from './FormUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { DropdownManager } from './DropdownManager.js';
@@ -169,30 +170,14 @@ export const SettingsUIManager = {
         }
 
         // Pastilles de statut du plan de classe
-        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
-        if (seatingDotsSelector) {
-            const nextDots = {
-                ...DEFAULT_SEATING_STATUS_DOTS,
-                ...(appState.seatingStatusDots || {})
-            };
-            seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
-                const cat = cb.getAttribute('data-dot-category');
-                if (cat) nextDots[cat] = cb.checked;
-            });
-            appState.seatingStatusDots = nextDots;
-        }
+        this.syncSeatingStatusDotsFromDOM({ dispatchEvent: false });
 
         // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
         document.dispatchEvent(new CustomEvent('app-settings-changed', {
             detail: { settings: appState }
         }));
 
-        const parsedPos = parseFloat(DOM.settingsEvolutionThresholdPositive?.value);
-        appState.evolutionThresholds.positive = !isNaN(parsedPos) ? parsedPos : (appState.evolutionThresholds.positive ?? 0.5);
-        appState.evolutionThresholds.veryPositive = appState.evolutionThresholds.positive * 4;
-        const parsedNeg = parseFloat(DOM.settingsEvolutionThresholdNegative?.value);
-        appState.evolutionThresholds.negative = !isNaN(parsedNeg) ? parsedNeg : (appState.evolutionThresholds.negative ?? -0.5);
-        appState.evolutionThresholds.veryNegative = appState.evolutionThresholds.negative * 4;
+        this.syncEvolutionThresholdsFromDOM();
 
         StorageManager.saveAppState();
         UIState.settingsBeforeEdit = {};
@@ -208,6 +193,64 @@ export const SettingsUIManager = {
             }
             AppreciationsManager.renderResults();
         }, 260);
+    },
+
+    /**
+     * Synchronise et borne les seuils d'évolution (positif >= 0, négatif <= 0) depuis le DOM vers appState.
+     * Source unique de vérité partagée entre l'édition en direct (change) et la sauvegarde de la modale.
+     */
+    syncEvolutionThresholdsFromDOM() {
+        if (DOM.settingsEvolutionThresholdPositive) {
+            let pos = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
+            if (Number.isNaN(pos)) {
+                pos = appState.evolutionThresholds?.positive ?? 0.5;
+            }
+            pos = Math.max(0, Math.round(pos * 10) / 10);
+            DOM.settingsEvolutionThresholdPositive.value = pos;
+            appState.evolutionThresholds.positive = pos;
+            appState.evolutionThresholds.veryPositive = Math.round(pos * 4 * 10) / 10;
+            FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdPositive);
+        }
+        if (DOM.settingsEvolutionThresholdNegative) {
+            let neg = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
+            if (Number.isNaN(neg)) {
+                neg = appState.evolutionThresholds?.negative ?? -0.5;
+            }
+            neg = Math.min(0, Math.round(neg * 10) / 10);
+            DOM.settingsEvolutionThresholdNegative.value = neg;
+            appState.evolutionThresholds.negative = neg;
+            appState.evolutionThresholds.veryNegative = Math.round(neg * 4 * 10) / 10;
+            FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdNegative);
+        }
+    },
+
+    /**
+     * Synchronise les pastilles de statut du plan de classe depuis le DOM vers appState.
+     * Source unique de vérité partagée entre le basculement en direct (change) et la sauvegarde de la modale.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.dispatchEvent=true] - Émettre l'événement `app-settings-changed`
+     */
+    syncSeatingStatusDotsFromDOM({ dispatchEvent = true } = {}) {
+        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
+        if (!seatingDotsSelector) return;
+
+        const nextDots = {
+            ...DEFAULT_SEATING_STATUS_DOTS,
+            ...(appState.seatingStatusDots || {})
+        };
+        seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
+            const cat = cb.getAttribute('data-dot-category');
+            if (!cat) return;
+            nextDots[cat] = cb.checked;
+            cb.closest('.seating-dot-option')?.classList.toggle('active', cb.checked);
+        });
+        appState.seatingStatusDots = nextDots;
+
+        if (dispatchEvent) {
+            document.dispatchEvent(new CustomEvent('app-settings-changed', {
+                detail: { settings: appState }
+            }));
+        }
     },
 
     /**

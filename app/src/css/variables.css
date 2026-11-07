@@ -101,8 +101,9 @@
     /* Sliders IA / Premium */
     --slider-thumb-size-premium: 18px;
     --slider-thumb-bg-premium: #ffffff;
-    --slider-thumb-border-premium: 2px solid var(--primary-color);
-    --slider-thumb-shadow-premium: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
+    --slider-thumb-border-premium: 1.5px solid rgba(0, 0, 0, 0.14);
+    --slider-thumb-shadow-premium: 0 1px 4px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+    --slider-thumb-shadow-premium-hover: 0 2px 8px rgba(0, 0, 0, 0.22);
 
     /* --- Toggle Switches Tokens --- */
     /* Standard Toggle (Large) */
@@ -615,6 +616,9 @@
 
     /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
     --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);
+    --slider-thumb-border-premium: 1px solid rgba(255, 255, 255, 0.25);
+    --slider-thumb-shadow-premium: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --slider-thumb-shadow-premium-hover: 0 3px 10px rgba(0, 0, 0, 0.58), 0 1px 3px rgba(0, 0, 0, 0.35);
 
     /* --- Identité IA Satin Subtil (Dark Mode — Compromis Doux) --- */
     --ai-satin-bg:

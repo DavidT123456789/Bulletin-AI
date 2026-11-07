@@ -5347,19 +5347,58 @@ describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève
         expect(deleteStudentBtn?.textContent).toContain('Retirer de PAPD');
         expect(deleteStudentBtn?.querySelector('.sc-sheet-action-hint')?.textContent).toContain('Conserve sa fiche dans 3ᵉ1');
 
-        // Poste partagé (2 élèves) -> bouton "..." par membre ouvrant la feuille individuelle avec retour au poste
+        // Poste partagé (2 élèves) -> bouton "..." par membre ouvrant la feuille individuelle avec retour au poste sans history.back parasite
         const s2 = SeatingChartManager._studentMap.get('s2-papd');
-        SeatingChartManager._openOccupiedCellSheet(0, 0, s1, [s1, s2]);
-        const multiSheet = document.getElementById('scMobileSheet');
-        const memberMoreBtn = multiSheet.querySelector('[data-member-actions-id="s2-papd"]');
-        expect(memberMoreBtn).not.toBeNull();
-        memberMoreBtn.click();
+        HistoryManager.destroy();
+        const manualCloseSpy = vi.spyOn(HistoryManager, 'handleManualClose');
 
-        const memberSheet = document.getElementById('scMobileSheet');
-        expect(memberSheet.querySelector('#scSheetBackBtn')).not.toBeNull();
-        const memberDeleteBtn = memberSheet.querySelector('[data-action="delete-student"]');
-        expect(memberDeleteBtn?.textContent).toContain("Supprimer l'élève");
-        expect(memberDeleteBtn?.querySelector('.sc-sheet-action-hint')?.textContent).toBe('Supprime définitivement cette fiche');
+        try {
+            SeatingChartManager._openOccupiedCellSheet(0, 0, s1, [s1, s2]);
+            expect(HistoryManager.isOpen('scMobileSheet')).toBe(true);
+            expect(HistoryManager.getStack()).toHaveLength(1);
+
+            const multiSheet = document.getElementById('scMobileSheet');
+            const memberMoreBtn = multiSheet.querySelector('[data-member-actions-id="s2-papd"]');
+            expect(memberMoreBtn).not.toBeNull();
+            memberMoreBtn.click();
+
+            // Pas de fermeture/réouverture dans l'historique navigateur lors du passage au niveau 2
+            expect(manualCloseSpy).not.toHaveBeenCalled();
+            expect(HistoryManager.getStack()).toHaveLength(1);
+
+            const memberSheet = document.getElementById('scMobileSheet');
+            expect(memberSheet.querySelector('#scSheetBackBtn')).not.toBeNull();
+            const memberDeleteBtn = memberSheet.querySelector('[data-action="delete-student"]');
+            expect(memberDeleteBtn?.textContent).toContain("Supprimer l'élève");
+            expect(memberDeleteBtn?.querySelector('.sc-sheet-action-hint')?.textContent).toBe('Supprime définitivement cette fiche');
+
+            // Geste Retour Android (popstate) depuis la sous-feuille -> revient au poste de groupe (niveau 1)
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            expect(document.getElementById('scMobileSheet')?.querySelector('#scSheetBackBtn')).toBeNull();
+            expect(document.getElementById('scMobileSheet')?.querySelector('.sc-sheet-entity-name')?.textContent).toContain('Binôme (2 élèves)');
+            expect(HistoryManager.isOpen('scMobileSheet')).toBe(true);
+
+            // Second geste Retour Android -> ferme complètement la feuille mobile
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            expect(document.getElementById('scMobileSheet')).toBeNull();
+            expect(HistoryManager.isOpen('scMobileSheet')).toBe(false);
+        } finally {
+            manualCloseSpy.mockRestore();
+        }
+
+        // Échappement XSS des noms et métadonnées dans les en-têtes de feuilles mobiles
+        const xssStudent = {
+            id: 's-xss"><img src=x onerror=alert(1)>',
+            prenom: '<img src=x onerror=alert(1)>',
+            nom: '<b>DUPONT</b>',
+            classId: appState.currentClassId,
+            studentData: { classe: '3<script>alert(1)</script>' }
+        };
+        SeatingChartManager._openOccupiedCellSheet(0, 0, xssStudent, [xssStudent]);
+        const xssSheet = document.getElementById('scMobileSheet');
+        expect(xssSheet.querySelector('.sc-sheet-entity-text img')).toBeNull();
+        expect(xssSheet.querySelector('.sc-sheet-entity-text script')).toBeNull();
+        expect(xssSheet.querySelector('.sc-sheet-entity-name')?.textContent).toContain('<img src=x onerror=alert(1)>');
 
         SeatingChartManager._closeMobileSheet(true);
     });

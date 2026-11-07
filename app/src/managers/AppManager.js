@@ -85,7 +85,6 @@ export const App = {
             GeneralListeners.initCloudReminder();
             UI.updateSettingsPromptFields();
             EventListenersManager.setupEventListeners();
-            this.setupInteractiveSliders();
             this.setupAutoSave();
             this.setupPWA();
         });
@@ -292,22 +291,6 @@ export const App = {
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-    },
-
-    setupInteractiveSliders() {
-        const sliders = document.querySelectorAll('.range-slider');
-        sliders.forEach(slider => {
-            const input = slider.querySelector('input[type="range"]');
-            const valueDisplay = slider.querySelector('.range-value');
-            if (input && valueDisplay) {
-                input.addEventListener('input', () => {
-                    valueDisplay.textContent = input.value;
-                    const percent = ((input.value - input.min) / (input.max - input.min)) * 100;
-                    input.style.setProperty('--percent', `${percent}%`);
-                });
-                input.dispatchEvent(new Event('input'));
-            }
-        });
     },
 
     // --- Core Logic Delegations ---

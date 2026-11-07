@@ -194,11 +194,9 @@ export function initDOM() {
     DOM.iaDiscipline = document.getElementById('iaDiscipline');
     DOM.iaLengthSlider = document.getElementById('iaLengthSlider');
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
-    DOM.iaLengthSliderContainer = document.getElementById('iaLengthSliderContainer');
     DOM.iaToneSlider = document.getElementById('iaToneSlider');
     DOM.iaToneToggle = document.getElementById('iaToneToggle');
     DOM.iaToneSliderValue = document.getElementById('iaToneSliderValue');
-    DOM.iaToneSliderContainer = document.getElementById('iaToneSliderContainer');
     DOM.iaToneCollapsible = document.getElementById('iaToneCollapsible');
     DOM.previewStudentSelect = document.getElementById('previewStudentSelect');
     DOM.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');

@@ -238,7 +238,7 @@ export const SeatingChartManager = {
                                             <button type="button" class="sc-config-step-btn" data-dim="cols" data-delta="-1" aria-label="Moins de colonnes">
                                                 <iconify-icon icon="ph:minus-bold"></iconify-icon>
                                             </button>
-                                            <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
+                                            <input type="range" class="control-slider" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
                                             <button type="button" class="sc-config-step-btn" data-dim="cols" data-delta="1" aria-label="Plus de colonnes">
                                                 <iconify-icon icon="ph:plus-bold"></iconify-icon>
                                             </button>
@@ -249,7 +249,7 @@ export const SeatingChartManager = {
                                             <button type="button" class="sc-config-step-btn" data-dim="rows" data-delta="-1" aria-label="Moins de rangées">
                                                 <iconify-icon icon="ph:minus-bold"></iconify-icon>
                                             </button>
-                                            <input type="range" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
+                                            <input type="range" class="control-slider" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
                                             <button type="button" class="sc-config-step-btn" data-dim="rows" data-delta="1" aria-label="Plus de rangées">
                                                 <iconify-icon icon="ph:plus-bold"></iconify-icon>
                                             </button>

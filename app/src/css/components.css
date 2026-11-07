@@ -14,7 +14,14 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
-    transition: all var(--transition-fast);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        filter var(--transition-fast),
+        opacity var(--transition-fast),
+        transform 0.16s var(--ease-spring);
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -218,9 +225,10 @@
     background: var(--primary-color);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     transition:
-        transform var(--transition-fast),
+        transform 0.16s var(--ease-spring),
         box-shadow var(--transition-fast),
-        background-color var(--transition-fast);
+        background-color var(--transition-fast),
+        filter var(--transition-fast);
 }
 
 .btn-primary::before {
@@ -603,15 +611,7 @@
     background-color: var(--bg-secondary);
 }
 
-.icon-button:focus-visible,
-.btn-icon:focus-visible,
-.btn:focus-visible,
-.btn-secondary:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
-    /* plus subtil */
-    border-color: var(--primary-color);
-}
+/* Focus clavier unifié dans accessibility.css */
 
 /* --- Inputs & Forms --- */
 .form-row {
@@ -798,7 +798,7 @@ input[type="number"]::-webkit-outer-spin-button {
     cursor: pointer;
     font-size: 11px;
     line-height: 1;
-    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast), transform 0.16s var(--ease-spring);
     padding: 0;
     margin: 0;
     flex-shrink: 0;
@@ -840,6 +840,117 @@ input[type="number"]::-webkit-outer-spin-button {
     outline: none;
     box-shadow: 0 0 0 2px var(--primary-color);
     color: var(--text-primary);
+}
+
+@media (pointer: coarse) {
+    .number-input-wrapper {
+        height: 44px;
+        padding: 4px;
+    }
+
+    .number-spinner-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .number-spinner-btn::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+    }
+
+    .number-spinner-btn iconify-icon {
+        font-size: 13px;
+    }
+
+    .number-input-wrapper input[type="number"] {
+        min-width: 44px;
+        padding: 0 6px;
+        font-size: 15px;
+    }
+}
+
+/* === Curseurs compacts partagés (Plan de classe & Trombinoscope) === */
+.control-slider {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    height: 22px;
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+.control-slider::-webkit-slider-runnable-track {
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
+}
+
+.control-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
+    cursor: grab;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    margin-top: calc((var(--slider-track-height-default) - var(--slider-thumb-size-default)) / 2);
+    transition: transform 0.16s var(--ease-spring), box-shadow var(--transition-fast);
+}
+
+.control-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: var(--shadow-md);
+}
+
+.control-slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
+    transform: scale(1.15);
+}
+
+.control-slider::-moz-range-track {
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
+}
+
+.control-slider::-moz-range-thumb {
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
+    cursor: grab;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    transition: transform 0.16s var(--ease-spring), box-shadow var(--transition-fast);
+}
+
+.control-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: var(--shadow-md);
+}
+
+.control-slider:active::-moz-range-thumb {
+    cursor: grabbing;
+    transform: scale(1.15);
+}
+
+.control-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.control-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 
