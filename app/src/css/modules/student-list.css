@@ -745,6 +745,7 @@
     background: transparent !important;
     padding: 4px 10px !important; /* Adjusted for pill shape */
     border-radius: var(--radius-pill) !important; /* Rounded premium style */
+    pointer-events: auto;
     transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast) !important;
 }
 
@@ -883,6 +884,11 @@
     gap: 8px;
     margin-left: 8px;
     z-index: 10;
+    pointer-events: none;
+}
+
+.appreciation-header-actions > * {
+    pointer-events: auto;
 }
 
 /* Ensure the hover overlay on appreciation header doesn't block the button */
@@ -893,14 +899,10 @@
 /* === FIX: Disable header hover effect when hovering interactive children === */
 .appreciation-toggle-header:has(.btn-smart-action-inline:hover)::after,
 .appreciation-toggle-header:has(.btn-smart-action-inline:active)::after,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover)::after,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:active)::after,
 .appreciation-toggle-header:has(#avgWordsChip:hover)::after,
 .appreciation-toggle-header:has(#avgWordsChip:active)::after,
 .appreciation-toggle-header:has(.btn-smart-action-inline:hover) .appreciation-toggle-btn,
 .appreciation-toggle-header:has(.btn-smart-action-inline:active) .appreciation-toggle-btn,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover) .appreciation-toggle-btn,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:active) .appreciation-toggle-btn,
 .appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-btn,
 .appreciation-toggle-header:has(#avgWordsChip:active) .appreciation-toggle-btn {
     opacity: 0 !important;
@@ -909,7 +911,14 @@
 /* === Appreciation Column Toggle (Expand/Collapse Content) === */
 .appreciation-toggle-header .header-content-wrapper {
     position: relative;
+    z-index: 2;
+    pointer-events: none;
     display: inline-flex !important;
+}
+
+.appreciation-toggle-header .header-content-wrapper > span {
+    display: inline-flex;
+    align-items: center;
 }
 
 /* Dedicated Action Button - Placed at left of header, perfectly centered vertically (extends .header-action-trigger) */
@@ -1669,13 +1678,13 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         width: auto !important;
     }
 
-    /* Empêcher le clic dans l'espace vide central de basculer la vue compacte/étendue */
+    /* Empêcher le clic dans l'espace vide central de basculer la vue compacte/étendue ou d'afficher un surlignement */
     .student-list-table th.appreciation-toggle-header {
         pointer-events: none !important;
     }
 
-    .appreciation-header-actions {
-        pointer-events: auto !important;
+    .student-list-table th.appreciation-toggle-header::after {
+        display: none !important;
     }
 
     /* Boutons d'action circulaires unifiés (40x40px visuels, cible tactile 44x44px) de la barre d'outils mobile */

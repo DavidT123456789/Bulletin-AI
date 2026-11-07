@@ -22,22 +22,14 @@ import { ClassUIManager } from '../ClassUIManager.js';
 export const ListViewEvents = {
 
     state: {
-        abortController: null,
-        activeDocClickListener: null,
-        activeKeydownListener: null
+        abortController: null
     },
 
     callbacks: {
         copySingleAppreciation: () => { },
         bulkReset: () => { },
         deleteStudent: () => { },
-        toggleAppreciationColumn: () => { },
-        handleSelectionInteraction: () => { },
-        clearSelections: () => { },
-        handleBulkAction: () => { },
-        toggleSelectVisible: () => { },
-        renderList: () => { },
-        updateHeaderSortIcons: () => { }
+        toggleAppreciationColumn: () => { }
     },
 
     init(callbacks) {
@@ -250,11 +242,7 @@ export const ListViewEvents = {
             }
         };
 
-        if (this.state.activeDocClickListener) {
-            document.removeEventListener('click', this.state.activeDocClickListener, true);
-        }
-        this.state.activeDocClickListener = handleOutsideClick;
-        document.addEventListener('click', this.state.activeDocClickListener, { capture: true, signal });
+        document.addEventListener('click', handleOutsideClick, { capture: true, signal });
 
         // Click handler
         listContainer.addEventListener('click', (e) => {
@@ -565,13 +553,8 @@ export const ListViewEvents = {
             }
         }, { signal });
 
-        // Close menus on escape key
-        // CRITICAL FIX: Remove previous listener to prevent accumulation
-        // Global shortcuts (Escape, Delete)
-        if (this.state.activeKeydownListener) {
-            document.removeEventListener('keydown', this.state.activeKeydownListener);
-        }
-        this.state.activeKeydownListener = (e) => {
+        // Global shortcuts (Escape, Delete, Ctrl+A)
+        document.addEventListener('keydown', (e) => {
             if (UI.isAnyModalOpen() || FocusPanelManager.isOpen?.()) return;
             if (e.key === 'Escape') {
                 // Priority 1: Close menus if any are open
@@ -582,11 +565,12 @@ export const ListViewEvents = {
                 else if (ListSelectionManager.selectedIds.size > 0) {
                     ListSelectionManager.clearSelections();
                 }
-                // Priority 3: Clear active stat filter if in list view and no header dropdown is open
+                // Priority 3: Clear active stat filter if in list view and no header dropdown/popover/search is open
                 else if (
+                    !e.defaultPrevented &&
                     appState.activeStatFilter &&
                     appState.activeView !== 'plan' &&
-                    !document.querySelector('#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open')
+                    !document.querySelector('#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open, #scFloatingSearch.open')
                 ) {
                     EventHandlersManager.handleStatFilterClick(null);
                     if (document.activeElement?.closest?.('.stats-container')) {
@@ -614,8 +598,7 @@ export const ListViewEvents = {
                 e.preventDefault();
                 ListSelectionManager.toggleSelectVisible(true);
             }
-        };
-        document.addEventListener('keydown', this.state.activeKeydownListener, { signal });
+        }, { signal });
 
         // [FIX] Prevent native text selection/blue rectangle when using Shift+Click
         listContainer.addEventListener('mousedown', (e) => {
@@ -627,16 +610,15 @@ export const ListViewEvents = {
             }
         }, { signal });
 
-        // Keyboard navigation - Enter/Space opens Focus Panel
-        listContainer.querySelectorAll('.student-row').forEach(row => {
-            row.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    const studentId = row.dataset.studentId;
-                    if (studentId) FocusPanelManager.open(studentId);
-                }
-            }, { signal });
-        });
+        // Delegated keyboard navigation - Enter/Space on a focused student row opens Focus Panel
+        listContainer.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const row = e.target.closest?.('.student-row');
+            if (!row || e.target !== row) return;
+            e.preventDefault();
+            const studentId = row.dataset.studentId;
+            if (studentId) FocusPanelManager.open(studentId);
+        }, { signal });
 
         // (Avatar click delegation removed - consolidated above)
 

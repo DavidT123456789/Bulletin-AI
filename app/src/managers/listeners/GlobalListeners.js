@@ -395,7 +395,7 @@ export const GlobalListeners = {
                 appState.activeStatFilter &&
                 e.target instanceof Element &&
                 e.target.isConnected &&
-                !e.target.closest('.stats-container, .student-list-view, #focusPanel, #focusPanelBackdrop, .selection-toolbar, .appreciation-result, .modal')
+                !e.target.closest('.stats-container, .student-list-view tbody tr, .student-list-view th, .global-actions-dropdown, #focusPanel, #focusPanelBackdrop, .selection-toolbar, .appreciation-result, .modal')
             ) {
                 EventHandlersManager.handleStatFilterClick(null);
             }

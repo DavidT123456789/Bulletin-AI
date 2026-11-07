@@ -14,7 +14,6 @@ import { StudentDataManager } from '../StudentDataManager.js';
 export const ListViewRenderer = {
 
     callbacks: {
-        updateSelectionUI: () => { },
         attachEventListeners: () => { }
     },
 
@@ -23,13 +22,53 @@ export const ListViewRenderer = {
     },
 
     /**
-         * Crée un élément TR pour une ligne d'élève
-         * @param {Object} result - Données de l'élève
-         * @param {Array} periods - Périodes
-         * @param {number} currentPeriodIndex - Index période courante
-         * @returns {HTMLElement} Élément TR
-         * @private
-         */
+     * Génère le HTML interne des cellules <td> d'une ligne élève
+     * @param {Object} result - Données de l'élève
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
+     * @param {Object} [context={}] - Contexte de rendu (searchQuery, currentClassName, isSelected, renderOptions)
+     * @returns {string} HTML des cellules <td>
+     * @private
+     */
+    _renderRowCellsHTML(result, periods, currentPeriodIndex, context = {}) {
+        const studentData = result.studentData || {};
+        if (!result.studentData) result.studentData = studentData;
+        const isSelected = context.isSelected ?? ListSelectionManager.selectedIds.has(result.id);
+        const searchQuery = context.searchQuery ?? (appState.searchQuery || '');
+        const currentClassName = context.currentClassName || Utils.getCurrentClassName();
+        const originClass = Utils.getOriginClass(result, currentClassName);
+        const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
+        const appreciationCell = this.getAppreciationCell(result);
+
+        return `
+            <td class="student-name-cell">
+                <div class="student-identity-wrapper">
+                    ${avatarHTML}
+                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
+                </div>
+            </td>
+            <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
+            ${this.renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex, context.renderOptions)}
+            <td class="appreciation-cell">${appreciationCell}</td>
+            <td class="action-cell">
+                <div class="action-dropdown">
+                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
+                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
+                    </button>
+                    ${this.generateActionMenuHTML(result.id)}
+                </div>
+            </td>
+        `;
+    },
+
+    /**
+     * Crée un élément TR pour une ligne d'élève
+     * @param {Object} result - Données de l'élève
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
+     * @returns {HTMLElement} Élément TR
+     * @private
+     */
     createRowElement(result, periods, currentPeriodIndex, context = {}) {
         const tr = document.createElement('tr');
         tr.dataset.studentId = result.id;
@@ -41,32 +80,7 @@ export const ListViewRenderer = {
             tr.tabIndex = 0;
         }
 
-        const studentData = result.studentData || {};
-        const appreciationCell = this.getAppreciationCell(result);
-        const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-        const searchQuery = context.searchQuery ?? (appState.searchQuery || '');
-        const currentClassName = context.currentClassName || Utils.getCurrentClassName();
-        const originClass = Utils.getOriginClass(result, currentClassName);
-        tr.innerHTML = `
-            <td class="student-name-cell">
-                <div class="student-identity-wrapper">
-                    ${avatarHTML}
-                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
-                </div>
-            </td>
-            <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
-            ${this.renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
-            <td class="appreciation-cell">${appreciationCell}</td>
-            <td class="action-cell">
-                <div class="action-dropdown">
-                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
-                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
-                    </button>
-                    ${this.generateActionMenuHTML(result.id)}
-                </div>
-            </td>
-        `;
-
+        tr.innerHTML = this._renderRowCellsHTML(result, periods, currentPeriodIndex, { ...context, isSelected });
         return tr;
     },
 
@@ -387,16 +401,16 @@ export const ListViewRenderer = {
                     </div>
                 </th>
                 ${this.renderGradeHeaders(periods.slice(0, headerPeriodCount), renderOptions)}
-                <th class="${headerClass}" style="position: relative;">
+                <th class="${headerClass}">
                     <button type="button" class="appreciation-toggle-btn header-action-trigger" id="appreciationToggleBtn" aria-label="${title}" data-tooltip="${title}">
                         <iconify-icon icon="${iconClass.split(' ')[0]}" class="appreciation-toggle-icon"></iconify-icon>
                     </button>
-                    <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
-                    <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
-                        <span style="display: inline-flex; align-items: center;">
+                    <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none;"></span>
+                    <div class="header-content-wrapper">
+                        <span>
                             Appréciation ${activePeriodLabel}
                         </span>
-                        <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
+                        <div class="appreciation-header-actions" id="appreciationHeaderActions">
                             <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="${title}" data-tooltip="${title}">
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                             </button>
@@ -484,22 +498,10 @@ export const ListViewRenderer = {
         const staggerStep = totalRows > 1 ? Math.min(28, Math.max(14, Math.floor(480 / totalRows))) : 0;
 
         let tbodyContent = '';
+        const tabIndexAttr = window.matchMedia?.('(pointer: coarse)')?.matches ? '' : ' tabindex="0"';
         results.forEach((result, index) => {
             try {
-                // Safeguard against missing studentData
-                const studentData = result.studentData || {};
-
-                // Ensure result.studentData is accessible for subsequent calls if it was missing
-                if (!result.studentData) result.studentData = studentData;
-
-                const appreciationCell = this.getAppreciationCell(result);
-
                 const isSelected = ListSelectionManager.selectedIds.has(result.id);
-                const tabIndexAttr = window.matchMedia?.('(pointer: coarse)')?.matches ? '' : ' tabindex="0"';
-
-                // Generate avatar HTML with selection state
-                const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-                const originClass = Utils.getOriginClass(result, currentClassName);
                 const rowDelay = shouldAnimateEntrance ? (baseDelay + Math.min(index * staggerStep, 520)) : 0;
                 const isDeparted = Utils.isStudentDeparted(result, appState.currentPeriod);
                 const rowClass = `${shouldAnimateEntrance ? 'student-row row-animate-in' : 'student-row'}${isDeparted ? ' student-row-departed' : ''}${isSelected ? ' selected' : ''}`;
@@ -507,23 +509,7 @@ export const ListViewRenderer = {
 
                 tbodyContent += `
                     <tr data-student-id="${result.id}" class="${rowClass}"${tabIndexAttr}${rowStyleAttr}>
-                        <td class="student-name-cell">
-                            <div class="student-identity-wrapper">
-                                ${avatarHTML}
-                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
-                            </div>
-                        </td>
-                        <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
-                        ${this.renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex, renderOptions)}
-                        <td class="appreciation-cell">${appreciationCell}</td>
-                        <td class="action-cell">
-                            <div class="action-dropdown">
-                                <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
-                                    <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
-                                </button>
-                                ${this.generateActionMenuHTML(result.id)}
-                            </div>
-                        </td>
+                        ${this._renderRowCellsHTML(result, periods, currentPeriodIndex, { searchQuery, currentClassName, isSelected, renderOptions })}
                     </tr>
                 `;
             } catch (e) {

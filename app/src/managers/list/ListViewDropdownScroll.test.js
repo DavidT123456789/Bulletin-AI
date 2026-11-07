@@ -666,12 +666,48 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
             appState.activeStatFilter = null;
         });
 
+        // When #classNotePopover.visible is open, Escape must NOT clear activeStatFilter
+        const notePopover = document.createElement('div');
+        notePopover.id = 'classNotePopover';
+        notePopover.className = 'class-note-popover visible';
+        document.body.appendChild(notePopover);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(filterSpy).not.toHaveBeenCalled();
+        expect(appState.activeStatFilter).toBe('gradeRange_12-16');
+
+        notePopover.remove();
+
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
         expect(filterSpy).toHaveBeenCalledWith(null);
         expect(appState.activeStatFilter).toBeNull();
 
         filterSpy.mockRestore();
+    });
+
+    it('should open FocusPanel on Enter/Space for dynamically added student rows without hijacking inner button Enter/Space', async () => {
+        const { FocusPanelManager } = await import('../FocusPanelManager.js');
+        const openSpy = vi.spyOn(FocusPanelManager, 'open').mockImplementation(() => {});
+
+        const tbody = listContainer.querySelector('tbody');
+        const dynamicRow = document.createElement('tr');
+        dynamicRow.className = 'student-row';
+        dynamicRow.dataset.studentId = 'student-dynamic';
+        dynamicRow.tabIndex = 0;
+        dynamicRow.innerHTML = '<td><button class="btn-action-menu" data-action="toggle-menu">...</button></td>';
+        tbody.appendChild(dynamicRow);
+
+        // Pressing Enter on the inner action button must NOT open FocusPanel
+        const innerBtn = dynamicRow.querySelector('.btn-action-menu');
+        innerBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        expect(openSpy).not.toHaveBeenCalled();
+
+        // Pressing Enter directly on the dynamically added row opens FocusPanel
+        dynamicRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        expect(openSpy).toHaveBeenCalledWith('student-dynamic');
+
+        openSpy.mockRestore();
     });
 
     it('should preserve activeStatFilter when clicking a student row or Focus Panel, and clear it on outside body click', async () => {
@@ -705,7 +741,25 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(filterSpy).not.toHaveBeenCalled();
         expect(appState.activeStatFilter).toBe('validated');
 
-        // Clicking outside on an unrelated page area clears the active stat filter
+        // Clicking a table header th or action button inside th must NOT clear the active stat filter
+        const table = container.querySelector('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th class="sortable-header">Nom</th></tr>';
+        table.prepend(thead);
+        const headerTh = thead.querySelector('th');
+        headerTh.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(filterSpy).not.toHaveBeenCalled();
+        expect(appState.activeStatFilter).toBe('validated');
+
+        // Clicking the empty mobile toolbar space (thead tr outside interactive th/buttons) clears the active stat filter
+        const theadTr = thead.querySelector('tr');
+        theadTr.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(filterSpy).toHaveBeenCalledWith(null);
+        expect(appState.activeStatFilter).toBeNull();
+
+        // Re-arm and verify clicking outside on an unrelated page area also clears the active stat filter
+        filterSpy.mockClear();
+        appState.activeStatFilter = 'validated';
         const outsideArea = document.createElement('div');
         outsideArea.className = 'outside-blank-area';
         document.body.appendChild(outsideArea);

@@ -6,12 +6,6 @@
 
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { FocusPanelManager } from './FocusPanelManager.js';
-import { FocusPanelStatus } from './FocusPanelStatus.js';
-import { StudentPhotoManager } from './StudentPhotoManager.js';
-// ResultCardsUI removed - logic moved to Utils
-import { StatsUI } from './StatsUIManager.js';
-import { HistoryManager } from './HistoryManager.js';
 import { ListSelectionManager } from './list/ListSelectionManager.js';
 import { ListViewRenderer } from './list/ListViewRenderer.js';
 import { ListViewAnimations } from './list/ListViewAnimations.js';
@@ -306,23 +300,24 @@ export const ListViewManager = {
             statusCell.innerHTML = this._getStudentStatusCellContent(result);
         }
 
-        // 1. Get the appreciation text
-        const currentPeriod = appState.currentPeriod;
-        let appreciation = '';
-
-        // Logic duplicated from _getAppreciationCell because we need the raw text for typewriter
-        const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
-        if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
-            appreciation = periodApp.trim();
-        } else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            const generationPeriod = result.generationPeriod || result.aiGenerationPeriod;
-            if (generationPeriod === currentPeriod) {
-                appreciation = result.appreciation.trim();
+        // 1. Extract plain text only when typewriter animation is requested
+        let cleanText = '';
+        if (animate) {
+            const currentPeriod = appState.currentPeriod;
+            const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
+            let appreciation = '';
+            if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
+                appreciation = periodApp.trim();
+            } else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
+                const generationPeriod = result.generationPeriod || result.aiGenerationPeriod;
+                if (generationPeriod === currentPeriod) {
+                    appreciation = result.appreciation.trim();
+                }
+            }
+            if (appreciation) {
+                cleanText = Utils.decodeHtmlEntities(appreciation).replace(/<[^>]*>/g, '').trim();
             }
         }
-
-        const decoded = Utils.decodeHtmlEntities(appreciation);
-        const cleanText = decoded.replace(/<[^>]*>/g, '').trim();
 
         // 2. Render content
         if (animate && cleanText) {
@@ -462,11 +457,5 @@ ListViewEvents?.init?.({
     copySingleAppreciation: (id) => ListViewManager._copySingleAppreciation(id),
     bulkReset: (ids) => ListViewManager._bulkReset(ids),
     deleteStudent: (id) => ListSelectionManager.confirmAndDeleteStudents([id]),
-    toggleAppreciationColumn: (c) => ListViewManager._toggleAppreciationColumn(c),
-    handleSelectionInteraction: (id, e) => ListSelectionManager.handleSelectionInteraction(id, e),
-    clearSelections: () => ListSelectionManager.clearSelections(),
-    handleBulkAction: (action) => ListSelectionManager.handleBulkAction(action),
-    toggleSelectVisible: (all) => ListSelectionManager.toggleSelectVisible(all),
-    updateHeaderSortIcons: (v) => ListViewRenderer.updateHeaderSortIcons(v),
-    hasSelections: () => ListSelectionManager.selectedIds.size > 0
+    toggleAppreciationColumn: (c) => ListViewManager._toggleAppreciationColumn(c)
 });
