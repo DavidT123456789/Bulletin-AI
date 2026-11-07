@@ -443,17 +443,27 @@ describe('ModalUIManager', () => {
             expect(result).toBe('restore');
         });
 
-        it('should resolve with cancel when cancel button is clicked', async () => {
-            const promise = ModalUI.showConflictResolutionModal();
-            const cancelBtn = document.getElementById('conflictCancelBtn');
-            cancelBtn.click();
+        it('should resolve with cancel when cancel button is clicked or closed via HistoryManager (closeModal)', async () => {
+            const p1 = ModalUI.showConflictResolutionModal();
+            document.getElementById('conflictCancelBtn').click();
+            expect(await p1).toBe('cancel');
 
-            const result = await promise;
-            expect(result).toBe('cancel');
+            const p2 = ModalUI.showConflictResolutionModal();
+            ModalUI.closeModal('conflictResolutionModal', { causedByHistory: true });
+            expect(await p2).toBe('cancel');
         });
     });
 
     describe('showRestoreConfirmationModal', () => {
+        it('should resolve false when closed externally via closeModal (e.g. browser Back button)', async () => {
+            const restorePromise = ModalUI.showRestoreConfirmationModal({ remoteStudentCount: 28, localStudentCount: 20 });
+            ModalUI.closeModal('restoreConfirmationModal', { causedByHistory: true });
+            expect(await restorePromise).toBe(false);
+
+            const savePromise = ModalUI.showSaveConfirmationModal({ localStudentCount: 28 });
+            ModalUI.closeModal('saveConfirmationModal', { causedByHistory: true });
+            expect(await savePromise).toBe(false);
+        });
         it('should render comparison details and resolve true on confirm', async () => {
             const promise = ModalUI.showRestoreConfirmationModal({
                 remoteDate: 1726000000000,
@@ -520,9 +530,11 @@ describe('ModalUIManager', () => {
             expect(result).toBe(true);
         });
 
-        it('should omit the redundant third line when remote and local volumes are identical', async () => {
+        it('should render symmetric sync dates, volume parity, and de-emphasized actions when syncState is in-sync', async () => {
+            const syncTimestamp = 1726000000000;
             const promise = ModalUI.showRestoreConfirmationModal({
-                remoteDate: 1726000000000,
+                remoteDate: syncTimestamp,
+                localDate: syncTimestamp - 600000, // Last local edit occurred 10 min before upload
                 remoteStudentCount: 28,
                 remoteClassCount: 1,
                 localStudentCount: 28,
@@ -532,13 +544,35 @@ describe('ModalUIManager', () => {
 
             const modal = document.getElementById('restoreConfirmationModal');
             expect(modal).not.toBeNull();
-            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat')).toBeNull();
-            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat')).toBeNull();
+            expect(modal.querySelector('.restore-comparison-grid.is-in-sync')).not.toBeNull();
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Aucune modification depuis votre dernière synchronisation.');
+            expect(modal.textContent).not.toContain('Session à jour');
+            expect(modal.textContent).not.toContain('Parfaitement synchronisée');
+
+            const cloudCard = modal.querySelector('.restore-comparison-card.cloud');
+            const localCard = modal.querySelector('.restore-comparison-card.local');
+            expect(cloudCard.querySelector('.restore-card-main-stat').textContent.trim())
+                .toBe(localCard.querySelector('.restore-card-main-stat').textContent.trim());
+            expect(cloudCard.querySelector('.restore-card-exact-date').textContent.trim())
+                .toBe(localCard.querySelector('.restore-card-exact-date').textContent.trim());
+            expect(cloudCard.querySelector('.restore-card-sub-stat').textContent.trim()).toBe('28 élèves · 1 classe');
+            expect(localCard.querySelector('.restore-card-sub-stat').textContent.trim()).toBe('28 élèves · 1 classe');
             expect(modal.textContent).toContain('Session alignée');
 
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            const okBtn = document.getElementById('restoreConfirmOkBtn');
+            expect(cancelBtn.textContent.trim()).toBe('Fermer');
+            expect(cancelBtn.classList.contains('btn-primary')).toBe(true);
+            expect(okBtn.textContent.trim()).toBe('Restaurer quand même');
+            expect(okBtn.classList.contains('btn-secondary')).toBe(true);
+            expect(document.activeElement).toBe(cancelBtn);
+
+            // Enter should not blindly trigger a redundant restore
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            expect(document.getElementById('restoreConfirmationModal')).not.toBeNull();
+
             cancelBtn.click();
-            await promise;
+            expect(await promise).toBe(false);
         });
 
         it('should show unified impact box and list local changes without false appreciation counts when syncState is local-changes', async () => {
@@ -567,9 +601,11 @@ describe('ModalUIManager', () => {
             expect(impactBox.textContent).not.toContain('appréciations ou notes éditées');
             expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
 
-            // Two-line date display: relative stat and exact timestamp, plus amber target highlight on Local card
+            // Two-line date display: relative stat and exact timestamp, plus amber target highlight on Local card (sub-stat omitted when volumes match without roster change)
             expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-exact-date')).not.toBeNull();
             expect(modal.querySelector('.restore-comparison-card.local .restore-card-exact-date')).not.toBeNull();
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat')).toBeNull();
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat')).toBeNull();
             expect(modal.querySelector('.restore-comparison-card.local.is-target.is-warning')).not.toBeNull();
 
             // Primary button has no duplicate icon
@@ -775,7 +811,7 @@ describe('ModalUIManager', () => {
             expect(await promise).toBe(false);
         });
 
-        it('should display the aligned session notice when isInSync is true', async () => {
+        it('should display symmetric comparison, aligned session notice, and de-emphasized actions when isInSync is true', async () => {
             const promise = ModalUI.showSaveConfirmationModal({
                 localStudentCount: 25,
                 localClassCount: 1,
@@ -783,11 +819,29 @@ describe('ModalUIManager', () => {
             });
 
             const modal = document.getElementById('saveConfirmationModal');
+            expect(modal.querySelector('.restore-comparison-grid.is-in-sync')).not.toBeNull();
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Aucune modification depuis votre dernière synchronisation.');
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-sub-stat').textContent.trim()).toBe('25 élèves · 1 classe');
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-sub-stat').textContent.trim()).toBe('25 élèves · 1 classe');
+            expect(modal.querySelector('.restore-comparison-card.local .restore-card-main-stat').textContent.trim()).toBe('Synchronisée');
+            expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-main-stat').textContent.trim()).toBe('Synchronisée');
+
             const notice = modal.querySelector('.restore-safety-notice.in-sync');
             expect(notice).not.toBeNull();
             expect(notice.textContent).toContain('Vos données locales sont déjà synchronisées');
 
-            document.getElementById('saveConfirmCancelBtn').click();
+            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
+            const okBtn = document.getElementById('saveConfirmOkBtn');
+            expect(cancelBtn.textContent.trim()).toBe('Fermer');
+            expect(cancelBtn.classList.contains('btn-primary')).toBe(true);
+            expect(okBtn.textContent.trim()).toBe('Sauvegarder quand même');
+            expect(okBtn.classList.contains('btn-secondary')).toBe(true);
+            expect(document.activeElement).toBe(cancelBtn);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            expect(document.getElementById('saveConfirmationModal')).not.toBeNull();
+
+            cancelBtn.click();
             expect(await promise).toBe(false);
         });
 
@@ -935,6 +989,24 @@ describe('ModalUIManager', () => {
 
             const result = await promise;
             expect(result).toEqual({ confirmed: true, values: { appreciations: false, photos: true } });
+        });
+
+        it('should resolve showCustomConfirm, showChoicesModal, and showHardConfirmModal when closed via closeModal (e.g. Back button)', async () => {
+            const onCancel = vi.fn();
+            const confirmPromise = ModalUI.showCustomConfirm('Message', null, onCancel);
+            ModalUI.closeModal('customConfirmModal', { causedByHistory: true });
+            expect(await confirmPromise).toBe(false);
+            expect(onCancel).toHaveBeenCalledTimes(1);
+
+            const choicesPromise = ModalUI.showChoicesModal('Titre', 'Message', [
+                { id: 'c1', label: 'Choix 1', checked: true }
+            ]);
+            ModalUI.closeModal('customChoicesModal', { causedByHistory: true });
+            expect(await choicesPromise).toEqual({ confirmed: false, values: {} });
+
+            const hardPromise = ModalUI.showHardConfirmModal({ title: 'Reset', confirmWord: 'SUPPRIMER' });
+            ModalUI.closeModal('hardConfirmModal', { causedByHistory: true });
+            expect(await hardPromise).toBe(false);
         });
     });
 

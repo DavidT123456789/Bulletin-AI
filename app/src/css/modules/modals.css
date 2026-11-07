@@ -2396,22 +2396,21 @@
 
 .restore-comparison-card.is-source {
     padding-right: 22px;
+}
+
+.restore-comparison-grid:not(.is-in-sync) .restore-comparison-card.is-source {
     border: 1.5px solid color-mix(in srgb, var(--text-primary) 24%, var(--border-color));
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
 }
 
-[data-theme="dark"] .restore-comparison-card.is-source {
+[data-theme="dark"] .restore-comparison-grid:not(.is-in-sync) .restore-comparison-card.is-source {
     background: var(--item-idle-bg);
     box-shadow: none;
 }
 
 .restore-comparison-card.is-target {
     padding-left: 22px;
-}
-
-[data-theme="dark"] .restore-comparison-card.is-target {
-    background: color-mix(in srgb, var(--bg-color) 45%, var(--surface-color));
 }
 
 .restore-comparison-card.is-target.is-warning {
@@ -2452,6 +2451,12 @@
     box-shadow: var(--shadow-elevation);
 }
 
+.restore-comparison-grid.is-in-sync .restore-flow-connector {
+    border-color: var(--border-default);
+    color: var(--text-tertiary);
+    box-shadow: none;
+}
+
 .restore-card-badge {
     display: inline-flex;
     align-items: center;
@@ -2464,6 +2469,8 @@
     border-radius: var(--radius-pill);
     padding: 4px 10px;
     width: fit-content;
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
 }
 
 .restore-card-badge iconify-icon {
@@ -2471,18 +2478,13 @@
     flex-shrink: 0;
 }
 
-.restore-comparison-card.is-source .restore-card-badge {
+.restore-comparison-grid:not(.is-in-sync) .restore-comparison-card.is-source .restore-card-badge {
     background: var(--text-primary);
     color: var(--surface-color);
 }
 
-[data-theme="dark"] .restore-comparison-card.is-source .restore-card-badge {
+[data-theme="dark"] .restore-comparison-grid:not(.is-in-sync) .restore-comparison-card.is-source .restore-card-badge {
     color: var(--bg-color);
-}
-
-.restore-comparison-card.is-target .restore-card-badge {
-    background: var(--tonal-bg);
-    color: var(--text-secondary);
 }
 
 .restore-card-main-stat {
@@ -2493,9 +2495,32 @@
     line-height: 1.2;
 }
 
-.restore-comparison-card.is-target .restore-card-main-stat {
+.restore-comparison-card.is-target .restore-card-main-stat,
+.restore-comparison-grid.is-in-sync .restore-comparison-card .restore-card-main-stat {
     font-weight: 600;
+}
+
+.restore-comparison-grid:not(.is-in-sync) .restore-comparison-card.is-target .restore-card-main-stat {
     color: var(--text-secondary);
+}
+
+.restore-card-exact-date {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    line-height: 1.25;
+}
+
+.restore-card-sub-stat {
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-top: 2px;
+}
+
+.restore-comparison-grid.is-in-sync .restore-card-sub-stat {
+    font-size: 0.8rem;
 }
 
 @media (max-width: 520px) {
@@ -2521,21 +2546,6 @@
     .restore-flow-connector iconify-icon {
         transform: rotate(90deg);
     }
-}
-
-.restore-card-exact-date {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    line-height: 1.25;
-}
-
-.restore-card-sub-stat {
-    font-size: 0.84rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    line-height: 1.35;
-    margin-top: 2px;
 }
 
 .restore-safety-notice {
@@ -2597,6 +2607,9 @@
     line-height: 1.4;
 }
 
+[data-theme="dark"] .restore-comparison-card.is-target:not(.is-warning),
+[data-theme="dark"] .restore-comparison-grid.is-in-sync .restore-comparison-card.is-source,
+[data-theme="dark"] .restore-safety-notice:not(.warning),
 [data-theme="dark"] .restore-impact-box:not(.warning) {
     background: color-mix(in srgb, var(--bg-color) 45%, var(--surface-color));
 }
@@ -2705,16 +2718,6 @@
     color: var(--primary-bright);
 }
 
-.pre-restore-btn {
-    width: auto !important;
-    height: 32px;
-    padding: 0 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    gap: 6px;
-    border-radius: var(--radius-sm);
-}
-
 .pre-restore-discard-btn {
     width: 32px !important;
     min-width: 32px !important;
@@ -2724,7 +2727,7 @@
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     color: var(--text-tertiary);
     background: transparent;
     border: 1px solid transparent;
@@ -2852,6 +2855,14 @@
         flex: 1;
         min-width: 0;
         justify-content: center;
+    }
+
+    .modal-alert-actions.is-in-sync {
+        flex-wrap: wrap-reverse;
+    }
+
+    .modal-alert-actions.is-in-sync .btn {
+        flex: 1 0 auto;
     }
 
     #welcomeModal .welcome-step {

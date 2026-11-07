@@ -252,6 +252,9 @@ export const BackupImportManager = {
             if (stats.updated > 0) studentParts.push(`${stats.updated} mis à jour`);
             parts.push(`${stats.imported + stats.updated} élève${(stats.imported + stats.updated) > 1 ? 's' : ''} (${studentParts.join(', ')})`);
         }
+        if (stats.addedEnrollments > 0) {
+            parts.push(`+${stats.addedEnrollments} affectation${stats.addedEnrollments > 1 ? 's' : ''}`);
+        }
         if (stats.journalEntries > 0) {
             parts.push(`${stats.journalEntries} entrée${stats.journalEntries > 1 ? 's' : ''} journal`);
         }

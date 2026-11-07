@@ -492,7 +492,7 @@ export const StorageManager = {
             }
             bus.emit(EVENTS.STATE_LOADED, {
                 fromTabSync,
-                studentCount: (runtimeState.data.generatedResults || []).length,
+                studentCount: Utils.countUniqueStudents(runtimeState.data.generatedResults, userSettings.academic.classes),
                 classCount: (userSettings.academic.classes || []).length
             });
         }
@@ -1589,6 +1589,7 @@ export const StorageManager = {
         };
         const knownStudentKeys = new Set();
         const knownClassStudentPairs = new Set();
+        const updatedStudentKeys = new Set();
         for (const r of localResults) {
             const sKey = resolveIdentityKey(r);
             knownStudentKeys.add(sKey);
@@ -1782,7 +1783,11 @@ export const StorageManager = {
 
                 if (hasStudentUpdates) {
                     localStudent._lastModified = Date.now();
-                    updatedStudents++;
+                    const sKey = resolveIdentityKey(localStudent);
+                    if (!updatedStudentKeys.has(sKey)) {
+                        updatedStudentKeys.add(sKey);
+                        updatedStudents++;
+                    }
                 } else {
                     skippedStudents++;
                 }

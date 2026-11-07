@@ -1590,5 +1590,27 @@ describe('StorageManager', () => {
             expect(parsed.categories.students.count).toBe(2);
             expect(parsed.categories.students.description).toContain('1 photo');
         });
+
+        it('ne sur-compte pas updatedStudents lors d\'une fusion quand un même élève est mis à jour dans sa classe et son groupe', async () => {
+            userSettings.academic.classes = [
+                { id: 'c1', name: '3°1', isGroup: false },
+                { id: 'g1', name: 'PAPD', isGroup: true }
+            ];
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c1', _lastModified: 1000, studentData: { statuses: [] } },
+                { id: 's2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g1', _lastModified: 1000, studentData: { statuses: [] } }
+            ];
+            runtimeState.data.deletedItems = { students: [], classes: [] };
+
+            const res = await StorageManager.mergeRemoteData({
+                classes: userSettings.academic.classes,
+                generatedResults: [
+                    { id: 's1', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'c1', _lastModified: 2000, studentData: { statuses: ['PAP'] } },
+                    { id: 's2', nom: 'MIRZAI', prenom: 'Brikhna', classId: 'g1', _lastModified: 2000, studentData: { statuses: ['PAP'] } }
+                ]
+            });
+
+            expect(res.stats.updatedStudents).toBe(1);
+        });
     });
 });

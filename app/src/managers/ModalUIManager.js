@@ -583,6 +583,7 @@ export const ModalUI = {
             }
 
             // Wrappers pour gérer à la fois Callback et Promise, et la fermeture
+            let settled = false;
             let keyHandler; // Définition en amont pour le cleanup
 
             const cleanup = () => {
@@ -590,31 +591,40 @@ export const ModalUI = {
             };
 
             const handleConfirm = () => {
+                if (settled) return;
+                settled = true;
                 cleanup();
                 if (onConfirm) onConfirm();
                 resolve(true);
                 this.closeModal(modal);
             };
 
-            const handleCancel = () => {
+            const handleCancel = (shouldClose = true) => {
+                if (settled) return;
+                settled = true;
                 cleanup();
                 if (onCancel) onCancel();
+                resolve(false);
+                if (shouldClose) this.closeModal(modal);
+            };
+
+            const handleExtra = () => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                if (extraButton && extraButton.action) extraButton.action();
                 resolve(false);
                 this.closeModal(modal);
             };
 
-            const handleExtra = () => {
-                // Pas de cleanup ici car le bouton extra ne ferme pas forcément la modale
-                // Sauf si on décide qu'il la ferme (comportement d'origine : closeModal appelé)
-                cleanup();
-                if (extraButton && extraButton.action) extraButton.action();
-                this.closeModal(modal);
-            };
+            this._modalHooks.set(modal, {
+                onClose: () => handleCancel(false)
+            });
 
             // Event Listeners (once: true pour éviter les doublons)
             okBtn.addEventListener('click', handleConfirm, { once: true });
-            cancelBtn.addEventListener('click', handleCancel, { once: true });
-            if (closeBtn) closeBtn.addEventListener('click', handleCancel, { once: true });
+            cancelBtn.addEventListener('click', () => handleCancel(), { once: true });
+            if (closeBtn) closeBtn.addEventListener('click', () => handleCancel(), { once: true });
             if (extraBtn) extraBtn.addEventListener('click', handleExtra, { once: true });
 
             // Fermeture sur clic backdrop
@@ -734,6 +744,7 @@ export const ModalUI = {
             });
             syncOkState();
 
+            let settled = false;
             let keyHandler;
 
             const getValues = () => {
@@ -747,26 +758,32 @@ export const ModalUI = {
 
             const cleanup = () => {
                 if (keyHandler) document.removeEventListener('keydown', keyHandler);
+                okBtn?.removeEventListener('click', handleConfirm);
             };
 
             const handleConfirm = () => {
-                if (okBtn?.disabled) return;
+                if (settled || okBtn?.disabled) return;
+                settled = true;
                 cleanup();
-                okBtn?.removeEventListener('click', handleConfirm);
                 resolve({ confirmed: true, values: getValues() });
                 this.closeModal(modal);
             };
 
-            const handleCancel = () => {
+            const handleCancel = (shouldClose = true) => {
+                if (settled) return;
+                settled = true;
                 cleanup();
-                okBtn?.removeEventListener('click', handleConfirm);
                 resolve({ confirmed: false, values: {} });
-                this.closeModal(modal);
+                if (shouldClose) this.closeModal(modal);
             };
 
+            this._modalHooks.set(modal, {
+                onClose: () => handleCancel(false)
+            });
+
             okBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel, { once: true });
-            if (closeBtn) closeBtn.addEventListener('click', handleCancel, { once: true });
+            cancelBtn.addEventListener('click', () => handleCancel(), { once: true });
+            if (closeBtn) closeBtn.addEventListener('click', () => handleCancel(), { once: true });
 
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) handleCancel();
@@ -824,13 +841,13 @@ export const ModalUI = {
                 },
                 overwrite: {
                     id: 'conflictChoiceOverwrite',
-                    icon: 'lucide:cloud-upload',
+                    icon: 'solar:cloud-upload-linear',
                     title: 'Écraser la version Cloud',
                     desc: 'Remplace le Cloud par cet appareil. Les modifications enregistrées depuis un autre appareil seront perdues.'
                 },
                 restore: {
                     id: 'conflictChoiceRestore',
-                    icon: 'lucide:cloud-download',
+                    icon: 'solar:cloud-download-linear',
                     title: isConflict ? 'Remplacer par la version Cloud' : 'Récupérer la version Cloud',
                     desc: isConflict
                         ? 'Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).'
@@ -894,13 +911,20 @@ export const ModalUI = {
 
             const cancelBtn = document.getElementById('conflictCancelBtn');
 
+            let settled = false;
             let keyHandler;
 
-            const selectChoice = (choice) => {
+            const selectChoice = (choice, shouldClose = true) => {
+                if (settled) return;
+                settled = true;
                 if (keyHandler) document.removeEventListener('keydown', keyHandler);
                 resolve(choice);
-                this.closeModal(modal);
+                if (shouldClose) this.closeModal(modal);
             };
+
+            this._modalHooks.set(modal, {
+                onClose: () => selectChoice('cancel', false)
+            });
 
             modal.querySelectorAll('.conflict-choice-card').forEach(card => {
                 card.addEventListener('click', () => selectChoice(card.dataset.choice), { once: true });
@@ -927,15 +951,21 @@ export const ModalUI = {
     /**
      * Résout le libellé et l'icône d'un provider Cloud.
      * @param {string} [providerName='google']
+     * @param {string|null} [providerLabel=null]
+     * @param {string|null} [providerIcon=null]
      * @returns {{ label: string, icon: string }}
      * @private
      */
-    _getProviderMeta(providerName = 'google') {
+    _getProviderMeta(providerName = 'google', providerLabel = null, providerIcon = null) {
         const meta = {
             google: { label: 'Google Drive', icon: 'logos:google-drive' },
             dropbox: { label: 'Dropbox', icon: 'logos:dropbox' }
         };
-        return meta[providerName] ?? { label: 'Cloud', icon: 'solar:cloud-upload-linear' };
+        const fallback = meta[providerName] ?? { label: 'Cloud', icon: 'solar:cloud-upload-linear' };
+        return {
+            label: providerLabel ?? fallback.label,
+            icon: providerIcon ?? fallback.icon
+        };
     },
 
     /**
@@ -1182,8 +1212,7 @@ export const ModalUI = {
         rClassCount = null,
         lStudentCount = 0,
         lClassCount = 0,
-        isVolumeIdentical = true,
-        showSubStats = !isVolumeIdentical,
+        showSubStats = false,
         isMissingLocalStudents = false,
         hasLocalChanges = false,
         isInSync = false,
@@ -1195,7 +1224,11 @@ export const ModalUI = {
         let cloudDateParts = this._formatDateParts(remoteDate);
         let localDateParts = this._formatDateParts(localTimestamp);
 
-        if (!isInSync && cloudDateParts && localDateParts && (
+        if (isInSync) {
+            const syncedDateParts = cloudDateParts || localDateParts;
+            cloudDateParts = syncedDateParts;
+            localDateParts = syncedDateParts;
+        } else if (cloudDateParts && localDateParts && (
             cloudDateParts.relative === localDateParts.relative ||
             cloudDateParts.absolute === localDateParts.absolute
         )) {
@@ -1203,28 +1236,35 @@ export const ModalUI = {
             localDateParts = this._formatDateParts(localTimestamp, { precise: true });
         }
 
-        const cloudSubStatHtml = (!showSubStats || rStudentCount === null)
-            ? ''
-            : `<div class="restore-card-sub-stat">${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}${rClassCount !== null ? ` · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}` : ''}</div>`;
+        const formatVolume = (students, classes) =>
+            `${students} élève${students > 1 ? 's' : ''}${classes !== null ? ` · ${classes} classe${classes > 1 ? 's' : ''}` : ''}`;
 
-        const localSubStatHtml = !showSubStats
-            ? ''
-            : `<div class="restore-card-sub-stat">${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}</div>`;
+        const effectiveRStudentCount = (isInSync && rStudentCount === null) ? lStudentCount : rStudentCount;
+        const effectiveRClassCount = (isInSync && rClassCount === null) ? lClassCount : rClassCount;
+
+        const cloudSubStat = (showSubStats && effectiveRStudentCount !== null)
+            ? formatVolume(effectiveRStudentCount, effectiveRClassCount)
+            : '';
+        const localSubStat = showSubStats ? formatVolume(lStudentCount, lClassCount) : '';
 
         const cloudMainStatText = cloudDateParts
             ? cloudDateParts.relative
-            : (isFirstSync ? 'Aucune sauvegarde' : 'Date inconnue');
+            : isInSync
+                ? 'Synchronisée'
+                : (isFirstSync ? 'Aucune sauvegarde' : 'Date inconnue');
 
-        const cloudExactDateHtml = cloudDateParts
-            ? `<div class="restore-card-exact-date">${cloudDateParts.absolute}</div>`
-            : (isFirstSync ? '<div class="restore-card-exact-date">Première synchronisation</div>' : '');
+        const cloudExactDateText = cloudDateParts
+            ? cloudDateParts.absolute
+            : isInSync
+                ? 'Aucune modification'
+                : (isFirstSync ? 'Première synchronisation' : '');
 
         const localMainStatText = hasLocalChanges
             ? (localDateParts ? localDateParts.relative : 'À l\'instant')
             : isMissingLocalStudents
                 ? 'Données manquantes'
                 : isInSync
-                    ? 'Session à jour'
+                    ? (localDateParts ? localDateParts.relative : 'Synchronisée')
                     : (localDateParts ? localDateParts.relative : 'Session locale');
 
         const localExactDateText = hasLocalChanges
@@ -1232,7 +1272,7 @@ export const ModalUI = {
             : isMissingLocalStudents
                 ? 'Aucun élève sur cet appareil'
                 : isInSync
-                    ? 'Parfaitement synchronisée'
+                    ? (localDateParts ? localDateParts.absolute : 'Aucune modification')
                     : (localDateParts ? localDateParts.absolute : 'Écart avec le Cloud');
 
         const isLocalSource = direction === 'local-to-cloud';
@@ -1240,43 +1280,48 @@ export const ModalUI = {
         const cloudRoleClass = isLocalSource ? targetRoleClass : 'is-source';
         const localRoleClass = isLocalSource ? 'is-source' : targetRoleClass;
 
-        const cloudCardHtml = `
-                        <div class="restore-comparison-card cloud ${cloudRoleClass}">
+        const renderCard = ({ type, roleClass, icon, label, mainStat, exactDate, subStat }) => `
+                        <div class="restore-comparison-card ${type} ${roleClass}">
                             <div class="restore-card-badge">
-                                <iconify-icon icon="${resolvedProviderIcon}"></iconify-icon>
-                                <span>${resolvedProviderLabel}</span>
+                                <iconify-icon icon="${Utils.escapeHtml(icon)}"></iconify-icon>
+                                <span>${Utils.escapeHtml(label)}</span>
                             </div>
                             <div class="restore-card-main-stat">
-                                ${cloudMainStatText}
+                                ${mainStat}
                             </div>
-                            ${cloudExactDateHtml}
-                            ${cloudSubStatHtml}
+                            ${exactDate ? `<div class="restore-card-exact-date">${exactDate}</div>` : ''}
+                            ${subStat ? `<div class="restore-card-sub-stat">${subStat}</div>` : ''}
                         </div>`;
 
-        const localCardHtml = `
-                        <div class="restore-comparison-card local ${localRoleClass}">
-                            <div class="restore-card-badge">
-                                <iconify-icon icon="lucide:laptop-minimal"></iconify-icon>
-                                <span>Session locale</span>
-                            </div>
-                            <div class="restore-card-main-stat">
-                                ${localMainStatText}
-                            </div>
-                            <div class="restore-card-exact-date">
-                                ${localExactDateText}
-                            </div>
-                            ${localSubStatHtml}
-                        </div>`;
+        const cloudCardHtml = renderCard({
+            type: 'cloud',
+            roleClass: cloudRoleClass,
+            icon: resolvedProviderIcon,
+            label: resolvedProviderLabel,
+            mainStat: cloudMainStatText,
+            exactDate: cloudExactDateText,
+            subStat: cloudSubStat
+        });
+
+        const localCardHtml = renderCard({
+            type: 'local',
+            roleClass: localRoleClass,
+            icon: 'solar:monitor-linear',
+            label: 'Session locale',
+            mainStat: localMainStatText,
+            exactDate: localExactDateText,
+            subStat: localSubStat
+        });
 
         const [sourceCardHtml, targetCardHtml] = isLocalSource
             ? [localCardHtml, cloudCardHtml]
             : [cloudCardHtml, localCardHtml];
 
         return `
-                    <div class="restore-comparison-grid">
+                    <div class="restore-comparison-grid${isInSync ? ' is-in-sync' : ''}">
                         ${sourceCardHtml}
                         <div class="restore-flow-connector" aria-hidden="true">
-                            <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                            <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
                         </div>
                         ${targetCardHtml}
                     </div>`;
@@ -1312,6 +1357,83 @@ export const ModalUI = {
     },
 
     /**
+     * Monte et ouvre le gabarit commun des modales de confirmation Cloud (Sauvegarder / Restaurer).
+     * @param {Object} params
+     * @returns {Promise<boolean>}
+     * @private
+     */
+    _openCloudConfirmModal({
+        modalId,
+        variant,
+        headerIcon,
+        title,
+        subtitle,
+        comparisonGridHtml,
+        noticeHtml = null,
+        isInSync = false,
+        okBtnId,
+        cancelBtnId,
+        confirmLabel,
+        forceConfirmLabel,
+        focusCancel = false
+    }) {
+        return new Promise((resolve) => {
+            document.getElementById(modalId)?.remove();
+
+            const resolvedNoticeHtml = noticeHtml ?? `
+                    <div class="restore-safety-notice in-sync">
+                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                        <div>
+                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées.
+                        </div>
+                    </div>`;
+
+            const modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal';
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-content-${variant} modal-alert-ios">
+                <div class="modal-alert-body">
+                    <h3 class="modal-alert-title has-header-icon">
+                        <div class="modal-alert-header-icon cloud">
+                            <iconify-icon icon="${headerIcon}"></iconify-icon>
+                        </div>
+                        <span>${title}</span>
+                    </h3>
+                    <div class="modal-alert-message">
+                        ${subtitle}
+                    </div>
+
+                    ${comparisonGridHtml}
+
+                    ${resolvedNoticeHtml}
+                </div>
+
+                <div class="modal-alert-actions${isInSync ? ' is-in-sync' : ''}">
+                    ${isInSync ? `
+                    <button type="button" class="btn btn-secondary" id="${okBtnId}">${forceConfirmLabel}</button>
+                    <button type="button" class="btn btn-primary" id="${cancelBtnId}">Fermer</button>
+                    ` : `
+                    <button type="button" class="btn btn-secondary" id="${cancelBtnId}">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="${okBtnId}">${confirmLabel}</button>
+                    `}
+                </div>
+            </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            this._bindConfirmActions(
+                modal,
+                modal.querySelector(`#${okBtnId}`),
+                modal.querySelector(`#${cancelBtnId}`),
+                resolve,
+                focusCancel
+            );
+        });
+    },
+
+    /**
      * Modale de confirmation comparative pré-restauration.
      * Affiche un comparatif clair (Cloud vs Local) et supprime l'action aveugle.
      * 
@@ -1326,125 +1448,95 @@ export const ModalUI = {
      * @returns {Promise<boolean>} Résout true si confirmé, false sinon
      */
     showRestoreConfirmationModal(options = {}) {
-        return new Promise((resolve) => {
-            const {
-                remoteDate = null,
-                localDate = null,
-                remoteStudentCount = 0,
-                remoteClassCount = 0,
-                localStudentCount = 0,
-                localClassCount = 0,
-                providerName = 'google',
-                providerLabel = null,
-                providerIcon = null,
-                syncState = null,
-                rosterDiff = null
-            } = options;
+        const {
+            remoteDate = null,
+            localDate = null,
+            remoteStudentCount = 0,
+            remoteClassCount = 0,
+            localStudentCount = 0,
+            localClassCount = 0,
+            providerName = 'google',
+            providerLabel = null,
+            providerIcon = null,
+            syncState = null,
+            rosterDiff = null
+        } = options;
 
-            const modalId = 'restoreConfirmationModal';
-            let modal = document.getElementById(modalId);
-            if (modal) modal.remove();
+        const { label: resolvedProviderLabel, icon: resolvedProviderIcon } =
+            this._getProviderMeta(providerName, providerLabel, providerIcon);
 
-            const { label: defaultProviderLabel, icon: defaultProviderIcon } = this._getProviderMeta(providerName);
-            const resolvedProviderLabel = providerLabel ?? defaultProviderLabel;
-            const resolvedProviderIcon = providerIcon ?? defaultProviderIcon;
+        const toCount = (val) => Number.isFinite(val) ? val : (parseInt(val, 10) || 0);
+        const rStudentCount = toCount(remoteStudentCount);
+        const rClassCount = toCount(remoteClassCount);
+        const lStudentCount = toCount(localStudentCount);
+        const lClassCount = toCount(localClassCount);
 
-            const rStudentCount = Number.isFinite(remoteStudentCount) ? remoteStudentCount : (parseInt(remoteStudentCount, 10) || 0);
-            const rClassCount = Number.isFinite(remoteClassCount) ? remoteClassCount : (parseInt(remoteClassCount, 10) || 0);
-            const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
-            const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+        const isVolumeIdentical = (rStudentCount === lStudentCount) && (rClassCount === lClassCount);
+        const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange);
+        const isMissingLocalStudents = rStudentCount > 0 && lStudentCount === 0;
 
-            const isVolumeIdentical = (rStudentCount === lStudentCount) && (rClassCount === lClassCount);
-            const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange);
-            const isMissingLocalStudents = rStudentCount > 0 && lStudentCount === 0;
+        const resolvedSyncState = syncState ||
+            window.SyncService?._lastSyncState ||
+            (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
+        const hasLocalChanges = !isMissingLocalStudents && (resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict');
+        const hasSyncContext = resolvedSyncState === 'in-sync' || remoteDate !== null || rStudentCount > 0;
+        const isInSync = hasSyncContext && !hasLocalChanges && isVolumeIdentical && !hasRosterChanges && resolvedSyncState !== 'cloud-changes';
 
-            const resolvedSyncState = syncState ||
-                window.SyncService?._lastSyncState ||
-                (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
-            const hasLocalChanges = !isMissingLocalStudents && (resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict');
-            const isInSync = !hasLocalChanges && isVolumeIdentical && !hasRosterChanges && resolvedSyncState !== 'cloud-changes';
+        const comparisonGridHtml = this._renderCloudComparisonGrid({
+            direction: 'cloud-to-local',
+            isTargetWarning: hasLocalChanges,
+            remoteDate,
+            localDate,
+            rStudentCount,
+            rClassCount,
+            lStudentCount,
+            lClassCount,
+            showSubStats: !isVolumeIdentical || (hasLocalChanges && hasRosterChanges) || (isInSync && lStudentCount > 0),
+            isMissingLocalStudents,
+            hasLocalChanges,
+            isInSync,
+            resolvedProviderLabel,
+            resolvedProviderIcon
+        });
 
-            const diffItems = hasLocalChanges ? this._getLocalDiffDetails(options) : [];
-            const comparisonGridHtml = this._renderCloudComparisonGrid({
-                direction: 'cloud-to-local',
-                isTargetWarning: hasLocalChanges,
-                remoteDate,
-                localDate,
-                rStudentCount,
-                rClassCount,
-                lStudentCount,
-                lClassCount,
-                isVolumeIdentical,
-                showSubStats: !isVolumeIdentical || (hasLocalChanges && hasRosterChanges),
-                isMissingLocalStudents,
-                hasLocalChanges,
-                isInSync,
-                resolvedProviderLabel,
-                resolvedProviderIcon
-            });
-
-            modal = document.createElement('div');
-            modal.id = modalId;
-            modal.className = 'modal';
-
-            modal.innerHTML = `
-            <div class="modal-content modal-content-confirm modal-content-restore modal-alert-ios">
-                <div class="modal-alert-body">
-                    <h3 class="modal-alert-title has-header-icon">
-                        <div class="modal-alert-header-icon cloud">
-                            <iconify-icon icon="lucide:cloud-download"></iconify-icon>
-                        </div>
-                        <span>Restaurer depuis le Cloud</span>
-                    </h3>
-                    <div class="modal-alert-message">
-                        ${hasLocalChanges
-                            ? 'Vérifiez les dates avant de recharger votre espace de travail.'
-                            : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.'}
-                    </div>
-
-                    ${comparisonGridHtml}
-
-                    ${hasLocalChanges ? this._renderImpactBox({
-                        isWarning: true,
-                        icon: 'solar:danger-triangle-bold',
-                        title: 'Sera remplacé sur cet appareil :',
-                        items: diffItems,
-                        footerText: 'Une copie de secours de votre session sera créée automatiquement.'
-                    }) : isInSync ? `
-                    <div class="restore-safety-notice in-sync">
-                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
-                        <div>
-                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées.
-                        </div>
-                    </div>
-                    ` : `
+        const noticeHtml = hasLocalChanges
+            ? this._renderImpactBox({
+                isWarning: true,
+                icon: 'solar:danger-triangle-bold',
+                title: 'Sera remplacé sur cet appareil :',
+                items: this._getLocalDiffDetails(options),
+                footerText: 'Une copie de secours de votre session sera créée automatiquement.'
+            })
+            : isInSync
+                ? null
+                : `
                     <div class="restore-safety-notice warning">
-                        <iconify-icon icon="lucide:cloud-download"></iconify-icon>
+                        <iconify-icon icon="solar:cloud-download-linear"></iconify-icon>
                         <div>
                             ${isMissingLocalStudents
                                 ? `<strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.`
                                 : `<strong>Différence détectée :</strong> Votre sauvegarde Cloud (${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}) diffère de votre session locale.`}
                         </div>
-                    </div>
-                    `}
-                </div>
+                    </div>`;
 
-                <div class="modal-alert-actions">
-                    <button type="button" class="btn btn-secondary" id="restoreConfirmCancelBtn">Annuler</button>
-                    <button type="button" class="btn btn-primary" id="restoreConfirmOkBtn">Restaurer</button>
-                </div>
-            </div>`;
-
-            document.body.appendChild(modal);
-            this.openModal(modal);
-
-            this._bindConfirmActions(
-                modal,
-                document.getElementById('restoreConfirmOkBtn'),
-                document.getElementById('restoreConfirmCancelBtn'),
-                resolve,
-                hasLocalChanges
-            );
+        return this._openCloudConfirmModal({
+            modalId: 'restoreConfirmationModal',
+            variant: 'restore',
+            headerIcon: 'solar:cloud-download-linear',
+            title: 'Restaurer depuis le Cloud',
+            subtitle: isInSync
+                ? 'Aucune modification depuis votre dernière synchronisation.'
+                : hasLocalChanges
+                    ? 'Vérifiez les dates avant de recharger votre espace de travail.'
+                    : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.',
+            comparisonGridHtml,
+            noticeHtml,
+            isInSync,
+            okBtnId: 'restoreConfirmOkBtn',
+            cancelBtnId: 'restoreConfirmCancelBtn',
+            confirmLabel: 'Restaurer',
+            forceConfirmLabel: 'Restaurer quand même',
+            focusCancel: hasLocalChanges || isInSync
         });
     },
 
@@ -1468,144 +1560,110 @@ export const ModalUI = {
      * @returns {Promise<boolean>}
      */
     showSaveConfirmationModal(options = {}) {
-        return new Promise((resolve) => {
-            const {
-                localStudentCount = 0,
-                localClassCount = 0,
-                remoteStudentCount = null,
-                remoteClassCount = null,
-                rosterDiff = null,
-                legacyRosterChanged = false,
-                lastSyncTime = null,
-                localDate = null,
-                providerName = 'google',
-                providerLabel = null,
-                providerIcon = null,
-                isInSync = false
-            } = options;
+        const {
+            localStudentCount = 0,
+            localClassCount = 0,
+            remoteStudentCount = null,
+            remoteClassCount = null,
+            rosterDiff = null,
+            legacyRosterChanged = false,
+            lastSyncTime = null,
+            localDate = null,
+            providerName = 'google',
+            providerLabel = null,
+            providerIcon = null,
+            isInSync = false
+        } = options;
 
-            const modalId = 'saveConfirmationModal';
-            let modal = document.getElementById(modalId);
-            if (modal) modal.remove();
+        const { label: resolvedProviderLabel, icon: resolvedProviderIcon } =
+            this._getProviderMeta(providerName, providerLabel, providerIcon);
 
-            const { label: defaultProviderLabel, icon: defaultProviderIcon } = this._getProviderMeta(providerName);
-            const resolvedProviderLabel = providerLabel ?? defaultProviderLabel;
-            const resolvedProviderIcon = providerIcon ?? defaultProviderIcon;
+        const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
+        const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+        const rStudentCount = typeof remoteStudentCount === 'number' && remoteStudentCount > 0 ? remoteStudentCount : null;
+        const rClassCount = typeof remoteClassCount === 'number' && remoteClassCount >= 0 ? remoteClassCount : null;
 
-            const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
-            const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
-            const rStudentCount = typeof remoteStudentCount === 'number' && remoteStudentCount > 0 ? remoteStudentCount : null;
-            const rClassCount = typeof remoteClassCount === 'number' && remoteClassCount >= 0 ? remoteClassCount : null;
+        const hasDataShrinkageWarning = rosterDiff
+            ? rosterDiff.removedStudents > 0
+            : (rStudentCount !== null && lStudentCount < rStudentCount);
+        const isVolumeIdentical = (rStudentCount === null || rStudentCount === lStudentCount) &&
+            (rClassCount === null || rClassCount === lClassCount);
+        const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange || legacyRosterChanged);
+        const effectiveIsInSync = Boolean(isInSync) && !hasDataShrinkageWarning && !hasRosterChanges;
+        const isFirstSync = !lastSyncTime && rStudentCount === null && !effectiveIsInSync && !localStorage.getItem('bulletin_last_sync');
+        const hasLocalChanges = !effectiveIsInSync;
 
-            const hasDataShrinkageWarning = rosterDiff
-                ? rosterDiff.removedStudents > 0
-                : (rStudentCount !== null && lStudentCount < rStudentCount);
-            const isVolumeIdentical = (rStudentCount === null || rStudentCount === lStudentCount) &&
-                (rClassCount === null || rClassCount === lClassCount);
-            const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange || legacyRosterChanged);
-            const isFirstSync = !lastSyncTime && rStudentCount === null && !isInSync && !localStorage.getItem('bulletin_last_sync');
-            const hasLocalChanges = !isInSync;
+        const comparisonGridHtml = this._renderCloudComparisonGrid({
+            direction: 'local-to-cloud',
+            isTargetWarning: hasDataShrinkageWarning,
+            remoteDate: lastSyncTime,
+            localDate,
+            rStudentCount,
+            rClassCount,
+            lStudentCount,
+            lClassCount,
+            showSubStats: !isVolumeIdentical || (hasLocalChanges && hasRosterChanges && rStudentCount !== null) || (effectiveIsInSync && lStudentCount > 0),
+            isMissingLocalStudents: false,
+            hasLocalChanges,
+            isInSync: effectiveIsInSync,
+            isFirstSync,
+            resolvedProviderLabel,
+            resolvedProviderIcon
+        });
 
-            const diffItems = (!hasDataShrinkageWarning && hasLocalChanges)
-                ? (isFirstSync && lStudentCount > 0
-                    ? [{ icon: 'solar:users-group-rounded-linear', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
-                    : this._getLocalDiffDetails({
-                        lastSyncTime,
-                        remoteStudentCount: rStudentCount,
-                        localStudentCount: lStudentCount,
-                        rosterDiff,
-                        legacyRosterChanged
-                    }))
-                : [];
+        const removedCount = rosterDiff?.removedStudents || 0;
+        const shrinkageNoticeHtml = (rStudentCount !== null && lStudentCount < rStudentCount)
+            ? `<strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>. Cette action va la remplacer par votre session actuelle (${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}).`
+            : `<strong>Attention (suppression d'élève${removedCount > 1 ? 's' : ''}) :</strong> <strong>${removedCount} élève${removedCount > 1 ? 's' : ''}</strong> présent${removedCount > 1 ? 's' : ''} sur le Cloud ${removedCount > 1 ? 'seront définitivement supprimés' : 'sera définitivement supprimé'} de la sauvegarde.`;
 
-            const comparisonGridHtml = this._renderCloudComparisonGrid({
-                direction: 'local-to-cloud',
-                isTargetWarning: hasDataShrinkageWarning,
-                remoteDate: lastSyncTime,
-                localDate,
-                rStudentCount,
-                rClassCount,
-                lStudentCount,
-                lClassCount,
-                isVolumeIdentical,
-                showSubStats: !isVolumeIdentical || (hasLocalChanges && hasRosterChanges && rStudentCount !== null),
-                isMissingLocalStudents: false,
-                hasLocalChanges,
-                isInSync,
-                isFirstSync,
-                resolvedProviderLabel,
-                resolvedProviderIcon
-            });
-
-            const removedCount = rosterDiff?.removedStudents || 0;
-            const shrinkageNoticeHtml = (rStudentCount !== null && lStudentCount < rStudentCount)
-                ? `<strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>. Cette action va la remplacer par votre session actuelle (${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}).`
-                : `<strong>Attention (suppression d'élève${removedCount > 1 ? 's' : ''}) :</strong> <strong>${removedCount} élève${removedCount > 1 ? 's' : ''}</strong> présent${removedCount > 1 ? 's' : ''} sur le Cloud ${removedCount > 1 ? 'seront définitivement supprimés' : 'sera définitivement supprimé'} de la sauvegarde.`;
-
-            modal = document.createElement('div');
-            modal.id = modalId;
-            modal.className = 'modal';
-
-            modal.innerHTML = `
-            <div class="modal-content modal-content-confirm modal-content-save modal-alert-ios">
-                <div class="modal-alert-body">
-                    <h3 class="modal-alert-title has-header-icon">
-                        <div class="modal-alert-header-icon cloud">
-                            <iconify-icon icon="lucide:cloud-upload"></iconify-icon>
-                        </div>
-                        <span>Sauvegarder vers le Cloud</span>
-                    </h3>
-                    <div class="modal-alert-message">
-                        ${hasLocalChanges
-                            ? 'Vérifiez les dates avant de mettre à jour votre sauvegarde en ligne.'
-                            : 'Sécurisez votre espace de travail sur votre sauvegarde en ligne.'}
-                    </div>
-
-                    ${comparisonGridHtml}
-
-                    ${hasDataShrinkageWarning ? `
+        const noticeHtml = hasDataShrinkageWarning
+            ? `
                     <div class="restore-safety-notice warning">
                         <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                         <div>
                             ${shrinkageNoticeHtml}
                         </div>
-                    </div>
-                    ` : isInSync ? `
-                    <div class="restore-safety-notice in-sync">
-                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
-                        <div>
-                            <strong>Session alignée :</strong> Vos données locales sont déjà synchronisées.
-                        </div>
-                    </div>
-                    ` : this._renderImpactBox({
-                        isWarning: false,
-                        icon: 'lucide:cloud-upload',
-                        title: 'Modifications à enregistrer :',
-                        items: diffItems
-                    })}
-                </div>
+                    </div>`
+            : effectiveIsInSync
+                ? null
+                : this._renderImpactBox({
+                    isWarning: false,
+                    icon: 'solar:cloud-upload-linear',
+                    title: 'Modifications à enregistrer :',
+                    items: isFirstSync && lStudentCount > 0
+                        ? [{ icon: 'solar:users-group-rounded-linear', text: `${lStudentCount} élève${lStudentCount > 1 ? 's' : ''}${lClassCount > 0 ? ` · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}` : ''}` }]
+                        : this._getLocalDiffDetails({
+                            lastSyncTime,
+                            remoteStudentCount: rStudentCount,
+                            localStudentCount: lStudentCount,
+                            rosterDiff,
+                            legacyRosterChanged
+                        })
+                });
 
-                <div class="modal-alert-actions">
-                    <button type="button" class="btn btn-secondary" id="saveConfirmCancelBtn">Annuler</button>
-                    <button type="button" class="btn btn-primary" id="saveConfirmOkBtn">Sauvegarder</button>
-                </div>
-            </div>`;
-
-            document.body.appendChild(modal);
-            this.openModal(modal);
-
-            this._bindConfirmActions(
-                modal,
-                document.getElementById('saveConfirmOkBtn'),
-                document.getElementById('saveConfirmCancelBtn'),
-                resolve,
-                hasDataShrinkageWarning
-            );
+        return this._openCloudConfirmModal({
+            modalId: 'saveConfirmationModal',
+            variant: 'save',
+            headerIcon: 'solar:cloud-upload-linear',
+            title: 'Sauvegarder vers le Cloud',
+            subtitle: effectiveIsInSync
+                ? 'Aucune modification depuis votre dernière synchronisation.'
+                : isFirstSync
+                    ? 'Sécurisez votre espace de travail sur votre sauvegarde en ligne.'
+                    : 'Vérifiez les dates avant de mettre à jour votre sauvegarde en ligne.',
+            comparisonGridHtml,
+            noticeHtml,
+            isInSync: effectiveIsInSync,
+            okBtnId: 'saveConfirmOkBtn',
+            cancelBtnId: 'saveConfirmCancelBtn',
+            confirmLabel: 'Sauvegarder',
+            forceConfirmLabel: 'Sauvegarder quand même',
+            focusCancel: hasDataShrinkageWarning || effectiveIsInSync
         });
     },
 
     /**
-     * Branche les actions standard d'une modale de confirmation (boutons, clic extérieur, clavier).
+     * Branche les actions standard d'une modale de confirmation (boutons, clic extérieur, clavier, fermeture externe).
      * @param {HTMLElement} modal
      * @param {HTMLElement} okBtn
      * @param {HTMLElement} cancelBtn
@@ -1614,13 +1672,20 @@ export const ModalUI = {
      * @private
      */
     _bindConfirmActions(modal, okBtn, cancelBtn, resolve, isDestructive = false) {
+        let settled = false;
         let keyHandler;
 
-        const finish = (confirmed) => {
+        const finish = (confirmed, shouldClose = true) => {
+            if (settled) return;
+            settled = true;
             document.removeEventListener('keydown', keyHandler);
             resolve(confirmed);
-            this.closeModal(modal);
+            if (shouldClose) this.closeModal(modal);
         };
+
+        this._modalHooks.set(modal, {
+            onClose: () => finish(false, false)
+        });
 
         okBtn.addEventListener('click', () => finish(true), { once: true });
         cancelBtn.addEventListener('click', () => finish(false), { once: true });
@@ -1712,6 +1777,7 @@ export const ModalUI = {
             const cancelBtn = document.getElementById('hardConfirmCancelBtn');
             const closeBtn = modal.querySelector('.close-button');
 
+            let settled = false;
             let keyHandler;
 
             const cleanup = () => {
@@ -1719,17 +1785,24 @@ export const ModalUI = {
             };
 
             const handleConfirm = () => {
-                if (okBtn.disabled) return;
+                if (settled || okBtn.disabled) return;
+                settled = true;
                 cleanup();
                 resolve(true);
                 this.closeModal(modal);
             };
 
-            const handleCancel = () => {
+            const handleCancel = (shouldClose = true) => {
+                if (settled) return;
+                settled = true;
                 cleanup();
                 resolve(false);
-                this.closeModal(modal);
+                if (shouldClose) this.closeModal(modal);
             };
+
+            this._modalHooks.set(modal, {
+                onClose: () => handleCancel(false)
+            });
 
             input.addEventListener('input', () => {
                 const match = input.value.trim() === confirmWord;
@@ -1738,8 +1811,8 @@ export const ModalUI = {
             });
 
             okBtn.addEventListener('click', handleConfirm, { once: true });
-            cancelBtn.addEventListener('click', handleCancel, { once: true });
-            if (closeBtn) closeBtn.addEventListener('click', handleCancel, { once: true });
+            cancelBtn.addEventListener('click', () => handleCancel(), { once: true });
+            if (closeBtn) closeBtn.addEventListener('click', () => handleCancel(), { once: true });
 
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) handleCancel();
@@ -1757,7 +1830,9 @@ export const ModalUI = {
             };
             document.addEventListener('keydown', keyHandler);
 
-            setTimeout(() => input.focus(), 150);
+            setTimeout(() => {
+                if (!settled) input.focus();
+            }, 150);
         });
     },
 

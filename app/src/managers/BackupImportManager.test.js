@@ -164,4 +164,20 @@ describe('BackupImportManager', () => {
 
         document.removeEventListener('keydown', docEscapeSpy);
     });
+
+    it('should include addedEnrollments in rich feedback toast when existing students are enrolled into another class/group', () => {
+        BackupImportManager._showRichFeedback(
+            { settingsImported: false, classesAdded: 0, imported: 0, updated: 0, addedEnrollments: 3, journalEntries: 0, apiKeysImported: 0 },
+            { students: true },
+            true,
+            {}
+        );
+
+        expect(UI.showNotification).toHaveBeenCalledWith(
+            '+3 affectations',
+            'success',
+            5000,
+            { title: 'Fusion réussie' }
+        );
+    });
 });

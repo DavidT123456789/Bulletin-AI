@@ -512,7 +512,7 @@ export const ClassUIManager = {
                     <iconify-icon icon="solar:mortarboard-linear"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
-                        <iconify-icon icon="ph:plus"></iconify-icon> Créer ma première classe
+                        <iconify-icon icon="ph:plus-bold" aria-hidden="true"></iconify-icon> Créer ma première classe
                     </button>
                 </div>
             `;
@@ -1930,8 +1930,8 @@ export const ClassUIManager = {
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button class="btn btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
-                            <iconify-icon icon="solar:add-linear"></iconify-icon> <span>Nouvelle classe</span>
+                        <button type="button" class="btn btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
+                            <iconify-icon icon="ph:plus-bold" aria-hidden="true"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
                         <div class="modal-header-actions-divider" aria-hidden="true"></div>
                         <div class="action-dropdown" id="classManageMoreWrapper">

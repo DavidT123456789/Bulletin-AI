@@ -166,18 +166,6 @@
     box-shadow: none;
 }
 
-[data-theme="dark"] .journal-header-btn.icon-only {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .journal-header-btn.icon-only:hover {
-    background: var(--item-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-}
-
 .journal-section.editing #focusJournalNoteBtn,
 .journal-section:has(.journal-draft-preview.visible) #focusJournalNoteBtn {
     background: var(--item-active-bg);
