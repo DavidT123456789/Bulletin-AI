@@ -953,45 +953,6 @@ input[type="number"]::-webkit-outer-spin-button {
     outline-offset: 2px;
 }
 
-
-/* Seuils d'évolution en ligne dans la mini-carte */
-.evolution-thresholds-inline {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 24px;
-    width: 100%;
-}
-
-.threshold-item-compact {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.threshold-item-compact .threshold-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-}
-
-.threshold-item-compact .threshold-label i {
-    font-size: 0.9rem;
-}
-
-/* Style sémantique pour les inputs des seuils d'évolution */
-#evolutionThresholdPositive {
-    color: var(--success-color);
-}
-
-#evolutionThresholdNegative {
-    color: var(--error-color);
-}
-
 textarea {
     min-height: 100px;
     resize: vertical;

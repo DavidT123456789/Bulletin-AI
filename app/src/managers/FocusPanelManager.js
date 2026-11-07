@@ -191,9 +191,10 @@ export const FocusPanelManager = {
 
         const scrollTop = Math.max(0, content.scrollTop);
         const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
+        const bottomThreshold = container.classList.contains('main-content-wrapper') ? 88 : 4;
 
         container.classList.toggle('can-scroll-top', maxScroll > 4 && scrollTop > 4);
-        container.classList.toggle('can-scroll-bottom', maxScroll > 4 && (maxScroll - scrollTop) > 4);
+        container.classList.toggle('can-scroll-bottom', maxScroll > bottomThreshold && (maxScroll - scrollTop) > bottomThreshold);
 
         const scrollLeft = Math.max(0, content.scrollLeft);
         const maxScrollX = Math.max(0, content.scrollWidth - content.clientWidth);

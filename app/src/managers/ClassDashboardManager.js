@@ -5,11 +5,11 @@
  */
 
 import { appState } from '../state/State.js';
-import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
+import { StatsService } from '../services/StatsService.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
@@ -76,14 +76,14 @@ export const ClassDashboardManager = {
         if (!this.modal || this._listenersBound) return;
         this._listenersBound = true;
 
-        // Attach Context Menu listener for Prompt Preview (Right Click)
-        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
-        if (generateBtn) {
-            generateBtn.addEventListener('contextmenu', (e) => {
+        // Attach Context Menu listener for Prompt Preview (Right Click on either Generate button)
+        this.modal.addEventListener('contextmenu', (e) => {
+            const triggerBtn = e.target.closest('#generateSynthesisBtn, #generateSynthesisPlaceholderBtn');
+            if (triggerBtn) {
                 e.preventDefault();
                 this._showPromptPreview();
-            });
-        }
+            }
+        });
 
         // Setup scroll-to-top buttons for highlights lists
         const progressList = this.modal?.querySelector('#highlightProgressList');
@@ -151,17 +151,26 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Get students data for a specific class or current filtered results
-     * @param {string|null} classId Optional class ID. If null, uses current appState.filteredResults
+     * Get students data for a specific class or the full active class roster
+     * (independent of active list search/stat filters, consistent with StatsUIManager)
+     * @param {string|null} classId Optional class ID. If null, uses active class roster or filteredResults fallback
      * @returns {Array} Array of student objects with grades and info
      */
     getStudentsData(classId = null) {
-        let sourceData = appState.filteredResults;
         const period = appState.currentPeriod;
+        let sourceData = appState.filteredResults || [];
 
-        // If specific class requested, fetch from main repository
         if (classId) {
-            sourceData = ClassManager.getStudentsForClass(classId);
+            sourceData = ClassManager.getStudentsForClass(classId).filter(
+                r => !Utils.isStudentDepartedBeforePeriod?.(r, period)
+            );
+        } else if (appState.currentClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
+            const classRoster = appState.generatedResults.filter(
+                r => r.classId === appState.currentClassId && !Utils.isStudentDepartedBeforePeriod?.(r, period)
+            );
+            if (classRoster.length > 0) {
+                sourceData = classRoster;
+            }
         }
 
         // Robust data gathering that doesn't fail on appreciation errors
@@ -189,7 +198,7 @@ export const ClassDashboardManager = {
                     : null;
 
                 const evolution = (prevGrade !== null && !isNaN(prevGrade))
-                    ? currentGrade - prevGrade
+                    ? parseFloat((currentGrade - prevGrade).toFixed(2))
                     : null;
 
                 return {
@@ -201,7 +210,7 @@ export const ClassDashboardManager = {
                     grade: currentGrade,
                     previousGrade: prevGrade,
                     evolution: evolution,
-                    appreciation: r.appreciation || '',
+                    appreciation: periodData.appreciation ?? r.appreciation ?? '',
                     context: periodData.context || ''
                 };
             })
@@ -243,29 +252,26 @@ export const ClassDashboardManager = {
 
     /**
      * Calculate all statistics for the class
+     * Mutualizes calculations with StatsService and respects appState.evolutionThresholds
      * @param {Array} students 
-     * @returns {Object} Computed statistics
+     * @returns {Object|null} Computed statistics
      */
     calculateStatistics(students) {
-        if (students.length === 0) return null;
+        if (!students || students.length === 0) return null;
 
         const grades = students.map(s => s.grade).sort((a, b) => a - b);
         const n = grades.length;
 
-        // Basic stats
+        // Basic stats & mutualized StatsService metrics
         const sum = grades.reduce((a, b) => a + b, 0);
         const average = sum / n;
         const min = grades[0];
         const max = grades[n - 1];
         const minStudents = students.filter(s => s.grade === min).map(s => s.fullName);
         const maxStudents = students.filter(s => s.grade === max).map(s => s.fullName);
-        const median = n % 2 === 0
-            ? (grades[n / 2 - 1] + grades[n / 2]) / 2
-            : grades[Math.floor(n / 2)];
-
-        // Standard deviation
-        const variance = grades.reduce((acc, g) => acc + Math.pow(g - average, 2), 0) / n;
-        const stdDev = Math.sqrt(variance);
+        const median = StatsService.calculateMedian(grades);
+        const stdDev = StatsService.calculateStandardDeviation(grades);
+        const heterogeneity = StatsService.calculateHeterogeneity(grades);
 
         // Success Rate (grade >= 10/20)
         const aboveTenCount = grades.filter(g => g >= 10).length;
@@ -274,7 +280,10 @@ export const ClassDashboardManager = {
         // Distribution by range
         const distribution = computeGradeDistributionMap(grades);
 
-        // Evolution analysis (only students with previous grades)
+        // Evolution analysis using configured thresholds
+        const posThreshold = appState.evolutionThresholds?.positive ?? 0.5;
+        const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
+
         const withEvolution = students.filter(s => s.evolution !== null);
         let avgEvolution = null;
         let progressCount = 0;
@@ -284,29 +293,45 @@ export const ClassDashboardManager = {
         if (withEvolution.length > 0) {
             avgEvolution = withEvolution.reduce((a, s) => a + s.evolution, 0) / withEvolution.length;
             withEvolution.forEach(s => {
-                if (s.evolution > 0.5) progressCount++;
-                else if (s.evolution < -0.5) regressionCount++;
+                if (s.evolution >= posThreshold) progressCount++;
+                else if (s.evolution <= negThreshold) regressionCount++;
                 else stableCount++;
             });
         }
 
-        // Top progressions and regressions
+        // Top significant progressions and regressions
         const sortedByEvolution = withEvolution.slice().sort((a, b) => b.evolution - a.evolution);
-        const topProgressions = sortedByEvolution.filter(s => s.evolution > 0).slice(0, 15);
-        const topRegressions = sortedByEvolution.filter(s => s.evolution < 0).slice(-15).reverse();
+        const topProgressions = sortedByEvolution.filter(s => s.evolution >= posThreshold).slice(0, 15);
+        const topRegressions = sortedByEvolution
+            .filter(s => s.evolution <= negThreshold)
+            .slice(-15)
+            .reverse();
 
-        // Students at risk (low grades or significant regression)
-        const atRisk = students.filter(s => s.grade < 8 || (s.evolution !== null && s.evolution < -2));
+        // Students genuinely requiring pedagogical attention:
+        // - Average below 10/20 (consistent with successRate < 100%)
+        // - Or sharp drop (<= -1.5 pt) regardless of grade
+        // - Or moderate drop (<= negThreshold) with fragile/medium grade (< 12/20)
+        const atRisk = students
+            .filter(s =>
+                s.grade < 10 ||
+                (s.evolution !== null && (s.evolution <= -1.5 || (s.grade < 12 && s.evolution <= negThreshold)))
+            )
+            .sort((a, b) => {
+                const scoreA = a.grade + Math.min(0, (a.evolution || 0) * 1.2);
+                const scoreB = b.grade + Math.min(0, (b.evolution || 0) * 1.2);
+                return scoreA - scoreB;
+            });
 
         return {
             count: n,
             average: average,
-            median: median,
+            median: typeof median === 'number' ? median : average,
             min: min,
             max: max,
             minStudents: minStudents,
             maxStudents: maxStudents,
             stdDev: stdDev,
+            heterogeneity: heterogeneity,
             successRate: successRate,
             aboveTenCount: aboveTenCount,
             distribution: distribution,
@@ -319,7 +344,7 @@ export const ClassDashboardManager = {
             atRisk: atRisk,
             hasEvolutionData: withEvolution.length > 0,
 
-            // New Metadata for AI & Consistency
+            // Metadata for AI & Consistency
             dataHash: this._computeClassDataHash(students),
             appreciationsList: students.filter(s => s.appreciation && s.appreciation.trim().length > 0)
                 .map(s => ({ prenom: s.prenom, nom: s.nom, text: s.appreciation }))
@@ -334,8 +359,6 @@ export const ClassDashboardManager = {
      */
     _computeClassDataHash(students) {
         if (!students || students.length === 0) return '';
-        // Create a signature based on ID, grade, and appreciation content length
-        // We use length/presence to detect changes without storing full text in hash
         return students.map(s =>
             `${s.id}:${s.grade}:${s.appreciation ? s.appreciation.length : 0}`
         ).join('|');
@@ -349,11 +372,11 @@ export const ClassDashboardManager = {
     renderDashboard(stats, students) {
         if (!stats || !this._ensureModal()) return;
 
-        // Update header info using new context line
+        // Update header info using context line pills
         const periodBadge = this.modal?.querySelector('#dashboardPeriodBadge');
         const studentCount = this.modal?.querySelector('#dashboardStudentCount');
         const classBadge = this.modal?.querySelector('#dashboardClassBadge');
-        const classDot = this.modal?.querySelector('#dashboardClassDot');
+        const subjectBadge = this.modal?.querySelector('#dashboardSubjectBadge');
 
         if (periodBadge) {
             const periodLabels = { T1: 'Trimestre 1', T2: 'Trimestre 2', T3: 'Trimestre 3', S1: 'Semestre 1', S2: 'Semestre 2' };
@@ -368,17 +391,12 @@ export const ClassDashboardManager = {
         const currentClass = classes.find(c => c.id === appState.currentClassId);
         if (classBadge && currentClass) {
             classBadge.textContent = currentClass.name;
-            classBadge.style.display = 'inline';
-            if (classDot) classDot.style.display = 'inline';
+            classBadge.style.display = 'inline-flex';
         } else if (classBadge) {
             classBadge.style.display = 'none';
-            if (classDot) classDot.style.display = 'none';
         }
 
         // Retrieve and display active subject (discipline)
-        const subjectBadge = this.modal?.querySelector('#dashboardSubjectBadge');
-        const subjectDot = this.modal?.querySelector('#dashboardSubjectDot');
-        
         const customStyle = appState.subjects?.['MonStyle']?.iaConfig;
         const genericStyle = appState.subjects?.['Générique']?.iaConfig;
         const iaConfig = customStyle || genericStyle || {};
@@ -386,50 +404,67 @@ export const ClassDashboardManager = {
 
         if (subjectBadge && discipline) {
             subjectBadge.textContent = discipline;
-            subjectBadge.style.display = 'inline';
-            if (subjectDot) subjectDot.style.display = 'inline';
+            subjectBadge.style.display = 'inline-flex';
         } else if (subjectBadge) {
             subjectBadge.style.display = 'none';
-            if (subjectDot) subjectDot.style.display = 'none';
         }
 
-        // Display Class Stats (Moyenne, Min, Max) in Cohort Stats Bar
+        // Display Class Stats (Moyenne, Médiane, Min, Max) in Cohort Stats Bar
         const statAverage = this.modal?.querySelector('#cohortStatAverage');
+        const statMedian = this.modal?.querySelector('#cohortStatMedian');
+        const statMedianItem = this.modal?.querySelector('#cohortStatMedianItem');
         const statMin = this.modal?.querySelector('#cohortStatMin');
+        const statMinItem = this.modal?.querySelector('#cohortStatMinItem');
         const statMax = this.modal?.querySelector('#cohortStatMax');
+        const statMaxItem = this.modal?.querySelector('#cohortStatMaxItem');
 
-        if (stats) {
-            const moy = stats.average.toFixed(1).replace('.', ',');
-            const min = stats.min.toFixed(1).replace('.', ',');
-            const max = stats.max.toFixed(1).replace('.', ',');
+        const moy = stats.average.toFixed(1).replace('.', ',');
+        const med = stats.median.toFixed(1).replace('.', ',');
+        const min = stats.min.toFixed(1).replace('.', ',');
+        const max = stats.max.toFixed(1).replace('.', ',');
+        const stdDevFormatted = stats.stdDev.toFixed(1).replace('.', ',');
 
-            if (statAverage) {
-                statAverage.textContent = `${moy}/20`;
-                // Remove previous grade range classes
-                statAverage.className = 'stat-value';
-                const gradeClass = Utils.getGradeClass(stats.average);
-                if (gradeClass) {
-                    statAverage.classList.add(gradeClass);
-                }
-            }
-            if (statMin) {
-                statMin.textContent = `${min}/20`;
-                const minLabel = stats.minStudents.length > 1 ? 'Élèves' : 'Élève';
-                const minTooltip = `<strong>${minLabel} (${min}/20) :</strong><br>${stats.minStudents.join('<br>')}`;
-                TooltipsUI.updateTooltip(statMin, minTooltip);
-            }
-            if (statMax) {
-                statMax.textContent = `${max}/20`;
-                const maxLabel = stats.maxStudents.length > 1 ? 'Élèves' : 'Élève';
-                const maxTooltip = `<strong>${maxLabel} (${max}/20) :</strong><br>${stats.maxStudents.join('<br>')}`;
-                TooltipsUI.updateTooltip(statMax, maxTooltip);
+        if (statAverage) {
+            statAverage.innerHTML = `${moy}<span class="stat-denominator">/20</span>`;
+            statAverage.className = 'stat-value';
+            const gradeClass = Utils.getGradeClass(stats.average);
+            if (gradeClass) {
+                statAverage.classList.add(gradeClass);
             }
         }
 
-        // Update cohort header micro-metric (success rate)
+        if (statMedian) {
+            statMedian.innerHTML = `${med}<span class="stat-denominator">/20</span>`;
+            const hetLabel = stats.heterogeneity?.label ? ` · ${stats.heterogeneity.label}` : '';
+            const medTooltip = `<strong>Médiane (${med}/20)</strong><br>50% des élèves ont au moins ${med}/20<br>Écart-type : ${stdDevFormatted} pt${hetLabel}`;
+            TooltipsUI.updateTooltip(statMedianItem || statMedian, medTooltip);
+        }
+
+        if (statMin) {
+            statMin.innerHTML = `${min}<span class="stat-denominator">/20</span>`;
+            const minLabel = stats.minStudents.length > 1 ? 'Élèves' : 'Élève';
+            const minNames = stats.minStudents.map(name => Utils.escapeHtml(name)).join('<br>');
+            const minTooltip = `<strong>${minLabel} (${min}/20) :</strong><br>${minNames}`;
+            TooltipsUI.updateTooltip(statMinItem || statMin, minTooltip);
+        }
+
+        if (statMax) {
+            statMax.innerHTML = `${max}<span class="stat-denominator">/20</span>`;
+            const maxLabel = stats.maxStudents.length > 1 ? 'Élèves' : 'Élève';
+            const maxNames = stats.maxStudents.map(name => Utils.escapeHtml(name)).join('<br>');
+            const maxTooltip = `<strong>${maxLabel} (${max}/20) :</strong><br>${maxNames}`;
+            TooltipsUI.updateTooltip(statMaxItem || statMax, maxTooltip);
+        }
+
+        // Update cohort header micro-metric (success rate) with semantic mineral color & tooltip
         const cohortHeaderMetric = this.modal?.querySelector('#cohortHeaderMetric');
         if (cohortHeaderMetric) {
-            cohortHeaderMetric.innerHTML = `<iconify-icon icon="solar:shield-check-linear"></iconify-icon> <strong>${stats.successRate.toFixed(0)}%</strong> de réussite`;
+            const rateRounded = Math.round(stats.successRate);
+            const semanticClass = rateRounded >= 70 ? 'positive' : rateRounded >= 50 ? 'warning' : 'negative';
+            cohortHeaderMetric.className = `cohort-header-metric tooltip ${semanticClass}`;
+            cohortHeaderMetric.innerHTML = `<iconify-icon icon="solar:shield-check-linear"></iconify-icon> <strong>${rateRounded}%</strong> de réussite`;
+            const successTooltip = `<strong>Taux de réussite (≥ 10/20)</strong><br>${stats.aboveTenCount} élève${stats.aboveTenCount > 1 ? 's' : ''} sur ${stats.count} ont la moyenne`;
+            TooltipsUI.updateTooltip(cohortHeaderMetric, successTooltip);
         }
 
         // Update Highlights
@@ -440,54 +475,95 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Update highlights sections (progressions and regressions)
+     * Update highlights sections (progressions and students to watch)
      * @param {Object} stats 
      */
     updateHighlights(stats) {
         if (!stats || !this._ensureModal()) return;
-        // Top Progressions
+
+        const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
         const progressList = this.modal?.querySelector('#highlightProgressList');
+        const progressCountBadge = this.modal?.querySelector('#highlightProgressCount');
+
+        // 1. Top Progressions
         if (progressList) {
             TooltipsUI.cleanupTooltipsIn(progressList);
-            if (stats.topProgressions.length > 0) {
+
+            if (!stats.hasEvolutionData) {
+                const nextPeriodShort = appState.periodSystem === 'semestres' ? 'S2' : 'T2';
+                const nextPeriodFull = appState.periodSystem === 'semestres' ? 'semestre' : 'trimestre';
+                if (progressCountBadge) {
+                    progressCountBadge.textContent = `Dès le ${nextPeriodShort}`;
+                    progressCountBadge.className = 'highlight-count-badge muted';
+                }
+                progressList.innerHTML = `<div class="highlight-empty">Comparaison disponible au prochain ${nextPeriodFull}</div>`;
+            } else if (stats.topProgressions.length > 0) {
+                if (progressCountBadge) {
+                    progressCountBadge.textContent = String(stats.topProgressions.length);
+                    progressCountBadge.className = 'highlight-count-badge positive';
+                }
                 progressList.innerHTML = stats.topProgressions.map(s => {
                     const formattedGrade = s.grade.toFixed(1).replace('.', ',');
                     const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
-                    const tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20 (+${formattedEvolution} pts)`;
+                    const unit = Math.abs(s.evolution) >= 2 ? 'pts' : 'pt';
+                    const tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20 (+${formattedEvolution} ${unit})`;
                     return `
                         <div class="highlight-item" data-student-id="${s.id}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                             <div class="highlight-item-left">
                                 ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                                 <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                             </div>
-                            <span class="highlight-evolution positive">+${formattedEvolution} pts</span>
+                            <div class="highlight-item-metrics">
+                                <span class="highlight-grade">${formattedGrade}<small>/20</small></span>
+                                <span class="highlight-evolution positive">+${formattedEvolution} ${unit}</span>
+                            </div>
                         </div>
                     `;
                 }).join('');
             } else {
+                if (progressCountBadge) {
+                    progressCountBadge.textContent = '0';
+                    progressCountBadge.className = 'highlight-count-badge muted';
+                }
                 progressList.innerHTML = '<div class="highlight-empty">Aucune progression significative</div>';
             }
         }
 
-        // At Risk / Regressions
+        // 2. Students to Watch (Élèves à surveiller)
         const riskList = this.modal?.querySelector('#highlightRiskList');
+        const riskCountBadge = this.modal?.querySelector('#highlightRiskCount');
+
         if (riskList) {
             TooltipsUI.cleanupTooltipsIn(riskList);
-            // Combine regressions and low grades
-            const atRiskStudents = [...new Map([...stats.topRegressions, ...stats.atRisk].map(s => [s.id, s])).values()].slice(0, 15);
+            const atRiskStudents = (stats.atRisk || []).slice(0, 15);
+
+            if (riskCountBadge) {
+                riskCountBadge.textContent = String(atRiskStudents.length);
+                riskCountBadge.className = `highlight-count-badge ${atRiskStudents.length > 0 ? 'negative' : 'muted'}`;
+            }
 
             if (atRiskStudents.length > 0) {
                 riskList.innerHTML = atRiskStudents.map(s => {
                     const formattedGrade = s.grade.toFixed(1).replace('.', ',');
                     let tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20`;
-                    let evolutionText = '';
+                    let metricsHTML = '';
 
-                    if (s.evolution !== null) {
+                    if (s.evolution !== null && s.evolution <= negThreshold) {
                         const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
-                        tooltipText += ` (${formattedEvolution} pts)`;
-                        evolutionText = `${formattedEvolution} pts`;
+                        const unit = Math.abs(s.evolution) >= 2 ? 'pts' : 'pt';
+                        tooltipText += ` (${formattedEvolution} ${unit})`;
+                        metricsHTML = `
+                            <span class="highlight-grade">${formattedGrade}<small>/20</small></span>
+                            <span class="highlight-evolution negative">${formattedEvolution} ${unit}</span>
+                        `;
                     } else {
-                        evolutionText = `Moy: ${formattedGrade}`;
+                        if (s.evolution !== null) {
+                            const sign = s.evolution >= 0 ? '+' : '';
+                            const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
+                            const unit = Math.abs(s.evolution) >= 2 ? 'pts' : 'pt';
+                            tooltipText += ` (${sign}${formattedEvolution} ${unit})`;
+                        }
+                        metricsHTML = `<span class="highlight-evolution negative">${formattedGrade}/20</span>`;
                     }
 
                     return `
@@ -496,7 +572,9 @@ export const ClassDashboardManager = {
                                 ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                                 <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                             </div>
-                            <span class="highlight-evolution negative">${evolutionText}</span>
+                            <div class="highlight-item-metrics">
+                                ${metricsHTML}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -532,7 +610,6 @@ export const ClassDashboardManager = {
                     </button>
                 </div>
             `;
-            // Attach event listener for the placeholder button since it's injected dynamically
             const placeholderBtn = content.querySelector('#generateSynthesisPlaceholderBtn');
             if (placeholderBtn) {
                 placeholderBtn.addEventListener('click', () => {
@@ -541,9 +618,10 @@ export const ClassDashboardManager = {
             }
         }
 
-        // Reset button state to "Générer"
+        // Reset button state to "Générer" and hide header duplicate while placeholder CTA is visible
         if (generateBtn) {
             UI.setGenerateButtonState(generateBtn, 'idle');
+            generateBtn.style.display = 'none';
         }
 
         // Hide copy button
@@ -574,7 +652,7 @@ export const ClassDashboardManager = {
             this.cachedSynthesisPeriod === currentPeriod) {
 
             this._applySynthesisToUI(this.cachedSynthesisHTML);
-            this._checkStaleData(); // Check stale data for memory cache too
+            this._checkStaleData();
             return;
         }
 
@@ -585,9 +663,7 @@ export const ClassDashboardManager = {
         if (currentClass && currentClass.analyses && currentClass.analyses[currentPeriod]) {
             const savedAnalysis = currentClass.analyses[currentPeriod];
 
-            // Check if saved analysis has valid content
             if (savedAnalysis.content) {
-                // Restore to UI
                 this._applySynthesisToUI(savedAnalysis.content);
 
                 // Update in-memory cache
@@ -601,11 +677,7 @@ export const ClassDashboardManager = {
                 this.cachedSynthesisModel = savedAnalysis.model || null;
                 this.cachedSynthesisSubject = savedAnalysis.subject || null;
 
-                // Update revert button visibility
                 this._updateRevertButtonState();
-
-                // Check for stale data (if data has changed since generation)
-                // We do this AFTER applying the content to ensure the button state updates correctly
                 this._checkStaleData();
                 return;
             }
@@ -628,11 +700,9 @@ export const ClassDashboardManager = {
         const dataChanged = this.cachedStats.dataHash !== this.cachedSynthesisDataHash;
 
         if (dataChanged) {
-            // Data is stale
             UI.setGenerateButtonState(generateBtn, 'dirty');
             generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
         } else {
-            // Data is fresh
             UI.setGenerateButtonState(generateBtn, 'done');
             generateBtn.title = "";
         }
@@ -676,6 +746,7 @@ export const ClassDashboardManager = {
 
         // Update button to show "Régénérer" since synthesis exists
         if (generateBtn) {
+            generateBtn.style.display = 'inline-flex';
             UI.setGenerateButtonState(generateBtn, 'done');
         }
 
@@ -705,7 +776,7 @@ export const ClassDashboardManager = {
 
         if (!content || !this.cachedStats) return;
 
-        // Show loading skeleton matching the Bento layout
+        // Show loading skeleton matching the 4-card Bento layout
         content.innerHTML = `
             <div class="appreciation-skeleton class-synthesis-skeleton ai-synthesis-text">
                 <div class="synthesis-section synthesis-intro-card" style="opacity: 0.6; min-height: 120px;">
@@ -737,6 +808,7 @@ export const ClassDashboardManager = {
         `;
 
         if (generateBtn) {
+            generateBtn.style.display = 'inline-flex';
             UI.setGenerateButtonState(generateBtn, 'loading');
         }
 
@@ -769,18 +841,16 @@ export const ClassDashboardManager = {
             });
 
             if (stillOnSameContext) {
-                // Cache the synthesis for persistence across modal open/close
                 this.cachedSynthesisHTML = synthesisHTML;
-                this.originalSynthesisHTML = synthesisHTML; // Save as original when first generated
+                this.originalSynthesisHTML = synthesisHTML;
                 this.cachedSynthesisRawText = response.text;
                 this.originalSynthesisRawText = response.text;
                 this.cachedSynthesisClassId = targetClassId;
-                this.cachedSynthesisDataHash = stats.dataHash; // Update hash
+                this.cachedSynthesisDataHash = stats.dataHash;
                 this.cachedSynthesisPeriod = targetPeriod;
                 this.cachedSynthesisModel = targetModel;
                 this.cachedSynthesisSubject = targetSubject;
 
-                // Apply to UI with progressive reveal animation!
                 await this._applySynthesisToUI(synthesisHTML, true);
             }
 
@@ -796,6 +866,7 @@ export const ClassDashboardManager = {
         } finally {
             if (generateBtn && appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod) {
                 const hasSynthesis = Boolean(this.cachedSynthesisHTML && this.cachedSynthesisClassId === targetClassId && this.cachedSynthesisPeriod === targetPeriod);
+                generateBtn.style.display = 'inline-flex';
                 UI.setGenerateButtonState(generateBtn, hasSynthesis ? 'done' : 'idle');
                 if (hasSynthesis) {
                     this._checkStaleData();
@@ -812,32 +883,29 @@ export const ClassDashboardManager = {
         const currentClassId = options.classId !== undefined ? options.classId : appState.currentClassId;
         const currentPeriod = options.period || appState.currentPeriod;
 
-        if (!currentClassId) return; // Legacy mode (no class ID) might not support persistence
+        if (!currentClassId) return;
 
         const classes = appState.classes || [];
         const classObj = classes.find(c => c.id === currentClassId);
 
         if (classObj) {
-            // Init analyses object if missing
             if (!classObj.analyses) {
                 classObj.analyses = {};
             }
 
             const existingAnalysis = classObj.analyses[currentPeriod] || {};
 
-            // Save analysis for this period
             classObj.analyses[currentPeriod] = {
                 content: htmlContent,
-                originalContent: options.originalContent || existingAnalysis.originalContent || this.originalSynthesisHTML || htmlContent, // Save original
+                originalContent: options.originalContent || existingAnalysis.originalContent || this.originalSynthesisHTML || htmlContent,
                 rawText: options.rawText !== undefined ? options.rawText : (this.cachedSynthesisRawText || existingAnalysis.rawText || ''),
                 originalRawText: options.originalRawText !== undefined ? options.originalRawText : (this.originalSynthesisRawText || existingAnalysis.originalRawText || ''),
                 timestamp: Date.now(),
                 model: options.model || appState.currentAIModel,
                 subject: options.subject || appState.currentSubject,
-                dataHash: dataHash || null // Save the signature of data used
+                dataHash: dataHash || null
             };
 
-            // Trigger storage save
             StorageManager.saveAppState();
         }
     },
@@ -967,6 +1035,7 @@ ${stats.appreciationsList.map((a, idx) => {
 
     /**
      * Handles refinement actions on the class analysis (summarize, positive, actionable)
+     * Preserves the structured 4-card Bento JSON format.
      * @param {HTMLButtonElement} button - The clicked button with data-refine-type
      */
     async handleClassAnalysisActions(button) {
@@ -974,7 +1043,6 @@ ${stats.appreciationsList.map((a, idx) => {
         const type = button.dataset.refineType;
         const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
 
-        // Find the text of current synthesis (prefer in-memory raw text or strip HTML from cachedSynthesisHTML)
         const currentTextElement = contentDiv?.querySelector('.ai-synthesis-text');
         if (!this.cachedSynthesisHTML && !currentTextElement) return;
 
@@ -992,17 +1060,23 @@ ${stats.appreciationsList.map((a, idx) => {
         button.disabled = true;
 
         const prompts = {
-            'summarize': "Résume cette analyse en 3 points clés très concis.",
-            'positive': "Reformule cette appréciation pour insister davantage sur les aspects positifs et encourageants.",
-            'actionable': "Transforme cette analyse en un plan d'action concret pour le prochain trimestre (3-4 objectifs collectifs)."
+            'summarize': "Condense fortement cette analyse : rédige une synthèse globale très directe de 1 à 2 phrases (max 35 mots) et raccourcis chaque point fort, point de vigilance et recommandation à l'essentiel (max 10 mots par puce).",
+            'positive': "Reformule l'ensemble de cette analyse avec un ton très encourageant, valorisant et constructif : mets en lumière le potentiel du groupe et transforme les points de vigilance en leviers de progression bienveillants.",
+            'actionable': "Oriente cette analyse vers l'action concrète pour la prochaine période : rends la synthèse très opérationnelle et formule 2 à 3 recommandations pédagogiques et méthodologiques directement applicables en classe."
         };
 
         try {
-            const systemPrompt = "Tu es un conseiller pédagogique. Réécris ou ajuste la synthèse de classe fournie selon les instructions de l'enseignant. Garde un ton professionnel et constructif. Réponds directement sans introduction ni formule de politesse.";
-            const userPrompt = `${prompts[type]}\n\nAnalyse originale :\n${currentContentText}`;
+            const systemPrompt = `Tu es un conseiller pédagogique expert. Ajuste la synthèse de classe fournie selon la consigne de l'enseignant tout en conservant impérativement la structure JSON stricte à 4 clés :
+{
+  "synthesis": "Texte de la synthèse générale...",
+  "strengths": ["Point fort 1...", "Point fort 2..."],
+  "vigilances": ["Point de vigilance 1...", "Point de vigilance 2..."],
+  "recommendations": ["Recommandation 1...", "Recommandation 2..."]
+}
+Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Réponds directement par l'objet JSON brut.`;
+            const userPrompt = `${prompts[type]}\n\nAnalyse à ajuster :\n${currentContentText}`;
             const resp = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
 
-            // Format and display
             const formattedText = this._formatSynthesisText(resp.text);
             const refinedHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
@@ -1038,17 +1112,14 @@ ${stats.appreciationsList.map((a, idx) => {
         const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
         if (!contentDiv || !this.originalSynthesisHTML) return;
 
-        // Apply back original HTML
         this.cachedSynthesisHTML = this.originalSynthesisHTML;
         this.cachedSynthesisRawText = this.originalSynthesisRawText || '';
         await UI.animateHtmlReveal(contentDiv, this.originalSynthesisHTML);
 
-        // Save back to storage
         this._saveSynthesisToStorage(this.originalSynthesisHTML, this.cachedSynthesisDataHash, {
             rawText: this.originalSynthesisRawText || ''
         });
 
-        // Update revert button visibility
         this._updateRevertButtonState();
 
         UI.showNotification("Synthèse d'origine restaurée !", "success");
@@ -1068,9 +1139,8 @@ ${stats.appreciationsList.map((a, idx) => {
         await FocusPanelRefinement.displayPromptModal(combined, 'Prévisualisation du Prompt');
     },
 
-
     /**
-     * Copy synthesis to clipboard
+     * Copy structured synthesis to clipboard with tactile visual feedback
      */
     copySynthesis() {
         if (!this._ensureModal()) return;
@@ -1080,8 +1150,49 @@ ${stats.appreciationsList.map((a, idx) => {
             return;
         }
 
-        navigator.clipboard.writeText(content.innerText)
-            .then(() => UI.showNotification("Synthèse copiée !", "success"))
+        // Build clean structured text with headers and bullet points for pasting into school reports
+        const sections = content.querySelectorAll('.synthesis-section');
+        let textToCopy = '';
+
+        if (sections.length > 0) {
+            const blocks = [];
+            sections.forEach(sec => {
+                const headerEl = sec.querySelector('.synthesis-intro-header span, .synthesis-section-header span');
+                const introTextEl = sec.querySelector('.synthesis-intro-text');
+                const listItems = sec.querySelectorAll('.synthesis-list li');
+                const title = headerEl ? headerEl.textContent.trim() : '';
+
+                if (introTextEl) {
+                    const body = introTextEl.textContent.trim();
+                    blocks.push(title ? `${title} :\n${body}` : body);
+                } else if (listItems.length > 0) {
+                    const bullets = Array.from(listItems).map(li => `• ${li.textContent.trim()}`).join('\n');
+                    blocks.push(title ? `${title} :\n${bullets}` : bullets);
+                }
+            });
+            textToCopy = blocks.join('\n\n');
+        }
+
+        if (!textToCopy) {
+            textToCopy = (content.innerText || content.textContent || '').trim();
+        }
+
+        const copyBtn = this.modal?.querySelector('#copyDashboardSynthesisBtn');
+
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                UI.showNotification("Synthèse copiée !", "success");
+                if (copyBtn) {
+                    if (copyBtn._copyFeedbackTimer) clearTimeout(copyBtn._copyFeedbackTimer);
+                    copyBtn.classList.add('copied');
+                    copyBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Copié';
+                    copyBtn._copyFeedbackTimer = setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon> Copier';
+                        copyBtn._copyFeedbackTimer = null;
+                    }, 1800);
+                }
+            })
             .catch(() => UI.showNotification("Erreur lors de la copie.", "error"));
     },
 
@@ -1095,10 +1206,16 @@ ${stats.appreciationsList.map((a, idx) => {
         // Normalize multiple ellipsis (e.g., "......" -> "...")
         text = text.replace(/\.{3,}/g, '...');
 
-        // 1. JSON Parser Mode (Robust)
+        // 1. JSON Parser Mode (Robust, handles optional markdown fences or surrounding text)
         let cleaned = text.trim();
         if (cleaned.startsWith('```')) {
             cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+        } else {
+            const firstBrace = cleaned.indexOf('{');
+            const lastBrace = cleaned.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace > firstBrace) {
+                cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+            }
         }
 
         try {
@@ -1109,7 +1226,7 @@ ${stats.appreciationsList.map((a, idx) => {
             const recommendations = data.recommendations || data.recommendation || [];
 
             let html = '';
-            
+
             if (synthesis) {
                 html += `
                     <div class="synthesis-section synthesis-intro-card">
@@ -1162,7 +1279,6 @@ ${stats.appreciationsList.map((a, idx) => {
 
         let html = '';
 
-        // Split text into sections by looking for section headers
         const lines = text.split('\n');
         let currentSection = null;
         let currentContent = [];
@@ -1174,19 +1290,16 @@ ${stats.appreciationsList.map((a, idx) => {
                     currentSection.toLowerCase().includes(s.title.toLowerCase())
                 ) || { icon: 'info-circle', color: 'primary' };
 
-                // Clean the title (remove ** and emoji)
-                let cleanTitle = currentSection
+                const cleanTitle = currentSection
                     .replace(/\*\*/g, '')
                     .replace(/[📝📊✅⚠️💡]/g, '')
                     .trim();
 
-                // Process content - convert bullet points to list items
                 const items = currentContent
                     .map(line => line.replace(/^[•\-→]\s*/, '').trim())
                     .filter(line => line.length > 0);
 
                 if (config.isFullWidth) {
-                    // Narrative section (Synthesis)
                     const paragraph = items.join(' ');
                     html += `
                     <div class="synthesis-section synthesis-intro-card">
@@ -1198,7 +1311,6 @@ ${stats.appreciationsList.map((a, idx) => {
                     </div>
                  `;
                 } else {
-                    // Bullet point sections
                     html += `
                     <div class="synthesis-section synthesis-section--${config.color}">
                         <div class="synthesis-section-header">
@@ -1221,7 +1333,6 @@ ${stats.appreciationsList.map((a, idx) => {
             const trimmed = line.trim();
             if (!trimmed) continue;
 
-            // Check if line is a section header (contains emoji or **Title**)
             const isHeader = sections.some(s =>
                 trimmed.includes(s.emoji) ||
                 trimmed.match(new RegExp(`\\*\\*.*${s.title}.*\\*\\*`, 'i'))
@@ -1235,10 +1346,21 @@ ${stats.appreciationsList.map((a, idx) => {
             }
         }
 
-        // Flush last section
         flushSection();
 
-        return html || `<p>${Utils.escapeHtml(text)}</p>`;
+        if (html) return html;
+
+        // 3. Plain-text / bullet fallback wrapped in intro card so layout never collapses
+        const fallbackLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        return `
+            <div class="synthesis-section synthesis-intro-card">
+                <div class="synthesis-intro-header">
+                    <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
+                    <span>Synthèse de la Classe</span>
+                </div>
+                <p class="synthesis-intro-text">${fallbackLines.map(l => Utils.escapeHtml(l)).join('<br>')}</p>
+            </div>
+        `;
     },
 
     /**

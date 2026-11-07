@@ -450,9 +450,15 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         expect(wrapper.classList.contains('can-scroll-top')).toBe(false);
         expect(wrapper.classList.contains('can-scroll-bottom')).toBe(false);
 
-        // 5. No overflow in list view (scrollHeight <= clientHeight) -> both scrims disabled
+        // 5. Overflow limited to bottom FAB clearance padding (<= 88px) -> bottom scrim disabled
         wrapper.dataset.view = 'list';
         mainContent.scrollTop = 0;
+        Object.defineProperty(mainContent, 'scrollHeight', { value: 560, configurable: true });
+        GlobalListeners.updateMainScrollAffordances();
+        expect(wrapper.classList.contains('can-scroll-top')).toBe(false);
+        expect(wrapper.classList.contains('can-scroll-bottom')).toBe(false);
+
+        // 6. No overflow in list view (scrollHeight <= clientHeight) -> both scrims disabled
         Object.defineProperty(mainContent, 'scrollHeight', { value: 500, configurable: true });
         GlobalListeners.updateMainScrollAffordances();
         expect(wrapper.classList.contains('can-scroll-top')).toBe(false);

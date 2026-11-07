@@ -432,10 +432,10 @@
         flex-shrink: 0;
         height: 36px;
         padding: 0 12px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        background: var(--bg-secondary);
-        color: var(--text-secondary);
+        border: 1px solid transparent;
+        border-radius: var(--dropdown-item-radius);
+        background: transparent;
+        color: var(--text-tertiary);
         font-size: 0.84rem;
         box-shadow: none;
         cursor: pointer;
@@ -454,7 +454,7 @@
     .ui-tabs-action-btn:hover {
         background: var(--item-hover-bg);
         color: var(--text-primary);
-        border-color: var(--border-color);
+        border-color: transparent;
     }
 
     .ui-tabs-action-btn:active {

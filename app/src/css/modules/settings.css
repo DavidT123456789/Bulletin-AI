@@ -411,13 +411,7 @@
 
 
 
-/* API key groups list & status badges */
-.api-keys-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
+/* API key groups & status badges */
 .api-key-title-group {
     display: flex;
     align-items: center;
@@ -522,17 +516,6 @@
     font-weight: 600;
 }
 
-/* Active model label in settings */
-.active-model-label {
-    font-size: 0.8rem;
-    color: var(--text-tertiary);
-    font-weight: 500;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-right: 8px;
-    margin-bottom: 0;
-}
-
 /* API key header links container */
 .api-key-links {
     display: flex;
@@ -553,12 +536,6 @@
     color: var(--text-secondary);
 }
 
-/* Full-width toggle container */
-.toggle-full-width {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
 /* Flex container for API key actions */
 .api-key-actions-wrap {
     flex-wrap: wrap;
@@ -567,22 +544,6 @@
 /* Flex-1 utility */
 .flex-1 {
     flex: 1;
-}
-
-/* Form group with no bottom margin */
-.form-group-compact {
-    margin-bottom: 0;
-}
-
-/* Sample data link style */
-.sample-data-link {
-    margin-left: auto;
-    font-size: 0.85em;
-}
-
-/* Input width utility */
-.input-sm {
-    width: 120px;
 }
 
 /* === Placeholder styling for settings inputs/textareas === */
@@ -1307,8 +1268,7 @@
     color: var(--text-tertiary);
 }
 
-.settings-group-card,
-#apiStatusSummary.settings-group-card {
+.settings-group-card {
     background: var(--surface-color);
     border: none;
     border-radius: var(--radius-md);
@@ -1329,20 +1289,15 @@
 
 .settings-group-card:focus-within,
 .settings-group-card:has(.custom-dropdown.open),
-.settings-group-card.has-open-dropdown,
-#apiStatusSummary.settings-group-card:focus-within,
-#apiStatusSummary.settings-group-card:has(.custom-dropdown.open),
-#apiStatusSummary.settings-group-card.has-open-dropdown {
+.settings-group-card.has-open-dropdown {
     z-index: 100;
 }
 
-#apiStatusSummary.settings-group-card .missing-key-warning.compact {
+.settings-group-card .missing-key-warning.compact {
     margin: 2px 0 14px 0;
 }
 
-.settings-row,
-.settings-row.api-status-header.compact,
-.settings-row.api-fallback-row {
+.settings-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1386,7 +1341,15 @@
 
 .settings-row-info .fallback-info {
     justify-content: flex-start;
-    margin-top: 4px;
+    margin-top: 2px;
+}
+
+#fallbackOrderHint {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px 6px;
+    line-height: 1.35;
 }
 
 .settings-row-info .fallback-info:empty {
@@ -1428,8 +1391,7 @@ label.settings-row-title {
     flex-shrink: 0;
 }
 
-.settings-row-control.model-selector-wrapper,
-.settings-row-control.model-selector-row {
+.settings-row-control.model-selector-wrapper {
     flex: 0 0 295px;
     width: 295px;
     max-width: 100%;
@@ -1677,12 +1639,16 @@ label.settings-row-title {
     flex-wrap: wrap;
 }
 
-.settings-group-card .threshold-item-compact {
+.threshold-item-compact {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 6px;
 }
 
-.settings-group-card .threshold-item-compact .threshold-label {
+.threshold-item-compact .threshold-label {
+    display: flex;
+    align-items: center;
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-secondary);
@@ -1691,31 +1657,143 @@ label.settings-row-title {
     white-space: nowrap;
 }
 
+#evolutionThresholdPositive {
+    color: var(--success-color);
+}
+
+#evolutionThresholdNegative {
+    color: var(--error-color);
+}
 
 @media (max-width: 640px) {
-    .settings-group-card,
-    #apiStatusSummary.settings-group-card {
+    .settings-group-card {
         padding: 0 14px;
     }
 
     .settings-row,
     .data-action-row {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 10px;
         padding: 12px 0;
     }
 
+    .settings-row-info {
+        width: 100%;
+    }
+
     .settings-row-control,
-    .settings-row-control.model-selector-wrapper,
-    .settings-row-control.model-selector-row {
+    .settings-row-control.model-selector-wrapper {
         flex: 1 1 auto;
         width: 100%;
     }
 
+    /* Les lignes à simple interrupteur (Relais automatique, RGPD) placent le switch à droite du titre et la description sur 100 % de la largeur */
+    .settings-row:has(> .settings-row-control > .toggle-switch) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 4px 12px;
+    }
+
+    .settings-row:has(> .settings-row-control > .toggle-switch) > .settings-row-info {
+        display: contents;
+    }
+
+    .settings-row:has(> .settings-row-control > .toggle-switch) .settings-row-title {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .settings-row:has(> .settings-row-control > .toggle-switch) > .settings-row-control {
+        grid-column: 2;
+        grid-row: 1;
+        width: auto;
+    }
+
+    .settings-row:has(> .settings-row-control > .toggle-switch) .settings-row-desc {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    /* Système périodique & Seuils d'évolution pleine largeur sur mobile */
+    .period-system-selector.ui-segmented-control {
+        width: 100%;
+    }
+
+    .period-system-selector.ui-segmented-control .ui-segment {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .evolution-thresholds-inline {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
+    }
+
+    .threshold-item-compact {
+        width: 100%;
+        align-items: flex-start;
+    }
+
+    .threshold-item-compact .number-input-wrapper {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Cartes Fournisseurs API & Ollama sur mobile */
+    .settings-providers-card > .api-key-section {
+        padding: 13px 0;
+    }
+
+    .api-key-header {
+        gap: 4px 8px;
+        margin-bottom: 6px;
+    }
+
+    .api-key-links {
+        margin-left: -6px;
+    }
+
+    .provider-models-hint {
+        gap: 4px;
+        margin: 2px 0 8px 0;
+        font-size: 0.7rem;
+    }
+
+    .provider-models-hint .model-chip {
+        padding: 2px 7px;
+        font-size: 0.68rem;
+    }
+
+    .api-key-actions.api-key-actions-wrap > .toggle-switch-container {
+        flex: 1 1 100%;
+        margin-bottom: 2px;
+    }
+
+    /* Onglet Données : boutons d'action équilibrés sur mobile */
     .data-action-buttons {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: flex-start;
+    }
+
+    .data-action-buttons .btn:not(.pre-restore-discard-btn) {
+        flex: 1 1 0;
+        justify-content: center;
+        min-height: 36px;
+    }
+
+    /* Modale Personnalisation (Lab) sur mobile */
+    .lab-pane {
+        padding: 14px 12px 18px;
+        gap: 14px;
+    }
+
+    .lab-student-nav {
+        max-width: none;
+        margin-left: 0;
     }
 
     .settings-tab-title {
