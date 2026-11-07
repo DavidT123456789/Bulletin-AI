@@ -1852,8 +1852,9 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         background: transparent !important;
     }
 
-    /* Mobile Card Spotlight (.focus-active, .highlight-new, .focus-closed-flash) */
+    /* Mobile Card Spotlight (.focus-active, .action-dropdown-menu.open, .highlight-new, .focus-closed-flash) */
     .student-list-table tbody tr.focus-active td,
+    .student-list-table tbody tr:has(.action-dropdown-menu.open) td,
     .student-list-table tbody tr.highlight-new td,
     .student-list-table tbody tr.focus-closed-flash td {
         animation: none !important;
@@ -1861,7 +1862,8 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         box-shadow: none !important;
     }
 
-    .student-list-table tbody tr.focus-active {
+    .student-list-table tbody tr.focus-active,
+    .student-list-table tbody tr:has(.action-dropdown-menu.open) {
         background: var(--row-spotlight-bg-peak) !important;
         border-color: var(--row-spotlight-border) !important;
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
@@ -2182,10 +2184,9 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 
     .student-list-table tbody tr.focus-active,
     .student-list-table tbody tr:has(.action-dropdown-menu.open) {
-        background-color: var(--row-spotlight-bg-peak) !important;
-        border-color: var(--row-spotlight-border) !important;
-        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
-                    inset 0 -1px 0 0 var(--row-spotlight-border);
+        background-color: var(--item-active-bg) !important;
+        border-color: var(--border-color-strong) !important;
+        box-shadow: none !important;
     }
 
     .student-list-table tbody tr.highlight-new {

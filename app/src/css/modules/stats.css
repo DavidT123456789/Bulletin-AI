@@ -602,17 +602,25 @@
     color: var(--text-secondary);
 }
 
-/* === Bento Sub-Tiles Mutualisées (Performance Details & Evolution Legend) === */
+/* === Bento Sub-Tiles Mutualisées (Performance Details & Evolution Legend) ===
+   Zéro "boîte dans boîte" : les sous-métriques reposent directement sur la surface
+   de la carte avec de fins filets séparateurs (pilule révélée uniquement au survol / filtre actif) */
 .performance-card .performance-details,
 .evolution-card .evolution-legend {
+    --sub-tile-gap: 10px;
     display: flex;
-    gap: 10px;
+    gap: var(--sub-tile-gap);
     margin-top: auto;
     padding-top: 0;
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 0;
     width: 100%;
+}
+
+.performance-card .performance-details {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
 }
 
 .performance-card .detail-item,
@@ -625,9 +633,9 @@
     justify-content: center;
     gap: 3px;
     text-align: center;
-    padding: 11px 8px;
+    padding: 8px 8px 4px;
     border-radius: var(--radius-md);
-    background: var(--item-idle-bg);
+    background: transparent;
     border: 1px solid transparent;
     box-shadow: none;
     backface-visibility: hidden;
@@ -636,6 +644,35 @@
                 background-color 0.2s ease,
                 border-color 0.2s ease;
     position: relative;
+}
+
+.performance-card .detail-item:not(:first-child)::before,
+.evolution-card .legend-item:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--sub-tile-gap) / 2);
+    top: 18%;
+    height: 64%;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.performance-card .detail-item.active-filter::before,
+.performance-card .detail-item.active-filter + .detail-item::before,
+.evolution-card .legend-item.active-filter::before,
+.evolution-card .legend-item.active-filter + .legend-item::before {
+    opacity: 0;
+}
+
+@media (hover: hover) {
+    .performance-card .detail-item[role="button"]:hover::before,
+    .performance-card .detail-item[role="button"]:hover + .detail-item::before,
+    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover::before,
+    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover + .legend-item::before {
+        opacity: 0;
+    }
 }
 
 .performance-card .detail-item[role="button"],
@@ -1163,12 +1200,12 @@
 
     .performance-card .performance-details,
     .evolution-card .evolution-legend {
-        gap: 8px;
+        --sub-tile-gap: 8px;
     }
 
     .performance-card .detail-item,
     .evolution-card .legend-item {
-        padding: 8px 6px;
+        padding: 6px 6px 2px;
     }
 
     .performance-card .detail-item .detail-value,
@@ -1228,41 +1265,16 @@
 
     .performance-card .performance-details,
     .evolution-card .evolution-legend {
-        gap: var(--space-2);
+        --sub-tile-gap: var(--space-2);
     }
 
-    /* Suppression de l'effet "boîte dans boîte" sur smartphone :
-       les sous-métriques (Min/Médiane/Max & Progrès/Stables/Régression)
-       reposent directement sur la surface de la carte avec de fins filets séparateurs */
     .performance-card .performance-details {
-        border-top: 1px solid var(--border-color);
         padding-top: 8px;
     }
 
     .performance-card .detail-item,
     .evolution-card .legend-item {
         padding: 6px 6px 2px;
-        background: transparent;
-    }
-
-    .performance-card .detail-item:not(:first-child)::before,
-    .evolution-card .legend-item:not(:first-child)::before {
-        content: '';
-        position: absolute;
-        left: calc(-1 * var(--space-2) / 2);
-        top: 18%;
-        height: 64%;
-        width: 1px;
-        background: var(--border-color);
-        pointer-events: none;
-        transition: opacity 0.2s ease;
-    }
-
-    .performance-card .detail-item.active-filter::before,
-    .performance-card .detail-item.active-filter + .detail-item::before,
-    .evolution-card .legend-item.active-filter::before,
-    .evolution-card .legend-item.active-filter + .legend-item::before {
-        opacity: 0;
     }
 
     .performance-card .detail-item .detail-value,
