@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ListViewEvents } from './ListViewEvents.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 
 vi.mock('../../state/State.js', () => ({
     appState: {
@@ -129,6 +130,38 @@ describe('ListView - Touch long-press opens the row actions menu', () => {
         vi.advanceTimersByTime(500);
 
         expect(menu.classList.contains('open')).toBe(false);
+    });
+
+    it('opens the menu immediately on a short tap/click on the 3-dots button or action cell without opening FocusPanel', () => {
+        FocusPanelManager.open.mockClear();
+
+        dispatchTouch(toggleBtn, 'touchstart', { x: 300, y: 20 });
+        const touchEnd = dispatchTouch(toggleBtn, 'touchend');
+        expect(touchEnd.defaultPrevented).toBe(false);
+
+        toggleBtn.click();
+        expect(menu.classList.contains('open')).toBe(true);
+        expect(FocusPanelManager.open).not.toHaveBeenCalled();
+
+        // Clicking the action-cell padding toggles the menu closed without opening FocusPanel
+        const actionCell = row.querySelector('.action-cell');
+        actionCell.click();
+        expect(menu.classList.contains('open')).toBe(false);
+        expect(FocusPanelManager.open).not.toHaveBeenCalled();
+    });
+
+    it('anchors the menu and swallows the synthetic click if Android fires contextmenu while holding the 3-dots button', () => {
+        dispatchTouch(toggleBtn, 'touchstart', { x: 300, y: 20 });
+        const ctx = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 20 });
+        toggleBtn.dispatchEvent(ctx);
+
+        expect(ctx.defaultPrevented).toBe(true);
+        expect(menu.classList.contains('open')).toBe(true);
+        expect(menu.style.position).toBe('');
+
+        const touchEnd = dispatchTouch(toggleBtn, 'touchend');
+        expect(touchEnd.defaultPrevented).toBe(true);
+        expect(menu.classList.contains('open')).toBe(true);
     });
 
     it('handles the Android native contextmenu fired during the hold without cursor positioning', () => {

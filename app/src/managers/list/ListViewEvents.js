@@ -279,8 +279,9 @@ export const ListViewEvents = {
                 return;
             }
 
-            // Toggle dropdown menu (per-row actions)
-            const menuBtn = target.closest('[data-action="toggle-menu"]');
+            // Toggle dropdown menu (per-row actions, including clicks on the action cell padding)
+            const actionCell = !target.closest('.action-dropdown-menu') ? target.closest('.action-cell') : null;
+            const menuBtn = target.closest('[data-action="toggle-menu"]') || actionCell?.querySelector('[data-action="toggle-menu"]');
             if (menuBtn) {
                 e.stopPropagation();
                 e.preventDefault(); // Prevent browser default focus behavior on click
@@ -438,7 +439,7 @@ export const ListViewEvents = {
         // Touch long-press on a student card opens its actions menu (shortcut for the 3-dots button)
         const LONG_PRESS_DELAY_MS = 450;
         const LONG_PRESS_MOVE_TOLERANCE_PX = 8;
-        const longPress = { timer: null, startX: 0, startY: 0, fired: false };
+        const longPress = { timer: null, startX: 0, startY: 0, fired: false, touchingActionBtn: false };
 
         const cancelLongPress = () => {
             clearTimeout(longPress.timer);
@@ -458,9 +459,14 @@ export const ListViewEvents = {
         listContainer.addEventListener('touchstart', (e) => {
             cancelLongPress();
             longPress.fired = false;
+            longPress.touchingActionBtn = false;
             if (e.touches?.length !== 1) return;
             const row = e.target.closest('.student-row');
-            if (!row || e.target.closest('.action-dropdown, a, input')) return;
+            if (!row || e.target.closest('a, input')) return;
+            if (e.target.closest('.action-dropdown, .action-cell')) {
+                longPress.touchingActionBtn = !e.target.closest('.action-dropdown-menu');
+                return;
+            }
             longPress.startX = e.touches[0].clientX;
             longPress.startY = e.touches[0].clientY;
             longPress.timer = setTimeout(() => triggerLongPress(row), LONG_PRESS_DELAY_MS);
@@ -475,6 +481,7 @@ export const ListViewEvents = {
 
         const endLongPress = (e) => {
             cancelLongPress();
+            longPress.touchingActionBtn = false;
             if (!longPress.fired) return;
             // Swallow the synthetic click: neither open the Focus Panel nor dismiss the freshly opened menu
             if (e.cancelable) e.preventDefault();
@@ -486,10 +493,12 @@ export const ListViewEvents = {
         // Right click (context menu) on student row to open actions menu
         listContainer.addEventListener('contextmenu', (e) => {
             // Android fires contextmenu on long-press: the touch handler owns it (menu anchored to the 3-dots button)
-            if (longPress.timer || longPress.fired) {
+            if (longPress.timer || longPress.fired || longPress.touchingActionBtn) {
                 e.preventDefault();
                 const pressedRow = e.target.closest('.student-row');
-                if (longPress.timer && pressedRow) triggerLongPress(pressedRow);
+                if ((longPress.timer || longPress.touchingActionBtn) && pressedRow && !longPress.fired) {
+                    triggerLongPress(pressedRow);
+                }
                 return;
             }
 

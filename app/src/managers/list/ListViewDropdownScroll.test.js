@@ -674,6 +674,50 @@ describe('ListView - Dropdown menus tap-outside dismiss, absorption, ARIA sync a
         filterSpy.mockRestore();
     });
 
+    it('should preserve activeStatFilter when clicking a student row or Focus Panel, and clear it on outside body click', async () => {
+        const { appState } = await import('../../state/State.js');
+        const { EventHandlersManager } = await import('../EventHandlersManager.js');
+        const { GlobalListeners } = await import('../listeners/GlobalListeners.js');
+
+        if (!document.body.dataset.testBodyClickBound) {
+            GlobalListeners._setupBodyClickListener();
+            document.body.dataset.testBodyClickBound = 'true';
+        }
+
+        appState.activeStatFilter = 'validated';
+        const filterSpy = vi.spyOn(EventHandlersManager, 'handleStatFilterClick').mockImplementation(() => {
+            appState.activeStatFilter = null;
+        });
+
+        const row = container.querySelector('.student-row');
+        expect(row).not.toBeNull();
+
+        // Clicking a student row inside .student-list-view must NOT clear the active stat filter
+        row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(filterSpy).not.toHaveBeenCalled();
+        expect(appState.activeStatFilter).toBe('validated');
+
+        // Clicking inside #focusPanel must NOT clear the active stat filter
+        const focusPanel = document.createElement('aside');
+        focusPanel.id = 'focusPanel';
+        document.body.appendChild(focusPanel);
+        focusPanel.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(filterSpy).not.toHaveBeenCalled();
+        expect(appState.activeStatFilter).toBe('validated');
+
+        // Clicking outside on an unrelated page area clears the active stat filter
+        const outsideArea = document.createElement('div');
+        outsideArea.className = 'outside-blank-area';
+        document.body.appendChild(outsideArea);
+        outsideArea.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        expect(filterSpy).toHaveBeenCalledWith(null);
+        expect(appState.activeStatFilter).toBeNull();
+
+        focusPanel.remove();
+        outsideArea.remove();
+        filterSpy.mockRestore();
+    });
+
     it('should activate unified header search on "/" and "Ctrl+F" in List view without intercepting "/" inside input', async () => {
         const { HistoryManager } = await import('../HistoryManager.js');
         const { appState } = await import('../../state/State.js');

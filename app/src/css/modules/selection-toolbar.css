@@ -258,12 +258,12 @@
 /* === Responsive Breakpoints (Adaptivity) === */
 @media (max-width: 768px) {
     .student-list-table tbody tr.selected {
-        background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%);
+        background: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--primary-color) 10%);
         border-color: rgba(var(--primary-color-rgb), 0.3);
     }
 
     [data-theme="dark"] .student-list-table tbody tr.selected {
-        background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 12%);
+        background: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--primary-bright) 12%);
         border-color: rgba(var(--primary-bright-rgb), 0.35);
     }
 

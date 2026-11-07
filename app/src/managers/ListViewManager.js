@@ -181,12 +181,16 @@ export const ListViewManager = {
         existingTable?.closest('.student-list-view')?.classList.remove('table-fade-in');
 
         if (existingTable) {
+            const hadExitingRows = existingRows.some(r => r.classList.contains('row-exit'));
             const existingIds = existingRows.map(r => r.dataset.studentId);
             const newIdsSet = new Set(results.map(r => r.id));
 
             // Clean up any stuck animation classes from previous animations
             // Preserve 'row-exit' on rows that are still exiting to avoid a visible flash during rapid typing
             existingRows.forEach(row => {
+                if (row._flipCleanup) {
+                    row._flipCleanup();
+                }
                 row.classList.remove('row-move', 'row-moving', 'row-filter-enter', 'row-import-refresh', 'row-animate-in', 'row-stagger-enter');
                 if (newIdsSet.has(row.dataset.studentId)) {
                     row.classList.remove('row-exit');
@@ -195,7 +199,8 @@ export const ListViewManager = {
                 row.style.transition = '';
             });
 
-            const hasIdChange = existingIds.length !== newIdsSet.size ||
+            const hasIdChange = hadExitingRows ||
+                existingIds.length !== newIdsSet.size ||
                 existingIds.some(id => !newIdsSet.has(id));
 
             if (hasIdChange) {
@@ -422,17 +427,15 @@ export const ListViewManager = {
         table.classList.toggle('appreciation-full-view', nextIsFull);
         header?.classList.toggle('expanded-view', nextIsFull);
 
-        // Update Tooltips
+        // Update Tooltips & ARIA labels
         const tooltipText = nextIsFull ? 'Réduire' : 'Voir tout le texte';
         const toggleBtn = header?.querySelector('#appreciationToggleBtn');
-        if (toggleBtn) {
-            TooltipsUI.updateTooltip(toggleBtn, tooltipText);
-            toggleBtn.setAttribute('aria-label', tooltipText);
-        }
-        if (mobileBtn) {
-            TooltipsUI.updateTooltip(mobileBtn, tooltipText);
-            mobileBtn.removeAttribute('title');
-        }
+        [toggleBtn, mobileBtn].forEach(btn => {
+            if (!btn) return;
+            TooltipsUI.updateTooltip(btn, tooltipText);
+            btn.setAttribute('aria-label', tooltipText);
+            btn.removeAttribute('title');
+        });
 
         // Update Icons
         const iconName = nextIsFull ? 'solar:minimize-square-linear' : 'solar:maximize-square-linear';

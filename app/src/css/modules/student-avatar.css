@@ -266,27 +266,25 @@
     background: var(--bg-tertiary);
 }
 
-/* === EXPANDED VIEW: Photo plus grande & Typographie proportionnelle (Desktop & Tablette) === */
-@media (min-width: 769px) {
-    .appreciation-full-view .student-identity-wrapper {
-        gap: 12px;
-    }
+/* === EXPANDED VIEW: Photo plus grande & Typographie proportionnelle (Desktop, Tablette & Mobile) === */
+.appreciation-full-view .student-identity-wrapper {
+    gap: 12px;
+}
 
-    .appreciation-full-view .student-identity-wrapper .student-avatar {
-        width: 56px;
-        height: 56px;
-        font-size: 20px;
-    }
+.appreciation-full-view .student-identity-wrapper .student-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+}
 
-    .appreciation-full-view .student-identity-wrapper .student-nom {
-        font-size: 15px;
-        line-height: 1.25;
-    }
+.appreciation-full-view .student-identity-wrapper .student-nom {
+    font-size: 15px;
+    line-height: 1.25;
+}
 
-    .appreciation-full-view .student-identity-wrapper .student-prenom {
-        font-size: 13.5px;
-        margin-top: 2px;
-    }
+.appreciation-full-view .student-identity-wrapper .student-prenom {
+    font-size: 13.5px;
+    margin-top: 2px;
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
@@ -294,6 +292,14 @@
         width: 50px;
         height: 50px;
         font-size: 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .appreciation-full-view .student-identity-wrapper .student-avatar {
+        width: 46px;
+        height: 46px;
+        font-size: 16.5px;
     }
 }
 

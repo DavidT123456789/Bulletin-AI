@@ -222,6 +222,99 @@ describe('ListView - Empty filter state transitions (1 <-> 0)', () => {
         expect(tbody.querySelectorAll('.student-row')).toHaveLength(1);
         expect(listView.style.transition).toBe('height 0.45s cubic-bezier(0.32, 0.72, 0, 1)');
         expect(listView.style.height).toBe('115px');
+        expect(listView.style.overflowY).toBe('clip');
+        expect(listView.style.overflow).toBe('');
+
+        // After height transition completes, overflowY and height are reset
+        vi.advanceTimersByTime(550);
+        expect(listView.style.overflowY).toBe('');
+        expect(listView.style.height).toBe('');
+
+        vi.useRealTimers();
+    });
+
+    it('should invert moved rows synchronously during FLIP and ignore bubbled child transitionend events', () => {
+        const allStudents = buildResults();
+        ListViewManager.render(allStudents, container);
+
+        const rows = Array.from(container.querySelectorAll('.student-row'));
+        const row1 = rows[0];
+        const row2 = rows[1];
+
+        // Initial positions before filtering out row1: row1 at top=0, row2 at top=80
+        let row2Top = 80;
+        vi.spyOn(row1, 'getBoundingClientRect').mockImplementation(() => ({
+            top: 0, left: 0, width: 360, height: 70
+        }));
+        vi.spyOn(row2, 'getBoundingClientRect').mockImplementation(() => ({
+            top: row2Top, left: 0, width: 360, height: 70
+        }));
+
+        const rafCallbacks = [];
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            rafCallbacks.push(cb);
+            return rafCallbacks.length;
+        });
+
+        // Filter out s1: FIRST captures row2 at top=80, then after DOM removal row2 moves to top=0
+        ListViewManager.render([allStudents[1]], container);
+        row2Top = 0;
+
+        // Advance past the 250ms exit phase
+        vi.advanceTimersByTime(250);
+
+        // Synchronous INVERT: row2 already has .row-moving and translateY(80px) BEFORE requestAnimationFrame runs
+        expect(row2.classList.contains('row-moving')).toBe(true);
+        expect(row2.classList.contains('row-move')).toBe(false);
+        expect(row2.style.transform).toBe('translateY(80px)');
+        expect(row2.style.transition).toBe('none');
+
+        // Run PLAY frame
+        expect(rafCallbacks.length).toBeGreaterThan(0);
+        rafCallbacks.shift()();
+
+        expect(row2.classList.contains('row-move')).toBe(true);
+        expect(row2.style.transform).toBe('');
+
+        // A bubbled transform transitionend from a child element (e.g. avatar or action button) must NOT strip .row-moving early
+        const child = row2.querySelector('.student-avatar') || row2.firstElementChild;
+        const bubbledEvent = new Event('transitionend', { bubbles: true });
+        Object.defineProperty(bubbledEvent, 'propertyName', { value: 'transform' });
+        child.dispatchEvent(bubbledEvent);
+
+        expect(row2.classList.contains('row-moving')).toBe(true);
+        expect(row2.classList.contains('row-move')).toBe(true);
+
+        // Direct transform transitionend on the row itself cleans up .row-moving and .row-move
+        const rowEvent = new Event('transitionend', { bubbles: true });
+        Object.defineProperty(rowEvent, 'propertyName', { value: 'transform' });
+        row2.dispatchEvent(rowEvent);
+
+        expect(row2.classList.contains('row-moving')).toBe(false);
+        expect(row2.classList.contains('row-move')).toBe(false);
+        expect(row2.style.transition).toBe('');
+
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    it('should cancel pending filter exit timeout if the user toggles the filter back off within 250ms', () => {
+        const allStudents = buildResults();
+        ListViewManager.render(allStudents, container);
+
+        // 1. Filter down to 1 student -> s2 gets .row-exit and a 250ms removal timer is scheduled
+        ListViewManager.render([allStudents[0]], container);
+        expect(container.querySelector('.student-row[data-student-id="s2"]').classList.contains('row-exit')).toBe(true);
+
+        // 2. 100ms later (before the 250ms exit timer fires), user unfilters back to all 2 students
+        vi.advanceTimersByTime(100);
+        ListViewManager.render(allStudents, container);
+
+        // Advance past the original 250ms mark -> s2 must NOT be removed by a stale timer
+        vi.advanceTimersByTime(300);
+        const remainingRows = container.querySelectorAll('.student-row');
+        expect(remainingRows).toHaveLength(2);
+        expect(container.querySelector('.student-row[data-student-id="s2"]').classList.contains('row-exit')).toBe(false);
 
         vi.useRealTimers();
     });

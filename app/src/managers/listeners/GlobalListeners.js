@@ -391,7 +391,12 @@ export const GlobalListeners = {
 
     _setupBodyClickListener() {
         document.body.addEventListener('click', e => {
-            if (appState.activeStatFilter && !e.target.closest('.stats-container') && !e.target.closest('.appreciation-result') && !e.target.closest('.modal')) {
+            if (
+                appState.activeStatFilter &&
+                e.target instanceof Element &&
+                e.target.isConnected &&
+                !e.target.closest('.stats-container, .student-list-view, #focusPanel, #focusPanelBackdrop, .selection-toolbar, .appreciation-result, .modal')
+            ) {
                 EventHandlersManager.handleStatFilterClick(null);
             }
 

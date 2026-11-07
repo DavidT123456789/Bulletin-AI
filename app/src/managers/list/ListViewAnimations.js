@@ -22,6 +22,10 @@ export const ListViewAnimations = {
     },
 
     _clearPendingHeightCleanup() {
+        if (this.state.activeFilterTimeout) {
+            clearTimeout(this.state.activeFilterTimeout);
+            this.state.activeFilterTimeout = null;
+        }
         if (this.state.activeHeightTimeout) {
             clearTimeout(this.state.activeHeightTimeout);
             this.state.activeHeightTimeout = null;
@@ -39,7 +43,160 @@ export const ListViewAnimations = {
             targetElement.style.height = '';
             targetElement.style.transition = '';
             targetElement.style.overflow = '';
+            targetElement.style.overflowY = '';
         }
+    },
+
+    /**
+     * Capture les coordonnées initiales (FIRST) d'une liste de lignes avant mutation DOM
+     * @param {Array<HTMLElement>} rows - Lignes à mesurer
+     * @returns {Map<string, {top: number, left: number}>}
+     * @private
+     */
+    _captureRowPositions(rows) {
+        const positions = new Map();
+        rows.forEach(row => {
+            const rect = row.getBoundingClientRect();
+            positions.set(row.dataset.studentId, { top: rect.top, left: rect.left });
+        });
+        return positions;
+    },
+
+    /**
+     * Nettoie les classes et variables CSS d'entrée/import après l'animation
+     * @param {HTMLElement} tbody - Corps de la table
+     * @param {number} delayMs - Délai avant nettoyage en ms
+     * @private
+     */
+    _scheduleRevealCleanup(tbody, delayMs) {
+        setTimeout(() => {
+            tbody.querySelectorAll('.row-filter-enter, .row-import-refresh').forEach(row => {
+                row.classList.remove('row-filter-enter', 'row-import-refresh');
+                row.style.removeProperty('--enter-delay');
+                row.style.removeProperty('--row-delay');
+            });
+            tbody.querySelectorAll('.avatar-import-pop').forEach(avatar => {
+                avatar.classList.remove('avatar-import-pop');
+                avatar.style.removeProperty('--avatar-delay');
+            });
+        }, delayMs);
+    },
+
+    /**
+     * Applique les classes d'animation post-import (ligne et avatar)
+     * @param {HTMLElement} row - Ligne cible
+     * @param {boolean} isUpdated - Indique si le contenu de la ligne a été mis à jour
+     * @param {boolean} hasPhoto - Indique si une photo a été importée sur la ligne
+     * @param {number} delayMs - Délai d'animation de la ligne en ms
+     * @param {number} [avatarOffsetMs=0] - Décalage additionnel pour l'avatar en ms
+     * @private
+     */
+    _applyImportRevealClasses(row, isUpdated, hasPhoto, delayMs, avatarOffsetMs = 0) {
+        if (isUpdated) {
+            row.classList.add('row-import-refresh');
+            row.style.setProperty('--row-delay', `${delayMs}ms`);
+        }
+        if (hasPhoto) {
+            const avatar = row.querySelector('.student-avatar');
+            if (avatar) {
+                avatar.classList.add('avatar-import-pop');
+                avatar.style.setProperty('--avatar-delay', `${delayMs + avatarOffsetMs}ms`);
+            }
+        }
+    },
+
+    /**
+     * Insère une ligne à sa position ordonnée dans le tbody sans déplacement DOM superflu
+     * @param {HTMLElement} tbody - Corps de la table
+     * @param {HTMLElement} row - Ligne à positionner
+     * @param {HTMLElement|null} previousNode - Ligne précédente dans l'ordre cible
+     * @returns {HTMLElement} La ligne insérée (nouveau previousNode)
+     * @private
+     */
+    _insertRowInOrder(tbody, row, previousNode) {
+        if (previousNode) {
+            if (previousNode.nextSibling !== row) {
+                tbody.insertBefore(row, previousNode.nextSibling);
+            }
+        } else if (tbody.firstChild !== row) {
+            tbody.insertBefore(row, tbody.firstChild);
+        }
+        return row;
+    },
+
+    /**
+     * Exécute la phase LAST + INVERT + PLAY d'une animation FLIP sur un ensemble de lignes
+     * @param {HTMLElement} tbody - Corps de la table
+     * @param {Array<HTMLElement>} rows - Lignes à animer
+     * @param {Map<string, {top: number, left: number}>} firstPositions - Positions initiales par studentId
+     * @param {number} [durationMs=450] - Durée de la transition en ms
+     * @private
+     */
+    _playFlipAnimation(tbody, rows, firstPositions, durationMs = 450) {
+        const movedRows = [];
+        rows.forEach(row => {
+            if (row._flipCleanup) {
+                row._flipCleanup();
+            }
+            const first = firstPositions.get(row.dataset.studentId);
+            if (!first) return;
+
+            const rect = row.getBoundingClientRect();
+            const deltaX = (first.left ?? rect.left) - rect.left;
+            const deltaY = first.top - rect.top;
+            if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+                movedRows.push({ row, deltaX, deltaY });
+            }
+        });
+
+        movedRows.forEach(({ row, deltaX, deltaY }) => {
+            row.classList.remove('row-move');
+            row.classList.add('row-moving');
+            row.style.transition = 'none';
+            row.style.transform = Math.abs(deltaX) > 2
+                ? `translate(${deltaX}px, ${deltaY}px)`
+                : `translateY(${deltaY}px)`;
+        });
+
+        // Force layout recalculation once for container height and all inverted rows
+        void tbody.offsetHeight;
+
+        if (movedRows.length === 0) return;
+
+        requestAnimationFrame(() => {
+            const transitionValue = `transform ${durationMs}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+            movedRows.forEach(({ row }) => {
+                row.classList.add('row-move');
+                row.style.transition = transitionValue;
+                row.style.transform = '';
+
+                let cleanedUp = false;
+                let fallbackTimer = null;
+                const finalizeRow = () => {
+                    if (cleanedUp) return;
+                    cleanedUp = true;
+                    if (fallbackTimer) {
+                        clearTimeout(fallbackTimer);
+                        fallbackTimer = null;
+                    }
+                    row._flipCleanup = null;
+                    row.classList.remove('row-move', 'row-moving');
+                    row.style.transition = '';
+                    row.style.transform = '';
+                    row.removeEventListener('transitionend', onTransitionEnd);
+                };
+
+                const onTransitionEnd = (e) => {
+                    if (e.target === row && e.propertyName === 'transform') {
+                        finalizeRow();
+                    }
+                };
+
+                row._flipCleanup = finalizeRow;
+                row.addEventListener('transitionend', onTransitionEnd);
+                fallbackTimer = setTimeout(finalizeRow, durationMs + 60);
+            });
+        });
     },
 
     init(callbacks) {
@@ -71,14 +228,7 @@ export const ListViewAnimations = {
 
         // *** FIRST: Capture positions of KEPT rows BEFORE any DOM changes ***
         // This is critical for the "flow up" animation when rows are filtered out
-        const firstPositions = new Map();
-        toKeep.forEach(row => {
-            const rect = row.getBoundingClientRect();
-            firstPositions.set(row.dataset.studentId, {
-                top: rect.top,
-                left: rect.left
-            });
-        });
+        const firstPositions = this._captureRowPositions(toKeep);
 
         // Step 1: Animate exiting rows (fade + scale out)
         toExit.forEach(row => {
@@ -103,7 +253,7 @@ export const ListViewAnimations = {
                 initialHeight = measureHeight(viewElement);
                 viewElement.style.height = `${initialHeight}px`;
                 viewElement.style.transition = 'none';
-                viewElement.style.overflow = 'hidden'; // Keep layout clipping clean during height changes
+                viewElement.style.overflowY = 'clip'; // Clip vertical height changes without clipping horizontal edge-to-edge rows on mobile
             }
 
             // Remove exited rows and any previous empty-state row from DOM (after initialHeight is captured)
@@ -147,18 +297,7 @@ export const ListViewAnimations = {
                             const keepDelay = baseDelay + Math.min(updatedKeepIndex * 22, 480);
                             updatedKeepIndex++;
                             if (keepDelay > maxAnimDelay) maxAnimDelay = keepDelay;
-
-                            if (isUpdated) {
-                                row.classList.add('row-import-refresh');
-                                row.style.setProperty('--row-delay', `${keepDelay}ms`);
-                            }
-                            if (hasPhoto) {
-                                const avatar = row.querySelector('.student-avatar');
-                                if (avatar) {
-                                    avatar.classList.add('avatar-import-pop');
-                                    avatar.style.setProperty('--avatar-delay', `${keepDelay + 40}ms`);
-                                }
-                            }
+                            this._applyImportRevealClasses(row, isUpdated, hasPhoto, keepDelay, 40);
                         }
                     }
                 } else {
@@ -172,29 +311,12 @@ export const ListViewAnimations = {
                         row = ListViewRenderer.createRowElement(result, periods, currentPeriodIndex, renderContext);
                         row.classList.add('row-filter-enter');
                         row.style.setProperty('--enter-delay', `${enterDelay}ms`);
-
-                        if (importReveal?.photoIds?.has(id)) {
-                            const avatar = row.querySelector('.student-avatar');
-                            if (avatar) {
-                                avatar.classList.add('avatar-import-pop');
-                                avatar.style.setProperty('--avatar-delay', `${enterDelay + 60}ms`);
-                            }
-                        }
+                        this._applyImportRevealClasses(row, false, Boolean(importReveal?.photoIds?.has(id)), enterDelay, 60);
                     }
                 }
 
                 if (row) {
-                    // Insert in correct position
-                    if (previousNode) {
-                        if (previousNode.nextSibling !== row) {
-                            tbody.insertBefore(row, previousNode.nextSibling);
-                        }
-                    } else {
-                        if (tbody.firstChild !== row) {
-                            tbody.insertBefore(row, tbody.firstChild);
-                        }
-                    }
-                    previousNode = row;
+                    previousNode = this._insertRowInOrder(tbody, row, previousNode);
                 }
             });
 
@@ -216,8 +338,8 @@ export const ListViewAnimations = {
                 viewElement.style.height = `${initialHeight}px`;
             }
 
-            // Force layout recalculation
-            void tbody.offsetHeight;
+            // *** LAST (batch reads) + INVERT (batch writes) + PLAY: Animate kept rows to their new positions ***
+            this._playFlipAnimation(tbody, toKeep, firstPositions, 450);
 
             if (viewElement) {
                 if (finalHeight !== initialHeight) {
@@ -241,68 +363,13 @@ export const ListViewAnimations = {
                 }
             }
 
-            // *** LAST (batch reads) + INVERT (batch writes) + PLAY: Animate kept rows to their new positions ***
-            requestAnimationFrame(() => {
-                const movedRows = [];
-                toKeep.forEach(row => {
-                    const first = firstPositions.get(row.dataset.studentId);
-                    if (!first) return;
-
-                    const rect = row.getBoundingClientRect();
-                    const deltaX = (first.left ?? rect.left) - rect.left;
-                    const deltaY = first.top - rect.top;
-                    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
-                        movedRows.push({ row, deltaX, deltaY });
-                    }
-                });
-
-                if (movedRows.length === 0) return;
-
-                movedRows.forEach(({ row, deltaX, deltaY }) => {
-                    row.classList.add('row-moving');
-                    row.style.transform = Math.abs(deltaX) > 2
-                        ? `translate(${deltaX}px, ${deltaY}px)`
-                        : `translateY(${deltaY}px)`;
-                    row.style.transition = 'none';
-                });
-
-                // Force browser to render the inverted state once for all moved rows
-                void tbody.offsetHeight;
-
-                requestAnimationFrame(() => {
-                    movedRows.forEach(({ row }) => {
-                        row.classList.add('row-move');
-                        row.style.transform = '';
-
-                        const cleanup = (e) => {
-                            if (e.propertyName === 'transform') {
-                                row.classList.remove('row-move', 'row-moving');
-                                row.style.transition = '';
-                                row.removeEventListener('transitionend', cleanup);
-                            }
-                        };
-                        row.addEventListener('transitionend', cleanup);
-                    });
-                });
-            });
-
             // Re-attach event listeners
             if (viewElement) {
                 this.callbacks.updateHeaderSortIcons(viewElement);
             }
 
             // Cleanup enter animations after full stagger duration
-            setTimeout(() => {
-                tbody.querySelectorAll('.row-filter-enter, .row-import-refresh').forEach(row => {
-                    row.classList.remove('row-filter-enter', 'row-import-refresh');
-                    row.style.removeProperty('--enter-delay');
-                    row.style.removeProperty('--row-delay');
-                });
-                tbody.querySelectorAll('.avatar-import-pop').forEach(avatar => {
-                    avatar.classList.remove('avatar-import-pop');
-                    avatar.style.removeProperty('--avatar-delay');
-                });
-            }, maxAnimDelay + 450);
+            this._scheduleRevealCleanup(tbody, maxAnimDelay + 450);
 
         }, exitDuration);
     },
@@ -321,16 +388,17 @@ export const ListViewAnimations = {
         const tbody = container.querySelector('tbody');
         if (!tbody) return;
 
+        if (this.state.activeFilterTimeout) {
+            clearTimeout(this.state.activeFilterTimeout);
+            this.state.activeFilterTimeout = null;
+        }
+
         // Build map of existing rows by ID
         const rowMap = new Map(existingRows.map(r => [r.dataset.studentId, r]));
         const newResultsMap = new Map(newResults.map(r => [r.id, r]));
 
         // *** FIRST: Capture positions BEFORE any DOM changes ***
-        const firstPositions = new Map();
-        existingRows.forEach(row => {
-            const rect = row.getBoundingClientRect();
-            firstPositions.set(row.dataset.studentId, { top: rect.top, left: rect.left });
-        });
+        const firstPositions = this._captureRowPositions(existingRows);
 
         // Reorder rows in correct order
         const orderedIds = newResults.map(r => r.id);
@@ -359,87 +427,20 @@ export const ListViewAnimations = {
                         const delay = importReveal.startDelay + Math.min(staggerIdx * staggerStep, 480);
                         staggerIdx++;
                         if (delay > maxImportDelay) maxImportDelay = delay;
-
-                        if (isUpdated) {
-                            row.classList.add('row-import-refresh');
-                            row.style.setProperty('--row-delay', `${delay}ms`);
-                        }
-                        if (hasPhoto) {
-                            const avatar = row.querySelector('.student-avatar');
-                            if (avatar) {
-                                avatar.classList.add('avatar-import-pop');
-                                avatar.style.setProperty('--avatar-delay', `${delay}ms`);
-                            }
-                        }
+                        this._applyImportRevealClasses(row, isUpdated, hasPhoto, delay, 0);
                     }
                 }
 
-                // Insert in correct position
-                if (previousNode) {
-                    if (previousNode.nextSibling !== row) {
-                        tbody.insertBefore(row, previousNode.nextSibling);
-                    }
-                } else {
-                    if (tbody.firstChild !== row) {
-                        tbody.insertBefore(row, tbody.firstChild);
-                    }
-                }
-                previousNode = row;
+                previousNode = this._insertRowInOrder(tbody, row, previousNode);
             }
         });
 
         if (maxImportDelay > 0) {
-            setTimeout(() => {
-                tbody.querySelectorAll('.row-import-refresh').forEach(row => {
-                    row.classList.remove('row-import-refresh');
-                    row.style.removeProperty('--row-delay');
-                });
-                tbody.querySelectorAll('.avatar-import-pop').forEach(avatar => {
-                    avatar.classList.remove('avatar-import-pop');
-                    avatar.style.removeProperty('--avatar-delay');
-                });
-            }, maxImportDelay + 480);
+            this._scheduleRevealCleanup(tbody, maxImportDelay + 480);
         }
 
         // *** LAST (batch reads) + INVERT (batch writes) + PLAY ***
-        const invertedRows = [];
-        existingRows.forEach(row => {
-            const first = firstPositions.get(row.dataset.studentId);
-            if (!first) return;
-
-            const rect = row.getBoundingClientRect();
-            const deltaX = (first.left ?? rect.left) - rect.left;
-            const deltaY = first.top - rect.top;
-            if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
-                invertedRows.push({ row, deltaX, deltaY });
-            }
-        });
-
-        invertedRows.forEach(({ row, deltaX, deltaY }) => {
-            row.style.transform = Math.abs(deltaX) > 2
-                ? `translate(${deltaX}px, ${deltaY}px)`
-                : `translateY(${deltaY}px)`;
-            row.style.transition = 'none';
-        });
-
-        // Force browser to render inverted state
-        void tbody.offsetHeight;
-
-        // PLAY: Animate to final position
-        requestAnimationFrame(() => {
-            invertedRows.forEach(({ row }) => {
-                row.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
-                row.style.transform = '';
-            });
-
-            // Cleanup with timeout (more reliable than transitionend)
-            setTimeout(() => {
-                existingRows.forEach(row => {
-                    row.style.transform = '';
-                    row.style.transition = '';
-                });
-            }, 400);
-        });
+        this._playFlipAnimation(tbody, existingRows, firstPositions, 350);
 
         // Update header icons
         const viewElement = container.querySelector('.student-list-view');

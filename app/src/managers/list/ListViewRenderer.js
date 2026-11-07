@@ -397,7 +397,7 @@ export const ListViewRenderer = {
                             Appréciation ${activePeriodLabel}
                         </span>
                         <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
-                            <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
+                            <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="${title}" data-tooltip="${title}">
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">

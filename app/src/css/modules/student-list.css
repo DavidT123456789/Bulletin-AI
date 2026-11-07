@@ -27,6 +27,16 @@
 }
 
 .student-list-table {
+    --row-rest-bg: var(--surface-color);
+    --row-rest-border: var(--border-color);
+    --row-moving-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    --row-spotlight-shadow-rest: inset 0 1px 0 0 transparent, inset 0 -1px 0 0 transparent;
+    --row-spotlight-shadow-mid: inset 0 1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent),
+                                inset 0 -1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent);
+    --row-spotlight-shadow-peak: inset 0 1px 0 0 var(--row-spotlight-border),
+                                 inset 0 -1px 0 0 var(--row-spotlight-border);
+    --row-exit-transform: scale(0.96) translateX(-15px);
+    --row-enter-transform: translateY(8px) scale(0.98);
     width: 100%;
     max-width: 100%;
     table-layout: fixed;
@@ -34,6 +44,10 @@
     border-spacing: 0;
     font-size: 14px;
     box-sizing: border-box;
+}
+
+[data-theme="dark"] .student-list-table {
+    --row-moving-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .student-list-table thead {
@@ -237,7 +251,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover td {
+    .student-list-table tbody tr:not(.focus-active):not(:has(.action-dropdown-menu.open)):hover td {
         background-color: var(--item-hover-bg);
     }
 
@@ -265,8 +279,8 @@
 .student-list-table tbody tr.focus-active td,
 .student-list-table tbody tr:has(.action-dropdown-menu.open) td {
     background-color: var(--row-spotlight-bg-peak);
-    box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
-                inset 0 -1px 0 0 var(--row-spotlight-border);
+    border-color: var(--row-spotlight-border);
+    box-shadow: var(--row-spotlight-shadow-peak);
 }
 
 .student-list-table tbody tr.highlight-new,
@@ -277,7 +291,7 @@
 
 /* 1. Target Acquisition Spotlight (.highlight-new: cross-class jump / new student) */
 .student-list-table tbody tr.highlight-new td {
-    animation: row-spotlight-cell-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: row-spotlight-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .student-list-table tbody tr.highlight-new .student-avatar {
@@ -287,7 +301,7 @@
 
 /* 2. Spatial Return Echo (.focus-closed-flash: exiting Focus Panel) */
 .student-list-table tbody tr.focus-closed-flash td {
-    animation: row-spotlight-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: row-spotlight-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .student-list-table tbody tr.focus-closed-flash .student-avatar {
@@ -303,23 +317,23 @@
     color: var(--text-primary);
 }
 
-@keyframes row-spotlight-cell-new {
+@keyframes row-spotlight-new {
     0%,
     100% {
-        background-color: var(--surface-color);
-        box-shadow: inset 0 1px 0 0 transparent,
-                    inset 0 -1px 0 0 transparent;
+        background-color: var(--row-rest-bg);
+        border-color: var(--row-rest-border);
+        box-shadow: var(--row-spotlight-shadow-rest);
     }
     14%,
     56% {
         background-color: var(--row-spotlight-bg-peak);
-        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
-                    inset 0 -1px 0 0 var(--row-spotlight-border);
+        border-color: var(--row-spotlight-border);
+        box-shadow: var(--row-spotlight-shadow-peak);
     }
     36% {
         background-color: var(--row-spotlight-bg-mid);
-        box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent),
-                    inset 0 -1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent);
+        border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--row-rest-border));
+        box-shadow: var(--row-spotlight-shadow-mid);
     }
 }
 
@@ -346,17 +360,17 @@
     }
 }
 
-@keyframes row-spotlight-cell-return {
+@keyframes row-spotlight-return {
     0%,
     18% {
         background-color: var(--row-spotlight-bg-peak);
-        box-shadow: inset 0 1px 0 0 var(--row-spotlight-border),
-                    inset 0 -1px 0 0 var(--row-spotlight-border);
+        border-color: var(--row-spotlight-border);
+        box-shadow: var(--row-spotlight-shadow-peak);
     }
     100% {
-        background-color: var(--surface-color);
-        box-shadow: inset 0 1px 0 0 transparent,
-                    inset 0 -1px 0 0 transparent;
+        background-color: var(--row-rest-bg);
+        border-color: var(--row-rest-border);
+        box-shadow: var(--row-spotlight-shadow-rest);
     }
 }
 
@@ -483,35 +497,16 @@
     }
 }
 
-/* Animation de highlight subtile lors du filtrage */
-@keyframes row-filter-highlight {
-    0% {
-        background-color: var(--surface-color);
-    }
-
-    30% {
-        background-color: color-mix(in srgb, var(--surface-color), var(--text-primary) 7%);
-    }
-
-    100% {
-        background-color: var(--surface-color);
-    }
-}
-
-.student-list-table tbody tr.filter-highlight {
-    animation: row-filter-highlight 0.6s ease-out;
-}
-
 /* Keyframes pour la sortie des lignes filtrées - fade + scale + collapse */
 @keyframes list-row-exit {
     0% {
         opacity: 1;
-        transform: scale(1) translateX(0);
+        transform: none;
     }
 
     100% {
         opacity: 0;
-        transform: scale(0.96) translateX(-15px);
+        transform: var(--row-exit-transform);
     }
 }
 
@@ -526,17 +521,18 @@
     transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
-/* Effet "carte" pendant le déplacement pour un feedback visuel premium */
+/* Surface opaque pendant le déplacement FLIP pour éviter toute transparence au croisement */
 .student-list-table tbody tr.row-moving {
     position: relative;
     z-index: 10;
-    background: var(--surface-color) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--row-moving-shadow);
     border-radius: 8px;
+    pointer-events: none;
 }
 
-.student-list-table tbody tr.row-moving td {
-    background: var(--surface-color);
+.student-list-table tbody tr.row-moving:not(.selected):not(.focus-active):not(:has(.action-dropdown-menu.open)),
+.student-list-table tbody tr.row-moving:not(.selected):not(.focus-active):not(:has(.action-dropdown-menu.open)) td {
+    background-color: var(--row-rest-bg);
 }
 
 .student-list-table tbody tr.row-moving td:first-child {
@@ -556,25 +552,16 @@
     border-bottom-right-radius: var(--radius-md) !important;
 }
 
-[data-theme="dark"] .student-list-table tbody tr.row-moving {
-    background: var(--surface-color) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .student-list-table tbody tr.row-moving td {
-    background: var(--surface-color);
-}
-
 /* Keyframes pour l'entrée retardée des nouvelles lignes lors du filtrage */
 @keyframes list-row-filter-enter {
     from {
         opacity: 0;
-        transform: translateY(8px) scale(0.98);
+        transform: var(--row-enter-transform);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: none;
     }
 }
 
@@ -1236,8 +1223,9 @@
     display: none !important;
 }
 
-.appreciation-full-view .status-badges-container .tag-badge {
+.appreciation-full-view .status-badges-container .tag-badge:nth-of-type(n+2) {
     display: inline-flex !important;
+    animation: appreciation-expand-reveal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 .status-empty-dash {
@@ -1299,8 +1287,12 @@
     opacity: 0;
 }
 
-/* Reveal on row hover, keyboard focus, or when menu is open */
-.student-list-table tbody tr:hover .btn-action-menu,
+.btn-action-menu iconify-icon,
+.btn-action-menu-header iconify-icon {
+    pointer-events: none;
+}
+
+/* Reveal on keyboard focus or when menu is open */
 .student-list-table tbody tr:focus-within .btn-action-menu,
 .student-list-table tbody tr .btn-action-menu:focus,
 .action-dropdown.open .btn-action-menu,
@@ -1308,10 +1300,20 @@
     opacity: 1;
 }
 
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .btn-action-menu {
+        opacity: 1;
+    }
+}
+
 /* Always visible on touch devices */
-@media (hover: none) {
+@media (hover: none), (pointer: coarse) {
     .student-list-table tbody tr .btn-action-menu {
         opacity: 0.6;
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        flex: 0 0 44px;
     }
 }
 
@@ -1798,12 +1800,26 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     }
 
     /* --- TBODY (Student Cards) --- */
+    .student-list-table {
+        --row-rest-border: var(--card-glass-border);
+        --row-moving-shadow: none;
+        --row-spotlight-shadow-rest: var(--shadow-sm);
+        --row-spotlight-shadow-mid: 0 4px 12px rgba(0, 0, 0, 0.09);
+        --row-spotlight-shadow-peak: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    [data-theme="dark"] .student-list-table {
+        --row-spotlight-shadow-rest: none;
+        --row-spotlight-shadow-mid: none;
+        --row-spotlight-shadow-peak: none;
+    }
+
     .student-list-table tbody tr {
-        background: var(--surface-color);
+        background-color: var(--row-rest-bg);
         border-radius: var(--radius-md);
         margin-bottom: 10px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--card-glass-border);
+        box-shadow: var(--row-spotlight-shadow-rest);
+        border: 1px solid var(--row-rest-border);
         padding: var(--space-3) var(--space-4);
         row-gap: 6px;
         position: relative;
@@ -1813,7 +1829,8 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         align-items: center;
         transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
                     box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-                    background-color var(--transition-fast);
+                    background-color var(--transition-fast),
+                    border-color var(--transition-fast);
         /* Long-press opens the actions menu: block native text selection & iOS callout */
         -webkit-user-select: none;
         user-select: none;
@@ -1825,13 +1842,14 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     }
 
     [data-theme="dark"] #mobileCompactToggleBtn,
-    [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header,
-    [data-theme="dark"] .student-list-table tbody tr {
+    [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
         box-shadow: none;
     }
 
     .student-list-table tbody tr:active {
         transform: scale(0.98);
+        background-color: var(--row-spotlight-bg-peak);
+        border-color: var(--row-spotlight-border);
     }
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
@@ -1850,7 +1868,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         background: transparent !important;
     }
 
-    /* Mobile Card Spotlight (.focus-active, .action-dropdown-menu.open, .highlight-new, .focus-closed-flash) */
+    /* Mobile Card & List Row Spotlight (.focus-active, .action-dropdown-menu.open, .highlight-new, .focus-closed-flash) */
     .student-list-table tbody tr.focus-active td,
     .student-list-table tbody tr:has(.action-dropdown-menu.open) td,
     .student-list-table tbody tr.highlight-new td,
@@ -1862,51 +1880,17 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 
     .student-list-table tbody tr.focus-active,
     .student-list-table tbody tr:has(.action-dropdown-menu.open) {
-        background: var(--row-spotlight-bg-peak) !important;
+        background-color: var(--row-spotlight-bg-peak) !important;
         border-color: var(--row-spotlight-border) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        box-shadow: var(--row-spotlight-shadow-peak) !important;
     }
 
     .student-list-table tbody tr.highlight-new {
-        animation: row-spotlight-card-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation: row-spotlight-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     .student-list-table tbody tr.focus-closed-flash {
-        animation: row-spotlight-card-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    @keyframes row-spotlight-card-new {
-        0%,
-        100% {
-            background-color: var(--surface-color);
-            border-color: var(--card-glass-border);
-            box-shadow: var(--shadow-sm);
-        }
-        14%,
-        56% {
-            background-color: var(--row-spotlight-bg-peak);
-            border-color: var(--row-spotlight-border);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
-        }
-        36% {
-            background-color: var(--row-spotlight-bg-mid);
-            border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--card-glass-border));
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09);
-        }
-    }
-
-    @keyframes row-spotlight-card-return {
-        0%,
-        18% {
-            background-color: var(--row-spotlight-bg-peak);
-            border-color: var(--row-spotlight-border);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-        }
-        100% {
-            background-color: var(--surface-color);
-            border-color: var(--card-glass-border);
-            box-shadow: var(--shadow-sm);
-        }
+        animation: row-spotlight-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     /* 1. Identity (Top) */
@@ -1917,15 +1901,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         /* Espace pour l'action cell à droite */
         padding-bottom: 0 !important;
         width: 100% !important;
-    }
-
-    .student-identity-wrapper {
-        gap: 10px;
-        padding-left: 0 !important; /* Align avatar with card left edge by overriding desktop full-view indent */
-    }
-
-    .student-nom-prenom {
-        font-size: 1rem;
     }
 
     .student-avatar {
@@ -2018,28 +1993,16 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         align-items: center;
     }
 
-    .student-list-view .appreciation-preview {
-        box-sizing: border-box;
-        width: 100%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        background: transparent;
+    .appreciation-preview {
         padding: 1px 2px 0;
-        border: none;
-        font-size: 13px;
-        line-height: 1.5;
-        transition: color var(--transition-fast);
     }
 
-    .student-list-view .appreciation-preview-wrapper:has(.dirty-indicator) .appreciation-preview {
+    .student-list-table.appreciation-full-view .appreciation-preview {
+        padding: 4px 2px 2px;
+    }
+
+    .appreciation-preview-wrapper:has(.dirty-indicator) .appreciation-preview {
         padding-left: 22px;
-    }
-
-    .student-list-view .student-list-table.appreciation-full-view .appreciation-preview {
-        white-space: pre-wrap;
-        max-height: 1000px;
-        overflow: visible;
     }
 
     .student-list-table.appreciation-full-view .appreciation-cell:not(:has(> .status-badge)) {
@@ -2053,12 +2016,19 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         position: absolute;
         top: 8px;
         right: 8px;
+        order: 5;
+        z-index: 20;
         width: auto !important;
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
+        transition: top 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .student-list-table.appreciation-full-view .action-cell {
+        top: 12px;
     }
 
     .action-dropdown {
@@ -2138,6 +2108,22 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 /* Smartphone (≤600px) : Flux continu Edge-to-Edge (style Liste native iOS / YouTube)
    Surface continue bord à bord, filets séparateurs 1px, zéro boîte par élève */
 @media (max-width: 600px) {
+    .student-list-table {
+        --row-rest-border: var(--border-color);
+        --row-spotlight-shadow-rest: none;
+        --row-spotlight-shadow-mid: none;
+        --row-spotlight-shadow-peak: none;
+        --row-exit-transform: translateY(-6px);
+        --row-enter-transform: translateY(8px);
+    }
+
+    [data-theme="dark"] .student-list-table {
+        --row-rest-bg: var(--bg-color);
+        --row-spotlight-bg-peak: color-mix(in srgb, var(--bg-color), var(--text-primary) 11%);
+        --row-spotlight-bg-mid: color-mix(in srgb, var(--bg-color), var(--text-primary) 5.5%);
+        --row-spotlight-border: var(--border-color-strong);
+    }
+
     .student-list-table tbody {
         width: calc(100% + (var(--content-padding-x) * 2));
         margin-inline: calc(-1 * var(--content-padding-x));
@@ -2148,45 +2134,28 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         margin-bottom: 0;
         box-shadow: none;
         border: none;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--row-rest-border);
         padding: 14px var(--space-4);
     }
 
-    [data-theme="dark"] .student-list-table tbody tr {
-        background: transparent;
-    }
-
     .student-list-table tbody tr:first-child {
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid var(--row-rest-border);
     }
 
-    .student-list-table tbody tr:active,
-    [data-theme="dark"] .student-list-table tbody tr:active {
+    .student-list-table tbody tr:active {
         transform: none;
-        background-color: var(--item-active-bg);
     }
 
     .student-list-table tbody tr.row-moving {
         border-radius: 0;
     }
 
-    .student-list-table tbody tr.focus-active,
-    .student-list-table tbody tr:has(.action-dropdown-menu.open) {
-        background-color: var(--item-active-bg) !important;
-        border-color: var(--border-color-strong) !important;
-        box-shadow: none !important;
-    }
-
-    .student-list-table tbody tr.highlight-new {
-        animation: row-spotlight-cell-new 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .student-list-table tbody tr.focus-closed-flash {
-        animation: row-spotlight-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
     .action-cell {
         top: 10px;
         right: 6px;
+    }
+
+    .student-list-table.appreciation-full-view .action-cell {
+        top: 14px;
     }
 }
