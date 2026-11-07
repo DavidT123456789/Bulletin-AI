@@ -32,6 +32,7 @@ import { GliderManager } from './GliderManager.js';
 import { AnimationManager } from './AnimationManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
 import { ClassManager } from './ClassManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -1244,7 +1245,16 @@ export const UI = {
         // Remove any existing close buttons from previous filters
         document.querySelectorAll('.filter-close-btn').forEach(btn => btn.remove());
 
-        if (!appState.activeStatFilter) return;
+        if (!appState.activeStatFilter) {
+            if (HistoryManager.isOpen('statFilter')) {
+                HistoryManager.handleManualClose('statFilter');
+            }
+            return;
+        }
+
+        if (!HistoryManager.isOpen('statFilter')) {
+            HistoryManager.pushState('statFilter', (opts) => EventHandlersManager.handleStatFilterClick(null, opts));
+        }
 
         // Restore visual active filter class on corresponding DOM element if not present
         const targetEl = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);

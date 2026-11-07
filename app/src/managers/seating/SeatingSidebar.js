@@ -8,6 +8,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
+import { HistoryManager } from '../HistoryManager.js';
 import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { MAX_ACTIVITY_GROUP_SIZE } from './SeatingState.js';
@@ -110,16 +111,21 @@ export const SeatingSidebar = {
         this._updateSelectionAttribute();
     },
 
-    _clearSelection() {
+    _clearSelection(options = {}) {
         if (this._activeLassoAbort || this._lassoBoxEl) {
             this._cleanupMouseLasso?.();
         }
-        if (this._selectedChipIds.length === 0) return;
+        if (this._selectedChipIds.length === 0) {
+            if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('scSelection')) {
+                HistoryManager.handleManualClose('scSelection');
+            }
+            return;
+        }
         this._selectedChipIds = [];
         this._lastSelectedGridPos = null;
         this._lastSelectedSidebarIndex = null;
         this._applyChipSelectionUI();
-        this._updateSelectionAttribute();
+        this._updateSelectionAttribute(options);
     },
 
     _applyChipSelectionUI() {
@@ -139,10 +145,19 @@ export const SeatingSidebar = {
         });
     },
 
-    _updateSelectionAttribute() {
+    _updateSelectionAttribute(options = {}) {
+        const hasSelection = this._selectedChipIds.length > 0;
         const view = document.getElementById('seatingChartView');
-        if (view) view.dataset.hasSelection = this._selectedChipIds.length > 0;
+        if (view) view.dataset.hasSelection = hasSelection;
         this._updateQuickGroupButton();
+
+        if (hasSelection) {
+            if (!HistoryManager.isOpen('scSelection')) {
+                HistoryManager.pushState('scSelection', (opts) => this._clearSelection(opts));
+            }
+        } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('scSelection')) {
+            HistoryManager.handleManualClose('scSelection');
+        }
     },
 
     _canQuickGroupSelection() {
@@ -718,6 +733,7 @@ export const SeatingSidebar = {
         if (prev !== placed && prev !== 0) this._animateCounterBump();
         this._prevPlacedCount = placed;
 
+        this._syncEditHistoryState?.();
         this._updateStatusPill();
     }
 };

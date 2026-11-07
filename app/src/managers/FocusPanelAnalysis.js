@@ -10,6 +10,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -123,6 +124,7 @@ export const FocusPanelAnalysis = {
 
         // Slide to analysis page
         container.classList.add('show-analysis');
+        HistoryManager.pushState('focusAnalysis', (opts) => this.hide(opts));
 
         // Manage focus/accessibility state (prevent tab bleeding)
         const mainPage = document.getElementById('focusMainPage');
@@ -166,11 +168,17 @@ export const FocusPanelAnalysis = {
 
     /**
      * Hide the analysis page (slide back to main)
+     * @param {Object} [options={}]
      */
-    hide() {
+    hide(options = {}) {
         const container = document.getElementById('focusPagesContainer');
+        const wasVisible = container?.classList.contains('show-analysis') ?? false;
         if (container) {
             container.classList.remove('show-analysis');
+        }
+
+        if (wasVisible && !options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusAnalysis')) {
+            HistoryManager.handleManualClose('focusAnalysis');
         }
 
         // Manage focus/accessibility state (restore focus to main page)

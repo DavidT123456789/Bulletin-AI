@@ -12,6 +12,7 @@
 import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -91,10 +92,17 @@ export const EventHandlersManager = {
     /**
      * Gère le clic sur une carte de statistique pour filtrer.
      * @param {HTMLElement|null} element - L'élément cliqué ou null pour reset
+     * @param {Object} [options={}] - Options d'origine (ex: { causedByHistory: true })
      */
-    handleStatFilterClick(element) {
+    handleStatFilterClick(element, options = {}) {
         if (!element) {
             appState.activeStatFilter = null;
+            if (!options?.causedByHistory && HistoryManager.isOpen('statFilter')) {
+                HistoryManager.handleManualClose('statFilter');
+            }
+            if (document.activeElement?.closest?.('.stats-container')) {
+                document.activeElement.blur?.();
+            }
             document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
             UI.updateActiveFilterInfo();
             // FLIP animation is handled in ListViewManager
@@ -115,10 +123,14 @@ export const EventHandlersManager = {
         if (isCurrentlyActive) {
             // DE-ACTIVATE
             appState.activeStatFilter = null;
+            if (!options?.causedByHistory && HistoryManager.isOpen('statFilter')) {
+                HistoryManager.handleManualClose('statFilter');
+            }
         } else {
             // ACTIVATE
             appState.activeStatFilter = statId;
             element.classList.add('active-filter');
+            HistoryManager.pushState('statFilter', (opts) => this.handleStatFilterClick(null, opts));
         }
 
         UI.updateActiveFilterInfo();

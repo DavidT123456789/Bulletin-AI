@@ -1967,6 +1967,147 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             rafSpy.mockRestore();
         });
+
+        it('devrait animer l’inertie de pan en 120Hz via une transition GPU FLIP sur #scClassroomBoard et restaurer la position intermédiaire en cas d’interruption au doigt', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._isActive = true;
+            SeatingChartManager._fitScale = 0.7;
+            SeatingChartManager._zoomScale = 1.5;
+            SeatingChartManager._isFitted = false;
+            gridArea.setAttribute('data-fitted', 'false');
+            board.style.setProperty('--sc-scale', '1.5');
+
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 1400, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 400, configurable: true });
+            gridArea.scrollLeft = 200;
+            gridArea.scrollTop = 150;
+
+            let mockNow = 1000;
+            const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => mockNow);
+
+            try {
+                // 1. Démarrage du pan tactile
+                const tStart = new Event('touchstart', { cancelable: true });
+                tStart.touches = [{ clientX: 300, clientY: 250 }];
+                gridArea.dispatchEvent(tStart);
+
+                // Glissement rapide à 120Hz (~8ms par échantillon) vers la gauche (-32px en 16ms -> vx = -2 px/ms)
+                mockNow = 1008;
+                const tMove1 = new Event('touchmove', { cancelable: true });
+                tMove1.touches = [{ clientX: 284, clientY: 242 }];
+                gridArea.dispatchEvent(tMove1);
+
+                mockNow = 1016;
+                const tMove2 = new Event('touchmove', { cancelable: true });
+                tMove2.touches = [{ clientX: 268, clientY: 234 }];
+                gridArea.dispatchEvent(tMove2);
+
+                // Dernier échantillon de décollement du doigt quasi-immobile (-1px en 8ms) : la fenêtre glissante doit préserver la vitesse de lancement
+                mockNow = 1024;
+                const tMoveLift = new Event('touchmove', { cancelable: true });
+                tMoveLift.touches = [{ clientX: 267, clientY: 233.5 }];
+                gridArea.dispatchEvent(tMoveLift);
+
+                const scrollBeforeReleaseX = gridArea.scrollLeft; // 233
+                const scrollBeforeReleaseY = gridArea.scrollTop;  // 166.5
+
+                mockNow = 1028;
+                const tEnd = new Event('touchend', { cancelable: true });
+                tEnd.touches = [];
+                tEnd.changedTouches = [{ clientX: 267, clientY: 233.5 }];
+                gridArea.dispatchEvent(tEnd);
+
+                // Le scroll cible final est engagé immédiatement une seule fois et la carte glisse sur le compositeur GPU
+                const targetX = gridArea.scrollLeft;
+                const targetY = gridArea.scrollTop;
+                expect(targetX).toBeGreaterThan(scrollBeforeReleaseX + 200);
+                expect(targetY).toBeGreaterThan(scrollBeforeReleaseY + 100);
+                expect(board.classList.contains('sc-lock-sliding')).toBe(true);
+                expect(board.style.transition).toContain('cubic-bezier(0.25, 0.6, 0.36, 1)');
+                expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+
+                // 2. Interruption à mi-course par un nouveau touchstart (à ~80ms dans la transition)
+                mockNow = 1108;
+                const tInterrupt = new Event('touchstart', { cancelable: true });
+                tInterrupt.touches = [{ clientX: 250, clientY: 200 }];
+                gridArea.dispatchEvent(tInterrupt);
+
+                // La transition GPU est nettoyée et scrollLeft/scrollTop sont figés à la position intermédiaire exacte
+                expect(board.classList.contains('sc-lock-sliding')).toBe(false);
+                expect(board.style.transition).toBe('');
+                expect(board.style.transform).toBe('');
+                expect(gridArea.scrollLeft).toBeGreaterThan(scrollBeforeReleaseX);
+                expect(gridArea.scrollLeft).toBeLessThan(targetX);
+                expect(gridArea.scrollTop).toBeGreaterThan(scrollBeforeReleaseY);
+                expect(gridArea.scrollTop).toBeLessThan(targetY);
+            } finally {
+                nowSpy.mockRestore();
+            }
+        });
+
+        it('devrait enchaîner le rebond élastique d’impact lorsque l’inertie GPU FLIP heurte un bord avec une vitesse résiduelle élevée', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._isActive = true;
+            SeatingChartManager._fitScale = 0.7;
+            SeatingChartManager._zoomScale = 1.4;
+            SeatingChartManager._isFitted = false;
+            gridArea.setAttribute('data-fitted', 'false');
+            board.style.setProperty('--sc-scale', '1.4');
+
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 1000, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 800, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 400, configurable: true });
+            gridArea.scrollLeft = 80; // Proche du bord gauche (0)
+            gridArea.scrollTop = 100;
+
+            const bounceSpy = vi.spyOn(SeatingChartManager, '_triggerEdgeImpactBounce');
+            let mockNow = 2000;
+            const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => mockNow);
+
+            try {
+                const tStart = new Event('touchstart', { cancelable: true });
+                tStart.touches = [{ clientX: 150, clientY: 200 }];
+                gridArea.dispatchEvent(tStart);
+
+                mockNow = 2010;
+                const tMove1 = new Event('touchmove', { cancelable: true });
+                tMove1.touches = [{ clientX: 180, clientY: 200 }]; // +30px en 10ms -> vx = +3 px/ms vers le bord gauche
+                gridArea.dispatchEvent(tMove1);
+
+                mockNow = 2020;
+                const tMove2 = new Event('touchmove', { cancelable: true });
+                tMove2.touches = [{ clientX: 210, clientY: 200 }]; // +30px en 10ms
+                gridArea.dispatchEvent(tMove2);
+
+                mockNow = 2024;
+                const tEnd = new Event('touchend', { cancelable: true });
+                tEnd.touches = [];
+                tEnd.changedTouches = [{ clientX: 210, clientY: 200 }];
+                gridArea.dispatchEvent(tEnd);
+
+                // Atteint le bord gauche (scrollLeft = 0) via la courbe d'approche d'impact
+                expect(gridArea.scrollLeft).toBe(0);
+                expect(board.style.transition).toContain('cubic-bezier(0.22, 0.68, 0.38, 1)');
+
+                // À la fin de la glissade jusqu'au bord, le rebond d'impact élastique est déclenché
+                const transEnd = new Event('transitionend');
+                Object.defineProperty(transEnd, 'propertyName', { value: 'transform' });
+                board.dispatchEvent(transEnd);
+
+                expect(bounceSpy).toHaveBeenCalledTimes(1);
+                expect(bounceSpy.mock.calls[0][0]).toBeGreaterThan(0);
+            } finally {
+                nowSpy.mockRestore();
+                bounceSpy.mockRestore();
+            }
+        });
     });
 
     describe('SeatingChartManager - Mode Édition Mobile & Tap-to-Place (2026 Gold Standard)', () => {
@@ -2505,13 +2646,33 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             HistoryManager.destroy();
         });
 
-        it('devrait empiler seatingChartEdit dans HistoryManager lors du passage en mode édition', () => {
+        it('devrait empiler seatingChartEdit dans HistoryManager lors du passage en mode édition (quand au moins 1 élève est placé)', () => {
+            SeatingChartManager._gridState = [['s1']];
             SeatingChartManager._toggleLock();
             expect(SeatingChartManager._isLocked).toBe(false);
             expect(HistoryManager.isOpen('seatingChartEdit')).toBe(true);
         });
 
+        it('ne devrait PAS empiler seatingChartEdit sur un plan vierge (0 élève placé) afin qu’un seul Retour ramène à la vue Liste', () => {
+            SeatingChartManager._gridState = [[null]];
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true, skipDraggabilityUpdate: true });
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(HistoryManager.isOpen('seatingChartEdit')).toBe(false);
+        });
+
+        it('devrait empiler scSelection lors de la sélection d’un élève et annuler la sélection au bouton Retour', () => {
+            SeatingChartManager._selectedChipIds = [];
+            SeatingChartManager._toggleChipSelection('s1');
+            expect(SeatingChartManager._selectedChipIds).toEqual(['s1']);
+            expect(HistoryManager.isOpen('scSelection')).toBe(true);
+
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+            expect(HistoryManager.isOpen('scSelection')).toBe(false);
+        });
+
         it('devrait quitter le mode édition et verrouiller le plan lors du popstate / retour', () => {
+            SeatingChartManager._gridState = [['s1']];
             SeatingChartManager._toggleLock();
             expect(SeatingChartManager._isLocked).toBe(false);
 

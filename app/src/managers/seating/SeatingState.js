@@ -271,10 +271,15 @@ export const SeatingState = {
         }
 
         // [UX Mobile] History integration for Edit Mode
-        if (!locked) {
+        this._syncEditHistoryState();
+    },
+
+    _syncEditHistoryState() {
+        const canLock = !this._isLocked && !this._isVirtualClass() && this._getPlacedIds().size > 0;
+        if (canLock) {
             if (!HistoryManager.isOpen('seatingChartEdit')) {
                 HistoryManager.pushState('seatingChartEdit', () => {
-                    if (!this._isLocked) {
+                    if (!this._isLocked && this._getPlacedIds().size > 0) {
                         this._toggleLock();
                     }
                 });

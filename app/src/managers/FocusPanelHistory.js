@@ -8,6 +8,7 @@ import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
 import { Utils } from '../utils/Utils.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Focus Panel history UI controller
@@ -91,6 +92,7 @@ export const FocusPanelHistory = {
     },
 
     load(resultId, targetPeriod = null) {
+        this.closePopover();
         this._currentResultId = resultId;
         const result = this._getResult(resultId);
         const currentPeriod = targetPeriod || appState.currentPeriod;
@@ -103,6 +105,7 @@ export const FocusPanelHistory = {
     },
 
     reset() {
+        this.closePopover();
         this._currentResultId = null;
         this._notifyHistoryChange();
     },
@@ -209,12 +212,28 @@ export const FocusPanelHistory = {
         }
     },
 
+    closePopover(options = {}) {
+        if (this._popoverCloseHandler) {
+            document.removeEventListener('click', this._popoverCloseHandler);
+            this._popoverCloseHandler = null;
+        }
+        const existing = document.getElementById('historyPopover');
+        if (existing) {
+            existing.remove();
+        }
+        const indicator = document.getElementById('focusHistoryIndicator');
+        indicator?.classList.remove('active');
+
+        if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusHistoryPopover')) {
+            HistoryManager.handleManualClose('focusHistoryPopover');
+        }
+    },
+
     showPopover() {
         const indicator = document.getElementById('focusHistoryIndicator');
         const existing = document.getElementById('historyPopover');
         if (existing) {
-            existing.remove();
-            indicator?.classList.remove('active');
+            this.closePopover();
             return;
         }
 
@@ -296,6 +315,7 @@ export const FocusPanelHistory = {
         }
 
         document.body.appendChild(popover);
+        HistoryManager.pushState('focusHistoryPopover', (opts) => this.closePopover(opts));
         if (listEl) {
             this._panel?.bindScrollAffordances?.(listEl);
         }
@@ -303,19 +323,22 @@ export const FocusPanelHistory = {
         popover.querySelectorAll('.history-version-item').forEach(item => {
             item.addEventListener('click', () => {
                 this.restoreVersion(parseInt(item.dataset.index, 10));
-                popover.remove();
-                indicator?.classList.remove('active');
+                this.closePopover();
             });
         });
 
+        if (this._popoverCloseHandler) {
+            document.removeEventListener('click', this._popoverCloseHandler);
+            this._popoverCloseHandler = null;
+        }
         setTimeout(() => {
+            if (!document.body.contains(popover)) return;
             const closeHandler = (e) => {
                 if (!popover.contains(e.target) && !indicator?.contains(e.target)) {
-                    popover.remove();
-                    indicator?.classList.remove('active');
-                    document.removeEventListener('click', closeHandler);
+                    this.closePopover();
                 }
             };
+            this._popoverCloseHandler = closeHandler;
             document.addEventListener('click', closeHandler);
         }, 100);
     },

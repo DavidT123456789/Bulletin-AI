@@ -10,6 +10,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 const STORAGE_KEY = 'pwa_install_dismissed';
 const SESSION_KEY = 'pwa_install_later';
@@ -414,35 +415,7 @@ export const PwaInstallManager = {
             </div>
         `;
 
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const overlay = document.getElementById('pwaModalOverlay');
-        const closeBtn = document.getElementById('pwaModalCloseBtn');
-        const neverBtn = document.getElementById('pwaModalNeverBtn');
-
-        const closeModal = () => {
-            overlay?.classList.remove('visible');
-            document.removeEventListener('keydown', handleEscape);
-            setTimeout(() => overlay?.remove(), 300);
-        };
-
-        // Keyboard accessibility: Escape to close
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') closeModal();
-        };
-        document.addEventListener('keydown', handleEscape);
-
-        // Animate in
-        requestAnimationFrame(() => overlay?.classList.add('visible'));
-
-        closeBtn?.addEventListener('click', closeModal);
-        neverBtn?.addEventListener('click', () => {
-            this._setDismissed(true);
-            closeModal();
-        });
-        overlay?.addEventListener('click', (e) => {
-            if (e.target === overlay) closeModal();
-        });
+        this._mountInstallModal(modalHtml);
     },
 
     /**
@@ -491,13 +464,26 @@ export const PwaInstallManager = {
             </div>
         `;
 
+        this._mountInstallModal(modalHtml);
+    },
+
+    /**
+     * Mounts the PWA install modal overlay and binds close/Escape/HistoryManager handlers
+     * @param {string} modalHtml
+     * @private
+     */
+    _mountInstallModal(modalHtml) {
+        document.getElementById('pwaModalOverlay')?.remove();
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
         const overlay = document.getElementById('pwaModalOverlay');
         const closeBtn = document.getElementById('pwaModalCloseBtn');
         const neverBtn = document.getElementById('pwaModalNeverBtn');
 
-        const closeModal = () => {
+        const closeModal = (options = {}) => {
+            if (!options?.causedByHistory && HistoryManager.isOpen('pwaModalOverlay')) {
+                HistoryManager.handleManualClose('pwaModalOverlay');
+            }
             overlay?.classList.remove('visible');
             document.removeEventListener('keydown', handleEscape);
             setTimeout(() => overlay?.remove(), 300);
@@ -508,9 +494,10 @@ export const PwaInstallManager = {
         };
         document.addEventListener('keydown', handleEscape);
 
+        HistoryManager.pushState('pwaModalOverlay', (opts) => closeModal(opts));
         requestAnimationFrame(() => overlay?.classList.add('visible'));
 
-        closeBtn?.addEventListener('click', closeModal);
+        closeBtn?.addEventListener('click', () => closeModal());
         neverBtn?.addEventListener('click', () => {
             this._setDismissed(true);
             closeModal();

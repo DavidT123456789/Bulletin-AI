@@ -409,7 +409,15 @@ export const ImportWizardManager = {
             this._updateUI();
             this._updateHeaderPeriodBadge(); // Show current period in guide
             this._updateClassBadge(); // Show current class name in header
-            UI.openModal(modal);
+            UI.openModal(modal, {
+                onClose: () => {
+                    this._togglePeriodDropdown(false);
+                    DropdownManager.closeAll();
+                    if (HistoryManager.isOpen('importWizardStep')) {
+                        HistoryManager.handleManualClose('importWizardStep');
+                    }
+                }
+            });
         }
     },
 
@@ -477,17 +485,25 @@ export const ImportWizardManager = {
 
     /**
      * Toggle active period dropdown menu visibility
+     * @param {boolean} show
+     * @param {Object} [options={}]
      * @private
      */
-    _togglePeriodDropdown(show) {
+    _togglePeriodDropdown(show, options = {}) {
         if (show) {
             DropdownManager.closeAll();
         }
         const dropdown = document.getElementById('wizardPeriodDropdown');
         const menu = document.getElementById('wizardPeriodMenu');
+        const wasOpen = dropdown?.classList.contains('open') ?? false;
         if (dropdown && menu) {
             dropdown.classList.toggle('open', show);
             menu.classList.toggle('open', show);
+        }
+        if (show && dropdown) {
+            HistoryManager.pushState('wizardPeriodDropdown', (opts) => this._togglePeriodDropdown(false, opts));
+        } else if (!show && wasOpen && !options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('wizardPeriodDropdown')) {
+            HistoryManager.handleManualClose('wizardPeriodDropdown');
         }
     },
 
@@ -550,7 +566,15 @@ export const ImportWizardManager = {
             }
             this.currentStep = 1;
             this._updateUI();
-            UI.openModal(modal);
+            UI.openModal(modal, {
+                onClose: () => {
+                    this._togglePeriodDropdown(false);
+                    DropdownManager.closeAll();
+                    if (HistoryManager.isOpen('importWizardStep')) {
+                        HistoryManager.handleManualClose('importWizardStep');
+                    }
+                }
+            });
 
             // Pre-fill the textarea with sample data
             const textarea = document.getElementById('wizardDataTextarea');
@@ -565,7 +589,11 @@ export const ImportWizardManager = {
      * Close the wizard modal
      */
     close() {
+        this._togglePeriodDropdown(false);
         DropdownManager.closeAll();
+        if (HistoryManager.isOpen('importWizardStep')) {
+            HistoryManager.handleManualClose('importWizardStep');
+        }
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             UI.closeModal(modal);
@@ -594,22 +622,35 @@ export const ImportWizardManager = {
 
     /**
      * Go to previous step
+     * @param {Object} [options={}]
      */
-    prevStep() {
+    prevStep(options = {}) {
         if (this.currentStep > 1) {
-            this.goToStep(this.currentStep - 1);
+            this.goToStep(this.currentStep - 1, options);
         }
     },
 
     /**
      * Go to specific step (public method)
+     * @param {number} step
+     * @param {Object} [options={}]
      */
-    goToStep(step) {
+    goToStep(step, options = {}) {
         if (step >= 1 && step <= 3) {
             const previousStep = this.currentStep;
             if (previousStep === step) return;
+            this._togglePeriodDropdown(false);
             DropdownManager.closeAll();
             this.currentStep = step;
+            if (step > 1) {
+                HistoryManager.pushState('importWizardStep', (opts) => {
+                    if (this.currentStep > 1) {
+                        this.prevStep(opts);
+                    }
+                });
+            } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('importWizardStep')) {
+                HistoryManager.handleManualClose('importWizardStep');
+            }
             this._updateUI(previousStep);
         }
     },
@@ -2080,6 +2121,9 @@ export const ImportWizardManager = {
      */
     _reset() {
         this.currentStep = 1;
+        if (HistoryManager.isOpen('importWizardStep')) {
+            HistoryManager.handleManualClose('importWizardStep');
+        }
         this._togglePeriodDropdown(false);
         DropdownManager.closeAll();
         this._updateSeparatorSelect('\t');

@@ -17,6 +17,7 @@ import { ResultsUIManager } from '../ResultsUIManager.js';
 import { DropdownManager } from '../DropdownManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { HistoryManager } from '../HistoryManager.js';
 
 export const GlobalListeners = {
     /**
@@ -99,7 +100,23 @@ export const GlobalListeners = {
     _setupKeyboardListeners() {
         document.addEventListener('keydown', (e) => {
             if (UI.activeModal) {
-                if (e.key === 'Escape') {
+                if (e.key === 'Escape' && !e.defaultPrevented) {
+                    const openWizardDropdown = document.getElementById('wizardPeriodDropdown');
+                    if (openWizardDropdown?.classList.contains('open')) {
+                        openWizardDropdown.classList.remove('open');
+                        document.getElementById('wizardPeriodMenu')?.classList.remove('open');
+                        if (HistoryManager.isOpen('wizardPeriodDropdown')) {
+                            HistoryManager.handleManualClose('wizardPeriodDropdown');
+                        }
+                        return;
+                    }
+                    if (document.querySelector('.custom-dropdown.open')) {
+                        DropdownManager.closeAll();
+                        return;
+                    }
+                    if (document.querySelector('.trombi-student-popover')) {
+                        return;
+                    }
                     if (UI.stackedModal) {
                         UI.closeModal(UI.activeModal);
                     } else {

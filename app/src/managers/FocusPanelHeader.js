@@ -13,6 +13,7 @@ import { StorageManager } from './StorageManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
 
 export const FocusPanelHeader = {
@@ -211,8 +212,9 @@ export const FocusPanelHeader = {
      * Toggles the Header Edit Mode (Identity + Statuses)
      * @param {boolean} show - True to edit, False to save and view
      * @param {boolean} [cancel=false] - If true, exit without saving
+     * @param {Object} [options={}]
      */
-    toggleEditMode(show, cancel = false) {
+    toggleEditMode(show, cancel = false, options = {}) {
         const header = document.querySelector('.focus-header');
         const readMode = document.querySelector('.focus-header-read');
         const editMode = document.querySelector('.focus-header-edit');
@@ -284,6 +286,10 @@ export const FocusPanelHeader = {
             header.classList.add('editing');
             readMode.classList.add('hidden');
             editMode.classList.add('visible');
+
+            if (!isCreationMode) {
+                HistoryManager.pushState('focusHeaderEdit', (opts) => this.toggleEditMode(false, true, opts));
+            }
 
             // Accessible labels for edit mode (no intrusive tooltips in compact top header)
             const saveBtn = document.getElementById('focusEditSaveBtn');
@@ -363,7 +369,7 @@ export const FocusPanelHeader = {
                 this.clearPendingAvatarData();
 
                 const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || avatarEl;
-                this._exitEditModeUI(header, readMode, editMode, currentAvatarEl);
+                this._exitEditModeUI(header, readMode, editMode, currentAvatarEl, options);
                 this._animateContentCloseFlip(beforeCloseTop);
 
                 const resultToRevert = appState.generatedResults.find(r => r.id === currentStudentId);
@@ -397,7 +403,7 @@ export const FocusPanelHeader = {
 
             // Fallback clean up UI
             const currentAvatarEl = avatarContainer?.querySelector('.student-avatar') || avatarEl;
-            this._exitEditModeUI(header, readMode, editMode, currentAvatarEl);
+            this._exitEditModeUI(header, readMode, editMode, currentAvatarEl, options);
             this._animateContentCloseFlip(beforeCloseTop);
             return true;
         }
@@ -437,7 +443,10 @@ export const FocusPanelHeader = {
      * Clean up UI state when exiting edit mode
      * @private
      */
-    _exitEditModeUI(header, readMode, editMode, avatarEl) {
+    _exitEditModeUI(header, readMode, editMode, avatarEl, options = {}) {
+        if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusHeaderEdit')) {
+            HistoryManager.handleManualClose('focusHeaderEdit');
+        }
         if (editMode && document.activeElement && editMode.contains(document.activeElement)) {
             document.activeElement.blur?.();
         }

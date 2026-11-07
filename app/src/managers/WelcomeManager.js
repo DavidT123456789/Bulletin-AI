@@ -18,6 +18,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { getDemoClassData } from '../data/SampleData.js';
 
 let validateApiKeyCallback = null;
@@ -205,8 +206,8 @@ export const WelcomeManager = {
             }, { signal });
         }
 
-        const showWelcomeStep = (step, direction = 'next') => {
-            if (isAnimating) return;
+        const showWelcomeStep = (step, direction = 'next', options = {}) => {
+            if (isAnimating && !options?.causedByHistory) return;
 
             const oldStepEl = document.getElementById(`welcome-step-${currentWelcomeStep}`);
             const newStepEl = document.getElementById(`welcome-step-${step}`);
@@ -214,6 +215,16 @@ export const WelcomeManager = {
             if (!newStepEl || step === currentWelcomeStep) return;
 
             isAnimating = true;
+
+            if (step > 1) {
+                HistoryManager.pushState('welcomeWizardStep', (opts) => {
+                    if (currentWelcomeStep > 1) {
+                        showWelcomeStep(currentWelcomeStep - 1, 'prev', opts);
+                    }
+                });
+            } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('welcomeWizardStep')) {
+                HistoryManager.handleManualClose('welcomeWizardStep');
+            }
 
             // Clean previous animation classes
             document.querySelectorAll('.welcome-step').forEach(cleanAnimationClasses);
@@ -286,6 +297,10 @@ export const WelcomeManager = {
         const completeWelcome = async ({ showLoading = false, skipCloseModal = false } = {}) => {
             if (isWelcomeCompleted) return;
             isWelcomeCompleted = true;
+
+            if (HistoryManager.isOpen('welcomeWizardStep')) {
+                HistoryManager.handleManualClose('welcomeWizardStep');
+            }
 
             localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
 
@@ -395,6 +410,9 @@ export const WelcomeManager = {
             DOM.welcomeFinishOptions.style.display = 'none';
             DOM.welcomeNextBtn.disabled = false;
             currentWelcomeStep = 1;
+            if (HistoryManager.isOpen('welcomeWizardStep')) {
+                HistoryManager.handleManualClose('welcomeWizardStep');
+            }
         };
 
         initFirstStep();

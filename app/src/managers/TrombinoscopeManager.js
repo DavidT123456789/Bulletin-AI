@@ -12,6 +12,7 @@
 
 import { ClassManager } from './ClassManager.js';
 import { ModalUI } from './ModalUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { TrombiPdfLoader } from './trombinoscope/TrombiPdfLoader.js';
 import { TrombiGridDetector } from './trombinoscope/TrombiGridDetector.js';
 import { TrombiViewportZoom } from './trombinoscope/TrombiViewportZoom.js';
@@ -259,7 +260,13 @@ export const TrombinoscopeManager = {
         const modal = document.getElementById('trombiWizardModal');
         if (modal) {
             ModalUI.openModal(modal, {
-                onClose: () => this._unbindDocumentListeners(),
+                onClose: () => {
+                    this._closeStudentPopover();
+                    if (HistoryManager.isOpen('trombiWizardStep')) {
+                        HistoryManager.handleManualClose('trombiWizardStep');
+                    }
+                    this._unbindDocumentListeners();
+                },
                 onClosed: () => this._reset()
             });
         }
@@ -276,6 +283,10 @@ export const TrombinoscopeManager = {
         const modal = document.getElementById('trombiWizardModal');
         if (!modal || (!modal.classList.contains('visible') && !modal.classList.contains('modal-visible')) || modal.classList.contains('closing')) return;
 
+        this._closeStudentPopover();
+        if (HistoryManager.isOpen('trombiWizardStep')) {
+            HistoryManager.handleManualClose('trombiWizardStep');
+        }
         this._unbindDocumentListeners();
         ModalUI.closeModal(modal, {
             ...options,
@@ -285,6 +296,9 @@ export const TrombinoscopeManager = {
 
     _reset() {
         this._currentStep = 1;
+        if (HistoryManager.isOpen('trombiWizardStep')) {
+            HistoryManager.handleManualClose('trombiWizardStep');
+        }
         this._imageSrc = null;
         this._parsedPdfData = null;
         this._currentPageIndex = 0;
@@ -436,13 +450,23 @@ export const TrombinoscopeManager = {
     // STEP NAVIGATION
     // ========================================================================
 
-    _goToStep(step) {
-        if (this._isTransitioning) return;
+    _goToStep(step, options = {}) {
+        if (this._isTransitioning && !options?.causedByHistory) return;
 
         const previousStep = this._currentStep;
         if (previousStep === step) return;
         this._closeStudentPopover();
         this._currentStep = step;
+
+        if (step > 1) {
+            HistoryManager.pushState('trombiWizardStep', (opts) => {
+                if (this._currentStep > 1) {
+                    this._goToStep(this._currentStep - 1, opts);
+                }
+            });
+        } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('trombiWizardStep')) {
+            HistoryManager.handleManualClose('trombiWizardStep');
+        }
 
         // Switch footers immediately (synchronized with stepper UI)
         const fromFooter = document.getElementById(`trombiStep${previousStep}Footer`);
@@ -895,7 +919,7 @@ export const TrombinoscopeManager = {
     _getAssignmentContext() { return TrombiStudentMatcher.getAssignmentContext(this); },
     _getAssignedZoneNumber(studentId, excludeZoneId, sortedZones) { return TrombiStudentMatcher.getAssignedZoneNumber(this, studentId, excludeZoneId, sortedZones); },
     _assignStudentToZone(zoneId, studentId) { return TrombiStudentMatcher.assignStudentToZone(this, zoneId, studentId); },
-    _closeStudentPopover(restoreFocus = false) { return TrombiStudentMatcher.closeStudentPopover(this, restoreFocus); },
+    _closeStudentPopover(restoreFocus = false, options = {}) { return TrombiStudentMatcher.closeStudentPopover(this, restoreFocus, options); },
     _toggleStudentPopover(zoneId, triggerBtn) { return TrombiStudentMatcher.toggleStudentPopover(this, zoneId, triggerBtn); },
     _openStudentPopover(zoneId, triggerBtn) { return TrombiStudentMatcher.openStudentPopover(this, zoneId, triggerBtn); },
     _renderAssignmentGrid() { return TrombiStudentMatcher.renderAssignmentGrid(this); },

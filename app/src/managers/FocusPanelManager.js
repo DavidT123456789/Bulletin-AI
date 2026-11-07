@@ -297,6 +297,10 @@ export const FocusPanelManager = {
         if (this.currentStudentId && this.currentStudentId !== studentId) {
             SpeechRecognitionManager.abort();
             this._saveContext();
+            FocusPanelJournal.closeThresholdPopover?.();
+            if (FocusPanelJournal.isEditing?.()) {
+                FocusPanelJournal.toggleQuickAdd(false);
+            }
         }
 
         if (!openState) {
@@ -363,6 +367,10 @@ export const FocusPanelManager = {
         }
 
         FocusPanelHeader.settleEditMode();
+        FocusPanelJournal.closeThresholdPopover?.();
+        if (FocusPanelJournal.isEditing?.()) {
+            FocusPanelJournal.toggleQuickAdd(false);
+        }
 
         this.isCreationMode = true;
         this.currentStudentId = null;
@@ -435,6 +443,11 @@ export const FocusPanelManager = {
         }
 
         SpeechSynthesisManager.cancel();
+        FocusPanelHistory.closePopover?.();
+        FocusPanelJournal.closeThresholdPopover?.();
+        if (HistoryManager.isOpen('focusJournalQuickAdd')) {
+            HistoryManager.handleManualClose('focusJournalQuickAdd');
+        }
         FocusPanelAnalysis.hide();
 
         if (panel) {

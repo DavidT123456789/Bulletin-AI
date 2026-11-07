@@ -52,6 +52,7 @@ vi.mock('./ClassUIManager.js', () => ({
 vi.mock('./HistoryManager.js', () => ({
     HistoryManager: {
         pushState: vi.fn(),
+        isOpen: vi.fn(() => true),
         handleManualClose: vi.fn()
     }
 }));
@@ -72,6 +73,7 @@ import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { UI } from './UIManager.js';
 
 describe('ImportWizardManager — Harmonisation des animations d\'ouverture & handoff Hub', () => {
@@ -137,19 +139,21 @@ describe('ImportWizardManager — Harmonisation des animations d\'ouverture & ha
         expect(guide1.classList.contains('active')).toBe(true);
         expect(guide1.classList.contains('slide-next')).toBe(false);
 
-        // Navigation avant (1 -> 2) : slide-next requis
+        // Navigation avant (1 -> 2) : slide-next requis + empilement importWizardStep
         ImportWizardManager.goToStep(2);
         expect(step2.classList.contains('active')).toBe(true);
         expect(step2.classList.contains('slide-next')).toBe(true);
         expect(guide2.classList.contains('active')).toBe(true);
         expect(guide2.classList.contains('slide-next')).toBe(true);
+        expect(HistoryManager.pushState).toHaveBeenCalledWith('importWizardStep', expect.any(Function));
 
-        // Navigation arrière (2 -> 1) : slide-prev requis
+        // Navigation arrière (2 -> 1) : slide-prev requis + retrait importWizardStep
         ImportWizardManager.goToStep(1);
         expect(step1.classList.contains('active')).toBe(true);
         expect(step1.classList.contains('slide-prev')).toBe(true);
         expect(step1.classList.contains('slide-next')).toBe(false);
         expect(guide1.classList.contains('slide-prev')).toBe(true);
+        expect(HistoryManager.handleManualClose).toHaveBeenCalledWith('importWizardStep');
     });
 
     it('abaisse le z-index du Hub (.is-handing-off) sans délai mort pour les 3 modales centrées et le nettoie après transition', () => {

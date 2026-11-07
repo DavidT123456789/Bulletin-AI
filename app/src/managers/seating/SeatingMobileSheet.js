@@ -395,8 +395,8 @@ export const SeatingMobileSheet = {
 
         sheet.querySelector('[data-action="move"]')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this._closeMobileSheet(true);
-            this._clearSelection();
+            this._closeMobileSheet(true, { replaceNext: true });
+            this._clearSelection({ silentHistory: true });
             this._toggleCellSelection(row, col);
             this._lastSelectedGridPos = { row, col };
             UI?.showNotification?.(`Touchez un poste libre pour déplacer, ou occupé pour permuter.`, 'info');
@@ -701,9 +701,9 @@ export const SeatingMobileSheet = {
     },
 
     _closeMobileSheet(immediate = false, options = {}) {
-        const { silentHistory = false } = options;
+        const { silentHistory = false, replaceNext = false } = options;
         if (!silentHistory && HistoryManager.isOpen('scMobileSheet')) {
-            HistoryManager.handleManualClose('scMobileSheet');
+            HistoryManager.handleManualClose('scMobileSheet', { replaceNext });
         }
 
         const existingSheets = document.querySelectorAll('.sc-mobile-sheet, .sc-mobile-sheet-backdrop');

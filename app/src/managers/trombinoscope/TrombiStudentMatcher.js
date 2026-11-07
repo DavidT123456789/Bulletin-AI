@@ -9,6 +9,7 @@ import { UI } from '../UIManager.js';
 import { ClassManager } from '../ClassManager.js';
 import { Utils } from '../../utils/Utils.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { HistoryManager } from '../HistoryManager.js';
 import { getSampleTrombiStudents } from '../../data/SampleData.js';
 
 export const TrombiStudentMatcher = {
@@ -336,9 +337,13 @@ export const TrombiStudentMatcher = {
         manager._renderAssignmentGrid();
     },
 
-    closeStudentPopover(manager, restoreFocus = false) {
+    closeStudentPopover(manager, restoreFocus = false, options = {}) {
         const prevZoneId = manager._openPopoverZoneId;
         manager._openPopoverZoneId = null;
+
+        if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('trombiStudentPopover')) {
+            HistoryManager.handleManualClose('trombiStudentPopover');
+        }
 
         if (manager._outsidePopoverHandler && typeof document !== 'undefined') {
             document.removeEventListener('mousedown', manager._outsidePopoverHandler, true);
@@ -375,13 +380,19 @@ export const TrombiStudentMatcher = {
     },
 
     openStudentPopover(manager, zoneId, triggerBtn) {
-        manager._closeStudentPopover(false);
+        manager._closeStudentPopover(false, { silentHistory: true });
 
         const zone = manager._zones.find(z => z.id === zoneId);
         const container = document.getElementById('trombiAssignmentGrid');
-        if (!zone || !container) return;
+        if (!zone || !container) {
+            if (HistoryManager.isOpen('trombiStudentPopover')) {
+                HistoryManager.handleManualClose('trombiStudentPopover');
+            }
+            return;
+        }
 
         manager._openPopoverZoneId = zoneId;
+        HistoryManager.pushState('trombiStudentPopover', (opts) => manager._closeStudentPopover(false, opts));
         manager._selectSingleZone(zoneId, false);
 
         const row = triggerBtn?.closest('.assignment-row') || container.querySelector(`.assignment-row[data-zone-id="${zoneId}"]`);

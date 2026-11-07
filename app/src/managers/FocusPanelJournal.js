@@ -12,6 +12,7 @@ import { ClassManager } from './ClassManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Journal system for student observation notes
@@ -70,6 +71,33 @@ export const FocusPanelJournal = {
     },
 
     /**
+     * Check whether the journal quick-add or inline editor is currently open
+     * @returns {boolean}
+     */
+    isEditing() {
+        const section = document.getElementById('focusJournalSection');
+        const draftPreview = document.getElementById('journalDraftPreview');
+        return Boolean(
+            this._editingJournalEntryId ||
+            section?.classList.contains('editing') ||
+            (draftPreview?.classList.contains('visible') && !draftPreview?.classList.contains('closing'))
+        );
+    },
+
+    /**
+     * Close the threshold popover and sync HistoryManager
+     * @param {Object} [options={}]
+     */
+    closeThresholdPopover(options = {}) {
+        const thresholdControl = document.getElementById('journalThresholdControl');
+        if (!thresholdControl || !thresholdControl.classList.contains('open')) return;
+        thresholdControl.classList.remove('open');
+        if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusJournalThreshold')) {
+            HistoryManager.handleManualClose('focusJournalThreshold');
+        }
+    },
+
+    /**
      * Setup Journal event listeners
      * @private
      */
@@ -81,19 +109,24 @@ export const FocusPanelJournal = {
             // Toggle popover
             thresholdBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                thresholdControl.classList.toggle('open');
-                this._updateThresholdUI();
+                if (thresholdControl.classList.contains('open')) {
+                    this.closeThresholdPopover();
+                } else {
+                    thresholdControl.classList.add('open');
+                    this._updateThresholdUI();
+                    HistoryManager.pushState('focusJournalThreshold', (opts) => this.closeThresholdPopover(opts));
+                }
             });
 
             // Close on outside click or Escape key
             document.addEventListener('click', (e) => {
                 if (!thresholdControl.contains(e.target)) {
-                    thresholdControl.classList.remove('open');
+                    this.closeThresholdPopover();
                 }
             });
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && thresholdControl.classList.contains('open')) {
-                    thresholdControl.classList.remove('open');
+                    this.closeThresholdPopover();
                 }
             });
 
@@ -236,6 +269,7 @@ export const FocusPanelJournal = {
                     if (btn && !btn.disabled) this._saveEntry();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.toggleQuickAdd(false);
                 }
             }, { signal });
@@ -671,14 +705,18 @@ export const FocusPanelJournal = {
     /**
      * Toggle the journal editing mode
      * @param {boolean} show - True to show editing UI, false to hide
-     * @param {boolean} reset - Whether to reset the input fields (default: true)
+     * @param {boolean} [reset=true] - Whether to reset the input fields (default: true)
+     * @param {Object} [options={}]
      */
-    toggleQuickAdd(show, reset = true) {
+    toggleQuickAdd(show, reset = true, options = {}) {
         const section = document.getElementById('focusJournalSection');
         const studentId = this._getCurrentStudentId();
 
         // If hiding (Cancel), always reset editing state and re-render to standard view
         if (!show) {
+            if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusJournalQuickAdd')) {
+                HistoryManager.handleManualClose('focusJournalQuickAdd');
+            }
             const draftPreview = document.getElementById('journalDraftPreview');
             const isVisible = draftPreview && (draftPreview.classList.contains('visible') || this._editingJournalEntryId);
             const editingId = this._editingJournalEntryId; // Capture before reset
@@ -819,6 +857,7 @@ export const FocusPanelJournal = {
 
             // Show the draft preview when opening
             draftPreview?.classList.add('visible');
+            HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
         }
 
         // Close any open dropdowns
@@ -842,6 +881,7 @@ export const FocusPanelJournal = {
         // and may write a note or pick another tag.
         if (this._selectedJournalTags.length > 0) {
             draftPreview.classList.add('visible');
+            HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
         }
     },
 
@@ -891,6 +931,7 @@ export const FocusPanelJournal = {
                     // Show draft if not visible
                     const draftPreview = document.getElementById('journalDraftPreview');
                     draftPreview?.classList.add('visible');
+                    HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
 
                     // Close on outside click
                     const closeHandler = (ev) => {
@@ -960,6 +1001,7 @@ export const FocusPanelJournal = {
         // 4. Mark section as editing
         const section = document.getElementById('focusJournalSection');
         section?.classList.add('editing');
+        HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
     },
 
     /**
@@ -980,6 +1022,10 @@ export const FocusPanelJournal = {
             } else {
                 return; // Nothing to save
             }
+        }
+
+        if (HistoryManager.isOpen('focusJournalQuickAdd')) {
+            HistoryManager.handleManualClose('focusJournalQuickAdd');
         }
 
         // Disable button immediately

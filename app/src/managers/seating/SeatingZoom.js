@@ -717,7 +717,8 @@ export const SeatingZoom = {
         let velocityX = 0;
         let velocityY = 0;
         let lastMoveTime = 0;
-        let panInertiaRaf = null;
+        let touchHistory = [];
+        let panInertiaState = null;
         let lastScrollX = gridArea.scrollLeft;
         let lastScrollY = gridArea.scrollTop;
         let lastScrollTime = performance.now();
@@ -729,6 +730,26 @@ export const SeatingZoom = {
 
         const calcImpactBounce = (speed, scaleComp) =>
             Math.round((Math.min(22, Math.max(7, Math.abs(speed) * 16)) / scaleComp) * 10) / 10;
+
+        const sampleCubicBezierY = (p1x, p1y, p2x, p2y, timeProgress) => {
+            if (timeProgress <= 0) return 0;
+            if (timeProgress >= 1) return 1;
+            const cx = 3 * p1x;
+            const bx = 3 * (p2x - p1x) - cx;
+            const ax = 1 - cx - bx;
+            const cy = 3 * p1y;
+            const by = 3 * (p2y - p1y) - cy;
+            const ay = 1 - cy - by;
+            let t = timeProgress;
+            for (let i = 0; i < 5; i++) {
+                const xErr = ((ax * t + bx) * t + cx) * t - timeProgress;
+                if (Math.abs(xErr) < 1e-4) break;
+                const dx = (3 * ax * t + 2 * bx) * t + cx;
+                if (Math.abs(dx) < 1e-5) break;
+                t = clamp(t - xErr / dx, 0, 1);
+            }
+            return clamp(((ay * t + by) * t + cy) * t, 0, 1);
+        };
 
         const getEffectiveMaxScroll = () => {
             if (this._isFitted && gridArea.getAttribute('data-fitted') === 'true') {
@@ -765,6 +786,7 @@ export const SeatingZoom = {
             lockedAxis = null;
             velocityX = 0;
             velocityY = 0;
+            touchHistory = [];
         };
 
         const syncScrollBaseline = (syncMax = true) => {
@@ -792,14 +814,67 @@ export const SeatingZoom = {
             touchStartY = touch.clientY;
             prevTouchX = touchStartX;
             prevTouchY = touchStartY;
-            lastMoveTime = performance.now();
+            const now = performance.now();
+            lastMoveTime = now;
+            touchHistory = [{ x: touchStartX, y: touchStartY, t: now }];
             syncScrollBaseline(true);
         };
 
         const stopPanInertia = () => {
-            if (panInertiaRaf) {
-                cancelAnimationFrame(panInertiaRaf);
-                panInertiaRaf = null;
+            if (panInertiaState) {
+                const state = panInertiaState;
+                panInertiaState = null;
+                if (state.timer) clearTimeout(state.timer);
+                if (state.onTransEnd && state.board) {
+                    state.board.removeEventListener('transitionend', state.onTransEnd);
+                }
+                if (this._zoomAnimCleanup === stopPanInertia) {
+                    this._zoomAnimCleanup = null;
+                }
+                if (!state.settled && state.board) {
+                    state.settled = true;
+                    let remTx = 0;
+                    let remTy = 0;
+                    let hasLiveMatrix = false;
+                    if (typeof window.getComputedStyle === 'function') {
+                        const computedTransform = window.getComputedStyle(state.board).transform || '';
+                        if (computedTransform.startsWith('matrix3d(')) {
+                            const parts = computedTransform.slice(9, -1).split(',');
+                            if (parts.length >= 14) {
+                                remTx = parseFloat(parts[12]) || 0;
+                                remTy = parseFloat(parts[13]) || 0;
+                                hasLiveMatrix = Math.abs(remTx) > 0.01 || Math.abs(remTy) > 0.01;
+                            }
+                        } else if (computedTransform.startsWith('matrix(')) {
+                            const parts = computedTransform.slice(7, -1).split(',');
+                            if (parts.length >= 6) {
+                                remTx = parseFloat(parts[4]) || 0;
+                                remTy = parseFloat(parts[5]) || 0;
+                                hasLiveMatrix = Math.abs(remTx) > 0.01 || Math.abs(remTy) > 0.01;
+                            }
+                        }
+                    }
+                    const elapsed = Math.max(0, performance.now() - state.startTime);
+                    if (!hasLiveMatrix && elapsed < state.durationMs) {
+                        const progress = sampleCubicBezierY(
+                            state.p1x,
+                            state.p1y,
+                            state.p2x,
+                            state.p2y,
+                            elapsed / state.durationMs
+                        );
+                        remTx = state.tx0 * (1 - progress);
+                        remTy = state.ty0 * (1 - progress);
+                    }
+                    state.board.classList.remove('sc-lock-sliding');
+                    state.board.style.removeProperty('transform');
+                    state.board.style.removeProperty('transition');
+
+                    const { maxX, maxY } = getEffectiveMaxScroll();
+                    gridArea.scrollLeft = clamp(state.targetX - remTx * state.boardScale, 0, maxX);
+                    gridArea.scrollTop = clamp(state.targetY - remTy * state.boardScale, 0, maxY);
+                    syncScrollBaseline(false);
+                }
             }
             velocityX = 0;
             velocityY = 0;
@@ -808,94 +883,175 @@ export const SeatingZoom = {
 
         const startPanInertia = (initialVx, initialVy) => {
             stopPanInertia();
-            let vx = initialVx;
-            let vy = initialVy;
-            let prevFrameTime = performance.now();
+            if (!this._isActive || this._isPinching || isTouching || this._dragSource || this._touchDragEl || this._isFitted) {
+                return;
+            }
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
 
-            const step = () => {
-                if (!this._isActive || this._isPinching || isTouching || this._dragSource || this._touchDragEl || this._isFitted) {
-                    panInertiaRaf = null;
-                    return;
-                }
-                const now = performance.now();
-                const dt = Math.min(32, Math.max(1, now - prevFrameTime));
-                prevFrameTime = now;
+            const { maxX, maxY } = getEffectiveMaxScroll();
+            if (maxX <= 0 && maxY <= 0) return;
 
-                const friction = Math.pow(0.94, dt / 16.67);
-                vx *= friction;
-                vy *= friction;
+            const speed = Math.max(0.18, Math.hypot(initialVx, initialVy));
+            const inertiaTauMs = clamp(170 + Math.sqrt(speed) * 95, 200, 320);
+            const scaleComp = Math.max(1, this._zoomScale || 1);
+            const startX = clamp(gridArea.scrollLeft, 0, maxX);
+            const startY = clamp(gridArea.scrollTop, 0, maxY);
+            let targetX = startX;
+            let targetY = startY;
+            let hitEdgeX = 0;
+            let hitEdgeY = 0;
 
-                const { maxX, maxY } = getEffectiveMaxScroll();
-                let hitEdgeX = 0;
-                let hitEdgeY = 0;
-                const scaleComp = Math.max(1, this._zoomScale || 1);
-
-                if (maxX > 0 && Math.abs(vx) > 0.02) {
-                    const nextX = virtualScrollLeft - vx * dt;
-                    if (nextX <= 0) {
-                        if (virtualScrollLeft > 0.5 && vx > 0.42) {
-                            hitEdgeX = calcImpactBounce(vx, scaleComp);
-                        }
-                        virtualScrollLeft = 0;
-                        gridArea.scrollLeft = 0;
-                        vx = 0;
-                    } else if (nextX >= maxX) {
-                        if (virtualScrollLeft < maxX - 0.5 && vx < -0.42) {
-                            hitEdgeX = -calcImpactBounce(vx, scaleComp);
-                        }
-                        virtualScrollLeft = maxX;
-                        gridArea.scrollLeft = maxX;
-                        vx = 0;
-                    } else {
-                        virtualScrollLeft = nextX;
-                        gridArea.scrollLeft = Math.round(virtualScrollLeft);
+            if (maxX > 0 && Math.abs(initialVx) > 0.02) {
+                const rawTargetX = startX - initialVx * inertiaTauMs;
+                if (rawTargetX <= 0) {
+                    const impactVx = initialVx - startX / inertiaTauMs;
+                    if (startX > 0.5 && impactVx > 0.42) {
+                        hitEdgeX = calcImpactBounce(impactVx, scaleComp);
                     }
-                } else {
-                    vx = 0;
-                }
-
-                if (maxY > 0 && Math.abs(vy) > 0.02) {
-                    const nextY = virtualScrollTop - vy * dt;
-                    if (nextY <= 0) {
-                        if (virtualScrollTop > 0.5 && vy > 0.42) {
-                            hitEdgeY = calcImpactBounce(vy, scaleComp);
-                        }
-                        virtualScrollTop = 0;
-                        gridArea.scrollTop = 0;
-                        vy = 0;
-                    } else if (nextY >= maxY) {
-                        if (virtualScrollTop < maxY - 0.5 && vy < -0.42) {
-                            hitEdgeY = -calcImpactBounce(vy, scaleComp);
-                        }
-                        virtualScrollTop = maxY;
-                        gridArea.scrollTop = maxY;
-                        vy = 0;
-                    } else {
-                        virtualScrollTop = nextY;
-                        gridArea.scrollTop = Math.round(virtualScrollTop);
+                    targetX = 0;
+                } else if (rawTargetX >= maxX) {
+                    const impactSpeedX = Math.abs(initialVx) - (maxX - startX) / inertiaTauMs;
+                    if (startX < maxX - 0.5 && impactSpeedX > 0.42) {
+                        hitEdgeX = -calcImpactBounce(impactSpeedX, scaleComp);
                     }
+                    targetX = maxX;
                 } else {
-                    vy = 0;
+                    targetX = Math.round(rawTargetX);
                 }
+            }
 
-                prevScrollLeft = gridArea.scrollLeft;
-                prevScrollTop = gridArea.scrollTop;
-                lastScrollX = prevScrollLeft;
-                lastScrollY = prevScrollTop;
-                lastVelocityX = 0;
-                lastVelocityY = 0;
+            if (maxY > 0 && Math.abs(initialVy) > 0.02) {
+                const rawTargetY = startY - initialVy * inertiaTauMs;
+                if (rawTargetY <= 0) {
+                    const impactVy = initialVy - startY / inertiaTauMs;
+                    if (startY > 0.5 && impactVy > 0.42) {
+                        hitEdgeY = calcImpactBounce(impactVy, scaleComp);
+                    }
+                    targetY = 0;
+                } else if (rawTargetY >= maxY) {
+                    const impactSpeedY = Math.abs(initialVy) - (maxY - startY) / inertiaTauMs;
+                    if (startY < maxY - 0.5 && impactSpeedY > 0.42) {
+                        hitEdgeY = -calcImpactBounce(impactSpeedY, scaleComp);
+                    }
+                    targetY = maxY;
+                } else {
+                    targetY = Math.round(rawTargetY);
+                }
+            }
 
+            if (this._zoomAnimCleanup) {
+                this._zoomAnimCleanup();
+                this._zoomAnimCleanup = null;
+            }
+
+            const state = {
+                board,
+                settled: false,
+                startX,
+                startY,
+                targetX,
+                targetY,
+                tx0: 0,
+                ty0: 0,
+                boardScale: 1,
+                startTime: 0,
+                durationMs: 0,
+                p1x: 0.25,
+                p1y: 0.6,
+                p2x: 0.36,
+                p2y: 1,
+                timer: null,
+                onTransEnd: null
+            };
+            panInertiaState = state;
+
+            gridArea.scrollLeft = targetX;
+            gridArea.scrollTop = targetY;
+            syncScrollBaseline(false);
+            state.targetX = virtualScrollLeft;
+            state.targetY = virtualScrollTop;
+
+            const dx = state.targetX - startX;
+            const dy = state.targetY - startY;
+            const actualDist = Math.hypot(dx, dy);
+
+            if (actualDist < 1.5) {
+                state.settled = true;
+                panInertiaState = null;
                 if (hitEdgeX !== 0 || hitEdgeY !== 0) {
+                    lastBounceTime = performance.now();
                     this._triggerEdgeImpactBounce(hitEdgeX, hitEdgeY);
                 }
+                return;
+            }
 
-                if (Math.hypot(vx, vy) < 0.03) {
-                    panInertiaRaf = null;
-                    return;
+            const boardScale = Math.max(0.1, parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1);
+            const tx0 = Math.round((dx / boardScale) * 100) / 100;
+            const ty0 = Math.round((dy / boardScale) * 100) / 100;
+            const hasEdgeImpact = hitEdgeX !== 0 || hitEdgeY !== 0;
+
+            const p1x = hasEdgeImpact ? 0.22 : 0.25;
+            const p1y = hasEdgeImpact ? 0.68 : 0.6;
+            const p2x = hasEdgeImpact ? 0.38 : 0.36;
+            const p2y = 1;
+            const initialCurveSlope = p1y / p1x;
+            const durationMs = Math.round(
+                clamp((actualDist * initialCurveSlope) / speed, hasEdgeImpact ? 90 : 220, hasEdgeImpact ? 480 : 780)
+            );
+
+            state.tx0 = tx0;
+            state.ty0 = ty0;
+            state.boardScale = boardScale;
+            state.durationMs = durationMs;
+            state.p1x = p1x;
+            state.p1y = p1y;
+            state.p2x = p2x;
+            state.p2y = p2y;
+
+            board.classList.add('sc-lock-sliding');
+            board.style.transition = 'none';
+            board.style.transform = `translate3d(${tx0}px, ${ty0}px, 0)`;
+            void board.offsetWidth;
+            if (typeof window.getComputedStyle === 'function') {
+                void window.getComputedStyle(board).transform;
+            }
+
+            state.startTime = performance.now();
+            board.style.transition = `transform ${durationMs}ms cubic-bezier(${p1x}, ${p1y}, ${p2x}, ${p2y})`;
+            board.style.transform = 'translate3d(0, 0, 0)';
+
+            const completeInertia = () => {
+                if (state.settled) return;
+                state.settled = true;
+                if (state.timer) clearTimeout(state.timer);
+                if (state.onTransEnd) {
+                    board.removeEventListener('transitionend', state.onTransEnd);
+                    state.onTransEnd = null;
                 }
-                panInertiaRaf = requestAnimationFrame(step);
+                board.classList.remove('sc-lock-sliding');
+                board.style.removeProperty('transform');
+                board.style.removeProperty('transition');
+                if (panInertiaState === state) {
+                    panInertiaState = null;
+                }
+                if (this._zoomAnimCleanup === stopPanInertia) {
+                    this._zoomAnimCleanup = null;
+                }
+                if ((hitEdgeX !== 0 || hitEdgeY !== 0) && this._isActive && !this._isPinching && !isTouching && !this._isFitted) {
+                    lastBounceTime = performance.now();
+                    this._triggerEdgeImpactBounce(hitEdgeX, hitEdgeY);
+                }
             };
-            panInertiaRaf = requestAnimationFrame(step);
+
+            state.onTransEnd = (e) => {
+                if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
+                    completeInertia();
+                }
+            };
+            board.addEventListener('transitionend', state.onTransEnd);
+            state.timer = setTimeout(completeInertia, durationMs + 40);
+            this._zoomAnimCleanup = stopPanInertia;
         };
 
         const onTouchStart = (e) => {
@@ -948,18 +1104,22 @@ export const SeatingZoom = {
 
             // If a cell hold timer is still disambiguating drag vs pan (< 6px), wait before scrolling
             if (this._longPressTimer) {
+                const now = performance.now();
                 prevTouchX = touch.clientX;
                 prevTouchY = touch.clientY;
-                lastMoveTime = performance.now();
+                lastMoveTime = now;
+                touchHistory = [{ x: touch.clientX, y: touch.clientY, t: now }];
                 return;
             }
 
             // If 1 finger remained after lifting the 2nd finger of a pinch, wait for intentional >= 6px slide
             if (isPostPinchPanPending) {
                 if (Math.hypot(totalMoveX, totalMoveY) < 6) {
+                    const now = performance.now();
                     prevTouchX = touch.clientX;
                     prevTouchY = touch.clientY;
-                    lastMoveTime = performance.now();
+                    lastMoveTime = now;
+                    touchHistory = [{ x: touch.clientX, y: touch.clientY, t: now }];
                     return;
                 }
                 isPostPinchPanPending = false;
@@ -967,6 +1127,7 @@ export const SeatingZoom = {
                     this._zoomAnimCleanup();
                     this._zoomAnimCleanup = null;
                 }
+                touchHistory = [{ x: prevTouchX, y: prevTouchY, t: lastMoveTime }];
                 syncScrollBaseline(true);
             }
 
@@ -984,10 +1145,25 @@ export const SeatingZoom = {
             const now = performance.now();
             const dt = now - lastMoveTime;
             if (dt > 0) {
+                touchHistory.push({ x: touch.clientX, y: touch.clientY, t: now });
+                while (touchHistory.length > 2 && (now - touchHistory[0].t) > 65) {
+                    touchHistory.shift();
+                }
+                let anchor = touchHistory[0];
+                for (let i = 0; i < touchHistory.length - 1; i++) {
+                    const span = now - touchHistory[i].t;
+                    if (span >= 14 && span <= 55) {
+                        anchor = touchHistory[i];
+                        break;
+                    }
+                }
+                const windowDt = Math.max(1, now - anchor.t);
+                const windowVx = (touch.clientX - anchor.x) / windowDt;
+                const windowVy = (touch.clientY - anchor.y) / windowDt;
                 const instVx = stepX / dt;
                 const instVy = stepY / dt;
-                velocityX = velocityX === 0 ? instVx : (velocityX * 0.35 + instVx * 0.65);
-                velocityY = velocityY === 0 ? instVy : (velocityY * 0.35 + instVy * 0.65);
+                velocityX = windowVx * 0.75 + instVx * 0.25;
+                velocityY = windowVy * 0.75 + instVy * 0.25;
                 lastMoveTime = now;
             }
 
@@ -1007,6 +1183,9 @@ export const SeatingZoom = {
             if (scrollingBackX || scrollingBackY) {
                 rawExcessX = 0;
                 rawExcessY = 0;
+                velocityX = 0;
+                velocityY = 0;
+                touchHistory = [{ x: touch.clientX, y: touch.clientY, t: now }];
                 if (isOverscrolling) {
                     isOverscrolling = false;
                     currentOverscrollX = 0;
@@ -1031,7 +1210,7 @@ export const SeatingZoom = {
                 dScrollX = nextScrollX - virtualScrollLeft;
                 unabsorbedStepX = stepX + dScrollX;
                 virtualScrollLeft = nextScrollX;
-                gridArea.scrollLeft = Math.round(virtualScrollLeft);
+                gridArea.scrollLeft = virtualScrollLeft;
             }
 
             if (maxScrollY > 0 && rawExcessY === 0 && Math.abs(extScrollY) <= 0.5) {
@@ -1039,7 +1218,7 @@ export const SeatingZoom = {
                 dScrollY = nextScrollY - virtualScrollTop;
                 unabsorbedStepY = stepY + dScrollY;
                 virtualScrollTop = nextScrollY;
-                gridArea.scrollTop = Math.round(virtualScrollTop);
+                gridArea.scrollTop = virtualScrollTop;
             }
 
             if (maxScrollX > 0) {
@@ -1057,7 +1236,7 @@ export const SeatingZoom = {
                         const leftoverMoveX = stepX + (rawExcessX / 1.15);
                         rawExcessX = 0;
                         virtualScrollLeft = clamp(virtualScrollLeft - leftoverMoveX, 0, maxScrollX);
-                        gridArea.scrollLeft = Math.round(virtualScrollLeft);
+                        gridArea.scrollLeft = virtualScrollLeft;
                     }
                 }
             } else if (lockedAxis !== 'y' && Math.abs(dScrollY) < 1) {
@@ -1080,7 +1259,7 @@ export const SeatingZoom = {
                         const leftoverMoveY = stepY + (rawExcessY / 1.15);
                         rawExcessY = 0;
                         virtualScrollTop = clamp(virtualScrollTop - leftoverMoveY, 0, maxScrollY);
-                        gridArea.scrollTop = Math.round(virtualScrollTop);
+                        gridArea.scrollTop = virtualScrollTop;
                     }
                 }
             } else if (lockedAxis !== 'x' && Math.abs(dScrollX) < 1) {
@@ -1235,9 +1414,7 @@ export const SeatingZoom = {
         gridArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
         const onScroll = () => {
-            TooltipsUI?.hideAll?.();
-
-            if (this._isPinching || isTouching || panInertiaRaf || this._dragSource || this._touchSourceInfo || this._zoomAnimCleanup || this._isFitted) {
+            if (this._isPinching || isTouching || panInertiaState || this._dragSource || this._touchSourceInfo || this._zoomAnimCleanup || this._isFitted) {
                 lastScrollX = gridArea.scrollLeft;
                 lastScrollY = gridArea.scrollTop;
                 lastScrollTime = performance.now();
@@ -1245,6 +1422,8 @@ export const SeatingZoom = {
                 lastVelocityY = 0;
                 return;
             }
+
+            TooltipsUI?.hideAll?.();
 
             const now = performance.now();
             const dt = Math.max(1, now - lastScrollTime);

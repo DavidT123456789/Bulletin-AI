@@ -9,6 +9,7 @@ import { UI } from '../UIManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { PromptService } from '../../services/PromptService.js';
 import { FocusPanelHistory } from '../FocusPanelHistory.js';
+import { FocusPanelJournal } from '../FocusPanelJournal.js';
 import { FocusPanelAnalysis } from '../FocusPanelAnalysis.js';
 import { FocusPanelHeader } from '../FocusPanelHeader.js';
 import { FocusPanelNavigation } from '../FocusPanelNavigation.js';
@@ -273,9 +274,19 @@ export const FocusPanelEvents = {
             if (e.key === 'Escape') {
                 const popover = document.getElementById('historyPopover');
                 if (popover) {
-                    popover.remove();
-                    const indicator = document.getElementById('focusHistoryIndicator');
-                    indicator?.classList.remove('active');
+                    FocusPanelHistory.closePopover?.();
+                    return;
+                }
+                if (document.getElementById('journalThresholdControl')?.classList.contains('open')) {
+                    FocusPanelJournal.closeThresholdPopover?.();
+                    return;
+                }
+                if (FocusPanelJournal.isEditing?.()) {
+                    FocusPanelJournal.toggleQuickAdd(false);
+                    return;
+                }
+                if (FocusPanelAnalysis.isVisible?.()) {
+                    FocusPanelAnalysis.hide();
                     return;
                 }
                 if (SpeechRecognitionManager.isRecording()) {

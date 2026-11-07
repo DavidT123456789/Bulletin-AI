@@ -437,6 +437,7 @@ export const SeatingChartManager = {
             // [UX Mobile] History state cleanup for plan view and sub-modes
             if (HistoryManager.isOpen('viewPlan')) HistoryManager.handleManualClose('viewPlan');
             if (HistoryManager.isOpen('seatingChartEdit')) HistoryManager.handleManualClose('seatingChartEdit');
+            if (HistoryManager.isOpen('scSelection')) HistoryManager.handleManualClose('scSelection');
             if (HistoryManager.isOpen('scMobileSheet')) HistoryManager.handleManualClose('scMobileSheet');
             if (HistoryManager.isOpen('scContextMenu')) HistoryManager.handleManualClose('scContextMenu');
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');

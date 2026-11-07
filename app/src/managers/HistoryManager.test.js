@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { HistoryManager } from './HistoryManager.js';
+import { appState } from '../state/State.js';
+import { EventHandlersManager } from './EventHandlersManager.js';
+import { UI } from './UIManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
+import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
+import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { FocusPanelHeader } from './FocusPanelHeader.js';
+import { FocusPanelJournal } from './FocusPanelJournal.js';
+import { PwaInstallManager } from './PwaInstallManager.js';
 
 describe('HistoryManager', () => {
     beforeEach(() => {
@@ -121,5 +130,184 @@ describe('HistoryManager', () => {
         expect(HistoryManager.isOpen('desyncedModal')).toBe(false);
         // back ne doit PAS avoir été appelé pour ne pas quitter app.html vers la landing page
         expect(backSpy).not.toHaveBeenCalled();
+    });
+
+    it('ne devrait jamais dupliquer un identifiant déjà présent plus bas dans la pile', () => {
+        HistoryManager.init();
+        const cb1 = vi.fn();
+        const cb2 = vi.fn();
+        const cb1Updated = vi.fn();
+
+        HistoryManager.pushState('layer1', cb1);
+        HistoryManager.pushState('layer2', cb2);
+        HistoryManager.pushState('layer1', cb1Updated);
+
+        expect(HistoryManager.getStack().map(s => s.id)).toEqual(['layer1', 'layer2']);
+
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        expect(cb2).toHaveBeenCalledWith({ causedByHistory: true });
+
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        expect(cb1Updated).toHaveBeenCalledWith({ causedByHistory: true });
+        expect(cb1).not.toHaveBeenCalled();
+    });
+
+    describe('Intégrations Mobile Back (Filtres stats, Focus Panel, PWA)', () => {
+        beforeEach(() => {
+            document.body.innerHTML = '';
+            appState.activeStatFilter = null;
+            vi.spyOn(AppreciationsManager, 'renderResults').mockImplementation(() => {});
+        });
+
+        it('devrait empiler statFilter à l’activation d’une carte stat et retirer le filtre au bouton Retour (popstate)', () => {
+            document.body.innerHTML = `
+                <div class="stats-container">
+                    <div class="stat-card" id="cardValidated" data-stat-id="validated" data-count="5"></div>
+                </div>
+            `;
+            const card = document.getElementById('cardValidated');
+
+            EventHandlersManager.handleStatFilterClick(card);
+            expect(appState.activeStatFilter).toBe('validated');
+            expect(card.classList.contains('active-filter')).toBe(true);
+            expect(HistoryManager.isOpen('statFilter')).toBe(true);
+
+            // Retour mobile -> désactive le filtre sans quitter l'application
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(appState.activeStatFilter).toBeNull();
+            expect(card.classList.contains('active-filter')).toBe(false);
+            expect(HistoryManager.isOpen('statFilter')).toBe(false);
+        });
+
+        it('devrait nettoyer statFilter dans HistoryManager lors d’une désactivation manuelle', () => {
+            document.body.innerHTML = `
+                <div class="stats-container">
+                    <div class="stat-card" id="cardValidated" data-stat-id="validated" data-count="5"></div>
+                </div>
+            `;
+            const card = document.getElementById('cardValidated');
+            const manualCloseSpy = vi.spyOn(HistoryManager, 'handleManualClose');
+
+            EventHandlersManager.handleStatFilterClick(card);
+            expect(HistoryManager.isOpen('statFilter')).toBe(true);
+
+            // Second clic sur la même carte -> désactivation manuelle
+            EventHandlersManager.handleStatFilterClick(card);
+            expect(appState.activeStatFilter).toBeNull();
+            expect(manualCloseSpy).toHaveBeenCalledWith('statFilter');
+            expect(HistoryManager.isOpen('statFilter')).toBe(false);
+        });
+
+        it('devrait fermer uniquement la sous-page Analyse IA (focusAnalysis) au bouton Retour sans fermer le Focus Panel', () => {
+            document.body.innerHTML = `
+                <div id="focusPagesContainer">
+                    <div id="focusMainPage"></div>
+                    <div id="focusAnalysisPage" inert></div>
+                </div>
+            `;
+            const closePanelCb = vi.fn();
+            HistoryManager.pushState('focusPanel', closePanelCb);
+
+            FocusPanelAnalysis.init({ getCurrentStudentId: () => null });
+            FocusPanelAnalysis.show();
+
+            expect(FocusPanelAnalysis.isVisible()).toBe(true);
+            expect(HistoryManager.isOpen('focusAnalysis')).toBe(true);
+
+            // 1er Retour : ferme uniquement la page d'analyse
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(FocusPanelAnalysis.isVisible()).toBe(false);
+            expect(HistoryManager.isOpen('focusAnalysis')).toBe(false);
+            expect(closePanelCb).not.toHaveBeenCalled();
+            expect(HistoryManager.isOpen('focusPanel')).toBe(true);
+        });
+
+        it('devrait fermer le popover d’historique (focusHistoryPopover) au bouton Retour', () => {
+            document.body.innerHTML = `<button id="focusHistoryIndicator"></button>`;
+            vi.spyOn(FocusPanelHistory, '_getState').mockReturnValue({
+                currentIndex: 1,
+                versions: [
+                    { content: 'V1', timestamp: Date.now() - 1000, source: 'ai' },
+                    { content: 'V2', timestamp: Date.now(), source: 'manual' }
+                ]
+            });
+
+            FocusPanelHistory.showPopover();
+            expect(document.getElementById('historyPopover')).not.toBeNull();
+            expect(HistoryManager.isOpen('focusHistoryPopover')).toBe(true);
+
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(document.getElementById('historyPopover')).toBeNull();
+            expect(HistoryManager.isOpen('focusHistoryPopover')).toBe(false);
+        });
+
+        it('devrait annuler le mode édition de l’en-tête élève (focusHeaderEdit) au bouton Retour sans fermer la fiche', () => {
+            document.body.innerHTML = `
+                <div class="focus-header">
+                    <div id="focusAvatarContainer"><div class="student-avatar"><span class="student-avatar__initials">JD</span></div></div>
+                    <div class="focus-header-read"></div>
+                    <div class="focus-header-edit">
+                        <input id="headerNomInput" value="DUPONT" />
+                        <input id="headerPrenomInput" value="Jean" />
+                    </div>
+                </div>
+            `;
+            appState.generatedResults = [{ id: 's1', nom: 'DUPONT', prenom: 'Jean', studentData: { statuses: [] } }];
+            FocusPanelHeader.callbacks.getCurrentStudentId = () => 's1';
+            FocusPanelHeader.callbacks.getIsCreationMode = () => false;
+
+            FocusPanelHeader.toggleEditMode(true);
+            expect(document.querySelector('.focus-header').classList.contains('editing')).toBe(true);
+            expect(HistoryManager.isOpen('focusHeaderEdit')).toBe(true);
+
+            document.getElementById('headerPrenomInput').value = 'Modifié';
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+
+            expect(document.querySelector('.focus-header').classList.contains('editing')).toBe(false);
+            expect(HistoryManager.isOpen('focusHeaderEdit')).toBe(false);
+            expect(appState.generatedResults[0].prenom).toBe('Jean');
+        });
+
+        it('devrait fermer l’ajout rapide et le popover de seuil du Journal (focusJournalQuickAdd / focusJournalThreshold) au bouton Retour', () => {
+            document.body.innerHTML = `
+                <div id="focusJournalSection">
+                    <div id="journalThresholdControl">
+                        <button id="journalThresholdBtn"></button>
+                    </div>
+                    <div id="focusJournalContent">
+                        <div id="journalDraftPreview">
+                            <textarea id="journalNoteInput"></textarea>
+                            <button id="journalDraftSaveBtn" disabled><span>Enregistrer</span></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            FocusPanelJournal.init({ getCurrentStudentId: () => 's1' });
+
+            FocusPanelJournal.toggleQuickAdd(true, true);
+            expect(FocusPanelJournal.isEditing()).toBe(true);
+            expect(HistoryManager.isOpen('focusJournalQuickAdd')).toBe(true);
+
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(HistoryManager.isOpen('focusJournalQuickAdd')).toBe(false);
+
+            document.getElementById('journalThresholdBtn').click();
+            expect(document.getElementById('journalThresholdControl').classList.contains('open')).toBe(true);
+            expect(HistoryManager.isOpen('focusJournalThreshold')).toBe(true);
+
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(document.getElementById('journalThresholdControl').classList.contains('open')).toBe(false);
+            expect(HistoryManager.isOpen('focusJournalThreshold')).toBe(false);
+        });
+
+        it('devrait fermer la modale d’installation PWA (pwaModalOverlay) au bouton Retour', () => {
+            PwaInstallManager._showIOSInstallModal();
+            expect(document.getElementById('pwaModalOverlay')).not.toBeNull();
+            expect(HistoryManager.isOpen('pwaModalOverlay')).toBe(true);
+
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(HistoryManager.isOpen('pwaModalOverlay')).toBe(false);
+            expect(document.getElementById('pwaModalOverlay').classList.contains('visible')).toBe(false);
+        });
     });
 });
