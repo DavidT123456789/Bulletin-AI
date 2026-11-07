@@ -1608,6 +1608,10 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     }
 
     /* --- THEAD (Header & Toolbars) --- */
+    .student-list-view.skeleton-table-view thead {
+        display: none;
+    }
+
     .student-list-table thead {
         display: flex;
         background: transparent !important;
@@ -1620,15 +1624,9 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         flex-wrap: nowrap !important;
         gap: var(--space-2);
         align-items: center;
-        background: transparent;
-        padding: 0;
-        border-radius: 0;
-        box-shadow: none;
-        border: none;
         pointer-events: auto;
         position: relative;
         width: 100%;
-        box-sizing: border-box !important;
     }
 
     /* Hide standard headers */
@@ -1914,7 +1912,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     /* 1. Identity (Top) */
     .student-name-cell {
         order: 1;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         padding-right: 40px !important;
         /* Espace pour l'action cell à droite */
         padding-bottom: 0 !important;
@@ -1945,8 +1943,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         min-width: 0 !important;
         max-width: none !important;
         height: auto !important;
-        min-height: 28px;
-        margin-bottom: 4px;
+        min-height: 24px;
         padding: 0 !important;
         display: flex !important;
         align-items: center;
@@ -1988,7 +1985,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         width: auto !important;
         margin-left: 8px;
         margin-right: 0;
-        margin-bottom: 4px;
         display: flex !important;
         align-items: center;
     }
@@ -2007,7 +2003,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     /* 4. Appreciation (Bottom) */
     .appreciation-cell {
         order: 4;
-        margin-top: 2px;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -2019,15 +2014,8 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         max-width: none !important;
         flex: 0 0 auto !important;
         margin-left: auto;
-        margin-top: 0;
         display: flex !important;
         align-items: center;
-    }
-
-    .student-list-table tbody tr:has(td.appreciation-cell > .status-badge) td.grade-cell,
-    .student-list-table tbody tr:has(td.appreciation-cell > .status-badge) td.evolution-cell,
-    .student-list-table tbody tr:has(td.appreciation-cell > .status-badge) td.status-cell {
-        margin-bottom: 0;
     }
 
     .student-list-view .appreciation-preview {
@@ -2037,7 +2025,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         overflow: hidden;
         text-overflow: ellipsis;
         background: transparent;
-        padding: 4px 2px 2px;
+        padding: 1px 2px 0;
         border: none;
         font-size: 13px;
         line-height: 1.5;
@@ -2195,5 +2183,10 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 
     .student-list-table tbody tr.focus-closed-flash {
         animation: row-spotlight-cell-return 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .action-cell {
+        top: 10px;
+        right: 6px;
     }
 }
