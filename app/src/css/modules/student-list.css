@@ -1678,14 +1678,14 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         pointer-events: auto !important;
     }
 
-    /* Boutons d'action carrés unifiés (44x44px) de la barre d'outils mobile */
+    /* Boutons d'action circulaires unifiés (40x40px visuels, cible tactile 44x44px) de la barre d'outils mobile */
     #mobileCompactToggleBtn,
     .global-actions-dropdown .btn-action-menu-header {
-        position: static !important;
+        position: relative !important;
         transform: none !important;
-        width: 44px;
-        height: 44px;
-        border-radius: var(--radius-md);
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-pill);
         background: var(--surface-color);
         border: 1px solid var(--card-glass-border);
         box-shadow: var(--shadow-sm);
@@ -1695,6 +1695,13 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         opacity: 1 !important;
         color: var(--text-secondary) !important;
         transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    #mobileCompactToggleBtn::after,
+    .global-actions-dropdown .btn-action-menu-header::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
     }
 
     /* Actions line (Generate, Update) */
@@ -1738,9 +1745,9 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 
     .appreciation-header-actions .btn-smart-action-inline {
         margin-left: auto;
-        height: 44px;
-        padding: 0 14px;
-        border-radius: var(--radius-md);
+        height: 40px;
+        padding: 0 16px;
+        border-radius: var(--radius-pill);
         font-size: 13px;
     }
 
@@ -2155,11 +2162,16 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         padding: 14px var(--space-4);
     }
 
+    [data-theme="dark"] .student-list-table tbody tr {
+        background: transparent;
+    }
+
     .student-list-table tbody tr:first-child {
         border-top: 1px solid var(--border-color);
     }
 
-    .student-list-table tbody tr:active {
+    .student-list-table tbody tr:active,
+    [data-theme="dark"] .student-list-table tbody tr:active {
         transform: none;
         background-color: var(--item-active-bg);
     }

@@ -1003,7 +1003,8 @@ button > .icon-spin-wrapper {
         max-width: 150px;
     }
 
-    .class-chip .class-virtual-tag {
+    .class-chip .class-virtual-tag,
+    .view-toggle-btn span {
         display: none !important;
     }
 
@@ -1044,7 +1045,11 @@ button > .icon-spin-wrapper {
     .header .header-context-chip,
     .ui-segmented-control.header-style,
     .header-actions-pill {
-        height: 40px;
+        height: 36px;
+    }
+
+    .ui-segmented-control.header-style {
+        --sc-padding: 3px;
     }
 
     .header-actions {
@@ -1061,18 +1066,19 @@ button > .icon-spin-wrapper {
 
     .header-actions-pill .pill-segment,
     .menu-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
     }
 
     .ui-segmented-control.header-style .ui-segment {
         min-width: 36px;
+        padding: 0 10px;
         gap: 4px;
     }
 
     .ui-segmented-control.header-style .ui-segment iconify-icon,
     .ui-segmented-control.header-style .ui-segment i {
-        font-size: 18px;
+        font-size: 17px;
     }
 }
 
@@ -1106,20 +1112,9 @@ button > .icon-spin-wrapper {
         gap: 2px;
     }
 
-    .header-actions-pill .pill-segment,
-    .menu-btn {
-        width: 36px;
-        height: 36px;
-    }
-
     .ui-segmented-control.header-style .ui-segment {
-        min-width: 32px;
-        padding: 0 8px;
-    }
-
-    .ui-segmented-control.header-style.view-toggle .ui-segment {
         min-width: 34px;
-        padding: 0 8px;
+        padding: 0 9px;
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {

@@ -159,9 +159,9 @@
     transform: translateX(200%);
 }
 
-/* --- Dark Mode : Rail et pilule opaques sans bordure --- */
+/* --- Dark Mode : Rail creusé subtil et pilule active haute-lisibilité --- */
 [data-theme="dark"] .ui-segmented-control {
-    background: color-mix(in srgb, var(--surface-color) 60%, var(--bg-tertiary) 40%);
+    background: rgba(255, 255, 255, 0.05);
     box-shadow: none;
     border: none;
 }
@@ -169,7 +169,15 @@
 [data-theme="dark"] .ui-glider,
 [data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) input[type="radio"]:checked + .ui-segment,
 [data-theme="dark"] .ui-segmented-control:not(:has(.ui-glider)) .ui-segment.active {
-    background: color-mix(in srgb, var(--bg-tertiary) 82%, var(--text-primary) 6%);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    background: color-mix(in srgb, var(--bg-tertiary) 92%, var(--text-primary) 12%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     border: none;
+}
+
+@media (max-width: 768px) {
+    .ui-segmented-control.header-style .ui-segment::after {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+    }
 }

@@ -503,11 +503,6 @@
 }
 
 @media (max-width: 480px) {
-    .header-search.sc-floating-search {
-        width: 34px;
-        height: 34px;
-    }
-
     .header-search .sc-search-toggle-btn iconify-icon {
         font-size: 18px;
     }
