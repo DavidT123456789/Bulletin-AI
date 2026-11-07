@@ -83,8 +83,16 @@
     right: calc(var(--content-padding-x, var(--space-5)) + var(--scrollbar-width, 6px));
 }
 
-[data-theme="dark"] .main-content-wrapper::after {
-    --scrim-rgb: var(--surface-color-rgb);
+@media (min-width: 769px) {
+    [data-theme="dark"] .main-content-wrapper::after {
+        --scrim-rgb: var(--surface-color-rgb);
+    }
+}
+
+@media (max-width: 600px) {
+    .main-content-wrapper::after {
+        display: none;
+    }
 }
 
 .focus-main-page.can-scroll-top::before,

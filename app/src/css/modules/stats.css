@@ -619,7 +619,7 @@
 }
 
 .performance-card .performance-details {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
     padding-top: 10px;
 }
 
@@ -633,7 +633,7 @@
     justify-content: center;
     gap: 3px;
     text-align: center;
-    padding: 8px 8px 4px;
+    padding: 6px 8px;
     border-radius: var(--radius-md);
     background: transparent;
     border: 1px solid transparent;
@@ -651,10 +651,10 @@
     content: '';
     position: absolute;
     left: calc(-1 * var(--sub-tile-gap) / 2);
-    top: 18%;
-    height: 64%;
+    top: 22%;
+    height: 56%;
     width: 1px;
-    background: var(--border-color);
+    background: var(--border-subtle);
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
@@ -1205,7 +1205,7 @@
 
     .performance-card .detail-item,
     .evolution-card .legend-item {
-        padding: 6px 6px 2px;
+        padding: 4px 6px;
     }
 
     .performance-card .detail-item .detail-value,
@@ -1274,7 +1274,7 @@
 
     .performance-card .detail-item,
     .evolution-card .legend-item {
-        padding: 6px 6px 2px;
+        padding: 4px 6px;
     }
 
     .performance-card .detail-item .detail-value,
