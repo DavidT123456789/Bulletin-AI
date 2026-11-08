@@ -33,13 +33,17 @@ vi.mock('../utils/Utils.js', () => ({
     }
 }));
 
-vi.mock('../services/StatsService.js', () => ({
-    StatsService: {
-        calculateMedian: vi.fn(() => 13),
-        calculateHeterogeneity: vi.fn(() => null),
-        getGradeDistribution: vi.fn(() => [0, 0, 0, 0, 0])
-    }
-}));
+vi.mock('../services/StatsService.js', async (importOriginal) => {
+    const actual = (await importOriginal()).StatsService;
+    return {
+        StatsService: {
+            ...actual,
+            calculateMedian: vi.fn(() => 13),
+            calculateHeterogeneity: vi.fn(() => null),
+            getGradeDistribution: vi.fn(() => [0, 0, 0, 0, 0])
+        }
+    };
+});
 
 describe('StatsUIManager', () => {
     beforeEach(() => {
@@ -489,6 +493,35 @@ describe('StatsUIManager', () => {
             expect(bar12_16.getAttribute('data-tooltip')).toContain('2 élèves (12-16/20)');
             expect(bar12_16.getAttribute('data-tooltip')).toContain('BERNARD Thomas (15)');
             expect(bar12_16.getAttribute('data-tooltip')).toContain('MARTIN Lucas (12,5)');
+        });
+
+        it('should include sorted student names and point deltas in evolution legend tooltips on hover', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            appState.currentPeriod = 'S2';
+            appState.evolutionThresholds = { positive: 0.5, veryPositive: 2, negative: -0.5, veryNegative: -2 };
+            appState.filteredResults = [
+                { studentData: { name: 'MARTIN Lucas', periods: { S1: { grade: 12 }, S2: { grade: 13.5 } } } }, // +1,5 pt
+                { studentData: { name: 'BERNARD Thomas', periods: { S1: { grade: 11 }, S2: { grade: 14 } } } }, // +3 pts
+                { studentData: { name: 'DUPONT Marie', periods: { S1: { grade: 14 }, S2: { grade: 14.2 } } } }, // +0,2 pt (stable)
+                { studentData: { name: 'PETIT Hugo', periods: { S1: { grade: 15 }, S2: { grade: 12.5 } } } } // -2,5 pts
+            ];
+
+            await StatsUI.updateStats();
+
+            const progressItem = document.querySelector('.legend-item[data-filter-id="progressCount"]');
+            const stableItem = document.querySelector('.legend-item[data-filter-id="stableCount"]');
+            const regressionItem = document.querySelector('.legend-item[data-filter-id="regressionCount"]');
+
+            expect(progressItem.dataset.tooltip).toContain('<strong>Élèves en progrès (≥ +0,5 pt)</strong>');
+            expect(progressItem.dataset.tooltip).toContain('BERNARD Thomas (+3 pts)<br>MARTIN Lucas (+1,5 pt)');
+
+            expect(stableItem.dataset.tooltip).toContain('<strong>Élèves stables (entre -0,5 et +0,5 pt)</strong>');
+            expect(stableItem.dataset.tooltip).toContain('DUPONT Marie (+0,2 pt)');
+
+            expect(regressionItem.dataset.tooltip).toContain('<strong>Élèves en régression (≤ -0,5 pt)</strong>');
+            expect(regressionItem.dataset.tooltip).toContain('PETIT Hugo (-2,5 pts)');
         });
     });
 });

@@ -11,6 +11,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { StatsService } from '../services/StatsService.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -89,8 +90,7 @@ export const ResultsUIManager = {
         let maxGrade = -Infinity;
         if (filter === 'minGrade' || filter === 'maxGrade') {
             viewableResults.forEach(r => {
-                const gradeRaw = r.studentData.periods[activePeriod]?.grade;
-                const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                const grade = StatsService.parseGrade(r.studentData.periods[activePeriod]?.grade);
                 if (!isNaN(grade)) {
                     minGrade = Math.min(minGrade, grade);
                     maxGrade = Math.max(maxGrade, grade);
@@ -108,48 +108,39 @@ export const ResultsUIManager = {
                 if (filter === 'totalCount') return true;
 
                 if (filter === 'minGrade') {
-                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
-                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    const grade = StatsService.parseGrade(r.studentData.periods[activePeriod]?.grade);
                     return !isNaN(grade) && grade === minGrade;
                 }
                 if (filter === 'maxGrade') {
-                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
-                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    const grade = StatsService.parseGrade(r.studentData.periods[activePeriod]?.grade);
                     return !isNaN(grade) && grade === maxGrade;
                 }
 
                 if (filter === 'newCount') return Utils.isStudentNew(r, activePeriod);
                 if (filter === 'departedCount') return Utils.isStudentDeparted(r, activePeriod);
 
-                // CORRECTIF CRITIQUE : Calculer l'évolution dynamique basée directement sur les notes de scolarité
-                // pour s'assurer que le filtrage correspond toujours à 100% aux compteurs de statistiques.
+                // Calculer l'évolution dynamique via StatsService pour correspondre à 100% aux compteurs statistiques
                 const periods = Utils.getPeriods();
                 const activePeriodIndex = periods.indexOf(activePeriod);
                 const previousPeriod = activePeriodIndex > 0 ? periods[activePeriodIndex - 1] : null;
-                let evoType = null;
+                let evoCategory = null;
                 if (previousPeriod) {
-                    const currentGradeRaw = r.studentData?.periods?.[activePeriod]?.grade;
-                    const prevGradeRaw = r.studentData?.periods?.[previousPeriod]?.grade;
-                    
-                    const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
-                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
-                    
-                    if (!isNaN(currentGrade) && !isNaN(prevGrade)) {
-                        const dist = currentGrade - prevGrade;
-                        evoType = Utils.getEvolutionType(dist);
-                    }
+                    const diff = StatsService.computeEvolutionDiff(
+                        r.studentData?.periods?.[activePeriod]?.grade,
+                        r.studentData?.periods?.[previousPeriod]?.grade
+                    );
+                    evoCategory = StatsService.classifyEvolutionCategory(diff);
                 }
 
-                if (filter === 'progressCount') return evoType && ['very-positive', 'positive'].includes(evoType);
-                if (filter === 'stableCount') return !evoType || evoType === 'stable';
-                if (filter === 'regressionCount') return evoType && ['very-negative', 'negative'].includes(evoType);
+                if (filter === 'progressCount') return evoCategory === 'progress';
+                if (filter === 'stableCount') return evoCategory === 'stable';
+                if (filter === 'regressionCount') return evoCategory === 'regression';
 
                 // Filtrage par tranche de notes (histogramme)
                 if (filter.startsWith('gradeRange_')) {
                     const range = filter.replace('gradeRange_', '');
                     const [min, max] = range.split('-').map(Number);
-                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
-                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    const grade = StatsService.parseGrade(r.studentData.periods[activePeriod]?.grade);
                     if (isNaN(grade)) return false;
                     // Inclusif sur min, exclusif sur max (sauf pour 16-20 qui est inclusif sur 20)
                     if (max === 20) {

@@ -133,30 +133,82 @@ export const StatsUI = {
     },
 
     /**
-     * Met à jour les tooltips des statistiques avec les seuils actuels.
+     * Construit le HTML d'une infobulle listant jusqu'à 8 élèves triés avec troncature "+X autres…".
+     * @param {string} header - En-tête de l'infobulle
+     * @param {Array} items - Liste d'élèves à afficher
+     * @param {function(Object): string} formatLineFn - Formateur de ligne pour un élève (déjà échappé ou texte brut)
+     * @param {boolean} [boldHeaderWhenEmpty=false] - Conserver le gras sur l'en-tête même si la liste est vide
+     * @returns {string}
+     * @private
      */
-    updateStatsTooltips() {
-        const thresholds = appState.evolutionThresholds;
-        const subStatProgress = document.querySelector('.legend-item[data-filter-id="progressCount"]');
-        const subStatRegression = document.querySelector('.legend-item[data-filter-id="regressionCount"]');
-        const subStatStable = document.querySelector('.legend-item[data-filter-id="stableCount"]');
+    _formatStudentListTooltip(header, items, formatLineFn, boldHeaderWhenEmpty = false) {
+        if (!Array.isArray(items) || items.length === 0) {
+            return boldHeaderWhenEmpty ? `<strong>${header}</strong>` : header;
+        }
+        const maxShown = 8;
+        const lines = items.slice(0, maxShown).map(formatLineFn);
+        if (items.length > maxShown) {
+            const remaining = items.length - maxShown;
+            lines.push(`+${remaining} autre${remaining > 1 ? 's' : ''}…`);
+        }
+        return `<strong>${header}</strong><br>${lines.join('<br>')}`;
+    },
 
-        if (subStatProgress) {
-            subStatProgress.dataset.tooltip = `Élèves en progrès (≥ +${String(thresholds.positive).replace('.', ',')} pt)`;
-        }
-        if (subStatRegression) {
-            subStatRegression.dataset.tooltip = `Élèves en régression (≤ ${String(thresholds.negative).replace('.', ',')} pt)`;
-        }
-        if (subStatStable) {
-            const negStr = String(thresholds.negative).replace('.', ',');
-            const posStr = String(thresholds.positive).replace('.', ',');
-            subStatStable.dataset.tooltip = `Élèves stables (entre ${negStr} et +${posStr} pt)`;
-        }
+    /**
+     * Met à jour les tooltips des statistiques d'évolution avec les seuils actuels
+     * et, lorsque disponible, la liste nominative des élèves concernés.
+     * @param {Object|null} [stats=null] - Statistiques calculées incluant evolutionBuckets
+     * @param {boolean} [hasEvolutionData=false] - Indique si une période précédente est disponible
+     */
+    updateStatsTooltips(stats = null, hasEvolutionData = false) {
+        const thresholds = appState.evolutionThresholds || { positive: 0.5, negative: -0.5 };
+        const posStr = String(thresholds.positive ?? 0.5).replace('.', ',');
+        const negStr = String(thresholds.negative ?? -0.5).replace('.', ',');
+
+        const itemsConfig = [
+            {
+                filterId: 'progressCount',
+                header: `Élèves en progrès (≥ +${posStr} pt)`,
+                bucket: stats?.evolutionBuckets?.progress || [],
+                sorter: (a, b) => (b.diff - a.diff) || (b.grade - a.grade)
+            },
+            {
+                filterId: 'stableCount',
+                header: `Élèves stables (entre ${negStr} et +${posStr} pt)`,
+                bucket: stats?.evolutionBuckets?.stable || [],
+                sorter: (a, b) => (b.grade - a.grade) || (b.diff - a.diff)
+            },
+            {
+                filterId: 'regressionCount',
+                header: `Élèves en régression (≤ ${negStr} pt)`,
+                bucket: stats?.evolutionBuckets?.regression || [],
+                sorter: (a, b) => (a.diff - b.diff) || (a.grade - b.grade)
+            }
+        ];
+
+        const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
+
+        itemsConfig.forEach(({ filterId, header, bucket, sorter }) => {
+            const el = document.querySelector(`.legend-item[data-filter-id="${filterId}"]`);
+            if (!el) return;
+
+            const sorted = (hasEvolutionData && Array.isArray(bucket) && bucket.length > 0)
+                ? [...bucket].sort(sorter)
+                : [];
+
+            el.dataset.tooltip = this._formatStudentListTooltip(header, sorted, s => {
+                const sign = s.diff > 0 ? '+' : '';
+                const diffStr = Number.isInteger(s.diff) ? String(s.diff) : s.diff.toFixed(1).replace('.', ',');
+                const unit = Math.abs(s.diff) >= 2 ? 'pts' : 'pt';
+                return `${escape(s.name)} (${sign}${diffStr} ${unit})`;
+            });
+        });
     },
 
 
     /**
      * Calcule les statistiques à partir des résultats filtrés.
+     * Mutualise les calculs de notes et d'évolution avec StatsService.
      * @param {Array} filteredResults - Résultats filtrés
      * @param {string} activePeriod - Période active
      * @param {string|null} previousPeriod - Période précédente
@@ -166,42 +218,48 @@ export const StatsUI = {
         const stats = {
             avgGrade: '--', prevAvgGrade: '--', minGrade: '--', maxGrade: '--',
             avgWords: 0, avgChars: 0, progress: 0, stable: 0, regression: 0,
-            median: '--', heterogeneity: null, distribution: [0, 0, 0, 0, 0]
+            median: '--', heterogeneity: null, distribution: [0, 0, 0, 0, 0],
+            evolutionBuckets: { progress: [], stable: [], regression: [] }
         };
 
         if (filteredResults.length === 0) return stats;
 
-        let totalGrades = 0, gradeCount = 0, totalPrevGrades = 0, prevGradeCount = 0;
-        let minCurrentGrade = Infinity, maxCurrentGrade = -Infinity;
+        let totalPrevGrades = 0, prevGradeCount = 0;
         let words = 0, chars = 0, errFree = 0;
         const currentGrades = [];
 
         filteredResults.forEach(res => {
             // Statistique 1: Notes (Indépendant des erreurs d'appréciation)
             const currentGradeRaw = res.studentData?.periods?.[activePeriod]?.grade;
-            const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
+            const currentGrade = StatsService.parseGrade(currentGradeRaw);
 
             if (!isNaN(currentGrade)) {
-                totalGrades += currentGrade;
-                gradeCount++;
-                minCurrentGrade = Math.min(minCurrentGrade, currentGrade);
-                maxCurrentGrade = Math.max(maxCurrentGrade, currentGrade);
                 currentGrades.push(currentGrade);
 
                 // Statistique 2: Évolution
                 if (previousPeriod) {
-                    const prevGradeRaw = res.studentData.periods[previousPeriod]?.grade;
-                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
+                    const prevGradeRaw = res.studentData?.periods?.[previousPeriod]?.grade;
+                    const prevGrade = StatsService.parseGrade(prevGradeRaw);
                     if (!isNaN(prevGrade)) {
                         totalPrevGrades += prevGrade;
                         prevGradeCount++;
 
-                        // Calculer l'évolution
-                        const dist = currentGrade - prevGrade;
-                        const evoType = Utils.getEvolutionType(dist);
-                        if (['very-positive', 'positive'].includes(evoType)) stats.progress++;
-                        else if (evoType === 'stable') stats.stable++;
-                        else stats.regression++;
+                        const diff = StatsService.computeEvolutionDiff(currentGrade, prevGrade);
+                        const category = StatsService.classifyEvolutionCategory(diff);
+                        const studentName = res.studentData?.name
+                            || (Utils.formatStudentName ? Utils.formatStudentName(res.nom || res.studentData?.nom, res.prenom || res.studentData?.prenom) : '')
+                            || `${res.nom || res.studentData?.nom || ''} ${res.prenom || res.studentData?.prenom || ''}`.trim();
+
+                        if (category === 'progress') {
+                            stats.progress++;
+                            if (studentName) stats.evolutionBuckets.progress.push({ name: studentName, diff, grade: currentGrade });
+                        } else if (category === 'stable') {
+                            stats.stable++;
+                            if (studentName) stats.evolutionBuckets.stable.push({ name: studentName, diff, grade: currentGrade });
+                        } else if (category === 'regression') {
+                            stats.regression++;
+                            if (studentName) stats.evolutionBuckets.regression.push({ name: studentName, diff, grade: currentGrade });
+                        }
                     }
                 }
             }
@@ -215,15 +273,14 @@ export const StatsUI = {
             }
         });
 
-        if (gradeCount > 0) {
-            stats.avgGrade = (totalGrades / gradeCount);
-            stats.minGrade = minCurrentGrade;
-            stats.maxGrade = maxCurrentGrade;
-
-            // Nouveaux calculs via StatsService
-            stats.median = StatsService.calculateMedian(currentGrades);
-            stats.heterogeneity = StatsService.calculateHeterogeneity(currentGrades);
-            stats.distribution = StatsService.getGradeDistribution(currentGrades);
+        const gradeSummary = StatsService.summarizeGrades(currentGrades);
+        if (gradeSummary) {
+            stats.avgGrade = gradeSummary.average;
+            stats.minGrade = gradeSummary.min;
+            stats.maxGrade = gradeSummary.max;
+            stats.median = gradeSummary.median;
+            stats.heterogeneity = gradeSummary.heterogeneity;
+            stats.distribution = gradeSummary.distribution;
         }
         if (prevGradeCount > 0) stats.prevAvgGrade = (totalPrevGrades / prevGradeCount);
         if (errFree > 0) {
@@ -479,7 +536,7 @@ export const StatsUI = {
         if (Array.isArray(filteredResults) && activePeriod) {
             filteredResults.forEach(res => {
                 const raw = res?.studentData?.periods?.[activePeriod]?.grade;
-                const grade = typeof raw === 'number' ? raw : parseFloat(String(raw ?? '').replace(',', '.'));
+                const grade = StatsService.parseGrade(raw);
                 if (isNaN(grade)) return;
                 const name = res?.studentData?.name || `${res?.studentData?.nom || ''} ${res?.studentData?.prenom || ''}`.trim();
                 if (!name) return;
@@ -512,21 +569,15 @@ export const StatsUI = {
                 const pluriel = count > 1 ? 's' : '';
                 const headerText = `${count} élève${pluriel} (${range}/20)`;
                 const studentsInRange = rangeBuckets[index].sort((a, b) => b.grade - a.grade);
+                const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
 
-                if (studentsInRange.length > 0) {
-                    const maxShown = 8;
-                    const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
-                    const lines = studentsInRange.slice(0, maxShown).map(s => {
+                barGroup.setAttribute(
+                    'data-tooltip',
+                    this._formatStudentListTooltip(headerText, studentsInRange, s => {
                         const gradeStr = Number.isInteger(s.grade) ? String(s.grade) : s.grade.toFixed(1).replace('.', ',');
                         return `${escape(s.name)} (${gradeStr})`;
-                    });
-                    if (studentsInRange.length > maxShown) {
-                        lines.push(`+${studentsInRange.length - maxShown} autre${studentsInRange.length - maxShown > 1 ? 's' : ''}…`);
-                    }
-                    barGroup.setAttribute('data-tooltip', `<strong>${headerText}</strong><br>${lines.join('<br>')}`);
-                } else {
-                    barGroup.setAttribute('data-tooltip', headerText);
-                }
+                    })
+                );
             }
         });
     },
@@ -607,6 +658,8 @@ export const StatsUI = {
                 item.setAttribute('aria-disabled', 'true');
             }
         });
+
+        this.updateStatsTooltips(stats, hasEvolutionData);
 
         let statusBadge = document.getElementById('evolutionStatusBadge');
         if (!statusBadge) {

@@ -38,8 +38,9 @@ vi.mock('../utils/Utils.js', async (importOriginal) => ({
     }
 }));
 
-vi.mock('./StatsService.js', () => ({
+vi.mock('./StatsService.js', async (importOriginal) => ({
     StatsService: {
+        ...(await importOriginal()).StatsService,
         analyserEvolution: vi.fn()
     }
 }));

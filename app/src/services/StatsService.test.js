@@ -180,5 +180,53 @@ describe('StatsService', () => {
             const dist = StatsService.getGradeDistribution([3, 'Abs', 7, 11, NaN, 15, 19]);
             expect(dist).toEqual([1, 1, 1, 1, 1]); // 3 (<4), 7 (<8), 11 (<12), 15 (<16), 19 (>=16)
         });
+
+        it('should parse grades from numbers, comma/dot strings, zero, and reject invalid inputs', () => {
+            expect(StatsService.parseGrade(14.5)).toBe(14.5);
+            expect(StatsService.parseGrade(0)).toBe(0);
+            expect(StatsService.parseGrade('0')).toBe(0);
+            expect(StatsService.parseGrade('12,5')).toBe(12.5);
+            expect(StatsService.parseGrade('16.25')).toBe(16.25);
+            expect(Number.isNaN(StatsService.parseGrade(''))).toBe(true);
+            expect(Number.isNaN(StatsService.parseGrade(null))).toBe(true);
+            expect(Number.isNaN(StatsService.parseGrade(undefined))).toBe(true);
+            expect(Number.isNaN(StatsService.parseGrade('Abs'))).toBe(true);
+        });
+
+        it('should compute evolution diff without floating-point drift and classify categories', () => {
+            // 12.6 - 12.1 in IEEE-754 is 0.4999999999999999 -> rounded to 0.50
+            expect(StatsService.computeEvolutionDiff('12,6', '12,1')).toBe(0.5);
+            expect(StatsService.computeEvolutionDiff(10, null)).toBeNull();
+
+            // With mocked thresholds positive: 1, negative: -1
+            expect(StatsService.classifyEvolutionCategory(1.5)).toBe('progress');
+            expect(StatsService.classifyEvolutionCategory(0.5)).toBe('stable');
+            expect(StatsService.classifyEvolutionCategory(-1.2)).toBe('regression');
+            expect(StatsService.classifyEvolutionCategory(null)).toBeNull();
+        });
+
+        it('should compute a complete class grade snapshot via summarizeGrades()', () => {
+            expect(StatsService.summarizeGrades([])).toBeNull();
+            expect(StatsService.summarizeGrades(['Abs', null, undefined])).toBeNull();
+
+            const snapshot = StatsService.summarizeGrades(['14,5', 8, 12, '15,5', 'Abs']);
+            expect(snapshot).not.toBeNull();
+            expect(snapshot.count).toBe(4);
+            expect(snapshot.grades).toEqual([8, 12, 14.5, 15.5]);
+            expect(snapshot.average).toBe(12.5);
+            expect(snapshot.median).toBe(13.25);
+            expect(snapshot.min).toBe(8);
+            expect(snapshot.max).toBe(15.5);
+            expect(snapshot.aboveTenCount).toBe(3);
+            expect(snapshot.successRate).toBe(75);
+            expect(snapshot.distribution).toEqual([0, 0, 1, 3, 0]);
+            expect(snapshot.distributionMap).toEqual({
+                '0-4': 0,
+                '4-8': 0,
+                '8-12': 1,
+                '12-16': 3,
+                '16-20': 0
+            });
+        });
     });
 });

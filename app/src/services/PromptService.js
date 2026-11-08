@@ -210,8 +210,7 @@ export const PromptService = {
      * @private
      */
     _extractJournalSynthesis(studentData, currentPeriod) {
-        const studentId = studentData?.id;
-        const fromManager = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        const fromManager = studentData ? JournalManager.synthesizeForPrompt(studentData, currentPeriod) : '';
         if (fromManager) return fromManager;
 
         if (!Array.isArray(studentData?.journal) || studentData.journal.length === 0) {
@@ -279,13 +278,13 @@ export const PromptService = {
     },
 
     /**
-     * Convertit une moyenne saisie (nombre ou chaîne « 12,5 ») en nombre.
+     * Convertit une moyenne saisie (nombre ou chaîne « 12,5 ») en nombre via StatsService.
      * @param {number|string|null|undefined} raw - Moyenne brute
      * @returns {number} Moyenne numérique, ou NaN si absente ou invalide
      * @private
      */
     _parseGrade(raw) {
-        return typeof raw === 'number' ? raw : parseFloat(String(raw ?? '').replace(',', '.'));
+        return StatsService.parseGrade(raw);
     },
 
     getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false) {
@@ -663,21 +662,16 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
                 return PromptService._classStatsCache.get(cacheKey);
             }
 
-            const grades = classStudents
-                .map(r => PromptService._parseGrade(r.studentData?.periods?.[period]?.grade))
-                .filter(g => !isNaN(g));
+            const summary = StatsService.summarizeGrades(
+                classStudents.map(r => r.studentData?.periods?.[period]?.grade)
+            );
 
-            if (grades.length < 3) {
+            if (!summary || summary.count < 3) {
                 PromptService._classStatsCache.set(cacheKey, '');
                 return ''; // Au moins 3 notes pour calculer des stats
             }
 
-            const sum = grades.reduce((acc, g) => acc + g, 0);
-            const avg = sum / grades.length;
-            const min = Math.min(...grades);
-            const max = Math.max(...grades);
-
-            const result = ` [Classe : Moy ${avg.toFixed(1).replace('.', ',')}, Min ${min.toFixed(1).replace('.', ',')}, Max ${max.toFixed(1).replace('.', ',')}]`;
+            const result = ` [Classe : Moy ${summary.average.toFixed(1).replace('.', ',')}, Min ${summary.min.toFixed(1).replace('.', ',')}, Max ${summary.max.toFixed(1).replace('.', ',')}]`;
             PromptService._classStatsCache.set(cacheKey, result);
             return result;
         } catch (e) {

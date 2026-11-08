@@ -21,26 +21,6 @@
     .form-row {
         grid-template-columns: 1fr;
     }
-
-
-    /* Personalization modal: single column on tablet/mobile */
-    .personalization-modal-content {
-        --modal-height: auto;
-    }
-
-    .lab-layout {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-    }
-
-    .lab-pane {
-        overflow-y: visible;
-    }
-
-    .lab-pane--settings {
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
 }
 
 /* ====================================================================

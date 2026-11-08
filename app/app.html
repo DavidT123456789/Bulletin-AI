@@ -4058,7 +4058,7 @@
                                 <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse Qualitative (IA)
                             </h3>
                             <div class="panel-header-actions">
-                                <button class="btn btn-neutral btn-small" id="copyDashboardSynthesisBtn" style="display: none;">
+                                <button class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
                                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                                 </button>
                                 <button class="btn btn-ai btn-small" id="generateSynthesisBtn" style="display: none;">
@@ -4109,7 +4109,7 @@
                         <div class="panel-content">
                             <!-- Class Statistics horizontal KPI bar -->
                             <div class="cohort-stats-bar">
-                                <div class="cohort-stat-item" id="cohortStatAverageItem">
+                                <div class="cohort-stat-item has-tooltip" id="cohortStatAverageItem">
                                     <span class="stat-label">Moyenne</span>
                                     <span class="stat-value" id="cohortStatAverage">--</span>
                                 </div>

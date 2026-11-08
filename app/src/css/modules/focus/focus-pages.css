@@ -78,14 +78,7 @@
 }
 
 .main-content-wrapper::after {
-    left: var(--content-padding-x, var(--space-5));
-    right: calc(var(--content-padding-x, var(--space-5)) + var(--scrollbar-width, 6px));
-}
-
-@media (max-width: 600px) {
-    .main-content-wrapper::after {
-        display: none;
-    }
+    right: var(--scrollbar-width, 6px);
 }
 
 .focus-main-page.can-scroll-top::before,

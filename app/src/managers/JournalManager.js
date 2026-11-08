@@ -4,7 +4,7 @@
  * @module managers/JournalManager
  */
 
-import { appState, userSettings } from '../state/State.js';
+import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { Utils } from '../utils/Utils.js';
@@ -231,9 +231,11 @@ export const JournalManager = {
 
         const counts = {};
         entries.forEach(entry => {
-            entry.tags.forEach(tagId => {
-                counts[tagId] = (counts[tagId] || 0) + 1;
-            });
+            if (Array.isArray(entry?.tags)) {
+                entry.tags.forEach(tagId => {
+                    counts[tagId] = (counts[tagId] || 0) + 1;
+                });
+            }
         });
 
         return counts;
@@ -276,7 +278,7 @@ export const JournalManager = {
         // 1. Try to get specific class
         const targetClassId = classId || appState.currentClassId;
         if (targetClassId) {
-            const classObj = userSettings.academic.classes?.find(c => c.id === targetClassId);
+            const classObj = appState.classes?.find(c => c.id === targetClassId);
             if (classObj && classObj.journalThreshold !== undefined) {
                 return classObj.journalThreshold;
             }
@@ -287,37 +289,61 @@ export const JournalManager = {
     },
 
     /**
+     * Resolve period journal entries and classId for a student ID or student object
+     * @param {string|Object} studentOrId - Student ID or student object ({ id, classId, journal })
+     * @param {string|null} [period=null] - Period filter
+     * @returns {{entries: JournalEntry[], classId: string|null}}
+     * @private
+     */
+    _resolveStudentPeriodEntries(studentOrId, period = null) {
+        const targetPeriod = period || appState.currentPeriod;
+        const isObj = Boolean(studentOrId && typeof studentOrId === 'object');
+        const studentId = isObj ? studentOrId.id : studentOrId;
+        const studentInState = studentId ? appState.generatedResults?.find(s => s.id === studentId) : null;
+        const rawEntries = isObj && Array.isArray(studentOrId.journal)
+            ? studentOrId.journal
+            : (isObj && Array.isArray(studentOrId.studentData?.journal)
+                ? studentOrId.studentData.journal
+                : (studentInState?.journal || []));
+        const entries = rawEntries.filter(e => e && (!e.period || e.period === targetPeriod));
+        const classId = (isObj ? studentOrId.classId : null) || studentInState?.classId || null;
+        return { entries, classId };
+    },
+
+    /**
+     * Get significant tag IDs (meeting threshold) for a student on a period, sorted by frequency
+     * @param {string|Object} studentOrId - Student ID or student object
+     * @param {string|null} [period=null] - Optional period filter
+     * @returns {string[]} Array of significant tag IDs
+     */
+    getSignificantTagIds(studentOrId, period = null) {
+        const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
+        if (entries.length === 0) return [];
+        const threshold = this.getThreshold(classId);
+        const tagCounts = this.countTags(entries);
+        return Object.entries(tagCounts)
+            .filter(([tagId, count]) => count >= threshold && Array.isArray(entries))
+            .sort((a, b) => b[1] - a[1])
+            .map(([tagId]) => tagId);
+    },
+
+    /**
      * Synthesize journal entries for prompt injection
      * Creates a compact summary suitable for the AI prompt
      * Only includes tags that meet the threshold (default 2)
-     * @param {string} studentId - Student ID
+     * @param {string|Object} studentId - Student ID or student object
      * @param {string} [period] - Optional period filter (defaults to active period)
      * @returns {string} Synthesized text for prompt (empty if no entries)
      */
     synthesizeForPrompt(studentId, period = null) {
-        const targetPeriod = period || appState.currentPeriod;
-        const entries = this.getEntriesForPeriod(studentId, targetPeriod);
-
+        const { entries } = this._resolveStudentPeriodEntries(studentId, period);
         if (entries.length === 0) return '';
 
-        // Get threshold from class settings
-        const student = appState.generatedResults?.find(s => s.id === studentId);
-        const threshold = this.getThreshold(student?.classId);
-
-        // Count tags
-        const tagCounts = this.countTags(studentId, targetPeriod);
-
-        // Build summary parts
+        const significantTagIdsList = this.getSignificantTagIds(studentId, period).slice(0, 5);
         const parts = [];
 
-        // Filter tags by threshold, then sort by frequency
-        const significantTags = Object.entries(tagCounts)
-            .filter(([tagId, count]) => count >= threshold)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // Top 5 significant tags
-
-        if (significantTags.length > 0) {
-            const tagLabels = significantTags.map(([tagId]) => {
+        if (significantTagIdsList.length > 0) {
+            const tagLabels = significantTagIdsList.map(tagId => {
                 const tag = this.tags.find(t => t.id === tagId);
                 return tag ? tag.label : tagId;
             });
@@ -325,9 +351,9 @@ export const JournalManager = {
         }
 
         // Include recent notes only from entries with significant tags
-        const significantTagIds = new Set(significantTags.map(([id]) => id));
+        const significantTagIds = new Set(significantTagIdsList);
         const significantNotes = entries
-            .filter(e => e.note && e.note.length > 0 && e.tags.some(t => significantTagIds.has(t)))
+            .filter(e => e.note && e.note.length > 0 && Array.isArray(e.tags) && e.tags.some(t => significantTagIds.has(t)))
             .slice(-3)
             .map(e => `"${e.note}"`)
             .join(' | ');

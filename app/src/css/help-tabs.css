@@ -1682,24 +1682,6 @@
     transform: scale(1);
 }
 
-@media (max-width: 600px) {
-    .seating-dot-option {
-        min-height: 38px;
-    }
-
-    .accent-color-selector {
-        width: 100%;
-        justify-content: space-between;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .accent-color-swatch {
-        width: 32px;
-        height: 32px;
-    }
-}
-
 /* ====================================================================
    ACCENT COLOR SWATCHES & CUSTOM PICKER (Settings > Préférences)
    ==================================================================== */
@@ -1728,6 +1710,24 @@
     padding: 0;
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.2s ease;
+}
+
+@media (max-width: 600px) {
+    .seating-dot-option {
+        min-height: 38px;
+    }
+
+    .accent-color-selector {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .accent-color-swatch {
+        width: 32px;
+        height: 32px;
+    }
 }
 
 .accent-color-swatch iconify-icon {
@@ -1788,7 +1788,7 @@
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
-    margin-top: 0;
+    margin-bottom: 0;
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
     border: 1px solid transparent;
@@ -1796,14 +1796,14 @@
     transition:
         grid-template-rows 0.35s var(--ease-spring),
         opacity 0.25s ease,
-        margin-top 0.35s var(--ease-spring),
+        margin-bottom 0.35s var(--ease-spring),
         border-color 0.25s ease;
 }
 
 .custom-picker-panel.open {
     grid-template-rows: 1fr;
     opacity: 1;
-    margin-top: 12px;
+    margin-bottom: 14px;
     border-color: var(--border-color);
     pointer-events: auto;
 }

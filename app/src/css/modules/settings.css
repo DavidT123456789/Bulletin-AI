@@ -12,7 +12,6 @@
 .personalization-modal-content {
     --modal-shell-width: 95%;
     --modal-width: 1040px;
-    --modal-height: min(720px, 90vh);
 }
 
 .personalization-modal-content .modal-header-actions {
@@ -41,11 +40,13 @@
 }
 
 .lab-layout {
-    display: grid;
-    grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .lab-pane {
@@ -53,18 +54,38 @@
     flex-direction: column;
     gap: 16px;
     padding: 18px 22px 20px;
-    overflow-y: auto;
-    min-height: 0;
     min-width: 0;
     background: var(--modal-scene-bg, var(--bg-color));
 }
 
 .lab-pane--settings {
-    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .lab-pane--preview {
     gap: 12px;
+}
+
+@media (min-width: 901px) {
+    .personalization-modal-content {
+        --modal-height: min(720px, 90vh);
+    }
+
+    .lab-layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    .lab-pane {
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .lab-pane--settings {
+        border-bottom: none;
+        border-right: 1px solid var(--border-color);
+    }
 }
 
 /* --- Left Pane: Field Rows & Controls --- */
@@ -225,7 +246,7 @@
                 opacity 0.18s ease,
                 margin-top 0.24s var(--ease-spring),
                 visibility 0s linear 0.24s;
-    margin-top: 0;
+    margin-top: -10px;
 }
 
 .settings-collapsible-control.open {
@@ -233,7 +254,7 @@
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    margin-top: 4px;
+    margin-top: 0;
     transition: grid-template-rows 0.24s var(--ease-spring),
                 opacity 0.18s ease,
                 margin-top 0.24s var(--ease-spring),
@@ -1320,7 +1341,6 @@
 .settings-row-block {
     display: flex;
     flex-direction: column;
-    padding: 14px 0;
     width: 100%;
 }
 
@@ -1716,12 +1736,14 @@ label.settings-row-title {
         grid-row: 2;
     }
 
-    /* Système périodique & Seuils d'évolution pleine largeur sur mobile */
-    .period-system-selector.ui-segmented-control {
+    /* Contrôles segmentés & Seuils d'évolution pleine largeur sur mobile */
+    .period-system-selector.ui-segmented-control,
+    .lab-preview-toolbar > .ui-segmented-control {
         width: 100%;
     }
 
-    .period-system-selector.ui-segmented-control .ui-segment {
+    .period-system-selector.ui-segmented-control .ui-segment,
+    .lab-preview-toolbar > .ui-segmented-control .ui-segment {
         flex: 1;
         justify-content: center;
     }

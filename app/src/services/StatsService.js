@@ -1,15 +1,78 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { computeGradeDistributionArray } from '../config/academicConstants.js';
+import { computeGradeDistributionArray, computeGradeDistributionMap } from '../config/academicConstants.js';
 
 export const StatsService = {
+    /**
+     * Convertit une note brute (nombre ou chaîne avec virgule/point) en nombre valide ou NaN.
+     * @param {number|string|null|undefined} raw
+     * @returns {number}
+     */
+    parseGrade(raw) {
+        if (typeof raw === 'number') return isNaN(raw) ? NaN : raw;
+        if (raw === null || raw === undefined || raw === '') return NaN;
+        const parsed = parseFloat(String(raw).replace(',', '.'));
+        return isNaN(parsed) ? NaN : parsed;
+    },
+
+    /**
+     * Calcule l'écart arrondi à 2 décimales entre deux notes brutes, ou null si l'une est invalide.
+     * @param {number|string|null|undefined} currentGradeRaw
+     * @param {number|string|null|undefined} prevGradeRaw
+     * @returns {number|null}
+     */
+    computeEvolutionDiff(currentGradeRaw, prevGradeRaw) {
+        const currentGrade = this.parseGrade(currentGradeRaw);
+        const prevGrade = this.parseGrade(prevGradeRaw);
+        if (isNaN(currentGrade) || isNaN(prevGrade)) return null;
+        return parseFloat((currentGrade - prevGrade).toFixed(2));
+    },
+
+    /**
+     * Détermine le type détaillé d'évolution ('very-positive', 'positive', 'stable', 'negative', 'very-negative')
+     * selon les seuils configurés dans appState.evolutionThresholds.
+     * @param {number|null} diff
+     * @returns {string}
+     */
+    getEvolutionType(diff) {
+        if (diff === null || typeof diff !== 'number' || isNaN(diff)) return 'stable';
+        const t = appState.evolutionThresholds || { veryPositive: 2, positive: 0.5, negative: -0.5, veryNegative: -2 };
+        if (typeof Utils.getEvolutionType === 'function' && t.veryPositive !== undefined) {
+            return Utils.getEvolutionType(diff);
+        }
+        const pos = t.positive ?? 0.5;
+        const veryPos = t.veryPositive ?? Math.max(2, pos * 2);
+        const neg = t.negative ?? -0.5;
+        const veryNeg = t.veryNegative ?? Math.min(-2, neg * 2);
+
+        if (diff >= veryPos) return 'very-positive';
+        if (diff >= pos) return 'positive';
+        if (diff <= veryNeg) return 'very-negative';
+        if (diff <= neg) return 'negative';
+        return 'stable';
+    },
+
+    /**
+     * Classe un écart de points dans l'une des 3 catégories agrégées ('progress' | 'stable' | 'regression')
+     * ou null si aucun écart valide.
+     * @param {number|null} diff
+     * @returns {'progress'|'stable'|'regression'|null}
+     */
+    classifyEvolutionCategory(diff) {
+        if (diff === null || typeof diff !== 'number' || isNaN(diff)) return null;
+        const evoType = this.getEvolutionType(diff);
+        if (evoType === 'very-positive' || evoType === 'positive') return 'progress';
+        if (evoType === 'very-negative' || evoType === 'negative') return 'regression';
+        return 'stable';
+    },
+
     /**
      * Calcule la médiane d'un ensemble de notes.
      * @param {number[]} grades - Liste des notes
      * @returns {number|string} La médiane ou '--' si vide
      */
     calculateMedian(grades) {
-        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        const cleanGrades = (grades || []).map(g => this.parseGrade(g)).filter(g => !isNaN(g));
         if (cleanGrades.length === 0) return '--';
         const sorted = [...cleanGrades].sort((a, b) => a - b);
         const mid = Math.floor(sorted.length / 2);
@@ -24,7 +87,7 @@ export const StatsService = {
      * @returns {number} L'écart-type
      */
     calculateStandardDeviation(grades) {
-        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        const cleanGrades = (grades || []).map(g => this.parseGrade(g)).filter(g => !isNaN(g));
         if (cleanGrades.length === 0) return 0;
         const n = cleanGrades.length;
         const mean = cleanGrades.reduce((a, b) => a + b, 0) / n;
@@ -38,7 +101,7 @@ export const StatsService = {
      * @returns {Object} { label: string, colorClass: string, value: number }
      */
     calculateHeterogeneity(grades) {
-        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        const cleanGrades = (grades || []).map(g => this.parseGrade(g)).filter(g => !isNaN(g));
         if (cleanGrades.length < 2) return { label: 'Indéterminée', colorClass: 'stable', value: 0 };
         const stdDev = this.calculateStandardDeviation(cleanGrades);
 
@@ -62,26 +125,65 @@ export const StatsService = {
         return computeGradeDistributionArray(grades);
     },
 
-    analyserEvolution(periodsData) {
-        const evolutions = [], t = appState.evolutionThresholds;
-        const getType = (diff) => {
-            if (diff === null || isNaN(diff)) return 'stable';
-            // Les seuils sont définis dans appState.evolutionThresholds (ex: positive: 0.5, veryPositive: 2.0...)
-            // Si la différence est ENTRE le seuil négatif et le seuil positif, c'est stable.
-            // Ex: si positive=2.0 et negative=-2.0, alors 1.5 est stable.
+    /**
+     * Calcule le snapshot statistique complet d'une série de notes.
+     * Mutualise moyenne, médiane, min, max, écart-type, hétérogénéité, taux de réussite et distributions.
+     * @param {Array<number|string>} grades - Liste de notes
+     * @returns {Object|null} Snapshot statistique ou null si aucune note valide
+     */
+    summarizeGrades(grades) {
+        const cleanGrades = (grades || [])
+            .map(g => this.parseGrade(g))
+            .filter(g => !isNaN(g));
 
-            if (diff >= t.veryPositive) return 'very-positive';
-            if (diff >= t.positive) return 'positive';
+        const count = cleanGrades.length;
+        if (count === 0) return null;
 
-            if (diff <= t.veryNegative) return 'very-negative';
-            if (diff <= t.negative) return 'negative';
+        const sortedGrades = [...cleanGrades].sort((a, b) => a - b);
+        const sum = sortedGrades.reduce((acc, g) => acc + g, 0);
+        const average = sum / count;
+        const min = sortedGrades[0];
+        const max = sortedGrades[count - 1];
+        const median = this.calculateMedian(cleanGrades);
+        const stdDev = this.calculateStandardDeviation(cleanGrades);
+        const heterogeneity = this.calculateHeterogeneity(cleanGrades);
+        const aboveTenCount = sortedGrades.filter(g => g >= 10).length;
+        const successRate = (aboveTenCount / count) * 100;
+        const distribution = this.getGradeDistribution(cleanGrades);
+        const distributionMap = computeGradeDistributionMap(cleanGrades);
 
-            return 'stable';
+        return {
+            count,
+            grades: sortedGrades,
+            average,
+            median: typeof median === 'number' ? median : average,
+            min,
+            max,
+            stdDev,
+            heterogeneity,
+            aboveTenCount,
+            successRate,
+            distribution,
+            distributionMap
         };
+    },
+
+    analyserEvolution(periodsData) {
+        if (!periodsData) return [];
+        const evolutions = [];
         const periods = Utils.getPeriods();
         for (let i = 1; i < periods.length; i++) {
-            const v1 = periodsData[periods[i - 1]]?.grade, v2 = periodsData[periods[i]]?.grade;
-            if (typeof v1 === 'number' && typeof v2 === 'number') { const diff = parseFloat((v2 - v1).toFixed(2)); evolutions.push({ type: getType(diff), valeur: diff, periode: `${periods[i - 1]}-${periods[i]}` }); }
+            const diff = this.computeEvolutionDiff(
+                periodsData[periods[i]]?.grade,
+                periodsData[periods[i - 1]]?.grade
+            );
+            if (diff !== null) {
+                evolutions.push({
+                    type: this.getEvolutionType(diff),
+                    valeur: diff,
+                    periode: `${periods[i - 1]}-${periods[i]}`
+                });
+            }
         }
         return evolutions;
     },

@@ -961,7 +961,7 @@ button > .icon-spin-wrapper {
     }
 
     .main-content-wrapper::after {
-        right: var(--content-padding-x, 16px);
+        right: 0;
     }
 
     .main-content {

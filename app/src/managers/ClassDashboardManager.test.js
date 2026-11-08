@@ -17,6 +17,9 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         ClassDashboardManager._listenersBound = false;
         ClassDashboardManager.cachedStats = null;
         ClassDashboardManager.cachedSynthesisHTML = null;
+        ClassDashboardManager.originalSynthesisHTML = null;
+        ClassDashboardManager.cachedSynthesisRawText = null;
+        ClassDashboardManager.originalSynthesisRawText = null;
         ClassDashboardManager.cachedSynthesisClassId = null;
         ClassDashboardManager.cachedSynthesisPeriod = null;
         ClassDashboardManager.previousSynthesisState = null;
@@ -317,6 +320,132 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(copiedText).toContain('Points forts :\n• Bonne participation');
     });
 
+    it('devrait copier uniquement le texte pur de la synthèse globale (sans titre ni puces) via le bouton dédié', async () => {
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <div id="aiSynthesisContent"></div>
+                <button id="generateSynthesisBtn"></button>
+                <div id="aiRefinementToolbar"></div>
+                <button id="revertSynthesisBtn"></button>
+                <button id="copyDashboardSynthesisBtn"></button>
+            </div>
+        `;
+        ClassDashboardManager._ensureModal();
+
+        const rawJson = JSON.stringify({
+            synthesis: 'Classe dynamique et investie tout au long du trimestre.',
+            strengths: ['Participation orale régulière'],
+            vigilances: ['Quelques bavardages en fin de séance'],
+            recommendations: ['Maintenir cette implication au prochain trimestre']
+        });
+        const html = `<div class="ai-synthesis-text">${ClassDashboardManager._formatSynthesisText(rawJson)}</div>`;
+        await ClassDashboardManager._applySynthesisToUI(html, false);
+
+        const writeTextMock = vi.fn().mockResolvedValue(undefined);
+        Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
+        const notifySpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+
+        const introCopyBtn = document.querySelector('.synthesis-intro-copy-btn');
+        expect(introCopyBtn).not.toBeNull();
+
+        introCopyBtn.click();
+        await new Promise(r => setTimeout(r, 0));
+
+        expect(writeTextMock).toHaveBeenCalledTimes(1);
+        expect(writeTextMock).toHaveBeenCalledWith('Classe dynamique et investie tout au long du trimestre.');
+        expect(notifySpy).toHaveBeenCalledWith('Synthèse globale copiée !', 'success');
+        expect(introCopyBtn.classList.contains('copied')).toBe(true);
+    });
+
+    it('devrait persister l\'édition manuelle directe, mettre à jour rawText et afficher le bouton Rétablir', async () => {
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <div id="aiSynthesisContent"></div>
+                <button id="generateSynthesisBtn"></button>
+                <div id="aiRefinementToolbar"></div>
+                <button id="revertSynthesisBtn" style="display: none;"></button>
+                <button id="copyDashboardSynthesisBtn"></button>
+            </div>
+        `;
+        ClassDashboardManager._ensureModal();
+
+        const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+        vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => { el.innerHTML = html; });
+        vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+
+        const initialJson = JSON.stringify({
+            synthesis: 'Bilan initial de la classe.',
+            strengths: ['Travail sérieux', 'Bonne écoute'],
+            vigilances: ['Devoirs parfois oubliés'],
+            recommendations: ['Consolider les acquis']
+        });
+        const initialHtml = `<div class="ai-synthesis-text">${ClassDashboardManager._formatSynthesisText(initialJson)}</div>`;
+
+        appState.currentClassId = 'class-1';
+        appState.currentPeriod = 'T2';
+        appState.classes = [{
+            id: 'class-1',
+            name: '3ème A',
+            analyses: {
+                T2: {
+                    content: initialHtml,
+                    originalContent: initialHtml,
+                    rawText: initialJson,
+                    originalRawText: initialJson,
+                    dataHash: 'hash1'
+                }
+            }
+        }];
+
+        ClassDashboardManager.restoreOrResetAISection();
+
+        const revertBtn = document.getElementById('revertSynthesisBtn');
+        expect(revertBtn.style.display).toBe('none');
+
+        const introTextEl = document.querySelector('.synthesis-intro-text');
+        expect(introTextEl.getAttribute('contenteditable')).toBe('true');
+
+        // 1. Focus and blur WITHOUT changing text -> no save, revert stays hidden
+        introTextEl.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        introTextEl.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        expect(saveSpy).not.toHaveBeenCalled();
+        expect(revertBtn.style.display).toBe('none');
+
+        // 2. Focus, modify text, and blur -> persists to storage, updates JSON rawText, shows revert button
+        introTextEl.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        introTextEl.textContent = 'Bilan personnalisé par le professeur.';
+        introTextEl.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+
+        expect(saveSpy).toHaveBeenCalledTimes(1);
+        expect(revertBtn.style.display).toBe('inline-flex');
+
+        const savedAnalysis = appState.classes[0].analyses.T2;
+        expect(savedAnalysis.content).toContain('Bilan personnalisé par le professeur.');
+        expect(JSON.parse(savedAnalysis.rawText).synthesis).toBe('Bilan personnalisé par le professeur.');
+        expect(JSON.parse(savedAnalysis.originalRawText).synthesis).toBe('Bilan initial de la classe.');
+
+        // 3. Clearing the intro paragraph restores the previous text instead of leaving an empty card
+        introTextEl.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        introTextEl.textContent = '   ';
+        introTextEl.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        expect(introTextEl.textContent).toBe('Bilan personnalisé par le professeur.');
+
+        // 4. Clearing one bullet in a multi-bullet list removes that bullet and persists
+        const strengthItems = document.querySelectorAll('.synthesis-section--success .synthesis-list li');
+        expect(strengthItems).toHaveLength(2);
+        strengthItems[1].dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        strengthItems[1].textContent = '';
+        strengthItems[1].dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(1);
+        expect(JSON.parse(appState.classes[0].analyses.T2.rawText).strengths).toEqual(['Travail sérieux']);
+
+        // 5. Reverting restores the original synthesis and hides the revert button
+        await ClassDashboardManager.revertSynthesis();
+        expect(document.querySelector('.synthesis-intro-text').textContent).toBe('Bilan initial de la classe.');
+        expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(2);
+        expect(revertBtn.style.display).toBe('none');
+    });
+
     it('devrait pseudonymiser les prénoms et nettoyer les noms dans buildAIPrompt quand anonymizeData est actif', () => {
         appState.anonymizeData = true;
         appState.currentPeriod = 'T2';
@@ -344,5 +473,143 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(userPrompt).toContain('• Élève #1 : Élève #1 a bien progressé.');
         expect(userPrompt).not.toMatch(/\bLucas\b/i);
         expect(userPrompt).not.toMatch(/\bMartin\b/i);
+    });
+
+    it('devrait exploiter le contexte et le journal de suivi en repli avant la génération des bulletins et agréger les tendances du journal', () => {
+        appState.currentClassId = 'class-1';
+        appState.currentPeriod = 'T2';
+        appState.anonymizeData = true;
+        appState.journalThreshold = 2;
+
+        appState.generatedResults = [
+            {
+                id: 's1',
+                classId: 'class-1',
+                nom: 'Dupont',
+                prenom: 'Alice',
+                journal: [
+                    { id: 'j1', period: 'T2', tags: ['participation+'], note: 'Alice participe activement.' },
+                    { id: 'j2', period: 'T2', tags: ['participation+', 'travail+'], note: '' }
+                ],
+                studentData: {
+                    periods: {
+                        T1: { grade: 12 },
+                        T2: { grade: 14, appreciation: '', context: 'Très investie à l\'oral.' }
+                    }
+                }
+            },
+            {
+                id: 's2',
+                classId: 'class-1',
+                nom: 'Martin',
+                prenom: 'Bob',
+                journal: [
+                    { id: 'j3', period: 'T2', tags: ['participation+'], note: '' },
+                    { id: 'j4', period: 'T2', tags: ['participation+', 'bavardage'], note: '' },
+                    { id: 'j5', period: 'T2', tags: ['bavardage'], note: 'Bob bavarde souvent.' }
+                ],
+                studentData: {
+                    periods: {
+                        T1: { grade: 11 },
+                        T2: { grade: 10, appreciation: '' }
+                    }
+                }
+            }
+        ];
+
+        const students = ClassDashboardManager.getStudentsData();
+        const stats = ClassDashboardManager.calculateStatistics(students);
+
+        // Tendances du journal : Participe (2 élèves), Bavardage (1 élève) — travail+ (1 occurrence < seuil 2) est ignoré
+        expect(stats.journalTrends).toEqual([
+            expect.objectContaining({ id: 'participation+', label: 'Participe', count: 2 }),
+            expect.objectContaining({ id: 'bavardage', label: 'Bavardage', count: 1 })
+        ]);
+
+        // Repli qualitatif automatique (context + journalSynthesis) alors qu'aucune appréciation finale n'est rédigée
+        expect(stats.appreciationsList).toHaveLength(2);
+        expect(stats.appreciationsList[0].text).toContain('Très investie à l\'oral.');
+        expect(stats.appreciationsList[0].text).toContain('Observations: Participe');
+
+        // Le prompt IA inclut les tendances du journal et les observations anonymisées
+        const { userPrompt } = ClassDashboardManager.buildAIPrompt(stats);
+        expect(userPrompt).toContain('• Tendances du journal de suivi : Participe (2 élèves), Bavardage (1 élève)');
+        expect(userPrompt).toContain('Très investie à l\'oral.');
+        expect(userPrompt).not.toMatch(/\bAlice\b/i);
+        expect(userPrompt).not.toMatch(/\bBob\b/i);
+
+        // Le dataHash change même si l'appréciation garde la même longueur ou si seul le contexte change
+        const hashBefore = stats.dataHash;
+        appState.generatedResults[0].studentData.periods.T2.context = 'Autre observation de même taille';
+        const statsAfter = ClassDashboardManager.calculateStatistics(ClassDashboardManager.getStudentsData());
+        expect(statsAfter.dataHash).not.toBe(hashBefore);
+    });
+
+    it('devrait calculer la trajectoire annuelle multi-périodes (T1 -> T2 -> T3), l\'afficher dans le tooltip de Moyenne et l\'injecter au T3', () => {
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <span id="cohortHeaderMetric"></span>
+                <div id="cohortStatAverageItem"><span id="cohortStatAverage"></span></div>
+                <div id="cohortStatMedianItem"><span id="cohortStatMedian"></span></div>
+                <div id="cohortStatMinItem"><span id="cohortStatMin"></span></div>
+                <div id="cohortStatMaxItem"><span id="cohortStatMax"></span></div>
+                <span id="highlightProgressCount"></span>
+                <span id="highlightRiskCount"></span>
+                <div id="highlightProgressList"></div>
+                <div id="highlightRiskList"></div>
+            </div>
+        `;
+        ClassDashboardManager._ensureModal();
+
+        appState.currentClassId = 'class-1';
+        appState.currentPeriod = 'T3';
+        appState.periodSystem = 'trimestres';
+        appState.generatedResults = [
+            {
+                id: 's1',
+                classId: 'class-1',
+                nom: 'Dupont',
+                prenom: 'Alice',
+                studentData: {
+                    periods: {
+                        T1: { grade: 11 },
+                        T2: { grade: 13 },
+                        T3: { grade: 15 }
+                    }
+                }
+            },
+            {
+                id: 's2',
+                classId: 'class-1',
+                nom: 'Martin',
+                prenom: 'Bob',
+                studentData: {
+                    periods: {
+                        T1: { grade: 9 },
+                        T2: { grade: 11 },
+                        T3: { grade: 13 }
+                    }
+                }
+            }
+        ];
+
+        const students = ClassDashboardManager.getStudentsData();
+        const stats = ClassDashboardManager.calculateStatistics(students);
+
+        expect(stats.periodAverages).toEqual([
+            { period: 'T1', average: 10, count: 2 },
+            { period: 'T2', average: 12, count: 2 },
+            { period: 'T3', average: 14, count: 2 }
+        ]);
+
+        ClassDashboardManager.renderDashboard(stats, students);
+
+        const avgItem = document.getElementById('cohortStatAverageItem');
+        expect(avgItem.getAttribute('data-tooltip')).toContain('Trajectoire : T1 : 10,0/20 → T2 : 12,0/20 → T3 : 14,0/20');
+        expect(avgItem.getAttribute('data-tooltip')).toContain('Évolution récente : +2,0 pts');
+
+        const { systemPrompt, userPrompt } = ClassDashboardManager.buildAIPrompt(stats);
+        expect(systemPrompt).toContain('bilan de fin d\'année');
+        expect(userPrompt).toContain('• Trajectoire annuelle des moyennes : T1 : 10.0/20 → T2 : 12.0/20 → T3 : 14.0/20');
     });
 });

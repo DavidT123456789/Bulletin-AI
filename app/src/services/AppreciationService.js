@@ -10,6 +10,7 @@ import { CONFIG, CONSTS, DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../
 import { Utils } from '../utils/Utils.js';
 import { AIService } from './AIService.js';
 import { PromptService } from './PromptService.js';
+import { StatsService } from './StatsService.js';
 
 export const AppreciationService = {
     /**
@@ -45,35 +46,18 @@ export const AppreciationService = {
 
     /**
      * Analyse l'évolution des notes entre les périodes
+     * Délègue à StatsService.analyserEvolution()
      */
     analyserEvolution(periodsData) {
-        const evolutions = [], t = appState.evolutionThresholds;
-        const getType = (diff) => {
-            if (diff === null || isNaN(diff)) return 'stable';
-            if (diff >= t.veryPositive) return 'very-positive'; if (diff >= t.positive) return 'positive';
-            if (diff <= t.veryNegative) return 'very-negative'; if (diff <= t.negative) return 'negative';
-            return 'stable';
-        };
-        const periods = Utils.getPeriods();
-        for (let i = 1; i < periods.length; i++) {
-            const v1Raw = periodsData[periods[i - 1]]?.grade;
-            const v2Raw = periodsData[periods[i]]?.grade;
-            const v1 = typeof v1Raw === 'number' ? v1Raw : parseFloat(String(v1Raw || '').replace(',', '.'));
-            const v2 = typeof v2Raw === 'number' ? v2Raw : parseFloat(String(v2Raw || '').replace(',', '.'));
-            if (!isNaN(v1) && !isNaN(v2)) {
-                const diff = parseFloat((v2 - v1).toFixed(2));
-                evolutions.push({ type: getType(diff), valeur: diff, periode: `${periods[i - 1]}-${periods[i]}` });
-            }
-        }
-        return evolutions;
+        return StatsService.analyserEvolution(periodsData);
     },
 
     /**
      * Récupère l'évolution pertinente pour la période actuelle
+     * Délègue à StatsService.getRelevantEvolution()
      */
     getRelevantEvolution(evolutions, currentPeriod) {
-        if (!evolutions || !Array.isArray(evolutions)) return null;
-        return evolutions.find(e => e.periode.endsWith(`-${currentPeriod}`));
+        return StatsService.getRelevantEvolution(evolutions, currentPeriod);
     },
 
     /**
