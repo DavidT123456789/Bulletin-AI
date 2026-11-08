@@ -388,6 +388,7 @@
 
 /* Elevate active row stacking context when dropdown menu is open (prevents clipping under subsequent cards on mobile and sits above FAB) */
 .student-list-table tbody tr:has(.action-dropdown-menu.open) {
+    position: relative;
     z-index: 150 !important;
 }
 
@@ -1355,15 +1356,8 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    background: var(--dropdown-bg-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border-glass);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
     opacity: 0;
     pointer-events: none;
-    padding: 6px;
 }
 
 .action-dropdown-menu {

@@ -91,15 +91,39 @@
     transform: rotate(180deg);
 }
 
-/* === Surface vitrée mutualisée des menus déroulants === */
+/* === Surface dépolie (Glass) mutualisée des menus déroulants, contextuels & popovers === */
 .custom-dropdown-menu,
 .header-model-dropdown,
-.wizard-period-menu {
-    background-color: var(--dropdown-bg);
+.wizard-period-menu,
+.header-dropdown-menu,
+.class-dropdown,
+.class-note-popover,
+.action-dropdown-menu,
+.global-actions-dropdown-menu,
+.sc-placement-popover,
+.sc-config-popover,
+.sc-floating-search-suggestions,
+.journal-threshold-popover,
+.journal-pill-menu,
+.trombi-student-popover,
+.history-popover {
+    background: var(--dropdown-bg-glass);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
-    box-shadow: var(--dropdown-shadow);
+    border: var(--dropdown-border-glass);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
+}
+
+.custom-dropdown-menu,
+.header-model-dropdown,
+.wizard-period-menu,
+.header-dropdown-menu,
+.action-dropdown-menu,
+.global-actions-dropdown-menu,
+.sc-placement-popover,
+.sc-floating-search-suggestions,
+.journal-pill-menu {
     padding: 6px;
 }
 
@@ -109,7 +133,6 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    border-radius: var(--dropdown-radius-sm);
     z-index: var(--z-dropdown);
     max-height: 360px;
     overflow-y: auto;
@@ -136,7 +159,6 @@
     max-width: calc(100vw - 24px);
     left: auto;
     right: 0;
-    border-radius: var(--dropdown-radius, 16px);
 }
 
 /* === Optgroup (groupe d'options) === */

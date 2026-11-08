@@ -383,17 +383,17 @@
 
 
 
-/* === NEW: Grades display (S1 vs S2) === */
+/* === Grades display (S1 vs S2) - Clean Typographic Style === */
 .grades-wrapper {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
 }
 
 .previous-grades-inline {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     cursor: default;
     user-select: none;
 }
@@ -402,20 +402,20 @@
     display: none;
 }
 
-/* Twin Micro-Capsules: Past Grade & Current Grade */
+/* Inline Grade Items: Past Grade (read-only) & Current Grade (editable on hover/focus) */
 .previous-grade-chip,
 .context-grade-group {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    height: 26px;
-    background: var(--tonal-bg);
+    gap: 4px;
+    height: 24px;
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    padding: 2px 8px 2px 7px;
+    border-radius: 6px;
+    padding: 0 6px;
     box-sizing: border-box;
     white-space: nowrap;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .previous-grade-chip {
@@ -423,38 +423,49 @@
     user-select: none;
 }
 
-.context-grade-group:hover,
-.context-grade-group:focus-within {
-    background: var(--tonal-hover-bg);
+.context-grade-group {
+    cursor: text;
 }
 
-.context-grade-group:focus-within label {
-    color: var(--text-primary);
+.context-grade-group:hover {
+    background: var(--item-hover-bg);
+}
+
+.context-grade-group:focus-within {
+    background: var(--surface-color);
+    border-color: var(--border-color-hover);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .context-grade-group:focus-within {
+    background: var(--item-hover-bg);
+    border-color: var(--border-color-hover);
+    box-shadow: none;
 }
 
 .previous-grade-chip .period-prefix,
-.previous-grade-chip .grade-period-tag,
 .context-grade-group label {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     user-select: none;
     line-height: 1;
     margin: 0;
     padding: 0;
     cursor: default;
+    transition: color var(--transition-fast);
 }
 
 .context-grade-group label {
-    cursor: pointer;
+    color: var(--text-secondary);
+    cursor: text;
 }
 
-[data-theme="dark"] .previous-grade-chip .period-prefix,
-[data-theme="dark"] .previous-grade-chip .grade-period-tag,
-[data-theme="dark"] .context-grade-group label {
-    color: var(--text-secondary);
+.context-grade-group:hover label,
+.context-grade-group:focus-within label {
+    color: var(--text-primary);
 }
 
 .previous-grade-chip .prev-grade-value {
@@ -465,12 +476,14 @@
     width: auto !important;
     max-width: unset !important;
     height: auto !important;
-    font-size: 12px !important;
-    font-weight: 700;
+    font-size: 13px !important;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     box-shadow: none !important;
     cursor: default;
     user-select: none;
+    opacity: 0.85;
 }
 
 .previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {
@@ -484,12 +497,13 @@
     background: transparent !important;
     color: var(--text-primary);
     font-weight: 700;
-    font-size: 12px !important;
-    width: 30px !important;
-    min-width: unset !important;
-    max-width: unset !important;
+    font-size: 13px !important;
+    font-variant-numeric: tabular-nums;
+    width: 3.4ch !important;
+    min-width: 1.8ch !important;
+    max-width: 4.2ch !important;
     height: auto !important;
-    text-align: center;
+    text-align: left;
     padding: 0 !important;
     margin: 0;
     line-height: 1 !important;
@@ -497,6 +511,13 @@
     font-family: inherit;
     box-sizing: border-box;
     transition: color var(--transition-fast);
+}
+
+@supports (field-sizing: content) {
+    .context-grade-input {
+        field-sizing: content;
+        width: auto !important;
+    }
 }
 
 /* Neutralize global input hover/focus glowing borders from components.css */

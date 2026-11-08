@@ -284,20 +284,13 @@
     transform: scale(0.9);
 }
 
-/* Cross-class suggestions popover */
+/* Cross-class suggestions popover (surface dépolie mutualisée dans dropdown.css) */
 .sc-floating-search-suggestions {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
     min-width: 260px;
     max-width: 340px;
-    background: var(--surface-color);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    padding: 8px;
     z-index: 300;
     animation: scSuggestionsIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -310,7 +303,7 @@
 .sc-cross-suggestion-pill {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .sc-cross-hint {
@@ -319,7 +312,7 @@
     color: var(--text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    padding: 2px 6px 4px;
+    padding: 4px 8px 3px;
 }
 
 .sc-cross-action {
@@ -329,14 +322,14 @@
     width: 100%;
     padding: 7px 10px;
     background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border: none;
+    border-radius: var(--dropdown-item-radius);
     color: var(--text-primary);
     font-size: 0.8rem;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast);
+    transition: background var(--transition-fast);
 }
 
 .sc-cross-action .student-avatar {
@@ -386,7 +379,6 @@
 .sc-cross-action:focus-visible {
     outline: none;
     background: var(--item-hover-bg);
-    border-color: var(--border-color);
 }
 
 .sc-cross-action:hover .sc-cross-arrow,

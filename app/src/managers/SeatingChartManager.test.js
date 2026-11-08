@@ -4461,11 +4461,10 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._planMode).toBe('course');
 
             const courseTab = document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="course"]');
-            const activityTab = document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="activity"]');
             courseTab?.focus();
             courseTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
             expect(SeatingChartManager._planMode).toBe('activity');
-            expect(document.activeElement).toBe(activityTab);
+            expect(document.activeElement?.closest?.('#scPlanModeSwitch') ?? null).toBeNull();
         });
 
         it('devrait permettre de changer de classe avec Ctrl + Flèches Haut/Bas au clavier sans déclencher de changement de classe au swipe vertical sur tactile', () => {

@@ -102,18 +102,23 @@
     z-index: 20;
 }
 
-.sc-cell.sc-chip-selected {
-    border: 2px solid var(--highlight-standard-border) !important;
+.sc-cell.sc-chip-selected,
+.sc-cell.occupied.sc-context-target,
+#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+    border: 1.5px solid var(--highlight-standard-border) !important;
     background: var(--surface-color) !important;
-    box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-lg) !important;
-    transform: scale(1.06) translateY(-3px) !important;
-    z-index: 30 !important;
 }
 
-[data-theme="dark"] .sc-cell.sc-chip-selected {
-    border-color: rgba(255, 255, 255, 0.75) !important;
+[data-theme="dark"] .sc-cell.sc-chip-selected,
+[data-theme="dark"] .sc-cell.occupied.sc-context-target,
+[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
     background: var(--bg-tertiary) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), var(--shadow-lg) !important;
+}
+
+.sc-cell.sc-chip-selected {
+    box-shadow: var(--shadow-lg), var(--highlight-standard-rim) !important;
+    transform: scale(1.06) translateY(-3px) !important;
+    z-index: 30 !important;
 }
 
 .sc-cell.sc-chip-selected .sc-cell-name,
@@ -124,11 +129,6 @@
 
 .sc-cell.sc-chip-selected .sc-cell-initial {
     color: var(--text-secondary) !important;
-}
-
-.sc-cell.sc-chip-selected .student-avatar .student-avatar__img {
-    opacity: 1 !important;
-    filter: none !important;
 }
 
 .sc-lasso-box {
@@ -142,7 +142,6 @@
 }
 
 [data-theme="dark"] .sc-lasso-box {
-    border-color: rgba(255, 255, 255, 0.65);
     background: rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
 }
@@ -256,7 +255,7 @@
     height: var(--sc-cell-h, 96px) !important;
     border-radius: var(--sc-cell-radius, var(--radius-md)) !important;
     background: var(--surface-color) !important;
-    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), var(--highlight-standard-rim) !important;
     opacity: 1 !important;
     border: 1.5px solid var(--highlight-standard-border) !important;
     translate: -9999px -9999px 0px;
@@ -275,8 +274,7 @@
 [data-theme="dark"] .sc-drag-clone,
 [data-theme="dark"] .sc-touch-ghost {
     background: var(--bg-tertiary) !important;
-    border-color: rgba(255, 255, 255, 0.65) !important;
-    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), var(--highlight-standard-rim) !important;
 }
 
 /* Atténuation fluide du clone au survol de la réserve pour laisser la place au réceptacle et ne pas masquer la liste */
@@ -615,26 +613,26 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 /* Neutral ghost/dashed styling for a departed student still occupying a desk */
-.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over) {
     border-style: dashed !important;
     border-color: rgba(161, 161, 170, 0.45) !important;
     background: rgba(255, 255, 255, 0.55) !important;
     box-shadow: none;
 }
 
-[data-theme="dark"] .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over) {
+[data-theme="dark"] .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over) {
     border-color: rgba(255, 255, 255, 0.22) !important;
     background: rgba(38, 38, 40, 0.45) !important;
 }
 
-.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over):not(:hover) .student-avatar,
-.sc-stacked-avatar.sc-member-departed:not(:hover):not(.is-member-hovered) .student-avatar {
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over, :hover) .student-avatar,
+.sc-stacked-avatar.sc-member-departed:not(:hover, .is-member-hovered, .sc-context-target) .student-avatar {
     opacity: 0.78;
     filter: saturate(0.8);
 }
 
-.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected):not(.drag-over):not(:hover) .sc-cell-name,
-.sc-stacked-member.sc-member-departed:not(:hover):not(.is-member-hovered) .sc-stacked-name-text {
+.sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over, :hover) .sc-cell-name,
+.sc-stacked-member.sc-member-departed:not(:hover, .is-member-hovered, .sc-context-target) .sc-stacked-name-text {
     opacity: 0.72;
 }
 
@@ -699,14 +697,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 /* ────────── CHIP SELECTION ────────── */
-.sc-student-chip.sc-chip-selected {
+.sc-student-chip.sc-chip-selected,
+.sc-student-chip.sc-context-target {
     background: var(--bg-secondary) !important;
-    box-shadow: inset 0 0 0 2px var(--highlight-standard-border) !important;
+    box-shadow: inset 0 0 0 1.5px var(--highlight-standard-border) !important;
 }
 
-[data-theme="dark"] .sc-student-chip.sc-chip-selected {
+[data-theme="dark"] .sc-student-chip.sc-chip-selected,
+[data-theme="dark"] .sc-student-chip.sc-context-target {
     background: var(--bg-tertiary) !important;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
 }
 
 .sc-student-chip.sc-chip-selected .sc-student-chip-name .student-prenom {
@@ -714,21 +713,16 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-weight: 700;
 }
 
-.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-nom {
+.sc-student-chip.sc-context-target .sc-student-chip-name .student-prenom {
+    color: var(--text-primary) !important;
+}
+
+.sc-student-chip.sc-chip-selected .sc-student-chip-name .student-nom,
+.sc-student-chip.sc-context-target .sc-student-chip-name .student-nom {
     color: color-mix(in srgb, var(--text-primary) 75%, var(--text-secondary)) !important;
 }
 
-.sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img {
-    opacity: 1 !important;
-    filter: none !important;
-}
-
-
 /* Occupied cells non-draggable in locked mode */
-#seatingChartView[data-locked="true"] .sc-cell.occupied {
-    cursor: pointer;
-}
-
 #seatingChartView[data-locked="true"] .sc-cell.occupied:active {
     cursor: pointer;
     transform: none;
@@ -1971,11 +1965,17 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         line-height: 1.12;
     }
 
-    .sc-student-chip.sc-chip-selected {
-        border-color: var(--highlight-standard-border);
-        background: var(--highlight-standard-bg);
-        box-shadow: 0 0 0 2px var(--highlight-standard-border);
+    .sc-student-chip.sc-chip-selected,
+    .sc-student-chip.sc-context-target {
+        border: 1.5px solid var(--highlight-standard-border) !important;
+        background: var(--surface-color) !important;
+        box-shadow: var(--shadow-sm), var(--highlight-standard-rim) !important;
         transform: translateY(-2px);
+    }
+
+    [data-theme="dark"] .sc-student-chip.sc-chip-selected,
+    [data-theme="dark"] .sc-student-chip.sc-context-target {
+        background: var(--bg-tertiary) !important;
     }
 
     .sc-student-chip .sc-chip-profile-btn {
@@ -2226,56 +2226,46 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         margin-top: 4px;
     }
 
-    /* ── Config Popover mobile alignment (opens upwards into board area) ── */
-    #seatingChartView .sc-config-popover {
+    /* ── Config & Placement Popovers mobile alignment (open upwards into board area) ── */
+    #seatingChartView :is(.sc-config-popover, .sc-placement-popover) {
         top: auto;
         bottom: calc(100% + 10px);
+        transform: translateY(8px) scale(0.95);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+        z-index: 300;
+    }
+
+    #seatingChartView .sc-config-popover {
         left: auto;
         right: -15px;
         transform-origin: bottom right;
-        transform: translateY(8px) scale(0.95);
-        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
-        z-index: 300;
     }
 
-    #seatingChartView .sc-config-popover.open {
+    #seatingChartView .sc-placement-popover {
+        left: 0;
+        transform-origin: bottom left;
+    }
+
+    #seatingChartView :is(.sc-config-popover, .sc-placement-popover).open {
         transform: translateY(0) scale(1);
+    }
+
+    #seatingChartView :is(.sc-config-popover, .sc-placement-popover)::before {
+        top: auto;
+        bottom: -5px;
+        border-top: none;
+        border-left: none;
+        border-bottom: var(--dropdown-border-glass);
+        border-right: var(--dropdown-border-glass);
     }
 
     #seatingChartView .sc-config-popover::before {
-        top: auto;
-        bottom: -5px;
         left: auto;
         right: 28px;
-        border-top: none;
-        border-left: none;
-        border-bottom: 1px solid var(--border-color);
-        border-right: 1px solid var(--border-color);
-    }
-
-    /* ── Placement Popover mobile alignment (opens upwards into board area) ── */
-    #seatingChartView .sc-placement-popover {
-        top: auto;
-        bottom: calc(100% + 10px);
-        left: 0;
-        transform-origin: bottom left;
-        transform: translateY(8px) scale(0.95);
-        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
-        z-index: 300;
-    }
-
-    #seatingChartView .sc-placement-popover.open {
-        transform: translateY(0) scale(1);
     }
 
     #seatingChartView .sc-placement-popover::before {
-        top: auto;
-        bottom: -5px;
         left: 13px;
-        border-top: none;
-        border-left: none;
-        border-bottom: 1px solid var(--border-color);
-        border-right: 1px solid var(--border-color);
     }
 
     #seatingChartView .sc-popover-item {
@@ -2320,12 +2310,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 [data-theme="dark"] .sc-isolated-btn {
     background: rgba(30, 30, 30, 0.85);
     border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .sc-config-popover,
-[data-theme="dark"] .sc-config-popover::before {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .sc-stat-value,

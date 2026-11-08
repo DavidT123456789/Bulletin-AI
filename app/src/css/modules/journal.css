@@ -231,12 +231,6 @@
     width: max-content;
     min-width: 236px;
     padding: 14px 16px;
-    background: var(--dropdown-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow);
     z-index: 150;
     opacity: 0;
     visibility: hidden;
@@ -562,14 +556,9 @@
     top: calc(100% + 4px);
     left: 0;
     min-width: 165px;
-    padding: 6px;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: var(--dropdown-bg);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
     z-index: 100;
     opacity: 0;
     visibility: hidden;
@@ -903,21 +892,6 @@
     transition: opacity var(--transition-base), transform var(--transition-base), background var(--transition-base);
 }
 
-.journal-empty iconify-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    min-height: 22px;
-    font-size: 22px;
-    opacity: 0.4;
-    color: var(--text-tertiary);
-    margin-bottom: 0;
-    flex-shrink: 0;
-}
-
 /* Interactive Empty State (clickable) */
 .journal-empty-interactive {
     cursor: pointer;
@@ -995,11 +969,11 @@
 }
 
 .journal-empty .journal-empty-cta-badge iconify-icon {
-    width: 14px;
-    height: 14px;
-    min-width: 14px;
-    min-height: 14px;
-    font-size: 14px;
+    width: 13px;
+    height: 13px;
+    min-width: 13px;
+    min-height: 13px;
+    font-size: 13px;
     color: var(--text-secondary);
     opacity: 1;
     flex-shrink: 0;
@@ -1388,14 +1362,6 @@
         padding: 10px 14px;
         min-height: 54px;
         gap: 12px;
-    }
-
-    .journal-empty iconify-icon {
-        width: 22px;
-        height: 22px;
-        min-width: 22px;
-        min-height: 22px;
-        font-size: 22px;
     }
 
     .journal-content:has(.journal-draft-preview.visible) {

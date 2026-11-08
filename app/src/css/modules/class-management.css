@@ -145,12 +145,6 @@
     left: 0;
     min-width: 280px;
     max-width: 340px;
-    background: var(--dropdown-bg-glass);
-    border: var(--dropdown-border-glass);
-    backdrop-filter: blur(var(--glass-overlay-blur));
-    -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
-    border-radius: var(--dropdown-radius);
-    box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
     overflow: hidden;
     opacity: 0;
@@ -603,12 +597,6 @@
     left: 16px;
     width: 340px;
     flex-direction: column;
-    background: var(--dropdown-bg-glass);
-    border: var(--dropdown-border-glass);
-    backdrop-filter: blur(var(--glass-overlay-blur));
-    -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
-    border-radius: var(--dropdown-radius);
-    box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
     overflow: hidden;
     opacity: 0;

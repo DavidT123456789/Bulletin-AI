@@ -512,49 +512,24 @@
 #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
     opacity: 1 !important;
     transform: scale(1.06) translateY(-2px) translateZ(0) !important;
-    border: 2px solid var(--highlight-standard-border) !important;
-    background: var(--surface-color) !important;
-    box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-xl) !important;
+    box-shadow: var(--shadow-xl), var(--highlight-standard-rim) !important;
     z-index: 25 !important;
 }
 
-[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
-    border-color: rgba(255, 255, 255, 0.85) !important;
-    background: var(--bg-tertiary) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 14px 34px rgba(0, 0, 0, 0.65) !important;
-}
-
 #seatingChartView.sc-search-active .sc-cell.sc-spotlight-single {
-    animation: scSpotlightPulseLight 2s var(--ease-spring) infinite;
+    animation: scSpotlightPulse 2s var(--ease-spring) infinite;
 }
 
-[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-single {
-    animation: scSpotlightPulseDark 2s var(--ease-spring) infinite;
-}
-
-@keyframes scSpotlightPulseLight {
+@keyframes scSpotlightPulse {
     0%, 100% {
         transform: scale(1.06) translateY(-2px);
         border-color: var(--highlight-standard-border);
-        box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-xl);
+        box-shadow: var(--shadow-xl), var(--highlight-standard-rim);
     }
     50% {
         transform: scale(1.10) translateY(-3px);
         border-color: var(--text-primary);
-        box-shadow: 0 0 0 5px var(--highlight-standard-glow), 0 16px 36px rgba(0, 0, 0, 0.16);
-    }
-}
-
-@keyframes scSpotlightPulseDark {
-    0%, 100% {
-        transform: scale(1.06) translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.85);
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 14px 34px rgba(0, 0, 0, 0.65);
-    }
-    50% {
-        transform: scale(1.10) translateY(-3px);
-        border-color: #ffffff;
-        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.28), 0 20px 42px rgba(0, 0, 0, 0.85);
+        box-shadow: var(--shadow-xl), var(--highlight-standard-rim);
     }
 }
 
@@ -594,15 +569,12 @@
 #seatingChartView.sc-search-active .sc-student-chip.sc-spotlight-match {
     opacity: 1 !important;
     background: var(--bg-secondary) !important;
-    border: 1.5px solid var(--highlight-standard-border) !important;
-    box-shadow: 0 0 0 2px var(--highlight-standard-glow), var(--shadow-sm) !important;
+    box-shadow: inset 0 0 0 1.5px var(--highlight-standard-border), var(--shadow-sm) !important;
     transform: translateX(4px) !important;
 }
 
 [data-theme="dark"] #seatingChartView.sc-search-active .sc-student-chip.sc-spotlight-match {
     background: var(--bg-tertiary) !important;
-    border-color: rgba(255, 255, 255, 0.7) !important;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), var(--shadow-sm) !important;
 }
 
 /* ====================================================================

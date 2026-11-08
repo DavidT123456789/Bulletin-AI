@@ -93,21 +93,9 @@ input[type="radio"]:focus-visible+label::before {
     border-radius: 50%;
 }
 
-/* Remove default outline and shadow on pointer/touch users (only show for keyboard) */
+/* Remove default outline on pointer/touch users (only show for keyboard) */
 :focus:not(:focus-visible) {
     outline: none;
-    box-shadow: none;
-}
-
-button:focus:not(:focus-visible),
-.btn:focus:not(:focus-visible),
-.btn-primary:focus:not(:focus-visible),
-.btn-secondary:focus:not(:focus-visible),
-.btn-icon:focus:not(:focus-visible),
-.icon-button:focus:not(:focus-visible),
-.custom-dropdown-trigger:focus:not(:focus-visible) {
-    outline: none;
-    box-shadow: none;
 }
 
 /* Masque l'anneau de focus programmatique initial à l'ouverture d'une modale

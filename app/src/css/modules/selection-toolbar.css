@@ -13,8 +13,8 @@
     max-width: calc(100vw - var(--space-8));
     z-index: var(--z-modal-backdrop, 500);
 
-    /* Minimalist Frosted Capsule (2026 - Crisp Outer Ring in Light, Flat Matte in Dark) */
-    background: rgba(var(--surface-color-rgb), 0.84);
+    /* Minimalist Frosted Capsule (2026 - Double-bezel crispness in Light & Dark) */
+    background: rgba(var(--surface-color-rgb), 0.88);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
 
@@ -35,11 +35,12 @@
 }
 
 [data-theme="dark"] .selection-toolbar {
-    background: rgba(38, 38, 43, 0.86);
-    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(28, 28, 31, 0.94);
+    border-color: rgba(255, 255, 255, 0.14);
     box-shadow:
-        0 18px 42px -6px rgba(0, 0, 0, 0.65),
-        0 4px 12px rgba(0, 0, 0, 0.40);
+        0 18px 42px -6px rgba(0, 0, 0, 0.70),
+        0 4px 12px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(0, 0, 0, 0.50);
 }
 
 .selection-toolbar.active {
@@ -52,8 +53,8 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    height: 48px;
-    padding: 0 10px;
+    height: 46px;
+    padding: 0 6px;
 }
 
 /* === Shared Interactive Buttons (Deselect, Select All, Actions) === */
@@ -64,14 +65,23 @@
     height: 34px;
     border: none;
     background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    letter-spacing: -0.01em;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.18s var(--ease-material),
-        color 0.18s var(--ease-material),
-        transform 0.18s var(--ease-material);
+    transition: all var(--transition-fast);
+}
+
+:is(.btn-deselect, .btn-select-all-link, .btn-selection-action):focus-visible {
+    outline: none;
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 :is(.btn-deselect, .btn-select-all-link, .btn-selection-action):active {
+    background: var(--item-active-bg);
     transform: scale(0.96);
 }
 
@@ -85,7 +95,6 @@
 
 .btn-deselect {
     width: 34px;
-    color: var(--text-secondary);
     flex-shrink: 0;
     border-radius: 50%;
     font-size: 16px;
@@ -99,7 +108,7 @@
     min-width: 24px;
     height: 24px;
     padding: 0 8px;
-    background: var(--item-active-bg);
+    background: var(--tonal-bg);
     border-radius: var(--radius-pill);
     color: var(--text-primary);
     font-size: var(--font-xs);
@@ -119,9 +128,6 @@
 .btn-select-all-link {
     padding: 0 10px;
     border-radius: var(--radius-pill);
-    font-size: var(--font-sm);
-    font-weight: 500;
-    color: var(--text-secondary);
 }
 
 .btn-select-all-link iconify-icon {
@@ -133,13 +139,9 @@
 .selection-divider {
     width: 1px;
     height: 16px;
-    background: rgba(0, 0, 0, 0.08);
-    margin: 0 5px;
+    background: var(--border-color);
+    margin: 0 4px;
     flex-shrink: 0;
-}
-
-[data-theme="dark"] .selection-divider {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 /* === Action Buttons & Groups === */
@@ -156,13 +158,9 @@
 }
 
 .btn-selection-action {
-    gap: 6px;
+    gap: 7px;
     padding: 0 11px;
     border-radius: var(--radius-pill);
-    color: var(--text-primary);
-    font-size: var(--font-sm);
-    font-weight: 500;
-    letter-spacing: -0.01em;
 }
 
 .btn-selection-action.icon-only {
@@ -183,9 +181,18 @@
     font-size: 18px;
 }
 
+.btn-selection-action.danger:focus-visible {
+    background: var(--error-light);
+    color: var(--error-color);
+}
+
+[data-theme="dark"] .btn-selection-action.danger:focus-visible {
+    color: var(--error-bright);
+}
+
 @media (hover: hover) and (pointer: fine) {
     :is(.btn-deselect, .btn-select-all-link, .btn-selection-action):hover {
-        background: var(--item-active-bg);
+        background: var(--item-hover-bg);
         color: var(--text-primary);
     }
 
@@ -272,10 +279,6 @@
         max-width: calc(100vw - 16px);
     }
 
-    .selection-toolbar-content {
-        padding: 0 8px;
-    }
-
     .btn-selection-action:not(.primary):not(.icon-only) span,
     .btn-select-all-link span {
         display: none;
@@ -310,9 +313,5 @@
 
     .selection-toolbar-content {
         gap: 2px;
-    }
-
-    .selection-divider {
-        margin: 0 4px;
     }
 }

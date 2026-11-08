@@ -425,7 +425,7 @@ export const JournalManager = {
                         <span class="journal-empty-subtitle">Consignez des faits marquants pour guider l'IA</span>
                     </div>
                     <span class="journal-empty-cta-badge">
-                        <iconify-icon icon="solar:add-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
                         <span>Ajouter</span>
                     </span>
                 </div>

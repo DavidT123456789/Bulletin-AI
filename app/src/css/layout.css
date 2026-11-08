@@ -118,7 +118,7 @@
     background: rgba(0, 0, 0, 0.36);
 }
 
-body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #headerGenWrapper.open)) .app-layout::after {
+body:is(.header-menu-open, :has(#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open)) .app-layout::after {
     opacity: 1;
     visibility: visible;
 }
@@ -191,11 +191,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     flex-shrink: 0;
     /* Fixed height across all breakpoints for consistency */
     height: 56px;
-    /* Transparence "légère" et effet dépoli (Frosted Glass) */
-    background: rgba(var(--surface-color-rgb), 0.8);
-    backdrop-filter: blur(var(--glass-base-blur));
-    -webkit-backdrop-filter: blur(var(--glass-base-blur));
-    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -206,6 +201,21 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     left: 0;
     width: 100%;
     z-index: var(--z-header);
+}
+
+/* Surface dépolie isolée sur ::before pour éviter que .header ne devienne une
+   "Backdrop Root" CSS (ce qui empêcherait les popovers/menus enfants dépassant
+   sous les 56px de flouter le contenu de la page avec leur propre backdrop-filter) */
+.header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: rgba(var(--surface-color-rgb), 0.8);
+    backdrop-filter: blur(var(--glass-base-blur));
+    -webkit-backdrop-filter: blur(var(--glass-base-blur));
+    border-bottom: 1px solid var(--border-color);
     transition: background var(--transition-base), border-color var(--transition-base);
 }
 
@@ -628,13 +638,6 @@ body.is-cloud-syncing label {
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    background-color: var(--dropdown-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius);
-    box-shadow: var(--dropdown-shadow);
-    padding: 6px;
     display: none;
     /* Hidden by default */
     flex-direction: column;

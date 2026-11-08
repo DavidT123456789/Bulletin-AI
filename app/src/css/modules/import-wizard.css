@@ -535,7 +535,6 @@
     top: calc(100% + 6px);
     right: 0;
     min-width: 164px;
-    border-radius: var(--dropdown-radius-sm);
     display: none;
     flex-direction: column;
     gap: 2px;

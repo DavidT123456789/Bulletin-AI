@@ -316,6 +316,7 @@
     --highlight-standard-border: rgba(24, 24, 27, 0.45);
     --highlight-standard-bg: rgba(0, 0, 0, 0.04);
     --highlight-standard-glow: rgba(0, 0, 0, 0.07);
+    --highlight-standard-rim: 0 0 0 1px rgba(0, 0, 0, 0.08);
 
     /* Student Row Spotlight (Cross-class jump, new student, Focus Panel return) */
     --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 9%);
@@ -391,12 +392,12 @@
     --dropdown-radius-sm: var(--radius-md);      /* 16px - Selects/Context menus */
     --dropdown-item-radius: var(--radius-control);    /* 10px - Concentric inner item radius (16px - 6px) */
     --dropdown-item-radius-sm: var(--radius-control); /* 10px - Compact item style */
-    --dropdown-bg: var(--surface-color);
-    --dropdown-bg-glass: var(--glass-overlay-bg);
-    --dropdown-border: 1px solid var(--border-color);
-    --dropdown-border-glass: 1px solid var(--glass-overlay-border);
-    --dropdown-shadow: var(--shadow-lg);
-    --dropdown-shadow-sm: var(--shadow-md);
+    --dropdown-bg: rgba(255, 255, 255, 0.94);
+    --dropdown-bg-glass: var(--dropdown-bg);
+    --dropdown-border: 1px solid rgba(255, 255, 255, 0.85);
+    --dropdown-border-glass: var(--dropdown-border);
+    --dropdown-shadow: var(--shadow-md);
+    --dropdown-shadow-sm: var(--dropdown-shadow);
 
     /* --- Close Button Tokens --- */
     --close-btn-size: 32px;
@@ -508,6 +509,7 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 14px 34px rgba(0, 0, 0, 0.65);
     --shadow-elevation: 0 2px 8px rgba(0, 0, 0, 0.4);
 
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
@@ -522,6 +524,7 @@
     --highlight-standard-border: rgba(255, 255, 255, 0.65);
     --highlight-standard-bg: rgba(255, 255, 255, 0.09);
     --highlight-standard-glow: rgba(255, 255, 255, 0.14);
+    --highlight-standard-rim: 0 0 0 1px rgba(255, 255, 255, 0.12);
 
     /* Student Row Spotlight (High Contrast in Dark Mode regardless of custom accent color) */
     --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 16%);
@@ -610,11 +613,11 @@
 
     /* --- Dropdown System Tokens (Dark Mode Single Source of Truth) --- */
     --dropdown-bg: rgba(24, 24, 26, 0.96);
-    --dropdown-bg-glass: rgba(24, 24, 26, 0.96);
+    --dropdown-bg-glass: var(--dropdown-bg);
     --dropdown-border: 1px solid rgba(255, 255, 255, 0.10);
-    --dropdown-border-glass: 1px solid rgba(255, 255, 255, 0.10);
-    --dropdown-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
-    --dropdown-shadow-sm: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+    --dropdown-border-glass: var(--dropdown-border);
+    --dropdown-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+    --dropdown-shadow-sm: var(--dropdown-shadow);
 
     /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
     --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);

@@ -361,13 +361,16 @@
 }
 
 /* Instant 100% crispness restoration upon hover, drag or selection (avatar, table row, or seating cell) */
-[data-theme="dark"] .student-avatar.is-selected .student-avatar__img,
-[data-theme="dark"] .pick-student-row.selected .student-avatar .student-avatar__img,
-[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar .student-avatar__img,
-[data-theme="dark"] .sc-cell.sc-chip-selected .student-avatar .student-avatar__img,
-[data-theme="dark"] .sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img,
-[data-theme="dark"] .sc-drag-clone .student-avatar .student-avatar__img,
-[data-theme="dark"] .sc-touch-ghost .student-avatar .student-avatar__img {
+[data-theme="dark"] :is(
+    .student-avatar.is-selected,
+    .pick-student-row.selected .student-avatar,
+    .student-list-table tbody tr.focus-active .student-avatar,
+    .sc-cell:is(.sc-chip-selected, .sc-context-target, .sc-spotlight-match) .student-avatar,
+    .sc-stacked-avatar.sc-context-target .student-avatar,
+    .sc-student-chip:is(.sc-chip-selected, .sc-context-target, .sc-spotlight-match) .student-avatar,
+    .sc-drag-clone .student-avatar,
+    .sc-touch-ghost .student-avatar
+) .student-avatar__img {
     opacity: 1 !important;
     filter: none !important;
 }

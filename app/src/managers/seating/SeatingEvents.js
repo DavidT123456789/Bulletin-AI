@@ -79,7 +79,9 @@ export const SeatingEvents = {
             }
         });
 
-        document.getElementById('scPlanModeSwitch')?.addEventListener('click', (e) => {
+        const modeSwitchEl = document.getElementById('scPlanModeSwitch');
+        modeSwitchEl?.addEventListener('mousedown', (e) => e.preventDefault());
+        modeSwitchEl?.addEventListener('click', (e) => {
             const tab = e.target.closest('.sc-mode-tab');
             if (!tab) return;
             const targetMode = tab.dataset.planMode;
@@ -455,7 +457,9 @@ export const SeatingEvents = {
             this._placeSelectedAsGroupInFirstFreeStation();
         });
 
-        document.getElementById('viewToggle')?.addEventListener('click', (e) => {
+        const viewToggleEl = document.getElementById('viewToggle');
+        viewToggleEl?.addEventListener('mousedown', (e) => e.preventDefault());
+        viewToggleEl?.addEventListener('click', (e) => {
             const btn = e.target.closest('.view-toggle-btn');
             if (!btn) return;
             this.switchToView(btn.dataset.view === 'plan' ? 'plan' : 'list');
@@ -719,11 +723,11 @@ export const SeatingEvents = {
                         !isTyping &&
                         !ClassUIManager?._isDropdownOpen &&
                         !document.querySelector('.custom-dropdown.open, #actionsDropdown.show, .action-dropdown-menu.open, .global-actions-dropdown-menu.open, #headerGenWrapper.open, #headerMenuDropdown.open')) {
+                        if (isHorizontalArrow && (hasNoModifier || hasCtrlOnly) && activeEl?.closest?.('#viewToggle, #headerClassChip, #scPlanModeSwitch')) {
+                            activeEl.blur?.();
+                        }
                         if (e.key === 'ArrowRight' && !e.repeat && (hasNoModifier || hasCtrlOnly) && this._getCurrentClassStudents().length > 0) {
                             e.preventDefault();
-                            if (activeEl?.closest?.('#viewToggle')) {
-                                activeEl.blur?.();
-                            }
                             if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
                                 this._planMode = 'course';
                             }
@@ -779,38 +783,26 @@ export const SeatingEvents = {
                     );
 
                     if (!hasBlockingOverlay) {
-                        if (activeEl?.closest?.('#viewToggle, #headerClassChip')) {
+                        if (activeEl?.closest?.('#viewToggle, #headerClassChip, #scPlanModeSwitch')) {
                             activeEl.blur?.();
                         }
                         if (e.key === 'ArrowRight') {
                             if (this._planMode === 'course' && this._canSwitchPlanMode('activity')) {
                                 e.preventDefault();
                                 this.switchPlanMode('activity');
-                                if (isInsideModeSwitch && hasNoModifier) {
-                                    document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="activity"]')?.focus();
-                                }
                             }
                         } else if (e.key === 'ArrowLeft') {
                             if (this._planMode === 'activity' && (!this._isLocked || this._hasClassCoursePlan())) {
                                 e.preventDefault();
                                 this.switchPlanMode('course');
-                                if (isInsideModeSwitch && hasNoModifier) {
-                                    document.querySelector('#scPlanModeSwitch .sc-mode-tab[data-plan-mode="course"]')?.focus();
-                                }
                             } else {
                                 e.preventDefault();
-                                if (isInsideModeSwitch) {
-                                    activeEl.blur?.();
-                                }
                                 this.switchToView('list');
                             }
                         } else if (canNavigateVertical) {
                             const delta = e.key === 'ArrowDown' ? 1 : -1;
                             if (this._canSwitchAdjacentClass(delta)) {
                                 e.preventDefault();
-                                if (isInsideModeSwitch) {
-                                    activeEl.blur?.();
-                                }
                                 this._switchAdjacentClass(delta);
                             }
                         }

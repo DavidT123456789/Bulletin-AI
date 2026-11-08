@@ -1024,12 +1024,6 @@
     left: 20px;
     right: 14px;
     z-index: 60;
-    background: var(--dropdown-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow);
     display: flex;
     flex-direction: column;
     overflow: hidden;
