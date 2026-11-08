@@ -430,12 +430,19 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'error', 'icon-only');
                 break;
             case 'generated':
-                // Success state after generation - show brief confirmation then hide
+                // Success state after generation - show brief confirmation then restore actual status (e.g. dirty after refinement)
                 badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                 badge.classList.add('visible', 'generated', 'icon-only');
                 setTimeout(() => {
                     if (badge.classList.contains('generated')) {
                         badge.classList.remove('visible', 'generated', 'icon-only');
+                        const currentId = this._getCurrentStudentId();
+                        const currentResult = currentId
+                            ? appState.generatedResults?.find(r => r.id === currentId)
+                            : result;
+                        if (currentResult) {
+                            this.updateAppreciationStatus(currentResult);
+                        }
                     }
                 }, 1500);
                 break;

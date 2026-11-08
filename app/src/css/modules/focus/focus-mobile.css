@@ -34,11 +34,6 @@
         padding: var(--focus-header-offset-tablet) 16px 24px 16px;
     }
 
-    /* Inline appreciation actions — tablet */
-    .focus-appreciation-actions {
-        padding: 10px 12px 12px 12px;
-    }
-
     /* Refinement options: scroll horizontally */
     .focus-refinement-options {
         flex-wrap: nowrap;
@@ -52,7 +47,7 @@
     }
 
     .focus-refinement-options .btn {
-        flex: 0 0 auto;
+        flex: 1 0 auto;
         height: auto;
     }
 }
@@ -553,22 +548,9 @@
     }
 
     /* Inline appreciation actions — mobile */
-    .focus-appreciation-actions {
-        padding: 8px 14px 10px 14px;
-        gap: 8px;
-    }
-
-    .focus-appreciation-actions #focusCopyBtn {
-        height: 34px;
+    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
+        height: 38px;
         padding: 0 12px;
-        font-size: 12px;
-    }
-
-    .focus-appreciation-actions #focusGenerateBtn {
-        min-width: 0;
-        height: 34px;
-        font-size: 12px;
-        padding: 0 10px;
     }
 
     /* Analysis page on mobile */
@@ -652,21 +634,10 @@
     }
 
     /* Inline actions — small mobile */
-    .focus-appreciation-actions {
-        padding: 6px 10px 10px 10px;
-        gap: 6px;
-    }
-
-    .focus-appreciation-actions #focusCopyBtn {
-        height: 32px;
+    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
+        height: 36px;
         padding: 0 10px;
         font-size: 11px;
-    }
-
-    .focus-appreciation-actions #focusGenerateBtn {
-        height: 32px;
-        font-size: 11px;
-        padding: 0 8px;
     }
 
     /* EDIT MODE: Ultra-compact adjustments */

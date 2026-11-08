@@ -293,11 +293,6 @@
     box-shadow: var(--ai-satin-shadow);
 }
 
-/* Grand bouton Focus : Compromis Doux (surface et liseré calibrés pour grande largeur) */
-#focusGenerateBtn.btn-ai {
-    background: var(--ai-satin-wide-bg);
-}
-
 /* Icône Étoiles IA : lueur optique pure sans décalage géométrique */
 :is(.btn-ai:not(.is-loading), .btn-smart-action-inline.mode-generate, .help-ui-pill.is-ai, .ai-placeholder-icon:not(.is-error)) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {
     color: var(--ai-icon-color);
@@ -339,10 +334,6 @@
         color: var(--ai-satin-hover-text);
         box-shadow: var(--ai-satin-hover-shadow);
         transform: translateY(-1px);
-    }
-
-    #focusGenerateBtn.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)) {
-        background: var(--ai-satin-wide-hover-bg);
     }
 
     :is(.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)), .btn-smart-action-inline.mode-generate:hover:not(:disabled):not(.loading)) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {

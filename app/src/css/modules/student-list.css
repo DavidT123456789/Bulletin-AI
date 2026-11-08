@@ -28,13 +28,7 @@
 
 .student-list-table {
     --row-rest-bg: var(--surface-color);
-    --row-rest-border: var(--border-color);
     --row-moving-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
-    --row-spotlight-shadow-rest: inset 0 1px 0 0 transparent, inset 0 -1px 0 0 transparent;
-    --row-spotlight-shadow-mid: inset 0 1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent),
-                                inset 0 -1px 0 0 color-mix(in srgb, var(--row-spotlight-border) 50%, transparent);
-    --row-spotlight-shadow-peak: inset 0 1px 0 0 var(--row-spotlight-border),
-                                 inset 0 -1px 0 0 var(--row-spotlight-border);
     --row-exit-transform: scale(0.96) translateX(-15px);
     --row-enter-transform: translateY(8px) scale(0.98);
     width: 100%;
@@ -279,8 +273,6 @@
 .student-list-table tbody tr.focus-active td,
 .student-list-table tbody tr:has(.action-dropdown-menu.open) td {
     background-color: var(--row-spotlight-bg-peak);
-    border-color: var(--row-spotlight-border);
-    box-shadow: var(--row-spotlight-shadow-peak);
 }
 
 .student-list-table tbody tr.highlight-new,
@@ -309,54 +301,45 @@
     z-index: 10;
 }
 
-/* Crisp first-name legibility during active spotlight */
-.student-list-table tbody tr.focus-active .student-name-cell .student-prenom,
-.student-list-table tbody tr.selected .student-name-cell .student-prenom,
-.student-list-table tbody tr.highlight-new .student-name-cell .student-prenom,
-.student-list-table tbody tr.focus-closed-flash .student-name-cell .student-prenom {
+/* Crisp legibility during active spotlight */
+.student-list-table tbody tr:is(.focus-active, .selected, .highlight-new, .focus-closed-flash, :has(.action-dropdown-menu.open)) :is(.student-name-cell .student-prenom, .appreciation-preview),
+.student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) td.grade-cell .grade-empty {
     color: var(--text-primary);
+}
+
+.student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) .evolution-cell .grade-evolution {
+    opacity: 1;
 }
 
 @keyframes row-spotlight-new {
     0%,
     100% {
         background-color: var(--row-rest-bg);
-        border-color: var(--row-rest-border);
-        box-shadow: var(--row-spotlight-shadow-rest);
     }
     14%,
     56% {
         background-color: var(--row-spotlight-bg-peak);
-        border-color: var(--row-spotlight-border);
-        box-shadow: var(--row-spotlight-shadow-peak);
     }
     36% {
         background-color: var(--row-spotlight-bg-mid);
-        border-color: color-mix(in srgb, var(--row-spotlight-border) 50%, var(--row-rest-border));
-        box-shadow: var(--row-spotlight-shadow-mid);
     }
 }
 
 @keyframes row-spotlight-avatar-new {
-    0% {
+    0%,
+    100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 transparent;
     }
     16% {
         transform: scale(1.16);
-        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
+        box-shadow: var(--shadow-sm);
     }
     36% {
         transform: scale(1.06);
-        box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--row-spotlight-accent) 60%, transparent);
     }
     56% {
         transform: scale(1.14);
-        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 transparent;
+        box-shadow: var(--shadow-sm);
     }
 }
 
@@ -364,13 +347,9 @@
     0%,
     18% {
         background-color: var(--row-spotlight-bg-peak);
-        border-color: var(--row-spotlight-border);
-        box-shadow: var(--row-spotlight-shadow-peak);
     }
     100% {
         background-color: var(--row-rest-bg);
-        border-color: var(--row-rest-border);
-        box-shadow: var(--row-spotlight-shadow-rest);
     }
 }
 
@@ -378,11 +357,10 @@
     0%,
     15% {
         transform: scale(1.15);
-        box-shadow: 0 0 0 2px var(--row-spotlight-accent), var(--shadow-sm);
+        box-shadow: var(--shadow-sm);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 transparent;
     }
 }
 
@@ -827,6 +805,8 @@
 /* Cancel icon (hidden unless loading + hovered) */
 .btn-smart-action-inline .cancel-svg {
     display: none;
+    width: 12px;
+    height: 12px;
     font-size: 13px;
     line-height: 1;
     color: currentColor;
@@ -1014,29 +994,27 @@
 }
 
 /* === FULL VIEW STATE (Expanded Content) === */
-.student-list-table.appreciation-full-view .appreciation-preview {
+.student-list-table:is(.appreciation-full-view, .appreciation-collapsing) .appreciation-preview {
     white-space: pre-wrap;
     word-break: break-word;
     max-height: none;
     overflow: visible;
     text-overflow: clip;
     background: transparent;
-    padding: 6px 8px;
-    line-height: 1.6;
+    padding: 0 8px;
+    line-height: 1.55;
     margin: 0;
     border: none;
     text-align: left !important;
-
-    /* Micro-fade animation to mask white-space switch */
-    animation: appreciation-expand-reveal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
-/* Wrapper manages structural margin in full view */
-.student-list-table.appreciation-full-view .appreciation-preview-wrapper {
-    margin: 2px 0;
+/* Soft bottom edge mask during expand/collapse height interpolation (clamped at 20px so line 1 descenders are never dimmed) */
+.student-list-table.appreciation-transitioning .appreciation-preview {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0px, #000 max(20px, calc(100% - 6px)), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0px, #000 max(20px, calc(100% - 6px)), transparent 100%);
 }
 
-/* Keyframe: subtle fade masks the layout change */
+/* Keyframe: subtle fade for newly revealed status badges in expanded view */
 @keyframes appreciation-expand-reveal {
     0% {
         opacity: 0.3;
@@ -1053,6 +1031,8 @@
     display: block;
     width: 100%;
     max-width: 100%;
+    padding: 6px 0;
+    box-sizing: border-box;
     cursor: pointer;
     vertical-align: middle;
 }
@@ -1063,9 +1043,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--text-secondary);
-    padding: 6px 8px;
+    padding: 0 8px;
     background: transparent;
     border: none;
     width: 100%;
@@ -1073,9 +1053,7 @@
     box-sizing: border-box;
     display: block;
     transition:
-        padding 0.25s var(--ease-spring),
         color var(--transition-fast),
-        line-height 0.35s var(--ease-spring),
         opacity var(--transition-fast);
     opacity: 1;
 }
@@ -1089,6 +1067,7 @@
 .appreciation-preview.expanded {
     white-space: pre-wrap;
     max-height: 300px;
+    padding: 6px 8px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1256,8 +1235,7 @@
     transition: opacity var(--transition-fast), filter var(--transition-fast);
 }
 
-.student-list-table tbody tr.student-row-departed:hover .student-identity-wrapper,
-.student-list-table tbody tr.student-row-departed:focus-within .student-identity-wrapper {
+.student-list-table tbody tr.student-row-departed:is(:hover, :focus-within, .focus-active, :has(.action-dropdown-menu.open)) .student-identity-wrapper {
     opacity: 0.95;
     filter: saturate(1);
 }
@@ -1327,7 +1305,8 @@
     }
 }
 
-.action-dropdown.open .btn-action-menu {
+.action-dropdown.open .btn-action-menu,
+.action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
     background: var(--item-hover-bg) !important;
     color: var(--icon-btn-hover);
 }
@@ -1806,22 +1785,13 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .student-list-table {
         --row-rest-border: var(--card-glass-border);
         --row-moving-shadow: none;
-        --row-spotlight-shadow-rest: var(--shadow-sm);
-        --row-spotlight-shadow-mid: 0 4px 12px rgba(0, 0, 0, 0.09);
-        --row-spotlight-shadow-peak: 0 4px 14px rgba(0, 0, 0, 0.12);
-    }
-
-    [data-theme="dark"] .student-list-table {
-        --row-spotlight-shadow-rest: none;
-        --row-spotlight-shadow-mid: none;
-        --row-spotlight-shadow-peak: none;
     }
 
     .student-list-table tbody tr {
         background-color: var(--row-rest-bg);
         border-radius: var(--radius-md);
         margin-bottom: 10px;
-        box-shadow: var(--row-spotlight-shadow-rest);
+        box-shadow: var(--shadow-sm);
         border: 1px solid var(--row-rest-border);
         padding: var(--space-3) var(--space-4);
         row-gap: 6px;
@@ -1844,6 +1814,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         margin-bottom: 0;
     }
 
+    [data-theme="dark"] .student-list-table tbody tr,
     [data-theme="dark"] #mobileCompactToggleBtn,
     [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
         box-shadow: none;
@@ -1852,7 +1823,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .student-list-table tbody tr:active {
         transform: scale(0.98);
         background-color: var(--row-spotlight-bg-peak);
-        border-color: var(--row-spotlight-border);
     }
 
     /* Fix row-moving border-radius for mobile cards (FLIP animation) */
@@ -1884,8 +1854,6 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .student-list-table tbody tr.focus-active,
     .student-list-table tbody tr:has(.action-dropdown-menu.open) {
         background-color: var(--row-spotlight-bg-peak) !important;
-        border-color: var(--row-spotlight-border) !important;
-        box-shadow: var(--row-spotlight-shadow-peak) !important;
     }
 
     .student-list-table tbody tr.highlight-new {
@@ -1996,16 +1964,21 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         align-items: center;
     }
 
-    .appreciation-preview {
-        padding: 1px 2px 0;
+    .appreciation-preview-wrapper {
+        padding: 2px 0;
     }
 
-    .student-list-table.appreciation-full-view .appreciation-preview {
-        padding: 4px 2px 2px;
+    .appreciation-preview,
+    .student-list-table:is(.appreciation-full-view, .appreciation-collapsing) .appreciation-preview {
+        padding: 0 2px;
     }
 
     .appreciation-preview-wrapper:has(.dirty-indicator) .appreciation-preview {
         padding-left: 22px;
+    }
+
+    .appreciation-preview-wrapper .dirty-indicator {
+        top: 4px;
     }
 
     .student-list-table.appreciation-full-view .appreciation-cell:not(:has(> .status-badge)) {
@@ -2027,7 +2000,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
-        transition: top 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: top 0.42s var(--ease-bounce);
     }
 
     .student-list-table.appreciation-full-view .action-cell {
@@ -2113,18 +2086,14 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
 @media (max-width: 600px) {
     .student-list-table {
         --row-rest-border: var(--border-color);
-        --row-spotlight-shadow-rest: none;
-        --row-spotlight-shadow-mid: none;
-        --row-spotlight-shadow-peak: none;
         --row-exit-transform: translateY(-6px);
         --row-enter-transform: translateY(8px);
     }
 
     [data-theme="dark"] .student-list-table {
         --row-rest-bg: var(--bg-color);
-        --row-spotlight-bg-peak: color-mix(in srgb, var(--bg-color), var(--text-primary) 11%);
-        --row-spotlight-bg-mid: color-mix(in srgb, var(--bg-color), var(--text-primary) 5.5%);
-        --row-spotlight-border: var(--border-color-strong);
+        --row-spotlight-bg-peak: color-mix(in srgb, var(--bg-color), var(--text-primary) 8.5%);
+        --row-spotlight-bg-mid: color-mix(in srgb, var(--bg-color), var(--text-primary) 4.5%);
     }
 
     .student-list-table tbody {

@@ -143,4 +143,38 @@ describe('FocusPanelHistory', () => {
         FocusPanelHistory.load('student-1');
         expect(FocusPanelHistory.getCurrentVersionInfo().total).toBe(2);
     });
+
+    it('devrait associer à chaque type de retouche son icône et sa classe de couleur dédiées dans le popover d\'historique', () => {
+        const concise = FocusPanelHistory._getVersionPresentation({ source: 'concise' }, 1);
+        const encouraging = FocusPanelHistory._getVersionPresentation({ source: 'encouraging' }, 1);
+        const polish = FocusPanelHistory._getVersionPresentation({ source: 'polish' }, 1);
+
+        expect(concise.icon).toContain('solar:minimize-square-linear');
+        expect(concise.typeClass).toBe('source-concise');
+        expect(encouraging.icon).toContain('solar:heart-linear');
+        expect(encouraging.typeClass).toBe('source-encouraging');
+        expect(polish.icon).toContain('solar:stars-line-linear');
+        expect(polish.typeClass).toBe('source-polish');
+    });
+
+    it('ne devrait pas déclencher de restauration ni de sauvegarde si l\'utilisateur clique sur la version déjà actuelle', () => {
+        FocusPanelHistory.load('student-1');
+        FocusPanelHistory.push('Version 1', 'original');
+        FocusPanelHistory.push('Version 2', 'concise');
+
+        FocusPanelHistory._callbacks.onContentChange.mockClear();
+        FocusPanelHistory.restoreVersion(1);
+
+        expect(FocusPanelHistory._callbacks.onContentChange).not.toHaveBeenCalled();
+    });
+
+    it('devrait échapper les chevrons HTML dans l\'aperçu du popover', () => {
+        FocusPanelHistory.load('student-1');
+        FocusPanelHistory.push('Version 1', 'original');
+        FocusPanelHistory.push('Moyenne < 10/20 mais en progrès > T1', 'edit');
+
+        FocusPanelHistory.showPopover();
+        const previews = document.querySelectorAll('#historyPopover .history-version-preview');
+        expect(previews[0].textContent).toBe('Moyenne < 10/20 mais en progrès > T1');
+    });
 });

@@ -64,25 +64,7 @@ button[data-refine-type="encouraging"].is-generating iconify-icon {
     transform-origin: center center;
 }
 
-/* 2. Détaillée (Expand) - Pulsation */
-@keyframes expand-pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.25);
-    }
-}
-
-button[data-refine-type="detailed"]:hover iconify-icon,
-button[data-refine-type="detailed"].is-generating iconify-icon {
-    animation: expand-pulse 1.2s ease-in-out infinite;
-}
-
-/* 3. Concise (Compress) - Compression */
+/* 2. Concise (Compress) - Compression */
 @keyframes compress-pulse {
 
     0%,
@@ -100,7 +82,7 @@ button[data-refine-type="concise"].is-generating iconify-icon {
     animation: compress-pulse 1.2s ease-in-out infinite;
 }
 
-/* 4. Variation (Sync) - Rotation */
+/* Rotation partagée (boutons Régénérer / Mettre à jour) */
 @keyframes rotate-soft {
     0% {
         transform: rotate(0deg);
@@ -111,17 +93,7 @@ button[data-refine-type="concise"].is-generating iconify-icon {
     }
 }
 
-button[data-refine-type="variations"]:hover iconify-icon,
-button[data-refine-type="variations"].is-generating iconify-icon {
-    animation: rotate-soft 1.5s linear infinite;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    transform-origin: center center;
-}
-
-/* 5. Peaufiner (Stars) - Wobble magique + scintillement */
+/* 3. Peaufiner (Stars) - Wobble magique + scintillement */
 @keyframes magic-polish {
     0% {
         transform: rotate(0deg) scale(1);

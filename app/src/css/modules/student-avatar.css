@@ -187,15 +187,15 @@
     align-items: center;
     gap: 10px;
     overflow: visible;
-    transition: gap 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: gap 0.42s var(--ease-bounce);
 }
 
 /* Avatar size transition for expand/collapse (Effet ressort / élastique) */
 .student-identity-wrapper .student-avatar {
-    transition: width 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
-        height 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
-        font-size 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
-        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transition: width 0.42s var(--ease-bounce),
+        height 0.42s var(--ease-bounce),
+        font-size 0.42s var(--ease-bounce),
+        transform 0.25s var(--ease-bounce),
         box-shadow 0.25s ease;
 }
 
@@ -220,8 +220,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     width: 100%;
-    transition: font-size 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                line-height 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: font-size 0.42s var(--ease-bounce),
+                line-height 0.42s var(--ease-bounce);
 }
 
 .student-identity-wrapper .student-prenom {
@@ -234,7 +234,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     width: 100%;
-    transition: font-size 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    transition: font-size 0.42s var(--ease-bounce),
+                margin-top 0.42s var(--ease-bounce),
                 color var(--transition-fast);
 }
 
@@ -303,22 +304,22 @@
     }
 }
 
-/* Maintain zoom when student is focused (panel open) OR selected via checkbox */
-.student-list-table tbody tr.focus-active .student-avatar,
+/* Maintain zoom when student is focused (panel open), action menu open, OR selected via checkbox */
+.student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) .student-avatar,
 .student-list-table tbody tr .student-avatar.is-selected {
     transform: scale(1.15);
     z-index: 10;
     box-shadow: var(--shadow-sm);
 }
 
-[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar,
+[data-theme="dark"] .student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) .student-avatar,
 [data-theme="dark"] .student-list-table tbody tr .student-avatar.is-selected {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Hover zoom triggered by entire row hover ONLY on hover-capable devices (Desktop with mouse) */
 @media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:not(.focus-active):hover .student-avatar:not(.is-selected) {
+    .student-list-table tbody tr:not(.focus-active):not(:has(.action-dropdown-menu.open)):hover .student-avatar:not(.is-selected) {
         transform: scale(1.12);
         z-index: 10;
     }
@@ -364,7 +365,7 @@
 [data-theme="dark"] :is(
     .student-avatar.is-selected,
     .pick-student-row.selected .student-avatar,
-    .student-list-table tbody tr.focus-active .student-avatar,
+    .student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) .student-avatar,
     .sc-cell:is(.sc-chip-selected, .sc-context-target, .sc-spotlight-match) .student-avatar,
     .sc-stacked-avatar.sc-context-target .student-avatar,
     .sc-student-chip:is(.sc-chip-selected, .sc-context-target, .sc-spotlight-match) .student-avatar,

@@ -228,25 +228,20 @@
 }
 
 /* Ensure lines represent text paragraphs consistently with neutral shimmer */
+.appreciation-skeleton .skeleton-line,
+.skeleton-shimmer-box {
+    background: linear-gradient(90deg,
+            var(--tonal-bg) 0%,
+            var(--tonal-hover-bg) 50%,
+            var(--tonal-bg) 100%);
+    background-size: 200% 100%;
+}
+
 .appreciation-skeleton .skeleton-line {
     height: 14px;
     border-radius: var(--radius-xs);
-    background: linear-gradient(90deg,
-            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 0%,
-            var(--item-hover-bg, rgba(0, 0, 0, 0.08)) 50%,
-            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 100%);
-    background-size: 200% 100%;
     animation: skeleton-shimmer 1.6s ease-in-out infinite;
     margin-bottom: 0;
-    opacity: 0.7;
-}
-
-[data-theme="dark"] .appreciation-skeleton .skeleton-line {
-    background: linear-gradient(90deg,
-            rgba(255, 255, 255, 0.04) 0%,
-            rgba(255, 255, 255, 0.1) 50%,
-            rgba(255, 255, 255, 0.04) 100%);
-    background-size: 200% 100%;
 }
 
 .appreciation-skeleton .skeleton-line:nth-child(1) {
@@ -461,21 +456,8 @@
 }
 
 .skeleton-shimmer-box {
-    background: linear-gradient(90deg,
-            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 0%,
-            var(--item-hover-bg, rgba(0, 0, 0, 0.08)) 50%,
-            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 100%);
-    background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
     border-radius: var(--radius-sm);
-}
-
-[data-theme="dark"] .skeleton-shimmer-box {
-    background: linear-gradient(90deg,
-            rgba(255, 255, 255, 0.03) 0%,
-            rgba(255, 255, 255, 0.08) 50%,
-            rgba(255, 255, 255, 0.03) 100%);
-    background-size: 200% 100%;
 }
 
 /* Stagger shimmer animations for organic luxury feel */

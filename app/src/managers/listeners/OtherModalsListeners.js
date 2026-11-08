@@ -14,34 +14,24 @@ import { appState } from '../../state/State.js';
 
 const HELP_REFINE_DEMO_DATA = {
     initial: {
-        words: '23 mots',
+        words: '24 mots',
         hint: 'Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus',
-        text: 'Un bon premier trimestre. Lucas s\'investit avec sérieux en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.'
+        text: 'Un bon deuxième trimestre. Lucas s\'investit avec sérieux, participe activement en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.'
     },
     concise: {
-        words: '14 mots · −39%',
-        hint: 'Concise : va droit à l\'essentiel sans perdre le sens pédagogique',
-        text: 'Bon trimestre. Lucas s\'investit sérieusement et progresse avec régularité. Poursuivez sur cette dynamique.'
-    },
-    detailed: {
-        words: '33 mots · +43%',
-        hint: 'Détaillée : développe l\'analyse et intègre la participation orale',
-        text: 'Un bon premier trimestre marqué par une implication constante. Lucas participe activement à l\'oral et s\'investit en groupe, ce qui explique sa belle progression. Continuez ainsi.'
+        words: '15 mots · −38%',
+        hint: 'Concise : raccourcit et va droit à l\'essentiel sans perdre d\'information',
+        text: 'Bon deuxième trimestre. Sérieux et actif à l\'oral, Lucas progresse régulièrement. Il faut poursuivre ainsi.'
     },
     encouraging: {
-        words: '25 mots · Ton valorisant',
-        hint: 'Encourageante : met en valeur les efforts accomplis avec bienveillance',
-        text: 'Un trimestre très positif ! Lucas fait preuve d\'un bel engagement à l\'oral et ses efforts portent leurs fruits. Félicitations, continue ainsi !'
-    },
-    variations: {
-        words: '22 mots · Reformulé',
-        hint: 'Variation : propose une autre tournure pour éviter les répétitions entre élèves',
-        text: 'Trimestre satisfaisant : le travail régulier et l\'attitude active de Lucas lui permettent de consolider ses acquis. Maintenez ce cap.'
+        words: '26 mots · Ton valorisant',
+        hint: 'Encourageante : valorise les efforts et la dynamique avec bienveillance',
+        text: 'Un deuxième trimestre très positif : l\'investissement régulier de Lucas et son rôle moteur en classe portent pleinement leurs fruits. Il faut continuer sur cette belle lancée.'
     },
     polish: {
-        words: '23 mots · Style fluide',
-        hint: 'Peaufiner : fluidifie la syntaxe et enrichit le vocabulaire sans changer le fond',
-        text: 'Un premier trimestre de qualité. Sérieux et dynamique à l\'oral, Lucas affiche des résultats en progression constante. Maintenez cet engagement.'
+        words: '24 mots · Style fluide',
+        hint: 'Peaufiner : corrige et fluidifie la rédaction sans modifier le fond',
+        text: 'Un deuxième trimestre de qualité. Sérieux et moteur à l\'oral, Lucas affiche des résultats en progression constante qu\'il conviendra de confirmer au trimestre prochain.'
     }
 };
 

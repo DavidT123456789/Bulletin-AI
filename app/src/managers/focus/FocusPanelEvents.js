@@ -266,6 +266,10 @@ export const FocusPanelEvents = {
 
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
+                if (FocusPanelAnalysis.isVisible?.()) {
+                    FocusPanelAnalysis.generate();
+                    return;
+                }
                 if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') return;
                 panel.generate();
                 return;
@@ -286,6 +290,10 @@ export const FocusPanelEvents = {
                     return;
                 }
                 if (FocusPanelAnalysis.isVisible?.()) {
+                    if (FocusPanelAnalysis._activeGenerations?.has(panel.currentStudentId)) {
+                        FocusPanelAnalysis.cancelGenerationForStudent(panel.currentStudentId);
+                        return;
+                    }
                     FocusPanelAnalysis.hide();
                     return;
                 }
@@ -397,10 +405,7 @@ export const FocusPanelEvents = {
                     const isRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (isRealContent) {
-                        if (content !== panel._initialAppreciationText) {
-                            FocusPanelHistory.push(content, 'edit');
-                            panel._initialAppreciationText = content;
-                        }
+                        FocusPanelHistory.push(content, 'edit');
 
                         if (result.wasGenerated === false) {
                             result.errorMessage = null;
@@ -428,7 +433,6 @@ export const FocusPanelEvents = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
-                        panel._initialAppreciationText = '';
                         FocusPanelStatus.refreshAppreciationStatus();
                         FocusPanelStatus.updateHistoryIndicator();
                         panel._saveContext();

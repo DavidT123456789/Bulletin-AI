@@ -69,14 +69,6 @@ export const AppreciationService = {
     },
 
     /**
-     * Génère le prompt de raffinement selon le type
-     * @deprecated Délègue maintenant à PromptService.getRefinementPrompt() pour éviter la duplication de code
-     */
-    getRefinementPrompt(type, original, context = null) {
-        return PromptService.getRefinementPrompt(type, original, context ? { context } : {});
-    },
-
-    /**
      * Génère une appréciation via l'IA
      */
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null) {

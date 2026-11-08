@@ -310,6 +310,7 @@
     background: rgba(245, 158, 11, 0.15);
     color: var(--warning-color);
     animation: analysis-modified-pulse 2s ease-in-out infinite;
+    cursor: pointer;
 }
 
 @keyframes analysis-modified-pulse {

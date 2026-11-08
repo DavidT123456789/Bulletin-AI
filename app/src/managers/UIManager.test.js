@@ -68,6 +68,7 @@ vi.mock('../utils/Utils.js', () => ({
         getPeriodLabel: vi.fn((p, long) => long ? `Trimestre ${p.slice(1)}` : p),
         validateGrade: vi.fn(),
         countWords: vi.fn(() => 50),
+        getStopSquareHTML: vi.fn((size = 13) => `<svg class="cancel-svg stop-square-svg" width="${size}" height="${size}"><rect x="2" y="2" width="12" height="12" rx="2.75"></rect></svg>`),
         getGradeClass: vi.fn((grade) => {
             if (grade === null || grade === undefined || isNaN(grade)) return '';
             if (grade < 6) return 'grade-poor';
@@ -107,7 +108,6 @@ vi.mock('./AppreciationsManager.js', () => ({
     AppreciationsManager: {
         renderResults: vi.fn(),
         getAllPrompts: vi.fn(() => ({ main: '', sw: '', ns: '' })),
-        getRefinementPrompt: vi.fn(() => 'Refine prompt'),
         getRelevantEvolution: vi.fn()
     }
 }));
@@ -889,11 +889,24 @@ describe('UIManager', () => {
 
             UI.showInlineSpinner(btn);
             expect(btn.classList.contains('is-loading')).toBe(true);
-            expect(btn.innerHTML).toContain('Génération...');
+            expect(btn.innerHTML).toContain('stop-square-svg');
+            expect(btn.innerHTML).toContain('Annuler');
+            expect(btn.hasAttribute('data-tooltip')).toBe(false);
 
             UI.hideInlineSpinner(btn);
             expect(btn.classList.contains('is-loading')).toBe(false);
             expect(btn.innerHTML).toContain('Actualiser');
+        });
+
+        it('ne réécrase pas le libellé "Régénérer" par "Générer" si setGenerateButtonState est appelé avant hideInlineSpinner', () => {
+            const btn = document.createElement('button');
+            UI.setGenerateButtonState(btn, 'idle');
+            UI.showInlineSpinner(btn);
+            UI.setGenerateButtonState(btn, 'done');
+            UI.hideInlineSpinner(btn);
+
+            expect(btn.classList.contains('btn-neutral')).toBe(true);
+            expect(btn.textContent.trim()).toBe('Régénérer');
         });
     });
 });

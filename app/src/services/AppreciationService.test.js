@@ -92,7 +92,6 @@ describe('AppreciationService', () => {
             expect(AppreciationService.analyserEvolution).toBeDefined();
             expect(AppreciationService.getRelevantEvolution).toBeDefined();
             expect(AppreciationService.getAllPrompts).toBeDefined();
-            expect(AppreciationService.getRefinementPrompt).toBeDefined();
             expect(AppreciationService.generateAppreciation).toBeDefined();
             expect(AppreciationService.parseStrengthsWeaknesses).toBeDefined();
         });
@@ -276,47 +275,6 @@ describe('AppreciationService', () => {
 
         it('should return null for undefined evolutions', () => {
             expect(AppreciationService.getRelevantEvolution(undefined, 'T1')).toBeNull();
-        });
-    });
-
-    describe('getRefinementPrompt()', () => {
-        it('should generate polish prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('polish', 'Bon travail.');
-            expect(result).toContain('Peaufine');
-            expect(result).toContain('Bon travail.');
-        });
-
-        it('should generate variations prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('variations', 'Travail sérieux.');
-            expect(result).toContain('Reformule');
-            expect(result).toContain('Travail sérieux.');
-        });
-
-        it('should generate detailed prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('detailed', 'Bon travail.');
-            expect(result).toContain('Développe');
-        });
-
-        it('should generate concise prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('concise', 'Un texte avec beaucoup de mots inutiles.');
-            expect(result).toContain('concis');
-        });
-
-        it('should generate encouraging prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('encouraging', 'Travail moyen.');
-            expect(result).toContain('encourageant');
-            expect(result).toContain('positif');
-        });
-
-        it('should generate default prompt for unknown type', () => {
-            const result = AppreciationService.getRefinementPrompt('unknown', 'Test.');
-            expect(result).toContain('Reformule');
-            expect(result).toContain('Test.');
-        });
-
-        it('should always include base instruction', () => {
-            const result = AppreciationService.getRefinementPrompt('polish', 'Test.');
-            expect(result).toContain('texte brut');
         });
     });
 

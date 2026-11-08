@@ -290,42 +290,28 @@
     --grade-ink: var(--grade-accent);
 }
 
-/* Hiérarchie temporelle en Vue Liste : Passé (Archive adoucie) vs Période en cours (Focus premier plan) */
+/* Hiérarchie temporelle en Vue Liste : Passé (Archive typographique sans fond) vs Période en cours (Pastille premier plan) */
 .grade-value.past-period-grade[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 8%, var(--surface-color));
+    background: transparent;
     color: var(--grade-ink);
     font-weight: 500;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 [data-theme="dark"] .grade-value.past-period-grade[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 6%, var(--surface-color));
-    color: color-mix(in srgb, var(--grade-accent) 80%, var(--text-secondary));
-    opacity: 0.7;
+    background: transparent;
+    color: color-mix(in srgb, var(--grade-accent) 85%, var(--text-secondary));
+    opacity: 0.85;
 }
 
 .grade-value.current-period-grade[class*="grade-range-"] {
     background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
     color: var(--grade-ink);
     font-weight: 600;
-    opacity: 1;
 }
 
 [data-theme="dark"] .grade-value.current-period-grade[class*="grade-range-"] {
     background: color-mix(in srgb, var(--grade-accent) 16%, var(--surface-color));
-}
-
-/* Densification tonale au survol de la ligne : la période passée s'éveille au niveau de contraste de la période active (en conservant sa graisse 500) */
-@media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-value.current-period-grade[class*="grade-range-"] {
-        background: color-mix(in srgb, var(--grade-accent) 19%, var(--surface-color));
-    }
-
-    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .grade-value.past-period-grade[class*="grade-range-"] {
-        opacity: 1;
-        color: var(--grade-ink);
-        background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
-    }
 }
 
 /* Note actuelle avec couleur sémantique pleine (Cartes seulement) */

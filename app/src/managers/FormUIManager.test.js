@@ -89,8 +89,7 @@ vi.mock('./AppreciationsManager.js', () => ({
             appreciation: 'Test prompt',
             sw: 'Strengths/Weaknesses prompt',
             ns: 'Next steps prompt'
-        })),
-        getRefinementPrompt: vi.fn(() => 'Refinement prompt')
+        }))
     }
 }));
 

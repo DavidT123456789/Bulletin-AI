@@ -491,6 +491,11 @@
     background: rgba(168, 85, 247, 0.12);
 }
 
+.history-source-icon:is(.source-concise, .source-encouraging, .source-polish) {
+    color: var(--chip-color);
+    background: rgba(var(--chip-rgb), 0.14);
+}
+
 /* Relative timestamp */
 .history-time {
     font-size: 11px;
@@ -593,7 +598,6 @@
 .focus-appreciation-text:has(.appreciation-skeleton) {
     line-height: 1;
     min-height: auto;
-    /* Padding 0 removed so it inherits 14px 16px from container (alignment fix) */
 }
 
 /* Remove skeleton's own padding to prevent vertical doubling (14px + 8px) */
@@ -765,7 +769,7 @@
     gap: 6px;
     align-items: center;
     margin-top: 0;
-    padding: 2px 16px 12px 16px;
+    padding: 2px 16px 14px 16px;
 }
 
 .focus-refinement-options .btn-ai-outline {
@@ -775,44 +779,74 @@
 
 /* ============================
    INLINE APPRECIATION ACTIONS
-   Airy, balanced action cluster
+   Flush split footer bar (zero nested boxes — distinct from refinement chips)
    ============================ */
 .focus-appreciation-actions {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px 12px 16px;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    background: var(--item-idle-bg);
     border-top: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
-/* Copy button — shares .btn.btn-neutral base from components.css */
+.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
+    height: 40px;
+    min-width: 0;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transform: none !important;
+    filter: none !important;
+}
+
+/* Copy segment — 1/3 left cell with vertical hairline divider */
 .focus-appreciation-actions #focusCopyBtn {
     flex: 1;
     padding: 0 14px;
     gap: 6px;
+    border-right: 1px solid var(--border-color);
 }
 
-.focus-appreciation-actions #focusCopyBtn iconify-icon {
+.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn.btn-neutral:not(.is-loading)) iconify-icon {
     font-size: 15px;
-    color: inherit;
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    color: var(--text-tertiary);
+    transition: color var(--transition-fast), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     transform-origin: center;
 }
 
-.focus-appreciation-actions #focusCopyBtn:active:not(:disabled) {
-    transform: scale(0.95);
+@media (hover: hover) and (pointer: fine) {
+    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn.btn-neutral):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) iconify-icon {
+        color: var(--text-primary);
+    }
+}
+
+.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn):active:not(:disabled):not(.disabled):not(.is-loading) {
+    background: var(--item-active-bg);
 }
 
 .focus-appreciation-actions #focusCopyBtn:disabled,
 .focus-appreciation-actions #focusCopyBtn.disabled {
-    display: none !important;
+    opacity: 0.35 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
 }
 
 /* Copy success feedback (turns green with checkmark) */
 .focus-appreciation-actions #focusCopyBtn.copied,
 .focus-appreciation-actions #focusCopyBtn.copied:hover {
-    background: rgba(var(--success-rgb), 0.16) !important;
-    border-color: transparent !important;
+    background: rgba(var(--success-rgb), 0.14) !important;
     color: var(--success-color, #10b981) !important;
 }
 
@@ -826,8 +860,7 @@
 /* Prompt copy success feedback (turns purple) */
 .focus-appreciation-actions #focusCopyBtn.copied-prompt,
 .focus-appreciation-actions #focusCopyBtn.copied-prompt:hover {
-    background: rgba(var(--purple-rgb), 0.22) !important;
-    border-color: transparent !important;
+    background: rgba(var(--purple-rgb), 0.18) !important;
     color: var(--purple-color, #9333ea) !important;
 }
 
@@ -838,18 +871,44 @@
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Generate button — 2/3 width vs 1/3 Copy button inside Focus appreciation footer (styles unified in components.css) */
+/* Generate / Regenerate segment — 2/3 right cell (or full width when Copy is hidden) */
 .focus-appreciation-actions #focusGenerateBtn {
     flex: 2;
     max-width: none;
+    padding: 0 16px;
+    gap: 7px;
+}
+
+.focus-appreciation-actions #focusGenerateBtn .kbd-hint {
+    background: var(--tonal-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-tertiary);
+}
+
+/* Dirty state ("Actualiser") inside flush footer */
+.focus-appreciation-actions #focusGenerateBtn.btn-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.12);
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.15);
+    color: var(--color-amber-bright);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled):not(.disabled):not(.is-loading) {
+        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.20);
+        color: var(--warning-color);
+    }
+
+    [data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled):not(.disabled):not(.is-loading) {
+        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.24);
+        color: var(--color-amber-bright);
+    }
 }
 
 @media (max-width: 480px) {
-    .focus-appreciation-actions #focusGenerateBtn {
-        min-width: 0;
-        margin-left: 0;
-    }
-
     .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
         display: none;
     }
@@ -893,64 +952,43 @@
     transform: scale(0.96);
 }
 
-/* === Per-chip accent colors (inspired by premium mockups) === */
+/* === Per-chip & history refinement accent colors (inspired by premium mockups) === */
 /* .btn prefix needed to beat .btn:hover:not(:disabled) from components.css */
-.btn[data-refine-type="concise"] {
+.btn[data-refine-type="concise"],
+.history-source-icon.source-concise {
     --chip-color: var(--color-amber);
     --chip-hover-color: var(--color-amber-deep);
     --chip-rgb: 245, 158, 11;
 }
 
-.btn[data-refine-type="detailed"] {
-    --chip-color: var(--color-sky);
-    --chip-hover-color: var(--color-sky-deep);
-    --chip-rgb: 14, 165, 233;
-}
-
-.btn[data-refine-type="encouraging"] {
+.btn[data-refine-type="encouraging"],
+.history-source-icon.source-encouraging {
     --chip-color: var(--color-rose);
     --chip-hover-color: var(--color-rose-deep);
     --chip-rgb: 244, 63, 94;
 }
 
-.btn[data-refine-type="variations"] {
-    --chip-color: var(--color-emerald);
-    --chip-hover-color: var(--color-emerald-deep);
-    --chip-rgb: 16, 185, 129;
-}
-
-.btn[data-refine-type="polish"] {
+.btn[data-refine-type="polish"],
+.history-source-icon.source-polish {
     --chip-color: var(--color-violet);
     --chip-hover-color: var(--color-violet-deep);
     --chip-rgb: 139, 92, 246;
 }
 
 /* Dark mode: brighter tints — auto-adapted via token overrides */
-[data-theme="dark"] .btn[data-refine-type="concise"] {
+[data-theme="dark"] :is(.btn[data-refine-type="concise"], .history-source-icon.source-concise) {
     --chip-color: var(--color-amber-bright);
     --chip-hover-color: var(--color-amber-bright);
     --chip-rgb: 251, 191, 36;
 }
 
-[data-theme="dark"] .btn[data-refine-type="detailed"] {
-    --chip-color: var(--color-sky-bright);
-    --chip-hover-color: var(--color-sky-bright);
-    --chip-rgb: 56, 189, 248;
-}
-
-[data-theme="dark"] .btn[data-refine-type="encouraging"] {
+[data-theme="dark"] :is(.btn[data-refine-type="encouraging"], .history-source-icon.source-encouraging) {
     --chip-color: var(--color-rose-bright);
     --chip-hover-color: var(--color-rose-bright);
     --chip-rgb: 251, 113, 133;
 }
 
-[data-theme="dark"] .btn[data-refine-type="variations"] {
-    --chip-color: var(--color-emerald-bright);
-    --chip-hover-color: var(--color-emerald-bright);
-    --chip-rgb: 52, 211, 153;
-}
-
-[data-theme="dark"] .btn[data-refine-type="polish"] {
+[data-theme="dark"] :is(.btn[data-refine-type="polish"], .history-source-icon.source-polish) {
     --chip-color: var(--color-violet-bright);
     --chip-hover-color: var(--color-violet-bright);
     --chip-rgb: 167, 139, 250;
@@ -1078,9 +1116,9 @@
    Keeps text visible with animated effects
    ============================================ */
 .btn-ai-outline.is-generating {
-    /* Foundation */
-    pointer-events: none;
-    cursor: wait;
+    /* Foundation: keep clickable so a second click cancels the refinement */
+    pointer-events: auto;
+    cursor: pointer;
 
     /* Elevated visual treatment - static, no pulse to let icon animation shine */
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.12);
@@ -1152,19 +1190,9 @@
 /* ============================
    6. GENERATE BUTTON LOADING & CANCELLATION STATE
    ============================ */
-#focusGenerateBtn:active:not(:disabled) {
-    transform: scale(0.95);
-    transition: transform 0.08s ease-out;
-}
-
-#focusGenerateBtn i,
-#focusGenerateBtn iconify-icon {
-    stroke-width: 1.6px !important;
-}
-
 /* Loading state - Active operation, cancellable on click */
-#focusGenerateBtn.is-loading,
-#focusGenerateBtn:has(.loading-spinner-svg) {
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading,
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg) {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1174,38 +1202,23 @@
     pointer-events: auto !important;
     background: var(--item-active-bg) !important;
     color: var(--text-primary) !important;
-    border: 1px solid transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease !important;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.08s ease !important;
 }
 
-[data-theme="dark"] #focusGenerateBtn.is-loading,
-[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg) {
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading,
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg) {
     background: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
-    border-color: transparent !important;
 }
 
-#focusGenerateBtn.is-loading:active,
-#focusGenerateBtn:has(.loading-spinner-svg):active {
+#focusGenerateAnalysisBtn.is-loading:active,
+#focusGenerateAnalysisBtn:has(.loading-spinner-svg):active {
     transform: scale(0.96) !important;
 }
 
-#focusGenerateBtn .btn-spinner-state {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-#focusGenerateBtn .btn-cancel-state {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-#focusGenerateBtn:has(.loading-spinner-svg) .loading-spinner-svg {
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg) .loading-spinner-svg {
     font-size: 14px;
     width: 14px;
     height: 14px;
@@ -1214,40 +1227,45 @@
     flex-shrink: 0;
 }
 
-#focusGenerateBtn .cancel-svg {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-    color: inherit !important;
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {
+    width: 13px;
+    height: 13px;
+    color: var(--error-color, #ef4444) !important;
     margin: 0 !important;
     flex-shrink: 0;
+    animation: stop-square-pulse 1.8s ease-in-out infinite;
+}
+
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {
+    color: #f87171 !important;
+}
+
+@keyframes stop-square-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.72;
+        transform: scale(0.92);
+    }
 }
 
 /* Hover state during loading: clearly signals cancellation (Focus Panel & Inline Table Header pills) */
-#focusGenerateBtn.is-loading:hover,
-#focusGenerateBtn:has(.loading-spinner-svg):hover,
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
 .btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.1) !important;
     color: var(--error-color, #ef4444) !important;
     border-color: transparent !important;
 }
 
-[data-theme="dark"] #focusGenerateBtn.is-loading:hover,
-[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg):hover,
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
 [data-theme="dark"] .btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.18) !important;
     color: #fca5a5 !important;
     border-color: transparent !important;
-}
-
-#focusGenerateBtn.is-loading:hover .btn-spinner-state,
-#focusGenerateBtn:has(.loading-spinner-svg):hover .btn-spinner-state {
-    display: none !important;
-}
-
-#focusGenerateBtn.is-loading:hover .btn-cancel-state,
-#focusGenerateBtn:has(.loading-spinner-svg):hover .btn-cancel-state {
-    display: inline-flex !important;
 }
 
 .appreciation-cell {

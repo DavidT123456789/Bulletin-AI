@@ -319,10 +319,8 @@
     --highlight-standard-rim: 0 0 0 1px rgba(0, 0, 0, 0.08);
 
     /* Student Row Spotlight (Cross-class jump, new student, Focus Panel return) */
-    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 9%);
-    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 4.5%);
-    --row-spotlight-border: color-mix(in srgb, var(--border-color), var(--text-primary) 18%);
-    --row-spotlight-accent: var(--primary-color);
+    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 6%);
+    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 3%);
 
     /* --- Gradients (Fixed Brand Colors — Aligned with Landing Page) --- */
     --gradient-primary: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
@@ -424,14 +422,12 @@
     --ai-satin-hover-bg:
         linear-gradient(112deg, #ffffff 0%, #eef3fb 50%, #e5edf8 100%) padding-box,
         linear-gradient(108deg, rgba(37, 99, 235, 0.35) 0%, rgba(148, 163, 184, 0.28) 50%, rgba(79, 70, 229, 0.35) 100%) border-box;
-    --ai-satin-wide-bg: var(--ai-satin-bg);
-    --ai-satin-wide-hover-bg: var(--ai-satin-hover-bg);
     --ai-satin-text: #1e293b;
     --ai-satin-hover-text: #0f172a;
     --ai-satin-shadow: 0 1px 4px rgba(15, 23, 42, 0.05), inset 0 1px 0 #ffffff;
     --ai-satin-hover-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
     --ai-satin-shine-small: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
-    --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.25) 25%, rgba(255, 255, 255, 0.65) 50%, rgba(255, 255, 255, 0.25) 75%, transparent 100%);
+    --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 25%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.28) 75%, transparent 100%);
     --ai-icon-color: #2563eb;
     --ai-icon-hover-color: #1d4ed8;
     --ai-icon-hover-filter: drop-shadow(0 0 4px rgba(37, 99, 235, 0.22));
@@ -527,10 +523,8 @@
     --highlight-standard-rim: 0 0 0 1px rgba(255, 255, 255, 0.12);
 
     /* Student Row Spotlight (High Contrast in Dark Mode regardless of custom accent color) */
-    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 16%);
-    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 9%);
-    --row-spotlight-border: rgba(255, 255, 255, 0.22);
-    --row-spotlight-accent: var(--primary-bright);
+    --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 11%);
+    --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
 
     /* --- Semantic Colors (Dark Mode) --- */
     --success-dark: #4ade80;
@@ -632,18 +626,12 @@
     --ai-satin-hover-bg:
         linear-gradient(110deg, #303440 0%, #23262f 48%, #1d2331 100%) padding-box,
         linear-gradient(108deg, rgba(255, 255, 255, 0.36) 0%, rgba(148, 163, 184, 0.20) 48%, rgba(96, 165, 250, 0.34) 100%) border-box;
-    --ai-satin-wide-bg:
-        linear-gradient(115deg, #24272f 0%, #1d1f26 52%, #181b24 100%) padding-box,
-        linear-gradient(110deg, rgba(255, 255, 255, 0.19) 0%, rgba(148, 163, 184, 0.11) 50%, rgba(96, 165, 250, 0.18) 100%) border-box;
-    --ai-satin-wide-hover-bg:
-        linear-gradient(115deg, #2b2e38 0%, #21242c 52%, #1c202b 100%) padding-box,
-        linear-gradient(110deg, rgba(255, 255, 255, 0.32) 0%, rgba(148, 163, 184, 0.18) 50%, rgba(96, 165, 250, 0.30) 100%) border-box;
     --ai-satin-text: #f1f5f9;
     --ai-satin-hover-text: #ffffff;
     --ai-satin-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
     --ai-satin-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
     --ai-satin-shine-small: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.20), transparent);
-    --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.11) 50%, rgba(255, 255, 255, 0.04) 75%, transparent 100%);
+    --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.06) 75%, transparent 100%);
     --ai-icon-color: #7dd3fc;
     --ai-icon-hover-color: #93c5fd;
     --ai-icon-hover-filter: brightness(1.18) drop-shadow(0 0 5px rgba(125, 211, 252, 0.42));

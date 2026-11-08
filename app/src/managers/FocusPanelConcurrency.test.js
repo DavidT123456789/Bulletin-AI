@@ -3,7 +3,8 @@ import { appState } from '../state/State.js';
 import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
-import { VariationsManager } from './VariationsManager.js';
+import { FocusPanelStatus } from './FocusPanelStatus.js';
+import { AIService } from '../services/AIService.js';
 
 vi.mock('./StorageManager.js', () => ({
     StorageManager: {
@@ -20,14 +21,14 @@ vi.mock('./ListViewManager.js', () => ({
 
 vi.mock('./UIManager.js', () => ({
     UI: {
-        showNotification: vi.fn()
+        showNotification: vi.fn(),
+        initTooltips: vi.fn()
     }
 }));
 
-vi.mock('./VariationsManager.js', () => ({
-    VariationsManager: {
-        applyRefinement: vi.fn(),
-        generateVariations: vi.fn()
+vi.mock('../services/AIService.js', () => ({
+    AIService: {
+        callAIWithFallback: vi.fn()
     }
 }));
 
@@ -111,7 +112,7 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
 
     it('T-06 (Bug C-01a) : FocusPanelRefinement.apply enregistre le texte raffiné dans la période d\'origine (T1 de A) sans écraser T2 ni le DOM de l\'élève B après navigation', async () => {
         let resolveRefinement;
-        VariationsManager.applyRefinement.mockReturnValue(
+        AIService.callAIWithFallback.mockReturnValue(
             new Promise((resolve) => {
                 resolveRefinement = resolve;
             })
@@ -197,5 +198,73 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         expect(studentA.historyPerPeriod.T2.versions.map(v => v.content)).toEqual(['Appréciation initiale A (T2)']);
         // - Le texte affiché dans l'éditeur (qui montre T2) ne doit pas être écrasé par le texte de T1
         expect(textEl.textContent).toBe('Appréciation initiale A (T2)');
+    });
+
+    it('préserve l\'alerte dirty (promptHash intact) lorsqu\'on raffine une appréciation dont la note a été modifiée', async () => {
+        const { PromptService } = await import('../services/PromptService.js');
+        const initialHash = PromptService.getPromptHash({
+            ...studentA.studentData,
+            id: studentA.id,
+            currentPeriod: 'T1'
+        });
+        studentA.promptHash = initialHash;
+        studentA.generationPeriod = 'T1';
+        studentA.wasGenerated = true;
+        studentA.appreciationSource = 'ai';
+
+        // La note change après génération : l'élève passe en état dirty
+        studentA.studentData.periods.T1.grade = 8;
+        expect(FocusPanelStatus.checkDirtyState(studentA)).toBe(true);
+
+        AIService.callAIWithFallback.mockResolvedValue({ text: 'Version raccourcie (basée sur ancien texte)' });
+
+        const mockPanel = {
+            currentStudentId: 'student-A',
+            _getCurrentStudent: () => studentA
+        };
+        FocusPanelHistory.init(mockPanel, {});
+        FocusPanelRefinement.init(mockPanel, {}, { showNotification: vi.fn() });
+
+        await FocusPanelRefinement.apply('concise');
+
+        // Le promptHash ne doit pas avoir été recalculé sur la note 8/20 : l'alerte dirty reste active
+        expect(studentA.promptHash).toBe(initialHash);
+        expect(FocusPanelStatus.checkDirtyState(studentA)).toBe(true);
+        expect(FocusPanelStatus.isBulkRefreshable(studentA, 'T1')).toBe(true);
+    });
+
+    it('protège une appréciation manuelle/dictée ou importée contre l\'actualisation de masse après un raffinement', async () => {
+        const { PromptService } = await import('../services/PromptService.js');
+        studentA.promptHash = PromptService.getPromptHash({
+            ...studentA.studentData,
+            id: studentA.id,
+            currentPeriod: 'T1'
+        });
+        studentA.generationPeriod = 'T1';
+        studentA.wasGenerated = false;
+        studentA.appreciationSource = 'manual';
+
+        AIService.callAIWithFallback.mockResolvedValue({
+            text: 'Appréciation dictée puis peaufinée.',
+            modelUsed: 'gemini-2.5-flash'
+        });
+
+        const mockPanel = {
+            currentStudentId: 'student-A',
+            _getCurrentStudent: () => studentA
+        };
+        FocusPanelHistory.init(mockPanel, {});
+        FocusPanelRefinement.init(mockPanel, {}, { showNotification: vi.fn() });
+
+        await FocusPanelRefinement.apply('polish');
+
+        expect(studentA.appreciation).toBe('Appréciation dictée puis peaufinée.');
+        expect(studentA.appreciationSource).toBe('manual');
+        expect(studentA.wasGenerated).toBe(false);
+
+        // Même si une note change ensuite, une saisie manuelle peaufinée ne doit jamais être écrasée en masse
+        studentA.studentData.periods.T1.grade = 9;
+        expect(FocusPanelStatus.checkDirtyState(studentA)).toBe(true);
+        expect(FocusPanelStatus.isBulkRefreshable(studentA, 'T1')).toBe(false);
     });
 });

@@ -74,6 +74,75 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         expect(appState.isAppreciationFullView).toBe(false);
     });
 
+    it('should smoothly interpolate appreciation preview height on expand and collapse and clean up after timer', () => {
+        vi.useFakeTimers();
+        try {
+            const view = document.createElement('div');
+            view.className = 'student-list-view';
+            view.innerHTML = `
+                <table class="student-list-table">
+                    <thead><tr><th class="appreciation-toggle-header"></th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td class="appreciation-cell">
+                                <div class="appreciation-preview-wrapper">
+                                    <div class="appreciation-preview">Long appreciation text</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            container.appendChild(view);
+
+            const table = view.querySelector('.student-list-table');
+            const preview = view.querySelector('.appreciation-preview');
+
+            Object.defineProperty(preview, 'offsetHeight', {
+                configurable: true,
+                get() {
+                    if (this.style.height) {
+                        return parseInt(this.style.height, 10);
+                    }
+                    return table.classList.contains('appreciation-full-view') ? 60 : 20;
+                }
+            });
+
+            // 1. Expand: 20px -> 60px (elastic spring)
+            ListViewManager._toggleAppreciationColumn(view);
+            expect(table.classList.contains('appreciation-full-view')).toBe(true);
+            expect(table.classList.contains('appreciation-transitioning')).toBe(true);
+            expect(table.classList.contains('appreciation-collapsing')).toBe(false);
+            expect(preview.style.height).toBe('60px');
+            expect(preview.style.overflow).toBe('hidden');
+            expect(preview.style.transition).toBe('height 0.42s cubic-bezier(0.34, 1.45, 0.64, 1)');
+
+            vi.advanceTimersByTime(430);
+            expect(table.classList.contains('appreciation-transitioning')).toBe(false);
+            expect(preview.style.height).toBe('');
+            expect(preview.style.overflow).toBe('');
+            expect(preview.style.transition).toBe('');
+
+            // 2. Collapse: 60px -> 20px with .appreciation-collapsing active during transition (damped spring)
+            ListViewManager._toggleAppreciationColumn(view);
+            expect(table.classList.contains('appreciation-full-view')).toBe(false);
+            expect(table.classList.contains('appreciation-transitioning')).toBe(true);
+            expect(table.classList.contains('appreciation-collapsing')).toBe(true);
+            expect(preview.style.height).toBe('20px');
+            expect(preview.style.overflow).toBe('hidden');
+            expect(preview.style.transition).toBe('height 0.36s cubic-bezier(0.32, 0.72, 0, 1)');
+
+            vi.advanceTimersByTime(370);
+            expect(table.classList.contains('appreciation-collapsing')).toBe(false);
+            expect(table.classList.contains('appreciation-transitioning')).toBe(false);
+            expect(preview.style.height).toBe('');
+            expect(preview.style.overflow).toBe('');
+            expect(preview.style.transition).toBe('');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('should prevent event listener accumulation on container reuse using AbortController', () => {
         const toggleSpy = vi.fn();
         ListViewEvents.init({ toggleAppreciationColumn: toggleSpy });
@@ -234,4 +303,3 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         expect(row2S2Empty.textContent).toBe('--');
     });
 });
-

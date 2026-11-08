@@ -417,10 +417,86 @@ export const ListViewManager = {
         const mobileIcon = mobileBtn?.querySelector('iconify-icon');
 
         const nextIsFull = !isFullView;
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        const isTabletGridSwitch = window.matchMedia?.('(min-width: 601px) and (max-width: 768px)')?.matches;
+        const shouldAnimate = !prefersReducedMotion && !isTabletGridSwitch;
+        const previews = (shouldAnimate || table._appreciationToggleTimer)
+            ? Array.from(table.querySelectorAll('.appreciation-preview'))
+            : [];
 
-        // Toggle CSS classes
+        const hadPendingToggle = Boolean(table._appreciationToggleTimer);
+        if (hadPendingToggle) {
+            clearTimeout(table._appreciationToggleTimer);
+            table._appreciationToggleTimer = null;
+        }
+
+        // Pass 1 (Pure READ): batch all initial height measurements in a single layout pass
+        const startHeights = shouldAnimate ? previews.map(el => el.offsetHeight) : [];
+
+        // Pass 2 (Pure WRITE): clear any interrupted inline styles and toggle view classes
+        if (hadPendingToggle) {
+            previews.forEach(el => {
+                el.style.height = '';
+                el.style.overflow = '';
+                el.style.transition = '';
+            });
+        }
+        table.classList.remove('appreciation-collapsing', 'appreciation-transitioning');
         table.classList.toggle('appreciation-full-view', nextIsFull);
         header?.classList.toggle('expanded-view', nextIsFull);
+
+        if (shouldAnimate && previews.length > 0) {
+            // Pass 3 (Pure READ): batch all target height measurements in a single layout pass
+            const animatedPreviews = [];
+            for (let i = 0; i < previews.length; i++) {
+                const el = previews[i];
+                const startH = startHeights[i];
+                const targetH = el.offsetHeight;
+                if (startH > 0 && targetH > 0 && Math.abs(targetH - startH) > 1) {
+                    animatedPreviews.push({ el, startH, targetH });
+                }
+            }
+
+            if (animatedPreviews.length > 0) {
+                // Pass 4 (Pure WRITE): lock starting heights before triggering transition
+                table.classList.add('appreciation-transitioning');
+                if (!nextIsFull) {
+                    table.classList.add('appreciation-collapsing');
+                }
+                for (let i = 0; i < animatedPreviews.length; i++) {
+                    const { el, startH } = animatedPreviews[i];
+                    el.style.height = `${startH}px`;
+                    el.style.overflow = 'hidden';
+                    el.style.transition = 'none';
+                }
+
+                // Force a single synchronous reflow for the entire table
+                void table.offsetHeight;
+
+                // Elastic spring on expand (synchronized with avatar bounce), damped spring on collapse (prevents clipping line 1)
+                const transitionValue = nextIsFull
+                    ? 'height 0.42s cubic-bezier(0.34, 1.45, 0.64, 1)'
+                    : 'height 0.36s cubic-bezier(0.32, 0.72, 0, 1)';
+                const cleanupDelay = nextIsFull ? 430 : 370;
+
+                for (let i = 0; i < animatedPreviews.length; i++) {
+                    const { el, targetH } = animatedPreviews[i];
+                    el.style.transition = transitionValue;
+                    el.style.height = `${targetH}px`;
+                }
+
+                table._appreciationToggleTimer = setTimeout(() => {
+                    table._appreciationToggleTimer = null;
+                    table.classList.remove('appreciation-collapsing', 'appreciation-transitioning');
+                    for (let i = 0; i < animatedPreviews.length; i++) {
+                        const { el } = animatedPreviews[i];
+                        el.style.height = '';
+                        el.style.overflow = '';
+                        el.style.transition = '';
+                    }
+                }, cleanupDelay);
+            }
+        }
 
         // Update Tooltips & ARIA labels
         const tooltipText = nextIsFull ? 'Réduire' : 'Voir tout le texte';

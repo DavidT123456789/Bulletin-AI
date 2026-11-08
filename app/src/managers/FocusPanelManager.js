@@ -95,13 +95,7 @@ export const FocusPanelManager = {
                     this._initialAppreciationHtml = textEl.innerHTML;
                     this._isAppreciationEdited = false;
                 }
-                if (this.currentStudentId) {
-                    const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                    if (result) {
-                        FocusPanelStatus.updateSourceIndicator(result);
-                        this._updateListRow(result);
-                    }
-                }
+                FocusPanelStatus.refreshAppreciationStatus();
             },
             onHistoryChange: () => {
                 FocusPanelStatus.updateHistoryIndicator();
@@ -269,6 +263,9 @@ export const FocusPanelManager = {
         this._renderAppreciationText(result);
 
         FocusPanelHistory.load(this.currentStudentId);
+        if (FocusPanelAnalysis.isVisible?.()) {
+            FocusPanelAnalysis.show();
+        }
         FocusPanelStatus.updateHistoryIndicator();
         this._updateGenerateButton(result);
         FocusPanelStatus.updateSourceIndicator(result);
@@ -325,6 +322,9 @@ export const FocusPanelManager = {
         }
 
         this._renderContent(result);
+        if (FocusPanelAnalysis.isVisible?.()) {
+            FocusPanelAnalysis.show();
+        }
         setTimeout(() => FocusPanelNavigation.updateControls(), 0);
 
         const panel = document.getElementById('focusPanel');
@@ -402,6 +402,9 @@ export const FocusPanelManager = {
 
         this._renderContent(dummyResult);
         FocusPanelNavigation.updateControls();
+        if (FocusPanelAnalysis.isVisible?.()) {
+            FocusPanelAnalysis.hide();
+        }
         FocusPanelHeader.toggleEditMode(true);
         FocusPanelHistory.reset();
 
@@ -594,6 +597,11 @@ export const FocusPanelManager = {
         const isGenerating = this._activeGenerations.has(result.id);
 
         if (isGenerating) {
+            const hasExistingApp = Boolean(result.studentData?.periods?.[currentPeriod]?.appreciation?.trim());
+            const refinementOptions = document.getElementById('focusRefinementOptions');
+            if (refinementOptions) refinementOptions.style.display = hasExistingApp ? 'flex' : 'none';
+            const copyBtn = document.getElementById('focusCopyBtn');
+            if (copyBtn) copyBtn.style.display = hasExistingApp ? 'inline-flex' : 'none';
             this._showAppreciationSkeleton();
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
             const generateBtn = document.getElementById('focusGenerateBtn');
@@ -623,7 +631,10 @@ export const FocusPanelManager = {
             }
         }
         this._initialAppreciationHtml = appreciationEl.innerHTML;
-        this._initialAppreciationText = appreciationEl.textContent?.trim() || '';
+        if (isGenerating) {
+            this._isAppreciationEdited = false;
+            return;
+        }
         this._isAppreciationEdited = false;
         FocusPanelStatus.updateWordCount();
     },

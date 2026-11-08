@@ -734,7 +734,11 @@ export const UI = {
         const isDisabled = options.disabled ?? config.disabled;
         const spinClass = config.spin ? ' icon-spin rotate-icon' : '';
 
-        btn.classList?.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
+        if (state !== 'loading' && btn.dataset?.originalContent) {
+            delete btn.dataset.originalContent;
+        }
+        btn.classList?.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning', 'is-loading', 'is-cancellable');
+        btn.removeAttribute?.('aria-busy');
         btn.classList?.add(config.variant);
         btn.disabled = isDisabled;
         if (isDisabled) {
@@ -753,18 +757,28 @@ export const UI = {
         }
         const orig = el.dataset.originalContent;
         const textContent = label || (orig.includes('Générer') || orig.includes('Régénérer') || orig.includes('Actualiser') ? 'Génération...' : '');
-        const isCancellable = options.canCancel ?? (el.id === 'focusGenerateBtn');
+        const isCancellable = options.canCancel ?? (el.id === 'focusGenerateBtn' || el.id === 'focusGenerateAnalysisBtn');
 
         if (isCancellable) {
-            el.innerHTML = `<span class="btn-spinner-state"><iconify-icon icon="ph:spinner-gap-bold" class="loading-spinner-svg rotate-icon" aria-hidden="true"></iconify-icon><span>${textContent}</span></span><span class="btn-cancel-state"><iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon><span>Annuler</span></span>`;
+            el.innerHTML = `${Utils.getStopSquareHTML(13)}<span>Annuler</span>`;
             el.disabled = false;
             el.setAttribute('aria-busy', 'true');
             el.classList.add('is-loading', 'is-cancellable');
 
-            const cancelTip = options.cancelTooltip || 'Cliquer pour annuler la génération';
-            el.dataset.prevTooltip = el.getAttribute('data-tooltip') || '';
-            el.setAttribute('data-tooltip', cancelTip);
-            if (el._tippy) el._tippy.setContent(cancelTip);
+            el.dataset.prevTooltip = el.getAttribute('data-tooltip') ?? '';
+            if (options.cancelTooltip) {
+                el.setAttribute('data-tooltip', options.cancelTooltip);
+                if (el._tippy) el._tippy.setContent(options.cancelTooltip);
+            } else {
+                el.removeAttribute('data-tooltip');
+                if (el._tippy) {
+                    el._tippy.hide?.();
+                    el._tippy.disable?.();
+                }
+            }
+
+
+
         } else {
             const labelHtml = textContent ? `<span>${textContent}</span>` : '';
             el.innerHTML = `<iconify-icon icon="ph:spinner-gap-bold" class="loading-spinner-svg rotate-icon" aria-hidden="true"></iconify-icon>${labelHtml}`;
@@ -786,7 +800,10 @@ export const UI = {
             delete el.dataset.prevTooltip;
             if (prev) {
                 el.setAttribute('data-tooltip', prev);
-                if (el._tippy) el._tippy.setContent(prev);
+                if (el._tippy) {
+                    el._tippy.enable?.();
+                    el._tippy.setContent(prev);
+                }
             } else {
                 el.removeAttribute('data-tooltip');
             }

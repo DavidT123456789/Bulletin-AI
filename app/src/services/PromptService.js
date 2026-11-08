@@ -577,9 +577,9 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
 
     /**
      * Generates a refinement prompt for appreciation modifications
-     * @param {string} type - Type of refinement (concise, detailed, encouraging, polish, variations, formal, context)
+     * @param {string} type - Type of refinement (concise, encouraging, polish)
      * @param {string} original - The original text to refine
-     * @param {Object|string} [options={}] - Optional configuration ({ prenom, nom, studentData, context }) or legacy context string
+     * @param {Object} [options={}] - Optional local identity for GDPR scrubbing & gender agreement ({ prenom, nom, studentData })
      * @returns {string} The formatted prompt for AI
      */
     getRefinementPrompt(type, original, options = {}) {
@@ -592,45 +592,37 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
 
         if (explicitPrenom || explicitNom) {
             const identity = { prenom: explicitPrenom, nom: explicitNom };
-            sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, identity, { anonymizePrenom: isAnonymous });
-        } else if (Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
-            for (const r of appState.generatedResults) {
-                const p = r?.prenom || r?.studentData?.prenom || '';
-                const n = r?.nom || r?.studentData?.nom || '';
-                if (p || n) {
-                    sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, { prenom: p, nom: n }, { anonymizePrenom: isAnonymous });
-                }
-            }
+            sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, identity, { anonymizePrenom: isAnonymous })
+                .replace(/\s*\[nom\]/gi, '');
         }
 
-        // Raw text only, keeping the grammatical person chosen by the teacher (je / nous / impersonnel)
-        const base = 'Conserve la personne grammaticale du texte d\'origine (je, nous ou tournure impersonnelle). Réponds uniquement avec le texte brut, sans introduction, commentaire, formatage ni guillemets.';
+        const gender = explicitPrenom ? Utils.detectGender(explicitPrenom) : null;
+        const genderClause = (gender === 'féminin' || gender === 'masculin')
+            ? `Genre de l'élève : ${gender} (pour les accords grammaticaux). `
+            : '';
+
+        const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
+        const customStyleClause = effectiveStyle.styleInstructions
+            ? `Consigne de l'enseignant : ${effectiveStyle.styleInstructions}\n`
+            : '';
+
+        // Raw text only, keeping the grammatical person and preventing hallucinations or direct tu/vous address
+        const base = `${genderClause}N'invente aucun fait, résultat ou compétence absents du texte. Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »). Conserve la personne grammaticale du texte d'origine (je, nous ou tournure impersonnelle). ${customStyleClause}Réponds uniquement avec le texte brut, sans introduction, commentaire, formatage ni guillemets.`;
         let instruction = '';
 
         switch (type) {
-            case 'polish':
-                // Same length, improved style
-                instruction = `Peaufine cette appréciation scolaire : corrige les fautes et les contradictions, améliore la fluidité et le naturel. Garde le sens et une longueur similaire.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
-                break;
-            case 'variations':
-                // Same length, different wording
-                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), avec le même sens et une longueur similaire.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
-                break;
-            case 'detailed':
-                // Slightly longer, symmetric with concise
-                instruction = `Développe les points de cette appréciation un peu plus en détail, sans inventer de faits.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
-                break;
             case 'concise':
-                // Shorter, essentials only
-                instruction = `Rends cette appréciation plus concise en allant à l'essentiel, sans perdre le sens.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                instruction = `Rends cette appréciation scolaire plus concise (environ 25 % plus courte) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'encouraging':
-                // Same length, warmer tone
-                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, sans changer les faits et avec une longueur similaire.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                instruction = `Reformule cette appréciation scolaire avec un ton plus bienveillant, valorisant et constructif : mets en valeur les acquis ou les efforts et formule les points à travailler comme des leviers de progression, sans masquer les difficultés réelles ni tomber dans l'éloge excessif. Garde une longueur similaire.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                break;
+            case 'polish':
+                instruction = `Peaufine cette appréciation scolaire : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style de bulletin naturel et professionnel, en restant fidèle au sens et à la longueur du texte d'origine (si le texte est sous forme de notes brèves, rédige-le en phrases complètes).\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
                 break;
             case 'default':
             default:
-                instruction = `Reformule cette appréciation.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                instruction = `Reformule cette appréciation scolaire de manière fluide et naturelle.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
         }
         return instruction;
     },

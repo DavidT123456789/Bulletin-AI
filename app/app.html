@@ -1016,30 +1016,22 @@
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
-                                data-tooltip="Réduit d'environ 20%">
+                                data-tooltip="Raccourcir et aller à l'essentiel">
                                 <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="detailed"
-                                data-tooltip="Développe d'environ 20%">
-                                <iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Détaillée
-                            </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
-                                data-tooltip="Ton plus positif et bienveillant">
+                                data-tooltip="Ton plus bienveillant et valorisant">
                                 <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="variations"
-                                data-tooltip="Reformulation complète, même sens">
-                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Variation
-                            </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
-                                data-tooltip="Corrige et améliore le style">
+                                data-tooltip="Corriger et fluidifier la rédaction">
                                 <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                             </button>
                         </div>
 
                         <!-- Inline actions: Copy (icon) + Generate (wide pill) -->
                         <div class="focus-appreciation-actions">
-                            <button id="focusCopyBtn" class="btn btn-neutral tooltip" disabled
+                            <button id="focusCopyBtn" class="btn btn-neutral tooltip" disabled style="display: none;"
                                 data-tooltip="Copier l'appréciation<br><i style='opacity:0.7'>Clic droit : copier le prompt</i>"
                                 aria-label="Copier l'appréciation">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon>
@@ -3018,19 +3010,13 @@
                                     </button>
                                 </div>
 
-                                <!-- Les 5 vrais boutons .btn-ai-outline[data-refine-type] -->
+                                <!-- Les 3 vrais boutons .btn-ai-outline[data-refine-type] -->
                                 <div class="focus-refinement-options help-native-refine-bar" role="group" aria-label="Outils de retouche IA">
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="concise" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:minimize-square-linear"></iconify-icon> Concise
                                     </button>
-                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="detailed" aria-pressed="false">
-                                        <iconify-icon class="iconify-inline" icon="solar:maximize-square-linear"></iconify-icon> Détaillée
-                                    </button>
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="encouraging" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:heart-linear"></iconify-icon> Encourageante
-                                    </button>
-                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="variations" aria-pressed="false">
-                                        <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon> Variation
                                     </button>
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="polish" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:stars-line-linear"></iconify-icon> Peaufiner
@@ -3069,11 +3055,11 @@
                                         </div>
                                     </div>
                                     <div class="help-preview-text-area">
-                                        <p class="text-preview" id="helpRefineDemoText">Un bon premier trimestre. Lucas s'investit avec sérieux en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p>
+                                        <p class="text-preview" id="helpRefineDemoText">Un bon deuxième trimestre. Lucas s'investit avec sérieux, participe activement en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p>
                                     </div>
                                     <div class="help-preview-meta">
                                         <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus</span>
-                                        <span class="word-count" id="helpRefineDemoWords">23 mots</span>
+                                        <span class="word-count" id="helpRefineDemoWords">24 mots</span>
                                     </div>
                                 </div>
                             </div>

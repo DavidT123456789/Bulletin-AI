@@ -92,7 +92,7 @@ export const AppreciationsManager = {
     /**
      * Sauvegarde la version actuelle dans l'historique avant modification
      * @param {Object} result - L'objet résultat à sauvegarder
-     * @param {string} source - Source de la modification (edit, concise, detailed, encouraging, variation, regenerate)
+     * @param {string} source - Source de la modification (edit, concise, encouraging, polish, regenerate)
      */
     pushToHistory(result, source = 'edit') {
         if (!result || !result.appreciation) return;
@@ -185,9 +185,6 @@ export const AppreciationsManager = {
         return PromptService.getAllPrompts(studentData, overrideConfig);
     },
 
-    getRefinementPrompt(type, original, context = null) {
-        return PromptService.getRefinementPrompt(type, original, context);
-    },
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
         const targetClassId = studentData?.classId ?? appState.currentClassId;
@@ -214,8 +211,8 @@ export const AppreciationsManager = {
         const systemPrompt = prompts.appreciationSystem || null;
         const aiResp = await AIService.callAIWithFallback(userPrompt, { signal, context, studentName: studentData.prenom, systemPrompt });
 
-        // Désanonymisation : remplacer [PRÉNOM] par le vrai prénom
-        appreciation = this._deanonymizeText(aiResp.text, studentData.prenom);
+        // Désanonymisation : remplacer [PRÉNOM] par le vrai prénom et purger tout [NOM] résiduel
+        appreciation = PromptService.deanonymizeText(aiResp.text, studentData.prenom);
 
         tokenUsage.appreciation = aiResp.usage;
         tokenUsage.generationTimeMs = aiResp.generationTimeMs; // Temps de génération
@@ -232,21 +229,6 @@ export const AppreciationsManager = {
         result.copied = false; // Ensure initialized as false
         UI?.recordSupportMilestone?.('generation', 1);
         return result;
-    },
-
-    /**
-     * Remplace le placeholder [PRÉNOM] par le vrai prénom de l'élève
-     * @param {string} text - Texte avec placeholder
-     * @param {string} prenom - Prénom réel de l'élève
-     * @returns {string} Texte avec le prénom réinjecté
-     * @private
-     */
-    _deanonymizeText(text, prenom) {
-        if (!text || !prenom) return text;
-        // Remplacer toutes les occurrences de [PRÉNOM] avec diverses variantes Unicode
-        // Les modèles IA peuvent générer: [Prénom], [PRÉNOM], [prénom], [Prėnom], [Prênom], etc.
-        // Cette regex couvre les variantes courantes des accents sur le 'e'
-        return text.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
     },
 
     _prepareStudentListForImport(lines, formatMap, importMode) {
@@ -269,13 +251,13 @@ export const AppreciationsManager = {
         return AppreciationService.parseStrengthsWeaknesses(text);
     },
 
-    async generateStrengthsWeaknesses(id, silent = false) {
+    async generateStrengthsWeaknesses(id, silent = false, signal = null) {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
         try {
             const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.sw = prompts.sw;
-            const resp = await AIService.callAIWithFallback(prompts.sw, { context: 'single-student', studentName: result.prenom });
+            const resp = await AIService.callAIWithFallback(prompts.sw, { context: 'single-student', studentName: result.prenom, signal });
             result.strengthsWeaknesses = resp.text;
             result._lastModified = Date.now();
             // Ensure tokenUsage exists before setting properties
@@ -289,13 +271,13 @@ export const AppreciationsManager = {
         }
     },
 
-    async generateNextSteps(id, silent = false) {
+    async generateNextSteps(id, silent = false, signal = null) {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
         try {
             const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.ns = prompts.ns;
-            const resp = await AIService.callAIWithFallback(prompts.ns, { context: 'single-student', studentName: result.prenom });
+            const resp = await AIService.callAIWithFallback(prompts.ns, { context: 'single-student', studentName: result.prenom, signal });
 
             const steps = [];
             const lines = resp.text.split('\n').filter(l => l.trim() !== '');

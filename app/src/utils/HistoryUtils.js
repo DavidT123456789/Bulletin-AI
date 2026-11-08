@@ -8,16 +8,6 @@
 const MAX_VERSIONS = 10;
 
 /**
- * Count words in a string
- * @param {string} text
- * @returns {number}
- */
-function countWords(text) {
-    if (!text) return 0;
-    return text.trim().split(/\s+/).filter(w => w.length > 0).length;
-}
-
-/**
  * Normalize a version entry to the new object format
  * Handles backward compatibility with string-only versions
  * @param {string|Object} version - Version entry (string or object)
@@ -43,16 +33,12 @@ export function normalizeVersion(version) {
             source: null,
             appreciationSource: null,
             aiModel: null,
-            tokenUsage: null,
-            wordCount: countWords(content)
+            tokenUsage: null
         };
     }
 
     if (version) {
         version.content = content;
-        if (!version.wordCount && version.content) {
-            version.wordCount = countWords(version.content);
-        }
     }
     return version;
 }
@@ -107,8 +93,7 @@ export function pushToState(state, content, source = 'edit', appreciationSource 
         source,
         appreciationSource,
         aiModel,
-        tokenUsage,
-        wordCount: countWords(content)
+        tokenUsage
     });
 
     if (state.versions.length > MAX_VERSIONS) {

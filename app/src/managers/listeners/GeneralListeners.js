@@ -14,6 +14,7 @@ import { EventHandlersManager } from '../EventHandlersManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { MassImportManager } from '../MassImportManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { FocusPanelAnalysis } from '../FocusPanelAnalysis.js';
 import { ModelSelectionManager } from '../ModelSelectionManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 
@@ -314,14 +315,16 @@ export const GeneralListeners = {
             // 1. Cancel mass import if running
             MassImportManager.cancelImport();
 
-            // 2. Cancel Focus Panel active generations (refinements)
+            // 2. Cancel Focus Panel active generations (appreciation, refinements, analysis)
             if (FocusPanelManager._activeGenerations && FocusPanelManager._activeGenerations.size > 0) {
-                for (const [studentId, controller] of FocusPanelManager._activeGenerations) {
-                    if (controller && typeof controller.abort === 'function') {
-                        controller.abort();
-                    }
+                for (const studentId of [...FocusPanelManager._activeGenerations.keys()]) {
+                    FocusPanelManager._cancelGenerationForStudent?.(studentId);
                 }
-                FocusPanelManager._activeGenerations.clear();
+            }
+            if (FocusPanelAnalysis._activeGenerations && FocusPanelAnalysis._activeGenerations.size > 0) {
+                for (const studentId of [...FocusPanelAnalysis._activeGenerations.keys()]) {
+                    FocusPanelAnalysis.cancelGenerationForStudent?.(studentId);
+                }
             }
         });
 
@@ -475,4 +478,3 @@ export const GeneralListeners = {
         this._updateCloudReminder();
     }
 };
-

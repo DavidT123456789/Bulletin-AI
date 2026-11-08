@@ -1162,6 +1162,15 @@ export const Utils = {
     },
 
     /**
+     * Génère le SVG du carré stop d'annulation de génération (Source unique de vérité)
+     * @param {number} [size=13] - Taille du SVG en pixels
+     * @returns {string} HTML string
+     */
+    getStopSquareHTML(size = 13) {
+        return `<svg class="cancel-svg stop-square-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="${size}" height="${size}" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.75"></rect></svg>`;
+    },
+
+    /**
      * Détermine la classe CSS associée à une note, alignée sur l'histogramme.
      * @param {number} grade - La note (0-20)
      * @returns {string} Classe CSS ('grade-range-0-4', 'grade-range-4-8', etc.)

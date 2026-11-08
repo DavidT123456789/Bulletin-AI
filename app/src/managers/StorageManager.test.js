@@ -67,7 +67,6 @@ vi.mock('../state/State.js', () => {
         process: {
             isMassImportCancelled: false,
             importJustCompleted: false,
-            pendingRefinementGeneration: null,
         },
         apiStatus: { google: 'not-configured', openai: 'not-configured', openrouter: 'not-configured' },
         validatedApiKeys: { google: false, openai: false, openrouter: false },

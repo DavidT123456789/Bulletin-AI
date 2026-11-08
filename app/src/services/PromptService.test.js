@@ -325,37 +325,61 @@ describe('PromptService', () => {
     describe('getRefinementPrompt', () => {
         const originalText = "Ceci est une bonne appréciation.";
 
-        it('should keep the original grammatical person and avoid word-count arithmetic', () => {
-            for (const type of ['polish', 'variations', 'detailed', 'concise', 'encouraging']) {
+        it('should keep the original grammatical person, include anti-hallucination guardrails and avoid word-count arithmetic', () => {
+            for (const type of ['concise', 'encouraging', 'polish']) {
                 const p = PromptService.getRefinementPrompt(type, originalText);
                 expect(p).toContain('Conserve la personne grammaticale');
+                expect(p).toContain("N'invente aucun fait");
+                expect(p).toContain('ni « tu » ni « vous »');
                 expect(p).not.toMatch(/\d+ mots/);
             }
-        });
-
-        it('should generate polish prompt', () => {
-            const p = PromptService.getRefinementPrompt('polish', originalText);
-            expect(p).toContain("Peaufine");
-        });
-
-        it('should generate variations prompt', () => {
-            const p = PromptService.getRefinementPrompt('variations', originalText);
-            expect(p).toContain('Reformule');
-        });
-
-        it('should generate context prompt', () => {
-            const p = PromptService.getRefinementPrompt('variations', originalText, { context: 'Plus de détails' });
-            expect(p).toContain('Reformule');
-        });
-
-        it('should generate detailed prompt', () => {
-            const p = PromptService.getRefinementPrompt('detailed', originalText);
-            expect(p).toContain('Développe les points');
         });
 
         it('should generate concise prompt', () => {
             const p = PromptService.getRefinementPrompt('concise', originalText);
             expect(p).toContain('concise');
+            expect(p).toContain('supprime les redondances');
+        });
+
+        it('should generate encouraging prompt', () => {
+            const p = PromptService.getRefinementPrompt('encouraging', originalText);
+            expect(p).toContain('bienveillant, valorisant et constructif');
+            expect(p).toContain('sans masquer les difficultés réelles');
+        });
+
+        it('should generate polish prompt', () => {
+            const p = PromptService.getRefinementPrompt('polish', originalText);
+            expect(p).toContain('Peaufine');
+            expect(p).toContain('fluidifie la syntaxe');
+        });
+
+        it('should inject student gender when prenom is provided and strip surname locally without leaking [NOM]', () => {
+            Utils.detectGender.mockReturnValueOnce('féminin');
+            const pFemale = PromptService.getRefinementPrompt(
+                'concise',
+                'Marie Dupont fournit un travail sérieux avec constance.',
+                { prenom: 'Marie', nom: 'Dupont' }
+            );
+            expect(pFemale).toContain("Genre de l'élève : féminin");
+            expect(pFemale).toContain('[PRÉNOM]');
+            expect(pFemale).not.toMatch(/Dupont/i);
+            expect(pFemale).not.toMatch(/\[nom\]/i);
+            expect(pFemale).toContain('avec constance');
+        });
+
+        it('should inject active teacher styleInstructions into refinement prompt', () => {
+            appState.useSubjectPersonalization = true;
+            appState.subjects['MonStyle'] = {
+                iaConfig: {
+                    tone: 3,
+                    voice: 'neutre',
+                    length: 35,
+                    enableStyleInstructions: true,
+                    styleInstructions: 'Bannir les superlatifs.'
+                }
+            };
+            const p = PromptService.getRefinementPrompt('polish', originalText);
+            expect(p).toContain("Consigne de l'enseignant : Bannir les superlatifs.");
         });
     });
 

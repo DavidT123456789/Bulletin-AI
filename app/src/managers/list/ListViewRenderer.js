@@ -416,12 +416,12 @@ export const ListViewRenderer = {
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">
                                 <iconify-icon icon="solar:stars-bold-duotone" class="smart-action-icon"></iconify-icon>
-                                <iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon>
+                                ${Utils.getStopSquareHTML(12)}
                                 <span class="smart-action-badge" id="generateBadgeInline">0</span>
                             </button>
                             <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})">
                                 <iconify-icon icon="solar:refresh-bold" class="smart-action-icon"></iconify-icon>
-                                <iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon>
+                                ${Utils.getStopSquareHTML(12)}
                                 <span class="smart-action-badge" id="updateBadgeInline">0</span>
                             </button>
                         </div>

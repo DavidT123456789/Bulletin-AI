@@ -205,6 +205,7 @@ export const FocusPanelHistory = {
     restoreVersion(index) {
         const state = this._getState();
         const oldIndex = state?.currentIndex ?? 0;
+        if (index === oldIndex) return;
         const version = HistoryUtils.goToVersion(state, index);
         if (version !== null) {
             this._save();
@@ -263,13 +264,13 @@ export const FocusPanelHistory = {
             }
 
             const currentBadgeHtml = isCurrent ? '<span class="history-badge-current">Actuelle</span>' : '';
-            const itemTitle = isCurrent ? 'Version actuellement affichée' : 'Cliquer pour restaurer';
+            const escapedContent = Utils.escapeHtml(content);
 
             html += `
-                    <div class="history-version-item ${isCurrent ? 'current' : ''}" data-index="${i}" title="${itemTitle}">
+                    <div class="history-version-item ${isCurrent ? 'current' : ''}" data-index="${i}">
                         <div class="history-version-header">
                             <div class="history-version-title-group">
-                                <span class="history-source-icon ${presentation.typeClass}" title="${presentation.tooltip}">
+                                <span class="history-source-icon ${presentation.typeClass}">
                                     ${presentation.icon}
                                 </span>
                                 <span class="history-version-label">${presentation.title}</span>
@@ -277,7 +278,7 @@ export const FocusPanelHistory = {
                             </div>
                             ${timeHtml}
                         </div>
-                        <span class="history-version-preview">${content}</span>
+                        <span class="history-version-preview">${escapedContent}</span>
                     </div>
                 `;
         }
@@ -427,11 +428,11 @@ export const FocusPanelHistory = {
     },
 
     /**
-     * Get user-friendly label, icon, and tooltip for a history version
+     * Get user-friendly label and icon for a history version
      * @private
      * @param {Object} versionData
      * @param {number} index
-     * @returns {{ title: string, icon: string, typeClass: string, tooltip: string }}
+     * @returns {{ title: string, icon: string, typeClass: string }}
      */
     _getVersionPresentation(versionData, index) {
         const isOriginal = index === 0;
@@ -443,54 +444,38 @@ export const FocusPanelHistory = {
             else if (source === 'imported') sourceType = 'imported';
             else if (source === 'dictation') sourceType = 'dictation';
             else if (versionData.aiModel || (isOriginal && versionData.aiModel)) sourceType = 'ai';
-            else if (isOriginal) sourceType = 'manual';
             else sourceType = 'manual';
         }
-
-        const modelInfo = versionData.aiModel ? ` (${versionData.aiModel})` : '';
 
         if (source === 'dictation' || sourceType === 'dictation') {
             return {
                 title: 'Dictée vocale',
                 icon: '<iconify-icon icon="solar:microphone-3-linear"></iconify-icon>',
-                typeClass: 'source-dictation',
-                tooltip: 'Saisie par dictée vocale'
+                typeClass: 'source-dictation'
             };
         }
 
         if (source === 'concise') {
             return {
                 title: 'Version concise',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Raffinement IA - Plus concise${modelInfo}`
+                icon: '<iconify-icon icon="solar:minimize-square-linear"></iconify-icon>',
+                typeClass: 'source-concise'
             };
         }
 
-        if (source === 'detailed') {
+        if (source === 'polish') {
             return {
-                title: 'Version détaillée',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Raffinement IA - Plus détaillée${modelInfo}`
+                title: 'Version peaufinée',
+                icon: '<iconify-icon icon="solar:stars-line-linear"></iconify-icon>',
+                typeClass: 'source-polish'
             };
         }
 
         if (source === 'encouraging') {
             return {
                 title: 'Version encourageante',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Raffinement IA - Plus encourageante${modelInfo}`
-            };
-        }
-
-        if (source === 'variation') {
-            return {
-                title: 'Variation IA',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Variation générée par IA${modelInfo}`
+                icon: '<iconify-icon icon="solar:heart-linear"></iconify-icon>',
+                typeClass: 'source-encouraging'
             };
         }
 
@@ -498,8 +483,7 @@ export const FocusPanelHistory = {
             return {
                 title: 'Régénération IA',
                 icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Régénéré par IA${modelInfo}`
+                typeClass: 'source-ai'
             };
         }
 
@@ -507,8 +491,7 @@ export const FocusPanelHistory = {
             return {
                 title: isOriginal ? 'Génération initiale' : 'Génération IA',
                 icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai',
-                tooltip: `Généré par IA${modelInfo}`
+                typeClass: 'source-ai'
             };
         }
 
@@ -516,8 +499,7 @@ export const FocusPanelHistory = {
             return {
                 title: 'Texte importé',
                 icon: '<iconify-icon icon="solar:file-download-linear"></iconify-icon>',
-                typeClass: 'source-imported',
-                tooltip: 'Importé depuis un fichier'
+                typeClass: 'source-imported'
             };
         }
 
@@ -525,16 +507,14 @@ export const FocusPanelHistory = {
             return {
                 title: 'Version initiale',
                 icon: '<iconify-icon icon="solar:document-text-linear"></iconify-icon>',
-                typeClass: 'source-initial',
-                tooltip: 'Texte d\'origine'
+                typeClass: 'source-initial'
             };
         }
 
         return {
             title: 'Modifié à la main',
             icon: '<iconify-icon icon="solar:pen-linear"></iconify-icon>',
-            typeClass: 'source-manual',
-            tooltip: 'Rédigé manuellement'
+            typeClass: 'source-manual'
         };
     },
 

@@ -109,7 +109,6 @@ export const runtimeState = {
     process: {
         isMassImportCancelled: false,
         importJustCompleted: false,
-        pendingRefinementGeneration: null,
         activeMassAction: null,
     },
 
@@ -222,7 +221,6 @@ const propertyMap = {
     // runtimeState.process
     isMassImportCancelled: () => runtimeState.process,
     importJustCompleted: () => runtimeState.process,
-    pendingRefinementGeneration: () => runtimeState.process,
     activeMassAction: () => runtimeState.process,
 
     // runtimeState.apiStatus (renommé pour compatibilité)
