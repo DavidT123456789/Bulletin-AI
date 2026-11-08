@@ -206,22 +206,7 @@
 }
 
 .focus-analyze-gen-btn {
-    margin-right: 8px;
-    /* Push nav buttons a bit to the right */
-}
-
-/* Kept for backwards compatibility if still used somewhere inside analysis */
-.focus-analysis-student {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: var(--item-hover-bg);
-    padding: 6px 12px;
-    border-radius: 100px;
-}
-
-[data-theme="dark"] .focus-analysis-student {
-    background: var(--item-active-bg);
+    margin-right: 2px;
 }
 
 /* Analysis Content Area */
@@ -253,24 +238,20 @@
     box-shadow: none;
 }
 
-/* Colored Borders for Analysis Cards */
 /* Colored Borders for Analysis Cards - Specificity increased to override .has-content */
 .analysis-card.analysis-forces,
 .analysis-card.analysis-forces.has-content {
     border-color: rgba(16, 185, 129, 0.3);
-    /* box-shadow removed */
 }
 
 .analysis-card.analysis-weaknesses,
 .analysis-card.analysis-weaknesses.has-content {
     border-color: rgba(245, 158, 11, 0.3);
-    /* box-shadow removed */
 }
 
 .analysis-card.analysis-suggestions,
 .analysis-card.analysis-suggestions.has-content {
     border-color: rgba(99, 102, 241, 0.3);
-    /* box-shadow removed */
 }
 
 .analysis-card-header {
@@ -766,25 +747,3 @@
     color: var(--color-emerald, #34d399);
     box-shadow: none;
 }
-
-/* ====================================================================
-   ANALYZE BUTTON — Header Pill Icon Style
-   Compact icon button in the header pill, before the close button
-   ==================================================================== */
-
-.focus-analyze-btn {
-    color: var(--text-secondary);
-    font-size: 16px;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-[data-theme="dark"] .focus-analyze-btn {
-    color: var(--text-secondary);
-}
-
-
-
-.focus-analyze-btn:active {
-    transform: scale(0.96);
-}
-

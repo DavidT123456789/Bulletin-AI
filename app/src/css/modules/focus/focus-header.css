@@ -214,41 +214,6 @@
     display: none !important;
 }
 
-/* Action buttons in scrolled capsule: stable & tactile (pas de rétrécissement punitif) */
-.focus-header:not(.editing) .focus-analyze-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-    flex-shrink: 0;
-}
-
-.focus-header:not(.editing) .focus-nav-buttons {
-    padding: 3px;
-    height: 36px;
-    gap: 2px;
-    border-radius: var(--radius-pill);
-    flex-shrink: 0;
-    box-sizing: border-box;
-}
-
-.focus-header:not(.editing) .focus-nav-buttons .focus-nav-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-}
-
-.focus-header:not(.editing) .focus-position {
-    font-size: 12.5px;
-}
-
-.focus-header:not(.editing) .focus-close-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-    flex-shrink: 0;
-    border-radius: 50%;
-}
-
 /* Edit Mode adjustments — In-flow card layout (prevents any overlap with content below) */
 .focus-header.editing {
     position: relative;
@@ -401,35 +366,6 @@
     }
 }
 
-.focus-back-btn {
-    background: transparent;
-    border: none;
-    font-size: 14px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease;
-}
-
-.focus-back-btn:hover {
-    background: var(--item-active-bg);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .focus-back-btn:hover {
-    background: var(--item-active-bg);
-}
-
-.focus-back-btn:active {
-    transform: scale(0.9);
-    transition: transform 0.08s ease-out;
-}
-
 .focus-student-name {
     font-size: 18px;
     font-weight: 700;
@@ -517,20 +453,6 @@
     transform: scale(0.98);
 }
 
-.focus-name-editable {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
-    margin: -6px -10px;
-    border-radius: 12px;
-}
-
-.focus-name-editable:hover {
-    background: var(--item-hover-bg);
-}
-
 .focus-name-edit-icon {
     font-size: 16px;
     opacity: 0;
@@ -541,7 +463,6 @@
 }
 
 .focus-student-name:hover .focus-name-edit-icon,
-.focus-name-editable:hover .focus-name-edit-icon,
 .focus-header:has(.focus-header-left:hover) .focus-name-edit-icon {
     opacity: 1;
     color: var(--text-primary);
@@ -580,60 +501,66 @@
     white-space: nowrap;
 }
 
-/* --- NAV BUTTONS: Compact embedded group (← 1/8 →) --- */
+/* --- NAV BUTTONS: 100% Ghost inline stepper with subtle vertical dividers (| ‹ 1/8 › |) --- */
 .focus-nav-buttons {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 2px;
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm) !important;
-    padding: 3px;
     height: 36px;
-    border-radius: 100px;
     flex-shrink: 0;
-    border: 1px solid transparent;
-    box-sizing: border-box;
 }
 
-[data-theme="dark"] .focus-nav-buttons {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+.focus-nav-buttons::before,
+.focus-nav-buttons::after {
+    content: '';
+    width: 1px;
+    height: 16px;
+    background: var(--border-color-strong);
+    flex-shrink: 0;
+}
+
+.focus-nav-buttons::before {
+    margin: 0 4px 0 -1px;
+}
+
+.focus-nav-buttons::after {
+    margin: 0 -1px 0 4px;
 }
 
 .focus-position {
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 600;
     color: var(--text-secondary);
-    padding: 0 5px;
+    padding: 0 2px;
     font-variant-numeric: tabular-nums;
     min-width: 28px;
     text-align: center;
+    user-select: none;
 }
 
-/* --- SHARED: All pill action buttons (flat style — no elevation) --- */
+/* --- SHARED: All header action & nav buttons (flat/ghost style — zero elevation) --- */
 .focus-nav-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    /* Hérite désormais du design global (aérien) */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    /* Standardize icon size for solar icons */
+    font-size: 18px;
     cursor: pointer;
-    transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease;
+    transition:
+        transform 0.25s var(--ease-bounce),
+        background-color var(--transition-fast),
+        color var(--transition-fast);
     flex-shrink: 0;
 }
 
 /* Shared transition for icon inside nav buttons */
 .focus-nav-btn iconify-icon,
 .focus-nav-btn svg {
-    transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: opacity 0.2s var(--ease-spring), transform 0.2s var(--ease-spring);
     stroke-width: 1.5px !important;
 }
 
@@ -644,129 +571,56 @@
 
 @media (hover: hover) and (pointer: fine) {
     .focus-nav-btn:hover:not(:disabled) {
-        background: var(--item-active-bg);
+        background: var(--tonal-hover-bg);
         color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
-        background: var(--item-active-bg);
-        color: var(--text-primary);
-    }
-
-    .focus-nav-btn.focus-close-btn:hover,
-    .focus-nav-btn.focus-analyze-btn:hover {
-        background: var(--item-hover-bg);
-        color: var(--text-primary);
-        box-shadow: var(--shadow-elevation) !important;
-        transform: translateY(-1px);
     }
 }
 
 .focus-nav-btn:active:not(:disabled) {
-    transform: scale(0.9);
+    transform: scale(0.92);
     transition: transform 0.08s ease-out;
 }
 
-/* --- STANDALONE FLOAT BUTTONS: Analyze & Close --- */
-.focus-nav-btn.focus-close-btn,
-.focus-nav-btn.focus-analyze-btn {
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm) !important;
-    border: 1px solid transparent;
-    /* Hauteur totale: 30px + 3px*2 = 36px (comme la pilule nav) */
+/* --- STANDALONE ACTION BUTTONS: Analyze, Save & Close --- */
+.focus-analyze-btn,
+.focus-save-btn,
+.focus-close-btn {
     width: 36px;
     height: 36px;
-    font-size: 16px;
-    color: var(--text-secondary);
 }
 
-.focus-nav-btn.focus-analyze-btn {
+.focus-analyze-btn,
+.focus-header.editing .focus-save-btn {
     margin-left: auto;
-    /* Push itself and siblings to the right */
 }
 
-.focus-nav-btn.focus-close-btn {
-    margin-right: 0;
-}
-
-[data-theme="dark"] .focus-nav-btn.focus-close-btn,
-[data-theme="dark"] .focus-nav-btn.focus-analyze-btn {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
-    color: var(--text-secondary);
-}
-
-
-
-/* --- SAVE button: Hidden by default, shown in edit mode --- */
-.focus-nav-btn.focus-save-btn {
+/* --- SAVE & CANCEL (Edit Mode) --- */
+.focus-save-btn {
     display: none;
     color: var(--success-color, #22c55e);
 }
 
-/* EDIT MODE: Show save button */
+.focus-header.editing .focus-save-btn,
+.focus-header.editing .focus-close-btn {
+    background: var(--tonal-bg);
+}
+
 .focus-header.editing .focus-save-btn {
     display: flex;
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-    margin-left: auto;
-    margin-right: 0;
-    background: var(--bg-secondary);
-    box-shadow: var(--shadow-sm) !important;
-    border: 1px solid var(--border-color);
-    color: var(--success-color);
     animation: focusHeaderControlSpringIn 0.34s var(--ease-spring);
 }
 
 .focus-header.editing .focus-save-btn:hover {
-    color: var(--success-bright, var(--success-color)) !important;
-    background: var(--success-light) !important;
-    border-color: transparent;
-    box-shadow: var(--shadow-elevation) !important;
-    transform: translateY(-1px);
-}
-
-[data-theme="dark"] .focus-header.editing .focus-save-btn {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
-}
-
-[data-theme="dark"] .focus-header.editing .focus-save-btn:hover {
-    background: var(--success-light) !important;
-    border-color: transparent;
-}
-
-/* Close → Cancel style in edit mode (neutral at rest, red on hover) */
-.focus-header.editing .focus-close-btn {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    color: var(--success-bright, var(--success-color));
+    background: var(--success-light);
 }
 
 .focus-header.editing .focus-close-btn:hover {
-    color: var(--error-bright, var(--error-color)) !important;
-    background: var(--error-light) !important;
-    border-color: transparent;
-    box-shadow: var(--shadow-elevation) !important;
-    transform: translateY(-1px);
+    color: var(--error-bright, var(--error-color));
+    background: var(--error-light);
 }
-
-[data-theme="dark"] .focus-header.editing .focus-close-btn:hover {
-    color: var(--error-bright) !important;
-    background: var(--error-light) !important;
-    border-color: transparent;
-}
-
-
 
 .focus-nav-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    opacity: 0.28;
+    cursor: default;
 }
-
-
-
-
