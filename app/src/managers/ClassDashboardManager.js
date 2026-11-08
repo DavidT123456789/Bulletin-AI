@@ -1495,7 +1495,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
         const { systemPrompt, userPrompt } = this.buildAIPrompt(this.cachedStats);
         const combined = `=== SYSTEM PROMPT ===\n${systemPrompt}\n\n=== USER PROMPT ===\n${userPrompt}`;
 
-        await FocusPanelRefinement.displayPromptModal(combined, 'Prévisualisation du Prompt');
+        await FocusPanelRefinement.displayPromptModal(combined, 'Prévisualisation du prompt');
     },
 
     /**

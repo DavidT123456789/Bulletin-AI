@@ -252,16 +252,16 @@
 }
 
 /* Brume dynamique verticale aux extrémités (Edge Scrims mutualisés Menu, Modale Mes classes, Paramètres, Guide, Piocher/Déplacer, Trombinoscope, Focus & Plan) */
-:is(.class-dropdown-list, #classManagementModal .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area):is(.can-scroll-top, .can-scroll-bottom) {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area):is(.can-scroll-top, .can-scroll-bottom) {
     -webkit-mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
     mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-top {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-top {
     --scrim-top: transparent 0px, rgba(0, 0, 0, 0.18) 6px, rgba(0, 0, 0, 0.5) 13px, rgba(0, 0, 0, 0.82) 20px, #000 28px;
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-bottom {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-bottom {
     --scrim-bottom: #000 calc(100% - 28px), rgba(0, 0, 0, 0.82) calc(100% - 20px), rgba(0, 0, 0, 0.5) calc(100% - 13px), rgba(0, 0, 0, 0.18) calc(100% - 6px), transparent 100%;
 }
 
@@ -951,7 +951,7 @@
    garde une vraie marge entre la carte et le curseur sans sur-élargir la droite,
    et préserve le curseur de défilement de l'estompage vertical du mask-image */
 @media (min-width: 769px) {
-    :is(.class-dropdown-list, #classManagementModal .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list):is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list):is(.can-scroll-top, .can-scroll-bottom) {
         -webkit-mask-image:
             linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%)),
             linear-gradient(to left, #000 var(--scrollbar-width), transparent var(--scrollbar-width));
@@ -970,6 +970,10 @@
 
     #classManagementModal .modal-body:is(.can-scroll-top, .can-scroll-bottom) {
         padding-right: 12px;
+    }
+
+    .modal-prompt-preview .modal-body:is(.can-scroll-top, .can-scroll-bottom) {
+        padding-right: 17px;
     }
 }
 

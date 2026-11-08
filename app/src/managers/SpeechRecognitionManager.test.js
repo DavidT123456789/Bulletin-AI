@@ -410,11 +410,13 @@ describe('SpeechRecognitionManager', () => {
             const genBtn = document.getElementById('focusGenerateBtn');
             expect(genBtn.disabled).toBe(true);
             expect(genBtn.classList.contains('disabled')).toBe(true);
+            expect(genBtn.getAttribute('data-tooltip')).toBe('Génération indisponible pendant la dictée vocale');
 
             SpeechRecognitionManager.stop();
             mockRecognition.onend();
             expect(genBtn.disabled).toBe(false);
             expect(genBtn.classList.contains('disabled')).toBe(false);
+            expect(genBtn.getAttribute('data-tooltip')).toBe('Clic droit : prévisualiser le prompt');
         });
 
         it('should not disable focusGenerateBtn when dictating in context field', () => {

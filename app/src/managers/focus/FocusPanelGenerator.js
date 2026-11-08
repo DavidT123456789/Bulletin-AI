@@ -92,7 +92,7 @@ export const FocusPanelGenerator = {
         const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
         const promptText = prompts.appreciation || '';
 
-        await panel._displayPromptModal(promptText, 'Prévisualisation du Prompt');
+        await panel._displayPromptModal(promptText, 'Prévisualisation du prompt');
     },
 
     /**
@@ -460,36 +460,29 @@ export const FocusPanelGenerator = {
      */
     updateGenerateButton(result) {
         const generateBtn = document.getElementById('focusGenerateBtn');
-        if (!generateBtn) return;
+        if (!generateBtn || generateBtn.classList.contains('is-loading')) return;
 
-        if (generateBtn.classList.contains('is-loading')) return;
+        let tooltipText = 'Clic droit : prévisualiser le prompt';
 
         if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
             generateBtn.disabled = true;
             generateBtn.classList.add('disabled');
-            const tooltipText = 'Génération indisponible pendant la dictée vocale';
-            generateBtn.setAttribute('data-tooltip', tooltipText);
-            if (generateBtn._tippy) generateBtn._tippy.setContent(tooltipText);
-            return;
+            tooltipText = 'Génération indisponible pendant la dictée vocale';
+        } else {
+            const currentPeriod = appState.currentPeriod;
+            const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
+            const hasAppreciation = Boolean(periodAppreciation && periodAppreciation.trim().length > 0);
+            const isDirty = hasAppreciation && FocusPanelStatus.isBulkRefreshable(result, currentPeriod);
+
+            const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
+            const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
+
+            const state = !hasAppreciation ? 'idle' : (isDirty ? 'dirty' : 'done');
+            UI?.setGenerateButtonState?.(generateBtn, state, { suffixHtml: shortcutKbd });
         }
 
-        const currentPeriod = appState.currentPeriod;
-        const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
-        const hasAppreciation = Boolean(periodAppreciation && periodAppreciation.trim().length > 0);
-        const isDirty = hasAppreciation && FocusPanelStatus.isBulkRefreshable(result, currentPeriod);
-
-        const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
-        const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
-
-        const state = !hasAppreciation ? 'idle' : (isDirty ? 'dirty' : 'done');
-        const tooltipAction = UI?.setGenerateButtonState?.(generateBtn, state, { suffixHtml: shortcutKbd })
-            || (state === 'idle' ? 'Générer' : (state === 'dirty' ? 'Actualiser' : 'Régénérer'));
-
-        const tooltipText = `${tooltipAction} l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>`;
         generateBtn.setAttribute('data-tooltip', tooltipText);
-        if (generateBtn._tippy) {
-            generateBtn._tippy.setContent(tooltipText);
-        }
+        generateBtn._tippy?.setContent(tooltipText);
     },
 
     /**

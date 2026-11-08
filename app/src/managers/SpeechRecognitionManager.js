@@ -216,15 +216,7 @@ export const SpeechRecognitionManager = {
 
                 if (this._activeTarget === 'appreciation') {
                     this._setAppreciationBadge('dictating');
-
-                    // Griser le bouton Générer pendant la dictée vocale
-                    const generateBtn = document.getElementById('focusGenerateBtn');
-                    if (generateBtn) {
-                        generateBtn.disabled = true;
-                        generateBtn.classList.add('disabled');
-                        generateBtn.setAttribute('data-tooltip', 'Génération indisponible pendant la dictée vocale');
-                        generateBtn._tippy?.setContent('Génération indisponible pendant la dictée vocale');
-                    }
+                    FocusPanelManager._updateGenerateButton?.(null);
                 }
             };
 
@@ -662,21 +654,14 @@ export const SpeechRecognitionManager = {
         }
 
         if (this._activeTarget === 'appreciation') {
-            const generateBtn = document.getElementById('focusGenerateBtn');
-            if (generateBtn) {
-                generateBtn.disabled = false;
-                generateBtn.classList.remove('disabled');
-            }
-
             const studentId = this._studentId ?? FocusPanelManager.currentStudentId;
-            const result = appState.generatedResults?.find(r => r.id === studentId);
+            const result = appState.generatedResults?.find(r => r.id === studentId) ?? null;
             if (result) {
                 result.errorMessage = null;
                 result.errorPeriod = null;
-
-                if (studentId === FocusPanelManager.currentStudentId && generateBtn) {
-                    FocusPanelManager._updateGenerateButton?.(result);
-                }
+            }
+            if (studentId === FocusPanelManager.currentStudentId) {
+                FocusPanelManager._updateGenerateButton?.(result);
             }
 
             if (this._gotResult) {

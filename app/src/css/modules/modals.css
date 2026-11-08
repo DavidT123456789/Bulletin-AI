@@ -1831,18 +1831,17 @@
    ==================================================================== */
 .modal-prompt-preview {
     --modal-shell-width: 95%;
-    --modal-width: 640px;
+    --modal-width: 720px;
+}
+
+.modal-prompt-preview > .modal-content {
+    background: var(--modal-scene-bg, var(--bg-color));
 }
 
 .modal-prompt-preview .modal-body {
-    padding: 0;
+    padding: 20px 24px;
     overflow-y: auto;
-    max-height: 60vh;
-}
-
-.prompt-preview-container {
-    width: 100%;
-    padding: 24px 28px;
+    max-height: 72vh;
 }
 
 .prompt-preview-content {
@@ -1850,42 +1849,26 @@
     font-family: var(--font-mono);
     font-size: 0.82rem;
     font-weight: normal;
-    line-height: 1.7;
+    line-height: 1.55;
     white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
     user-select: text;
     cursor: text;
     outline: none;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 20px;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-[data-theme='dark'] .prompt-preview-content {
-    background: var(--bg-color);
-    border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* Copy button success state */
-.modal-prompt-preview .btn-success {
-    background: var(--success-color);
-    color: white;
-    border-color: var(--success-color);
-}
-
 /* Mobile Adjustments */
 @media (max-width: 480px) {
-    .prompt-preview-container {
-        padding: 16px 20px;
+    .modal-prompt-preview .modal-body {
+        padding: 16px 18px;
     }
 
     .prompt-preview-content {
         font-size: 0.78rem;
-        line-height: 1.55;
-        padding: 16px;
     }
 }
 

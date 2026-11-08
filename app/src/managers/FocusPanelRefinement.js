@@ -87,16 +87,17 @@ export const FocusPanelRefinement = {
             prenom: ctx.result.studentData?.prenom || ctx.result.prenom || '',
             nom: ctx.result.studentData?.nom || ctx.result.nom || ''
         });
-        await this.displayPromptModal(promptText, 'Prévisualisation du Prompt (Raffinement)');
+        await this.displayPromptModal(promptText, 'Prévisualisation du prompt (raffinement)');
     },
 
     /**
      * Helper partagé pour afficher une modale de prévisualisation de prompt
      * @param {string} promptText - Le texte du prompt à afficher
-     * @param {string} title - Le titre de la modale
+     * @param {string} [title='Prévisualisation du prompt'] - Le titre de la modale
      */
-    async displayPromptModal(promptText, title) {
+    async displayPromptModal(promptText, title = 'Prévisualisation du prompt') {
         const escapedText = Utils.escapeHtml(promptText);
+        const escapedTitle = Utils.escapeHtml(title);
 
         const modalId = 'promptPreviewModal';
         let modal = document.getElementById(modalId);
@@ -105,22 +106,23 @@ export const FocusPanelRefinement = {
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'modal modal-prompt-preview';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'promptPreviewModalTitle');
 
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">
-                        <span class="modal-title-icon"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
-                        <span class="modal-title-text">${title}</span>
+                    <h2 class="modal-title" id="promptPreviewModalTitle">
+                        <span class="modal-title-icon"><iconify-icon icon="solar:code-square-linear"></iconify-icon></span>
+                        <span class="modal-title-text">${escapedTitle}</span>
                     </h2>
                     <button class="close-button" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="prompt-preview-container">
-                        <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
-                    </div>
+                    <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>
@@ -133,21 +135,33 @@ export const FocusPanelRefinement = {
         `;
 
         document.body.appendChild(modal);
-        ModalUI.openModal(modal);
 
         return new Promise((resolve) => {
-            const copyBtn = document.getElementById('promptPreviewCopyBtn');
-            const closeBtn = document.getElementById('promptPreviewCloseBtn');
+            const copyBtn = modal.querySelector('#promptPreviewCopyBtn');
+            const closeBtn = modal.querySelector('#promptPreviewCloseBtn');
             const xBtn = modal.querySelector('.close-button');
             let closed = false;
+            let copyResetTimer = null;
+
+            const finalizeClose = () => {
+                if (closed) return;
+                closed = true;
+                if (copyResetTimer) {
+                    clearTimeout(copyResetTimer);
+                    copyResetTimer = null;
+                }
+                resolve();
+            };
 
             const handleCopy = async () => {
                 try {
                     await navigator.clipboard.writeText(promptText);
                     UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
+                    if (copyResetTimer) clearTimeout(copyResetTimer);
                     copyBtn.innerHTML = '<iconify-icon icon="solar:check-read-linear"></iconify-icon> Copié';
                     copyBtn.classList.replace('btn-primary', 'btn-success');
-                    setTimeout(() => {
+                    copyResetTimer = setTimeout(() => {
+                        copyResetTimer = null;
                         copyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon> Copier';
                         copyBtn.classList.replace('btn-success', 'btn-primary');
                     }, 2000);
@@ -158,13 +172,14 @@ export const FocusPanelRefinement = {
 
             const handleClose = () => {
                 if (closed) return;
-                closed = true;
-                resolve();
+                finalizeClose();
                 ModalUI.closeModal(modal);
             };
 
-            copyBtn.addEventListener('click', handleCopy);
-            closeBtn.addEventListener('click', handleClose, { once: true });
+            ModalUI.openModal(modal, { onClose: finalizeClose });
+
+            copyBtn?.addEventListener('click', handleCopy);
+            closeBtn?.addEventListener('click', handleClose, { once: true });
             xBtn?.addEventListener('click', handleClose, { once: true });
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) handleClose();
