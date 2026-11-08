@@ -77,6 +77,10 @@ const getCommonTippyConfig = () => {
                     }
                 });
             }
+            const latestTooltip = instance.reference?.getAttribute?.('data-tooltip');
+            if (latestTooltip && latestTooltip !== instance.props?.content && typeof instance.setContent === 'function') {
+                instance.setContent(latestTooltip);
+            }
             if (typeof instance.setProps === 'function' && typeof instance.reference?.getBoundingClientRect === 'function') {
                 const ref = instance.reference;
                 const anchorSelector = ref.getAttribute?.('data-tooltip-anchor');

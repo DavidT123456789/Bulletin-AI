@@ -81,6 +81,8 @@ export const WelcomeManager = {
 
         const totalWelcomeSteps = 4;
         let isAnimating = false;
+        let stepOutTimer = null;
+        let stepInTimer = null;
         let currentProvider = 'albert';
         let isWelcomeCompleted = false;
 
@@ -209,25 +211,44 @@ export const WelcomeManager = {
         const showWelcomeStep = (step, direction = 'next', options = {}) => {
             if (isAnimating && !options?.causedByHistory) return;
 
-            const oldStepEl = document.getElementById(`welcome-step-${currentWelcomeStep}`);
+            const previousStep = currentWelcomeStep;
+            const oldStepEl = document.getElementById(`welcome-step-${previousStep}`);
             const newStepEl = document.getElementById(`welcome-step-${step}`);
 
-            if (!newStepEl || step === currentWelcomeStep) return;
+            if (!newStepEl || step === previousStep) return;
+
+            if (stepOutTimer) {
+                clearTimeout(stepOutTimer);
+                stepOutTimer = null;
+            }
+            if (stepInTimer) {
+                clearTimeout(stepInTimer);
+                stepInTimer = null;
+            }
 
             isAnimating = true;
 
-            if (step > 1) {
+            if (step > previousStep) {
                 HistoryManager.pushState('welcomeWizardStep', (opts) => {
                     if (currentWelcomeStep > 1) {
                         showWelcomeStep(currentWelcomeStep - 1, 'prev', opts);
                     }
                 });
             } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('welcomeWizardStep')) {
-                HistoryManager.handleManualClose('welcomeWizardStep');
+                if (step === 1) {
+                    HistoryManager.handleManualClose('welcomeWizardStep');
+                } else {
+                    HistoryManager.handleManualClose('welcomeWizardStep', { stepCount: previousStep - step });
+                }
             }
 
-            // Clean previous animation classes
-            document.querySelectorAll('.welcome-step').forEach(cleanAnimationClasses);
+            // Clean previous animation classes and stale active states on intermediate steps
+            document.querySelectorAll('.welcome-step').forEach(el => {
+                cleanAnimationClasses(el);
+                if (el !== oldStepEl && el !== newStepEl) {
+                    el.classList.remove('active');
+                }
+            });
 
             // Animate out the current step
             if (oldStepEl) {
@@ -235,7 +256,8 @@ export const WelcomeManager = {
                 oldStepEl.classList.add(outClass);
 
                 // Remove active class after animation
-                setTimeout(() => {
+                stepOutTimer = setTimeout(() => {
+                    stepOutTimer = null;
                     oldStepEl.classList.remove('active');
                     cleanAnimationClasses(oldStepEl);
                 }, 400);
@@ -246,7 +268,8 @@ export const WelcomeManager = {
             newStepEl.classList.add('active', inClass);
 
             // Update navigation state
-            setTimeout(() => {
+            stepInTimer = setTimeout(() => {
+                stepInTimer = null;
                 cleanAnimationClasses(newStepEl);
                 isAnimating = false;
             }, 500);

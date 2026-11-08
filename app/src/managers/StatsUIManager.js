@@ -15,7 +15,7 @@ import { Utils } from '../utils/Utils.js';
 import { StatsService } from '../services/StatsService.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { UI } from './UIManager.js';
-import { GRADE_BRACKET_IDS, GRADE_BRACKET_CLASSES, getGradeBracketIndex } from '../config/academicConstants.js';
+import { GRADE_BRACKET_IDS, GRADE_BRACKET_CLASSES } from '../config/academicConstants.js';
 
 /**
  * Module de gestion des statistiques de l'interface utilisateur.
@@ -133,17 +133,15 @@ export const StatsUI = {
     },
 
     /**
-     * Construit le HTML d'une infobulle listant jusqu'à 8 élèves triés avec troncature "+X autres…".
+     * Construit le HTML d'une infobulle listant jusqu'à 8 élèves avec troncature "+X autres…".
      * @param {string} header - En-tête de l'infobulle
      * @param {Array} items - Liste d'élèves à afficher
      * @param {function(Object): string} formatLineFn - Formateur de ligne pour un élève (déjà échappé ou texte brut)
-     * @param {boolean} [boldHeaderWhenEmpty=false] - Conserver le gras sur l'en-tête même si la liste est vide
      * @returns {string}
-     * @private
      */
-    _formatStudentListTooltip(header, items, formatLineFn, boldHeaderWhenEmpty = false) {
+    formatStudentListTooltip(header, items, formatLineFn) {
         if (!Array.isArray(items) || items.length === 0) {
-            return boldHeaderWhenEmpty ? `<strong>${header}</strong>` : header;
+            return header;
         }
         const maxShown = 8;
         const lines = items.slice(0, maxShown).map(formatLineFn);
@@ -155,9 +153,50 @@ export const StatsUI = {
     },
 
     /**
+     * Formate une infobulle synthétique sur une ligne (effectif + part en % + condition).
+     * Mutualisé entre l'histogramme de Répartition et la légende de Dynamique.
+     * @param {number} count - Nombre d'élèves dans la catégorie
+     * @param {number} total - Effectif total de référence
+     * @param {string} conditionStr - Plage de notes ou seuil d'évolution
+     * @returns {string}
+     * @private
+     */
+    _formatCountShareTooltip(count, total, conditionStr) {
+        const pluriel = count > 1 ? 's' : '';
+        const percentStr = (total > 0 && count > 0)
+            ? ` · ${Math.round((count / total) * 100)} %`
+            : '';
+        return `${count} élève${pluriel}${percentStr} (${conditionStr})`;
+    },
+
+    /**
+     * Synchronise l'état d'accessibilité et d'interactivité (`data-count`, `tabindex`, `aria-disabled`)
+     * d'une tuile de filtre statistique.
+     * @param {HTMLElement|null} el - Élément DOM cible
+     * @param {number} count - Effectif associé au filtre
+     * @param {boolean} [isAvailable=true] - Indique si la donnée est disponible pour la période
+     * @private
+     */
+    _setFilterTileAccessibility(el, count, isAvailable = true) {
+        if (!el) return;
+        if (isAvailable) {
+            el.setAttribute('data-count', String(count));
+        } else {
+            el.removeAttribute('data-count');
+        }
+        if (isAvailable && count > 0) {
+            el.setAttribute('tabindex', '0');
+            el.removeAttribute('aria-disabled');
+        } else {
+            el.setAttribute('tabindex', '-1');
+            el.setAttribute('aria-disabled', 'true');
+        }
+    },
+
+    /**
      * Met à jour les tooltips des statistiques d'évolution avec les seuils actuels
-     * et, lorsque disponible, la liste nominative des élèves concernés.
-     * @param {Object|null} [stats=null] - Statistiques calculées incluant evolutionBuckets
+     * et, lorsque la période de comparaison est active, l'effectif et le pourcentage.
+     * @param {Object|null} [stats=null] - Statistiques calculées
      * @param {boolean} [hasEvolutionData=false] - Indique si une période précédente est disponible
      */
     updateStatsTooltips(stats = null, hasEvolutionData = false) {
@@ -168,40 +207,49 @@ export const StatsUI = {
         const itemsConfig = [
             {
                 filterId: 'progressCount',
-                header: `Élèves en progrès (≥ +${posStr} pt)`,
-                bucket: stats?.evolutionBuckets?.progress || [],
-                sorter: (a, b) => (b.diff - a.diff) || (b.grade - a.grade)
+                statKey: 'progress',
+                rule: `≥ +${posStr} pt`,
+                fallbackLabel: 'Élèves en progrès'
             },
             {
                 filterId: 'stableCount',
-                header: `Élèves stables (entre ${negStr} et +${posStr} pt)`,
-                bucket: stats?.evolutionBuckets?.stable || [],
-                sorter: (a, b) => (b.grade - a.grade) || (b.diff - a.diff)
+                statKey: 'stable',
+                rule: `entre ${negStr} et +${posStr} pt`,
+                fallbackLabel: 'Élèves stables'
             },
             {
                 filterId: 'regressionCount',
-                header: `Élèves en régression (≤ ${negStr} pt)`,
-                bucket: stats?.evolutionBuckets?.regression || [],
-                sorter: (a, b) => (a.diff - b.diff) || (a.grade - b.grade)
+                statKey: 'regression',
+                rule: `≤ ${negStr} pt`,
+                fallbackLabel: 'Élèves en régression'
             }
         ];
 
-        const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
+        const resolvedElements = itemsConfig.map(cfg => ({
+            ...cfg,
+            el: document.querySelector(`.legend-item[data-filter-id="${cfg.filterId}"]`)
+        }));
 
-        itemsConfig.forEach(({ filterId, header, bucket, sorter }) => {
-            const el = document.querySelector(`.legend-item[data-filter-id="${filterId}"]`);
+        const hasDomCounts = !stats && resolvedElements.some(({ el }) => el?.hasAttribute('data-count'));
+        const isEvoActive = Boolean((stats && hasEvolutionData) || hasDomCounts);
+
+        const counts = resolvedElements.map(({ statKey, el }) => {
+            if (stats && hasEvolutionData) return Number(stats[statKey]) || 0;
+            if (hasDomCounts && el?.hasAttribute('data-count')) return parseInt(el.getAttribute('data-count'), 10) || 0;
+            return null;
+        });
+        const total = isEvoActive ? counts.reduce((sum, n) => sum + (n || 0), 0) : 0;
+
+        resolvedElements.forEach(({ el, rule, fallbackLabel }, idx) => {
             if (!el) return;
-
-            const sorted = (hasEvolutionData && Array.isArray(bucket) && bucket.length > 0)
-                ? [...bucket].sort(sorter)
-                : [];
-
-            el.dataset.tooltip = this._formatStudentListTooltip(header, sorted, s => {
-                const sign = s.diff > 0 ? '+' : '';
-                const diffStr = Number.isInteger(s.diff) ? String(s.diff) : s.diff.toFixed(1).replace('.', ',');
-                const unit = Math.abs(s.diff) >= 2 ? 'pts' : 'pt';
-                return `${escape(s.name)} (${sign}${diffStr} ${unit})`;
-            });
+            const count = counts[idx];
+            const tooltip = (isEvoActive && count !== null)
+                ? this._formatCountShareTooltip(count, total, rule)
+                : `${fallbackLabel} (${rule})`;
+            el.dataset.tooltip = tooltip;
+            if (el._tippy && typeof el._tippy.setContent === 'function') {
+                el._tippy.setContent(tooltip);
+            }
         });
     },
 
@@ -217,9 +265,9 @@ export const StatsUI = {
     calculateStats(filteredResults, activePeriod, previousPeriod) {
         const stats = {
             avgGrade: '--', prevAvgGrade: '--', minGrade: '--', maxGrade: '--',
+            minStudents: [], maxStudents: [],
             avgWords: 0, avgChars: 0, progress: 0, stable: 0, regression: 0,
-            median: '--', heterogeneity: null, distribution: [0, 0, 0, 0, 0],
-            evolutionBuckets: { progress: [], stable: [], regression: [] }
+            median: '--', heterogeneity: null, distribution: [0, 0, 0, 0, 0]
         };
 
         if (filteredResults.length === 0) return stats;
@@ -227,6 +275,7 @@ export const StatsUI = {
         let totalPrevGrades = 0, prevGradeCount = 0;
         let words = 0, chars = 0, errFree = 0;
         const currentGrades = [];
+        const gradedStudents = [];
 
         filteredResults.forEach(res => {
             // Statistique 1: Notes (Indépendant des erreurs d'appréciation)
@@ -235,6 +284,12 @@ export const StatsUI = {
 
             if (!isNaN(currentGrade)) {
                 currentGrades.push(currentGrade);
+                const studentName = res.studentData?.name
+                    || (Utils.formatStudentName ? Utils.formatStudentName(res.nom || res.studentData?.nom, res.prenom || res.studentData?.prenom) : '')
+                    || `${res.nom || res.studentData?.nom || ''} ${res.prenom || res.studentData?.prenom || ''}`.trim();
+                if (studentName) {
+                    gradedStudents.push({ name: studentName, grade: currentGrade });
+                }
 
                 // Statistique 2: Évolution
                 if (previousPeriod) {
@@ -246,20 +301,10 @@ export const StatsUI = {
 
                         const diff = StatsService.computeEvolutionDiff(currentGrade, prevGrade);
                         const category = StatsService.classifyEvolutionCategory(diff);
-                        const studentName = res.studentData?.name
-                            || (Utils.formatStudentName ? Utils.formatStudentName(res.nom || res.studentData?.nom, res.prenom || res.studentData?.prenom) : '')
-                            || `${res.nom || res.studentData?.nom || ''} ${res.prenom || res.studentData?.prenom || ''}`.trim();
 
-                        if (category === 'progress') {
-                            stats.progress++;
-                            if (studentName) stats.evolutionBuckets.progress.push({ name: studentName, diff, grade: currentGrade });
-                        } else if (category === 'stable') {
-                            stats.stable++;
-                            if (studentName) stats.evolutionBuckets.stable.push({ name: studentName, diff, grade: currentGrade });
-                        } else if (category === 'regression') {
-                            stats.regression++;
-                            if (studentName) stats.evolutionBuckets.regression.push({ name: studentName, diff, grade: currentGrade });
-                        }
+                        if (category === 'progress') stats.progress++;
+                        else if (category === 'stable') stats.stable++;
+                        else if (category === 'regression') stats.regression++;
                     }
                 }
             }
@@ -278,6 +323,8 @@ export const StatsUI = {
             stats.avgGrade = gradeSummary.average;
             stats.minGrade = gradeSummary.min;
             stats.maxGrade = gradeSummary.max;
+            stats.minStudents = gradedStudents.filter(s => s.grade === gradeSummary.min).map(s => s.name);
+            stats.maxStudents = gradedStudents.filter(s => s.grade === gradeSummary.max).map(s => s.name);
             stats.median = gradeSummary.median;
             stats.heterogeneity = gradeSummary.heterogeneity;
             stats.distribution = gradeSummary.distribution;
@@ -477,11 +524,38 @@ export const StatsUI = {
         // Utilise updateProgressBars existant
         this.updateProgressBars(stats.progress, stats.stable, stats.regression);
 
-        // Update Median (maintenant dans performance-details)
+        // Update Median, Min & Max tooltips (maintenant dans performance-details)
         const medianEl = document.getElementById('medianGradeOutput');
         if (medianEl) {
             const medianValue = stats.median === '--' ? '--' : (Number.isInteger(stats.median) ? String(stats.median) : stats.median.toFixed(1).replace('.', ','));
             medianEl.textContent = medianValue;
+        }
+
+        const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
+        const minItemEl = document.querySelector('.detail-item[data-filter-id="minGrade"]');
+        if (minItemEl) {
+            const minFormatted = typeof stats.minGrade === 'number'
+                ? ` (${(Number.isInteger(stats.minGrade) ? String(stats.minGrade) : stats.minGrade.toFixed(1).replace('.', ','))}/20)`
+                : '';
+            this._setFilterTileAccessibility(minItemEl, stats.minStudents.length);
+            minItemEl.dataset.tooltip = this.formatStudentListTooltip(
+                `Note la plus basse${minFormatted}`,
+                stats.minStudents,
+                name => escape(name)
+            );
+        }
+
+        const maxItemEl = document.querySelector('.detail-item[data-filter-id="maxGrade"]');
+        if (maxItemEl) {
+            const maxFormatted = typeof stats.maxGrade === 'number'
+                ? ` (${(Number.isInteger(stats.maxGrade) ? String(stats.maxGrade) : stats.maxGrade.toFixed(1).replace('.', ','))}/20)`
+                : '';
+            this._setFilterTileAccessibility(maxItemEl, stats.maxStudents.length);
+            maxItemEl.dataset.tooltip = this.formatStudentListTooltip(
+                `Note la plus haute${maxFormatted}`,
+                stats.maxStudents,
+                name => escape(name)
+            );
         }
 
         // Update Heterogeneity Badge (dans dispersion-card header)
@@ -509,13 +583,11 @@ export const StatsUI = {
         }
 
         // Update Histogram (en parallèle avec les animations)
-        this.updateHistogram(stats.distribution, statsSource, activePeriod);
+        this.updateHistogram(stats.distribution);
 
-        await Promise.all(animationPromises);
-
-        // Refresh tooltips via UI manager
+        // Refresh tooltips scoped to statsContainer immediately (avoids global teardown after 500ms)
         if (uiManager && uiManager.initTooltips) {
-            uiManager.initTooltips();
+            uiManager.initTooltips(document.getElementById('statsContainer'));
         }
 
         await Promise.all(animationPromises);
@@ -524,26 +596,12 @@ export const StatsUI = {
     /**
      * Met à jour l'histogramme de distribution des notes.
      * @param {number[]} distribution - Tableau [0-4, 4-8, 8-12, 12-16, 16-20]
-     * @param {Array} [filteredResults] - Résultats de la classe pour enrichir le tooltip avec les noms des élèves
-     * @param {string} [activePeriod] - Période active
      */
-    updateHistogram(distribution, filteredResults = this._getStatsSourceResults(appState.currentPeriod), activePeriod = appState.currentPeriod) {
+    updateHistogram(distribution) {
         if (!distribution || distribution.length !== 5) return;
         const maxCount = Math.max(...distribution);
+        const totalCount = distribution.reduce((sum, n) => sum + n, 0);
         const ranges = GRADE_BRACKET_IDS;
-        const rangeBuckets = [[], [], [], [], []];
-
-        if (Array.isArray(filteredResults) && activePeriod) {
-            filteredResults.forEach(res => {
-                const raw = res?.studentData?.periods?.[activePeriod]?.grade;
-                const grade = StatsService.parseGrade(raw);
-                if (isNaN(grade)) return;
-                const name = res?.studentData?.name || `${res?.studentData?.nom || ''} ${res?.studentData?.prenom || ''}`.trim();
-                if (!name) return;
-                const idx = getGradeBracketIndex(grade);
-                rangeBuckets[idx].push({ name, grade });
-            });
-        }
 
         ranges.forEach((range, index) => {
             const barGroup = document.querySelector(`.hist-bar-group[data-range="${range}"]`);
@@ -556,28 +614,8 @@ export const StatsUI = {
                 const bar = barGroup.querySelector('.hist-bar');
                 if (bar) bar.style.height = `${Math.max(heightPercent, 4)}%`;
 
-                barGroup.setAttribute('data-count', count);
-                if (count === 0) {
-                    barGroup.setAttribute('tabindex', '-1');
-                    barGroup.setAttribute('aria-disabled', 'true');
-                } else {
-                    barGroup.setAttribute('tabindex', '0');
-                    barGroup.removeAttribute('aria-disabled');
-                }
-
-                // Update tooltip (Tippy.js) with student names when available
-                const pluriel = count > 1 ? 's' : '';
-                const headerText = `${count} élève${pluriel} (${range}/20)`;
-                const studentsInRange = rangeBuckets[index].sort((a, b) => b.grade - a.grade);
-                const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
-
-                barGroup.setAttribute(
-                    'data-tooltip',
-                    this._formatStudentListTooltip(headerText, studentsInRange, s => {
-                        const gradeStr = Number.isInteger(s.grade) ? String(s.grade) : s.grade.toFixed(1).replace('.', ',');
-                        return `${escape(s.name)} (${gradeStr})`;
-                    })
-                );
+                this._setFilterTileAccessibility(barGroup, count);
+                barGroup.setAttribute('data-tooltip', this._formatCountShareTooltip(count, totalCount, `${range}/20`));
             }
         });
     },
@@ -645,18 +683,7 @@ export const StatsUI = {
 
         evolutionCard.querySelectorAll('.evolution-legend .legend-item').forEach(item => {
             const count = legendCounts[item.dataset.filterId] ?? 0;
-            if (hasEvolutionData) {
-                item.setAttribute('data-count', String(count));
-            } else {
-                item.removeAttribute('data-count');
-            }
-            if (hasEvolutionData && count > 0) {
-                item.setAttribute('tabindex', '0');
-                item.removeAttribute('aria-disabled');
-            } else {
-                item.setAttribute('tabindex', '-1');
-                item.setAttribute('aria-disabled', 'true');
-            }
+            this._setFilterTileAccessibility(item, count, hasEvolutionData);
         });
 
         this.updateStatsTooltips(stats, hasEvolutionData);

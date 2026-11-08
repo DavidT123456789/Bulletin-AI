@@ -416,7 +416,8 @@ export const ImportWizardManager = {
                     if (HistoryManager.isOpen('importWizardStep')) {
                         HistoryManager.handleManualClose('importWizardStep');
                     }
-                }
+                },
+                onClosed: () => this._reset()
             });
         }
     },
@@ -573,7 +574,8 @@ export const ImportWizardManager = {
                     if (HistoryManager.isOpen('importWizardStep')) {
                         HistoryManager.handleManualClose('importWizardStep');
                     }
-                }
+                },
+                onClosed: () => this._reset()
             });
 
             // Pre-fill the textarea with sample data
@@ -642,14 +644,18 @@ export const ImportWizardManager = {
             this._togglePeriodDropdown(false);
             DropdownManager.closeAll();
             this.currentStep = step;
-            if (step > 1) {
+            if (step > previousStep) {
                 HistoryManager.pushState('importWizardStep', (opts) => {
                     if (this.currentStep > 1) {
                         this.prevStep(opts);
                     }
                 });
             } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('importWizardStep')) {
-                HistoryManager.handleManualClose('importWizardStep');
+                if (step === 1) {
+                    HistoryManager.handleManualClose('importWizardStep');
+                } else {
+                    HistoryManager.handleManualClose('importWizardStep', { stepCount: previousStep - step });
+                }
             }
             this._updateUI(previousStep);
         }

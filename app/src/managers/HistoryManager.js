@@ -54,7 +54,13 @@ export const HistoryManager = {
 
                 // 2. Si un élément UI est dans la pile -> dépiler et fermer le plus récent (LIFO)
                 if (this._stack.length > 0) {
-                    const top = this._stack.pop();
+                    const topIndex = this._stack.length - 1;
+                    const top = this._stack[topIndex];
+                    if (top && top.steps > 1) {
+                        top.steps--;
+                    } else {
+                        this._stack.pop();
+                    }
                     try {
                         top?.closeCallback?.({ causedByHistory: true });
                     } catch (err) {
@@ -99,16 +105,22 @@ export const HistoryManager = {
      * 
      * @param {string} id - Identifiant unique de l'élément (ex: 'seatingChartEdit', 'focusPanel')
      * @param {Function} closeCallback - Fonction à exécuter pour fermer l'élément
+     * @param {Object} [options={}] - Options (ex: { allowMultiple: true } pour les assistants multi-étapes)
      */
-    pushState(id, closeCallback) {
+    pushState(id, closeCallback, options = {}) {
         this.init();
         if (!id) return;
 
-        // Éviter d'empiler deux fois le même ID dans la pile (mettre à jour le callback si déjà présent)
+        const isMultiStep = Boolean(options.allowMultiple || id.endsWith('WizardStep'));
+
+        // Éviter d'empiler deux fois le même ID dans la pile (sauf assistants multi-étapes qui incrémentent leur compteur)
         const existingIndex = this._stack.findIndex(item => item.id === id);
         if (existingIndex !== -1) {
             this._stack[existingIndex].closeCallback = closeCallback;
-            return;
+            if (!isMultiStep) {
+                return;
+            }
+            this._stack[existingIndex].steps = (this._stack[existingIndex].steps || 1) + 1;
         }
 
         const useReplace = this._replaceNextPush;
@@ -124,7 +136,9 @@ export const HistoryManager = {
             }
         } catch (_) {}
 
-        this._stack.push({ id, closeCallback });
+        if (existingIndex === -1) {
+            this._stack.push({ id, closeCallback, steps: 1 });
+        }
     },
 
     /**
@@ -132,31 +146,32 @@ export const HistoryManager = {
      * Synchronise physiquement l'historique du navigateur sans déclencher le closeCallback.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
-     * @param {Object} [options={}] - Options (ex: { replaceNext: true } lors d'un handoff direct vers une autre modale)
+     * @param {Object} [options={}] - Options (ex: { replaceNext: true } lors d'un handoff direct, { stepCount: 1 } pour reculer d'une étape)
      */
     handleManualClose(id, options = {}) {
         if (!id || this._stack.length === 0) return;
 
-        const topIndex = this._stack.length - 1;
-        const top = this._stack[topIndex];
+        const index = this._stack.findIndex(item => item.id === id);
+        if (index === -1) return;
 
-        if (top.id === id) {
-            this._stack.pop();
-            if (options.replaceNext) {
-                this._replaceNextPush = true;
-            } else {
+        const item = this._stack[index];
+        const currentSteps = item.steps || 1;
+        const stepCount = options.stepCount > 0 ? Math.min(options.stepCount, currentSteps) : currentSteps;
+
+        if (stepCount < currentSteps) {
+            item.steps = currentSteps - stepCount;
+        } else {
+            this._stack.splice(index, 1);
+        }
+
+        if (options.replaceNext) {
+            this._replaceNextPush = true;
+            for (let i = 1; i < stepCount; i++) {
                 this._triggerProgrammaticBack();
             }
         } else {
-            // Fermeture désordonnée (ex: parent fermé emportant un enfant)
-            const index = this._stack.findIndex(item => item.id === id);
-            if (index !== -1) {
-                this._stack.splice(index, 1);
-                if (options.replaceNext) {
-                    this._replaceNextPush = true;
-                } else {
-                    this._triggerProgrammaticBack();
-                }
+            for (let i = 0; i < stepCount; i++) {
+                this._triggerProgrammaticBack();
             }
         }
     },

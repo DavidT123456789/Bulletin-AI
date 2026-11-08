@@ -1166,6 +1166,29 @@ describe('ModalUIManager', () => {
             cancelBtn.click();
             await promise;
         });
+
+        it('should dispatch settings-modal-close when personalizationModal or appSettingsModal is closed via Mobile Back (causedByHistory)', () => {
+            const closeEvents = [];
+            const handler = (e) => closeEvents.push(e.detail);
+            document.addEventListener('settings-modal-close', handler);
+
+            const personalizationModal = document.createElement('div');
+            personalizationModal.id = 'personalizationModal';
+            personalizationModal.className = 'modal';
+            document.body.appendChild(personalizationModal);
+
+            ModalUI.openModal(personalizationModal);
+            ModalUI.closeModal(personalizationModal, { causedByHistory: true });
+
+            expect(closeEvents).toHaveLength(1);
+            expect(closeEvents[0]).toEqual({
+                modalId: 'personalizationModal',
+                options: { causedByHistory: true }
+            });
+
+            document.removeEventListener('settings-modal-close', handler);
+            personalizationModal.remove();
+        });
     });
 });
 

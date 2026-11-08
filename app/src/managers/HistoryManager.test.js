@@ -309,5 +309,99 @@ describe('HistoryManager', () => {
             expect(HistoryManager.isOpen('pwaModalOverlay')).toBe(false);
             expect(document.getElementById('pwaModalOverlay').classList.contains('visible')).toBe(false);
         });
+
+        it('devrait gérer les étapes multiples d’un Wizard (1 -> 2 -> 3 -> Retour -> 2 -> Retour -> 1 -> Retour -> Fermer) sans pushState pendant popstate', () => {
+            HistoryManager.init();
+            const pushSpy = vi.spyOn(history, 'pushState');
+            const backSpy = vi.spyOn(history, 'back').mockImplementation(() => {});
+
+            let currentStep = 1;
+            const closeModalCb = vi.fn();
+            const prevStepCb = vi.fn(() => {
+                if (currentStep > 1) currentStep--;
+            });
+
+            // Ouverture de la modale à l'étape 1
+            HistoryManager.pushState('importWizardModal', closeModalCb);
+            // Passage 1 -> 2 puis 2 -> 3
+            currentStep = 2;
+            HistoryManager.pushState('importWizardStep', prevStepCb);
+            currentStep = 3;
+            HistoryManager.pushState('importWizardStep', prevStepCb);
+
+            expect(HistoryManager.getStack().map(s => s.id)).toEqual(['importWizardModal', 'importWizardStep']);
+            expect(HistoryManager.getStack()[1].steps).toBe(2);
+            expect(pushSpy).toHaveBeenCalledTimes(3);
+
+            pushSpy.mockClear();
+
+            // 1er Retour mobile : étape 3 -> 2 (sans ré-empiler pendant popstate)
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(currentStep).toBe(2);
+            expect(HistoryManager.isOpen('importWizardStep')).toBe(true);
+            expect(HistoryManager.getStack()[1].steps).toBe(1);
+            expect(pushSpy).not.toHaveBeenCalled();
+            expect(closeModalCb).not.toHaveBeenCalled();
+
+            // 2e Retour mobile : étape 2 -> 1 (dépile importWizardStep)
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(currentStep).toBe(1);
+            expect(HistoryManager.isOpen('importWizardStep')).toBe(false);
+            expect(pushSpy).not.toHaveBeenCalled();
+            expect(closeModalCb).not.toHaveBeenCalled();
+
+            // 3e Retour mobile : ferme la modale
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(closeModalCb).toHaveBeenCalledWith({ causedByHistory: true });
+            expect(HistoryManager.getStack().length).toBe(0);
+            expect(backSpy).not.toHaveBeenCalled();
+        });
+
+        it('devrait supporter le recul partiel (stepCount: 1) et la fermeture complète depuis l’étape 3 d’un Wizard', () => {
+            HistoryManager.init();
+            const backSpy = vi.spyOn(history, 'back').mockImplementation(() => {});
+            const prevStepCb = vi.fn();
+
+            HistoryManager.pushState('importWizardStep', prevStepCb);
+            HistoryManager.pushState('importWizardStep', prevStepCb);
+            HistoryManager.pushState('importWizardStep', prevStepCb);
+            expect(HistoryManager.getStack()[0].steps).toBe(3);
+
+            // Bouton UI "Précédent" (4 -> 3) : décrémente d'1 cran
+            HistoryManager.handleManualClose('importWizardStep', { stepCount: 1 });
+            expect(HistoryManager.isOpen('importWizardStep')).toBe(true);
+            expect(HistoryManager.getStack()[0].steps).toBe(2);
+            expect(backSpy).toHaveBeenCalledTimes(1);
+
+            backSpy.mockClear();
+
+            // Fermeture complète depuis l'étape 3 : dépile les 2 étapes restantes
+            HistoryManager.handleManualClose('importWizardStep');
+            expect(HistoryManager.isOpen('importWizardStep')).toBe(false);
+            expect(backSpy).toHaveBeenCalledTimes(2);
+        });
+
+        it('devrait remplacer l’entrée d’historique (replaceState) sans history.back lors d’un handoff menu -> modale (replaceNext: true)', () => {
+            HistoryManager.init();
+            const backSpy = vi.spyOn(history, 'back').mockImplementation(() => {});
+            const replaceSpy = vi.spyOn(history, 'replaceState');
+            const pushSpy = vi.spyOn(history, 'pushState');
+
+            HistoryManager.pushState('headerMenu', vi.fn());
+            pushSpy.mockClear();
+            replaceSpy.mockClear();
+
+            HistoryManager.handleManualClose('headerMenu', { replaceNext: true });
+            HistoryManager.pushState('appSettingsModal', vi.fn());
+
+            expect(backSpy).not.toHaveBeenCalled();
+            expect(pushSpy).not.toHaveBeenCalled();
+            expect(replaceSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ uiOpen: true, uiId: 'appSettingsModal' }),
+                '',
+                ''
+            );
+            expect(HistoryManager.getStack().map(s => s.id)).toEqual(['appSettingsModal']);
+        });
     });
 });

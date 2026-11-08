@@ -73,7 +73,9 @@ export const GeneralListeners = {
                 }
 
                 if (wasOpen && !options?.causedByHistory && HistoryManager.isOpen('headerMenu')) {
-                    HistoryManager.handleManualClose('headerMenu');
+                    HistoryManager.handleManualClose('headerMenu', {
+                        replaceNext: Boolean(options?.replaceNext || options?.handoff)
+                    });
                 }
             };
             this.closeHeaderMenu = closeMenu;
@@ -84,7 +86,7 @@ export const GeneralListeners = {
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
-                    ModelSelectionManager.closeDropdown?.();
+                    ModelSelectionManager.closeDropdown?.({ replaceNext: true });
                     DOM.headerMenuDropdown.classList.add('open');
                     DOM.headerMenuBtn.classList.add('active');
                     DOM.headerMenuBtn.setAttribute('aria-expanded', 'true');
@@ -194,14 +196,14 @@ export const GeneralListeners = {
             // Integrated Menu Items Handlers
             if (DOM.personalizationBtn) {
                 addClickListener(DOM.personalizationBtn, () => {
-                    closeMenu();
+                    closeMenu({ replaceNext: true });
                     UI.openModal(DOM.personalizationModal);
                 });
             }
 
             if (DOM.settingsButton) {
                 addClickListener(DOM.settingsButton, () => {
-                    closeMenu();
+                    closeMenu({ replaceNext: true });
                     UI.openModal(DOM.settingsModal);
                     SettingsUIManager.updateApiStatusDisplay();
                 });
@@ -209,7 +211,7 @@ export const GeneralListeners = {
 
             if (DOM.helpButton) {
                 addClickListener(DOM.helpButton, () => {
-                    closeMenu();
+                    closeMenu({ replaceNext: true });
                     App.handleHelpButtonClick();
                 });
             }
@@ -218,11 +220,9 @@ export const GeneralListeners = {
 
 
         // Personalization Modal Actions
-        const closePersonalization = (isSave = false) => {
-            // Fermer la modale d'abord pour une animation fluide
-            UI.closeModal(DOM.personalizationModal);
-
-            // If cancelling (not saving), restore the original state after animation (250ms)
+        let isSavingPersonalization = false;
+        let personalizationOutcomeHandled = false;
+        const applyPersonalizationCloseOutcome = (isSave) => {
             if (!isSave) {
                 setTimeout(() => {
                     if (SettingsUIManager.restoreSnapshot()) {
@@ -230,10 +230,31 @@ export const GeneralListeners = {
                     }
                 }, 260);
             } else {
-                // Confirm changes: clear snapshot without restoring
                 UIState.settingsBeforeEdit = {};
             }
         };
+
+        const closePersonalization = (isSave = false) => {
+            isSavingPersonalization = isSave;
+            personalizationOutcomeHandled = false;
+            try {
+                // Fermer la modale d'abord pour une animation fluide (déclenche 'settings-modal-close')
+                UI.closeModal(DOM.personalizationModal);
+                if (!personalizationOutcomeHandled) {
+                    applyPersonalizationCloseOutcome(isSave);
+                }
+            } finally {
+                isSavingPersonalization = false;
+                personalizationOutcomeHandled = false;
+            }
+        };
+
+        document.addEventListener('settings-modal-close', (e) => {
+            if (e.detail?.modalId === 'personalizationModal') {
+                personalizationOutcomeHandled = true;
+                applyPersonalizationCloseOutcome(isSavingPersonalization || Boolean(e.detail?.options?.isSave));
+            }
+        });
 
         addClickListener(DOM.closePersonalizationModalBtn, () => closePersonalization(false));
         addClickListener(DOM.cancelPersonalizationBtn, () => closePersonalization(false));

@@ -165,8 +165,8 @@ export const ModelSelectionManager = {
         if (trigger.classList.contains('generating')) return;
 
         // Fermer les autres dropdowns ouverts pour éviter les superpositions
-        ClassUIManager.closeDropdown?.();
-        GeneralListeners.closeHeaderMenu?.();
+        ClassUIManager.closeDropdown?.({ replaceNext: true });
+        GeneralListeners.closeHeaderMenu?.({ replaceNext: true });
 
         this.renderDropdown();
 
@@ -195,7 +195,9 @@ export const ModelSelectionManager = {
         if (!this.isOpen) return;
 
         if (!options?.causedByHistory && HistoryManager.isOpen('modelDropdown')) {
-            HistoryManager.handleManualClose('modelDropdown');
+            HistoryManager.handleManualClose('modelDropdown', {
+                replaceNext: Boolean(options?.replaceNext || options?.handoff)
+            });
         }
 
         const dropdown = DOM.headerModelDropdown || document.getElementById('headerModelDropdown');
@@ -317,7 +319,7 @@ export const ModelSelectionManager = {
      * @param {string|null} highlightTarget - Identifiant optionnel d'élément à cibler
      */
     openAllSettings(highlightTarget = null) {
-        this.closeDropdown();
+        this.closeDropdown({ replaceNext: true });
         UI.openModal(DOM.settingsModal);
         UI.showSettingsTab('settings-engine');
         SettingsUIManager.updateApiStatusDisplay();

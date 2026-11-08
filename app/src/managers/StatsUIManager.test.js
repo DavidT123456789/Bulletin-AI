@@ -481,31 +481,28 @@ describe('StatsUIManager', () => {
             expect(activeBar.hasAttribute('aria-disabled')).toBe(false);
         });
 
-        it('should include student names and grades in histogram bar tooltip on hover', () => {
-            const results = [
-                { studentData: { name: 'BERNARD Thomas', periods: { S2: { grade: 15 } } } },
-                { studentData: { name: 'MARTIN Lucas', periods: { S2: { grade: 12.5 } } } }
-            ];
+        it('should display compact count and class percentage in histogram bar tooltip on hover', () => {
+            StatsUI.updateHistogram([0, 0, 3, 3, 2]);
 
-            StatsUI.updateHistogram([0, 0, 0, 2, 0], results, 'S2');
+            const bar0_4 = document.querySelector('.hist-bar-group[data-range="0-4"]');
+            const bar8_12 = document.querySelector('.hist-bar-group[data-range="8-12"]');
+            const bar16_20 = document.querySelector('.hist-bar-group[data-range="16-20"]');
 
-            const bar12_16 = document.querySelector('.hist-bar-group[data-range="12-16"]');
-            expect(bar12_16.getAttribute('data-tooltip')).toContain('2 élèves (12-16/20)');
-            expect(bar12_16.getAttribute('data-tooltip')).toContain('BERNARD Thomas (15)');
-            expect(bar12_16.getAttribute('data-tooltip')).toContain('MARTIN Lucas (12,5)');
+            expect(bar0_4.getAttribute('data-tooltip')).toBe('0 élève (0-4/20)');
+            expect(bar8_12.getAttribute('data-tooltip')).toBe('3 élèves · 38 % (8-12/20)');
+            expect(bar16_20.getAttribute('data-tooltip')).toBe('2 élèves · 25 % (16-20/20)');
         });
 
-        it('should include sorted student names and point deltas in evolution legend tooltips on hover', async () => {
+        it('should display compact count, class share percentage and threshold in evolution legend tooltips on hover', async () => {
             const { appState } = await import('../state/State.js');
             const { Utils } = await import('../utils/Utils.js');
             Utils.getPeriods.mockReturnValue(['S1', 'S2']);
             appState.currentPeriod = 'S2';
             appState.evolutionThresholds = { positive: 0.5, veryPositive: 2, negative: -0.5, veryNegative: -2 };
             appState.filteredResults = [
-                { studentData: { name: 'MARTIN Lucas', periods: { S1: { grade: 12 }, S2: { grade: 13.5 } } } }, // +1,5 pt
-                { studentData: { name: 'BERNARD Thomas', periods: { S1: { grade: 11 }, S2: { grade: 14 } } } }, // +3 pts
-                { studentData: { name: 'DUPONT Marie', periods: { S1: { grade: 14 }, S2: { grade: 14.2 } } } }, // +0,2 pt (stable)
-                { studentData: { name: 'PETIT Hugo', periods: { S1: { grade: 15 }, S2: { grade: 12.5 } } } } // -2,5 pts
+                { studentData: { name: 'MARTIN Lucas', periods: { S1: { grade: 12 }, S2: { grade: 13.5 } } } },
+                { studentData: { name: 'BERNARD Thomas', periods: { S1: { grade: 11 }, S2: { grade: 14 } } } },
+                { studentData: { name: 'DUPONT Marie', periods: { S1: { grade: 14 }, S2: { grade: 14.2 } } } }
             ];
 
             await StatsUI.updateStats();
@@ -514,14 +511,51 @@ describe('StatsUIManager', () => {
             const stableItem = document.querySelector('.legend-item[data-filter-id="stableCount"]');
             const regressionItem = document.querySelector('.legend-item[data-filter-id="regressionCount"]');
 
-            expect(progressItem.dataset.tooltip).toContain('<strong>Élèves en progrès (≥ +0,5 pt)</strong>');
-            expect(progressItem.dataset.tooltip).toContain('BERNARD Thomas (+3 pts)<br>MARTIN Lucas (+1,5 pt)');
+            expect(progressItem.dataset.tooltip).toBe('2 élèves · 67 % (≥ +0,5 pt)');
+            expect(stableItem.dataset.tooltip).toBe('1 élève · 33 % (entre -0,5 et +0,5 pt)');
+            expect(regressionItem.dataset.tooltip).toBe('0 élève (≤ -0,5 pt)');
 
-            expect(stableItem.dataset.tooltip).toContain('<strong>Élèves stables (entre -0,5 et +0,5 pt)</strong>');
-            expect(stableItem.dataset.tooltip).toContain('DUPONT Marie (+0,2 pt)');
+            // Changing thresholds via updateStatsTooltips() without args preserves count + % from DOM data-count
+            appState.evolutionThresholds = { positive: 1, negative: -1 };
+            StatsUI.updateStatsTooltips();
+            expect(progressItem.dataset.tooltip).toBe('2 élèves · 67 % (≥ +1 pt)');
+        });
 
-            expect(regressionItem.dataset.tooltip).toContain('<strong>Élèves en régression (≤ -0,5 pt)</strong>');
-            expect(regressionItem.dataset.tooltip).toContain('PETIT Hugo (-2,5 pts)');
+        it('should include student names and manage accessibility attributes in minGrade and maxGrade detail item tooltips', async () => {
+            const { appState } = await import('../state/State.js');
+            const minItem = document.createElement('div');
+            minItem.className = 'detail-item';
+            minItem.dataset.filterId = 'minGrade';
+            const maxItem = document.createElement('div');
+            maxItem.className = 'detail-item';
+            maxItem.dataset.filterId = 'maxGrade';
+            document.body.appendChild(minItem);
+            document.body.appendChild(maxItem);
+
+            appState.currentPeriod = 'S1';
+            appState.filteredResults = [];
+
+            await StatsUI.updateStats();
+
+            expect(minItem.getAttribute('data-count')).toBe('0');
+            expect(minItem.getAttribute('tabindex')).toBe('-1');
+            expect(minItem.getAttribute('aria-disabled')).toBe('true');
+            expect(maxItem.getAttribute('data-count')).toBe('0');
+            expect(maxItem.getAttribute('tabindex')).toBe('-1');
+            expect(maxItem.getAttribute('aria-disabled')).toBe('true');
+
+            appState.filteredResults = [
+                { studentData: { name: 'PETIT Hugo', periods: { S1: { grade: 8.5 } } } },
+                { studentData: { name: 'BERNARD Thomas', periods: { S1: { grade: 18 } } } }
+            ];
+
+            await StatsUI.updateStats();
+
+            expect(minItem.getAttribute('data-count')).toBe('1');
+            expect(minItem.getAttribute('tabindex')).toBe('0');
+            expect(minItem.hasAttribute('aria-disabled')).toBe(false);
+            expect(minItem.dataset.tooltip).toBe('<strong>Note la plus basse (8,5/20)</strong><br>PETIT Hugo');
+            expect(maxItem.dataset.tooltip).toBe('<strong>Note la plus haute (18/20)</strong><br>BERNARD Thomas');
         });
     });
 });

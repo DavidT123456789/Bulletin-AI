@@ -10,6 +10,7 @@ import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
 import { StatsService } from '../services/StatsService.js';
+import { StatsUI } from './StatsUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
@@ -622,17 +623,21 @@ export const ClassDashboardManager = {
 
         if (statMin) {
             statMin.innerHTML = `${min}<span class="stat-denominator">/20</span>`;
-            const minLabel = stats.minStudents.length > 1 ? 'Élèves' : 'Élève';
-            const minNames = stats.minStudents.map(name => Utils.escapeHtml(name)).join('<br>');
-            const minTooltip = `<strong>${minLabel} (${min}/20) :</strong><br>${minNames}`;
+            const minTooltip = StatsUI.formatStudentListTooltip(
+                `Note la plus basse (${min}/20)`,
+                stats.minStudents,
+                name => Utils.escapeHtml(name)
+            );
             TooltipsUI.updateTooltip(statMinItem || statMin, minTooltip);
         }
 
         if (statMax) {
             statMax.innerHTML = `${max}<span class="stat-denominator">/20</span>`;
-            const maxLabel = stats.maxStudents.length > 1 ? 'Élèves' : 'Élève';
-            const maxNames = stats.maxStudents.map(name => Utils.escapeHtml(name)).join('<br>');
-            const maxTooltip = `<strong>${maxLabel} (${max}/20) :</strong><br>${maxNames}`;
+            const maxTooltip = StatsUI.formatStudentListTooltip(
+                `Note la plus haute (${max}/20)`,
+                stats.maxStudents,
+                name => Utils.escapeHtml(name)
+            );
             TooltipsUI.updateTooltip(statMaxItem || statMax, maxTooltip);
         }
 

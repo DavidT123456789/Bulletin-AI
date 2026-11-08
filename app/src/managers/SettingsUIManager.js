@@ -146,53 +146,68 @@ export const SettingsUIManager = {
         AppreciationsManager.renderResults();
     },
 
+    /** @private Garde anti-récursion lors de la fermeture de appSettingsModal */
+    _isSavingSettings: false,
+
     /**
      * Sauvegarde tous les paramètres de l'application.
+     * @param {boolean} [showNotification=true]
+     * @param {Object} [options={}]
+     * @param {boolean} [options.skipCloseModal=false]
      */
-    saveSettings(showNotification = true) {
-        this._savePersonalStyleChanges();
+    saveSettings(showNotification = true, { skipCloseModal = false } = {}) {
+        if (this._isSavingSettings) return;
+        this._isSavingSettings = true;
 
-        if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
-        if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
-        if (DOM.albertApiKey) appState.albertApiKey = DOM.albertApiKey.value.trim();
-        if (DOM.groqApiKey) appState.groqApiKey = DOM.groqApiKey.value.trim();
-        if (DOM.openrouterApiKey) appState.openrouterApiKey = DOM.openrouterApiKey.value.trim();
-        if (DOM.anthropicApiKey) appState.anthropicApiKey = DOM.anthropicApiKey.value.trim();
-        if (DOM.mistralApiKey) appState.mistralApiKey = DOM.mistralApiKey.value.trim();
-        if (DOM.aiModelSelect) appState.currentAIModel = DOM.aiModelSelect.value;
-        // Ollama
-        if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
-        if (DOM.ollamaBaseUrl) appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
+        try {
+            this._savePersonalStyleChanges();
 
-        // Confidentialité
-        if (DOM.settingsPrivacyAnonymizeToggle) {
-            appState.anonymizeData = DOM.settingsPrivacyAnonymizeToggle.checked;
-        }
+            if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
+            if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
+            if (DOM.albertApiKey) appState.albertApiKey = DOM.albertApiKey.value.trim();
+            if (DOM.groqApiKey) appState.groqApiKey = DOM.groqApiKey.value.trim();
+            if (DOM.openrouterApiKey) appState.openrouterApiKey = DOM.openrouterApiKey.value.trim();
+            if (DOM.anthropicApiKey) appState.anthropicApiKey = DOM.anthropicApiKey.value.trim();
+            if (DOM.mistralApiKey) appState.mistralApiKey = DOM.mistralApiKey.value.trim();
+            if (DOM.aiModelSelect) appState.currentAIModel = DOM.aiModelSelect.value;
+            // Ollama
+            if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
+            if (DOM.ollamaBaseUrl) appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
 
-        // Pastilles de statut du plan de classe
-        this.syncSeatingStatusDotsFromDOM({ dispatchEvent: false });
-
-        // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
-        document.dispatchEvent(new CustomEvent('app-settings-changed', {
-            detail: { settings: appState }
-        }));
-
-        this.syncEvolutionThresholdsFromDOM();
-
-        StorageManager.saveAppState();
-        UIState.settingsBeforeEdit = {};
-
-        // Fermer la modale d'abord pour une animation fluide
-        UI.closeModal(DOM.settingsModal);
-
-        // Effectuer les mises à jour UI après l'animation de fermeture (260ms)
-        setTimeout(() => {
-            this.updateApiStatusDisplay();
-            if (showNotification !== false) {
-                UI.showNotification('Paramètres enregistrés.', 'success');
+            // Confidentialité
+            if (DOM.settingsPrivacyAnonymizeToggle) {
+                appState.anonymizeData = DOM.settingsPrivacyAnonymizeToggle.checked;
             }
-            AppreciationsManager.renderResults();
-        }, 260);
+
+            // Pastilles de statut du plan de classe
+            this.syncSeatingStatusDotsFromDOM({ dispatchEvent: false });
+
+            // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
+            document.dispatchEvent(new CustomEvent('app-settings-changed', {
+                detail: { settings: appState }
+            }));
+
+            this.syncEvolutionThresholdsFromDOM();
+
+            StorageManager.saveAppState();
+            UIState.settingsBeforeEdit = {};
+
+            // Fermer la modale d'abord pour une animation fluide
+            if (!skipCloseModal) {
+                UI.closeModal(DOM.settingsModal);
+            }
+
+            // Effectuer les mises à jour UI après l'animation de fermeture (260ms)
+            setTimeout(() => {
+                this.updateApiStatusDisplay();
+                if (showNotification !== false) {
+                    UI.showNotification('Paramètres enregistrés.', 'success');
+                }
+                AppreciationsManager.renderResults();
+            }, 260);
+        } finally {
+            this._isSavingSettings = false;
+        }
     },
 
     /**

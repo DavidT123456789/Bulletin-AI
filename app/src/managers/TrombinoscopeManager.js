@@ -458,14 +458,18 @@ export const TrombinoscopeManager = {
         this._closeStudentPopover();
         this._currentStep = step;
 
-        if (step > 1) {
+        if (step > previousStep) {
             HistoryManager.pushState('trombiWizardStep', (opts) => {
                 if (this._currentStep > 1) {
                     this._goToStep(this._currentStep - 1, opts);
                 }
             });
         } else if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('trombiWizardStep')) {
-            HistoryManager.handleManualClose('trombiWizardStep');
+            if (step === 1) {
+                HistoryManager.handleManualClose('trombiWizardStep');
+            } else {
+                HistoryManager.handleManualClose('trombiWizardStep', { stepCount: previousStep - step });
+            }
         }
 
         // Switch footers immediately (synchronized with stepper UI)

@@ -79,6 +79,13 @@ export const SettingsModalListeners = {
             }
         });
 
+        // Auto-sauvegarde lorsque appSettingsModal est fermée via Retour mobile (popstate) ou Échap
+        document.addEventListener('settings-modal-close', (e) => {
+            if (e.detail?.modalId === 'appSettingsModal' && !SettingsUIManager._isSavingSettings) {
+                SettingsUIManager.saveSettings(false, { skipCloseModal: true });
+            }
+        });
+
         DOM.periodSystemRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 EventHandlersManager.handlePeriodSystemChange(e);

@@ -667,8 +667,8 @@
 }
 
 @media (hover: hover) {
-    .performance-card .detail-item[role="button"]:hover::before,
-    .performance-card .detail-item[role="button"]:hover + .detail-item::before,
+    .performance-card .detail-item[role="button"]:not([data-count="0"]):hover::before,
+    .performance-card .detail-item[role="button"]:not([data-count="0"]):hover + .detail-item::before,
     .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover::before,
     .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover + .legend-item::before {
         opacity: 0;
@@ -764,49 +764,17 @@
     box-sizing: border-box;
     transition: width 0.5s var(--ease-spring), 
                 margin-left 0.5s var(--ease-spring),
-                transform 0.3s var(--ease-spring), 
-                opacity 0.3s ease, 
-                filter 0.3s ease;
+                transform 0.25s var(--ease-spring), 
+                opacity 0.25s ease, 
+                filter 0.25s ease;
     position: relative;
-    cursor: pointer;
+    pointer-events: none;
     transform-origin: center;
     flex-shrink: 1; /* Permet un ajustement parfait avec flexbox */
 }
 
 .evolution-card .bar-segment[style]:not([style*="width: 0%"]):not([style*="width:0%"]) ~ .bar-segment[style]:not([style*="width: 0%"]):not([style*="width:0%"]) {
     margin-left: 3px;
-}
-
-.evolution-card .bar-segment:not([style]),
-.evolution-card .bar-segment[style*="width: 0%"],
-.evolution-card .bar-segment[style*="width:0%"] {
-    pointer-events: none;
-}
-
-/* Tooltip pourcentage au hover */
-.evolution-card .bar-segment::after {
-    content: attr(data-percent);
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%) scale(0.9);
-    background: var(--text-primary);
-    color: var(--surface-color);
-    padding: 3px 8px;
-    border-radius: var(--radius-xs);
-    font-size: 0.7rem;
-    font-weight: 600;
-    opacity: 0;
-    pointer-events: none;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
-    box-shadow: var(--shadow-md);
-    z-index: 10;
-}
-
-.evolution-card .bar-segment:hover::after {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
 }
 
 /* Aplats mats minéraux harmonisés (Style Éditorial 2026) */
@@ -826,28 +794,29 @@
     background: var(--grade-range-0-4);
 }
 
-/* Micro-interactions tactiles premium (Style iOS/Google 2026) */
-.evolution-card .evolution-distribution-bar:hover .bar-segment {
-    opacity: 0.6;
-    transform: scaleY(0.92);
+/* Synchronisation de la barre avec le filtre actif ou le survol des tuiles de légende */
+.evolution-card:has(.legend-item.active-filter) .bar-segment {
+    opacity: 0.35;
 }
 
-.evolution-card .evolution-distribution-bar .bar-segment:hover {
+.evolution-card:has(.legend-item[data-filter-id="progressCount"].active-filter) .bar-segment.progress,
+.evolution-card:has(.legend-item[data-filter-id="stableCount"].active-filter) .bar-segment.stable,
+.evolution-card:has(.legend-item[data-filter-id="regressionCount"].active-filter) .bar-segment.regression {
     opacity: 1;
-    transform: scaleY(1.18) scaleX(1.01);
-    z-index: 2;
+    filter: brightness(1.08) saturate(1.1);
 }
 
-.evolution-card .evolution-distribution-bar .bar-segment.progress:hover {
-    box-shadow: 0 0 10px rgba(var(--grade-range-16-20-rgb), 0.35);
-}
+@media (hover: hover) {
+    .evolution-card:not(.is-empty):has(.legend-item[role="button"]:not([data-count="0"]):hover) .bar-segment {
+        opacity: 0.35;
+    }
 
-.evolution-card .evolution-distribution-bar .bar-segment.stable:hover {
-    box-shadow: 0 0 10px rgba(var(--text-secondary-rgb), 0.25);
-}
-
-.evolution-card .evolution-distribution-bar .bar-segment.regression:hover {
-    box-shadow: 0 0 10px rgba(var(--grade-range-0-4-rgb), 0.35);
+    .evolution-card:not(.is-empty):has(.legend-item[data-filter-id="progressCount"]:not([data-count="0"]):hover) .bar-segment.progress,
+    .evolution-card:not(.is-empty):has(.legend-item[data-filter-id="stableCount"]:not([data-count="0"]):hover) .bar-segment.stable,
+    .evolution-card:not(.is-empty):has(.legend-item[data-filter-id="regressionCount"]:not([data-count="0"]):hover) .bar-segment.regression {
+        opacity: 1;
+        filter: brightness(1.08) saturate(1.1);
+    }
 }
 
 /* === Légende Interactive (Mutualisée avec .performance-details ci-dessus) === */
@@ -1115,6 +1084,7 @@
                 opacity 0.2s ease;
 }
 
+.performance-card .detail-item[data-count="0"][role="button"],
 .hist-bar-group[data-count="0"][role="button"],
 .evolution-card .legend-item[data-count="0"][role="button"] {
     cursor: default;
@@ -1412,7 +1382,7 @@
 
 /* 2. Style de survol unifié (Micro-élévation maîtrisée -2px) */
 @media (hover: hover) {
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover,
+    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
         transform: translateY(-2px);
@@ -1421,7 +1391,7 @@
         box-shadow: var(--shadow-sm);
     }
 
-    [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover,
+    [data-theme="dark"] .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     [data-theme="dark"] .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     [data-theme="dark"] .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
         background: var(--bg-tertiary);
@@ -1430,14 +1400,14 @@
     }
 
     /* Harmonisation des textes et valeurs (Haute lisibilité neutre au survol) */
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value,
+    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .detail-value,
     .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"][role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-count,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover .hist-label,
     .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover::before {
         color: var(--text-primary);
     }
 
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label,
+    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .detail-label,
     .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-label {
         color: var(--text-secondary);
     }
@@ -1446,12 +1416,16 @@
         filter: brightness(1.1) saturate(1.08);
     }
 
+    .performance-details:has(.detail-item.active-filter) .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
+    .evolution-legend:has(.legend-item.active-filter) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
     .histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
         opacity: 1;
     }
 }
 
 /* 3. Style d'état actif (filtre actif) unifié */
+.performance-details:has(.detail-item.active-filter) .detail-item:not(.active-filter),
+.evolution-legend:has(.legend-item.active-filter) .legend-item:not(.active-filter),
 .histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group:not(.active-filter) {
     opacity: 0.5;
 }

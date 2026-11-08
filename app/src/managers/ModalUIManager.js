@@ -382,14 +382,16 @@ export const ModalUI = {
             hooks.onClose();
         }
 
+        if (modal.id === 'welcomeModal') {
+            document.dispatchEvent(new CustomEvent('welcome-modal-close', { detail: { modalId: modal.id, options } }));
+        } else if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
+            document.dispatchEvent(new CustomEvent('settings-modal-close', { detail: { modalId: modal.id, options } }));
+        }
+
         // [UX Mobile] History Cleanup
         // If closed via UI (X button) and NOT caused by back button, we must clean up history
         if (!options.causedByHistory && !options.skipHistory) {
             HistoryManager.handleManualClose(modal.id);
-        }
-
-        if (modal.id === 'welcomeModal') {
-            document.dispatchEvent(new CustomEvent('welcome-modal-close', { detail: { modalId: modal.id, options } }));
         }
 
         this._isIgnoringTooltips = true;
