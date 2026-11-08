@@ -230,7 +230,7 @@
 .synthesis-intro-copy-btn.copied,
 .synthesis-intro-copy-btn.copied:hover {
     background: rgba(var(--success-rgb), 0.16) !important;
-    border-color: rgba(var(--success-rgb), 0.45) !important;
+    border-color: transparent !important;
     color: var(--success-color) !important;
 }
 
@@ -1122,15 +1122,15 @@
 .btn-refinement--revert {
     margin-left: auto;
     color: var(--text-secondary);
-    background: var(--item-idle-bg);
-    border-color: var(--border-color);
+    background: var(--tonal-bg);
+    border-color: transparent;
 }
 
 @media (hover: hover) {
     .btn-refinement--revert:not(:disabled):hover {
-        background: var(--item-hover-bg);
+        background: var(--tonal-hover-bg);
         color: var(--text-primary);
-        border-color: var(--border-color-hover);
+        border-color: transparent;
     }
 
     .btn-refinement--revert:not(:disabled):hover iconify-icon {

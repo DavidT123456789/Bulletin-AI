@@ -446,8 +446,8 @@
     gap: 6px;
     padding: 5px 12px;
     border-radius: var(--radius-pill);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
     color: var(--text-secondary);
     font-size: 0.76rem;
     font-weight: 500;
@@ -456,7 +456,7 @@
 }
 
 .help-demo-reset-pill:hover {
-    background: var(--item-hover-bg);
+    background: var(--tonal-hover-bg);
     color: var(--text-primary);
 }
 

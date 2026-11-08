@@ -904,7 +904,7 @@
 .focus-appreciation-actions #focusCopyBtn.copied,
 .focus-appreciation-actions #focusCopyBtn.copied:hover {
     background: rgba(var(--success-rgb), 0.16) !important;
-    border-color: rgba(var(--success-rgb), 0.45) !important;
+    border-color: transparent !important;
     color: var(--success-color, #10b981) !important;
 }
 
@@ -919,7 +919,7 @@
 .focus-appreciation-actions #focusCopyBtn.copied-prompt,
 .focus-appreciation-actions #focusCopyBtn.copied-prompt:hover {
     background: rgba(var(--purple-rgb), 0.22) !important;
-    border-color: rgba(var(--purple-rgb), 0.45) !important;
+    border-color: transparent !important;
     color: var(--purple-color, #9333ea) !important;
 }
 
@@ -1102,14 +1102,14 @@
 .btn-ai-outline.active {
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), var(--chip-bg-opacity, 0.16)) !important;
     color: var(--chip-hover-color, var(--primary-color)) !important;
-    border-color: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.45) !important;
+    border-color: transparent !important;
     font-weight: 600;
     box-shadow: none !important;
 }
 
 .btn-ai-outline.active:hover {
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), var(--chip-bg-opacity, 0.22)) !important;
-    border-color: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.6) !important;
+    border-color: transparent !important;
     box-shadow: none !important;
 }
 
@@ -1183,7 +1183,7 @@
     /* Elevated visual treatment - static, no pulse to let icon animation shine */
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.12);
     color: var(--chip-hover-color, var(--primary-color));
-    border-color: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.35);
+    border-color: transparent;
     box-shadow: none;
 }
 
@@ -1236,7 +1236,7 @@
 /* Dark mode adjustments */
 [data-theme="dark"] .btn-ai-outline.is-generating {
     background: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.18);
-    border-color: rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.45);
+    border-color: transparent;
     box-shadow: none;
 }
 
@@ -1272,7 +1272,7 @@
     pointer-events: auto !important;
     background: var(--item-active-bg) !important;
     color: var(--text-primary) !important;
-    border: 1px solid var(--border-color) !important;
+    border: 1px solid transparent !important;
     box-shadow: none !important;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease !important;
 }
@@ -1281,7 +1281,7 @@
 [data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg) {
     background: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
-    border-color: rgba(255, 255, 255, 0.14) !important;
+    border-color: transparent !important;
 }
 
 #focusGenerateBtn.is-loading:active,
@@ -1327,7 +1327,7 @@
 .btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.1) !important;
     color: var(--error-color, #ef4444) !important;
-    border-color: rgba(239, 68, 68, 0.35) !important;
+    border-color: transparent !important;
 }
 
 [data-theme="dark"] #focusGenerateBtn.is-loading:hover,
@@ -1335,7 +1335,7 @@
 [data-theme="dark"] .btn-smart-action-inline.loading:hover {
     background: rgba(239, 68, 68, 0.18) !important;
     color: #fca5a5 !important;
-    border-color: rgba(239, 68, 68, 0.45) !important;
+    border-color: transparent !important;
 }
 
 #focusGenerateBtn.is-loading:hover .btn-spinner-state,

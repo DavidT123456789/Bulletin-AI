@@ -139,7 +139,7 @@
 .btn-warning,
 .btn-smart-action-inline.mode-update {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
-    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
+    border: 1px solid transparent;
     color: var(--warning-color);
     box-shadow: none;
 }
@@ -154,7 +154,7 @@
     .btn-warning:hover:not(:disabled):not(.disabled):not(.loading),
     .btn-smart-action-inline.mode-update:hover:not(:disabled):not(.loading) {
         background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
-        border-color: rgba(var(--warning-color-rgb, 245, 158, 11), 0.35);
+        border-color: transparent;
         box-shadow: none;
         transform: translateY(-1px);
     }
@@ -501,7 +501,7 @@
 
 .btn-warning .kbd-hint {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
-    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
+    border: 1px solid transparent;
     color: inherit;
 }
 
