@@ -92,7 +92,7 @@ export const FocusPanelGenerator = {
         const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
         const promptText = prompts.appreciation || '';
 
-        await panel._displayPromptModal(promptText, 'Prévisualisation du prompt');
+        await panel._displayPromptModal(promptText);
     },
 
     /**

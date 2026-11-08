@@ -1155,45 +1155,6 @@
     /* Maintenir l'ombre de base sans ÃƒÂ©lÃƒÂ©vation */
 }
 
-/* Utilities Modales (from lines 711-768) */
-
-
-
-/* Redundant definition of close-button was at 711 but identical functionality, keeping standard one above */
-/* Help & Accordion */
-.help-code-block,
-.prompt-preview-block {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    font-family: monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    margin-top: 12px;
-    max-height: 350px;
-    overflow-y: auto;
-    /* EmpÃƒÂªche l'ÃƒÂ©largissement du conteneur parent */
-    word-break: break-word;
-    overflow-wrap: break-word;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Dark mode: Code blocks inside cards should be darker than cards */
-[data-theme="dark"] .help-code-block,
-[data-theme="dark"] .prompt-preview-block {
-    background: var(--bg-color);
-    border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* Inspecteur de Prompt - Hauteur adaptative sans barre de dÃ©filement interne */
-.prompt-preview-auto-height {
-    max-height: none;
-    overflow-y: visible;
-    margin-top: 0;
-}
-
 .modal-help {
     --modal-height: min(685px, 90vh);
 }
@@ -1857,8 +1818,6 @@
     cursor: text;
     outline: none;
     text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Mobile Adjustments */
