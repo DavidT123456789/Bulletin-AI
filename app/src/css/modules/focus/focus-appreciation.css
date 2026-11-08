@@ -15,11 +15,6 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-[data-theme="dark"] .focus-appreciation-header {
-    background: var(--item-idle-bg);
-    border-bottom-color: var(--border-color);
-}
-
 .focus-appreciation-label {
     font-size: 13.5px;
     font-weight: 600;
@@ -144,11 +139,6 @@
     padding: 4px;
 }
 
-[data-theme="dark"] .appreciation-status-badge.empty {
-    background: transparent;
-    color: var(--text-secondary);
-}
-
 .appreciation-status-badge.modified {
     background: rgba(245, 158, 11, 0.15);
     color: var(--warning-color);
@@ -194,11 +184,6 @@
     font-size: 12px;
     font-weight: 600;
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-[data-theme="dark"] .appreciation-status-badge.valid {
-    background: var(--item-active-bg);
-    color: var(--text-secondary);
 }
 
 @keyframes saved-fade-in {
@@ -330,36 +315,6 @@
 
 .appreciation-status-badge.is-dictating iconify-icon {
     color: var(--error-color);
-}
-
-/* History Indicator */
-.history-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
-    border-radius: 12px;
-    color: var(--primary-color);
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.history-indicator:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
-    transform: scale(1.02);
-}
-
-.history-indicator i {
-    font-size: 0.7rem;
-    opacity: 0.8;
-}
-
-.history-indicator .history-count {
-    font-weight: 600;
 }
 
 /* History Popover (surface dépolie mutualisée dans dropdown.css) */
@@ -696,13 +651,6 @@
     transform: none;
 }
 
-[data-theme="dark"] #focusWordCount:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-    box-shadow: none;
-    transform: none;
-}
-
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
     display: inline-flex;
@@ -736,16 +684,6 @@
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .ai-indicator.source-manual {
-    /* Harmonized with #focusWordCount */
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .ai-indicator.source-manual:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-}
-
 .ai-indicator.source-manual iconify-icon,
 .ai-indicator.source-manual i {
     font-size: 13px;
@@ -762,16 +700,10 @@
     color: var(--color-cyan);
 }
 
-[data-theme="dark"] .ai-indicator.source-imported {
-    color: var(--color-cyan);
-}
-
 [data-theme="dark"] .ai-indicator.source-imported:hover {
     background: rgba(6, 182, 212, 0.18);
     color: var(--color-cyan);
 }
-
-
 
 /* Editable appreciation - clean, seamless editing canvas matching context textarea */
 .focus-appreciation-text[contenteditable="true"] {
@@ -788,28 +720,10 @@
     caret-color: var(--text-primary);
 }
 
-/* Hover state - calm, distraction-free (no pop-in border box or background flash) */
-.focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-}
-
-[data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-}
-
-/* Focus state - clean, seamless editing with active caret (card focus handled at card container level) */
+/* Hover & Focus state - calm, distraction-free (card focus handled at card container level) */
+.focus-appreciation-text[contenteditable="true"]:hover:not(:focus),
 .focus-appreciation-text[contenteditable="true"]:focus {
     outline: none !important;
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-}
-
-[data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:focus {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -850,9 +764,13 @@
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
-    justify-content: space-between;
     margin-top: 0;
-    padding: 4px 16px 6px 16px;
+    padding: 2px 16px 12px 16px;
+}
+
+.focus-refinement-options .btn-ai-outline {
+    flex: 1 0 auto;
+    justify-content: center;
 }
 
 /* ============================
@@ -863,11 +781,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px 14px 16px;
+    padding: 10px 16px 12px 16px;
+    border-top: 1px solid var(--border-color);
 }
 
 /* Copy button — shares .btn.btn-neutral base from components.css */
 .focus-appreciation-actions #focusCopyBtn {
+    flex: 1;
     padding: 0 14px;
     gap: 6px;
 }
@@ -918,15 +838,14 @@
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Generate button — full-width layout inside Focus appreciation footer (styles unified in components.css) */
+/* Generate button — 2/3 width vs 1/3 Copy button inside Focus appreciation footer (styles unified in components.css) */
 .focus-appreciation-actions #focusGenerateBtn {
-    flex: 1;
+    flex: 2;
     max-width: none;
 }
 
 @media (max-width: 480px) {
     .focus-appreciation-actions #focusGenerateBtn {
-        flex: 1;
         min-width: 0;
         margin-left: 0;
     }
@@ -1047,10 +966,6 @@
     transition: color 0.2s ease, transform 0.2s ease;
 }
 
-[data-theme="dark"] [data-refine-type] iconify-icon {
-    color: var(--chip-color);
-}
-
 @media (hover: hover) {
     .btn[data-refine-type]:hover {
         color: var(--chip-hover-color) !important;
@@ -1146,8 +1061,7 @@
     display: none !important;
 }
 
-/* Contrôles audio et copie désactivés pendant la génération */
-#focusCopyBtn.disabled,
+/* Contrôles audio désactivés pendant la génération */
 #focusAppreciationSpeakBtn.disabled,
 #focusAppreciationSpeechBtn.disabled {
     opacity: 0.35 !important;
@@ -1382,4 +1296,3 @@
     /* Disable pulse during leave */
     pointer-events: none;
 }
-

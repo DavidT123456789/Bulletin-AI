@@ -556,6 +556,7 @@ export const FocusPanelJournal = {
             } else {
                 countBadge.innerHTML = '';
                 countBadge.classList.add('is-hidden');
+                this.closeThresholdPopover();
             }
         }
     },

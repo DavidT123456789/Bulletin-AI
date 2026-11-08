@@ -3,18 +3,6 @@
    Styles pour la modale de raffinement et suggestions
    ==================================================================== */
 
-/* --- Focus Panel Refinement Options --- */
-.focus-refinement-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    padding: 4px 16px 6px 16px;
-    /* Harmonized with focus-appreciation-text */
-}
-
-
-/* Texte de chargement "Génération en cours..." - Effet Lumineux */
 /* Texte de chargement "Génération en cours..." - Effet Scintillement Dynamique */
 .loading-text {
     font-weight: 700;
@@ -210,4 +198,4 @@ button:not(.menu-item):hover iconify-icon[icon*="refresh"],
     justify-content: center;
     line-height: 1;
     transform-origin: center center;
-}
+}

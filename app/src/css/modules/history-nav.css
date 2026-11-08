@@ -6,20 +6,14 @@
 .history-navigation-group {
     display: inline-flex;
     align-items: center;
-    background: var(--item-idle-bg);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     padding: 1px 2px;
     height: 26px;
     box-sizing: border-box;
     transition: border-color var(--transition-fast), background-color var(--transition-fast);
     flex-shrink: 0;
-}
-
-[data-theme="dark"] .history-navigation-group {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: none;
 }
 
 /* Arrows: Left & Right */

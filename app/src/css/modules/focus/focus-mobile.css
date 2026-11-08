@@ -14,7 +14,7 @@
 
     /* Simplify header layout */
     .focus-header {
-        padding: 4px;
+        padding: 4px 0;
         gap: 6px;
     }
 
@@ -36,7 +36,7 @@
 
     /* Inline appreciation actions — tablet */
     .focus-appreciation-actions {
-        padding: 8px 12px 14px 12px;
+        padding: 10px 12px 12px 12px;
     }
 
     /* Refinement options: scroll horizontally */
@@ -44,7 +44,7 @@
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: 4px;
+        padding-bottom: 10px;
     }
 
     .focus-refinement-options::-webkit-scrollbar {
@@ -52,11 +52,9 @@
     }
 
     .focus-refinement-options .btn {
-        flex-shrink: 0;
+        flex: 0 0 auto;
         height: auto;
     }
-
-
 }
 
 /* Mobile Breakpoint (max-width: 600px) */
@@ -73,6 +71,7 @@
         /* Dynamic viewport height for mobile browsers */
         border-radius: 0;
         border-top: none;
+        border-left: none;
     }
 
     /* Backdrop: below header */
@@ -84,7 +83,7 @@
     /* Header: Pilule compacte pour mobile */
     .focus-header {
         flex-wrap: wrap;
-        padding: 4px;
+        padding: 4px 0;
         margin: 8px 12px 0 12px;
         gap: 8px;
     }
@@ -262,10 +261,6 @@
         height: 34px;
     }
 
-    .focus-nav-buttons::before {
-        margin: 0 8px 0 0;
-    }
-
     .focus-nav-buttons::after {
         margin: 0 0 0 8px;
     }
@@ -316,12 +311,16 @@
     .focus-header:not(.editing) {
         --p: var(--scroll-p, 0);
         flex-wrap: nowrap !important;
-        padding: calc(4px - 2px * var(--p)) calc(4px + 4px * var(--p)) calc(4px - 2px * var(--p)) calc(4px - 2px * var(--p)) !important;
+        padding: calc(4px - 2px * var(--p)) calc(8px * var(--p)) calc(4px - 2px * var(--p)) calc(2px * var(--p)) !important;
         margin: calc(8px - 3px * var(--p)) 12px 0 12px !important;
         gap: 8px !important;
         border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p)) !important;
         align-items: center !important;
         box-sizing: border-box !important;
+    }
+
+    .focus-header:not(.editing) .focus-header-left {
+        margin-right: calc(4px - 2px * var(--p));
     }
 
     .focus-header:not(.editing) .focus-header-left,
@@ -542,8 +541,8 @@
 
     /* Refinement buttons: Horizontal scroll */
     .focus-refinement-options {
-        margin: 6px 0 0;
-        padding: 0 14px 6px;
+        margin: 2px 0 0;
+        padding: 0 14px 10px;
         gap: 6px;
     }
 
@@ -555,7 +554,7 @@
 
     /* Inline appreciation actions — mobile */
     .focus-appreciation-actions {
-        padding: 6px 14px 10px 14px;
+        padding: 8px 14px 10px 14px;
         gap: 8px;
     }
 
@@ -566,7 +565,6 @@
     }
 
     .focus-appreciation-actions #focusGenerateBtn {
-        flex: 1;
         min-width: 0;
         height: 34px;
         font-size: 12px;
@@ -601,7 +599,7 @@
 @media (max-width: 375px) {
 
     .focus-header {
-        padding: 3px;
+        padding: 3px 0;
         margin: 6px 10px 0 10px;
         gap: 6px;
     }

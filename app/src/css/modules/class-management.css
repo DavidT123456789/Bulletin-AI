@@ -562,7 +562,7 @@
 }
 
 .header-class-note-btn .header-class-note-icon {
-    font-size: 16px;
+    font-size: 18px;
     flex-shrink: 0;
     color: currentColor;
     transition: transform var(--transition-fast);

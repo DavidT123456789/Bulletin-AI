@@ -55,7 +55,7 @@
 }
 
 .header-search .sc-search-toggle-btn iconify-icon {
-    font-size: 19px;
+    font-size: 18px;
     transition: color 0.2s ease, transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -495,10 +495,6 @@
 }
 
 @media (max-width: 480px) {
-    .header-search .sc-search-toggle-btn iconify-icon {
-        font-size: 18px;
-    }
-
     .header-search .sc-floating-search-input-box {
         right: var(--space-2);
         width: 38px;

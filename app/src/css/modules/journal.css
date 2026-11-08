@@ -19,12 +19,6 @@
     border-top-right-radius: var(--radius-md);
 }
 
-/* Removed hover effects */
-
-[data-theme="dark"] .journal-header {
-    background: var(--item-idle-bg);
-}
-
 .journal-header-left {
     display: flex;
     align-items: center;
@@ -75,6 +69,10 @@
 /* === Threshold Quick Control === */
 .journal-threshold-control {
     position: relative;
+}
+
+.journal-count-badge.is-hidden + .journal-threshold-control {
+    display: none;
 }
 
 .journal-count-badge:not(.is-hidden) + .journal-threshold-control {
@@ -883,12 +881,12 @@
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    min-height: 52px;
+    margin: -4px -6px -4px -8px;
+    padding: 6px 8px;
+    min-height: 44px;
     box-sizing: border-box;
     color: var(--text-tertiary);
     font-size: 13px;
-    opacity: 0.55;
     transition: opacity var(--transition-base), transform var(--transition-base), background var(--transition-base);
 }
 
@@ -907,13 +905,6 @@
 .journal-empty-interactive:active {
     transform: scale(0.99);
 }
-
-[data-theme="dark"] .journal-empty-interactive:hover {
-    opacity: 1;
-    background: var(--item-hover-bg);
-}
-
-
 
 .journal-empty-content {
     display: flex;
@@ -980,10 +971,6 @@
     transition: color 0.2s ease;
 }
 
-[data-theme="dark"] .journal-empty .journal-empty-cta-badge iconify-icon {
-    color: var(--text-secondary);
-}
-
 .journal-empty-interactive:hover .journal-empty-cta-badge,
 .journal-empty-interactive:focus-within .journal-empty-cta-badge,
 .journal-empty-cta-badge:hover {
@@ -1006,12 +993,6 @@
 .journal-empty-cta-badge:active {
     transform: scale(0.96);
     box-shadow: none;
-}
-
-[data-theme="dark"] .journal-empty-cta-badge {
-    background: var(--surface-color);
-    border-color: var(--border-color);
-    color: var(--text-secondary);
 }
 
 [data-theme="dark"] .journal-empty-interactive:hover .journal-empty-cta-badge,
@@ -1041,23 +1022,9 @@
     }
 }
 
-@keyframes journal-empty-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(3px);
-    }
-    to {
-        opacity: 0.7;
-        transform: translateY(0);
-    }
-}
-
-.journal-timeline.fade-in {
-    animation: journal-timeline-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
+.journal-timeline.fade-in,
 .journal-empty.fade-in {
-    animation: journal-empty-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: journal-timeline-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* === Timeline === */
@@ -1359,8 +1326,9 @@
     }
 
     .journal-empty {
-        padding: 10px 14px;
-        min-height: 54px;
+        margin: -4px -6px;
+        padding: 6px;
+        min-height: 44px;
         gap: 12px;
     }
 
