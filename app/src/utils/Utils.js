@@ -720,6 +720,18 @@ export const Utils = {
     },
 
     /**
+     * Vérifie si un objet classe correspond à la classe d'exemple/démo.
+     * @param {Object|null} cls - Objet classe
+     * @returns {boolean}
+     */
+    isDemoClassObject(cls) {
+        if (!cls || cls.isVirtual) return false;
+        if (cls.isDemo === true) return true;
+        const lowerName = String(cls.name || '').trim().toLowerCase();
+        return lowerName === 'classe exemple' || lowerName === 'classe démo' || lowerName === 'classe demo';
+    },
+
+    /**
      * Compte le nombre d'élèves distincts (personnes uniques) à travers toutes les classes et groupes,
      * afin de ne pas sur-compter un élève inscrit à la fois dans sa classe et dans un groupe.
      * Les entrées anonymes (ex: stubs de test sans nom/prénom) sont comptées individuellement.
@@ -733,7 +745,7 @@ export const Utils = {
         const demoClassIds = new Set();
         if (Array.isArray(classes)) {
             for (const cls of classes) {
-                if (cls?.id && (cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple')) {
+                if (cls?.id && this.isDemoClassObject(cls)) {
                     demoClassIds.add(cls.id);
                 }
             }

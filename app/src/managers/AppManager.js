@@ -296,7 +296,7 @@ export const App = {
     // --- Core Logic Delegations ---
 
     handleHelpButtonClick() {
-        UI.openModal(DOM.helpModal, { isStacked: true });
+        UI.openModal(DOM.helpModal);
         // Peupler les exemples de format d'import
         UI.updateHelpImportFormat();
     },

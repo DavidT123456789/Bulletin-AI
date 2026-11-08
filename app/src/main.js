@@ -95,62 +95,32 @@ const init = () => {
         };
 
         window.openSettingsTab = (tabName, elementId) => {
-            UI.closeAllModals();
-            setTimeout(() => {
-                UI.openModal(DOM.settingsModal);
-                if (elementId) {
-                    UI.highlightSettingsElement(elementId, { tab: tabName });
-                } else if (tabName) {
-                    UI.showSettingsTab(tabName);
-                }
-            }, 200);
+            UI.openModal(DOM.settingsModal);
+            if (elementId) {
+                UI.highlightSettingsElement(elementId, { tab: tabName });
+            } else if (tabName) {
+                UI.showSettingsTab(tabName);
+            }
         };
 
         window.openImportWizardFromHelp = () => {
-            UI.closeAllModals();
-            setTimeout(() => {
-                window.ImportWizardManager = ImportWizardManager;
-                ImportWizardManager.open();
-            }, 200);
+            window.ImportWizardManager = ImportWizardManager;
+            ImportWizardManager.open();
         };
 
         window.openTrombiWizardFromHelp = () => {
-            UI.closeAllModals();
-            setTimeout(() => {
-                window.TrombinoscopeManager = TrombinoscopeManager;
-                TrombinoscopeManager.open();
-            }, 200);
+            window.TrombinoscopeManager = TrombinoscopeManager;
+            TrombinoscopeManager.open();
         };
 
         window.openSeatingChartFromHelp = () => {
             UI.closeAllModals();
-            setTimeout(() => {
-                const planBtn = document.querySelector('#viewToggle [data-view="plan"]');
-                if (planBtn) planBtn.click();
-            }, 200);
+            const planBtn = document.querySelector('#viewToggle [data-view="plan"]');
+            if (planBtn) planBtn.click();
         };
 
         window.openHelpTab = (tabId, sectionId) => {
-            UI.openModal(DOM.helpModal, { isStacked: true });
-            if (tabId) {
-                const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${tabId}"]`);
-                if (tabBtn) tabBtn.click();
-            }
-            window.dispatchEvent(new CustomEvent('help-modal-opened'));
-            if (sectionId) {
-                setTimeout(() => {
-                    const section = document.getElementById(sectionId);
-                    if (section) {
-                        if (section.tagName === 'DETAILS') {
-                            DOM.helpModal?.querySelectorAll('.help-accordion[open]').forEach(acc => {
-                                if (acc !== section) acc.open = false;
-                            });
-                            section.open = true;
-                        }
-                        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                }, 150);
-            }
+            UI.openHelpTab(tabId, sectionId);
         };
 
         // PWA Update Handler

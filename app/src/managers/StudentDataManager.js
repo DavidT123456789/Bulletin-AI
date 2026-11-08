@@ -55,8 +55,7 @@ export const StudentDataManager = {
     },
 
     _isDemoClass(cls) {
-        if (!cls) return false;
-        return cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
+        return Utils.isDemoClassObject(cls);
     },
 
     /**

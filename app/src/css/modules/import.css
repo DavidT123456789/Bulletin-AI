@@ -223,10 +223,9 @@
 }
 
 #welcome-dots .dot.active {
-    background: var(--gradient-primary);
+    background: var(--text-primary);
     width: 24px;
     border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.35);
 }
 
 #welcome-finish-options {
@@ -309,12 +308,12 @@
 
 /* État "prêt" : clé saisie, prête à valider */
 .welcome-api-key-group .btn-validate-key.ready {
-    background: var(--brand-primary);
+    background: var(--color-blue-deep);
     color: white;
 }
 
 .welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--brand-primary), white 9%);
+    background-color: color-mix(in srgb, var(--color-blue-deep), white 9%);
 }
 
 /* État "validé" : clé confirmée */
@@ -380,14 +379,6 @@
     box-sizing: border-box;
 }
 
-/* Harmonized h3 size across all welcome steps */
-.welcome-step h3 {
-    font-size: 1.8em;
-    font-weight: 800;
-    margin-bottom: 24px;
-    letter-spacing: -0.02em;
-}
-
 /* App logo for welcome screen (Hero Step 1) - Pure elevated white squircle card */
 .welcome-app-logo {
     width: 76px;
@@ -422,26 +413,15 @@
         0 20px 48px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Specific styling for the premium welcome title */
+/* Specific styling for the welcome step titles (Apple / Linear native sobriety) */
 .welcome-title-premium {
-    font-size: 2.2em !important;
-    font-weight: 800 !important;
+    font-size: 2.15em;
+    font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 14px !important;
-    letter-spacing: -0.03em !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.welcome-title-gradient {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
+    margin-bottom: 14px;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    text-align: center;
 }
 
 .welcome-subtitle-premium {
@@ -553,9 +533,8 @@
 
 /* Responsive: Typography and layout on small screens */
 @media (max-width: 700px) {
-    .welcome-step h3,
     .welcome-title-premium {
-        font-size: 1.6em !important;
+        font-size: 1.6em;
     }
 
     #welcomeModal .welcome-step {
@@ -620,14 +599,14 @@
     flex-direction: column;
     gap: 14px;
     padding: 16px 18px;
-    border-radius: 20px;
-    background-color: var(--surface-color);
+    border-radius: var(--radius-md);
+    background-color: var(--item-idle-bg);
     border: 1.5px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
     cursor: pointer;
-    transition: border-color 0.35s var(--ease-spring),
-                background-color 0.35s var(--ease-spring),
-                box-shadow 0.35s var(--ease-spring),
+    transition: border-color 0.2s var(--ease-spring),
+                background-color 0.2s var(--ease-spring),
+                box-shadow 0.2s var(--ease-spring),
                 transform 0.2s var(--ease-spring);
     position: relative;
     user-select: none;
@@ -635,66 +614,45 @@
 }
 
 [data-theme="dark"] .welcome-start-card {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.02);
     border-color: var(--border-color);
-    box-shadow: none;
 }
 
-.welcome-start-card:hover:not(.active) {
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .welcome-start-card:hover:not(.active) {
+        background-color: var(--surface-color);
+        border-color: var(--border-color-hover);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    [data-theme="dark"] .welcome-start-card:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.04);
+        border-color: var(--border-color-hover);
+        box-shadow: none;
+    }
+}
+
+.welcome-start-card.active {
+    background-color: var(--surface-color);
+    border-color: color-mix(in srgb, var(--text-primary) 28%, var(--border-color));
     box-shadow: var(--shadow-md);
 }
 
-.welcome-start-card[data-value="trimestres"]:hover:not(.active) {
-    border-color: rgba(var(--color-blue-rgb), 0.3);
-}
-
-.welcome-start-card[data-value="semestres"]:hover:not(.active) {
-    border-color: rgba(139, 92, 246, 0.3);
-}
-
-[data-theme="dark"] .welcome-start-card:hover:not(.active) {
+[data-theme="dark"] .welcome-start-card.active {
     background-color: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.35);
-}
-
-.welcome-start-card.active[data-value="trimestres"] {
-    border-color: rgba(var(--color-blue-rgb), 0.55);
-    background-color: color-mix(in srgb, var(--color-blue) 3.5%, var(--surface-color));
-    box-shadow: 0 8px 22px -6px rgba(var(--color-blue-rgb), 0.14), 0 2px 6px -1px rgba(var(--color-blue-rgb), 0.06);
-}
-
-.welcome-start-card.active[data-value="semestres"] {
-    border-color: rgba(139, 92, 246, 0.55);
-    background-color: color-mix(in srgb, var(--color-violet) 3.5%, var(--surface-color));
-    box-shadow: 0 8px 22px -6px rgba(139, 92, 246, 0.14), 0 2px 6px -1px rgba(139, 92, 246, 0.06);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
-    border-color: rgba(var(--color-blue-rgb), 0.6);
-    background-color: rgba(var(--color-blue-rgb), 0.09);
-    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] {
-    border-color: rgba(139, 92, 246, 0.6);
-    background-color: rgba(139, 92, 246, 0.09);
+    border-color: rgba(255, 255, 255, 0.28);
     box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
 }
 
 .welcome-start-card:active {
-    transform: scale(0.98);
+    transform: scale(0.985);
 }
 
 .welcome-start-card:focus-visible {
     outline: none;
-    border-color: var(--color-blue);
-    box-shadow: 0 0 0 3px rgba(var(--color-blue-rgb), 0.15);
-}
-
-.welcome-start-card.active[data-value="semestres"]:focus-visible {
-    border-color: var(--color-violet);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    border-color: var(--highlight-standard-border);
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow);
 }
 
 .welcome-start-card__header {
@@ -711,7 +669,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     letter-spacing: -0.01em;
-    transition: color 0.3s var(--ease-spring);
+    transition: color 0.2s var(--ease-spring);
 }
 
 .welcome-start-card.active .welcome-start-card__title,
@@ -725,118 +683,68 @@
     color: var(--text-tertiary);
     line-height: 1.35;
     white-space: nowrap;
-    transition: color 0.3s var(--ease-spring);
+    transition: color 0.2s var(--ease-spring);
 }
 
 .welcome-start-card.active .welcome-start-card__desc {
     color: var(--text-secondary);
 }
 
+/* Proportional timeline blocks (3 equal thirds vs 2 equal halves — non-interactive look) */
 .welcome-start-card__segments {
     display: flex;
     align-items: center;
     gap: 6px;
     width: 100%;
-    padding: 4px;
-    border-radius: 12px;
-    background-color: var(--bg-secondary);
-    transition: background-color 0.35s var(--ease-spring);
-}
-
-[data-theme="dark"] .welcome-start-card__segments {
-    background-color: rgba(0, 0, 0, 0.3);
-}
-
-.welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
-    background-color: rgba(var(--color-blue-rgb), 0.08);
-}
-
-.welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
-    background-color: rgba(139, 92, 246, 0.08);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__segments {
-    background-color: rgba(var(--color-blue-rgb), 0.14);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] .welcome-start-card__segments {
-    background-color: rgba(139, 92, 246, 0.14);
+    padding: 0;
 }
 
 .welcome-period-pill {
     flex: 1;
-    height: 32px;
-    border-radius: 8px;
+    height: 30px;
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: 0.78rem;
+    font-weight: 500;
     color: var(--text-tertiary);
-    background-color: rgba(var(--surface-color-rgb), 0.6);
-    border: 1px solid transparent;
-    transform: scale(0.98);
-    transition: background-color 0.35s var(--ease-spring),
-                color 0.35s var(--ease-spring),
-                border-color 0.35s var(--ease-spring),
-                box-shadow 0.35s var(--ease-spring),
-                transform 0.35s var(--ease-spring);
+    background-color: rgba(0, 0, 0, 0.035);
+    border: 1px solid var(--border-subtle);
+    transition: background-color 0.2s var(--ease-spring),
+                border-color 0.2s var(--ease-spring),
+                color 0.2s var(--ease-spring);
 }
 
 [data-theme="dark"] .welcome-period-pill {
     background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
     color: var(--text-tertiary);
 }
 
-.welcome-start-card:hover:not(.active) .welcome-period-pill {
-    color: var(--text-secondary);
-    background-color: rgba(var(--surface-color-rgb), 0.9);
-    transform: scale(0.99);
-}
+@media (hover: hover) and (pointer: fine) {
+    .welcome-start-card:hover:not(.active) .welcome-period-pill {
+        background-color: rgba(0, 0, 0, 0.055);
+        color: var(--text-secondary);
+    }
 
-[data-theme="dark"] .welcome-start-card:hover:not(.active) .welcome-period-pill {
-    color: var(--text-secondary);
-    background-color: rgba(255, 255, 255, 0.06);
+    [data-theme="dark"] .welcome-start-card:hover:not(.active) .welcome-period-pill {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+    }
 }
 
 .welcome-start-card.active .welcome-period-pill {
-    background-color: var(--surface-color);
-    transform: scale(1);
+    font-weight: 600;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color-strong);
 }
 
-.welcome-start-card.active .welcome-period-pill:nth-child(2) {
-    transition-delay: 35ms;
-}
-
-.welcome-start-card.active .welcome-period-pill:nth-child(3) {
-    transition-delay: 70ms;
-}
-
-.welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
-    color: var(--color-blue);
-    border-color: rgba(var(--color-blue-rgb), 0.16);
-    box-shadow: 0 2px 5px rgba(var(--color-blue-rgb), 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
-}
-
-.welcome-start-card.active[data-value="semestres"] .welcome-period-pill {
-    color: var(--color-violet);
-    border-color: rgba(139, 92, 246, 0.16);
-    box-shadow: 0 2px 5px rgba(139, 92, 246, 0.1), 0 1px 1px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] .welcome-period-pill {
-    background-color: rgba(var(--color-blue-rgb), 0.22);
-    color: var(--color-blue-bright);
-    border-color: rgba(var(--color-blue-rgb), 0.28);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .welcome-start-card.active[data-value="semestres"] .welcome-period-pill {
-    background-color: rgba(139, 92, 246, 0.22);
-    color: var(--color-violet-bright);
-    border-color: rgba(139, 92, 246, 0.28);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+[data-theme="dark"] .welcome-start-card.active .welcome-period-pill {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile responsive styling */
@@ -853,7 +761,7 @@
     }
 
     .welcome-period-pill {
-        height: 30px;
+        height: 26px;
     }
 }
 

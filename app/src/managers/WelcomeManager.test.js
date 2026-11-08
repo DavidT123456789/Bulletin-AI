@@ -341,8 +341,7 @@ describe('WelcomeManager', () => {
     });
 
     describe('handleRelaunchWelcomeGuide', () => {
-        it('should relaunch the welcome guide', async () => {
-            vi.useFakeTimers();
+        it('should relaunch the welcome guide via direct modal handoff', async () => {
             const { UI } = await import('./UIManager');
             const { DOM } = await import('../utils/DOM');
 
@@ -351,11 +350,7 @@ describe('WelcomeManager', () => {
             WelcomeManager.handleRelaunchWelcomeGuide(mockEvent);
 
             expect(mockEvent.preventDefault).toHaveBeenCalled();
-            expect(UI.closeAllModals).toHaveBeenCalled();
-
-            vi.advanceTimersByTime(300);
             expect(UI.openModal).toHaveBeenCalledWith(DOM.welcomeModal);
-            vi.useRealTimers();
         });
     });
 });

@@ -306,9 +306,9 @@
     --glow-highlight: rgba(var(--primary-color-rgb), 0.6);
     /* Blue Glow */
 
-    /* --- Brand Tokens --- */
-    --brand-primary: var(--primary-color);
-    --brand-primary-rgb: var(--primary-color-rgb);
+    /* --- Brand Tokens (Fixed Identity — Independent of [data-accent]) --- */
+    --brand-primary: #2563eb;
+    --brand-primary-rgb: 37, 99, 235;
     --brand-purple: var(--brand-accent-color);
     --brand-purple-rgb: var(--brand-accent-rgb);
 
@@ -323,10 +323,10 @@
     --row-spotlight-border: color-mix(in srgb, var(--border-color), var(--text-primary) 18%);
     --row-spotlight-accent: var(--primary-color);
 
-    /* --- Gradients (Fixed Brand Colors) --- */
-    --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
-    --gradient-ai: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
-    --gradient-brand: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+    /* --- Gradients (Fixed Brand Colors — Aligned with Landing Page) --- */
+    --gradient-primary: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+    --gradient-ai: var(--gradient-primary);
+    --gradient-brand: var(--gradient-primary);
 
     --gradient-warning: linear-gradient(135deg, var(--warning-deep) 0%, var(--color-amber-deep) 100%);
     --warning-deep: #ea580c;
@@ -512,9 +512,11 @@
 
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
-    /* Brand Gradient Colors Overrides */
-    --brand-purple: #6366f1;
-    --brand-purple-rgb: 99, 102, 241;
+    /* Brand Gradient Colors Overrides (Luminous Blue → Purple for Dark Surfaces) */
+    --brand-primary: #60a5fa;
+    --brand-primary-rgb: 96, 165, 250;
+    --brand-purple: #a855f7;
+    --brand-purple-rgb: 168, 85, 247;
 
     /* Standard UI Highlight / Drop Target (Neutral Frosted White — High Contrast in Dark Mode) */
     --highlight-standard-border: rgba(255, 255, 255, 0.65);

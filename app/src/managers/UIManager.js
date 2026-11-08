@@ -802,6 +802,7 @@ export const UI = {
     openModal(modalOrId, options = {}) { ModalUI.openModal(modalOrId, options); },
     closeModal(modalOrId, options = {}) { ModalUI.closeModal(modalOrId, options); },
     closeAllModals() { ModalUI.closeAllModals(); },
+    openHelpTab(tabId, sectionId) { ModalUI.openHelpTab(tabId, sectionId); },
     isAnyModalOpen() { return ModalUI.isAnyModalOpen(); },
 
     // Settings form functions delegated to FormUIManager

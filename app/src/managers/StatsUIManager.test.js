@@ -481,19 +481,19 @@ describe('StatsUIManager', () => {
             expect(activeBar.hasAttribute('aria-disabled')).toBe(false);
         });
 
-        it('should display compact count and class percentage in histogram bar tooltip on hover', () => {
+        it('should display class share percentage in histogram bar tooltip on hover and omit tooltip on zero bars', () => {
             StatsUI.updateHistogram([0, 0, 3, 3, 2]);
 
             const bar0_4 = document.querySelector('.hist-bar-group[data-range="0-4"]');
             const bar8_12 = document.querySelector('.hist-bar-group[data-range="8-12"]');
             const bar16_20 = document.querySelector('.hist-bar-group[data-range="16-20"]');
 
-            expect(bar0_4.getAttribute('data-tooltip')).toBe('0 élève (0-4/20)');
-            expect(bar8_12.getAttribute('data-tooltip')).toBe('3 élèves · 38 % (8-12/20)');
-            expect(bar16_20.getAttribute('data-tooltip')).toBe('2 élèves · 25 % (16-20/20)');
+            expect(bar0_4.hasAttribute('data-tooltip')).toBe(false);
+            expect(bar8_12.getAttribute('data-tooltip')).toBe('38 % de la classe');
+            expect(bar16_20.getAttribute('data-tooltip')).toBe('25 % de la classe');
         });
 
-        it('should display compact count, class share percentage and threshold in evolution legend tooltips on hover', async () => {
+        it('should display class share percentage and threshold in evolution legend tooltips on hover', async () => {
             const { appState } = await import('../state/State.js');
             const { Utils } = await import('../utils/Utils.js');
             Utils.getPeriods.mockReturnValue(['S1', 'S2']);
@@ -511,14 +511,14 @@ describe('StatsUIManager', () => {
             const stableItem = document.querySelector('.legend-item[data-filter-id="stableCount"]');
             const regressionItem = document.querySelector('.legend-item[data-filter-id="regressionCount"]');
 
-            expect(progressItem.dataset.tooltip).toBe('2 élèves · 67 % (≥ +0,5 pt)');
-            expect(stableItem.dataset.tooltip).toBe('1 élève · 33 % (entre -0,5 et +0,5 pt)');
-            expect(regressionItem.dataset.tooltip).toBe('0 élève (≤ -0,5 pt)');
+            expect(progressItem.dataset.tooltip).toBe('67 % de la classe (≥ +0,5 pt)');
+            expect(stableItem.dataset.tooltip).toBe('33 % de la classe (entre -0,5 et +0,5 pt)');
+            expect(regressionItem.dataset.tooltip).toBe('Élèves en régression (≤ -0,5 pt)');
 
-            // Changing thresholds via updateStatsTooltips() without args preserves count + % from DOM data-count
+            // Changing thresholds via updateStatsTooltips() without args preserves % from DOM data-count
             appState.evolutionThresholds = { positive: 1, negative: -1 };
             StatsUI.updateStatsTooltips();
-            expect(progressItem.dataset.tooltip).toBe('2 élèves · 67 % (≥ +1 pt)');
+            expect(progressItem.dataset.tooltip).toBe('67 % de la classe (≥ +1 pt)');
         });
 
         it('should include student names and manage accessibility attributes in minGrade and maxGrade detail item tooltips', async () => {

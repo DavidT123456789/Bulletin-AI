@@ -36,8 +36,11 @@ export const ModalUI = {
     /** @type {HTMLElement|null} Dernier élément focalisé avant ouverture */
     lastFocusedElement: null,
 
-    /** @type {HTMLElement|null} Modale empilée (ex: helpModal par-dessus settings) */
+    /** @type {HTMLElement|null} Modale de Niveau 1 sous-jacente lorsqu'une confirmation de Niveau 2 est empilée */
     stackedModal: null,
+
+    /** @private {HTMLElement|null} Élément focalisé dans la modale de Niveau 1 avant ouverture d'une confirmation */
+    _stackedFocusedElement: null,
 
     /** @private Handler pour le focus trap (WCAG) */
     _focusTrapHandler: null,
@@ -206,9 +209,62 @@ export const ModalUI = {
         });
     },
 
-    /** @private */
-    _isOverlayModal(modal, options = {}) {
-        return modal.id === 'helpModal' || DYNAMIC_MODAL_IDS.has(modal.id) || Boolean(options.isStacked);
+    /**
+     * Indique si la modale est un dialogue court de Niveau 2 (confirmation, alerte, conflit)
+     * destiné à se superposer légèrement sur la modale de Niveau 1 active.
+     * @private
+     */
+    _isOverlayModal(modal) {
+        return DYNAMIC_MODAL_IDS.has(modal?.id);
+    },
+
+    /**
+     * Indique si l'ouverture de #helpModal survient comme aide contextuelle (?) au-dessus
+     * d'une modale de Niveau 1 active (qui doit alors être suspendue sans perdre son état).
+     * @param {HTMLElement} modal
+     * @private
+     */
+    _isContextualHelpOverlay(modal) {
+        return Boolean(
+            modal?.id === 'helpModal' &&
+            this.activeModal &&
+            this.activeModal !== modal &&
+            this.activeModal.isConnected &&
+            !this.activeModal.classList.contains('modal-closing') &&
+            !this.activeModal.classList.contains('closing') &&
+            !this._isOverlayModal(this.activeModal)
+        );
+    },
+
+    /**
+     * Restaure la modale de Niveau 1 sous-jacente après la fermeture d'un dialogue de Niveau 2
+     * ou de l'aide contextuelle sans retirer .modal-visible (zéro flash ni ré-animation d'entrée).
+     * @param {HTMLElement} underlyingModal
+     * @private
+     */
+    _restoreUnderlyingModal(underlyingModal) {
+        if (!underlyingModal) return;
+        this.activeModal = underlyingModal;
+        this.stackedModal = null;
+        underlyingModal.classList.remove('modal-suspended');
+        underlyingModal.classList.add('is-initial-focus');
+        if (typeof document !== 'undefined') {
+            document.body.classList.add('modal-open');
+        }
+        this.activateFocusTrap(underlyingModal);
+
+        const targetFocus = this._stackedFocusedElement;
+        this._stackedFocusedElement = null;
+        if (
+            targetFocus &&
+            underlyingModal.contains(targetFocus) &&
+            targetFocus.offsetParent !== null &&
+            !targetFocus.disabled
+        ) {
+            targetFocus.focus?.({ preventScroll: true });
+        } else if (typeof document !== 'undefined' && !underlyingModal.contains(document.activeElement)) {
+            underlyingModal.focus?.({ preventScroll: true });
+        }
     },
 
     /**
@@ -227,15 +283,100 @@ export const ModalUI = {
 
     /**
      * Ouvre une modale avec animation style Apple / iOS 2026.
+     * - Niveau 1 (modale espace de travail) : remplace automatiquement toute modale ouverte via handoff fluide.
+     * - Niveau 2 (confirmation / alerte dynamique) : se superpose légèrement sans doubler le flou GPU.
      * @param {HTMLElement|string} modalOrId - L'élément modale ou son ID
-     * @param {Object} [options={}] - Options d'ouverture (ex: { isStacked: true })
+     * @param {Object} [options={}] - Options d'ouverture
      */
     openModal(modalOrId, options = {}) {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
+        const isOverlay = this._isOverlayModal(modal);
+        const isContextualHelp = !isOverlay && this._isContextualHelpOverlay(modal);
+        let isHandoff = Boolean(options.isHandoff);
+
+        if (isOverlay) {
+            // Niveau 2 (confirmation / dialogue court) : superposition légère sur la modale de Niveau 1
+            if (this.activeModal && this.activeModal !== modal && this.activeModal.isConnected) {
+                if (this.activeModal.classList.contains('modal-closing') || this.activeModal.classList.contains('closing')) {
+                    this.activeModal.classList.add('modal-handoff-out');
+                    isHandoff = true;
+                } else if (this._isOverlayModal(this.activeModal)) {
+                    // Enchaînement de deux dialogues de Niveau 2 (ex: customChoicesModal -> hardConfirmModal)
+                    this.closeModal(this.activeModal, { isHandoff: true });
+                    isHandoff = true;
+                } else {
+                    this.stackedModal = this.activeModal;
+                    this._stackedFocusedElement = typeof document !== 'undefined' ? document.activeElement : null;
+                }
+            } else if (!this.stackedModal && typeof document !== 'undefined') {
+                this.lastFocusedElement = document.activeElement;
+            }
+        } else if (isContextualHelp) {
+            // Aide contextuelle (?) ouverte depuis une modale de Niveau 1 :
+            // Suspension invisible de la modale parente (zéro superposition visuelle, zéro perte de saisie)
+            this.stackedModal = this.activeModal;
+            this._stackedFocusedElement = typeof document !== 'undefined' ? document.activeElement : null;
+            this.stackedModal.classList.add('modal-suspended');
+            isHandoff = true;
+        } else {
+            // Niveau 1 (modale espace de travail) : remplacement exclusif (Handoff) de toute modale ouverte
+            const activeHub = typeof document !== 'undefined'
+                ? document.querySelector('#importHubBackdrop.active')
+                : null;
+            if (activeHub) {
+                activeHub.classList.remove('active', 'is-handing-off');
+                if (document.body) document.body.style.overflow = '';
+                HistoryManager.handleManualClose?.('importHub', { replaceNext: true });
+                isHandoff = true;
+            }
+
+            const modalsToClose = new Set();
+            if (
+                this.stackedModal &&
+                this.stackedModal !== modal &&
+                this.stackedModal.isConnected &&
+                (!modal.id || this.stackedModal.id !== modal.id)
+            ) {
+                modalsToClose.add(this.stackedModal);
+            }
+            if (
+                this.activeModal &&
+                this.activeModal !== modal &&
+                this.activeModal.isConnected &&
+                (!modal.id || this.activeModal.id !== modal.id)
+            ) {
+                modalsToClose.add(this.activeModal);
+            }
+            if (typeof document !== 'undefined') {
+                document.querySelectorAll('.modal.modal-visible, .modal.show, .modal.modal-closing, #trombiWizardModal.visible, #trombiWizardModal.closing').forEach(m => {
+                    if (m !== modal && (!modal.id || m.id !== modal.id)) modalsToClose.add(m);
+                });
+            }
+
+            this.stackedModal = null;
+            this._stackedFocusedElement = null;
+
+            if (modalsToClose.size > 0) {
+                isHandoff = true;
+                modalsToClose.forEach(m => {
+                    m.classList.remove('modal-suspended');
+                    if (m.classList.contains('modal-closing') || m.classList.contains('closing')) {
+                        m.classList.add('modal-handoff-out');
+                    } else {
+                        this.closeModal(m, { isHandoff: true });
+                    }
+                });
+            }
+
+            if ((!isHandoff || !this.lastFocusedElement) && typeof document !== 'undefined') {
+                this.lastFocusedElement = document.activeElement;
+            }
+        }
+
         // Déclencher un événement lors de l'ouverture des modales de paramétrage pour créer un snapshot
-        if (!options.isRestoringStacked && (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal')) {
+        if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
             document.dispatchEvent(new CustomEvent('settings-modal-open', { detail: { modalId: modal.id } }));
         }
 
@@ -253,25 +394,20 @@ export const ModalUI = {
                 onClosed: options.onClosed
             });
         }
-        modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show');
+        modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show', 'modal-handoff', 'modal-handoff-out', 'modal-stacked-overlay', 'modal-suspended');
         modal.classList.add('is-initial-focus');
+        if (isHandoff) {
+            modal.classList.add('modal-handoff');
+        }
+        if (isOverlay && this.stackedModal) {
+            modal.classList.add('modal-stacked-overlay');
+        }
         if (isTrombiModal) {
             modal.classList.add('visible');
         }
 
         // [UX Mobile] History Push via Manager
-        if (!options.isRestoringStacked) {
-            HistoryManager.pushState(modal.id, (closeOptions) => this.closeModal(modal, closeOptions));
-        }
-
-        // Une modale "overlay" (aide, confirmation dynamique) s'empile sur la modale active
-        if (this.activeModal && this.activeModal !== modal && this._isOverlayModal(modal, options)) {
-            if (!this.activeModal.classList.contains('modal-closing') || !this.stackedModal) {
-                this.stackedModal = this.activeModal;
-            }
-        } else if (!options.isRestoringStacked) {
-            this.lastFocusedElement = document.activeElement;
-        }
+        HistoryManager.pushState(modal.id, (closeOptions) => this.closeModal(modal, closeOptions));
 
         const modalContent = modal.querySelector('.modal-content, .trombi-wizard-content');
         if (modalContent) {
@@ -283,8 +419,10 @@ export const ModalUI = {
         // Forcer le reflow pour que la transition s'applique
         void modal.offsetWidth;
         modal.querySelectorAll('.ui-tabs-content, .modal-body:not(.modal-body-flex):not(.import-wizard-body)').forEach(el => {
+            el.scrollTop = 0;
             FocusPanelManager.bindScrollAffordances?.(el);
         });
+        modal.querySelectorAll('.lab-layout, .lab-pane').forEach(el => { el.scrollTop = 0; });
         // Ajouter les classes pour déclencher l'animation Apple
         const scheduleVisible = typeof requestAnimationFrame === 'function'
             ? requestAnimationFrame
@@ -391,7 +529,11 @@ export const ModalUI = {
         // [UX Mobile] History Cleanup
         // If closed via UI (X button) and NOT caused by back button, we must clean up history
         if (!options.causedByHistory && !options.skipHistory) {
-            HistoryManager.handleManualClose(modal.id);
+            if (options.isHandoff) {
+                HistoryManager.handleManualClose(modal.id, { replaceNext: true });
+            } else {
+                HistoryManager.handleManualClose(modal.id);
+            }
         }
 
         this._isIgnoringTooltips = true;
@@ -400,6 +542,19 @@ export const ModalUI = {
         // IMPORTANT: Ne pas retirer modal-visible ici pour permettre à l'animation CSS de fonctionner
         // La classe modal-closing doit avoir priorité sur modal-visible dans le CSS
         modal.classList.add('modal-closing');
+        const isReturningToSuspended = Boolean(
+            modal.id === 'helpModal' &&
+            this.stackedModal &&
+            this.stackedModal !== modal &&
+            this.stackedModal.classList.contains('modal-suspended') &&
+            !this.stackedModal.classList.contains('modal-closing')
+        );
+        if (options.isHandoff || isReturningToSuspended) {
+            modal.classList.add('modal-handoff-out');
+        }
+        if (isReturningToSuspended) {
+            this.stackedModal.classList.remove('modal-suspended');
+        }
         if (isTrombiModal) {
             modal.classList.add('closing');
         }
@@ -409,7 +564,18 @@ export const ModalUI = {
             this._animTimeouts.delete(modal);
             this._modalHooks.delete(modal);
             modal.style.display = isTrombiModal ? '' : 'none';
-            modal.classList.remove('modal-closing', 'closing', 'modal-visible', 'show', 'visible', 'is-initial-focus');
+            modal.classList.remove(
+                'modal-closing',
+                'closing',
+                'modal-visible',
+                'show',
+                'visible',
+                'is-initial-focus',
+                'modal-handoff',
+                'modal-handoff-out',
+                'modal-stacked-overlay',
+                'modal-suspended'
+            );
             options.onClosed?.();
             if (hooks?.onClosed && hooks.onClosed !== options.onClosed) {
                 hooks.onClosed();
@@ -440,14 +606,14 @@ export const ModalUI = {
                 // Une autre modale a été ouverte pendant la fermeture (ex: bascule Trombi -> ImportWizard ou customConfirm -> hardConfirm)
                 if (!canRestoreStacked || !this._isOverlayModal(this.activeModal)) {
                     this.stackedModal = null;
+                    this._stackedFocusedElement = null;
                 }
-            } else if (this._isOverlayModal(modal, options) && canRestoreStacked) {
-                // Restaure la modale sous-jacente (focus trap) sans dupliquer l'historique
-                this.activeModal = this.stackedModal;
-                this.stackedModal = null;
-                this.openModal(this.activeModal, { isRestoringStacked: true });
+            } else if ((this._isOverlayModal(modal) || modal.id === 'helpModal') && canRestoreStacked) {
+                // Restaure la modale sous-jacente (focus trap) sans ré-animer ni dupliquer l'historique
+                this._restoreUnderlyingModal(this.stackedModal);
             } else {
                 this.stackedModal = null;
+                this._stackedFocusedElement = null;
                 const underlyingStandalone = typeof document !== 'undefined'
                     ? document.querySelector('#trombiWizardModal.visible, #importHubBackdrop.active, #focusPanel.open')
                     : null;
@@ -1838,7 +2004,48 @@ export const ModalUI = {
         });
     },
 
+    /**
+     * Ouvre la modale d'aide sur un onglet et une section (accordéon) ciblés.
+     * Point d'entrée unique mutualisé pour les boutons '?' et liens d'aide contextuelle.
+     * @param {string} [tabId]
+     * @param {string} [sectionId]
+     */
+    openHelpTab(tabId, sectionId) {
+        this.openModal(DOM.helpModal);
+        if (tabId) {
+            const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${tabId}"]`);
+            if (tabBtn) tabBtn.click();
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('help-modal-opened'));
+        }
+        if (sectionId) {
+            setTimeout(() => {
+                const section = document.getElementById(sectionId);
+                if (!section) return;
+                if (section.tagName === 'DETAILS') {
+                    DOM.helpModal?.querySelectorAll('.help-accordion[open]').forEach(acc => {
+                        if (acc !== section) acc.open = false;
+                    });
+                    section.open = true;
+                }
+                section.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
+        }
+    },
+
     closeAllModals(options = {}) {
+        const activeHub = typeof document !== 'undefined'
+            ? document.querySelector('#importHubBackdrop.active')
+            : null;
+        if (activeHub) {
+            activeHub.classList.remove('active', 'is-handing-off');
+            if (document.body) document.body.style.overflow = '';
+            if (!options.causedByHistory && !options.skipHistory) {
+                HistoryManager.handleManualClose?.('importHub');
+            }
+        }
+
         const modals = new Set([
             this.activeModal,
             this.stackedModal,
@@ -1847,9 +2054,10 @@ export const ModalUI = {
             DOM.studentDetailsModal,
             DOM.helpModal,
             DOM.welcomeModal,
-            ...document.querySelectorAll('.modal.modal-visible, .modal.show')
+            ...document.querySelectorAll('.modal.modal-visible, .modal.show, #trombiWizardModal.visible')
         ]);
         this.stackedModal = null; // Prevent restoring stacked modals when closing all
+        this._stackedFocusedElement = null;
         modals.forEach(m => {
             if (m) this.closeModal(m, options);
         });

@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="color-scheme" content="light dark">
+    <meta name="color-scheme" content="light">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa">
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <title>Bulletin AI | L'assistant numérique des enseignants</title>
     <meta name="description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. Compatible Albert (IA souveraine Gouv.fr), gratuit et respectueux du RGPD.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. Compatible Albert (IA souveraine Gouv.fr), gratuit et respectueux du RGPD.">
 
     <meta property="og:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta property="og:description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
     <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
     <meta property="og:url" content="https://bulletin-ai.pages.dev">
     <meta property="og:type" content="website">
@@ -22,7 +22,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta name="twitter:description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
     <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
 
     <link rel="canonical" href="https://bulletin-ai.pages.dev">
@@ -38,28 +38,6 @@
 
     <link rel="stylesheet" href="./src/css/landing-tailwind.css">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
-
-    <script>
-        window.tailwind = window.tailwind || {}; window.tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
-                    },
-                    colors: {
-                        primary: '#3b82f6',
-                        surface: '#ffffff',
-                        subtle: '#f4f4f5',
-                    },
-                    letterSpacing: { tightest: '-.04em', tighter: '-.02em' },
-                    transitionTimingFunction: {
-                        'organic': 'cubic-bezier(0.25, 1, 0.5, 1)',
-                        'spring': 'cubic-bezier(0.32, 0.72, 0, 1)'
-                    }
-                }
-            }
-        }
-    </script>
 
     <style>
         .bg-orb {
@@ -118,32 +96,31 @@
             z-index: 10;
             transform: translate(-50%, -50%) scale(1);
             opacity: 1;
-            filter: blur(0);
             cursor: default;
+            border-color: rgba(228, 228, 231, 0.85);
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
         }
 
         .carousel-card[data-pos="left"] {
-            transform: translate(calc(-50% - 320px), -50%) scale(0.85);
+            transform: translate(calc(-50% - 320px), -50%) scale(0.88);
             z-index: 5;
-            opacity: 0.6;
-            filter: blur(1px);
+            opacity: 0.78;
             cursor: pointer;
         }
 
         .carousel-card[data-pos="left"]:hover {
-            opacity: 0.8;
+            opacity: 0.94;
         }
 
         .carousel-card[data-pos="right"] {
-            transform: translate(calc(-50% + 320px), -50%) scale(0.85);
+            transform: translate(calc(-50% + 320px), -50%) scale(0.88);
             z-index: 5;
-            opacity: 0.6;
-            filter: blur(1px);
+            opacity: 0.78;
             cursor: pointer;
         }
 
         .carousel-card[data-pos="right"]:hover {
-            opacity: 0.8;
+            opacity: 0.94;
         }
 
         .carousel-card[data-pos="far-left"] {
@@ -176,11 +153,11 @@
 
         @media (max-width: 768px) {
             .carousel-card[data-pos="left"] {
-                transform: translate(calc(-50% - 200px), -50%) scale(0.8);
+                transform: translate(calc(-50% - 200px), -50%) scale(0.82);
             }
 
             .carousel-card[data-pos="right"] {
-                transform: translate(calc(-50% + 200px), -50%) scale(0.8);
+                transform: translate(calc(-50% + 200px), -50%) scale(0.82);
             }
 
             .carousel-card[data-pos="far-left"],
@@ -192,17 +169,17 @@
         @media (max-width: 640px) {
             .carousel-card {
                 width: 260px !important;
-                height: 340px !important;
+                height: 280px !important;
             }
 
             .carousel-card[data-pos="left"] {
                 transform: translate(calc(-50% - 150px), -50%) scale(0.75);
-                opacity: 0.4;
+                opacity: 0.45;
             }
 
             .carousel-card[data-pos="right"] {
                 transform: translate(calc(-50% + 150px), -50%) scale(0.75);
-                opacity: 0.4;
+                opacity: 0.45;
             }
 
             .carousel-card[data-pos="far-left"],
@@ -213,13 +190,167 @@
         }
 
         .mockup-3d {
-            transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
+            transform: perspective(1200px) rotateY(-4deg) rotateX(1.5deg);
             transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease;
-            height: 370px;
         }
 
         .mockup-3d:hover {
             transform: perspective(1200px) rotateY(0) rotateX(0);
+        }
+
+        /* ── Hero Focus Panel Mockup (harmonized with app.html) ── */
+        .mockup-status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 7px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            letter-spacing: 0.01em;
+        }
+
+        .mockup-nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 9999px;
+            background: #f4f4f5;
+            border: 1px solid rgba(228, 228, 231, 0.8);
+            font-size: 11px;
+            font-weight: 500;
+            color: #52525b;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mockup-grade-prev {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background: #f4f4f5;
+            font-size: 10px;
+            font-weight: 500;
+            color: #71717a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mockup-grade-prev strong {
+            font-weight: 600;
+            color: #3f3f46;
+        }
+
+        .mockup-grade-current {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 3px;
+            padding: 2px 9px;
+            border-radius: 9999px;
+            background: #fffbeb;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            font-size: 10px;
+            font-weight: 600;
+            color: #d97706;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mockup-grade-current strong {
+            font-size: 12px;
+            font-weight: 700;
+            color: #d97706;
+        }
+
+        .mockup-grade-current small {
+            font-size: 9px;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+
+        .mockup-obs-badge {
+            gap: 4px;
+            padding: 2px 8px;
+            height: 22px;
+            border-radius: 9999px;
+            font-size: 10.5px;
+            font-weight: 500;
+        }
+
+        .mockup-obs-badge--warn {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid rgba(254, 202, 202, 0.7);
+        }
+
+        .mockup-obs-badge--pos {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid rgba(187, 247, 208, 0.7);
+        }
+
+        .mockup-refine-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            background: #f4f4f5;
+            border: 1px solid transparent;
+            font-size: 10.5px;
+            font-weight: 500;
+            color: #52525b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mockup-refine-chip[data-mockup-tone="concise"]:hover,
+        .mockup-refine-chip[data-mockup-tone="concise"].is-active {
+            background: #fffbeb;
+            color: #d97706;
+            border-color: rgba(251, 191, 36, 0.35);
+        }
+
+        .mockup-refine-chip[data-mockup-tone="encouraging"]:hover,
+        .mockup-refine-chip[data-mockup-tone="encouraging"].is-active {
+            background: #fff1f2;
+            color: #e11d48;
+            border-color: rgba(251, 113, 133, 0.35);
+        }
+
+        .mockup-refine-chip[data-mockup-tone="polish"]:hover,
+        .mockup-refine-chip[data-mockup-tone="polish"].is-active {
+            background: #faf5ff;
+            color: #9333ea;
+            border-color: rgba(192, 132, 252, 0.35);
+        }
+
+        .mockup-copy-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            background: #ffffff;
+            border: 1px solid #e4e4e7;
+            color: #52525b;
+            font-size: 10.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mockup-copy-pill:hover {
+            background: #f4f4f5;
+            color: #27272a;
+            border-color: #d4d4d8;
+        }
+
+        .mockup-copy-pill.is-copied {
+            background: #f0fdf4;
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #16a34a;
         }
 
         .blur-word {
@@ -496,16 +627,16 @@
 
         /* Smart Spacing System */
         :root {
-            --spacing-title-subtitle: 1rem;
-            /* 16px (mb-4) */
-            --spacing-header-content: 5rem;
-            /* 80px (mb-20) */
+            --spacing-title-subtitle: 0.875rem;
+            /* 14px */
+            --spacing-header-content: 3.5rem;
+            /* 56px */
         }
 
         @media (max-width: 768px) {
             :root {
-                --spacing-header-content: 3rem;
-                /* 48px (mb-12) on mobile */
+                --spacing-header-content: 2.5rem;
+                /* 40px on mobile */
             }
         }
 
@@ -763,7 +894,7 @@
             <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
                 <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="w-8 h-8 object-contain transition-transform duration-200 group-hover:scale-105" width="32" height="32">
                 <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin AI</span>
-                <span id="landingVersionDisplay"
+                <span
                     class="px-2.5 py-0.5 rounded-full bg-zinc-100/90 text-zinc-600 text-[10px] font-medium tracking-normal ring-1 ring-zinc-900/5 backdrop-blur-sm">
                     Accès libre
                 </span>
@@ -826,7 +957,7 @@
     <main>
         <header id="hero" class="relative min-h-[100svh] flex flex-col justify-center pt-20 pb-12 lg:pt-24 lg:pb-20 overflow-hidden">
             <div
-                class="max-w-7xl mx-auto px-[34px] grid lg:grid-cols-[56%_44%] gap-12 lg:gap-8 items-center lg:items-end">
+                class="max-w-7xl mx-auto px-[34px] grid lg:grid-cols-[56%_44%] gap-12 lg:gap-8 items-center">
                 <div class="text-center lg:text-left z-10">
 
                     <h1 class="text-5xl lg:text-6xl font-semibold tracking-tightest text-zinc-800 leading-[1.1] mb-6">
@@ -835,7 +966,7 @@
                             enseignants</span>
                     </h1>
                     <p class="text-lg text-zinc-500 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
-                        Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves.
+                        Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                         <a href="./app.html"
@@ -884,59 +1015,84 @@
                     </div>
                     <div
                         class="mockup-3d bg-white rounded-2xl shadow-2xl border border-zinc-200/50 overflow-hidden relative max-w-md mx-auto flex flex-col">
+                        <!-- En-tête style Panneau Focus -->
                         <div
-                            class="h-12 border-b border-zinc-100 bg-white/80 backdrop-blur-sm flex items-center justify-between px-4">
-                            <div class="font-semibold text-xs tracking-tight text-zinc-500 flex items-center gap-2">
-                                <iconify-icon icon="solar:bolt-linear"></iconify-icon> Assistant de rédaction
+                            class="py-3 px-4 border-b border-zinc-100 bg-white flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0 text-left">
+                                <img src="./images/sample-solo-1.png" alt="Mathéo D."
+                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-1 ring-zinc-900/5 flex-shrink-0">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-semibold text-zinc-800 tracking-tight">Mathéo D.</h3>
+                                        <span class="mockup-status-pill">PAP</span>
+                                    </div>
+                                    <p class="text-[10px] text-zinc-500 font-medium">3e B · Trimestre 2</p>
+                                </div>
                             </div>
-                            <div class="text-[10px] font-medium text-zinc-400 flex items-center gap-1">
-                                <iconify-icon icon="solar:lock-keyhole-linear" width="10"></iconify-icon>
-                                local_storage
+                            <div class="mockup-nav-pill flex-shrink-0">
+                                <iconify-icon icon="solar:alt-arrow-left-linear" width="11"></iconify-icon>
+                                <span>12/28</span>
+                                <iconify-icon icon="solar:alt-arrow-right-linear" width="11"></iconify-icon>
                             </div>
                         </div>
-                        <div class="p-5 grid gap-4 bg-[#FAFAFA] flex-1">
-                            <div
-                                class="bg-white p-4 rounded-xl border border-zinc-100 shadow-sm flex items-start gap-4">
-                                <img src="./images/sample-solo-1.png" alt="Mathéo D."
-                                    class="w-10 h-10 rounded-full object-cover shadow-blue-200 shadow-lg flex-shrink-0">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <h3 class="text-sm font-semibold text-zinc-800">Mathéo D.</h3>
-                                            <p class="text-[10px] text-zinc-400 font-medium">Données brutes</p>
-                                        </div>
-                                        <div class="text-right flex-shrink-0">
-                                            <div class="text-lg font-semibold text-amber-500 tracking-tight">8.5<span
-                                                    class="text-xs text-zinc-300 font-normal">/20</span></div>
-                                        </div>
+
+                        <!-- Corps du Panneau Focus -->
+                        <div class="p-4 grid gap-3 bg-[#FAFAFA] flex-1 text-left">
+                            <!-- Carte 1 : Contexte & Journal de bord -->
+                            <div class="bg-white rounded-xl border border-zinc-200/70 shadow-sm overflow-hidden">
+                                <div class="px-4 py-2 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-1.5 text-xs font-semibold text-zinc-700">
+                                        <span>Contexte & Journal</span>
+                                        <iconify-icon icon="solar:microphone-3-linear" class="text-zinc-400" width="13"></iconify-icon>
                                     </div>
-                                    <div class="mt-3 h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                                        <div id="mockup-bar"
-                                            class="h-full bg-amber-400 rounded-full w-0 transition-all duration-1000 ease-out">
-                                        </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="mockup-grade-prev">T1 <strong>10.5</strong></span>
+                                        <span class="mockup-grade-current">T2 <strong>8.5</strong><small>/20</small></span>
                                     </div>
-                                    <div class="mt-2 text-[10px] text-zinc-500 italic">"Bavardages incessants, passif
-                                        en cours..."</div>
+                                </div>
+                                <div class="p-4">
+                                    <p class="text-xs text-zinc-500 italic mb-2">"Inattentif ce trimestre, mais volontaire à l'oral."</p>
+                                    <div id="mockup-analysis" class="flex flex-wrap items-center gap-1.5 min-h-[24px]"></div>
                                 </div>
                             </div>
-                            <div
-                                class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm ring-2 ring-blue-50 relative overflow-hidden group">
-                                <div class="flex items-center justify-between gap-2 mb-3">
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                            <iconify-icon icon="solar:magic-stick-3-linear" width="14"></iconify-icon>
-                                        </div>
-                                        <span class="text-xs font-semibold text-zinc-700">Analyse & Appréciation</span>
+
+                            <!-- Carte 2 : Appréciation & Affinage -->
+                            <div class="bg-white rounded-xl border border-zinc-200/70 shadow-sm relative overflow-hidden">
+                                <div class="px-4 py-2 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-1.5 text-xs font-semibold text-zinc-700">
+                                        <span>Appréciation</span>
+                                        <iconify-icon icon="solar:volume-loud-linear" class="text-zinc-400" width="13"></iconify-icon>
                                     </div>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-50 text-green-600 text-[10px] font-medium border border-green-100/50">
-                                        <iconify-icon icon="solar:shield-check-linear" width="11"></iconify-icon>
-                                        Pseudonymisé · RGPD
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span id="mockup-word-count" class="text-[10px] font-medium text-zinc-400"></span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-[10px] font-medium border border-green-100/50">
+                                            <iconify-icon icon="solar:shield-check-linear" width="11"></iconify-icon>
+                                            Pseudonymisé · RGPD
+                                        </span>
+                                    </div>
                                 </div>
-                                <div class="space-y-2">
-                                    <div id="mockup-analysis" class="text-[10px] mb-2 flex gap-2 min-h-[24px]"></div>
-                                    <p id="mockup-text" class="text-xs text-zinc-600 leading-relaxed min-h-[90px] md:min-h-[60px]"></p>
+                                <div class="p-4">
+                                    <p id="mockup-text" class="text-xs text-zinc-700 leading-relaxed min-h-[60px] mb-3"></p>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <button type="button" tabindex="-1" class="mockup-refine-chip" data-mockup-tone="concise">
+                                                <iconify-icon icon="solar:minimize-square-linear" class="text-amber-500" width="12"></iconify-icon>
+                                                Concise
+                                            </button>
+                                            <button type="button" tabindex="-1" class="mockup-refine-chip" data-mockup-tone="encouraging">
+                                                <iconify-icon icon="solar:heart-linear" class="text-rose-400" width="12"></iconify-icon>
+                                                Encourageante
+                                            </button>
+                                            <button type="button" tabindex="-1" class="mockup-refine-chip" data-mockup-tone="polish">
+                                                <iconify-icon icon="solar:stars-line-linear" class="text-purple-500" width="12"></iconify-icon>
+                                                Peaufiner
+                                            </button>
+                                        </div>
+                                        <button type="button" tabindex="-1" id="mockup-copy-btn" class="mockup-copy-pill flex-shrink-0">
+                                            <iconify-icon icon="solar:copy-linear" width="11"></iconify-icon>
+                                            <span>Copier</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -945,12 +1101,12 @@
             </div>
         </header>
 
-        <section id="how-it-works" class="py-24 bg-white">
+        <section id="how-it-works" class="py-20 bg-white">
             <div class="max-w-7xl mx-auto px-[34px]">
                 <div class="section-header reveal-on-scroll">
                     <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Flux de travail
                     </h2>
-                    <p>Import des notes, analyse du contexte et génération par IA.</p>
+                    <p>De l'import de vos listes au suivi quotidien, jusqu'aux bulletins.</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
                     <div class="hidden md:block workflow-connector reveal-on-scroll"
@@ -971,9 +1127,8 @@
                                 1</div>
                         </div>
                         <div class="text-center px-4">
-                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Importez vos données</h3>
-                            <p class="text-sm text-zinc-500 leading-relaxed">Copier-coller depuis n'importe quel
-                                tableur. Les colonnes sont détectées automatiquement.</p>
+                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Importez votre classe</h3>
+                            <p class="text-sm text-zinc-500 leading-relaxed">Glissez un PDF Pronote / MBN, un fichier Excel ou collez votre tableau : élèves, notes et photos sont reconnus automatiquement.</p>
                         </div>
                     </div>
 
@@ -989,8 +1144,8 @@
                                 2</div>
                         </div>
                         <div class="text-center px-4">
-                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Générez en un clic</h3>
-                            <p class="text-sm text-zinc-500 leading-relaxed">L'IA (Albert / Gouv.fr, Gemini, Mistral ou Ollama) rédige l'appréciation à partir de données pseudonymisées à la volée.</p>
+                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Suivez et générez</h3>
+                            <p class="text-sm text-zinc-500 leading-relaxed">Notez vos observations au fil des cours, puis générez l'appréciation en un clic à partir de données pseudonymisées à la volée.</p>
                         </div>
                     </div>
 
@@ -1006,34 +1161,33 @@
                                 3</div>
                         </div>
                         <div class="text-center px-4">
-                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Supervisez et exportez</h3>
-                            <p class="text-sm text-zinc-500 leading-relaxed">Relisez, ajustez si besoin, puis copiez
-                                directement dans votre logiciel scolaire.</p>
+                            <h3 class="text-lg font-semibold text-zinc-800 mb-2">Affinez et exportez</h3>
+                            <p class="text-sm text-zinc-500 leading-relaxed">Ajustez le ton en un clic (concis, encourageant…), relisez et copiez directement dans votre logiciel scolaire.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="features" class="py-24 overflow-hidden bg-zinc-100">
+        <section id="features" class="py-20 overflow-hidden bg-zinc-100">
             <div class="section-header reveal-on-scroll">
                 <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Fonctionnalités</h2>
                 <p>Une suite d'outils conçue pour la productivité et la confidentialité.</p>
             </div>
-            <div class="h-[360px] sm:h-[380px] relative w-full perspective-container reveal-on-scroll"
+            <div class="h-[290px] sm:h-[300px] relative w-full perspective-container reveal-on-scroll"
                 id="carousel-track" role="region" aria-label="Fonctionnalités de Bulletin AI"
                 aria-roledescription="carousel" aria-live="off" tabindex="0"></div>
             <div class="flex justify-center items-center mt-[42px] reveal-on-scroll">
                 <div class="px-4 py-2 flex items-center gap-4">
                     <button id="prevBtn"
-                        class="text-zinc-300 hover:text-zinc-600 hover:scale-110 transition-all flex items-center justify-center"
+                        class="text-zinc-400 hover:text-zinc-800 hover:scale-110 transition-all flex items-center justify-center"
                         aria-label="Slide précédente">
                         <iconify-icon icon="solar:alt-arrow-left-linear" width="20"></iconify-icon>
                     </button>
                     <div id="carousel-dots" class="flex gap-1.5 items-center" role="tablist"
                         aria-label="Navigation du carousel"></div>
                     <button id="nextBtn"
-                        class="text-zinc-300 hover:text-zinc-600 hover:scale-110 transition-all flex items-center justify-center"
+                        class="text-zinc-400 hover:text-zinc-800 hover:scale-110 transition-all flex items-center justify-center"
                         aria-label="Slide suivante">
                         <iconify-icon icon="solar:alt-arrow-right-linear" width="20"></iconify-icon>
                     </button>
@@ -1041,7 +1195,7 @@
             </div>
         </section>
 
-        <section id="specs" class="py-24 bg-white">
+        <section id="specs" class="py-20 bg-white">
             <div class="max-w-3xl mx-auto px-[34px]">
                 <div class="section-header reveal-on-scroll">
                     <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Spécifications</h2>
@@ -1054,8 +1208,9 @@
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="true" aria-controls="acc-panel-1">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
-                                <iconify-icon icon="solar:server-square-linear"
-                                    class="text-green-500 text-lg"></iconify-icon>
+                                <span class="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                                    <iconify-icon icon="solar:server-square-linear" width="16"></iconify-icon>
+                                </span>
                                 Architecture Local-First & Confidentialité (RGPD)
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
@@ -1063,7 +1218,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-1" role="region" aria-hidden="false">
                             <div class="overflow-hidden">
-                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
+                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
                                     Les données sensibles (identités des élèves, notes brutes, photos) sont stockées
                                     <strong>exclusivement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, sans serveur intermédiaire, avec sauvegarde optionnelle sur votre propre Google Drive (clés API isolées). L'application
                                     applique par défaut une <strong>pseudonymisation à la volée</strong> (masquage des noms/prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres) avant tout appel vers l'IA — compatible avec <strong>Albert API</strong> (infrastructure gouvernementale souveraine Gouv.fr / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
@@ -1076,8 +1231,9 @@
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-2">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
-                                <iconify-icon icon="solar:stars-minimalistic-linear"
-                                    class="text-blue-500 text-lg"></iconify-icon>
+                                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                                    <iconify-icon icon="solar:stars-minimalistic-linear" width="16"></iconify-icon>
+                                </span>
                                 Modèles IA & Haute Disponibilité
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
@@ -1085,7 +1241,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
+                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
                                     Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA gouvernementale souveraine Gouv.fr / DINUM, gratuite pour les enseignants via ProConnect), <strong>Mistral AI</strong>, <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi qu'OpenAI, Claude et
                                     OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
                                     100% hors ligne (Air-Gapped).
@@ -1098,19 +1254,18 @@
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-3">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
-                                <iconify-icon icon="solar:tuning-square-linear"
-                                    class="text-purple-500 text-lg"></iconify-icon>
-                                Ingénierie des Prompts
+                                <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                                    <iconify-icon icon="solar:tuning-square-linear" width="16"></iconify-icon>
+                                </span>
+                                Ingénierie des Prompts & Suivi
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
                                 class="accordion-icon text-zinc-400 flex-shrink-0 ml-4"></iconify-icon>
                         </button>
                         <div class="accordion-content" id="acc-panel-3" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    L'application utilise des System Prompts calibrés pour garantir un ton
-                                    professionnel. Les commandes (Concis, Détaillé, Encourageant) modifient
-                                    dynamiquement les paramètres de génération.
+                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
+                                    L'application utilise des consignes calibrées pour garantir un ton professionnel et synthétise automatiquement vos observations du <strong>Journal de bord</strong> (avec seuil de signalement réglable) ainsi que l'historique des trimestres. Cinq commandes rapides (<em>Concise, Détaillée, Encourageante, Variation, Peaufiner</em>) ajustent l'appréciation à la volée.
                                 </div>
                             </div>
                         </div>
@@ -1120,8 +1275,9 @@
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-4">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
-                                <iconify-icon icon="solar:file-check-linear"
-                                    class="text-cyan-500 text-lg"></iconify-icon>
+                                <span class="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0">
+                                    <iconify-icon icon="solar:file-check-linear" width="16"></iconify-icon>
+                                </span>
                                 Standards & Interopérabilité
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
@@ -1129,10 +1285,8 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-4" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
-                                    Algorithme de détection automatique de colonnes compatible avec tout tableur (Excel,
-                                    CSV, Pronote). Export en format texte brut formaté pour les logiciels de vie
-                                    scolaire.
+                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
+                                    Extraction locale des bilans périodiques et trombinoscopes <strong>PDF (Pronote, MBN)</strong> et détection automatique de colonnes depuis tout tableur (Excel, CSV, copier-coller). Export des plans de classe en PDF et copie rapide formatée pour les logiciels de vie scolaire.
                                 </div>
                             </div>
                         </div>
@@ -1142,8 +1296,9 @@
                         <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-5">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
-                                <iconify-icon icon="solar:copyright-linear"
-                                    class="text-orange-500 text-lg"></iconify-icon>
+                                <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center flex-shrink-0">
+                                    <iconify-icon icon="solar:copyright-linear" width="16"></iconify-icon>
+                                </span>
                                 Licence, Indépendance & Soutien
                             </span>
                             <iconify-icon icon="solar:alt-arrow-down-linear"
@@ -1151,7 +1306,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-5" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-8">
+                                <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
                                     Outil indépendant distribué gratuitement sous licence <strong>CC BY-NC-SA 4.0</strong>, au code auditable sur
                                     GitHub pour garantir l'absence de télémétrie ou de publicité. Vos clés d'accès aux modèles d'IA (dont <strong>Albert API</strong> via ProConnect) restent strictement personnelles ; les dons libres via Ko-fi soutiennent exclusivement le développement bénévole de l'interface et son hébergement.
                                 </div>
@@ -1159,6 +1314,17 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- Appel à l'action final sobre -->
+                <div class="mt-10 pt-4 flex justify-center reveal-on-scroll">
+                    <a href="./app.html"
+                        class="h-12 px-8 rounded-full bg-zinc-800 text-white text-sm font-medium inline-flex items-center gap-2 hover:bg-zinc-900 hover:shadow-lg hover:-translate-y-0.5 transition-all shine-effect landing-commencer-btn">
+                        <span class="rocket-container">
+                            <iconify-icon icon="solar:rocket-linear" width="18"></iconify-icon>
+                        </span>
+                        Ouvrir l'application
+                    </a>
                 </div>
             </div>
         </section>
@@ -1175,7 +1341,7 @@
                             height="24">
                         <span class="font-semibold text-zinc-700 tracking-tight">Bulletin AI</span>
                     </div>
-                    <p class="text-sm text-zinc-400">
+                    <p class="text-sm text-zinc-500">
                         Développé avec <iconify-icon icon="solar:heart-bold"
                             class="text-rose-400 align-middle mx-0.5"></iconify-icon> par un prof, pour les profs.
                     </p>
@@ -1183,17 +1349,17 @@
 
                 <div class="flex items-center gap-5">
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
-                        target="_blank" class="text-zinc-400 hover:text-blue-500 transition-colors"
+                        target="_blank" class="text-zinc-500 hover:text-blue-500 transition-colors"
                         aria-label="Donner son avis" title="Donner son avis">
                         <iconify-icon icon="solar:chat-round-dots-linear" width="22"></iconify-icon>
                     </a>
                     <a href="https://ko-fi.com/profassistant" target="_blank"
-                        class="text-zinc-400 hover:text-rose-500 transition-colors" aria-label="Soutenir sur Ko-fi"
+                        class="text-zinc-500 hover:text-rose-500 transition-colors" aria-label="Soutenir sur Ko-fi"
                         title="Soutenir le projet">
                         <iconify-icon icon="simple-icons:kofi" width="22"></iconify-icon>
                     </a>
                     <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank"
-                        class="text-zinc-400 hover:text-zinc-800 transition-colors" aria-label="GitHub"
+                        class="text-zinc-500 hover:text-zinc-800 transition-colors" aria-label="GitHub"
                         title="Voir sur GitHub">
                         <iconify-icon icon="mdi:github" width="24"></iconify-icon>
                     </a>
@@ -1201,11 +1367,12 @@
             </div>
 
             <div
-                class="mt-8 pt-8 border-t border-zinc-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-400">
+                class="mt-8 pt-8 border-t border-zinc-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
                 <p>© <span id="currentYear"></span> David Trafial. Tous droits réservés.</p>
-                <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                    <span id="landingVersionDisplay"></span>
                     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank"
-                        class="hover:text-zinc-600 transition-colors">Licence CC BY-NC-SA 4.0</a>
+                        class="hover:text-zinc-800 transition-colors">Licence CC BY-NC-SA 4.0</a>
                 </div>
             </div>
 
@@ -1332,14 +1499,14 @@
 
         /* ── Carousel ── */
         const carouselData = [
-            { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Formats Universels', desc: 'Compatible Excel, CSV et copier-coller depuis Pronote.', label: 'Import' },
-            { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
-            { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en cours, binômes ou îlots d\'activité et export PDF.', label: 'Spatial' },
+            { icon: 'solar:magic-stick-3-linear', color: 'bg-purple-50 text-purple-600', title: 'Rédaction & Affinage IA', desc: 'Générez sur mesure et ajustez le ton en un clic : concis, détaillé, encourageant ou reformulé.', label: 'Rédaction' },
+            { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Import PDF & Tableurs', desc: 'Compatible bilans et trombinoscopes PDF (Pronote, MBN), Excel, CSV ou copier-coller.', label: 'Import' },
+            { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Consignez vos observations au fil des séances (clavier ou dictée vocale) pour nourrir le bilan.', label: 'Suivi' },
+            { icon: 'solar:chart-square-linear', color: 'bg-orange-50 text-orange-600', title: 'Statistiques & Dynamique', desc: 'Visualisez moyenne, médiane, répartition et évolution (progrès, stabilité, régression) de la classe.', label: 'Analyse' },
             { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
-            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama en local.', label: 'Flexible' },
-            { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
-            { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },
-            { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Sauvegarde Cloud', desc: 'Archivez vos bulletins (manuel). Zéro synchronisation cachée.', label: 'Stockage' }
+            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama 100% hors-ligne.', label: 'Flexible' },
+            { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Trombinoscope & Sauvegarde', desc: 'Visualisez vos élèves et archivez vos classes en local ou sur votre Google Drive personnel.', label: 'Stockage' },
+            { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en classe, binômes ou îlots d\'activité équilibrés et export PDF.', label: 'Organisation' }
         ];
 
         const track = document.getElementById('carousel-track');
@@ -1351,21 +1518,17 @@
                 centerIndex = index;
                 updateCarousel();
             });
-            // Removed 'border' class and item.border
-            // Added 'border border-transparent' to keep layout similar if needed, or just remove border class.
-            // Original had 'border border-zinc-200'. I will make it 'border border-transparent' to be safe or just no border classes.
-            // Use 'shadow-xl' mostly.
-            card.className = `carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-2xl border border-zinc-100 shadow-sm p-6 sm:p-8 flex flex-col items-center text-center select-none`;
+            card.className = `carousel-card w-[280px] sm:w-[320px] h-[290px] sm:h-[300px] bg-white rounded-2xl border border-zinc-100 shadow-sm p-6 flex flex-col items-center text-center select-none`;
             card.setAttribute('role', 'tabpanel');
             card.setAttribute('aria-label', item.title);
             card.innerHTML = `
-                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${item.color} flex items-center justify-center text-2xl sm:text-3xl mb-5 sm:mb-6 flex-shrink-0">
+                <div class="w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center text-2xl mb-4 flex-shrink-0">
                     <iconify-icon icon="${item.icon}" stroke-width="1.5"></iconify-icon>
                 </div>
-                <h3 class="text-base sm:text-lg font-semibold text-zinc-800 mb-2 sm:mb-3">${item.title}</h3>
+                <h3 class="text-base sm:text-lg font-semibold text-zinc-800 mb-2">${item.title}</h3>
                 <p class="text-sm text-zinc-500 leading-relaxed">${item.desc}</p>
-                <div class="mt-auto pt-4 sm:pt-6">
-                    <span class="px-3 py-1 rounded-full bg-zinc-50 text-zinc-400 text-[10px] font-bold tracking-widest uppercase border border-zinc-100">${item.label}</span>
+                <div class="mt-auto pt-4">
+                    <span class="px-3 py-1 rounded-full bg-zinc-50 text-zinc-500 text-[10px] font-bold tracking-widest uppercase border border-zinc-100">${item.label}</span>
                 </div>
             `;
             track.appendChild(card);
@@ -1504,12 +1667,21 @@
 
         /* ── Mockup Hero ── */
         const mockupText = document.getElementById('mockup-text');
-        const mockupBar = document.getElementById('mockup-bar');
+        const mockupWordCount = document.getElementById('mockup-word-count');
         const mockupAnalysis = document.getElementById('mockup-analysis');
-        const fullText = "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des bavardages perturbent sa progression. Il est impératif qu'il se recentre.";
+        const mockupToneBtns = Array.from(document.querySelectorAll('[data-mockup-tone]'));
+        const mockupCopyBtn = document.getElementById('mockup-copy-btn');
+        const mockupTexts = {
+            default: "Les résultats de Mathéo sont fragiles ce trimestre. Malgré une bonne curiosité à l'oral, les bavardages dispersent son attention : il doit se recentrer.",
+            concise: "Ensemble fragile ce trimestre. De la curiosité à l'oral, mais trop de bavardages : Mathéo doit se recentrer en classe.",
+            encouraging: "Des résultats encore fragiles, mais Mathéo montre une belle curiosité à l'oral. En canalisant son attention en classe, il progressera rapidement.",
+            polish: "Trimestre fragile mais perfectible : l'investissement oral est pertinent, il faut désormais canaliser l'attention à l'écrit et cesser les bavardages."
+        };
+        let currentMockupTone = 'default';
 
         let mockupActiveTimeouts = [];
         let mockupLoopTimeout = null;
+        let mockupCopyTimeout = null;
 
         function clearMockupTimeouts() {
             mockupActiveTimeouts.forEach(clearTimeout);
@@ -1517,16 +1689,22 @@
             if (mockupLoopTimeout) { clearTimeout(mockupLoopTimeout); mockupLoopTimeout = null; }
         }
 
-        function typeWriter() {
-            const words = fullText.split(' ');
+        function setMockupActiveChip(tone) {
+            currentMockupTone = tone;
+            mockupToneBtns.forEach(btn => {
+                btn.classList.toggle('is-active', btn.dataset.mockupTone === tone);
+            });
+        }
+
+        function renderMockupText(text, stepDelay = 65) {
+            const words = text.split(' ');
             let html = '';
             words.forEach((word, index) => {
-                html += `<span class="blur-word" style="transition-delay: ${index * 80}ms">${word}</span> `;
+                html += `<span class="blur-word" style="transition-delay: ${index * stepDelay}ms">${word}</span> `;
             });
             mockupText.innerHTML = html;
+            if (mockupWordCount) mockupWordCount.textContent = `${words.length} mots`;
 
-            // Force browser to process the initial state before adding the class
-            // This prevents the browser from batching the changes and skipping the transition
             void mockupText.offsetWidth;
 
             requestAnimationFrame(() => {
@@ -1536,26 +1714,65 @@
 
         function startMockupLoop() {
             clearMockupTimeouts();
+            setMockupActiveChip('default');
             mockupText.innerHTML = '<div class="shimmer h-2 w-full rounded mb-2"></div><div class="shimmer h-2 w-11/12 rounded mb-2"></div><div class="shimmer h-2 w-2/3 rounded"></div>';
-            mockupBar.style.width = '0%';
+            if (mockupWordCount) mockupWordCount.textContent = '';
             mockupAnalysis.innerHTML = '';
 
-            const t1 = setTimeout(() => { mockupBar.style.width = '42%'; }, 500);
+            const t1 = setTimeout(() => {
+                mockupAnalysis.innerHTML = `
+                    <span class="pop-in mockup-obs-badge mockup-obs-badge--warn">
+                        <iconify-icon icon="solar:notebook-linear" width="11"></iconify-icon>
+                        Bavardages ×3
+                    </span>
+                    <span class="pop-in mockup-obs-badge mockup-obs-badge--pos" style="animation-delay: 0.14s">
+                        <iconify-icon icon="solar:hand-stars-linear" width="11"></iconify-icon>
+                        Curiosité orale
+                    </span>
+                `;
+            }, 600);
             mockupActiveTimeouts.push(t1);
 
             const t2 = setTimeout(() => {
-                mockupAnalysis.innerHTML = `
-                    <span class="pop-in px-2 h-5 rounded-lg bg-green-50 text-green-600 border border-green-200/60 font-medium shadow-sm">Curiosité</span>
-                    <span class="pop-in px-2 h-5 rounded-lg bg-red-50 text-red-600 border border-red-200/60 font-medium shadow-sm" style="animation-delay: 0.15s">Bavardages</span>
-                `;
-            }, 1200);
-            mockupActiveTimeouts.push(t2);
-
-            const t3 = setTimeout(() => {
-                typeWriter();
+                renderMockupText(mockupTexts.default, 65);
                 mockupLoopTimeout = setTimeout(startMockupLoop, 12000);
-            }, 2000);
-            mockupActiveTimeouts.push(t3);
+            }, 1500);
+            mockupActiveTimeouts.push(t2);
+        }
+
+        mockupToneBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                clearMockupTimeouts();
+                const tone = btn.dataset.mockupTone;
+                const nextTone = currentMockupTone === tone ? 'default' : tone;
+                setMockupActiveChip(nextTone);
+                if (!mockupAnalysis.children.length) {
+                    mockupAnalysis.innerHTML = `
+                        <span class="mockup-obs-badge mockup-obs-badge--warn">
+                            <iconify-icon icon="solar:notebook-linear" width="11"></iconify-icon>
+                            Bavardages ×3
+                        </span>
+                        <span class="mockup-obs-badge mockup-obs-badge--pos">
+                            <iconify-icon icon="solar:hand-stars-linear" width="11"></iconify-icon>
+                            Curiosité orale
+                        </span>
+                    `;
+                }
+                renderMockupText(mockupTexts[nextTone] || mockupTexts.default, 35);
+                mockupLoopTimeout = setTimeout(startMockupLoop, 14000);
+            });
+        });
+
+        if (mockupCopyBtn) {
+            mockupCopyBtn.addEventListener('click', () => {
+                if (mockupCopyTimeout) clearTimeout(mockupCopyTimeout);
+                mockupCopyBtn.classList.add('is-copied');
+                mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear" width="11"></iconify-icon><span>Copié</span>';
+                mockupCopyTimeout = setTimeout(() => {
+                    mockupCopyBtn.classList.remove('is-copied');
+                    mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear" width="11"></iconify-icon><span>Copier</span>';
+                }, 1600);
+            });
         }
 
         const heroObserver = new IntersectionObserver((entries) => {
@@ -1572,7 +1789,7 @@
             .then(data => {
                 const badge = document.getElementById('landingVersionDisplay');
                 if (badge && data && data.version) {
-                    badge.textContent = `Accès libre · v${data.version}`;
+                    badge.textContent = `v${data.version} ·`;
                 }
             })
             .catch(() => {});

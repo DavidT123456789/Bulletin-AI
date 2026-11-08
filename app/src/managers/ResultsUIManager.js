@@ -21,20 +21,290 @@ export const ResultsUIManager = {
         Am = appreciationsManager;
         UI = uiManager;
 
-        // Listen for repair mismatch custom event
-        document.addEventListener('repairMismatchClicked', () => this.repairMismatch());
+        if (!this._mismatchListenersBound) {
+            this._mismatchListenersBound = true;
+            document.addEventListener('repairMismatchClicked', () => this.repairMismatch());
+            document.addEventListener('convertMismatchClicked', () => this.convertMismatchPeriods());
+        }
+    },
+
+    _hasPeriodData(data) {
+        if (!data) return false;
+        const gradeRaw = data.grade;
+        const gradeParsed = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw ?? '').replace(',', '.'));
+        const hasGrade = !isNaN(gradeParsed);
+        const hasAppreciation = Boolean(data.appreciation && String(data.appreciation).replace(/<[^>]*>/g, '').trim() !== '');
+        const hasContext = Boolean(data.context && String(data.context).trim() !== '');
+        return hasGrade || hasAppreciation || hasContext;
+    },
+
+    _detectPeriodSystemData(results, currentSystemPeriods) {
+        let hasDataInCurrentSystem = false;
+        let hasDataInOtherSystem = false;
+
+        if (Array.isArray(results) && results.length > 0) {
+            for (const r of results) {
+                const periods = r?.studentData?.periods || {};
+                for (const [p, data] of Object.entries(periods)) {
+                    if (this._hasPeriodData(data)) {
+                        if (currentSystemPeriods.includes(p)) hasDataInCurrentSystem = true;
+                        else hasDataInOtherSystem = true;
+                    }
+                }
+                if (hasDataInCurrentSystem) break;
+            }
+        }
+
+        return { hasDataInCurrentSystem, hasDataInOtherSystem };
+    },
+
+    _convertStudentsToSystem(students, targetSystem = appState.periodSystem) {
+        if (!Array.isArray(students) || students.length === 0) return 0;
+
+        const toTrimestres = targetSystem !== 'semestres';
+        const mapPeriodCode = (code) => {
+            if (!code || typeof code !== 'string') return code;
+            if (toTrimestres) {
+                if (code === 'S1') return 'T1';
+                if (code === 'S2') return 'T2';
+                return code;
+            }
+            if (code === 'T1') return 'S1';
+            if (code === 'T2' || code === 'T3') return 'S2';
+            return code;
+        };
+
+        const now = Date.now();
+        let convertedCount = 0;
+
+        for (const r of students) {
+            if (!r?.studentData) continue;
+            const periods = r.studentData.periods || (r.studentData.periods = {});
+
+            if (toTrimestres) {
+                if (!this._hasPeriodData(periods.T1) && this._hasPeriodData(periods.S1)) {
+                    periods.T1 = Utils.deepClone(periods.S1);
+                } else if (!periods.T1) {
+                    periods.T1 = { grade: null, appreciation: '' };
+                }
+                if (!this._hasPeriodData(periods.T2) && this._hasPeriodData(periods.S2)) {
+                    periods.T2 = Utils.deepClone(periods.S2);
+                } else if (!periods.T2) {
+                    periods.T2 = { grade: null, appreciation: '' };
+                }
+                if (!periods.T3) {
+                    periods.T3 = { grade: null, appreciation: '' };
+                }
+                delete periods.S1;
+                delete periods.S2;
+            } else {
+                if (!this._hasPeriodData(periods.S1) && this._hasPeriodData(periods.T1)) {
+                    periods.S1 = Utils.deepClone(periods.T1);
+                } else if (!periods.S1) {
+                    periods.S1 = { grade: null, appreciation: '' };
+                }
+                if (!this._hasPeriodData(periods.S2)) {
+                    if (this._hasPeriodData(periods.T2)) {
+                        periods.S2 = Utils.deepClone(periods.T2);
+                    } else if (this._hasPeriodData(periods.T3)) {
+                        periods.S2 = Utils.deepClone(periods.T3);
+                    } else if (!periods.S2) {
+                        periods.S2 = { grade: null, appreciation: '' };
+                    }
+                }
+                delete periods.T1;
+                delete periods.T2;
+                delete periods.T3;
+            }
+
+            if (r.studentData.currentPeriod) {
+                r.studentData.currentPeriod = mapPeriodCode(r.studentData.currentPeriod);
+            }
+            if (r.generationPeriod) {
+                r.generationPeriod = mapPeriodCode(r.generationPeriod);
+            }
+            if (r.errorPeriod) {
+                r.errorPeriod = mapPeriodCode(r.errorPeriod);
+            }
+            if (r.analysisGenerationPeriod) {
+                r.analysisGenerationPeriod = mapPeriodCode(r.analysisGenerationPeriod);
+            }
+            if (r.generationSnapshot && typeof r.generationSnapshot === 'object') {
+                if (r.generationSnapshot.currentPeriod) {
+                    r.generationSnapshot.currentPeriod = mapPeriodCode(r.generationSnapshot.currentPeriod);
+                }
+                if (r.generationSnapshot.periods && typeof r.generationSnapshot.periods === 'object') {
+                    const snapPeriods = {};
+                    for (const [k, v] of Object.entries(r.generationSnapshot.periods)) {
+                        const mappedKey = mapPeriodCode(k);
+                        if (!snapPeriods[mappedKey] || this._hasPeriodData(v)) {
+                            snapPeriods[mappedKey] = Utils.deepClone(v);
+                        }
+                    }
+                    r.generationSnapshot.periods = snapPeriods;
+                }
+            }
+            if (Array.isArray(r.history)) {
+                r.history.forEach(entry => {
+                    if (entry?.period) entry.period = mapPeriodCode(entry.period);
+                });
+            }
+            if (Array.isArray(r.journal)) {
+                r.journal.forEach(entry => {
+                    if (entry?.period) entry.period = mapPeriodCode(entry.period);
+                });
+            }
+            if (Array.isArray(r.studentData.statuses)) {
+                r.studentData.statuses = r.studentData.statuses.map(st =>
+                    typeof st === 'string'
+                        ? st.replace(/\b(S1|S2|T1|T2|T3)\b/g, m => mapPeriodCode(m))
+                        : st
+                );
+            }
+
+            r._lastModified = now;
+            convertedCount++;
+        }
+
+        return convertedCount;
+    },
+
+    _getCurrentClassSourceResults() {
+        const currentClassId = appState.currentClassId;
+        const hasAnyClasses = ClassManager.getAllClasses().length > 0;
+        if (hasAnyClasses && currentClassId) {
+            return ClassManager.getStudentsForClass(currentClassId);
+        }
+        if (!hasAnyClasses) return [];
+        return appState.generatedResults.filter(r => !r.classId);
+    },
+
+    _getFirstPopulatedPeriod(sourceResults, periods = Utils.getPeriods()) {
+        return periods.find(p =>
+            sourceResults.some(r => this._hasPeriodData(r?.studentData?.periods?.[p]))
+        ) || periods[0];
     },
 
     repairMismatch() {
         const currentSystem = appState.periodSystem;
         const newSystem = currentSystem === 'semestres' ? 'trimestres' : 'semestres';
-        const label = newSystem === 'semestres' ? 'Semestre' : 'Trimestre';
+        const label = newSystem === 'semestres' ? 'Semestres' : 'Trimestres';
+        const sourceResults = this._getCurrentClassSourceResults();
 
-        const radio = document.querySelector(`input[name="periodSystemRadio"][value="${newSystem}"]`);
-        if (radio) {
-            radio.checked = true;
-            radio.dispatchEvent(new Event('change'));
-            UI.showNotification(`Système basculé en mode ${label}. Vos données sont de retour.`, 'success');
+        appState.periodSystem = newSystem;
+        appState.currentPeriod = this._getFirstPopulatedPeriod(sourceResults);
+        if (appState.sortState?.field === 'grade') {
+            appState.sortState.param = appState.currentPeriod;
+        }
+        document.querySelectorAll('input[name="periodSystemRadio"]').forEach(r => {
+            r.checked = (r.value === newSystem);
+        });
+        UI?.updatePeriodSystemUI?.();
+        UI?.updateSettingsPromptFields?.();
+        this.renderResults();
+        document.dispatchEvent(new CustomEvent('periodChanged', {
+            detail: { period: appState.currentPeriod }
+        }));
+        UI?.showNotification?.(`Affichage basculé en mode ${label}.`, 'success');
+    },
+
+    _renderPeriodMismatchBanner(isPeriodMismatch) {
+        let bannerContainer = DOM.periodMismatchContainer?.isConnected
+            ? DOM.periodMismatchContainer
+            : document.getElementById('period-mismatch-container');
+
+        if (!bannerContainer && isPeriodMismatch && DOM.resultsDiv?.parentNode) {
+            bannerContainer = document.createElement('div');
+            bannerContainer.id = 'period-mismatch-container';
+            DOM.resultsDiv.parentNode.insertBefore(bannerContainer, DOM.resultsDiv);
+            DOM.periodMismatchContainer = bannerContainer;
+        }
+
+        if (!bannerContainer) return;
+
+        if (!isPeriodMismatch) {
+            bannerContainer.style.display = 'none';
+            return;
+        }
+
+        if (!bannerContainer.querySelector('.period-mismatch-banner')) {
+            bannerContainer.innerHTML = `
+                <div class="period-mismatch-banner" role="status" aria-live="polite">
+                    <div class="period-mismatch-content">
+                        <div class="period-mismatch-icon" aria-hidden="true">
+                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                        </div>
+                        <div class="period-mismatch-text">
+                            <h4 id="periodMismatchTitle"></h4>
+                            <p id="periodMismatchDesc"></p>
+                        </div>
+                    </div>
+                    <div class="period-mismatch-action">
+                        <button type="button" class="btn btn-secondary" data-action="convert-mismatch">
+                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                            <span id="periodMismatchConvertLabel"></span>
+                        </button>
+                        <button type="button" class="btn btn-primary" data-action="switch-mismatch">
+                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                            <span id="periodMismatchSwitchLabel"></span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            bannerContainer.querySelector('[data-action="convert-mismatch"]')?.addEventListener('click', () => this.convertMismatchPeriods());
+            bannerContainer.querySelector('[data-action="switch-mismatch"]')?.addEventListener('click', () => this.repairMismatch());
+        }
+
+        const isSemestresActive = appState.periodSystem === 'semestres';
+        const currentSystemLabel = isSemestresActive ? 'Semestres' : 'Trimestres';
+        const otherSystemLabel = isSemestresActive ? 'Trimestres' : 'Semestres';
+        const otherSystemAdj = isSemestresActive ? 'trimestriel' : 'semestriel';
+        const conversionRange = isSemestresActive ? 'T1 → S1, T2 → S2' : 'S1 → T1, S2 → T2';
+
+        const titleEl = bannerContainer.querySelector('#periodMismatchTitle');
+        const descEl = bannerContainer.querySelector('#periodMismatchDesc');
+        const convertBtn = bannerContainer.querySelector('[data-action="convert-mismatch"]');
+        const convertLabel = bannerContainer.querySelector('#periodMismatchConvertLabel');
+        const switchBtn = bannerContainer.querySelector('[data-action="switch-mismatch"]');
+        const switchLabel = bannerContainer.querySelector('#periodMismatchSwitchLabel');
+
+        if (titleEl) titleEl.textContent = `Saisies enregistrées en mode ${otherSystemAdj}`;
+        if (descEl) {
+            descEl.innerHTML = `Cette classe contient des données en <strong>${otherSystemLabel}</strong> alors que l'affichage actif est en <strong>${currentSystemLabel}</strong>.`;
+        }
+        if (convertBtn) convertBtn.setAttribute('data-tooltip', `Convertir les saisies de cette classe (${conversionRange})`);
+        if (convertLabel) convertLabel.textContent = `Convertir vers ${currentSystemLabel}`;
+        if (switchBtn) switchBtn.setAttribute('data-tooltip', `Basculer l'affichage en mode ${otherSystemLabel}`);
+        if (switchLabel) switchLabel.textContent = `Passer en ${otherSystemLabel}`;
+
+        bannerContainer.style.display = 'block';
+    },
+
+    convertMismatchPeriods() {
+        const sourceResults = this._getCurrentClassSourceResults();
+        if (sourceResults.length === 0) return;
+
+        const convertedCount = this._convertStudentsToSystem(sourceResults, appState.periodSystem);
+        if (convertedCount > 0) {
+            const activePeriod = appState.currentPeriod;
+            const hasDataInActive = sourceResults.some(r => this._hasPeriodData(r?.studentData?.periods?.[activePeriod]));
+            if (!hasDataInActive) {
+                const firstPopulatedPeriod = this._getFirstPopulatedPeriod(sourceResults);
+                if (firstPopulatedPeriod && firstPopulatedPeriod !== activePeriod) {
+                    appState.currentPeriod = firstPopulatedPeriod;
+                    if (appState.sortState?.field === 'grade') {
+                        appState.sortState.param = firstPopulatedPeriod;
+                    }
+                    UI?.updatePeriodSystemUI?.();
+                    document.dispatchEvent(new CustomEvent('periodChanged', {
+                        detail: { period: firstPopulatedPeriod }
+                    }));
+                }
+            }
+
+            const label = appState.periodSystem === 'semestres' ? 'Semestres' : 'Trimestres';
+            this.renderResults();
+            UI?.showNotification?.(`Saisies converties en mode ${label}.`, 'success');
         }
     },
 
@@ -48,18 +318,16 @@ export const ResultsUIManager = {
         // CORRECTIF: Toujours repartir de la liste complète (generatedResults) filtrée par la classe courante
         // Ne JAMAIS utiliser filteredResults comme source, sinon on perd les élèves masqués quand on retire un filtre.
         const currentClassId = appState.currentClassId;
-        const hasAnyClasses = ClassManager.getAllClasses().length > 0;
+        const sourceResults = this._getCurrentClassSourceResults();
 
-        // Si aucune classe n'existe, sourceResults est vide (pas de mode legacy)
-        let sourceResults = [];
-        if (hasAnyClasses && currentClassId) {
-            sourceResults = ClassManager.getStudentsForClass(currentClassId);
-        } else if (!hasAnyClasses) {
-            // Aucune classe : afficher état vide
-            sourceResults = [];
-        } else {
-            // Classes existent mais pas de classe courante sélectionnée : mode legacy
-            sourceResults = appState.generatedResults.filter(r => !r.classId);
+        // --- PERIOD MISMATCH DETECTION & DEMO CLASS AUTO-ADAPTATION ---
+        const currentSystemPeriods = Utils.getPeriods(); // e.g. ['S1','S2'] or ['T1','T2','T3']
+        let { hasDataInCurrentSystem, hasDataInOtherSystem } = this._detectPeriodSystemData(sourceResults, currentSystemPeriods);
+
+        if (!hasDataInCurrentSystem && hasDataInOtherSystem && ClassManager.isDemoClass?.(currentClassId)) {
+            this._convertStudentsToSystem(sourceResults, appState.periodSystem);
+            hasDataInCurrentSystem = true;
+            hasDataInOtherSystem = false;
         }
 
         const viewableResults = sourceResults
@@ -171,65 +439,8 @@ export const ResultsUIManager = {
 
         appState.filteredResults = filteredAndSorted;
 
-        // --- PERIOD MISMATCH DETECTION ---
-        // Only flag a mismatch when data exists in the OTHER period system (semestre↔trimestre),
-        // NOT when data is in a different period of the SAME system (e.g. S1 when viewing S2).
-        const currentSystemPeriods = Utils.getPeriods(); // e.g. ['S1','S2'] or ['T1','T2','T3']
-        let hasDataInCurrentSystem = false;
-        let hasDataInOtherSystem = false;
-
-        if (sourceResults.length > 0) {
-            for (const r of sourceResults) {
-                const periods = r.studentData?.periods || {};
-
-                for (const [p, data] of Object.entries(periods)) {
-                    const gradeRaw = data?.grade;
-                    const gradeParsed = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
-                    const hasDataInPeriod = data && ((!isNaN(gradeParsed)) || (data.appreciation && data.appreciation.replace(/<[^>]*>/g, '').trim() !== ''));
-                    if (hasDataInPeriod) {
-                        if (currentSystemPeriods.includes(p)) hasDataInCurrentSystem = true;
-                        else hasDataInOtherSystem = true;
-                    }
-                }
-
-                if (hasDataInCurrentSystem) break;
-            }
-        }
-
         const isPeriodMismatch = !hasDataInCurrentSystem && hasDataInOtherSystem;
-
-        // Handle period mismatch banner injection
-        let bannerContainer = document.getElementById('period-mismatch-container');
-        if (!bannerContainer && DOM.resultsDiv?.parentNode) {
-            bannerContainer = document.createElement('div');
-            bannerContainer.id = 'period-mismatch-container';
-            DOM.resultsDiv.parentNode.insertBefore(bannerContainer, DOM.resultsDiv);
-        }
-
-        if (isPeriodMismatch && bannerContainer) {
-            const alternateSystem = appState.periodSystem === 'semestres' ? 'trimestriel' : 'semestriel';
-            bannerContainer.innerHTML = `
-                <div class="period-mismatch-banner">
-                    <div class="period-mismatch-content">
-                        <div class="period-mismatch-icon">
-                            <iconify-icon icon="solar:folder-error-linear"></iconify-icon>
-                        </div>
-                        <div class="period-mismatch-text">
-                            <h4>Aucune donnée pour cette période</h4>
-                            <p>Le système <strong>${appState.periodSystem}</strong> est actif mais vos saisies semblent avoir été faites dans le système ${alternateSystem}.</p>
-                        </div>
-                    </div>
-                    <div class="period-mismatch-action">
-                        <button class="btn btn-primary" onclick="document.dispatchEvent(new CustomEvent('repairMismatchClicked'))">
-                            <iconify-icon icon="solar:refresh-square-linear"></iconify-icon> Récupérer mes données
-                        </button>
-                    </div>
-                </div>
-            `;
-            bannerContainer.style.display = 'block';
-        } else if (bannerContainer) {
-            bannerContainer.style.display = 'none';
-        }
+        this._renderPeriodMismatchBanner(isPeriodMismatch);
 
         // Afficher l'état vide si la classe courante n'a pas de résultats
         if (sourceResults.length === 0) {
@@ -273,6 +484,14 @@ export const ResultsUIManager = {
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
             // Masquer les statistiques et dots quand il n'y a pas de données
+            if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
+            const statsPagination = document.getElementById('statsPagination');
+            if (statsPagination) statsPagination.style.display = 'none';
+        }
+        else if (isPeriodMismatch) {
+            if (DOM.resultsDiv) DOM.resultsDiv.innerHTML = '';
+            if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
+            if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
             if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
             const statsPagination = document.getElementById('statsPagination');
             if (statsPagination) statsPagination.style.display = 'none';

@@ -89,6 +89,44 @@
         -webkit-backdrop-filter 0.22s ease-out !important;
 }
 
+/* Handoff inter-modales (Niveau 1 -> Niveau 1) et suspension sous l'aide contextuelle (?) :
+   Masquage immédiat de la modale sortante/suspendue et maintien continu du backdrop sur l'entrante */
+.modal.modal-handoff-out,
+.modal.modal-suspended,
+.trombi-wizard-modal.modal-handoff-out .trombi-wizard-backdrop,
+.trombi-wizard-modal.modal-suspended .trombi-wizard-backdrop,
+.modal.modal-handoff-out .modal-content,
+.modal.modal-suspended .modal-content,
+.trombi-wizard-modal.modal-handoff-out .trombi-wizard-content,
+.trombi-wizard-modal.modal-suspended .trombi-wizard-content {
+    opacity: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: none !important;
+    pointer-events: none !important;
+}
+
+.modal.modal-handoff:not(.modal-closing),
+.trombi-wizard-modal.modal-handoff:not(.closing) .trombi-wizard-backdrop {
+    background: var(--modal-backdrop-bg);
+    backdrop-filter: blur(var(--modal-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+    transition: none;
+}
+
+/* Superposition légère (Niveau 2 : confirmations / alertes sur une modale ouverte) :
+   Voile d'assombrissement subtil sans doubler le backdrop-filter: blur GPU */
+.modal.modal-stacked-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.modal.modal-stacked-overlay.modal-visible:not(.modal-closing),
+.modal.modal-stacked-overlay.modal-handoff:not(.modal-closing) {
+    background: rgba(0, 0, 0, 0.35);
+}
+
 #customConfirmModal,
 #customChoicesModal,
 #hardConfirmModal,

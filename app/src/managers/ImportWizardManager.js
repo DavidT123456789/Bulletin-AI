@@ -370,13 +370,6 @@ export const ImportWizardManager = {
         modal.addEventListener('click', e => {
             if (e.target === modal) this.close();
         });
-
-        // Escape key
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
-                this.close();
-            }
-        });
     },
 
     /**

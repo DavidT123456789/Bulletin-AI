@@ -1949,9 +1949,6 @@ export const ClassUIManager = {
             </div>
         `;
 
-        document.body.appendChild(modalEl);
-        UI?.openModal(modalEl);
-
         // Bind events
         const ghostImg = document.createElement('div');
         ghostImg.style.cssText = 'width:1px;height:1px;position:fixed;top:-100px;opacity:0;';
@@ -1960,10 +1957,14 @@ export const ClassUIManager = {
         const cleanupGhost = () => ghostImg.remove();
         modalEl.addEventListener('close', cleanupGhost, { once: true });
 
+        document.body.appendChild(modalEl);
+        UI?.openModal(modalEl, {
+            onClose: cleanupGhost,
+            onClosed: () => modalEl.remove()
+        });
+
         const closeModal = () => {
             UI?.closeModal(modalEl);
-            cleanupGhost();
-            setTimeout(() => modalEl.remove(), 300);
         };
 
         const moreWrapper = modalEl.querySelector('#classManageMoreWrapper');
@@ -2958,7 +2959,6 @@ export const ClassUIManager = {
 
         const closeModal = () => {
             UI?.closeModal(modalEl);
-            setTimeout(() => modalEl.remove(), 300);
         };
 
         modalEl.querySelector('.close-move-modal')?.addEventListener('click', closeModal);

@@ -81,11 +81,18 @@ export const EventHandlersManager = {
         appState.periodSystem = e.target.value;
         appState.currentPeriod = UI.getPeriods()[0];
 
+        if (appState.sortState?.field === 'grade') {
+            appState.sortState.param = appState.currentPeriod;
+        }
+
         UI.updatePeriodSystemUI();
         UI.updateSettingsPromptFields();
 
         // MàJ des sliders si on change de système (bien que config globale pour l'instant)
         UI.updateSettingsFields();
+        document.dispatchEvent(new CustomEvent('periodChanged', {
+            detail: { period: appState.currentPeriod }
+        }));
         AppreciationsManager.renderResults();
     },
 

@@ -710,37 +710,11 @@
 }
 
 /* ====================================================================
-   EVOLUTION CARD - Version Compacte avec Toggle
+   EVOLUTION CARD - Dynamique de classe
    ==================================================================== */
 .evolution-card {
     display: flex;
     flex-direction: column;
-}
-
-/* Toggle View Button */
-.evolution-card .view-toggle-btn {
-    background: var(--bg-secondary);
-    border: 1px solid transparent;
-    border-radius: var(--radius-xs);
-    padding: 4px 8px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.evolution-card .view-toggle-btn:hover {
-    background: var(--item-hover-bg-elevated);
-    border-color: transparent;
-    color: var(--icon-btn-hover);
-}
-
-.evolution-card .view-toggle-btn i {
-    font-size: 0.65rem;
 }
 
 /* Conteneur de la barre - Smart-Bar Segmentée (Style 2026) */
@@ -833,11 +807,6 @@
     .evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"]:not([data-count="0"]):hover .legend-count::before {
         transform: translate(1.5px, 1.5px) scale(1.08);
     }
-}
-
-/* Points colorés de la légende - Remplacés par les flèches */
-.evolution-card .legend-dot {
-    display: none;
 }
 
 /* Mise en page interne de la légende (inverse l'ordre DOM label/count) */

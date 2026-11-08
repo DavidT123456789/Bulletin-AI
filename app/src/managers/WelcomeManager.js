@@ -622,11 +622,7 @@ export const WelcomeManager = {
      */
     handleRelaunchWelcomeGuide(e) {
         e?.preventDefault?.();
-        UI.closeAllModals();
-        // Délai pour permettre l'animation de fermeture avant d'ouvrir le welcomeModal
-        setTimeout(() => {
-            this.setupWelcomeModal();
-            UI.openModal(DOM.welcomeModal);
-        }, 300);
+        this.setupWelcomeModal();
+        UI.openModal(DOM.welcomeModal);
     }
 };

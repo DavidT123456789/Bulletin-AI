@@ -171,7 +171,7 @@
     <!-- SEO Meta Tags -->
     <link rel="canonical" href="https://bulletin-ai.pages.dev/app.html">
     <meta name="description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. Gratuit et conforme RGPD.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. Gratuit et conforme RGPD.">
     <meta name="keywords"
         content="bulletin scolaire, appréciations, plan de classe, enseignant, IA, intelligence artificielle, école, éducation">
     <meta name="author" content="David Trafial">
@@ -180,13 +180,13 @@
     <meta property="og:url" content="https://bulletin-ai.pages.dev/app.html">
     <meta property="og:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta property="og:description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
     <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta name="twitter:description"
-        content="Un outil simple pour rédiger vos appréciations, organiser votre classe et suivre vos élèves. L'outil gratuit qui simplifie votre quotidien.">
+        content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
     <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
     <title>Bulletin AI | L'assistant numérique des enseignants</title>
     <!-- Favicon & Icons -->
@@ -560,27 +560,24 @@
                                 <span class="homogeneity-badge muted tooltip" id="evolutionStatusBadge" style="display: none;"></span>
                             </div>
                             <div class="evolution-distribution-bar">
-                                <div id="progressChartBar" class="bar-segment progress" data-percent="0%"></div>
-                                <div id="stableChartBar" class="bar-segment stable" data-percent="0%"></div>
-                                <div id="regressionChartBar" class="bar-segment regression" data-percent="0%"></div>
+                                <div id="progressChartBar" class="bar-segment progress"></div>
+                                <div id="stableChartBar" class="bar-segment stable"></div>
+                                <div id="regressionChartBar" class="bar-segment regression"></div>
                             </div>
                             <div class="evolution-legend">
                                 <div class="legend-item" data-filter-id="progressCount" role="button" tabindex="0">
-                                    <span class="legend-dot progress"></span>
                                     <div class="legend-text">
                                         <span class="legend-label">Progrès</span>
                                         <span class="legend-count" id="classEvolutionProgressStat">0</span>
                                     </div>
                                 </div>
                                 <div class="legend-item" data-filter-id="stableCount" role="button" tabindex="0">
-                                    <span class="legend-dot stable"></span>
                                     <div class="legend-text">
                                         <span class="legend-label">Stables</span>
                                         <span class="legend-count" id="classEvolutionStableStat">0</span>
                                     </div>
                                 </div>
                                 <div class="legend-item" data-filter-id="regressionCount" role="button" tabindex="0">
-                                    <span class="legend-dot regression"></span>
                                     <div class="legend-text">
                                         <span class="legend-label">Régression</span>
                                         <span class="legend-count" id="classEvolutionRegressionStat">0</span>
@@ -598,6 +595,8 @@
                     </div>
 
                     <!-- Progress and error UI moved to header chip (#headerGenerationStatus) -->
+
+                    <div id="period-mismatch-container" style="display: none;"></div>
 
                     <div id="outputList" role="region" aria-live="polite">
                         <div class="student-list-view skeleton-table-view" id="initialTableSkeleton" aria-hidden="true">
@@ -3515,17 +3514,13 @@
                 <div id="welcome-step-1" class="welcome-step active">
                     <div class="welcome-step-header">
                         <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="welcome-app-logo" width="76" height="76">
-                        <h3 class="welcome-title-premium">
-                            <span class="welcome-title-gradient">Bienvenue sur Bulletin AI</span>
-                        </h3>
+                        <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI</h3>
                         <p class="welcome-subtitle-premium">Prenez quelques instants pour configurer votre espace.</p>
                     </div>
                 </div>
                 <div id="welcome-step-2" class="welcome-step">
                     <div class="welcome-step-header">
-                        <h3 class="welcome-title-premium">
-                            <span class="welcome-title-gradient">Activez votre Assistant</span>
-                        </h3>
+                        <h3 class="welcome-title-premium">Activez votre Assistant</h3>
                         <p class="welcome-subtitle-premium">
                             Démarrage rapide avec <strong>Albert</strong> (IA souveraine Gouv.fr via ProConnect) ou <strong>Gemini</strong>. Les moteurs locaux (Ollama) ou payants restent accessibles dans les Paramètres.
                         </p>
@@ -3592,9 +3587,7 @@
 
                 <div id="welcome-step-3" class="welcome-step">
                     <div class="welcome-step-header">
-                        <h3 class="welcome-title-premium">
-                            <span class="welcome-title-gradient">Votre rythme scolaire</span>
-                        </h3>
+                        <h3 class="welcome-title-premium">Votre rythme scolaire</h3>
                         <p class="welcome-subtitle-premium">Choisissez le découpage de votre année scolaire.</p>
                     </div>
 
@@ -3908,7 +3901,7 @@
                     </div>
 
                     <div class="welcome-step-header">
-                        <h3 class="welcome-title-premium"><span class="welcome-title-gradient">Prêt à commencer !</span></h3>
+                        <h3 class="welcome-title-premium">Prêt à commencer !</h3>
                         <p class="welcome-subtitle-premium" id="welcomeFinalSubtitle">Tout est prêt. Lancez l'application pour commencer.</p>
                     </div>
                 </div>

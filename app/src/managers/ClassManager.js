@@ -520,8 +520,7 @@ export const ClassManager = {
     isDemoClass(classId = null) {
         if (classId && this.isVirtualClass(classId)) return false;
         const cls = classId ? this.getClassById(classId) : this.getCurrentClass();
-        if (cls?.isVirtual) return false;
-        return cls?.name?.toLowerCase() === 'classe exemple' || cls?.isDemo === true;
+        return Utils.isDemoClassObject(cls);
     },
 
     /**

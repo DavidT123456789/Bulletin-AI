@@ -1577,7 +1577,7 @@ export const StorageManager = {
 
         const demoClassIds = new Set();
         for (const c of [...(userSettings.academic?.classes || []), ...incomingClasses]) {
-            if (c?.id && (c.isDemo === true || c.name?.toLowerCase() === 'classe exemple')) {
+            if (c?.id && Utils.isDemoClassObject(c)) {
                 demoClassIds.add(c.id);
             }
         }

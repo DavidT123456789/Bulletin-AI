@@ -157,7 +157,11 @@ export const FocusPanelRefinement = {
                 if (e.target === modal) handleClose();
             });
             modal.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') handleClose();
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleClose();
+                }
             });
         });
     },

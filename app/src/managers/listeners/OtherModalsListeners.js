@@ -60,11 +60,15 @@ export const OtherModalsListeners = {
     _setupHelpModal(addClickListener) {
         addClickListener(DOM.closeHelpModalBtn, () => UI.closeModal(DOM.helpModal));
         addClickListener(DOM.closeHelpModalFooterBtn, () => UI.closeModal(DOM.helpModal));
+        DOM.helpModal?.addEventListener('click', (e) => {
+            if (e.target === DOM.helpModal) {
+                UI.closeModal(DOM.helpModal);
+            }
+        });
 
         const helpToPersonalizationBtn = document.getElementById('helpToPersonalizationBtn');
         helpToPersonalizationBtn?.addEventListener('click', () => {
-            UI.closeAllModals();
-            setTimeout(() => SettingsModalListeners.openPersonalization('settings-controls-panel'), 300);
+            SettingsModalListeners.openPersonalization('settings-controls-panel');
         });
 
         addClickListener(DOM.relaunchWelcomeGuideBtn, (e) => WelcomeManager.handleRelaunchWelcomeGuide(e));

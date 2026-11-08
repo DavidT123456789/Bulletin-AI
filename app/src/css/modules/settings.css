@@ -1435,6 +1435,7 @@ label.settings-row-title {
 
 .settings-group-card > .settings-row.settings-focus-highlight,
 .settings-providers-card > .api-key-section.settings-focus-highlight {
+    width: calc(100% + 20px);
     margin: 0 -10px;
     padding-left: 10px;
     padding-right: 10px;

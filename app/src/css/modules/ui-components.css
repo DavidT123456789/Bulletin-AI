@@ -705,61 +705,78 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
     padding: 16px 20px;
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.02));
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    background: var(--card-glass-bg);
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-md);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     box-shadow: var(--shadow-sm);
-    animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: fadeInScale 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .period-mismatch-content {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
 }
 
 .period-mismatch-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-control);
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
+    font-size: 20px;
     flex-shrink: 0;
 }
 
+.period-mismatch-text {
+    min-width: 0;
+}
+
 .period-mismatch-text h4 {
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
     color: var(--text-primary);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .period-mismatch-text p {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.4;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.period-mismatch-text p strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .period-mismatch-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .period-mismatch-action .btn {
     white-space: nowrap;
+    height: 36px;
+    padding: 0 14px;
+    font-size: 0.82rem;
 }
 
 @keyframes fadeInScale {
     from {
         opacity: 0;
-        transform: scale(0.98) translateY(-5px);
+        transform: scale(0.99) translateY(-4px);
     }
 
     to {
@@ -771,18 +788,23 @@
 @media (max-width: 768px) {
     .period-mismatch-banner {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        align-items: stretch;
+        gap: 14px;
         padding: 14px 16px;
+    }
+
+    .period-mismatch-content {
+        align-items: flex-start;
     }
 
     .period-mismatch-action {
         width: 100%;
-        margin-top: 4px;
+        flex-wrap: wrap;
     }
 
     .period-mismatch-action .btn {
-        width: 100%;
+        flex: 1 1 auto;
+        min-height: 44px;
         justify-content: center;
     }
 }

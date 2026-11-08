@@ -28,6 +28,7 @@
 
 /* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */
 .main-content-wrapper[data-view="plan"] .stats-container,
+.main-content-wrapper[data-view="plan"] #period-mismatch-container,
 .main-content-wrapper[data-view="plan"] #outputList,
 .main-content-wrapper[data-view="plan"] #skeletonContainer,
 .main-content-wrapper[data-view="plan"] #empty-state-card,

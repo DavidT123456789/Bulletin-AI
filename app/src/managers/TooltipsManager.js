@@ -77,6 +77,9 @@ const getCommonTippyConfig = () => {
                     }
                 });
             }
+            if (instance.reference?.matches?.('.hist-bar-group[data-count="0"], .detail-item[data-count="0"]')) {
+                return false;
+            }
             const latestTooltip = instance.reference?.getAttribute?.('data-tooltip');
             if (latestTooltip && latestTooltip !== instance.props?.content && typeof instance.setContent === 'function') {
                 instance.setContent(latestTooltip);

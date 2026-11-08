@@ -122,14 +122,45 @@ describe('ModalUIManager', () => {
             expect(document.body.classList.contains('modal-open')).toBe(false);
         });
 
-        it('should stack helpModal on top of another modal', () => {
+        it('should invisibly suspend underlying workspace modal when opening helpModal as contextual help (?) and replace all when opening another Level 1 modal from helpModal', () => {
+            const trigger = document.createElement('button');
+            document.body.appendChild(trigger);
+            trigger.focus();
+
             ModalUI.openModal(testModal);
             expect(ModalUI.activeModal).toBe(testModal);
+            expect(ModalUI.lastFocusedElement).toBe(trigger);
+
+            // 1. Contextual '?' inside testModal opens helpModal -> testModal is suspended in place (not destroyed)
+            const internalBtn = testModal.querySelector('#focusable');
+            internalBtn.focus();
 
             ModalUI.openModal(helpModal);
 
             expect(ModalUI.stackedModal).toBe(testModal);
             expect(ModalUI.activeModal).toBe(helpModal);
+            expect(testModal.classList.contains('modal-suspended')).toBe(true);
+            expect(testModal.classList.contains('modal-closing')).toBe(false);
+            expect(helpModal.classList.contains('modal-handoff')).toBe(true);
+            expect(helpModal.classList.contains('modal-stacked-overlay')).toBe(false);
+            expect(ModalUI.lastFocusedElement).toBe(trigger);
+
+            // 2. Clicking an action button inside helpModal to open a Level 1 modal (e.g. settingsModal) replaces both
+            const settingsModal = document.createElement('div');
+            settingsModal.id = 'appSettingsModal';
+            settingsModal.className = 'modal';
+            document.body.appendChild(settingsModal);
+
+            ModalUI.openModal(settingsModal);
+
+            expect(ModalUI.stackedModal).toBeNull();
+            expect(ModalUI.activeModal).toBe(settingsModal);
+            expect(testModal.classList.contains('modal-closing')).toBe(true);
+            expect(testModal.classList.contains('modal-handoff-out')).toBe(true);
+            expect(helpModal.classList.contains('modal-closing')).toBe(true);
+            expect(helpModal.classList.contains('modal-handoff-out')).toBe(true);
+            expect(settingsModal.classList.contains('modal-handoff')).toBe(true);
+            expect(ModalUI.lastFocusedElement).toBe(trigger);
         });
     });
 
@@ -215,15 +246,64 @@ describe('ModalUIManager', () => {
             document.removeEventListener('welcome-modal-close', listener);
         });
 
-        it('should restore stacked modal when closing helpModal', () => {
+        it('should seamlessly un-suspend and restore underlying workspace modal when closing contextual helpModal', () => {
             ModalUI.openModal(testModal);
-            ModalUI.openModal(helpModal);
+            testModal.classList.add('modal-visible', 'show');
 
+            const internalBtn = testModal.querySelector('#focusable');
+            Object.defineProperty(internalBtn, 'offsetParent', { value: testModal, configurable: true });
+            internalBtn.focus();
+
+            ModalUI.openModal(helpModal);
+            expect(testModal.classList.contains('modal-suspended')).toBe(true);
+
+            const openModalSpy = vi.spyOn(ModalUI, 'openModal');
             ModalUI.closeModal(helpModal);
+
+            // Un-suspends underlying modal immediately on close start so backdrop remains continuous
+            expect(testModal.classList.contains('modal-suspended')).toBe(false);
+            expect(helpModal.classList.contains('modal-handoff-out')).toBe(true);
+
             vi.advanceTimersByTime(250);
 
             expect(ModalUI.activeModal).toBe(testModal);
             expect(ModalUI.stackedModal).toBeNull();
+            expect(testModal.classList.contains('modal-visible')).toBe(true);
+            expect(openModalSpy).not.toHaveBeenCalled();
+            expect(document.activeElement).toBe(internalBtn);
+            openModalSpy.mockRestore();
+        });
+
+        it('should stack Level 2 overlay modal with modal-stacked-overlay and restore underlying modal without removing modal-visible', () => {
+            ModalUI.openModal(testModal);
+            testModal.classList.add('modal-visible', 'show');
+
+            const internalBtn = testModal.querySelector('#focusable');
+            Object.defineProperty(internalBtn, 'offsetParent', { value: testModal, configurable: true });
+            internalBtn.focus();
+
+            const confirmModal = document.createElement('div');
+            confirmModal.id = 'customConfirmModal';
+            confirmModal.className = 'modal';
+            confirmModal.innerHTML = '<div class="modal-content"><button>OK</button></div>';
+            document.body.appendChild(confirmModal);
+
+            const openModalSpy = vi.spyOn(ModalUI, 'openModal');
+            ModalUI.openModal(confirmModal);
+            expect(ModalUI.stackedModal).toBe(testModal);
+            expect(ModalUI.activeModal).toBe(confirmModal);
+            expect(confirmModal.classList.contains('modal-stacked-overlay')).toBe(true);
+
+            ModalUI.closeModal(confirmModal);
+            vi.advanceTimersByTime(250);
+
+            expect(ModalUI.activeModal).toBe(testModal);
+            expect(ModalUI.stackedModal).toBeNull();
+            expect(testModal.classList.contains('modal-visible')).toBe(true);
+            // Underlying modal must never be re-opened via openModal on restore (no re-animation flash)
+            expect(openModalSpy).toHaveBeenCalledTimes(1);
+            expect(document.activeElement).toBe(internalBtn);
+            openModalSpy.mockRestore();
         });
 
         it('should remove customConfirmModal from DOM', () => {

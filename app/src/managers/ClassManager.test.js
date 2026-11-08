@@ -11,9 +11,11 @@ describe('ClassManager - isDemoClass and Demo Handling', () => {
         appState.currentClassId = null;
     });
 
-    it('should correctly identify "Classe Exemple" as a demo class', () => {
+    it('should correctly identify "Classe Exemple" and "Classe Démo" as demo classes', () => {
         const demoClass = ClassManager.createClass('Classe Exemple');
+        const demoClassAlt = ClassManager.createClass('Classe Démo');
         expect(ClassManager.isDemoClass(demoClass.id)).toBe(true);
+        expect(ClassManager.isDemoClass(demoClassAlt.id)).toBe(true);
     });
 
     it('should correctly identify a standard class as not a demo class', () => {

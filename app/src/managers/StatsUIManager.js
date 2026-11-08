@@ -153,20 +153,18 @@ export const StatsUI = {
     },
 
     /**
-     * Formate une infobulle synthétique sur une ligne (effectif + part en % + condition).
-     * Mutualisé entre l'histogramme de Répartition et la légende de Dynamique.
+     * Formate une infobulle épurée indiquant la part de la classe en % (et le seuil optionnel).
+     * Évite de répéter l'effectif ou la tranche déjà inscrits sur la barre/tuile.
      * @param {number} count - Nombre d'élèves dans la catégorie
      * @param {number} total - Effectif total de référence
-     * @param {string} conditionStr - Plage de notes ou seuil d'évolution
+     * @param {string} [conditionStr=''] - Seuil d'évolution optionnel
      * @returns {string}
      * @private
      */
-    _formatCountShareTooltip(count, total, conditionStr) {
-        const pluriel = count > 1 ? 's' : '';
-        const percentStr = (total > 0 && count > 0)
-            ? ` · ${Math.round((count / total) * 100)} %`
-            : '';
-        return `${count} élève${pluriel}${percentStr} (${conditionStr})`;
+    _formatClassShareTooltip(count, total, conditionStr = '') {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const suffix = conditionStr ? ` (${conditionStr})` : '';
+        return `${pct} % de la classe${suffix}`;
     },
 
     /**
@@ -243,8 +241,8 @@ export const StatsUI = {
         resolvedElements.forEach(({ el, rule, fallbackLabel }, idx) => {
             if (!el) return;
             const count = counts[idx];
-            const tooltip = (isEvoActive && count !== null)
-                ? this._formatCountShareTooltip(count, total, rule)
+            const tooltip = (isEvoActive && count !== null && count > 0 && total > 0)
+                ? this._formatClassShareTooltip(count, total, rule)
                 : `${fallbackLabel} (${rule})`;
             el.dataset.tooltip = tooltip;
             if (el._tippy && typeof el._tippy.setContent === 'function') {
@@ -346,21 +344,16 @@ export const StatsUI = {
      */
     updateProgressBars(progress, stable, regression) {
         const total = progress + stable + regression;
-        const progressPercent = total > 0 ? (progress / total) * 100 : 0;
-        const stablePercent = total > 0 ? (stable / total) * 100 : 0;
-        const regressionPercent = total > 0 ? (regression / total) * 100 : 0;
-
         const progressBarUpdates = {
-            'progressChartBar': { percent: progressPercent, count: progress },
-            'stableChartBar': { percent: stablePercent, count: stable },
-            'regressionChartBar': { percent: regressionPercent, count: regression }
+            'progressChartBar': total > 0 ? (progress / total) * 100 : 0,
+            'stableChartBar': total > 0 ? (stable / total) * 100 : 0,
+            'regressionChartBar': total > 0 ? (regression / total) * 100 : 0
         };
 
-        for (const [id, data] of Object.entries(progressBarUpdates)) {
+        for (const [id, percent] of Object.entries(progressBarUpdates)) {
             const bar = document.getElementById(id);
             if (bar) {
-                bar.style.width = `${data.percent}%`;
-                bar.setAttribute('data-percent', `${Math.round(data.percent)}%`);
+                bar.style.width = `${percent}%`;
             }
         }
     },
@@ -494,26 +487,27 @@ export const StatsUI = {
                     evolutionChip.removeAttribute('data-tooltip');
                     evolutionChip.classList.remove('tooltip');
                 }
-                // startValue can contain a comma, replace it before parsing
-                const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.')) || 0;
-                const promise = new Promise(resolve => {
-                    let startTimestamp = null; const duration = 500;
-                    const step = (timestamp) => {
-                        if (!startTimestamp) startTimestamp = timestamp;
-                        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                        const currentVal = startVal + progress * (avgEvolution - startVal);
-                        const unit = Math.abs(currentVal) >= 2 ? 'pts' : 'pt';
-                        avgEvoEl.textContent = `${currentVal >= 0 ? '+' : ''}${currentVal.toFixed(1).replace('.', ',')} ${unit}`;
-                        if (progress < 1) window.requestAnimationFrame(step);
-                        else {
-                            const finalUnit = Math.abs(avgEvolution) >= 2 ? 'pts' : 'pt';
-                            avgEvoEl.textContent = `${avgEvolution >= 0 ? '+' : ''}${avgEvolution.toFixed(1).replace('.', ',')} ${finalUnit}`;
-                            resolve();
-                        }
-                    };
-                    window.requestAnimationFrame(step);
-                });
-                animationPromises.push(promise);
+                const formatEvoText = (val) => {
+                    const unit = Math.abs(val) >= 2 ? 'pts' : 'pt';
+                    return `${val >= 0 ? '+' : ''}${val.toFixed(1).replace('.', ',')} ${unit}`;
+                };
+                const targetEvoText = formatEvoText(avgEvolution);
+                if (avgEvoEl.textContent !== targetEvoText) {
+                    const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.')) || 0;
+                    animationPromises.push(new Promise(resolve => {
+                        let startTimestamp = null;
+                        const duration = 500;
+                        const step = (timestamp) => {
+                            if (!startTimestamp) startTimestamp = timestamp;
+                            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                            const currentVal = startVal + progress * (avgEvolution - startVal);
+                            avgEvoEl.textContent = progress < 1 ? formatEvoText(currentVal) : targetEvoText;
+                            if (progress < 1) window.requestAnimationFrame(step);
+                            else resolve();
+                        };
+                        window.requestAnimationFrame(step);
+                    }));
+                }
 
                 if (avgEvolution >= appState.evolutionThresholds.positive) evolutionChip.classList.add('positive');
                 else if (avgEvolution <= appState.evolutionThresholds.negative) evolutionChip.classList.add('negative');
@@ -615,7 +609,11 @@ export const StatsUI = {
                 if (bar) bar.style.height = `${Math.max(heightPercent, 4)}%`;
 
                 this._setFilterTileAccessibility(barGroup, count);
-                barGroup.setAttribute('data-tooltip', this._formatCountShareTooltip(count, totalCount, `${range}/20`));
+                if (count > 0 && totalCount > 0) {
+                    barGroup.setAttribute('data-tooltip', this._formatClassShareTooltip(count, totalCount));
+                } else {
+                    barGroup.removeAttribute('data-tooltip');
+                }
             }
         });
     },

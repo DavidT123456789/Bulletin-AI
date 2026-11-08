@@ -454,6 +454,9 @@ export const TrombiCropExporter = {
                         if (!targetClass) {
                             targetClass = (appState.currentClassId && ClassManager.getClass?.(appState.currentClassId))
                                 || ClassManager.createClass?.('Classe Démo');
+                            if (targetClass && targetClass.name === 'Classe Démo') {
+                                targetClass.isDemo = true;
+                            }
                             if (targetClass && appState.currentClassId !== targetClass.id) {
                                 await ClassManager.switchClass?.(targetClass.id);
                             }

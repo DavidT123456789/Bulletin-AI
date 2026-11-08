@@ -419,7 +419,7 @@ export const SyncService = {
 
         for (const cls of safeClasses) {
             if (!cls?.id || String(cls.id).startsWith('virtual_')) continue;
-            const isDemo = cls.isDemo === true || cls.name?.toLowerCase() === 'classe exemple';
+            const isDemo = Utils.isDemoClassObject(cls);
             if (isDemo) demoClassIds.add(cls.id);
             classesMeta[cls.id] = {
                 name: cls.name || '',

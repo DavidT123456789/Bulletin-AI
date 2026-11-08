@@ -117,6 +117,7 @@ export const GlobalListeners = {
                     if (document.querySelector('.trombi-student-popover')) {
                         return;
                     }
+                    e.preventDefault();
                     if (UI.stackedModal) {
                         UI.closeModal(UI.activeModal);
                     } else {
@@ -421,30 +422,17 @@ export const GlobalListeners = {
             if (link) {
                 e.preventDefault();
                 if (link.dataset.action === "open-help") {
-                    UI.openModal(DOM.helpModal, { isStacked: true });
-                    const targetTab = link.dataset.targetTab;
-                    if (targetTab) {
-                        const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${targetTab}"]`);
-                        if (tabBtn) tabBtn.click();
-                    }
-                    const section = document.getElementById(link.dataset.targetSection);
-                    if (section) {
-                        if (section.tagName === 'DETAILS') section.open = true;
-                        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-                    }
+                    UI.openHelpTab(link.dataset.targetTab, link.dataset.targetSection);
                 } else {
-                    UI.closeAllModals();
                     // Explicitly close actions dropdown and custom dropdowns
                     DOM.actionsDropdown?.classList.remove('show');
                     DropdownManager.closeAll();
 
-                    setTimeout(() => {
-                        UI.openModal(DOM.settingsModal);
-                        // Use centralized highlight utility
-                        UI.highlightSettingsElement(link.dataset.targetElement, {
-                            tab: link.dataset.targetTab
-                        });
-                    }, 350);
+                    UI.openModal(DOM.settingsModal);
+                    // Use centralized highlight utility
+                    UI.highlightSettingsElement(link.dataset.targetElement, {
+                        tab: link.dataset.targetTab
+                    });
                 }
             }
 

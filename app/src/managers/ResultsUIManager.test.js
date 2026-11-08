@@ -17,6 +17,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
 
     beforeEach(() => {
         document.body.innerHTML = `
+            <div id="period-mismatch-container" style="display: none;"></div>
             <div id="results"></div>
             <div id="empty-state-card" style="display: none;"></div>
             <p id="noResultsMessage" style="display: none;"></p>
@@ -44,6 +45,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             </template>
         `;
 
+        DOM.periodMismatchContainer = document.getElementById('period-mismatch-container');
         DOM.resultsDiv = document.getElementById('results');
         DOM.emptyStateCard = document.getElementById('empty-state-card');
         DOM.noResultsMessage = document.getElementById('noResultsMessage');
@@ -474,6 +476,239 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
         expect(observedCountsAfterEachRow[0]).toEqual({ badgeText: '1', display: 'inline-flex' });
         // Après le 2e (dernier) élève : plus aucun élève à actualiser, le bouton se masque
         expect(observedCountsAfterEachRow[1].display).toBe('none');
+        vi.restoreAllMocks();
+    });
+
+    describe('Period Mismatch Banner & Demo Class Auto-Adaptation', () => {
+        beforeEach(() => {
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T1';
+            appState.sortState = { field: 'name', direction: 'asc' };
+        });
+
+        it('devrait afficher le bandeau avec double action (Convertir / Passer) pour une classe réelle en décalage de système', () => {
+            const cls = ClassManager.createClass('2nde A');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+
+            appState.generatedResults = [
+                {
+                    id: 'stu-1',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    classId: cls.id,
+                    generationPeriod: 'S1',
+                    studentData: {
+                        nom: 'MARTIN',
+                        prenom: 'Lucas',
+                        currentPeriod: 'S1',
+                        statuses: ['PAI', 'Nouveau S2'],
+                        periods: {
+                            S1: { grade: 14.5, appreciation: 'Bon semestre.', context: 'Sérieux' },
+                            S2: { grade: 16, appreciation: 'Très bien.' }
+                        }
+                    }
+                }
+            ];
+
+            ResultsUIManager.renderResults();
+
+            const banner = document.getElementById('period-mismatch-container');
+            expect(banner).not.toBeNull();
+            expect(banner.style.display).toBe('block');
+            expect(DOM.statsContainer.style.display).toBe('none');
+            expect(DOM.resultsDiv.innerHTML).toBe('');
+            expect(banner.textContent).toContain('Saisies enregistrées en mode semestriel');
+
+            const convertBtn = banner.querySelector('[data-action="convert-mismatch"]');
+            const switchBtn = banner.querySelector('[data-action="switch-mismatch"]');
+            expect(convertBtn).not.toBeNull();
+            expect(switchBtn).not.toBeNull();
+            expect(convertBtn.textContent).toContain('Convertir vers Trimestres');
+            expect(switchBtn.textContent).toContain('Passer en Semestres');
+        });
+
+        it('devrait convertir les données (S1->T1, S2->T2, métadonnées et statuts) et masquer le bandeau au clic sur Convertir', () => {
+            const cls = ClassManager.createClass('2nde A');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+
+            const student = {
+                id: 'stu-1',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                classId: cls.id,
+                generationPeriod: 'S1',
+                errorPeriod: 'S2',
+                generationSnapshot: {
+                    currentPeriod: 'S1',
+                    periods: { S1: { grade: 14.5, appreciation: 'Bon semestre.' } }
+                },
+                history: [{ period: 'S1', content: 'Ancienne version' }],
+                journal: [{ id: 'j1', period: 'S1', text: 'Participation' }],
+                studentData: {
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    currentPeriod: 'S1',
+                    statuses: ['PAI', 'Nouveau S2'],
+                    periods: {
+                        S1: { grade: 14.5, appreciation: 'Bon semestre.', context: 'Sérieux' },
+                        S2: { grade: 16, appreciation: 'Très bien.' }
+                    }
+                }
+            };
+            appState.generatedResults = [student];
+
+            ResultsUIManager.renderResults();
+
+            const convertBtn = document.querySelector('#period-mismatch-container [data-action="convert-mismatch"]');
+            convertBtn.click();
+
+            expect(student.studentData.periods.T1).toEqual({ grade: 14.5, appreciation: 'Bon semestre.', context: 'Sérieux' });
+            expect(student.studentData.periods.T2).toEqual({ grade: 16, appreciation: 'Très bien.' });
+            expect(student.studentData.periods.T3).toEqual({ grade: null, appreciation: '' });
+            expect(student.studentData.periods.S1).toBeUndefined();
+            expect(student.studentData.periods.S2).toBeUndefined();
+            expect(student.generationPeriod).toBe('T1');
+            expect(student.errorPeriod).toBe('T2');
+            expect(student.generationSnapshot.currentPeriod).toBe('T1');
+            expect(student.generationSnapshot.periods.T1.grade).toBe(14.5);
+            expect(student.history[0].period).toBe('T1');
+            expect(student.journal[0].period).toBe('T1');
+            expect(student.studentData.statuses).toEqual(expect.arrayContaining(['PAI', 'Nouveau T2']));
+
+            const banner = document.getElementById('period-mismatch-container');
+            expect(banner.style.display).toBe('none');
+            expect(DOM.statsContainer.style.display).toBe('');
+            expect(DOM.resultsDiv.innerHTML).not.toBe('');
+            expect(mockUI.showNotification).toHaveBeenCalledWith('Saisies converties en mode Trimestres.', 'success');
+        });
+
+        it('devrait repositionner currentPeriod et sortState.param sur T1 après conversion si l\'utilisateur était sur T3 vide', () => {
+            const cls = ClassManager.createClass('2nde A');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T3';
+            appState.sortState = { field: 'grade', direction: 'desc', param: 'T3' };
+            mockUI.updatePeriodSystemUI = vi.fn();
+
+            appState.generatedResults = [
+                {
+                    id: 'stu-1',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    classId: cls.id,
+                    studentData: {
+                        nom: 'MARTIN',
+                        prenom: 'Lucas',
+                        periods: { S1: { grade: 14, appreciation: 'Bien' } }
+                    }
+                }
+            ];
+
+            ResultsUIManager.convertMismatchPeriods();
+
+            expect(appState.currentPeriod).toBe('T1');
+            expect(appState.sortState.param).toBe('T1');
+            expect(mockUI.updatePeriodSystemUI).toHaveBeenCalled();
+        });
+
+        it('devrait convertir T1/T3 vers S1/S2 lors du passage vers Semestres si T2 est vide', () => {
+            const cls = ClassManager.createClass('1ère G1');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.periodSystem = 'semestres';
+            appState.currentPeriod = 'S1';
+
+            const student = {
+                id: 'stu-2',
+                nom: 'DURAND',
+                prenom: 'Chloé',
+                classId: cls.id,
+                studentData: {
+                    nom: 'DURAND',
+                    prenom: 'Chloé',
+                    currentPeriod: 'T3',
+                    periods: {
+                        T1: { grade: 12, appreciation: 'Trimestre 1' },
+                        T2: { grade: null, appreciation: '' },
+                        T3: { grade: 15, appreciation: 'Trimestre 3' }
+                    }
+                }
+            };
+            appState.generatedResults = [student];
+
+            ResultsUIManager.convertMismatchPeriods();
+
+            expect(student.studentData.periods.S1).toEqual({ grade: 12, appreciation: 'Trimestre 1' });
+            expect(student.studentData.periods.S2).toEqual({ grade: 15, appreciation: 'Trimestre 3' });
+            expect(student.studentData.periods.T1).toBeUndefined();
+            expect(student.studentData.periods.T3).toBeUndefined();
+        });
+
+        it('devrait basculer le système périodique au clic sur Passer en Semestres', () => {
+            const cls = ClassManager.createClass('2nde A');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            mockUI.updatePeriodSystemUI = vi.fn();
+
+            appState.generatedResults = [
+                {
+                    id: 'stu-1',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    classId: cls.id,
+                    studentData: {
+                        nom: 'MARTIN',
+                        prenom: 'Lucas',
+                        periods: { S1: { grade: 14, appreciation: '' } }
+                    }
+                }
+            ];
+
+            ResultsUIManager.renderResults();
+            const switchBtn = document.querySelector('#period-mismatch-container [data-action="switch-mismatch"]');
+            switchBtn.click();
+
+            expect(appState.periodSystem).toBe('semestres');
+            expect(appState.currentPeriod).toBe('S1');
+            expect(mockUI.showNotification).toHaveBeenCalledWith('Affichage basculé en mode Semestres.', 'success');
+        });
+
+        it('devrait adapter automatiquement et silencieusement la Classe Démo sans jamais afficher le bandeau d\'erreur', () => {
+            const demoCls = ClassManager.createClass('Classe Démo');
+            appState.currentClassId = demoCls.id;
+            userSettings.academic.currentClassId = demoCls.id;
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T1';
+
+            const demoStudent = {
+                id: 'demo-1',
+                nom: 'BERNARD',
+                prenom: 'Thomas',
+                classId: demoCls.id,
+                studentData: {
+                    nom: 'BERNARD',
+                    prenom: 'Thomas',
+                    currentPeriod: 'S1',
+                    periods: {
+                        S1: { grade: 15, appreciation: '', context: 'Élève moteur' },
+                        S2: { grade: null, appreciation: '' }
+                    }
+                }
+            };
+            appState.generatedResults = [demoStudent];
+
+            ResultsUIManager.renderResults();
+
+            const banner = document.getElementById('period-mismatch-container');
+            expect(banner?.style.display).toBe('none');
+            expect(demoStudent.studentData.periods.T1).toEqual({ grade: 15, appreciation: '', context: 'Élève moteur' });
+            expect(demoStudent.studentData.periods.S1).toBeUndefined();
+            expect(appState.filteredResults).toHaveLength(1);
+            expect(appState.filteredResults[0].isPlaceholderForPeriod).toBe(false);
+        });
         vi.restoreAllMocks();
     });
 });
