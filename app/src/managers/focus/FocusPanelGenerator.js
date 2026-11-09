@@ -51,6 +51,9 @@ export const FocusPanelGenerator = {
             if (restoreUI) {
                 const result = appState.generatedResults.find(r => r.id === studentId);
                 if (panel.currentStudentId === studentId) {
+                    const appreciationEl = document.getElementById('focusAppreciationText');
+                    if (appreciationEl) UI?.cancelHtmlReveal?.(appreciationEl);
+
                     const generateBtn = document.getElementById('focusGenerateBtn');
                     if (generateBtn) UI.hideInlineSpinner(generateBtn);
 
@@ -208,6 +211,17 @@ export const FocusPanelGenerator = {
         }
 
         const generateBtn = document.getElementById('focusGenerateBtn');
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        const isStillOnSameView = () =>
+            panel.currentStudentId === generatingForStudentId &&
+            appState.currentPeriod === generatingForPeriod &&
+            appState.currentClassId === generatingForClassId;
+        const clearActiveGeneration = () => {
+            if (panel._activeGenerations.get(generatingForStudentId)?.signal === signal) {
+                panel._activeGenerations.delete(generatingForStudentId);
+            }
+        };
+
         if (generateBtn) {
             UI?.showInlineSpinner?.(generateBtn);
         }
@@ -223,77 +237,100 @@ export const FocusPanelGenerator = {
                 return;
             }
 
-            Object.assign(result, {
-                evolutions: newResult.evolutions,
-                errorMessage: newResult.errorMessage,
-                timestamp: newResult.timestamp,
-                isPending: false,
-                wasGenerated: true,
-                appreciationSource: 'ai',
-                tokenUsage: newResult.tokenUsage
-            });
-
-            if (appState.currentPeriod === generatingForPeriod) {
-                result.appreciation = newResult.appreciation;
-            }
-
-            if (newResult.studentData?.currentAIModel) {
-                result.studentData.currentAIModel = newResult.studentData.currentAIModel;
-            }
-
-            result.promptHash = PromptService.getPromptHash({
-                ...result.studentData,
-                id: result.id,
-                currentPeriod: generatingForPeriod
-            });
-            result.generationPeriod = generatingForPeriod;
-
-            if (!result.studentData.periods[generatingForPeriod]) {
-                result.studentData.periods[generatingForPeriod] = {};
-            }
-            result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
-
-            const stillOnSameView =
-                panel.currentStudentId === generatingForStudentId &&
-                appState.currentPeriod === generatingForPeriod &&
-                appState.currentClassId === generatingForClassId;
-
             if (newResult.errorMessage) {
-                if (stillOnSameView) {
-                    panel._renderAppreciationText(result);
-                    UI?.showNotification?.(`Erreur : ${newResult.errorMessage}`, 'error');
+                Object.assign(result, {
+                    evolutions: newResult.evolutions,
+                    timestamp: newResult.timestamp,
+                    isPending: false
+                });
+                throw new Error(newResult.errorMessage);
+            }
+
+            if (newResult.appreciation) {
+                const htmlHtml = Utils.cleanMarkdown(newResult.appreciation);
+
+                if (isStillOnSameView() && appreciationEl) {
+                    appreciationEl.classList.remove('empty');
+
+                    const targetWordCount = Utils.countWords(newResult.appreciation);
+                    FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
+
+                    if (typeof UI?.animateHtmlReveal === 'function') {
+                        await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast', signal });
+                    } else {
+                        appreciationEl.innerHTML = htmlHtml;
+                    }
                 }
-            } else if (newResult.appreciation) {
+
+                if (signal.aborted) {
+                    return;
+                }
+
                 if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                FocusPanelHistory.load(generatingForStudentId, generatingForPeriod);
+                if (panel.currentStudentId === generatingForStudentId && appState.currentPeriod === generatingForPeriod) {
+                    FocusPanelHistory.load(generatingForStudentId, generatingForPeriod);
+                }
                 const hasExistingVersions = FocusPanelHistory.getVersionCount(generatingForPeriod, generatingForStudentId) > 0;
+
+                Object.assign(result, {
+                    evolutions: newResult.evolutions,
+                    errorMessage: null,
+                    errorPeriod: null,
+                    timestamp: newResult.timestamp,
+                    isPending: false,
+                    wasGenerated: true,
+                    appreciationSource: 'ai',
+                    tokenUsage: newResult.tokenUsage
+                });
+
+                if (appState.currentPeriod === generatingForPeriod) {
+                    result.appreciation = newResult.appreciation;
+                }
+
+                if (newResult.studentData?.currentAIModel) {
+                    result.studentData.currentAIModel = newResult.studentData.currentAIModel;
+                }
+
+                result.promptHash = PromptService.getPromptHash({
+                    ...result.studentData,
+                    id: result.id,
+                    currentPeriod: generatingForPeriod
+                });
+                result.generationPeriod = generatingForPeriod;
+
+                if (!result.studentData.periods[generatingForPeriod]) {
+                    result.studentData.periods[generatingForPeriod] = {};
+                }
+                result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
+
                 FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original', {
                     studentId: generatingForStudentId,
                     period: generatingForPeriod
                 });
 
-                if (stillOnSameView) {
-                    const appreciationEl = document.getElementById('focusAppreciationText');
+                clearActiveGeneration();
+
+                if (isStillOnSameView()) {
                     if (appreciationEl) {
-                        appreciationEl.classList.remove('empty');
-
-                        const targetWordCount = Utils.countWords(newResult.appreciation);
-                        FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
-
-                        const htmlHtml = Utils.cleanMarkdown(newResult.appreciation);
-                        if (typeof UI?.animateHtmlReveal === 'function') {
-                            await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
-                        } else {
+                        if (appreciationEl.innerHTML !== htmlHtml) {
                             appreciationEl.innerHTML = htmlHtml;
                         }
+                        appreciationEl.classList.remove('empty');
+                        appreciationEl.classList.add('filled');
                         panel._initialAppreciationHtml = htmlHtml;
                         panel._isAppreciationEdited = false;
                     }
 
+                    if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
+                    FocusPanelStatus.updateWordCount();
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
                     FocusPanelStatus.updateSourceIndicator(result);
                     panel._updateGenerateButton(result);
                 } else {
+                    if (panel.currentStudentId === generatingForStudentId && generateBtn) {
+                        UI?.hideInlineSpinner?.(generateBtn);
+                        panel._updateGenerateButton(result);
+                    }
                     UI?.showNotification?.(`Appréciation générée pour ${result.prenom || result.studentData?.prenom || ''}`, 'info');
                 }
 
@@ -305,24 +342,16 @@ export const FocusPanelGenerator = {
                 return;
             }
 
-            if (panel._activeGenerations.has(generatingForStudentId)) {
-                const currentController = panel._activeGenerations.get(generatingForStudentId);
-                if (currentController && currentController.signal === signal) {
-                    panel._activeGenerations.delete(generatingForStudentId);
-                }
-            }
+            clearActiveGeneration();
 
             result.errorMessage = error.message;
             result.errorPeriod = generatingForPeriod;
 
-            const stillOnSameView =
-                panel.currentStudentId === generatingForStudentId &&
-                appState.currentPeriod === generatingForPeriod &&
-                appState.currentClassId === generatingForClassId;
-
-            if (stillOnSameView) {
+            if (isStillOnSameView()) {
+                if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
                 UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
                 panel._renderAppreciationText(result);
+                panel._updateGenerateButton(result);
             } else {
                 UI?.showNotification?.(`Échec pour ${result.prenom || result.studentData?.prenom || ''} : ${error.message}`, 'error');
             }
@@ -330,30 +359,13 @@ export const FocusPanelGenerator = {
             panel._updateListRow(result);
             StorageManager.saveAppState();
         } finally {
-            if (panel._activeGenerations.has(generatingForStudentId)) {
-                const currentController = panel._activeGenerations.get(generatingForStudentId);
-                if (currentController && currentController.signal === signal) {
-                    panel._activeGenerations.delete(generatingForStudentId);
-                }
-            }
+            clearActiveGeneration();
 
             if (!panel._activeGenerations.has(generatingForStudentId)) {
-                const stillOnSameView =
-                    panel.currentStudentId === generatingForStudentId &&
-                    appState.currentPeriod === generatingForPeriod &&
-                    appState.currentClassId === generatingForClassId;
-
                 if (panel.currentStudentId === generatingForStudentId && generateBtn) {
                     UI?.hideInlineSpinner?.(generateBtn);
+                    if (result) panel._updateGenerateButton(result);
                 }
-
-                if (stillOnSameView && result) {
-                    FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-                    panel._renderAppreciationText(result);
-                    panel._updateGenerateButton(result);
-                }
-
-                panel._updateListRow(result);
                 UI?.updateControlButtons?.();
             }
         }
@@ -382,7 +394,6 @@ export const FocusPanelGenerator = {
     async handleExternalGenerationComplete(panel, studentId, result, animate = true) {
         if (panel.currentStudentId !== studentId || !result) return;
         const generateBtn = document.getElementById('focusGenerateBtn');
-        if (generateBtn) UI.hideInlineSpinner(generateBtn);
 
         const appreciationEl = document.getElementById('focusAppreciationText');
         const period = appState.currentPeriod;
@@ -390,6 +401,7 @@ export const FocusPanelGenerator = {
         const effectiveApp = periodApp || ((result.generationPeriod === period) ? result.appreciation : '');
 
         if (result.errorMessage && result.errorPeriod === period) {
+            if (generateBtn) UI.hideInlineSpinner(generateBtn);
             panel._renderAppreciationText(result);
             FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
             panel._updateGenerateButton(result);
@@ -403,21 +415,31 @@ export const FocusPanelGenerator = {
                 FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
                 const htmlHtml = Utils.cleanMarkdown(effectiveApp);
                 await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+                if (panel.currentStudentId !== studentId || appState.currentPeriod !== period) return;
                 panel._initialAppreciationHtml = htmlHtml;
                 panel._isAppreciationEdited = false;
             } else if (appreciationEl) {
                 panel._renderAppreciationText(result);
             }
 
-            if (!result.historyPerPeriod) result.historyPerPeriod = {};
-            FocusPanelHistory.load(studentId);
-            const hasExistingVersions = FocusPanelHistory.getVersionCount() > 0;
-            FocusPanelHistory.push(effectiveApp, hasExistingVersions ? 'regenerate' : 'original');
+            if (generateBtn) UI.hideInlineSpinner(generateBtn);
 
+            if (!result.historyPerPeriod) result.historyPerPeriod = {};
+            FocusPanelHistory.load(studentId, period);
+            const hasExistingVersions = FocusPanelHistory.getVersionCount(period, studentId) > 0;
+            FocusPanelHistory.push(effectiveApp, hasExistingVersions ? 'regenerate' : 'original', {
+                studentId,
+                period
+            });
+
+            FocusPanelStatus.updateWordCount();
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
             FocusPanelStatus.updateSourceIndicator(result);
             panel._updateGenerateButton(result);
             try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
+        } else if (generateBtn) {
+            UI.hideInlineSpinner(generateBtn);
+            panel._updateGenerateButton(result);
         }
     },
 
@@ -428,6 +450,7 @@ export const FocusPanelGenerator = {
         const appreciationEl = document.getElementById('focusAppreciationText');
         if (!appreciationEl) return;
 
+        UI?.cancelHtmlReveal?.(appreciationEl);
         appreciationEl.classList.remove('empty');
         appreciationEl.innerHTML = Utils.getSkeletonHTML(false, '', false, false);
 

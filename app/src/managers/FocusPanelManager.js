@@ -447,6 +447,7 @@ export const FocusPanelManager = {
         }
 
         SpeechSynthesisManager.cancel();
+        UI?.cancelHtmlReveal?.(document.getElementById('focusAppreciationText'));
         FocusPanelHistory.closePopover?.();
         FocusPanelJournal.closeThresholdPopover?.();
         if (HistoryManager.isOpen('focusJournalQuickAdd')) {
@@ -594,6 +595,7 @@ export const FocusPanelManager = {
         if (!appreciationEl) return;
 
         const currentPeriod = appState.currentPeriod;
+        UI?.cancelHtmlReveal?.(appreciationEl);
         const isGenerating = this._activeGenerations.has(result.id);
 
         if (isGenerating) {

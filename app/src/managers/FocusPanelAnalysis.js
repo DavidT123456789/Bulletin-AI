@@ -486,14 +486,21 @@ export const FocusPanelAnalysis = {
                 const updated = appState.generatedResults.find(r => r.id === id);
 
                 if (updated?.strengthsWeaknesses) {
+                    const revealPromises = [];
                     if (forcesContent) {
-                        UI.animateHtmlReveal(forcesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'forces'));
+                        revealPromises.push(UI.animateHtmlReveal(forcesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'forces'), { speed: 'fast', signal }));
+                    }
+                    if (weaknessesContent) {
+                        revealPromises.push(UI.animateHtmlReveal(weaknessesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'weaknesses'), { speed: 'fast', signal }));
+                    }
+                    await Promise.all(revealPromises);
+                    if (signal?.aborted || !isCurrentStudent()) return;
+                    if (forcesContent) {
                         forcesCard?.classList.remove('has-error');
                         forcesCard?.classList.add('has-content');
                         this._setCardBadge(forcesCard, 'done');
                     }
                     if (weaknessesContent) {
-                        UI.animateHtmlReveal(weaknessesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'weaknesses'));
                         weaknessesCard?.classList.remove('has-error');
                         weaknessesCard?.classList.add('has-content');
                         this._setCardBadge(weaknessesCard, 'done');
@@ -535,7 +542,10 @@ export const FocusPanelAnalysis = {
                 const updated = appState.generatedResults.find(r => r.id === id);
 
                 if (updated?.nextSteps?.length) {
-                    UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`);
+                    if (suggestionsContent) {
+                        await UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`, { speed: 'fast', signal });
+                    }
+                    if (signal?.aborted || !isCurrentStudent()) return;
                     suggestionsCard?.classList.remove('has-error');
                     suggestionsCard?.classList.add('has-content');
                     this._setCardBadge(suggestionsCard, 'done');

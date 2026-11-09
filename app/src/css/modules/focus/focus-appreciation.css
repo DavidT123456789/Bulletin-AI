@@ -671,6 +671,7 @@
     transition: all var(--transition-fast);
     color: var(--ai-icon-color);
     flex-shrink: 0;
+    animation: badge-pop-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .ai-indicator:hover {
@@ -770,11 +771,20 @@
     align-items: center;
     margin-top: 0;
     padding: 2px 16px 14px 16px;
+    animation: word-fade-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .focus-refinement-options .btn-ai-outline {
     flex: 1 0 auto;
     justify-content: center;
+}
+
+.focus-refinement-options .btn-ai-outline:not(.disabled):nth-child(2) {
+    transition-delay: 0s, 0s, 0s, 0s, 30ms, 0s;
+}
+
+.focus-refinement-options .btn-ai-outline:not(.disabled):nth-child(3) {
+    transition-delay: 0s, 0s, 0s, 0s, 60ms, 0s;
 }
 
 /* ============================
@@ -811,6 +821,14 @@
     padding: 0 14px;
     gap: 6px;
     border-right: 1px solid var(--border-color);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+
+    @starting-style {
+        opacity: 0 !important;
+    }
 }
 
 .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn.btn-neutral:not(.is-loading)) iconify-icon {
@@ -924,7 +942,13 @@
     border-radius: 100px;
     font-size: 12px;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.16s var(--ease-spring);
     display: flex;
     align-items: center;
     gap: 7px;
@@ -1100,8 +1124,20 @@
 }
 
 /* Contrôles audio désactivés pendant la génération */
+#focusAppreciationSpeakBtn,
+#focusAppreciationMicBtn {
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+
+    @starting-style {
+        opacity: 0 !important;
+    }
+}
+
 #focusAppreciationSpeakBtn.disabled,
-#focusAppreciationSpeechBtn.disabled {
+#focusAppreciationMicBtn.disabled {
     opacity: 0.35 !important;
     pointer-events: none !important;
     cursor: default !important;
@@ -1227,13 +1263,19 @@
     flex-shrink: 0;
 }
 
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn) > :not(.loading-spinner-svg):not(.stop-square-svg) {
+    animation: word-fade-in 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
 :is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {
     width: 13px;
     height: 13px;
     color: var(--error-color, #ef4444) !important;
     margin: 0 !important;
     flex-shrink: 0;
-    animation: stop-square-pulse 1.8s ease-in-out infinite;
+    animation:
+        word-fade-in 0.18s cubic-bezier(0.32, 0.72, 0, 1) both,
+        stop-square-pulse 1.8s ease-in-out 0.18s infinite;
 }
 
 [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {

@@ -129,7 +129,11 @@ export const FocusPanelHistory = {
 
         if (HistoryUtils.pushToState(state, cleanContent, source, appreciationSource, aiModel, tokenUsage)) {
             this._save();
-            this._notifyHistoryChange();
+            const isCurrentStudent = !targetStudentId || targetStudentId === (this._currentResultId || this._panel?.currentStudentId);
+            const isCurrentPeriod = !targetPeriod || targetPeriod === appState.currentPeriod;
+            if (isCurrentStudent && isCurrentPeriod) {
+                this._notifyHistoryChange();
+            }
         }
     },
 
@@ -187,7 +191,10 @@ export const FocusPanelHistory = {
     },
 
     getVersionCount(targetPeriod = null, targetStudentId = null) {
-        const state = this._getState(false, targetPeriod, targetStudentId);
+        const result = this._getResult(targetStudentId);
+        const currentPeriod = targetPeriod || appState.currentPeriod;
+        const hasExistingAppreciation = Boolean(result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim());
+        const state = this._getState(hasExistingAppreciation, currentPeriod, targetStudentId);
         return state ? state.versions.length : 0;
     },
 

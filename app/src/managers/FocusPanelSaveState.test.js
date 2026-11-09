@@ -257,6 +257,8 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(cancelSpy).toHaveBeenCalledWith('student-1');
 
             FocusPanelManager._activeGenerations.clear();
+            FocusPanelManager._isCancellingGeneration = false;
+            cancelSpy.mockRestore();
         });
 
         it('qualifies newly checked Nouveau/Départ with the active period and keeps inactive history when merging header checkboxes', async () => {
@@ -498,6 +500,96 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(document.querySelector('#focusAvatarContainer .student-avatar')).toBe(avatarBefore);
             expect(avatarBefore.querySelector('.student-avatar__initials').textContent).toBe('JD');
             saveSpy.mockRestore();
+        });
+    });
+
+    describe('Progressive Reveal & Button Synchronization', () => {
+        beforeEach(() => {
+            document.getElementById('focusRefinementOptions').innerHTML = `
+                <button data-refine-type="concise">Concise</button>
+                <button data-refine-type="encouraging">Encourageante</button>
+                <button data-refine-type="polish">Peaufiner</button>
+            `;
+        });
+
+        it('keeps Annuler active and secondary buttons disabled during progressive reveal, then unlocks all together with the generated badge', async () => {
+            vi.useFakeTimers();
+            const mockAm = {
+                generateAppreciation: vi.fn().mockResolvedValue({
+                    appreciation: 'Nouvelle appréciation bienveillante et précise.',
+                    evolutions: [],
+                    timestamp: new Date().toISOString(),
+                    studentData: { currentAIModel: 'gemini-2.5-flash' },
+                    tokenUsage: { appreciation: { total_tokens: 42 } }
+                })
+            };
+            FocusPanelManager.init(mockAm, null);
+            FocusPanelManager.open('student-1');
+
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            const copyBtn = document.getElementById('focusCopyBtn');
+            const conciseBtn = document.querySelector('[data-refine-type="concise"]');
+            const badge = document.getElementById('focusAppreciationBadge');
+
+            const genPromise = FocusPanelManager.generate();
+
+            // Flush microtasks so generateAppreciation resolves and animateHtmlReveal starts
+            await Promise.resolve();
+            await Promise.resolve();
+            // Advance past skeleton fade-out (150ms) into the middle of word reveal (200ms)
+            await vi.advanceTimersByTimeAsync(200);
+
+            // During progressive reveal: button MUST still be on "Annuler" and secondary buttons MUST still be disabled
+            expect(generateBtn.classList.contains('is-loading')).toBe(true);
+            expect(generateBtn.textContent).toContain('Annuler');
+            expect(copyBtn.classList.contains('disabled')).toBe(true);
+            expect(conciseBtn.classList.contains('disabled')).toBe(true);
+
+            // Advance to exact end of progressive reveal (no extra +400ms dead wait)
+            await vi.advanceTimersByTimeAsync(500);
+            await genPromise;
+
+            // Right after reveal completes: everything unlocks together and generated badge is preserved
+            expect(generateBtn.classList.contains('is-loading')).toBe(false);
+            expect(generateBtn.textContent).toContain('Régénérer');
+            expect(copyBtn.classList.contains('disabled')).toBe(false);
+            expect(conciseBtn.classList.contains('disabled')).toBe(false);
+            expect(badge.classList.contains('generated')).toBe(true);
+            expect(badge.classList.contains('visible')).toBe(true);
+
+            vi.useRealTimers();
+        });
+
+        it('cancels progressive reveal and restores previous appreciation if user clicks Annuler during reveal', async () => {
+            vi.useFakeTimers();
+            const originalAppreciation = runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation;
+            const mockAm = {
+                generateAppreciation: vi.fn().mockResolvedValue({
+                    appreciation: 'Texte qui sera annulé pendant le fondu.',
+                    evolutions: [],
+                    timestamp: new Date().toISOString()
+                })
+            };
+            FocusPanelManager.init(mockAm, null);
+            FocusPanelManager.open('student-1');
+
+            const genPromise = FocusPanelManager.generate();
+
+            await Promise.resolve();
+            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(200);
+
+            // User cancels while progressive reveal is running
+            FocusPanelManager._cancelGenerationForStudent('student-1');
+            await vi.advanceTimersByTimeAsync(1000);
+            await genPromise;
+
+            // Previous appreciation is preserved in state and restored in DOM
+            expect(runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation).toBe(originalAppreciation);
+            expect(document.getElementById('focusAppreciationText').textContent).toContain('Bon travail.');
+            expect(document.getElementById('focusGenerateBtn').textContent).toContain('Régénérer');
+
+            vi.useRealTimers();
         });
     });
 });

@@ -746,7 +746,10 @@ export const UI = {
         } else {
             btn.classList?.remove('disabled');
         }
-        btn.innerHTML = `<iconify-icon class="iconify-inline${spinClass}" icon="${config.icon}"></iconify-icon> ${label}${suffixHtml}`;
+        const nextHtml = `<iconify-icon class="iconify-inline${spinClass}" icon="${config.icon}"></iconify-icon> <span>${label}</span>${suffixHtml}`;
+        if (btn.innerHTML !== nextHtml) {
+            btn.innerHTML = nextHtml;
+        }
         return label;
     },
 
@@ -1312,6 +1315,7 @@ export const UI = {
     fadeOutSkeleton(container) { return AnimationManager.fadeOutSkeleton(container); },
     typewriterReveal(container, text, options) { return AnimationManager.typewriterReveal(container, text, options); },
     animateHtmlReveal(container, htmlContent, options) { return AnimationManager.animateHtmlReveal(container, htmlContent, options); },
+    cancelHtmlReveal(container) { AnimationManager.cancelHtmlReveal(container); },
 
     // ====================================================================
     //  TOOLTIPS ET ACCORDÉONS

@@ -525,35 +525,40 @@ export const FocusPanelStatus = {
             return;
         }
 
-        // Update refinement buttons state: completely hidden when empty to avoid ghost disabled chips
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            refinementOptions.style.display = isEmpty ? 'none' : 'flex';
-            const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
-            refineButtons.forEach(btn => {
-                btn.disabled = false; // Always ensure native disabled is removed to allow hover and tooltips
-                btn.classList.toggle('disabled', isEmpty);
-            });
-        }
+        const isGenerating = this._isGenerating(this._getCurrentStudentId()) || targetCount !== null;
+        const shouldDisable = isEmpty || isGenerating;
 
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) {
-            copyBtn.disabled = isEmpty;
-            copyBtn.classList.toggle('disabled', isEmpty);
-            copyBtn.style.display = isEmpty ? 'none' : 'inline-flex';
-        }
+        if (!isGenerating || targetCount !== null) {
+            // Update refinement buttons state: completely hidden when empty to avoid ghost disabled chips
+            const refinementOptions = document.getElementById('focusRefinementOptions');
+            if (refinementOptions) {
+                refinementOptions.style.display = isEmpty ? 'none' : 'flex';
+                const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
+                refineButtons.forEach(btn => {
+                    btn.disabled = false; // Always ensure native disabled is removed to allow hover and tooltips
+                    btn.classList.toggle('disabled', shouldDisable && !btn.classList.contains('is-generating'));
+                });
+            }
 
-        const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
-        if (speakBtn) {
-            speakBtn.disabled = isEmpty;
-            speakBtn.classList.toggle('disabled', isEmpty);
-            speakBtn.style.display = isEmpty ? 'none' : 'inline-flex';
-        }
+            const copyBtn = document.getElementById('focusCopyBtn');
+            if (copyBtn) {
+                copyBtn.disabled = shouldDisable;
+                copyBtn.classList.toggle('disabled', shouldDisable);
+                copyBtn.style.display = isEmpty ? 'none' : 'inline-flex';
+            }
 
-        const micBtn = document.getElementById('focusAppreciationMicBtn');
-        if (micBtn) {
-            micBtn.disabled = false;
-            micBtn.classList.remove('disabled');
+            const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
+            if (speakBtn) {
+                speakBtn.disabled = shouldDisable;
+                speakBtn.classList.toggle('disabled', shouldDisable);
+                speakBtn.style.display = isEmpty ? 'none' : 'inline-flex';
+            }
+
+            const micBtn = document.getElementById('focusAppreciationMicBtn');
+            if (micBtn) {
+                micBtn.disabled = isGenerating;
+                micBtn.classList.toggle('disabled', isGenerating);
+            }
         }
 
         if (isEmpty) {

@@ -48,11 +48,22 @@ export const AnimationManager = {
     },
 
     /**
+     * Annule toute animation de révélation HTML en cours sur un conteneur
+     * @param {HTMLElement|null} container
+     */
+    cancelHtmlReveal(container) {
+        if (container && typeof container._cancelHtmlReveal === 'function') {
+            container._cancelHtmlReveal();
+        }
+    },
+
+    /**
      * Fait disparaître le skeleton en fondu
      * @param {HTMLElement} container - Le conteneur avec le skeleton
+     * @param {AbortSignal|null} [signal=null] - Signal d'annulation optionnel
      */
-    async fadeOutSkeleton(container) {
-        if (!container) return;
+    async fadeOutSkeleton(container, signal = null) {
+        if (!container || signal?.aborted) return;
         const skeleton = container.querySelector('.appreciation-skeleton');
         const badge = container.querySelector('.generating-badge');
         if (!skeleton && !badge) return;
@@ -66,8 +77,19 @@ export const AnimationManager = {
             badge.style.opacity = '0';
         }
 
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(resolve => {
+            const onAbort = () => {
+                clearTimeout(timerId);
+                resolve();
+            };
+            const timerId = setTimeout(() => {
+                signal?.removeEventListener?.('abort', onAbort);
+                resolve();
+            }, 150);
+            signal?.addEventListener?.('abort', onAbort, { once: true });
+        });
 
+        if (signal?.aborted) return;
         if (skeleton) skeleton.remove();
         if (badge) badge.remove();
     },
@@ -142,10 +164,33 @@ export const AnimationManager = {
      */
     async animateHtmlReveal(container, htmlContent, options = {}) {
         if (!container) return;
-        const safeHtml = htmlContent ?? '';
+        this.cancelHtmlReveal(container);
 
-        await this.fadeOutSkeleton(container);
+        const signal = options.signal || null;
+        if (signal?.aborted) return;
+
+        const safeHtml = htmlContent ?? '';
+        const revealId = Symbol('htmlReveal');
+        container._activeRevealId = revealId;
+
+        let cancelCurrent = null;
+        container._cancelHtmlReveal = () => {
+            if (container._activeRevealId === revealId) {
+                container._activeRevealId = null;
+            }
+            container._cancelHtmlReveal = null;
+            container.classList.remove('progressive-reveal-container');
+            cancelCurrent?.();
+        };
+
+        await this.fadeOutSkeleton(container, signal);
+        if (signal?.aborted || container._activeRevealId !== revealId) {
+            container._cancelHtmlReveal?.();
+            return;
+        }
+
         if (!safeHtml || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            container._cancelHtmlReveal?.();
             container.innerHTML = safeHtml;
             return;
         }
@@ -172,6 +217,7 @@ export const AnimationManager = {
         }
 
         const isFast = totalWordCount > 100;
+        const wordAnimDuration = isFast ? 300 : 400;
 
         let globalWordIndex = 0;
         let maxDelay = 0;
@@ -214,10 +260,26 @@ export const AnimationManager = {
             container.appendChild(tempDiv.firstChild);
         }
 
-        const totalDuration = maxDelay + 400;
+        const totalDuration = maxDelay + wordAnimDuration;
 
-        await new Promise(r => setTimeout(r, totalDuration + 400));
+        await new Promise(resolve => {
+            const finish = () => {
+                clearTimeout(timerId);
+                signal?.removeEventListener?.('abort', finish);
+                resolve();
+            };
+            cancelCurrent = finish;
+            const timerId = setTimeout(finish, totalDuration);
+            signal?.addEventListener?.('abort', finish, { once: true });
+        });
 
+        if (signal?.aborted || container._activeRevealId !== revealId) {
+            container._cancelHtmlReveal?.();
+            return;
+        }
+
+        container._activeRevealId = null;
+        container._cancelHtmlReveal = null;
         container.innerHTML = safeHtml;
         container.classList.remove('progressive-reveal-container');
     },

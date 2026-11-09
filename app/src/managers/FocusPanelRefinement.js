@@ -232,6 +232,16 @@ export const FocusPanelRefinement = {
         panel?._activeGenerations?.set(refineStudentId, abortController);
         const signal = abortController.signal;
 
+        const isStillOnSameContext = () =>
+            panel?.currentStudentId === refineStudentId &&
+            appState.currentPeriod === refinePeriod &&
+            appState.currentClassId === refineClassId;
+        const clearActiveGeneration = () => {
+            if (panel?._activeGenerations?.get(refineStudentId)?.signal === signal) {
+                panel._activeGenerations.delete(refineStudentId);
+            }
+        };
+
         if (panel?.listViewManager?.setRowStatus) {
             panel.listViewManager.setRowStatus(refineStudentId, 'generating');
         } else if (ListViewManager?.setRowStatus) {
@@ -252,6 +262,23 @@ export const FocusPanelRefinement = {
 
             if (response?.text) {
                 const refined = PromptService.deanonymizeText(response.text.trim(), studentPrenom);
+                const finalHtml = Utils.cleanMarkdown(refined);
+
+                if (isStillOnSameContext() && appreciationText) {
+                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
+                    const targetWordCount = Utils.countWords(refined);
+
+                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
+
+                    if (typeof UI?.animateHtmlReveal === 'function') {
+                        await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast', signal });
+                    } else {
+                        appreciationText.innerHTML = finalHtml;
+                    }
+                }
+
+                if (signal.aborted) return;
+
                 const priorSource = FocusPanelStatus._resolveSource(result);
                 const isProtectedSource = priorSource === 'manual' || priorSource === 'imported';
 
@@ -286,21 +313,12 @@ export const FocusPanelRefinement = {
 
                 FocusPanelHistory.push(refined, refineType, { studentId: refineStudentId, period: refinePeriod });
 
-                const stillOnSameContext =
-                    panel?.currentStudentId === refineStudentId &&
-                    appState.currentPeriod === refinePeriod &&
-                    appState.currentClassId === refineClassId;
+                // Delete the active generation ONLY after animation finishes,
+                // so that _saveContext() triggered during animation does not save the span tags.
+                clearActiveGeneration();
 
-                if (stillOnSameContext && appreciationText) {
-                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
-                    const targetWordCount = Utils.countWords(refined);
-
-                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
-
-                    const finalHtml = Utils.cleanMarkdown(refined);
-                    if (typeof UI?.animateHtmlReveal === 'function') {
-                        await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
-                    } else {
+                if (isStillOnSameContext() && appreciationText) {
+                    if (appreciationText.innerHTML !== finalHtml) {
                         appreciationText.innerHTML = finalHtml;
                     }
                     if (panel) {
@@ -308,13 +326,10 @@ export const FocusPanelRefinement = {
                         panel._isAppreciationEdited = false;
                     }
 
+                    FocusPanelStatus.updateWordCount();
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
                     FocusPanelStatus.updateSourceIndicator(result);
                 }
-
-                // CRITICAL FIX: Delete the active generation ONLY after animation finishes,
-                // so that _saveContext() triggered during animation does not save the span tags.
-                panel?._activeGenerations?.delete(refineStudentId);
 
                 // Update list row and persist
                 panel?._updateListRow?.(result);
@@ -326,12 +341,8 @@ export const FocusPanelRefinement = {
                 || signal.aborted
                 || error.message?.includes('annulé');
 
-            const stillOnSameContext =
-                panel?.currentStudentId === refineStudentId &&
-                appState.currentPeriod === refinePeriod &&
-                appState.currentClassId === refineClassId;
-
-            panel?._activeGenerations?.delete(refineStudentId);
+            const stillOnSameContext = isStillOnSameContext();
+            clearActiveGeneration();
 
             if (isAborted) {
                 if (stillOnSameContext) {
@@ -348,13 +359,13 @@ export const FocusPanelRefinement = {
             panel?._updateListRow?.(result);
             StorageManager.saveAppState();
         } finally {
+            clearActiveGeneration();
             if (panel?.currentStudentId === refineStudentId && !panel?._activeGenerations?.has(refineStudentId)) {
                 btn?.classList.remove('is-generating');
                 document.querySelectorAll('#focusRefinementOptions [data-refine-type]').forEach(b => {
                     b.classList.remove('disabled');
                 });
                 this._setSecondaryControlsDisabled(false);
-                const generateBtn = document.getElementById('focusGenerateBtn');
                 if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
                 panel?._updateGenerateButton?.(result);
             }
