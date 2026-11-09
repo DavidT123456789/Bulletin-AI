@@ -278,15 +278,22 @@
 
 .grade-bubble[class*="grade-range-"],
 .grade-value[class*="grade-range-"] {
-    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #09090b);
-    background: color-mix(in srgb, var(--grade-accent) 13%, var(--surface-color));
     border: none;
     color: var(--grade-ink);
     transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
-[data-theme="dark"] .grade-bubble[class*="grade-range-"],
-[data-theme="dark"] .grade-value[class*="grade-range-"] {
+.grade-bubble[class*="grade-range-"] {
+    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #09090b);
+    background: color-mix(in srgb, var(--grade-accent) 13%, var(--surface-color));
+}
+
+.grade-value[class*="grade-range-"] {
+    --grade-ink: var(--grade-accent);
+    background: transparent;
+}
+
+[data-theme="dark"] .grade-bubble[class*="grade-range-"] {
     --grade-ink: var(--grade-accent);
 }
 
@@ -295,22 +302,24 @@
     background: transparent;
     color: var(--grade-ink);
     font-weight: 500;
-    opacity: 0.85;
+    opacity: 0.8;
 }
 
 [data-theme="dark"] .grade-value.past-period-grade[class*="grade-range-"] {
     background: transparent;
     color: color-mix(in srgb, var(--grade-accent) 85%, var(--text-secondary));
-    opacity: 0.85;
+    opacity: 0.8;
 }
 
 .grade-value.current-period-grade[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
+    --grade-ink: color-mix(in srgb, var(--grade-accent) 92%, #09090b);
+    background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
     color: var(--grade-ink);
     font-weight: 600;
 }
 
 [data-theme="dark"] .grade-value.current-period-grade[class*="grade-range-"] {
+    --grade-ink: var(--grade-accent);
     background: color-mix(in srgb, var(--grade-accent) 16%, var(--surface-color));
 }
 
