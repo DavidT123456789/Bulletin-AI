@@ -510,13 +510,17 @@ export const FocusPanelStatus = {
             charCount = null; // Can't compute char count without actual text
             isEmpty = words === 0;
         } else if (appreciationText) {
+            const hasSkeleton = Boolean(appreciationText.querySelector('.appreciation-skeleton'));
             const text = appreciationText.textContent || '';
-            isEmpty = !text.trim();
+            isEmpty = !hasSkeleton && !text.trim();
             words = isEmpty ? 0 : Utils.countWords(text);
             charCount = isEmpty ? 0 : Utils.countCharacters(text);
 
-            // Update empty class
+            // Normalize empty contenteditable DOM (strip residual <br>/<div> from Backspace) so :empty & ::before layout stay clean
             if (isEmpty) {
+                if (appreciationText.innerHTML !== '') {
+                    appreciationText.innerHTML = '';
+                }
                 appreciationText.classList.add('empty');
             } else {
                 appreciationText.classList.remove('empty');
@@ -562,7 +566,7 @@ export const FocusPanelStatus = {
         }
 
         if (isEmpty) {
-            wordCountEl.textContent = '0 mots';
+            wordCountEl.textContent = '';
             if (wordCountEl._tippy) {
                 wordCountEl._tippy.destroy();
             }

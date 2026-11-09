@@ -208,7 +208,10 @@ export const FocusPanelEvents = {
         const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
         if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => FocusPanelAnalysis.hide());
         const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
-        if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => FocusPanelAnalysis.generate());
+        if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => {
+            FocusPanelAnalysis.generate();
+            generateAnalysisBtn.blur();
+        });
 
         const handleDataChange = (e) => {
             if (!isPanelOpen(panel) || !panel.currentStudentId) return;

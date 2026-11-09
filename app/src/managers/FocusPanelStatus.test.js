@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { appState } from '../state/State.js';
+import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
@@ -17,7 +18,8 @@ vi.mock('../state/State.js', () => ({
 
 vi.mock('./UIManager.js', () => ({
     UI: {
-        showNotification: vi.fn()
+        showNotification: vi.fn(),
+        updateTooltip: vi.fn()
     }
 }));
 
@@ -46,7 +48,10 @@ vi.mock('../services/PromptService.js', () => ({
 }));
 
 vi.mock('./SpeechSynthesisManager.js', () => ({
-    SpeechSynthesisManager: {}
+    SpeechSynthesisManager: {
+        isPlaying: vi.fn(() => false),
+        cancel: vi.fn()
+    }
 }));
 
 describe('FocusPanelStatus', () => {
@@ -356,6 +361,40 @@ describe('FocusPanelStatus', () => {
             expect(FocusPanelStatus.checkDirtyState(dirtyImportedStudent)).toBe(true);
             expect(FocusPanelStatus.isBulkRefreshable(dirtyImportedStudent, 'T1')).toBe(false);
             expect(FocusPanelStatus.isBulkRefreshable(manualOverOldError, 'T1')).toBe(false);
+        });
+    });
+
+    describe('updateWordCount', () => {
+        beforeEach(() => {
+            SpeechSynthesisManager.isPlaying.mockReturnValue(false);
+            SpeechSynthesisManager.cancel.mockClear();
+            document.body.innerHTML = `
+                <div id="focusAppreciationText" contenteditable="true"></div>
+                <span id="focusWordCount"></span>
+            `;
+        });
+
+        it('devrait purger les balises résiduelles (<br>, <div><br></div>) et masquer le compteur de mots quand le champ contenteditable devient vide', () => {
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const wordCountEl = document.getElementById('focusWordCount');
+            wordCountEl.textContent = '12 mots';
+            appreciationEl.innerHTML = '<div><br></div>';
+
+            FocusPanelStatus.updateWordCount();
+
+            expect(appreciationEl.innerHTML).toBe('');
+            expect(appreciationEl.classList.contains('empty')).toBe(true);
+            expect(wordCountEl.textContent).toBe('');
+        });
+
+        it('ne devrait pas vider le DOM ni ajouter .empty lorsqu\'un squelette de chargement est affiché', () => {
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            appreciationEl.innerHTML = '<div class="appreciation-skeleton"><div class="skeleton-line"></div></div>';
+
+            FocusPanelStatus.updateWordCount();
+
+            expect(appreciationEl.querySelector('.appreciation-skeleton')).not.toBeNull();
+            expect(appreciationEl.classList.contains('empty')).toBe(false);
         });
     });
 });

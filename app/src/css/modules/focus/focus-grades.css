@@ -85,11 +85,22 @@
     cursor: help;
 }
 
-/* === Voice Dictation Button (Mic) - iOS 2026 Style === */
-.focus-mic-btn {
+/* === Voice Dictation (Mic) & Audio Synthesis (Speaker) - iOS 2026 Style === */
+.focus-audio-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.focus-mic-btn,
+.focus-speaker-btn {
     width: 26px;
     height: 26px;
     border-radius: 50%;
+    margin: 0;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-secondary);
@@ -98,27 +109,21 @@
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-left: 0;
     flex-shrink: 0;
     box-shadow: none;
     line-height: 1;
 }
 
-[data-theme="dark"] .focus-mic-btn {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-secondary);
-}
-
-.focus-mic-btn i,
-.focus-mic-btn iconify-icon {
+.focus-mic-btn :is(i, iconify-icon),
+.focus-speaker-btn :is(i, iconify-icon) {
     font-size: 15px;
     width: 15px;
     height: 15px;
     line-height: 1;
 }
 
-.focus-mic-btn svg {
+.focus-mic-btn svg,
+.focus-speaker-btn svg {
     width: 15px;
     height: 15px;
     display: block;
@@ -127,19 +132,17 @@
     line-height: 1;
 }
 
-.focus-mic-btn:hover {
-    color: var(--text-primary);
-    background: var(--item-hover-bg);
-    border-color: transparent;
+@media (hover: hover) and (pointer: fine) {
+    .focus-mic-btn:hover,
+    .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+        color: var(--text-primary);
+        background: var(--item-hover-bg);
+        border-color: transparent;
+    }
 }
 
-[data-theme="dark"] .focus-mic-btn:hover {
-    background: var(--item-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-}
-
-.focus-mic-btn:active {
+.focus-mic-btn:active,
+.focus-speaker-btn:active:not(.disabled):not([disabled]) {
     transform: scale(0.94);
 }
 
@@ -185,79 +188,6 @@
     border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
-/* Dark theme adjustments - keep neutral at rest */
-/* === Voice Dictation & Audio Synthesis Group === */
-.focus-audio-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: 0;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.focus-audio-group .focus-mic-btn,
-.focus-audio-group .focus-speaker-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    margin: 0;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-[data-theme="dark"] .focus-audio-group .focus-mic-btn,
-[data-theme="dark"] .focus-audio-group .focus-speaker-btn {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-secondary);
-}
-
-.focus-audio-group .focus-mic-btn iconify-icon,
-.focus-audio-group .focus-speaker-btn iconify-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
-    line-height: 1;
-}
-
-.focus-audio-group .focus-mic-btn svg,
-.focus-audio-group .focus-speaker-btn svg {
-    width: 15px;
-    height: 15px;
-    display: block;
-    flex-shrink: 0;
-    stroke-width: 1.4;
-    line-height: 1;
-}
-
-.focus-audio-group .focus-mic-btn:hover,
-.focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
-    color: var(--text-primary);
-    background: var(--item-hover-bg);
-    border-color: transparent;
-}
-
-[data-theme="dark"] .focus-audio-group .focus-mic-btn:hover,
-[data-theme="dark"] .focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
-    background: var(--item-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-}
-
-.focus-audio-group .focus-mic-btn:active,
-.focus-audio-group .focus-speaker-btn:active:not(.disabled):not([disabled]) {
-    transform: scale(0.94);
-}
-
 .focus-speaker-btn.disabled,
 .focus-speaker-btn[disabled] {
     display: none !important;
@@ -283,15 +213,6 @@
     }
 }
 
-/* Thème sombre */
-[data-theme="dark"] .focus-speaker-btn {
-    background: transparent;
-}
-[data-theme="dark"] .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-}
-
 .period-badge {
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
@@ -305,13 +226,13 @@
 
 .focus-context-textarea {
     width: 100%;
-    min-height: 56px;
+    min-height: 52px;
     max-height: 200px;
     height: auto;
     padding: 14px 16px;
     margin: 0;
     background: transparent !important;
-    border: 2px solid transparent !important;
+    border: none !important;
     box-shadow: inset 0 0 0 0 rgba(var(--primary-color-rgb), 0) !important;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     font-size: 14px;
@@ -320,7 +241,7 @@
     caret-color: var(--primary-color);
     resize: none;
     overflow-y: hidden;
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    transition: background-color var(--transition-fast);
     font-family: inherit;
     box-sizing: border-box;
     display: block;
@@ -345,7 +266,6 @@
 .focus-context-textarea:hover:not(:disabled):not(:focus) {
     background: transparent !important;
     background-image: none !important;
-    border: 2px solid transparent !important;
 }
 
 [data-theme="dark"] .focus-context-textarea:hover:not(:disabled):not(:focus) {

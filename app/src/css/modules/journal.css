@@ -1315,10 +1315,6 @@
         padding: 8px 14px;
     }
 
-    .journal-header-left {
-        font-size: 14px;
-    }
-
     /* Elimination of nested scrollbar on mobile */
     .journal-content {
         padding: 10px 14px;

@@ -42,7 +42,7 @@
 /* Main Appreciation Text Area - ContentEditable */
 .focus-appreciation-text {
     width: 100%;
-    min-height: 56px;
+    min-height: 52px;
     max-height: 500px;
     height: auto;
     padding: 14px 16px;
@@ -55,13 +55,11 @@
     overflow-y: auto;
     white-space: pre-wrap;
     position: relative;
-    /* Smooth transition for border color (harmonized with context-textarea) */
-    transition: border-color var(--transition-fast);
     background: transparent;
-    /* CRITICAL: 2px border at all times to prevent layout shift (harmonized with context-textarea) */
-    border: 2px solid transparent;
+    border: none;
     border-radius: 0;
     box-sizing: border-box;
+    cursor: text;
 }
 
 [data-theme="dark"] .focus-appreciation-text {
@@ -655,6 +653,10 @@
     transform: none;
 }
 
+#focusWordCount:empty {
+    display: none;
+}
+
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
     display: inline-flex;
@@ -710,41 +712,18 @@
     color: var(--color-cyan);
 }
 
-/* Editable appreciation - clean, seamless editing canvas matching context textarea */
-.focus-appreciation-text[contenteditable="true"] {
-    border: 2px solid transparent;
-    border-radius: 0;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    cursor: text;
-    position: relative;
-    box-sizing: border-box;
-    caret-color: var(--primary-color);
-}
-
-[data-theme="dark"] .focus-appreciation-text[contenteditable="true"] {
-    caret-color: var(--text-primary);
-}
-
 /* Hover & Focus state - calm, distraction-free (card focus handled at card container level) */
 .focus-appreciation-text[contenteditable="true"]:hover:not(:focus),
 .focus-appreciation-text[contenteditable="true"]:focus {
     outline: none !important;
     background: transparent !important;
-    border-color: transparent !important;
     box-shadow: none !important;
-}
-
-/* Empty state for appreciation - CSS-only placeholder using data attribute */
-.focus-appreciation-text[contenteditable] {
-    position: relative;
-    color: var(--text-primary);
 }
 
 /* Prevent scrollbar and ensure harmonious vertical breathing room when empty */
 .focus-appreciation-text:empty,
 .focus-appreciation-text.empty {
     overflow-y: hidden;
-    min-height: 56px;
 }
 
 .focus-appreciation-text[contenteditable]:empty::before,
@@ -756,10 +735,7 @@
     opacity: 0.75;
     transition: opacity var(--transition-fast);
     pointer-events: none;
-    position: absolute;
-    top: 14px;
-    left: 16px;
-    right: 16px;
+    display: block;
 }
 
 
@@ -968,10 +944,6 @@
     box-shadow: none;
 }
 
-.btn-ai-outline:hover iconify-icon {
-    transform: scale(1.1);
-}
-
 .btn-ai-outline:active {
     transform: scale(0.96);
 }
@@ -1028,40 +1000,45 @@
     transition: color 0.2s ease, transform 0.2s ease;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
+    .btn-ai-outline:hover iconify-icon {
+        transform: scale(1.1);
+    }
+
     .btn[data-refine-type]:hover {
         color: var(--chip-hover-color) !important;
         background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.14)) !important;
         border-color: transparent !important;
         box-shadow: none !important;
     }
+
     .btn[data-refine-type]:hover iconify-icon,
     .btn[data-refine-type]:hover i {
         color: var(--chip-hover-color) !important;
         transform: scale(1.12);
     }
-}
 
-/* Effet Shine au survol */
-.btn-ai-outline:hover::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.6) 50%,
-            transparent 100%);
-    animation: shine-sweep 1.5s ease-in-out infinite;
-}
+    /* Effet Shine au survol */
+    .btn-ai-outline:hover::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.6) 50%,
+                transparent 100%);
+        animation: shine-sweep 1.5s ease-in-out infinite;
+    }
 
-/* État Hover : Fond tonal (exclut les chips avec couleur individuelle) */
-.btn-ai-outline:hover:not(:disabled):not([data-refine-type]) {
-    background: var(--tonal-hover-bg);
-    color: var(--text-primary);
-    box-shadow: none;
+    /* État Hover : Fond tonal (exclut les chips avec couleur individuelle) */
+    .btn-ai-outline:hover:not(:disabled):not([data-refine-type]) {
+        background: var(--tonal-hover-bg);
+        color: var(--text-primary);
+        box-shadow: none;
+    }
 }
 
 .btn-ai-outline.active {
@@ -1141,10 +1118,6 @@
     opacity: 0.35 !important;
     pointer-events: none !important;
     cursor: default !important;
-}
-
-#focusWordCount:empty {
-    display: none !important;
 }
 
 /* ============================================
@@ -1236,17 +1209,21 @@
     opacity: 1 !important;
     cursor: pointer !important;
     pointer-events: auto !important;
-    background: var(--item-active-bg) !important;
+    background: transparent !important;
     color: var(--text-primary) !important;
     border: none !important;
     box-shadow: none !important;
     transition: background 0.15s ease, color 0.15s ease, transform 0.08s ease !important;
 }
 
-[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading,
-[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg) {
+#focusGenerateAnalysisBtn.is-loading,
+#focusGenerateAnalysisBtn:has(.loading-spinner-svg) {
+    background: var(--item-active-bg) !important;
+}
+
+[data-theme="dark"] #focusGenerateAnalysisBtn.is-loading,
+[data-theme="dark"] #focusGenerateAnalysisBtn:has(.loading-spinner-svg) {
     background: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
 }
 
 #focusGenerateAnalysisBtn.is-loading:active,
@@ -1293,19 +1270,37 @@
     }
 }
 
-/* Hover state during loading: clearly signals cancellation (Focus Panel & Inline Table Header pills) */
-:is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
-:is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
-.btn-smart-action-inline.loading:hover {
-    background: rgba(239, 68, 68, 0.1) !important;
+/* Hover state during loading (desktop pointer only): clearly signals cancellation */
+@media (hover: hover) and (pointer: fine) {
+    :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
+    :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
+    .btn-smart-action-inline.loading:hover {
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: var(--error-color, #ef4444) !important;
+        border-color: transparent !important;
+    }
+
+    [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
+    [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
+    [data-theme="dark"] .btn-smart-action-inline.loading:hover {
+        background: rgba(239, 68, 68, 0.18) !important;
+        color: #fca5a5 !important;
+        border-color: transparent !important;
+    }
+}
+
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:active,
+:is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):active,
+.btn-smart-action-inline.loading:active {
+    background: rgba(239, 68, 68, 0.14) !important;
     color: var(--error-color, #ef4444) !important;
     border-color: transparent !important;
 }
 
-[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
-[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
-[data-theme="dark"] .btn-smart-action-inline.loading:hover {
-    background: rgba(239, 68, 68, 0.18) !important;
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:active,
+[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):active,
+[data-theme="dark"] .btn-smart-action-inline.loading:active {
+    background: rgba(239, 68, 68, 0.22) !important;
     color: #fca5a5 !important;
     border-color: transparent !important;
 }

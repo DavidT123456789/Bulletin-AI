@@ -828,7 +828,7 @@
     box-shadow: none !important;
 }
 
-.btn-smart-action-inline.loading.mode-update:not(:hover) .smart-action-icon {
+.btn-smart-action-inline.loading.mode-update .smart-action-icon {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
@@ -837,7 +837,7 @@
     animation: spin 1.2s linear infinite !important;
 }
 
-.btn-smart-action-inline.loading.mode-generate:not(:hover) .smart-action-icon {
+.btn-smart-action-inline.loading.mode-generate .smart-action-icon {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;

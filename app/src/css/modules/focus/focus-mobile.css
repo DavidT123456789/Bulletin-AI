@@ -439,10 +439,6 @@
     }
 
     /* Context group */
-    .focus-context-group {
-        padding: 0;
-    }
-
     .focus-context-header {
         /* Restore row layout on mobile for header to save space */
         flex-direction: row;
@@ -457,16 +453,12 @@
     }
 
     .focus-context-textarea {
-        min-height: 48px;
+        min-height: 44px;
         padding: 10px 14px;
         font-size: 14px;
     }
 
     /* Appreciation area */
-    .focus-appreciation {
-        padding: 0;
-    }
-
     .focus-appreciation-header {
         padding: 8px 14px;
         gap: 8px;
@@ -478,20 +470,9 @@
         flex-shrink: 0;
     }
 
-    #focusAppreciationTitle {
-        font-size: 13px;
-        white-space: nowrap;
-    }
-
     .focus-audio-group {
         gap: 2px;
         flex-shrink: 0;
-    }
-
-    .focus-audio-group .focus-mic-btn,
-    .focus-audio-group .focus-speaker-btn {
-        width: 26px;
-        height: 26px;
     }
 
     .focus-appreciation-meta {
@@ -528,7 +509,7 @@
     }
 
     .focus-appreciation-text {
-        min-height: 52px;
+        min-height: 48px;
         padding: 10px 14px;
         font-size: 14px;
         line-height: 1.5;
@@ -549,7 +530,7 @@
 
     /* Inline appreciation actions — mobile */
     .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
-        height: 38px;
+        height: 44px;
         padding: 0 12px;
     }
 
@@ -624,6 +605,8 @@
         -ms-overflow-style: none;
     }
 
+    .focus-context-header,
+    .journal-header,
     .focus-appreciation-header {
         padding: 6px 10px;
         gap: 6px;
@@ -635,7 +618,6 @@
 
     /* Inline actions — small mobile */
     .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
-        height: 36px;
         padding: 0 10px;
         font-size: 11px;
     }
