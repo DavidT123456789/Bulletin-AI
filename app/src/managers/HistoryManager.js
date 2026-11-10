@@ -23,6 +23,9 @@ export const HistoryManager = {
     /** @type {number} Compteur de retours programmatiques pour ignorer les popstates correspondants */
     _programmaticBackCount: 0,
 
+    /** @type {Array<number>} Timers de sécurité associés aux retours programmatiques en attente */
+    _programmaticBackTimers: [],
+
     /** @type {boolean} Remplace l'entrée d'historique courante lors du prochain pushState (handoff inter-modales sans history.back asynchrone) */
     _replaceNextPush: false,
 
@@ -49,6 +52,9 @@ export const HistoryManager = {
                 // 1. Si ce popstate résulte d'une fermeture manuelle interne (handleManualClose) -> ignorer
                 if (this._programmaticBackCount > 0) {
                     this._programmaticBackCount--;
+                    if (this._programmaticBackTimers.length > 0) {
+                        clearTimeout(this._programmaticBackTimers.shift());
+                    }
                     return;
                 }
 
@@ -191,18 +197,26 @@ export const HistoryManager = {
         }
 
         this._programmaticBackCount++;
-        try {
-            history.back();
-        } catch (_) {
-            this._programmaticBackCount = Math.max(0, this._programmaticBackCount - 1);
-        }
-
-        // Sécurité en cas d'environnement sans dispatch popstate (tests ou browsers anciens)
-        setTimeout(() => {
+        const timerId = setTimeout(() => {
+            const idx = this._programmaticBackTimers.indexOf(timerId);
+            if (idx !== -1) {
+                this._programmaticBackTimers.splice(idx, 1);
+            }
             if (this._programmaticBackCount > 0) {
                 this._programmaticBackCount--;
             }
         }, 500);
+        this._programmaticBackTimers.push(timerId);
+
+        try {
+            history.back();
+        } catch (_) {
+            const idx = this._programmaticBackTimers.indexOf(timerId);
+            if (idx !== -1) {
+                clearTimeout(this._programmaticBackTimers.splice(idx, 1)[0]);
+            }
+            this._programmaticBackCount = Math.max(0, this._programmaticBackCount - 1);
+        }
     },
 
     /**
@@ -228,6 +242,8 @@ export const HistoryManager = {
     clearStack() {
         this._stack = [];
         this._programmaticBackCount = 0;
+        this._programmaticBackTimers.forEach(t => clearTimeout(t));
+        this._programmaticBackTimers = [];
         this._replaceNextPush = false;
         this._lastRootBackTime = 0;
     },

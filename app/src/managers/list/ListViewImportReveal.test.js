@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ListViewManager } from '../ListViewManager.js';
+import { ListViewAnimations } from './ListViewAnimations.js';
 import { ClassManager } from '../ClassManager.js';
 import { appState } from '../../state/State.js';
 
@@ -25,6 +26,8 @@ vi.mock('../../state/State.js', () => ({
 
 vi.mock('../TooltipsManager.js', () => ({
     TooltipsUI: {
+        initTooltips: vi.fn(),
+        cleanupTooltipsIn: vi.fn(),
         updateTooltip: vi.fn()
     }
 }));
@@ -208,13 +211,8 @@ describe('ListView - Empty filter state transitions (1 <-> 0)', () => {
             }
         });
 
-        // Transition 0 -> 1 student
+        // Transition 0 -> 1 student commits synchronously (no exiting rows) without collapsing to 48px
         ListViewManager.render(singleStudent, container);
-
-        // Before the 0ms timeout fires, .empty-state-row is NOT prematurely removed (avoiding a 48px collapse)
-        expect(tbody.querySelector('.empty-state-row')).not.toBeNull();
-
-        vi.advanceTimersByTime(0);
 
         // First height read was 185px (with .empty-state-row), second was 115px (with .student-row), never 48px
         expect(recordedHeights).toEqual([185, 115]);
@@ -315,6 +313,67 @@ describe('ListView - Empty filter state transitions (1 <-> 0)', () => {
         const remainingRows = container.querySelectorAll('.student-row');
         expect(remainingRows).toHaveLength(2);
         expect(container.querySelector('.student-row[data-student-id="s2"]').classList.contains('row-exit')).toBe(false);
+
+        vi.useRealTimers();
+    });
+
+    it('should not cancel a new filter or unfilter transition when a previous height transition finishes (transitionend or 550ms timeout)', () => {
+        const threeStudents = [
+            ...buildResults(),
+            {
+                id: 's3',
+                nom: 'MOREAU',
+                prenom: 'Julie',
+                studentData: { periods: { S1: { grade: 18 } } }
+            }
+        ];
+        vi.spyOn(ClassManager, 'getStudentsForClass').mockReturnValue(threeStudents);
+        ListViewManager.render(threeStudents, container);
+
+        const listView = container.querySelector('.student-list-view');
+        const tbody = container.querySelector('tbody');
+
+        Object.defineProperty(listView, 'offsetHeight', {
+            configurable: true,
+            get() {
+                const rowCount = tbody.querySelectorAll('.student-row').length;
+                return 48 + rowCount * 70;
+            }
+        });
+
+        // 1. Activate Filter A (only s3 / MOREAU Julie) -> 2 rows exit over 250ms
+        ListViewManager.render([threeStudents[2]], container);
+        vi.advanceTimersByTime(250);
+        expect(tbody.querySelectorAll('.student-row')).toHaveLength(1);
+        expect(tbody.querySelector('.student-row').dataset.studentId).toBe('s3');
+        // listView is now in a 450ms CSS height transition (with a 550ms fallback timeout)
+
+        // 2. 350ms into the height transition, user switches to Filter B (s1, s2) -> s3 gets .row-exit (250ms timer)
+        vi.advanceTimersByTime(350);
+        ListViewManager.render([threeStudents[0], threeStudents[1]], container);
+
+        // Dispatch a height transitionend on listView AND advance past the 550ms mark of Filter A
+        const heightEndEvent = new Event('transitionend', { bubbles: true });
+        Object.defineProperty(heightEndEvent, 'propertyName', { value: 'height' });
+        listView.dispatchEvent(heightEndEvent);
+        vi.advanceTimersByTime(200);
+
+        // Complete the remaining 50ms of Filter B's 250ms exit timer
+        vi.advanceTimersByTime(50);
+        expect(Array.from(tbody.querySelectorAll('.student-row')).map(r => r.dataset.studentId)).toEqual(['s1', 's2']);
+
+        // 3. While Filter B's height transition is active, user deactivates the filter (restoring all 3 students synchronously)
+        ListViewManager.render(threeStudents, container);
+        expect(Array.from(tbody.querySelectorAll('.student-row')).map(r => r.dataset.studentId)).toEqual(['s1', 's2', 's3']);
+        expect(listView.style.height).not.toBe('');
+
+        // 4. Before the expand height transition finishes, user triggers another filter exit (which calls _clearPendingHeightCleanup),
+        //    and then resets height transition (e.g. via sort or class switch): listView.style.height must still be unlocked
+        ListViewManager.render([threeStudents[0]], container);
+        expect(listView.style.height).not.toBe('');
+        ListViewAnimations.resetHeightTransition();
+        expect(listView.style.height).toBe('');
+        ListViewAnimations._clearFilterTimeout();
 
         vi.useRealTimers();
     });

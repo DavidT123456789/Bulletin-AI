@@ -294,11 +294,7 @@ describe('ApiValidationManager', () => {
                 target: {
                     id: 'googleApiKey',
                     value: 'new-key',
-                    classList: { remove: vi.fn() },
-                    nextElementSibling: {
-                        classList: { contains: vi.fn(() => true) },
-                        innerHTML: ''
-                    }
+                    classList: { remove: vi.fn() }
                 }
             };
 
@@ -306,26 +302,6 @@ describe('ApiValidationManager', () => {
 
             expect(appState.validatedApiKeys.google).toBe(false);
             expect(appState.apiKeyErrorDetails?.google).toBeUndefined();
-        });
-
-        it('should clear validation icon on input', () => {
-            const mockIcon = {
-                classList: { contains: vi.fn(() => true) },
-                innerHTML: '<i class="fas fa-check"></i>'
-            };
-
-            const mockEvent = {
-                target: {
-                    id: 'googleApiKey',
-                    value: 'new-key',
-                    classList: { remove: vi.fn() },
-                    nextElementSibling: mockIcon
-                }
-            };
-
-            ApiValidationManager.handleApiKeyInput(mockEvent);
-
-            expect(mockIcon.innerHTML).toBe('');
         });
 
         it('should sync UIState.settingsBeforeEdit snapshot after successful validation so closing Settings does not revert validated key', async () => {

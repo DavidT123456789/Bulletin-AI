@@ -30,53 +30,6 @@
     }
 }
 
-@keyframes success-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
-
-    50% {
-        box-shadow: 0 0 16px 2px rgba(16, 185, 129, 0.25);
-    }
-}
-
-@keyframes error-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    }
-
-    50% {
-        box-shadow: 0 0 16px 2px rgba(239, 68, 68, 0.25);
-    }
-}
-
-/* === Empty State - Style Premium avec Animation === */
-@keyframes empty-state-float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
-}
-
-@keyframes empty-state-rotate {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* ====================================================================
    ANIMATION: Empty State Entrance & Hub Stagger (iOS 2026 Motion)
    ==================================================================== */
@@ -286,13 +239,6 @@
     max-width: 560px;
 }
 
-#empty-state-card .empty-state-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-}
-
-
 /* === Empty State Inline Hub === */
 /* Base card, icon, text & semantic accent rules are mutualized in import-hub.css */
 .empty-state-hub {
@@ -465,18 +411,6 @@
 /* [data-theme="dark"] .stat-card block removed */
 
 
-/* État actif avec filtre - Bordure haute colorée */
-.stat-card.active-filter::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
-    opacity: 1;
-}
-
 /* === Header de carte - Titre + Toggle === */
 .stat-card-header {
     display: flex;
@@ -495,11 +429,6 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
-}
-
-/* Sous-titre masqué par défaut (rétrocompatibilité) */
-.stat-card .stat-subtitle {
-    display: none;
 }
 
 /* ====================================================================
@@ -642,7 +571,8 @@
     transition: transform 0.2s var(--ease-spring),
                 box-shadow 0.2s var(--ease-spring),
                 background-color 0.2s ease,
-                border-color 0.2s ease;
+                border-color 0.2s ease,
+                opacity 0.2s ease;
     position: relative;
 }
 
@@ -667,10 +597,10 @@
 }
 
 @media (hover: hover) {
-    .performance-card .detail-item[role="button"]:not([data-count="0"]):hover::before,
-    .performance-card .detail-item[role="button"]:not([data-count="0"]):hover + .detail-item::before,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover::before,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):hover + .legend-item::before {
+    .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):hover::before,
+    .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):hover + .detail-item::before,
+    .evolution-card:not(.is-empty) .legend-item[role="button"][data-count]:not([data-count="0"]):hover::before,
+    .evolution-card:not(.is-empty) .legend-item[role="button"][data-count]:not([data-count="0"]):hover + .legend-item::before {
         opacity: 0;
     }
 }
@@ -945,6 +875,10 @@
 .homogeneity-badge.warning {
     background: rgba(var(--grade-range-8-12-rgb), 0.14);
     color: var(--grade-range-4-8);
+}
+
+[data-theme="dark"] .homogeneity-badge.warning {
+    color: var(--grade-range-8-12);
 }
 
 /* Indicateur d'infobulle discret ("Homogène ⓘ") */
@@ -1261,6 +1195,7 @@
     right: -6px;
     width: 18px;
     height: 18px;
+    padding: 0;
     border-radius: 50%;
     background: var(--text-primary);
     color: var(--surface-color);
@@ -1424,7 +1359,8 @@
 
 .performance-card .detail-item.active-filter .detail-value,
 .evolution-card .legend-item[data-filter-id="stableCount"].active-filter .legend-count,
-.hist-bar-group.active-filter .hist-label {
+.hist-bar-group.active-filter .hist-label,
+.hist-bar-group.active-filter::before {
     color: var(--text-primary) !important;
     font-weight: 700;
 }
@@ -1443,6 +1379,6 @@
 .performance-card .detail-item[role="button"]:focus-visible,
 .evolution-card .legend-item[role="button"]:focus-visible,
 .hist-bar-group[role="button"]:focus-visible {
-    outline: none;
+    outline: none !important;
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.35) !important;
 }

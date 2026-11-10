@@ -573,9 +573,6 @@ export const ListViewEvents = {
                     !document.querySelector('#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open, #scFloatingSearch.open')
                 ) {
                     EventHandlersManager.handleStatFilterClick(null);
-                    if (document.activeElement?.closest?.('.stats-container')) {
-                        document.activeElement.blur?.();
-                    }
                 }
             }
 

@@ -406,8 +406,8 @@ export const StatsUI = {
 
         const elementsToAnimate = {
             currentAvgGradeOutput: stats.avgGrade,
-            previousAvgGradeOutput: stats.prevAvgGrade,
             minAvgGradeOutput: stats.minGrade,
+            medianGradeOutput: stats.median,
             maxAvgGradeOutput: stats.maxGrade,
             classEvolutionProgressStat: hasEvolutionData ? stats.progress : '--',
             classEvolutionStableStat: hasEvolutionData ? stats.stable : '--',
@@ -522,13 +522,7 @@ export const StatsUI = {
         // Utilise updateProgressBars existant
         this.updateProgressBars(stats.progress, stats.stable, stats.regression);
 
-        // Update Median, Min & Max tooltips (maintenant dans performance-details)
-        const medianEl = document.getElementById('medianGradeOutput');
-        if (medianEl) {
-            const medianValue = stats.median === '--' ? '--' : (Number.isInteger(stats.median) ? String(stats.median) : stats.median.toFixed(1).replace('.', ','));
-            medianEl.textContent = medianValue;
-        }
-
+        // Update Min & Max tooltips (dans performance-details)
         const escape = (str) => (Utils.escapeHtml ? Utils.escapeHtml(str) : str);
         const minItemEl = document.querySelector('.detail-item[data-filter-id="minGrade"]');
         if (minItemEl) {

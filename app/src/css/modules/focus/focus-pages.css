@@ -571,18 +571,11 @@
 }
 
 .focus-input-header {
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 100px;
-    padding: 7px 14px;
+    padding: 7px 12px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
     flex: 1;
     min-width: 0;
-    outline: none;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 /* Nom prend plus de place que Prénom et s'affiche toujours en majuscules */
@@ -594,11 +587,6 @@
 .focus-input-header::placeholder {
     color: var(--text-tertiary);
     font-weight: 500;
-}
-
-.focus-input-header:focus {
-    background: var(--surface-color);
-    border-color: var(--border-color-hover);
 }
 
 /* Status Selection in Header (Chips) — wrap cleanly so all statuses remain visible */
@@ -701,16 +689,6 @@
 }
 
 /* Dark Mode Adjustments */
-[data-theme="dark"] .focus-input-header {
-    background: var(--input-fill-bg);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .focus-input-header:focus {
-    background: var(--input-focus-bg);
-    border-color: var(--border-color-hover);
-}
-
 [data-theme="dark"] .status-pill-check:has(input[value^="Nouveau"]:checked) {
     background: rgba(56, 189, 248, 0.15);
     border-color: transparent;

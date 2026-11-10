@@ -12,12 +12,17 @@
 import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
-import { HistoryManager } from './HistoryManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
 
+export const STAT_FILTER_BUTTON_SELECTOR = '.stat-card[role="button"], .legend-item[role="button"], .detail-item[role="button"], .hist-bar-group[role="button"]';
+export const ACTIVE_STAT_FILTER_SELECTOR = '.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter';
+
 export const EventHandlersManager = {
+    STAT_FILTER_BUTTON_SELECTOR,
+    ACTIVE_STAT_FILTER_SELECTOR,
+
     /**
      * Initialise le module avec une référence à l'application principale.
      * @param {Object} appInstance - Instance de l'application principale
@@ -80,6 +85,7 @@ export const EventHandlersManager = {
     handlePeriodSystemChange(e) {
         appState.periodSystem = e.target.value;
         appState.currentPeriod = UI.getPeriods()[0];
+        appState.activeStatFilter = null;
 
         if (appState.sortState?.field === 'grade') {
             appState.sortState.param = appState.currentPeriod;
@@ -102,45 +108,25 @@ export const EventHandlersManager = {
      * @param {Object} [options={}] - Options d'origine (ex: { causedByHistory: true })
      */
     handleStatFilterClick(element, options = {}) {
-        if (!element) {
+        const statId = element ? (element.dataset.filterId || element.dataset.statId) : null;
+        const isCurrentlyActive = Boolean(
+            element && (element.classList.contains('active-filter') || (statId && appState.activeStatFilter === statId))
+        );
+
+        if (element && !isCurrentlyActive && (!statId || element.closest('#evolutionCard.is-empty') || element.dataset.count === '0' || element.getAttribute('aria-disabled') === 'true')) {
+            return;
+        }
+
+        if (!element || isCurrentlyActive) {
             appState.activeStatFilter = null;
-            if (!options?.causedByHistory && HistoryManager.isOpen('statFilter')) {
-                HistoryManager.handleManualClose('statFilter');
-            }
             if (document.activeElement?.closest?.('.stats-container')) {
                 document.activeElement.blur?.();
             }
-            document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
-            UI.updateActiveFilterInfo();
-            // FLIP animation is handled in ListViewManager
-            AppreciationsManager.renderResults();
-            return;
-        }
-
-        const statId = element.dataset.filterId || element.dataset.statId;
-        const isCurrentlyActive = element.classList.contains('active-filter');
-
-        if (!isCurrentlyActive && (element.closest('#evolutionCard.is-empty') || element.dataset.count === '0' || element.getAttribute('aria-disabled') === 'true')) {
-            return;
-        }
-
-        // Reset visual state
-        document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
-
-        if (isCurrentlyActive) {
-            // DE-ACTIVATE
-            appState.activeStatFilter = null;
-            if (!options?.causedByHistory && HistoryManager.isOpen('statFilter')) {
-                HistoryManager.handleManualClose('statFilter');
-            }
         } else {
-            // ACTIVATE
             appState.activeStatFilter = statId;
-            element.classList.add('active-filter');
-            HistoryManager.pushState('statFilter', (opts) => this.handleStatFilterClick(null, opts));
         }
 
-        UI.updateActiveFilterInfo();
+        UI.updateActiveFilterInfo(options);
 
         // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();

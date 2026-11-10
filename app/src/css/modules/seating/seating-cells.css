@@ -2127,30 +2127,19 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         max-width: calc(100vw - 128px);
     }
 
-    .sc-plan-mode-switch {
-        --sc-mode-padding: 2px;
+    :is(:root, [data-theme="dark"]) .ui-segmented-control.sc-plan-mode-switch {
         --sc-inactive-w: 28px;
-        height: 32px !important;
-        padding: var(--sc-mode-padding);
     }
 
-    .sc-mode-tab {
-        font-size: 0.72rem;
-        padding: 0 10px;
-        gap: 4px;
+    .sc-plan-mode-switch .ui-segment {
+        font-size: 0.76rem;
+        padding: 0 9px;
+        gap: 5px;
     }
 
-    .sc-mode-tab:not(.active) {
-        padding: 0;
+    .sc-plan-mode-switch .ui-segment:not(.active) {
+        padding: 0 calc((var(--sc-inactive-w) - 16px) / 2);
         gap: 0;
-    }
-
-    .sc-mode-tab iconify-icon {
-        font-size: 1rem;
-    }
-
-    .sc-mode-tab[data-plan-mode="course"] iconify-icon {
-        font-size: 1.04rem;
     }
 
     .sc-status-pill {
@@ -2512,9 +2501,13 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
-    .sc-empty-sidebar {
+    .sc-empty-sidebar,
+    .sc-plan-mode-switch .ui-glider,
+    .sc-plan-mode-switch .ui-segment,
+    .sc-plan-mode-switch .sc-mode-label {
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
     }
 }
 

@@ -324,12 +324,13 @@
     box-sizing: border-box;
     gap: 2px;
     padding: 3px;
-    background: rgba(255, 255, 255, 0.76);
+    background: var(--floating-capsule-bg);
+    background-clip: padding-box;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: var(--floating-capsule-border);
     border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--floating-capsule-shadow);
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
@@ -339,20 +340,16 @@
     transition: opacity 0.35s ease, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1), background var(--transition-fast);
 }
 
-/* In Edit mode: hide orientation & print in floating capsule (already accessible in sidebar) */
+/* In Edit mode (or Activity mode for orientation): smoothly collapse action buttons in floating capsule */
 #seatingChartView[data-locked="false"] .sc-floating-actions .sc-orientation-btn,
-#seatingChartView[data-locked="false"] .sc-floating-actions .sc-print-btn {
+#seatingChartView[data-locked="false"] .sc-floating-actions .sc-print-btn,
+#seatingChartView[data-plan-mode="activity"] .sc-floating-actions .sc-orientation-btn {
     width: 0 !important;
     margin-left: -2px !important;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     transform: scale(0.75);
-}
-
-[data-theme="dark"] .sc-floating-actions {
-    background: rgba(38, 38, 39, 0.65);
-    border-color: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 /* Seamless ghost icon buttons: NO contours or borders at rest */
@@ -377,7 +374,8 @@
                 transform 0.15s ease,
                 width var(--sc-drawer-transition),
                 margin-left var(--sc-drawer-transition),
-                opacity 0.25s ease;
+                opacity 0.25s ease,
+                visibility 0.25s;
 }
 
 .sc-floating-actions .sc-action-btn iconify-icon {
@@ -385,15 +383,10 @@
 }
 
 /* Soft hover wash: no harsh borders */
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
     .sc-floating-actions .sc-action-btn:hover {
-        background: rgba(0, 0, 0, 0.06) !important;
+        background: var(--tonal-hover-bg) !important;
         color: var(--text-primary) !important;
-    }
-
-    [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
-        background: rgba(255, 255, 255, 0.12) !important;
-        color: #ffffff !important;
     }
 }
 
@@ -472,7 +465,7 @@
 }
 
 /* ────────── ORIENTATION TOGGLE ────────── */
-.sc-action-btn.sc-orientation-btn {
+.sc-sidebar .sc-action-btn.sc-orientation-btn {
     transition: background var(--transition-fast),
                 color var(--transition-fast),
                 border-color var(--transition-fast),
@@ -485,13 +478,8 @@
 }
 
 #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
-    background: rgba(0, 0, 0, 0.08) !important;
+    background: var(--tonal-active-bg) !important;
     color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
-    background: rgba(255, 255, 255, 0.14) !important;
-    color: #ffffff !important;
 }
 
 .sc-action-btn.sc-orientation-btn iconify-icon {
@@ -751,7 +739,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-desk-row,
 #seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row,
-#seatingChartView[data-plan-mode="activity"] .sc-orientation-btn {
+#seatingChartView[data-plan-mode="activity"] .sc-sidebar .sc-orientation-btn {
     display: none !important;
 }
 

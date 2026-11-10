@@ -434,8 +434,12 @@ export const ClassManager = {
         }
 
         // Mettre à jour le state
+        const prevClassId = appState.currentClassId;
         userSettings.academic.currentClassId = classId;
         appState.currentClassId = classId;
+        if (prevClassId && prevClassId !== classId && appState.activeStatFilter) {
+            appState.activeStatFilter = null;
+        }
 
         // Filtrer les résultats pour cette classe
         await this._filterResultsByClass(classId);

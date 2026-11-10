@@ -99,8 +99,7 @@ a:hover {
 
 /* Ensure buttons that are links maintain their proper text color on hover */
 a.btn:hover,
-a.btn-ai:hover,
-a.btn-purple:hover {
+a.btn-ai:hover {
     color: white;
 }
 

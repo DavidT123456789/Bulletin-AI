@@ -5,6 +5,7 @@
 
 import { appState } from '../../state/State.js';
 import { ListViewRenderer } from './ListViewRenderer.js';
+import { TooltipsUI } from '../TooltipsManager.js';
 import { Utils } from '../../utils/Utils.js';
 
 export const ListViewAnimations = {
@@ -13,7 +14,8 @@ export const ListViewAnimations = {
         activeFilterTimeout: null,
         activeHeightTimeout: null,
         activeHeightEndHandler: null,
-        activeHeightElement: null
+        activeHeightElement: null,
+        activeRevealCleanupTimeout: null
     },
 
     callbacks: {
@@ -21,11 +23,14 @@ export const ListViewAnimations = {
         updateHeaderSortIcons: () => { }
     },
 
-    _clearPendingHeightCleanup() {
+    _clearFilterTimeout() {
         if (this.state.activeFilterTimeout) {
             clearTimeout(this.state.activeFilterTimeout);
             this.state.activeFilterTimeout = null;
         }
+    },
+
+    _clearPendingHeightCleanup() {
         if (this.state.activeHeightTimeout) {
             clearTimeout(this.state.activeHeightTimeout);
             this.state.activeHeightTimeout = null;
@@ -34,7 +39,6 @@ export const ListViewAnimations = {
             this.state.activeHeightElement.removeEventListener('transitionend', this.state.activeHeightEndHandler);
         }
         this.state.activeHeightEndHandler = null;
-        this.state.activeHeightElement = null;
     },
 
     resetHeightTransition(targetElement = this.state.activeHeightElement) {
@@ -44,6 +48,9 @@ export const ListViewAnimations = {
             targetElement.style.transition = '';
             targetElement.style.overflow = '';
             targetElement.style.overflowY = '';
+        }
+        if (!targetElement || targetElement === this.state.activeHeightElement) {
+            this.state.activeHeightElement = null;
         }
     },
 
@@ -69,7 +76,11 @@ export const ListViewAnimations = {
      * @private
      */
     _scheduleRevealCleanup(tbody, delayMs) {
-        setTimeout(() => {
+        if (this.state.activeRevealCleanupTimeout) {
+            clearTimeout(this.state.activeRevealCleanupTimeout);
+        }
+        this.state.activeRevealCleanupTimeout = setTimeout(() => {
+            this.state.activeRevealCleanupTimeout = null;
             tbody.querySelectorAll('.row-filter-enter, .row-import-refresh').forEach(row => {
                 row.classList.remove('row-filter-enter', 'row-import-refresh');
                 row.style.removeProperty('--enter-delay');
@@ -230,19 +241,16 @@ export const ListViewAnimations = {
         // This is critical for the "flow up" animation when rows are filtered out
         const firstPositions = this._captureRowPositions(toKeep);
 
-        // Step 1: Animate exiting rows (fade + scale out)
+        // Step 1: Animate exiting rows (fade + scale out) when rows leave
+        const hasExitingRows = toExit.length > 0;
         toExit.forEach(row => {
             row.classList.add('row-exit');
         });
 
-        // Step 2: After exit animation, reorganize and animate movement
-        const exitDuration = toExit.length > 0 ? 250 : 0;
+        this._clearFilterTimeout();
+        this._clearPendingHeightCleanup();
 
-        if (this.state.activeFilterTimeout) {
-            clearTimeout(this.state.activeFilterTimeout);
-        }
-
-        this.state.activeFilterTimeout = setTimeout(() => {
+        const commitFilterDomTransition = () => {
             this.state.activeFilterTimeout = null;
             this._clearPendingHeightCleanup();
 
@@ -257,7 +265,10 @@ export const ListViewAnimations = {
             }
 
             // Remove exited rows and any previous empty-state row from DOM (after initialHeight is captured)
-            toExit.forEach(row => row.remove());
+            toExit.forEach(row => {
+                TooltipsUI?.cleanupTooltipsIn?.(row);
+                row.remove();
+            });
             tbody.querySelectorAll('.empty-state-row').forEach(row => row.remove());
 
             // Build map of kept rows
@@ -361,17 +372,27 @@ export const ListViewAnimations = {
                 } else {
                     this.resetHeightTransition(viewElement);
                 }
-            }
 
-            // Re-attach event listeners
-            if (viewElement) {
                 this.callbacks.updateHeaderSortIcons(viewElement);
             }
 
-            // Cleanup enter animations after full stagger duration
-            this._scheduleRevealCleanup(tbody, maxAnimDelay + 450);
+            if (hasExitingRows && newRowCount > 0) {
+                TooltipsUI?.initTooltips?.(tbody);
+            }
 
-        }, exitDuration);
+            // Cleanup enter animations after full stagger duration
+            if (newRowCount > 0 || updatedKeepIndex > 0 || orderedIds.length === 0) {
+                this._scheduleRevealCleanup(tbody, maxAnimDelay + 450);
+            }
+        };
+
+        // Step 2: Defer DOM reorganization by 250ms only when exiting rows must fade out first;
+        // otherwise commit synchronously (e.g. filter deactivation, 0 -> N, or adding a student)
+        if (hasExitingRows) {
+            this.state.activeFilterTimeout = setTimeout(commitFilterDomTransition, 250);
+        } else {
+            commitFilterDomTransition();
+        }
     },
 
     /**
@@ -388,10 +409,8 @@ export const ListViewAnimations = {
         const tbody = container.querySelector('tbody');
         if (!tbody) return;
 
-        if (this.state.activeFilterTimeout) {
-            clearTimeout(this.state.activeFilterTimeout);
-            this.state.activeFilterTimeout = null;
-        }
+        this._clearFilterTimeout();
+        this.resetHeightTransition();
 
         // Build map of existing rows by ID
         const rowMap = new Map(existingRows.map(r => [r.dataset.studentId, r]));

@@ -272,46 +272,6 @@
     margin-top: var(--space-2);
 }
 
-/* Hard Confirm Modal Specifics */
-.hard-confirm-input-wrapper {
-    margin-top: var(--space-1);
-}
-
-.hard-confirm-label {
-    display: block;
-    margin-bottom: 12px;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.hard-confirm-word {
-    color: var(--text-primary);
-    user-select: all;
-}
-
-.hard-confirm-input {
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    border-radius: var(--radius-control);
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    font-size: 1rem;
-    color: var(--text-primary);
-    transition: all var(--transition-fast);
-}
-
-.hard-confirm-input:focus {
-    border-color: var(--error-color);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-    outline: none;
-}
-
-.hard-confirm-input.match {
-    border-color: var(--error-color);
-}
-
 .modal-instruction-text {
     margin-bottom: 12px;
     color: var(--text-secondary);
@@ -1473,88 +1433,149 @@
     transform: scale(0.97);
 }
 
-.api-key-section .api-key-actions {
+.api-key-section .api-key-actions,
+.welcome-api-key-group {
     margin-bottom: 0;
     display: flex;
     gap: 12px;
     align-items: center;
 }
 
-.api-key-section .api-key-actions .api-key-input-container {
+.api-key-section .api-key-actions .api-key-input-container,
+.welcome-api-key-group .api-key-input-container {
+    --api-input-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 2.5%);
+    --api-input-border: var(--border-default);
     flex: 1;
     position: relative;
 }
 
-.api-key-section .api-key-actions .api-key-input-container input {
+[data-theme="dark"] .api-key-section .api-key-actions .api-key-input-container,
+[data-theme="dark"] .welcome-api-key-group .api-key-input-container {
+    --api-input-border: var(--border-color);
+}
+
+.api-key-section .api-key-actions .api-key-input-container::after,
+.welcome-api-key-group .api-key-input-container::after {
+    content: '';
+    position: absolute;
+    inset: 1px 1px 1px auto;
+    width: 40px;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    background: linear-gradient(to right, transparent, var(--api-input-bg) 76%);
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+}
+
+.api-key-section .api-key-actions .api-key-input-container:focus-within::after,
+.welcome-api-key-group .api-key-input-container:focus-within::after,
+.api-key-section .api-key-actions .api-key-input-container:has(.ollama-base-url-input)::after {
+    opacity: 0;
+}
+
+.api-key-section .api-key-actions .api-key-input-container input,
+#welcomeModal .welcome-api-key-group input {
     height: 32px;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding: 0 18px 0 15px;
     margin: 0 !important;
     font-size: 13px;
-    background-color: var(--modal-scene-bg, var(--bg-color));
-    border-color: transparent;
+    background-color: var(--api-input-bg);
+    border: 1px solid var(--api-input-border);
+    border-radius: var(--radius-pill);
     box-shadow: none;
+    color: var(--text-secondary);
     -webkit-text-security: disc;
     text-security: disc;
 }
 
-.api-key-section .api-key-actions .api-key-input-container input:hover:not(:disabled):not(:focus) {
-    border-color: var(--border-color-strong);
+.api-key-section .api-key-actions .api-key-input-container input:not(:focus):not(:placeholder-shown):not(.ollama-base-url-input),
+#welcomeModal .welcome-api-key-group input:not(:focus):not(:placeholder-shown) {
+    letter-spacing: 0.1em;
+    padding-bottom: 2px;
 }
 
-.api-key-section .api-key-actions .api-key-input-container input::placeholder {
+.api-key-section .api-key-actions .api-key-input-container input:hover:not(:disabled):not(:focus),
+#welcomeModal .welcome-api-key-group input:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-color-hover);
+}
+
+.api-key-section .api-key-actions .api-key-input-container input::placeholder,
+#welcomeModal .welcome-api-key-group input::placeholder {
     font-style: normal !important;
     color: var(--text-tertiary);
     opacity: 0.75;
 }
 
-.api-key-section .api-key-actions .api-key-input-container input:focus {
-    border-color: var(--border-color-hover);
+.api-key-section .api-key-actions .api-key-input-container input:focus,
+#welcomeModal .welcome-api-key-group input:focus {
+    border-color: var(--text-tertiary);
+    box-shadow: 0 0 0 3px var(--item-hover-bg);
+    color: var(--text-primary);
     -webkit-text-security: none;
     text-security: none;
 }
 
-.api-key-section .api-key-actions .btn {
-    flex: 0 0 auto !important;
-    width: auto !important;
+.btn-validate-key {
+    flex: 0 0 auto;
+    width: auto;
     height: 32px;
     min-width: 96px;
-    padding-top: 0;
-    padding-bottom: 0;
-    margin: 0 !important;
+    padding: 0 16px;
+    margin: 0;
+    display: inline-flex;
     justify-content: center;
     align-items: center;
+    gap: 6px;
+    white-space: nowrap;
     font-size: 13px;
-    background: var(--tonal-bg) !important;
-    border: 1px solid transparent !important;
-    color: var(--text-secondary) !important;
-    border-radius: var(--radius-pill) !important;
-    box-shadow: none !important;
+    background: var(--tonal-bg);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-pill);
+    box-shadow: none;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform 0.16s var(--ease-spring);
 }
 
-.api-key-section .api-key-actions .btn:hover:not(:disabled):not(.btn-validated) {
-    background: var(--tonal-hover-bg) !important;
-    color: var(--text-primary) !important;
-    border-color: transparent !important;
+.btn-validate-key:is(.btn-needs-validation, .ready) {
+    background: var(--primary-color);
+    color: var(--text-on-primary);
+    border-color: transparent;
+    font-weight: 600;
 }
 
-.api-key-section .api-key-actions .btn:active:not(:disabled) {
+@media (hover: hover) and (pointer: fine) {
+    .btn-validate-key:hover:not(:disabled):not(.btn-needs-validation):not(.ready):not(.btn-validated):not(.validated) {
+        background: var(--tonal-hover-bg);
+        color: var(--text-primary);
+        border-color: transparent;
+    }
+
+    .btn-validate-key:is(.btn-needs-validation, .ready):hover:not(:disabled) {
+        background: var(--primary-btn-hover);
+        color: var(--text-on-primary);
+    }
+}
+
+.btn-validate-key:active:not(:disabled) {
     transform: scale(0.97);
 }
 
-.api-key-section .api-key-actions .btn.btn-validated {
-    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.12) !important;
-    color: var(--success-color) !important;
-    border: 1px solid rgba(var(--success-color-rgb, 16, 185, 129), 0.3) !important;
-    box-shadow: none !important;
+.btn-validate-key:is(.btn-validated, .validated),
+.btn-validate-key:is(.btn-validated, .validated):disabled {
+    opacity: 1;
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
+    color: var(--color-emerald-deep);
+    border-color: transparent;
+    box-shadow: none;
+    font-weight: 600;
+    cursor: default;
 }
 
-[data-theme="dark"] .api-key-section .api-key-actions .btn.btn-validated {
-    background: rgba(16, 185, 129, 0.15) !important;
-    color: var(--success-bright, #34d399) !important;
-    border-color: rgba(16, 185, 129, 0.35) !important;
+[data-theme="dark"] .btn-validate-key:is(.btn-validated, .validated),
+[data-theme="dark"] .btn-validate-key:is(.btn-validated, .validated):disabled {
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.15);
+    color: var(--success-bright);
+    border-color: transparent;
 }
 
 /* Ollama dependent fields: dimmed and disabled when toggle is unchecked */
@@ -1595,10 +1616,10 @@
 .model-selector-wrapper .custom-dropdown-trigger {
     width: 100%;
     height: 38px;
-    padding: 0 14px;
+    padding: 0 15px;
     font-size: 0.95em;
     font-weight: 500;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     margin: 0 !important;
     background-color: var(--modal-scene-bg, var(--bg-color));
 }
@@ -1752,26 +1773,29 @@
 
 .hard-confirm-input {
     width: 100%;
+    box-sizing: border-box;
+    text-align: center;
     padding: 10px 14px;
     font-size: var(--font-base);
     font-weight: 600;
     font-family: var(--font-sans);
     letter-spacing: 0.08em;
     color: var(--text-primary);
-    background: var(--surface-color);
-    border: 1.5px solid var(--border-default);
-    border-radius: var(--radius-sm);
+    background: var(--modal-scene-bg, var(--bg-color));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-control);
     outline: none;
-    transition: border-color 0.2s var(--ease-material), box-shadow 0.2s var(--ease-material);
-}
-
-[data-theme="dark"] .hard-confirm-input {
-    background: var(--bg-color);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 }
 
 .hard-confirm-input:focus {
     border-color: var(--error-color);
+    background: var(--surface-color);
     box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.15);
+}
+
+[data-theme="dark"] .hard-confirm-input:focus {
+    background: var(--bg-color);
 }
 
 .hard-confirm-input.match {
@@ -2444,12 +2468,13 @@
         padding: 2px 6px;
     }
 
-    .api-key-section .api-key-actions {
+    .api-key-section .api-key-actions,
+    .welcome-api-key-group {
         gap: 8px;
     }
 
     .api-key-section .api-key-actions .api-key-input-container input,
-    .api-key-section .api-key-actions .btn {
+    .btn-validate-key {
         height: 36px;
     }
 

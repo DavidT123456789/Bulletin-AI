@@ -703,31 +703,10 @@
     width: 100%;
     min-height: 56px;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.04);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-family: inherit;
     font-size: 13px;
     line-height: 1.45;
     resize: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     box-sizing: border-box;
-}
-
-[data-theme="dark"] .journal-note-input {
-    background: rgba(255, 255, 255, 0.045);
-}
-
-.journal-note-input:focus {
-    outline: none;
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-}
-
-[data-theme="dark"] .journal-note-input:focus {
-    background: rgba(255, 255, 255, 0.065);
-    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .journal-note-input::placeholder {

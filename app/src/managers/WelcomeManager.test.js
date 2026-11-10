@@ -366,6 +366,48 @@ describe('WelcomeManager', () => {
             expect(DOM.welcomeValidateApiKeyBtn.classList.contains('validated')).toBe(true);
             expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(false);
             expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+
+            // Clearing the input (or whitespace only) disables Valider and removes ready/validated
+            DOM.welcomeApiKeyInput.value = '   ';
+            DOM.welcomeApiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('validated')).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+            expect(DOM.welcomeValidateApiKeyBtn.textContent).toBe('Valider');
+        });
+
+        it('should disable Valider when opening on an empty provider and clear stale error messages on tab switch or input edit', async () => {
+            const { DOM } = await import('../utils/DOM');
+            WelcomeManager.setupWelcomeModal();
+
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(false);
+
+            // Simulate a validation error shown on Albert
+            DOM.welcomeApiKeyError.style.display = 'block';
+            DOM.welcomeApiKeyError.textContent = 'Clé invalide';
+
+            // Switching to Mistral clears the stale error and keeps Valider disabled on empty field
+            const mistralRadio = document.getElementById('providerMistral');
+            mistralRadio.checked = true;
+            mistralRadio.dispatchEvent(new Event('change', { bubbles: true }));
+
+            expect(DOM.welcomeApiKeyError.style.display).toBe('none');
+            expect(DOM.welcomeApiKeyError.textContent).toBe('');
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+
+            // Simulate another error, then type in input -> error clears and button becomes ready
+            DOM.welcomeApiKeyError.style.display = 'block';
+            DOM.welcomeApiKeyError.textContent = 'Erreur réseau';
+
+            DOM.welcomeApiKeyInput.value = 'mistral-key-123';
+            DOM.welcomeApiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            expect(DOM.welcomeApiKeyError.style.display).toBe('none');
+            expect(DOM.welcomeApiKeyError.textContent).toBe('');
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(true);
         });
     });
 

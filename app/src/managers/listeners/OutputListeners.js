@@ -31,7 +31,9 @@ export const OutputListeners = {
             });
         }
 
-        document.querySelectorAll('.stat-card[role="button"], .legend-item[role="button"], .detail-item[role="button"], .hist-bar-group[role="button"]').forEach(card => {
+        const statFilterSelector = EventHandlersManager.STAT_FILTER_BUTTON_SELECTOR
+            || '.stat-card[role="button"], .legend-item[role="button"], .detail-item[role="button"], .hist-bar-group[role="button"]';
+        document.querySelectorAll(statFilterSelector).forEach(card => {
             card.addEventListener('click', EventHandlersManager.handleStatFilterClick.bind(EventHandlersManager, card));
         });
     }

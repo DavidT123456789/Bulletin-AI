@@ -147,6 +147,7 @@ export const GlobalListeners = {
 
     _setupRoleButtonKeyboardListener() {
         document.addEventListener('keydown', (e) => {
+            if (e.defaultPrevented) return;
             if (e.key === 'Enter' || e.key === ' ') {
                 const target = e.target;
                 if (!target || !target.closest) return;
@@ -154,13 +155,17 @@ export const GlobalListeners = {
                 const button = target.closest('[role="button"]');
                 if (!button) return;
 
-                const tagName = target.tagName;
-                const isNativeButton = tagName === 'BUTTON' || (tagName === 'INPUT' && ['button', 'submit', 'reset', 'checkbox', 'radio'].includes(target.type));
-                const isNativeLink = tagName === 'A' && target.hasAttribute('href');
-
-                // Éviter le double déclenchement sur les contrôles natifs
-                if (isNativeButton) return;
-                if (isNativeLink && e.key === 'Enter') return;
+                // Éviter le double déclenchement ou l'interception sur les contrôles natifs (y compris imbriqués, ex. .filter-close-btn)
+                const nestedControl = target.closest('button, input, select, textarea, a[href], [contenteditable="true"]');
+                if (nestedControl) {
+                    if (nestedControl !== button) return;
+                    const tagName = nestedControl.tagName;
+                    const isNativeButton = tagName === 'BUTTON' || (tagName === 'INPUT' && ['button', 'submit', 'reset', 'checkbox', 'radio'].includes(nestedControl.type));
+                    const isNativeLink = tagName === 'A' && nestedControl.hasAttribute('href');
+                    if (isNativeButton || (isNativeLink && e.key === 'Enter') || ['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName) || nestedControl.isContentEditable) {
+                        return;
+                    }
+                }
 
                 if (e.key === ' ') {
                     e.preventDefault(); // Évite le défilement de page
@@ -412,7 +417,7 @@ export const GlobalListeners = {
                 appState.activeStatFilter &&
                 e.target instanceof Element &&
                 e.target.isConnected &&
-                !e.target.closest('.stats-container, .student-list-view tbody tr, .student-list-view th, .global-actions-dropdown, #focusPanel, #focusPanelBackdrop, .selection-toolbar, .appreciation-result, .modal')
+                !e.target.closest('.stats-container, #mainPeriodSelector, .student-list-view tbody tr, .student-list-view th, .global-actions-dropdown, #focusPanel, #focusPanelBackdrop, .selection-toolbar, .appreciation-result, .modal')
             ) {
                 EventHandlersManager.handleStatFilterClick(null);
             }

@@ -839,9 +839,6 @@ export const SettingsUIManager = {
             DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
             DOM.validateOllamaBtn.disabled = true;
         }
-        if (DOM.ollamaValidationIcon) {
-            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
-        }
 
         try {
             // Mettre à jour l'URL depuis le champ
@@ -912,7 +909,6 @@ export const SettingsUIManager = {
      * @param {string[]} [models] - Liste des modèles installés (optionnel)
      */
     updateOllamaStatus(status, models = []) {
-        const validationIcon = DOM.ollamaValidationIcon;
         const modelsInfo = DOM.ollamaModelsInfo;
         const modelsText = DOM.ollamaModelsText;
         const errorEl = DOM.ollamaError;
@@ -920,18 +916,6 @@ export const SettingsUIManager = {
         // Réinitialiser
         if (errorEl) errorEl.style.display = 'none';
         if (modelsInfo) modelsInfo.style.display = 'none';
-
-        // Mettre à jour l'icône de validation
-        if (validationIcon) {
-            if (status === 'valid') {
-                // Pour Ollama, on n'affiche pas l'icône dans l'input car on a déjà le bouton OK et les badges
-                validationIcon.innerHTML = '';
-            } else if (status === 'error') {
-                validationIcon.innerHTML = '<iconify-icon icon="solar:close-circle-linear" style="color: var(--error-color);"></iconify-icon>';
-            } else {
-                validationIcon.innerHTML = '';
-            }
-        }
 
         // Afficher les modèles installés avec détail des modèles supportés
         if (status === 'valid' && modelsInfo && modelsText) {

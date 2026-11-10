@@ -193,6 +193,7 @@ export const ResultsUIManager = {
 
         appState.periodSystem = newSystem;
         appState.currentPeriod = this._getFirstPopulatedPeriod(sourceResults);
+        appState.activeStatFilter = null;
         if (appState.sortState?.field === 'grade') {
             appState.sortState.param = appState.currentPeriod;
         }

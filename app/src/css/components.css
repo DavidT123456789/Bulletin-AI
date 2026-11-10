@@ -51,7 +51,7 @@
     filter: brightness(0.92);
 }
 
-.btn:disabled:not(.is-loading):not(:has(.loading-spinner-svg)) {
+.btn:disabled:not(.is-loading):not(:has(.loading-spinner-svg)):not(:is(.validated, .btn-validated)) {
     opacity: 0.45;
     cursor: not-allowed;
 }
@@ -169,48 +169,6 @@
     transform: scale(0.97);
     background-color: rgba(var(--warning-color-rgb, 245, 158, 11), 0.3);
 }
-
-.btn-purple {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-    box-shadow: var(--shadow-sm);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn-purple:hover:not(:disabled) {
-        background-color: var(--primary-btn-hover);
-        box-shadow: var(--shadow-md);
-        transform: none;
-    }
-}
-
-.btn-purple:active:not(:disabled) {
-    transform: scale(0.97);
-    filter: brightness(0.92);
-    box-shadow: var(--shadow-sm);
-}
-
-/* État de succès franc et immédiat (sans animation de rebond) */
-.btn-purple.btn-validated {
-    background: var(--success-color);
-    color: white;
-    pointer-events: none;
-}
-
-/* État d'attention - couleur primaire fixe pour inviter à l'action poliment */
-.btn-purple.btn-needs-validation {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-    /* La pulsation est supprimée, jugée trop anxiogène/vieillotte */
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn-purple.btn-needs-validation:hover:not(:disabled) {
-        background-color: var(--primary-btn-hover);
-    }
-}
-
-
 
 /* ====================================================================
    BTN-PRIMARY - Boutons d'action standards (Flat 2026)
@@ -658,21 +616,20 @@ label {
     margin-bottom: 0;
 }
 
-/* --- Inputs & Forms (Nebula Style) --- */
-/* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
-input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)),
-textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input, .class-note-textarea)),
+/* --- Inputs & Forms (Nebula Style — Unified Inset Well) --- */
+input:not(:where([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input)),
+textarea:not(:where(.focus-context-textarea, .import-textarea, .class-note-textarea)),
 select {
     padding: 12.5px 14.5px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-control);
     font-size: 14px;
-    background-color: var(--bg-color);
+    background-color: var(--modal-scene-bg, var(--bg-color));
     color: var(--text-primary);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
     font-family: inherit;
     width: 100%;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: none;
 }
 
 /* Force native controls (autocomplete, calendar) - Dark mode text color */
@@ -682,10 +639,28 @@ select {
     color: var(--text-primary);
 }
 
-/* --- Hover & Focus States: Calm, distraction-free text fields (iOS 2026) --- */
-input:not(:where([type="range"], .custom-input, .context-grade-input, .inline-field-input)):focus,
-textarea:not(:where(.focus-context-textarea, .import-textarea, .journal-note-input, .class-note-textarea)):focus {
+/* --- Hover & Focus States: Progressive Border (Repos -> Hover -> Focus) --- */
+:where(
+    input:not([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input),
+    textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
+):hover:not(:where(:disabled, :focus)) {
+    border-color: var(--border-color-strong);
+}
+
+:where(
+    input:not([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input),
+    textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
+):focus {
     outline: none;
+    border-color: var(--border-color-hover);
+    background-color: var(--surface-color);
+}
+
+[data-theme="dark"] :where(
+    input:not([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input),
+    textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
+):focus {
+    background-color: var(--bg-color);
 }
 
 /* --- Container-Embedded Inputs (.custom-input) ---

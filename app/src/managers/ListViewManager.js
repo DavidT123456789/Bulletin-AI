@@ -106,10 +106,7 @@ export const ListViewManager = {
         }
 
         // Cancel any pending filter animation to prevent race conditions
-        if (ListViewAnimations.state.activeFilterTimeout) {
-            clearTimeout(ListViewAnimations.state.activeFilterTimeout);
-            ListViewAnimations.state.activeFilterTimeout = null;
-        }
+        ListViewAnimations._clearFilterTimeout();
 
         const importReveal = this._pendingImportReveal;
         this._pendingImportReveal = null;
@@ -219,6 +216,7 @@ export const ListViewManager = {
         }
 
         // === INITIAL RENDER (no existing table) ===
+        ListViewAnimations.resetHeightTransition();
         this._renderFresh(container, results, periods, currentPeriodIndex, { importReveal });
         if (results.length === 0) {
             ResultsUIManager?.updateGenerateButtonState?.();

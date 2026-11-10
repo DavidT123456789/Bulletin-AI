@@ -10,39 +10,6 @@
     background-color: var(--bg-color);
 }
 
-.api-key-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.api-key-input-container {
-    position: relative;
-    flex-grow: 1;
-}
-
-.api-key-validation-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translatey(-50%);
-    font-size: 16px;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.api-key-validation-icon.visible {
-    opacity: 1;
-}
-
-.api-key-validation-icon.success {
-    color: var(--success-color);
-}
-
-.api-key-validation-icon.error {
-    color: var(--error-color);
-}
-
 /* === WELCOME MODAL IMMERSIVE OVERRIDES === */
 #welcomeModal .modal-header {
     background: transparent;
@@ -242,103 +209,35 @@
     gap: 12px;
 }
 
+/* Welcome API Key Row — Mutualized with .api-key-section .api-key-actions in modals.css, scaled to Hero proportions */
 .welcome-api-key-group {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
     width: 100%;
     max-width: 480px;
-    margin: 12px 0 8px 0;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid var(--border-color-strong);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm);
-    position: relative;
+    margin: 14px 0 8px 0;
 }
 
-.welcome-api-key-group:focus-within {
-    border-color: var(--highlight-standard-border);
-    box-shadow: 0 0 0 3px var(--highlight-standard-glow);
+#welcomeModal .welcome-api-key-group .api-key-input-container::after {
+    width: 44px;
 }
 
-/* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input {
-    -webkit-text-security: disc;
-    text-security: disc;
-    padding: 10px 18px;
-    flex: 1;
-    font-size: 0.95em;
-    height: auto;
-    color: var(--text-primary);
-    background: transparent;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent calc(100% - 10px));
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent calc(100% - 10px));
+    height: var(--modal-btn-height);
+    padding: 0 22px 0 18px;
+    font-size: var(--font-base);
 }
 
-#welcomeModal .welcome-api-key-group input:focus {
-    -webkit-mask-image: none;
-    mask-image: none;
-}
-
-/* Placeholder styling */
-.welcome-api-key-group input::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.7;
-}
-
-/* Bouton de validation API - Style unique avec états de couleur */
-.welcome-api-key-group .btn-validate-key {
-    border-radius: 0 16px 16px 0;
-    margin: 0;
-    padding: 0 16px;
-    border: none;
-    border-left: 1px solid var(--border-color);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
-    min-width: 100px;
-    justify-content: center;
-    height: auto;
-    align-self: stretch;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-    transform: none;
-    box-shadow: none;
-}
-
-.welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
-    background: var(--tonal-hover-bg);
-    color: var(--text-primary);
-}
-
-/* État "prêt" : clé saisie, prête à valider */
-.welcome-api-key-group .btn-validate-key.ready {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-}
-
-.welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
-    background-color: var(--primary-btn-hover);
-}
-
-/* État "validé" : clé confirmée */
-.welcome-api-key-group .btn-validate-key.validated,
-.welcome-api-key-group .btn-validate-key.validated:disabled {
-    opacity: 1;
-    background: var(--success-color);
-    color: var(--text-on-primary);
-    cursor: default;
+#welcomeModal .btn-validate-key {
+    height: var(--modal-btn-height);
+    min-width: 108px;
+    padding: 0 18px;
+    font-size: var(--font-base);
 }
 
 /* Welcome modal selector: styling for proper display */
 #welcomeModal .ui-segmented-control {
+    --sc-padding: 3px;
+    height: 36px;
+    background: var(--tonal-bg);
     justify-content: center;
     width: 100%;
     max-width: 480px;
@@ -347,6 +246,21 @@
 
 #welcomeModal .ui-segmented-control .ui-segment {
     flex: 1;
+}
+
+@media (max-width: 540px) {
+    #welcomeModal .ui-segmented-control {
+        height: 40px;
+    }
+
+    #welcomeModal .welcome-api-key-group input {
+        height: 44px;
+        font-size: 16px;
+    }
+
+    #welcomeModal .btn-validate-key {
+        height: 44px;
+    }
 }
 
 /* === WELCOME MODAL STABILIZATION === */

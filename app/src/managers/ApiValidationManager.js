@@ -359,10 +359,6 @@ export const ApiValidationManager = {
     handleApiKeyInput(e) {
         const input = e.target;
         input.classList.remove('input-error', 'input-success', 'input-warning');
-        const icon = input.nextElementSibling;
-        if (icon?.classList.contains('api-key-validation-icon')) {
-            icon.innerHTML = '';
-        }
 
         // Ajouter l'état d'attention au bouton correspondant si une clé est saisie
         const inputId = input.id;

@@ -285,6 +285,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
 
         appState.activeStatFilter = null;
         UI.updateActiveFilterInfo();
+        expect(bar.classList.contains('active-filter')).toBe(false);
         expect(bar.querySelector('.filter-close-btn')).toBeNull();
     });
 

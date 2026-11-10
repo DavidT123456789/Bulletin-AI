@@ -3550,6 +3550,12 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
         it('devrait isoler totalement les placements et dimensions entre Cours et Activité', () => {
             // En mode Cours : 4x5, 4 élèves placés
+            const switcher = document.getElementById('scPlanModeSwitch');
+            const courseTab = switcher?.querySelector('[data-plan-mode="course"]');
+            const activityTab = switcher?.querySelector('[data-plan-mode="activity"]');
+            expect(switcher?.dataset.activeIndex).toBe('0');
+            expect(courseTab?.hasAttribute('data-tooltip')).toBe(false);
+            expect(activityTab?.getAttribute('data-tooltip')).toBe('Passer en mode Activité');
             expect(SeatingChartManager._isActivityMode()).toBe(false);
             expect(SeatingChartManager._getRows()).toBe(4);
             expect(SeatingChartManager._getCols()).toBe(5);
@@ -3557,6 +3563,9 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // Basculer en mode Activité : grille par défaut 3x5, 0 élève placé
             SeatingChartManager.switchPlanMode('activity');
+            expect(switcher?.dataset.activeIndex).toBe('1');
+            expect(activityTab?.hasAttribute('data-tooltip')).toBe(false);
+            expect(courseTab?.getAttribute('data-tooltip')).toBe('Passer en mode Cours');
             expect(SeatingChartManager._isActivityMode()).toBe(true);
             expect(SeatingChartManager._getRows()).toBe(3);
             expect(SeatingChartManager._getCols()).toBe(5);
@@ -3580,6 +3589,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // Revenir en mode Cours : les élèves sont toujours sur leurs tables individuelles
             SeatingChartManager.switchPlanMode('course');
+            expect(switcher?.dataset.activeIndex).toBe('0');
             expect(SeatingChartManager._getCellStudentIds(0, 0)).toEqual(['u1']);
             expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual(['u2']);
         });

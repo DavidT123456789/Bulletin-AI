@@ -100,28 +100,25 @@ export const SeatingState = {
 
         if (!switchEl) return;
 
-        switchEl.dataset.activeMode = this._planMode;
+        switchEl.dataset.activeIndex = this._planMode === 'activity' ? '1' : '0';
         switchEl.querySelectorAll('.sc-mode-tab').forEach(tab => {
             const isActive = tab.dataset.planMode === this._planMode;
-            const fullLabel = tab.dataset.fullLabel || (tab.dataset.planMode === 'activity' ? 'Activité' : 'Cours');
             tab.classList.toggle('active', isActive);
             tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
 
-            const labelEl = tab.querySelector('.sc-mode-label');
-            if (labelEl) {
-                labelEl.classList.toggle('is-expanded', isActive);
-                labelEl.classList.toggle('is-collapsed', !isActive);
-            }
-
             if (isActive) {
-                tab.removeAttribute('data-tooltip');
-                if (tab._tippy) {
-                    tab._tippy.destroy();
+                if (tab.hasAttribute('data-tooltip') || tab._tippy) {
+                    TooltipsUI?.cleanupTooltipsIn?.(tab);
+                    tab.removeAttribute('data-tooltip');
+                    tab._tippy?.destroy?.();
                 }
             } else {
+                const fullLabel = tab.dataset.planMode === 'activity' ? 'Activité' : 'Cours';
                 const nextTooltip = `Passer en mode ${fullLabel}`;
-                tab.setAttribute('data-tooltip', nextTooltip);
-                TooltipsUI?.updateTooltip?.(tab, nextTooltip);
+                if (tab.getAttribute('data-tooltip') !== nextTooltip || !tab._tippy) {
+                    tab.setAttribute('data-tooltip', nextTooltip);
+                    TooltipsUI?.updateTooltip?.(tab, nextTooltip);
+                }
             }
         });
 

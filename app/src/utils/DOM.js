@@ -62,7 +62,6 @@ export function initDOM() {
     DOM.classEvolutionStableStat = document.getElementById('classEvolutionStableStat');
     DOM.classEvolutionRegressionStat = document.getElementById('classEvolutionRegressionStat');
     DOM.currentAvgGradeOutput = document.getElementById('currentAvgGradeOutput');
-    DOM.previousAvgGradeOutput = document.getElementById('previousAvgGradeOutput');
     DOM.minAvgGradeOutput = document.getElementById('minAvgGradeOutput');
     DOM.maxAvgGradeOutput = document.getElementById('maxAvgGradeOutput');
     DOM.regenerateAllBtn = document.getElementById('regenerateAllBtn');
@@ -89,47 +88,39 @@ export function initDOM() {
     DOM.openaiApiKey = document.getElementById('openaiApiKey');
     DOM.openaiApiKeyGroup = document.getElementById('openaiApiKeyGroup');
     DOM.openaiApiKeyError = document.getElementById('openaiApiKeyError');
-    DOM.openaiApiKeyValidationIcon = document.getElementById('openaiApiKeyValidationIcon');
     DOM.validateOpenaiApiKeyBtn = document.getElementById('validateOpenaiApiKeyBtn');
     DOM.googleApiKey = document.getElementById('googleApiKey');
     DOM.googleApiKeyGroup = document.getElementById('googleApiKeyGroup');
     DOM.googleApiKeyError = document.getElementById('googleApiKeyError');
-    DOM.googleApiKeyValidationIcon = document.getElementById('googleApiKeyValidationIcon');
     DOM.validateGoogleApiKeyBtn = document.getElementById('validateGoogleApiKeyBtn');
     // Albert API (Gouv.fr / DINUM)
     DOM.albertApiKey = document.getElementById('albertApiKey');
     DOM.albertApiKeyGroup = document.getElementById('albertApiKeyGroup');
     DOM.albertApiKeyError = document.getElementById('albertApiKeyError');
-    DOM.albertApiKeyValidationIcon = document.getElementById('albertApiKeyValidationIcon');
     DOM.validateAlbertApiKeyBtn = document.getElementById('validateAlbertApiKeyBtn');
     DOM.openrouterApiKey = document.getElementById('openrouterApiKey');
     DOM.openrouterApiKeyGroup = document.getElementById('openrouterApiKeyGroup');
     DOM.openrouterApiKeyError = document.getElementById('openrouterApiKeyError');
-    DOM.openrouterApiKeyValidationIcon = document.getElementById('openrouterApiKeyValidationIcon');
     DOM.validateOpenrouterApiKeyBtn = document.getElementById('validateOpenrouterApiKeyBtn');
     // Groq Cloud
     DOM.groqApiKey = document.getElementById('groqApiKey');
     DOM.groqApiKeyGroup = document.getElementById('groqApiKeyGroup');
     DOM.groqApiKeyError = document.getElementById('groqApiKeyError');
-    DOM.groqApiKeyValidationIcon = document.getElementById('groqApiKeyValidationIcon');
     DOM.validateGroqApiKeyBtn = document.getElementById('validateGroqApiKeyBtn');
     // Anthropic (Claude)
     DOM.anthropicApiKey = document.getElementById('anthropicApiKey');
     DOM.anthropicApiKeyGroup = document.getElementById('anthropicApiKeyGroup');
     DOM.anthropicApiKeyError = document.getElementById('anthropicApiKeyError');
-    DOM.anthropicApiKeyValidationIcon = document.getElementById('anthropicApiKeyValidationIcon');
     DOM.validateAnthropicApiKeyBtn = document.getElementById('validateAnthropicApiKeyBtn');
     // Mistral (API directe)
     DOM.mistralApiKey = document.getElementById('mistralApiKey');
     DOM.mistralApiKeyGroup = document.getElementById('mistralApiKeyGroup');
     DOM.mistralApiKeyError = document.getElementById('mistralApiKeyError');
-    DOM.mistralApiKeyValidationIcon = document.getElementById('mistralApiKeyValidationIcon');
     DOM.validateMistralApiKeyBtn = document.getElementById('validateMistralApiKeyBtn');
     // Ollama (IA locale)
     DOM.ollamaEnabledToggle = document.getElementById('ollamaEnabledToggle');
     DOM.ollamaBaseUrl = document.getElementById('ollamaBaseUrl');
     DOM.validateOllamaBtn = document.getElementById('validateOllamaBtn');
-    DOM.ollamaValidationIcon = document.getElementById('ollamaValidationIcon');
     DOM.ollamaError = document.getElementById('ollamaError');
     DOM.ollamaModelsInfo = document.getElementById('ollamaModelsInfo');
     DOM.ollamaModelsText = document.getElementById('ollamaModelsText');

@@ -509,8 +509,13 @@ export const UI = {
             FocusPanelManager.saveCurrentContext();
         }
 
+        const periodChanged = Boolean(appState.currentPeriod && appState.currentPeriod !== validPeriod);
+
         // Update active period in state
         appState.currentPeriod = validPeriod;
+        if (periodChanged && appState.activeStatFilter) {
+            appState.activeStatFilter = null;
+        }
 
         // Synchronize radio button selection
         document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => {
@@ -1222,12 +1227,17 @@ export const UI = {
     },
 
     getGradeClass(grade) { return Utils.getGradeClass(grade); },
-    updateActiveFilterInfo() {
-        // Remove any existing close buttons from previous filters
-        document.querySelectorAll('.filter-close-btn').forEach(btn => btn.remove());
+    updateActiveFilterInfo(options = {}) {
+        const activeFilterSelector = EventHandlersManager.ACTIVE_STAT_FILTER_SELECTOR
+            || '.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter';
+        const statFilterButtonSelector = EventHandlersManager.STAT_FILTER_BUTTON_SELECTOR
+            || '.stat-card[role="button"], .legend-item[role="button"], .detail-item[role="button"], .hist-bar-group[role="button"]';
 
         if (!appState.activeStatFilter) {
-            if (HistoryManager.isOpen('statFilter')) {
+            document.querySelectorAll('.filter-close-btn').forEach(btn => btn.remove());
+            document.querySelectorAll(activeFilterSelector).forEach(c => c.classList.remove('active-filter'));
+            document.querySelectorAll(statFilterButtonSelector).forEach(el => el.setAttribute('aria-pressed', 'false'));
+            if (!options?.causedByHistory && HistoryManager.isOpen('statFilter')) {
                 HistoryManager.handleManualClose('statFilter');
             }
             return;
@@ -1237,21 +1247,32 @@ export const UI = {
             HistoryManager.pushState('statFilter', (opts) => EventHandlersManager.handleStatFilterClick(null, opts));
         }
 
-        // Restore visual active filter class on corresponding DOM element if not present
         const targetEl = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
-        if (targetEl && !targetEl.classList.contains('active-filter')) {
-            document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
+        document.querySelectorAll(activeFilterSelector).forEach(el => {
+            if (el !== targetEl) el.classList.remove('active-filter');
+        });
+        if (targetEl) {
             targetEl.classList.add('active-filter');
         }
+        document.querySelectorAll(statFilterButtonSelector).forEach(el => {
+            el.setAttribute('aria-pressed', el === targetEl ? 'true' : 'false');
+        });
 
-        // Add close button on the active element
-        const activeElement = document.querySelector('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter');
-        if (activeElement) {
+        const activeElement = document.querySelector(activeFilterSelector);
+
+        // Remove any existing close buttons from previous filters without recreating the active one
+        document.querySelectorAll('.filter-close-btn').forEach(btn => {
+            if (!activeElement || btn.parentElement !== activeElement) {
+                btn.remove();
+            }
+        });
+
+        // Add close button on the active element if not already present
+        if (activeElement && !activeElement.querySelector('.filter-close-btn')) {
             const closeBtn = document.createElement('button');
             closeBtn.className = 'filter-close-btn';
             closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
             closeBtn.setAttribute('aria-label', 'Retirer le filtre');
-            activeElement.style.position = 'relative';
             activeElement.appendChild(closeBtn);
 
             closeBtn.addEventListener('click', (e) => {

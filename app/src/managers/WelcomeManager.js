@@ -123,15 +123,23 @@ export const WelcomeManager = {
 
             validateBtn.classList.remove('ready', 'validated');
             if (existingKey && trimmedValue === existingKey) {
-                validateBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
+                validateBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Validée';
                 validateBtn.classList.add('validated');
                 validateBtn.disabled = true;
             } else {
+                const hasInput = trimmedValue.length > 0;
                 validateBtn.innerHTML = 'Valider';
-                validateBtn.disabled = false;
-                if (trimmedValue.length > 0) {
+                validateBtn.disabled = !hasInput;
+                if (hasInput) {
                     validateBtn.classList.add('ready');
                 }
+            }
+        };
+
+        const clearApiKeyError = () => {
+            if (DOM.welcomeApiKeyError) {
+                DOM.welcomeApiKeyError.style.display = 'none';
+                DOM.welcomeApiKeyError.textContent = '';
             }
         };
 
@@ -212,6 +220,7 @@ export const WelcomeManager = {
                     getKeyLink.textContent = config.linkText;
                 }
 
+                clearApiKeyError();
                 updateProviderKeyState(currentProvider);
             }, { signal });
         }
@@ -300,8 +309,7 @@ export const WelcomeManager = {
             DOM.welcomeNextBtn.disabled = false;
 
             if (step === 2) {
-                // Reset error message
-                if (DOM.welcomeApiKeyError) DOM.welcomeApiKeyError.style.display = 'none';
+                clearApiKeyError();
 
                 // Initialize glider for provider selector IMMEDIATELY (before slide-in animation completes)
                 if (providerSelector) {
@@ -445,9 +453,10 @@ export const WelcomeManager = {
 
         initFirstStep();
 
-        // Toggle button style based on input content (grey when empty, brand primary when key is present, green when matching saved key) + Enter key support
+        // Toggle button style based on input content (disabled when empty, brand primary when key is present, green when matching saved key) + Enter key support
         if (DOM.welcomeApiKeyInput) {
             DOM.welcomeApiKeyInput.addEventListener('input', (e) => {
+                clearApiKeyError();
                 syncValidateBtnWithInput(currentProvider, e.target.value);
             }, { signal });
 
@@ -502,11 +511,9 @@ export const WelcomeManager = {
         addClickListener(DOM.welcomeSkipApiKeyBtn, () => {
             if (DOM.welcomeApiKeyInput && !DOM.welcomeApiKeyInput.disabled) {
                 DOM.welcomeApiKeyInput.value = '';
-                DOM.welcomeValidateApiKeyBtn?.classList?.remove('ready');
+                syncValidateBtnWithInput(currentProvider, '');
             }
-            if (DOM.welcomeApiKeyError) {
-                DOM.welcomeApiKeyError.style.display = 'none';
-            }
+            clearApiKeyError();
             showWelcomeStep(3, 'next');
         });
 

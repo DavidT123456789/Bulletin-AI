@@ -172,9 +172,11 @@ export const SeatingChartManager = {
         const mainContent = document.querySelector('.main-content .output-section');
         if (!mainContent) return;
 
+        const planMode = this._planMode || 'course';
+        const isActivity = planMode === 'activity';
         const view = document.createElement('div');
         view.id = 'seatingChartView';
-        view.dataset.planMode = this._planMode || 'course';
+        view.dataset.planMode = planMode;
         view.style.display = 'none';
         view.innerHTML = `
             <div class="sc-body">
@@ -274,15 +276,15 @@ export const SeatingChartManager = {
                 <div class="sc-grid-area" id="scGridArea">
                     <!-- Top-Left Bar: Plan Mode Switcher (Cours | Activité) -->
                     <div class="sc-top-left-bar" id="scTopLeftBar">
-                        <div class="sc-plan-mode-switch" id="scPlanModeSwitch" role="tablist" aria-label="Mode du plan de classe">
-                            <div class="sc-mode-glider" aria-hidden="true"></div>
-                            <button class="sc-mode-tab active" data-plan-mode="course" data-full-label="Cours" role="tab" aria-selected="true" aria-label="Mode Cours" type="button">
+                        <div class="ui-segmented-control css-driven sc-plan-mode-switch" id="scPlanModeSwitch" data-active-index="${isActivity ? '1' : '0'}" role="tablist" aria-label="Mode du plan de classe">
+                            <div class="ui-glider" aria-hidden="true"></div>
+                            <button class="ui-segment sc-mode-tab${isActivity ? '' : ' active'}" data-plan-mode="course" role="tab" aria-selected="${isActivity ? 'false' : 'true'}" aria-label="Mode Cours"${isActivity ? ' data-tooltip="Passer en mode Cours"' : ''} type="button">
                                 <iconify-icon icon="solar:chair-linear"></iconify-icon>
-                                <span class="sc-mode-label period-label-text is-expanded">Cours</span>
+                                <span class="sc-mode-label">Cours</span>
                             </button>
-                            <button class="sc-mode-tab" data-plan-mode="activity" data-full-label="Activité" role="tab" aria-selected="false" aria-label="Mode Activité" data-tooltip="Passer en mode Activité" type="button">
-                                <iconify-icon icon="solar:monitor-linear"></iconify-icon>
-                                <span class="sc-mode-label period-label-text is-collapsed">Activité</span>
+                            <button class="ui-segment sc-mode-tab${isActivity ? ' active' : ''}" data-plan-mode="activity" role="tab" aria-selected="${isActivity ? 'true' : 'false'}" aria-label="Mode Activité"${isActivity ? '' : ' data-tooltip="Passer en mode Activité"'} type="button">
+                                <iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>
+                                <span class="sc-mode-label">Activité</span>
                             </button>
                         </div>
                     </div>
@@ -290,7 +292,7 @@ export const SeatingChartManager = {
                     <!-- Bottom-Left Status Pill (Consultation mode) -->
                     <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
 
-                    <div class="sc-classroom-board" id="scClassroomBoard" data-plan-mode="${this._planMode || 'course'}" data-locked="${this._isLocked ? 'true' : 'false'}">
+                    <div class="sc-classroom-board" id="scClassroomBoard" data-plan-mode="${planMode}" data-locked="${this._isLocked ? 'true' : 'false'}">
                         <div class="sc-grid-container" id="scGridContainer"></div>
                         <div class="sc-desk-row">
                             <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>

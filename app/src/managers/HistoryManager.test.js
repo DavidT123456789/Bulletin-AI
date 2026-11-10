@@ -179,6 +179,63 @@ describe('HistoryManager', () => {
             expect(HistoryManager.isOpen('statFilter')).toBe(false);
         });
 
+        it('devrait activer et désactiver un filtre stat au clavier (Entrée / Espace) via GlobalListeners + OutputListeners sans intercepter .filter-close-btn', async () => {
+            const { OutputListeners } = await import('./listeners/OutputListeners.js');
+            const { GlobalListeners } = await import('./listeners/GlobalListeners.js');
+            if (!GlobalListeners._roleButtonListenerTestBound) {
+                GlobalListeners._roleButtonListenerTestBound = true;
+                GlobalListeners._setupRoleButtonKeyboardListener();
+            }
+            document.body.innerHTML = `
+                <div class="stats-container">
+                    <div class="hist-bar-group" id="bar8_12" data-filter-id="gradeRange_8-12" data-count="3" role="button" tabindex="0"></div>
+                </div>
+            `;
+            OutputListeners.setup(() => {});
+            const bar = document.getElementById('bar8_12');
+
+            bar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+            expect(appState.activeStatFilter).toBe('gradeRange_8-12');
+            expect(bar.classList.contains('active-filter')).toBe(true);
+            expect(bar.getAttribute('aria-pressed')).toBe('true');
+
+            // Keydown sur le bouton de fermeture interne ne doit pas déclencher un double clic via le parent [role="button"]
+            const closeBtn = bar.querySelector('.filter-close-btn');
+            expect(closeBtn).not.toBeNull();
+            closeBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+            expect(appState.activeStatFilter).toBe('gradeRange_8-12');
+
+            bar.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+            expect(appState.activeStatFilter).toBeNull();
+            expect(bar.classList.contains('active-filter')).toBe(false);
+            expect(bar.getAttribute('aria-pressed')).toBe('false');
+        });
+
+        it('devrait purger activeStatFilter lors d’un vrai changement de période ou de classe, tout en le préservant à la réhydratation sur la même période/classe', async () => {
+            const { ClassManager } = await import('./ClassManager.js');
+            const c1 = ClassManager.createClass('6e A');
+            const c2 = ClassManager.createClass('5e B');
+
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T2';
+            appState.currentClassId = c1.id;
+            appState.activeStatFilter = 'progressCount';
+
+            // Même période / même classe (cas réhydratation au chargement) -> préservé
+            UI.setPeriod('T2');
+            await ClassManager.switchClass(c1.id);
+            expect(appState.activeStatFilter).toBe('progressCount');
+
+            // Changement réel de période (ex. T2 -> T1 où la carte Dynamique est vide) -> purgé
+            UI.setPeriod('T1');
+            expect(appState.activeStatFilter).toBeNull();
+
+            // Changement réel de classe (c1 -> c2) -> purgé
+            appState.activeStatFilter = 'gradeRange_16-20';
+            await ClassManager.switchClass(c2.id);
+            expect(appState.activeStatFilter).toBeNull();
+        });
+
         it('devrait nettoyer statFilter dans HistoryManager lors d’une désactivation manuelle', () => {
             document.body.innerHTML = `
                 <div class="stats-container">
@@ -191,11 +248,51 @@ describe('HistoryManager', () => {
             EventHandlersManager.handleStatFilterClick(card);
             expect(HistoryManager.isOpen('statFilter')).toBe(true);
 
+            // Des appels répétés à updateActiveFilterInfo (ex. tri ou recherche) doivent conserver la même instance de .filter-close-btn
+            const initialCloseBtn = card.querySelector('.filter-close-btn');
+            expect(initialCloseBtn).not.toBeNull();
+            UI.updateActiveFilterInfo();
+            expect(card.querySelector('.filter-close-btn')).toBe(initialCloseBtn);
+
             // Second clic sur la même carte -> désactivation manuelle
             EventHandlersManager.handleStatFilterClick(card);
             expect(appState.activeStatFilter).toBeNull();
             expect(manualCloseSpy).toHaveBeenCalledWith('statFilter');
             expect(HistoryManager.isOpen('statFilter')).toBe(false);
+        });
+
+        it('ne devrait pas laisser le timer de sécurité 500ms d’un premier handleManualClose consommer le retour d’un second handleManualClose', () => {
+            vi.useFakeTimers();
+            try {
+                HistoryManager.init();
+                vi.spyOn(history, 'back').mockImplementation(() => {});
+                const rootCloseCb = vi.fn();
+
+                HistoryManager.pushState('baseModal', rootCloseCb);
+                HistoryManager.pushState('statFilter', vi.fn());
+
+                // 1. Fermeture manuelle de statFilter à t=0ms suivie immédiatement de son popstate navigateur
+                HistoryManager.handleManualClose('statFilter');
+                window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+                expect(HistoryManager._programmaticBackCount).toBe(0);
+
+                // 2. À t=490ms, réouverture puis fermeture manuelle d'un filtre avant que son popstate n'arrive à t=510ms
+                vi.advanceTimersByTime(490);
+                HistoryManager.pushState('statFilter', vi.fn());
+                HistoryManager.handleManualClose('statFilter');
+                expect(HistoryManager._programmaticBackCount).toBe(1);
+
+                // À t=500ms, l'ancien timer de sécurité du 1er handleManualClose ne doit PAS décrémenter le compteur du 2nd
+                vi.advanceTimersByTime(15);
+                expect(HistoryManager._programmaticBackCount).toBe(1);
+
+                // Le popstate du 2nd handleManualClose est bien ignoré sans dépiler baseModal
+                window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+                expect(rootCloseCb).not.toHaveBeenCalled();
+                expect(HistoryManager.isOpen('baseModal')).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('devrait fermer uniquement la sous-page Analyse IA (focusAnalysis) au bouton Retour sans fermer le Focus Panel', () => {
