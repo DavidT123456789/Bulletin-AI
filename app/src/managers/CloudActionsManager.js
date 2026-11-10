@@ -137,6 +137,7 @@ export const CloudActionsManager = {
                 return false;
             }
             SyncService._updateCloudIndicator?.('connected');
+            UI.showNotification('Connecté à Google Drive', 'success');
             await SyncService.refreshStatus({ showChecking: true });
             return true;
         } catch (error) {

@@ -347,6 +347,7 @@ export const GeneralListeners = {
         const connectBtn = document.getElementById('cloudConnectBtn');
         if (connectBtn) {
             connectBtn.addEventListener('click', async () => {
+                if (connectBtn.classList.contains('saving') || CloudActionsManager.isBusy()) return;
                 if (!navigator.onLine) {
                     UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
                     return;
@@ -460,7 +461,7 @@ export const GeneralListeners = {
      * @private
      */
     async _onMenuOpen() {
-        if (!localStorage.getItem('bulletin_sync_provider')) return;
+        if (!localStorage.getItem('bulletin_sync_provider') || CloudActionsManager.isBusy()) return;
         try {
             const SyncService = window.SyncService || (await import('../../services/SyncService.js')).SyncService;
             await SyncService.refreshStatus({ showChecking: true });

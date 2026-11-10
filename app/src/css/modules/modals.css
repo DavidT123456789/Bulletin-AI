@@ -2354,13 +2354,13 @@
     font-weight: 600;
     padding: 2px 7px;
     border-radius: var(--radius-pill);
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.12);
-    color: var(--primary-color, #3b82f6);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
     line-height: 1.2;
 }
 
 [data-theme="dark"] .pre-restore-snapshot-badge {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
+    background: rgba(var(--primary-color-rgb), 0.2);
     color: var(--primary-bright);
 }
 

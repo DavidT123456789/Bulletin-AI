@@ -19,13 +19,13 @@ describe('ThemeManager', () => {
         localStorage.clear();
 
         appState.theme = 'light';
-        appState.accentColor = 'blue';
+        appState.accentColor = 'anthracite';
         ThemeManager.currentResolvedTheme = 'light';
         ThemeManager._lastCustomHex = '';
 
         document.head.innerHTML = `
             <meta name="color-scheme" content="light dark">
-            <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f7f7f8">
+            <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f6f6f6">
             <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0c0c0d">
         `;
         document.body.innerHTML = `
@@ -35,7 +35,8 @@ describe('ThemeManager', () => {
                 <button class="ui-segment" data-value="system"></button>
             </div>
             <div id="accentColorSelector">
-                <button class="accent-color-swatch active" data-color="blue"></button>
+                <button class="accent-color-swatch active" data-color="anthracite"></button>
+                <button class="accent-color-swatch" data-color="blue"></button>
                 <button class="accent-color-swatch" data-color="purple"></button>
                 <button class="accent-color-swatch" data-color="teal"></button>
                 <button class="accent-color-swatch custom-picker" id="customAccentBtn" data-color="custom"></button>
@@ -100,6 +101,19 @@ describe('ThemeManager', () => {
             ThemeManager.hydrateFromLocalStorage();
 
             expect(appState.theme).toBe('light');
+            expect(appState.accentColor).toBe('anthracite');
+        });
+
+        it('should migrate legacy unchosen blue in appreciationGeneratorState_v6.2 to anthracite, while preserving explicit blue in bulletin_accent', () => {
+            localStorage.setItem('appreciationGeneratorState_v6.2', JSON.stringify({
+                settings: { accentColor: 'blue' }
+            }));
+
+            ThemeManager.hydrateFromLocalStorage();
+            expect(appState.accentColor).toBe('anthracite');
+
+            localStorage.setItem('bulletin_accent', 'blue');
+            ThemeManager.hydrateFromLocalStorage();
             expect(appState.accentColor).toBe('blue');
         });
 
@@ -135,14 +149,14 @@ describe('ThemeManager', () => {
             ThemeManager.applyTheme();
 
             expect(document.documentElement.dataset.theme).toBe('light');
-            expect(document.documentElement.style.backgroundColor).toBe('rgb(247, 247, 248)');
+            expect(document.documentElement.style.backgroundColor).toBe('rgb(246, 246, 246)');
             expect(document.documentElement.style.colorScheme).toBe('light');
-            expect(document.body.style.backgroundColor).toBe('rgb(247, 247, 248)');
+            expect(document.body.style.backgroundColor).toBe('rgb(246, 246, 246)');
             expect(document.querySelector('meta[name="color-scheme"]').getAttribute('content')).toBe('light');
 
             const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
             themeMetas.forEach(meta => {
-                expect(meta.getAttribute('content')).toBe('#f7f7f8');
+                expect(meta.getAttribute('content')).toBe('#f6f6f6');
             });
         });
 
@@ -161,7 +175,7 @@ describe('ThemeManager', () => {
 
             expect(ThemeManager.currentResolvedTheme).toBe('light');
             expect(document.documentElement.dataset.theme).toBe('light');
-            expect(document.querySelector('#theme-color-dark').getAttribute('content')).toBe('#f7f7f8');
+            expect(document.querySelector('#theme-color-dark').getAttribute('content')).toBe('#f6f6f6');
         });
 
         it('should default to light when appState.theme has an unexpected value', () => {
@@ -198,8 +212,9 @@ describe('ThemeManager', () => {
 
             expect(appState.accentColor).toBe('purple');
             expect(document.documentElement.dataset.accent).toBe('purple');
+            expect(localStorage.getItem('bulletin_accent')).toBe('purple');
             expect(document.querySelector('[data-color="purple"]').classList.contains('active')).toBe(true);
-            expect(document.querySelector('[data-color="blue"]').classList.contains('active')).toBe(false);
+            expect(document.querySelector('[data-color="anthracite"]').classList.contains('active')).toBe(false);
             expect(StorageManager.saveAppState).toHaveBeenCalledTimes(1);
         });
 
@@ -211,13 +226,15 @@ describe('ThemeManager', () => {
             expect(document.documentElement.style.getPropertyValue('--primary-color')).toBe('#e11d48');
             expect(document.documentElement.style.getPropertyValue('--primary-color-rgb')).toBe('225, 29, 72');
             expect(document.documentElement.style.getPropertyValue('--primary-bright')).toMatch(/^#[0-9a-f]{6}$/);
+            expect(document.documentElement.style.getPropertyValue('--text-on-primary')).toBe('#ffffff');
             expect(document.querySelector('[data-color="custom"]').classList.contains('active')).toBe(true);
 
-            ThemeManager.setAccentColor('blue');
-            expect(appState.accentColor).toBe('blue');
+            ThemeManager.setAccentColor('anthracite');
+            expect(appState.accentColor).toBe('anthracite');
             expect(document.documentElement.dataset.accent).toBeUndefined();
             expect(document.documentElement.style.getPropertyValue('--primary-color')).toBe('');
-            expect(document.querySelector('[data-color="blue"]').classList.contains('active')).toBe(true);
+            expect(document.documentElement.style.getPropertyValue('--text-on-primary')).toBe('');
+            expect(document.querySelector('[data-color="anthracite"]').classList.contains('active')).toBe(true);
         });
 
         it('should toggle custom picker panel when clicking custom swatch and support EyeDropper selection', async () => {

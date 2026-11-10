@@ -284,7 +284,7 @@
 }
 
 .grade-bubble[class*="grade-range-"] {
-    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #09090b);
+    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #0a0a0a);
     background: color-mix(in srgb, var(--grade-accent) 13%, var(--surface-color));
 }
 
@@ -312,7 +312,7 @@
 }
 
 .grade-value.current-period-grade[class*="grade-range-"] {
-    --grade-ink: color-mix(in srgb, var(--grade-accent) 92%, #09090b);
+    --grade-ink: color-mix(in srgb, var(--grade-accent) 92%, #0a0a0a);
     background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
     color: var(--grade-ink);
     font-weight: 600;
@@ -569,8 +569,8 @@
     border-radius: 50%;
     background-color: var(--primary-color);
     border: none;
-    color: #ffffff;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.12);
+    color: var(--text-on-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -589,7 +589,7 @@
 }
 
 [data-theme="dark"] .fab-add-student {
-    --fab-primary-dark: color-mix(in srgb, var(--primary-color) 88%, #09090b);
+    --fab-primary-dark: color-mix(in srgb, var(--primary-color) 88%, #0a0a0a);
     background-color: var(--fab-primary-dark);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.28);
 }
@@ -603,9 +603,9 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 @media (hover: hover) and (pointer: fine) {
     .fab-add-student:hover {
         transform: translateY(-2px) scale(1.03);
-        background-color: color-mix(in srgb, var(--primary-color), white 9%);
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16);
-        color: #ffffff;
+        background-color: var(--primary-btn-hover);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10), 0 8px 20px -3px rgba(0, 0, 0, 0.16);
+        color: var(--text-on-primary);
         outline: none;
     }
 
@@ -617,7 +617,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 
 .fab-add-student:focus-visible {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10), 0 8px 20px -3px rgba(0, 0, 0, 0.16), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
     outline: none;
 }
 
@@ -627,7 +627,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 
 .fab-add-student:active {
     transform: translateY(0) scale(0.95);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
 }
 
 [data-theme="dark"] .fab-add-student:active {
@@ -638,7 +638,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 .fab-add-student.is-scroll-top {
     background-color: var(--surface-color);
     color: var(--text-primary);
-    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"] .fab-add-student.is-scroll-top {
@@ -652,7 +652,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
     .fab-add-student.is-scroll-top:hover {
         background-color: var(--bg-secondary);
         color: var(--text-primary);
-        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.10), 0 8px 20px -3px rgba(15, 23, 42, 0.16);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.10), 0 8px 20px -3px rgba(0, 0, 0, 0.16);
     }
 
     [data-theme="dark"] .fab-add-student.is-scroll-top:hover {

@@ -12,6 +12,7 @@ import { appState } from '../state/State.js';
 import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, MODEL_DESCRIPTIONS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
+import { ThemeManager } from './ThemeManager.js';
 
 /** Nombre moyen de caractères par mot, pour l'estimation affichée sous la cible de longueur. */
 const APPROX_CHARS_PER_WORD = 6.5;
@@ -91,24 +92,9 @@ export const FormUI = {
             DOM.settingsPrivacyAnonymizeToggle.checked = appState.anonymizeData;
         }
 
-        // Synchroniser la pastille de couleur d'accentuation
-        const accentSelector = document.getElementById('accentColorSelector');
-        if (accentSelector) {
-            const rawAccent = appState.accentColor || 'blue';
-            const isCustomHex = typeof rawAccent === 'string' && /^#[0-9a-fA-F]{6}$/.test(rawAccent.trim());
-            const currentAccent = isCustomHex ? 'custom' : (['blue', 'purple', 'pink', 'orange', 'green', 'teal'].includes(rawAccent) ? rawAccent : 'blue');
-
-
-            accentSelector.querySelectorAll('.accent-color-swatch').forEach(swatch => {
-                const swatchColor = swatch.getAttribute('data-color');
-                const isActive = swatchColor === currentAccent;
-                swatch.classList.toggle('active', isActive);
-                swatch.setAttribute('aria-checked', String(isActive));
-                if (swatchColor === 'custom' && isCustomHex) {
-                    swatch.style.setProperty('--swatch-color', rawAccent.trim().toLowerCase());
-                }
-            });
-        }
+        // Synchroniser la pastille de couleur d'accentuation et replier le tiroir personnalisé
+        document.getElementById('customPickerPanel')?.classList.remove('open');
+        ThemeManager.applyAccentColor(appState.accentColor);
 
         this.updateModelDescription();
     },

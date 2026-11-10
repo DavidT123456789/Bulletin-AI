@@ -806,7 +806,7 @@
 }
 
 .journal-save-btn:hover:not(:disabled) {
-    background: var(--primary-hover, #2563eb);
+    background: var(--primary-btn-hover);
     box-shadow: 0 3px 10px rgba(var(--primary-color-rgb), 0.28);
 }
 

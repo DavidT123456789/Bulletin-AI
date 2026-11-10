@@ -106,44 +106,56 @@ export const WelcomeManager = {
             appState.ollamaEnabled
         );
 
+        const getKeyForProvider = (provider) => ({
+            google: appState.googleApiKey,
+            albert: appState.albertApiKey,
+            groq: appState.groqApiKey,
+            openrouter: appState.openrouterApiKey,
+            mistral: appState.mistralApiKey
+        }[provider] || '');
+
+        const syncValidateBtnWithInput = (provider, rawValue) => {
+            const validateBtn = DOM.welcomeValidateApiKeyBtn;
+            if (!validateBtn) return;
+
+            const trimmedValue = (rawValue ?? '').trim();
+            const existingKey = getKeyForProvider(provider);
+
+            validateBtn.classList.remove('ready', 'validated');
+            if (existingKey && trimmedValue === existingKey) {
+                validateBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
+                validateBtn.classList.add('validated');
+                validateBtn.disabled = true;
+            } else {
+                validateBtn.innerHTML = 'Valider';
+                validateBtn.disabled = false;
+                if (trimmedValue.length > 0) {
+                    validateBtn.classList.add('ready');
+                }
+            }
+        };
+
+        const providerSelector = document.getElementById('welcomeProviderSelector');
+        const getKeyLink = document.getElementById('welcomeGetKeyLink');
+        const skipSep = document.getElementById('welcomeSkipApiKeySep');
+
         // Helper to update input and button state for current provider
         const updateProviderKeyState = (provider) => {
             const input = DOM.welcomeApiKeyInput;
-            const validateBtn = DOM.welcomeValidateApiKeyBtn;
-
-            const keyByProvider = {
-                google: appState.googleApiKey,
-                albert: appState.albertApiKey,
-                groq: appState.groqApiKey,
-                openrouter: appState.openrouterApiKey,
-                mistral: appState.mistralApiKey
-            };
-            const existingKey = keyByProvider[provider] || '';
+            const existingKey = getKeyForProvider(provider);
 
             if (input) {
                 input.value = existingKey;
-                input.disabled = Boolean(existingKey);
+                input.disabled = false;
             }
 
-            if (validateBtn) {
-                validateBtn.classList.remove('ready', 'validated');
-
-                if (existingKey) {
-                    validateBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
-                    validateBtn.classList.add('validated');
-                    validateBtn.disabled = true;
-                } else {
-                    validateBtn.innerHTML = 'Valider';
-                    validateBtn.disabled = false;
-                }
-            }
+            syncValidateBtnWithInput(provider, existingKey);
 
             if (DOM.welcomeNextBtn) {
                 DOM.welcomeNextBtn.disabled = false;
             }
 
             const showSkip = !hasAnyConfiguredKey() && !existingKey;
-            const skipSep = document.getElementById('welcomeSkipApiKeySep');
             if (skipSep) {
                 skipSep.style.display = showSkip ? '' : 'none';
             }
@@ -151,10 +163,6 @@ export const WelcomeManager = {
                 DOM.welcomeSkipApiKeyBtn.style.display = showSkip ? '' : 'none';
             }
         };
-
-        // Provider Selection Logic (new radio-based selector)
-        const providerSelector = document.getElementById('welcomeProviderSelector');
-        const getKeyLink = document.getElementById('welcomeGetKeyLink');
 
         // Provider configuration
         const providerConfig = {
@@ -296,15 +304,14 @@ export const WelcomeManager = {
                 if (DOM.welcomeApiKeyError) DOM.welcomeApiKeyError.style.display = 'none';
 
                 // Initialize glider for provider selector IMMEDIATELY (before slide-in animation completes)
-                const providerSelectorEl = document.getElementById('welcomeProviderSelector');
-                if (providerSelectorEl) {
-                    if (!providerSelectorEl.querySelector('.ui-glider')) {
+                if (providerSelector) {
+                    if (!providerSelector.querySelector('.ui-glider')) {
                         const glider = document.createElement('div');
                         glider.className = 'ui-glider';
-                        providerSelectorEl.prepend(glider);
-                        providerSelectorEl.classList.add('has-glider');
+                        providerSelector.prepend(glider);
+                        providerSelector.classList.add('has-glider');
                     }
-                    requestAnimationFrame(() => UI.updateGlider?.(providerSelectorEl, true));
+                    requestAnimationFrame(() => UI.updateGlider?.(providerSelector, true));
                 }
             }
 
@@ -372,12 +379,7 @@ export const WelcomeManager = {
                     DOM.welcomeApiKeyError,
                     DOM.welcomeValidateApiKeyBtn,
                     () => {
-                        if (DOM.welcomeApiKeyInput) {
-                            DOM.welcomeApiKeyInput.disabled = true;
-                        }
-                        const skipSep = document.getElementById('welcomeSkipApiKeySep');
-                        if (skipSep) skipSep.style.display = 'none';
-                        if (DOM.welcomeSkipApiKeyBtn) DOM.welcomeSkipApiKeyBtn.style.display = 'none';
+                        updateProviderKeyState(currentProvider);
 
                         const recommendedModel = PROVIDER_DEFAULT_MODELS[currentProvider];
                         if (recommendedModel && appState.currentAIModel !== recommendedModel) {
@@ -393,6 +395,9 @@ export const WelcomeManager = {
                         setTimeout(() => showWelcomeStep(3, 'next'), 500);
                     }
                 );
+                if (DOM.welcomeValidateApiKeyBtn && !DOM.welcomeValidateApiKeyBtn.classList.contains('validated')) {
+                    syncValidateBtnWithInput(currentProvider, DOM.welcomeApiKeyInput?.value);
+                }
             }
         };
 
@@ -440,14 +445,10 @@ export const WelcomeManager = {
 
         initFirstStep();
 
-        // Toggle button style based on input content (grey when empty, brand primary when key is present) + Enter key support
+        // Toggle button style based on input content (grey when empty, brand primary when key is present, green when matching saved key) + Enter key support
         if (DOM.welcomeApiKeyInput) {
             DOM.welcomeApiKeyInput.addEventListener('input', (e) => {
-                const validateBtn = DOM.welcomeValidateApiKeyBtn;
-                if (!validateBtn || validateBtn.classList.contains('validated')) return;
-
-                const hasValue = e.target.value.trim().length > 0;
-                validateBtn.classList.toggle('ready', hasValue);
+                syncValidateBtnWithInput(currentProvider, e.target.value);
             }, { signal });
 
             DOM.welcomeApiKeyInput.addEventListener('keydown', (e) => {

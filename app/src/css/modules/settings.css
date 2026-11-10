@@ -609,6 +609,11 @@
 .lab-preview-toolbar > .ui-segmented-control {
     --sc-padding: 3px;
     height: 36px;
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .lab-preview-toolbar > .ui-segmented-control {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .lab-preview-toolbar > .ui-segmented-control .ui-segment {
@@ -722,7 +727,7 @@
 
 .lab-result-card.is-empty {
     background: transparent;
-    border: 1.5px dashed var(--border-color);
+    border: 1.5px dashed var(--border-color-strong);
 }
 
 .lab-result-text {
@@ -1475,8 +1480,8 @@ label.settings-row-title {
 }
 
 .data-badge-neutral {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
-    color: var(--primary-color, #3b82f6);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 .data-badge-dot {

@@ -368,11 +368,10 @@ export const GlobalListeners = {
         // UNIFIED APPROACH: Uses a counter to track ALL active generations.
         // This ensures the badge is hidden when ALL generations complete,
         // regardless of their source (single, mass, lab preview, refinement).
-        window.addEventListener('ai-generation-start', async (e) => {
+        window.addEventListener('ai-generation-start', () => {
             this._activeGenerationsCount++;
 
             if (DOM.headerGenDashboard) {
-                DOM.headerGenDashboard.classList.add('generating');
                 DOM.headerGenDashboard.classList.remove('fallback-active');
             }
 
@@ -385,7 +384,7 @@ export const GlobalListeners = {
                     return;
                 }
 
-                UI.showHeaderProgress(0, 1, e.detail?.studentName || '');
+                UI.showHeaderProgress(0, 1);
             }
         });
 

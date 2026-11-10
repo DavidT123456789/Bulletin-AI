@@ -10,6 +10,7 @@ import { AppreciationsManager } from '../AppreciationsManager.js';
 import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { UI } from '../UIManager.js';
 
@@ -340,6 +341,67 @@ describe('ListSelectionManager', () => {
 
             // Expect calls in alphabetical order: BERNARD (student-2), DURAND (student-3), PETIT (student-1)
             expect(callOrder).toEqual(['student-2', 'student-3', 'student-1']);
+        });
+
+        it('should clear selection and close toolbar immediately before AI generation completes', async () => {
+            appState.generatedResults = [
+                { id: 'student-1', nom: 'DUPONT', prenom: 'Jean', studentData: { periods: { T1: { grade: 10 } } } },
+                { id: 'student-2', nom: 'MARTIN', prenom: 'Claire', studentData: { periods: { T1: { grade: 15 } } } }
+            ];
+
+            ListSelectionManager.toggleSelectVisible(true);
+            expect(ListSelectionManager.selectedIds.size).toBe(3);
+            expect(document.querySelectorAll('.student-row.selected').length).toBe(3);
+
+            let selectionDuringGeneration = -1;
+            let selectedRowsDuringGeneration = -1;
+            AppreciationsManager.generateAppreciation = vi.fn().mockImplementation(async (sd) => {
+                selectionDuringGeneration = ListSelectionManager.selectedIds.size;
+                selectedRowsDuringGeneration = document.querySelectorAll('.student-row.selected').length;
+                return { id: sd.id, appreciation: 'Nouvelle appréciation', studentData: sd };
+            });
+            StudentDataManager.updateResult = vi.fn((orig, next) => ({ ...orig, ...next }));
+
+            await ListSelectionManager.handleBulkAction('regenerate');
+
+            expect(selectionDuringGeneration).toBe(0);
+            expect(selectedRowsDuringGeneration).toBe(0);
+            expect(document.getElementById('selectionToolbar')?.classList.contains('active')).toBe(false);
+            expect(UI.updateStats).toHaveBeenCalled();
+            expect(ResultsUIManager.updateGenerateButtonState).toHaveBeenCalled();
+        });
+
+        it('should preserve original historyState and only restore remaining rows when aborted mid-batch', async () => {
+            appState.generatedResults = [
+                { id: 'student-1', nom: 'BERNARD', prenom: 'Thomas', historyState: { idx: 1 }, copied: true, studentData: { periods: { T1: { grade: 15 } } } },
+                { id: 'student-2', nom: 'DURAND', prenom: 'Sophie', historyState: { idx: 2 }, copied: true, studentData: { periods: { T1: { grade: 12 } } } },
+                { id: 'student-3', nom: 'PETIT', prenom: 'Emma', historyState: { idx: 3 }, copied: true, studentData: { periods: { T1: { grade: 10 } } } }
+            ];
+            appState.sortState = { field: 'name', direction: 'asc' };
+
+            let callCount = 0;
+            AppreciationsManager.generateAppreciation = vi.fn().mockImplementation(async (sd, _preview, _cfg, signal) => {
+                callCount++;
+                if (callCount === 2) {
+                    const abortErr = new Error('Aborted');
+                    abortErr.name = 'AbortError';
+                    throw abortErr;
+                }
+                return { id: sd.id, appreciation: 'Nouvelle appréciation', studentData: sd };
+            });
+            StudentDataManager.updateResult = vi.fn((orig, next) => Object.assign(orig, next, { copied: false }));
+
+            mockCallbacks.updateStudentRow.mockClear();
+            await ListSelectionManager.bulkRegenerate(['student-1', 'student-2', 'student-3']);
+
+            // First student succeeded: historyState reset to null
+            expect(appState.generatedResults[0].historyState).toBeNull();
+            // Second student aborted during AI call: historyState and copied preserved
+            expect(appState.generatedResults[1].historyState).toEqual({ idx: 2 });
+            expect(appState.generatedResults[1].copied).toBe(true);
+            // updateStudentRow called once when student-1 succeeded, then only for student-2 and student-3 on abort cleanup
+            expect(mockCallbacks.updateStudentRow.mock.calls.map(c => c[0])).toEqual(['student-1', 'student-2', 'student-3']);
+            expect(UI.showNotification).toHaveBeenCalledWith('Régénération interrompue (1/3 régénérée).', 'warning');
         });
     });
 

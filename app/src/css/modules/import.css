@@ -72,7 +72,12 @@
 .welcome-step {
     display: none;
     text-align: center;
+    max-width: 800px;
+    width: 100%;
+    min-height: 360px;
+    margin: 0 auto;
     padding: 0 10px;
+    position: relative;
     /* iOS 2026 Premium Transition System */
     opacity: 0;
     transform: translateX(0) scale(1);
@@ -171,6 +176,7 @@
 
 
 .welcome-nav-container {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -209,6 +215,9 @@
 
 
 #welcome-dots {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     gap: 8px;
 }
@@ -223,7 +232,7 @@
 }
 
 #welcome-dots .dot.active {
-    background: var(--text-primary);
+    background: var(--primary-color);
     width: 24px;
     border-radius: var(--radius-pill);
 }
@@ -237,36 +246,40 @@
     display: flex;
     align-items: stretch;
     gap: 0;
-    margin: 20px auto;
+    width: 100%;
     max-width: 480px;
+    margin: 12px 0 8px 0;
     border-radius: 16px;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    transition: all var(--transition-fast);
+    border: 1px solid var(--border-color-strong);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
     position: relative;
+}
+
+.welcome-api-key-group:focus-within {
+    border-color: var(--highlight-standard-border);
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow);
 }
 
 /* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input {
     -webkit-text-security: disc;
     text-security: disc;
-    /* Arrondi à gauche seulement pour se connecter au bouton */
-    border-radius: 16px 0 0 16px !important;
     padding: 10px 18px;
     flex: 1;
     font-size: 0.95em;
     height: auto;
     color: var(--text-primary);
     background: transparent;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent calc(100% - 10px));
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent calc(100% - 10px));
 }
 
-#welcomeModal .welcome-api-key-group input:disabled {
-    background: transparent !important;
-    color: var(--text-secondary) !important;
-    opacity: 0.85 !important;
-    cursor: default;
+#welcomeModal .welcome-api-key-group input:focus {
+    -webkit-mask-image: none;
+    mask-image: none;
 }
 
 /* Placeholder styling */
@@ -277,7 +290,7 @@
 
 /* Bouton de validation API - Style unique avec états de couleur */
 .welcome-api-key-group .btn-validate-key {
-    border-radius: 0 16px 16px 0 !important;
+    border-radius: 0 16px 16px 0;
     margin: 0;
     padding: 0 16px;
     border: none;
@@ -296,37 +309,32 @@
     background: var(--bg-secondary);
     color: var(--text-secondary);
     transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-    transform: none !important;
-    box-shadow: none !important;
+    transform: none;
+    box-shadow: none;
 }
 
 .welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
-    /* Hover style aligné sur btn-secondary : teinte primaire légère */
-    background: rgba(var(--brand-primary-rgb), 0.12);
-    color: var(--brand-primary);
+    background: var(--tonal-hover-bg);
+    color: var(--text-primary);
 }
 
 /* État "prêt" : clé saisie, prête à valider */
 .welcome-api-key-group .btn-validate-key.ready {
-    background: var(--color-blue-deep);
-    color: white;
+    background: var(--primary-color);
+    color: var(--text-on-primary);
 }
 
 .welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-blue-deep), white 9%);
+    background-color: var(--primary-btn-hover);
 }
 
 /* État "validé" : clé confirmée */
-.welcome-api-key-group .btn-validate-key.validated {
-    background: var(--success-color);
-    color: white;
-    cursor: default;
-}
-
+.welcome-api-key-group .btn-validate-key.validated,
 .welcome-api-key-group .btn-validate-key.validated:disabled {
-    opacity: 1 !important;
-    background: var(--success-color) !important;
-    color: white !important;
+    opacity: 1;
+    background: var(--success-color);
+    color: var(--text-on-primary);
+    cursor: default;
 }
 
 /* Welcome modal selector: styling for proper display */
@@ -361,22 +369,7 @@
 
 #welcomeModal .modal-content {
     margin: 0 auto;
-    background: var(--glass-overlay-bg);
-    backdrop-filter: blur(var(--glass-overlay-blur));
-    -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
-    border: 1px solid var(--glass-overlay-border);
     box-shadow: var(--shadow-xl);
-}
-
-/* Ensure step content is centered and bounded */
-.welcome-step {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 10px;
-    width: 100%;
-    min-height: 360px;
-    position: relative;
-    box-sizing: border-box;
 }
 
 /* App logo for welcome screen (Hero Step 1) - Pure elevated white squircle card */
@@ -387,13 +380,13 @@
     padding: 4px;
     box-sizing: border-box;
     border-radius: 22px;
-    border: none !important;
-    background: var(--surface-color) !important;
+    border: none;
+    background: var(--surface-color);
     box-shadow: 
         0 2px 6px rgba(0, 0, 0, 0.04),
         0 8px 24px rgba(0, 0, 0, 0.08),
-        0 16px 40px rgba(0, 0, 0, 0.04) !important;
-    filter: none !important;
+        0 16px 40px rgba(0, 0, 0, 0.04);
+    filter: none;
     margin: 0 auto 28px auto;
     display: block;
     user-select: none;
@@ -402,7 +395,7 @@
 }
 
 [data-theme="dark"] .welcome-app-logo {
-    background: var(--text-primary) !important;
+    background: var(--text-primary);
 }
 
 .welcome-app-logo:hover {
@@ -410,7 +403,7 @@
     box-shadow: 
         0 4px 12px rgba(0, 0, 0, 0.06),
         0 12px 32px rgba(0, 0, 0, 0.12),
-        0 20px 48px rgba(0, 0, 0, 0.06) !important;
+        0 20px 48px rgba(0, 0, 0, 0.06);
 }
 
 /* Specific styling for the welcome step titles (Apple / Linear native sobriety) */
@@ -451,32 +444,19 @@
     align-items: center;
 }
 
-.welcome-api-setup .provider-selector-row {
+.provider-selector-row {
     width: 100%;
     display: flex;
     justify-content: center;
     margin-bottom: 6px;
 }
 
-.welcome-api-setup .welcome-api-key-group {
-    width: 100%;
-    margin: 12px 0 8px 0;
-}
-
 .welcome-api-setup .error-message {
     width: 100%;
     text-align: center;
-}
-
-.welcome-api-setup .welcome-action-links {
-    margin-top: 8px;
-}
-
-/* Provider Selector Row - Centrer le sélecteur */
-.provider-selector-row {
-    display: flex;
     justify-content: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
 }
 
 /* Action Links Row - Below the input field */
@@ -485,7 +465,7 @@
     justify-content: center;
     align-items: center;
     gap: 4px;
-    margin-top: 6px;
+    margin-top: 8px;
     font-size: 0.88em;
 }
 
@@ -500,30 +480,31 @@
 .btn-text-link-compact {
     background: transparent;
     border: none;
-    color: var(--text-secondary);
     cursor: pointer;
-    padding: 5px 11px;
+    padding: 5px 12px;
     border-radius: var(--radius-pill);
     transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     font-size: inherit;
-    font-weight: 500;
     font-family: inherit;
+    font-weight: 500;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 5px;
 }
 
+.get-key-link-mini {
+    color: var(--text-secondary);
+}
+
+.btn-text-link-compact {
+    color: var(--text-tertiary);
+}
+
 .get-key-link-mini:hover,
 .btn-text-link-compact:hover {
     color: var(--text-primary);
-    background: var(--item-active-bg);
-}
-
-[data-theme="dark"] .get-key-link-mini:hover,
-[data-theme="dark"] .btn-text-link-compact:hover {
-    background: rgba(255, 255, 255, 0.09);
-    color: var(--text-primary);
+    background: var(--item-hover-bg);
 }
 
 .get-key-link-mini:active,
@@ -548,9 +529,24 @@
     margin-top: 0;
 }
 
-/* === WELCOME ILLUSTRATION (STEP 4) === */
+/* === WELCOME ILLUSTRATION (STEP 4 — Identité IA Satin Subtil) === */
 
 .welcome-transformation-svg {
+    --svg-doc-start: #ffffff;
+    --svg-doc-mid: #f4f7fb;
+    --svg-doc-end: #edf2f9;
+    --svg-border-start: #93c5fd;
+    --svg-border-mid: #cbd5e1;
+    --svg-border-end: #7dd3fc;
+    --svg-glow-1: #7dd3fc;
+    --svg-glow-2: #93c5fd;
+    --svg-glow-3: #cbd5e1;
+    --svg-glow-4: #38bdf8;
+    --svg-line-title: #1e293b;
+    --svg-line-accent-1: #38bdf8;
+    --svg-line-accent-2: #64748b;
+    --svg-line-accent-3: #7dd3fc;
+    --svg-line-duotone: #476b87;
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
@@ -561,6 +557,24 @@
     padding: 0;
     margin-bottom: 12px;
     background: transparent;
+}
+
+[data-theme="dark"] .welcome-transformation-svg {
+    --svg-doc-start: #282b34;
+    --svg-doc-mid: #1e2027;
+    --svg-doc-end: #191d27;
+    --svg-border-start: #475569;
+    --svg-border-mid: #334155;
+    --svg-border-end: #7dd3fc;
+    --svg-glow-1: #38bdf8;
+    --svg-glow-2: #476b87;
+    --svg-glow-3: #1e293b;
+    --svg-glow-4: #7dd3fc;
+    --svg-line-title: #f1f5f9;
+    --svg-line-accent-1: #7dd3fc;
+    --svg-line-accent-2: #64748b;
+    --svg-line-accent-3: #38bdf8;
+    --svg-line-duotone: #5b82a6;
 }
 
 .welcome-transformation-svg svg {
@@ -601,7 +615,7 @@
     padding: 16px 18px;
     border-radius: var(--radius-md);
     background-color: var(--item-idle-bg);
-    border: 1.5px solid var(--border-color);
+    border: 1px solid var(--border-color);
     box-shadow: none;
     cursor: pointer;
     transition: border-color 0.2s var(--ease-spring),
@@ -621,27 +635,27 @@
 @media (hover: hover) and (pointer: fine) {
     .welcome-start-card:hover:not(.active) {
         background-color: var(--surface-color);
-        border-color: var(--border-color-hover);
+        border-color: var(--border-default);
         box-shadow: var(--shadow-sm);
         transform: translateY(-1px);
     }
 
     [data-theme="dark"] .welcome-start-card:hover:not(.active) {
         background-color: rgba(255, 255, 255, 0.04);
-        border-color: var(--border-color-hover);
+        border-color: var(--border-default);
         box-shadow: none;
     }
 }
 
 .welcome-start-card.active {
     background-color: var(--surface-color);
-    border-color: color-mix(in srgb, var(--text-primary) 28%, var(--border-color));
+    border-color: var(--border-color);
     box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .welcome-start-card.active {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
 }
 
@@ -738,13 +752,13 @@
     font-weight: 600;
     color: var(--text-primary);
     background-color: var(--bg-secondary);
-    border-color: var(--border-color-strong);
+    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .welcome-start-card.active .welcome-period-pill {
     color: var(--text-primary);
     background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Mobile responsive styling */
@@ -787,7 +801,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.75);
+    background: color-mix(in srgb, currentColor 75%, transparent);
     filter: blur(1px);
     pointer-events: none;
     transform: translate(-1.5px, 1.5px) scale(0.9);
@@ -803,7 +817,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
+    background: color-mix(in srgb, currentColor 50%, transparent);
     filter: blur(1px);
     pointer-events: none;
     transform: translate(-3.5px, 3.5px) scale(0.7);

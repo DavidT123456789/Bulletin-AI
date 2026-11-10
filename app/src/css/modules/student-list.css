@@ -231,7 +231,6 @@
 .student-list-table td {
     padding: 14px 16px;
     border-bottom: 1px solid var(--border-color);
-    background-clip: padding-box;
     vertical-align: middle;
     transition: background-color var(--transition-fast);
 }
@@ -301,13 +300,13 @@
     z-index: 10;
 }
 
-/* Crisp legibility during active spotlight */
+/* Crisp legibility during active spotlight or selection */
 .student-list-table tbody tr:is(.focus-active, .selected, .highlight-new, .focus-closed-flash, :has(.action-dropdown-menu.open)) :is(.student-name-cell .student-prenom, .appreciation-preview),
-.student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) td.grade-cell .grade-empty {
+.student-list-table tbody tr:is(.focus-active, .selected, :has(.action-dropdown-menu.open)) td.grade-cell .grade-empty {
     color: var(--text-primary);
 }
 
-.student-list-table tbody tr:is(.focus-active, :has(.action-dropdown-menu.open)) .evolution-cell .grade-evolution {
+.student-list-table tbody tr:is(.focus-active, .selected, :has(.action-dropdown-menu.open)) .evolution-cell .grade-evolution {
     opacity: 1;
 }
 

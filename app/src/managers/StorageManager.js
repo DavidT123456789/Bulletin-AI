@@ -266,7 +266,11 @@ export const StorageManager = {
 
         // UI Settings
         if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
-        if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
+        if (settings.accentColor !== undefined) {
+            let explicitAccent = '';
+            try { explicitAccent = localStorage.getItem('bulletin_accent') || ''; } catch (_) {}
+            userSettings.ui.accentColor = (settings.accentColor === 'blue' && explicitAccent !== 'blue') ? 'anthracite' : settings.accentColor;
+        }
         if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
         if (settings.seatingStatusDots !== undefined && settings.seatingStatusDots && typeof settings.seatingStatusDots === 'object') {
             userSettings.ui.seatingStatusDots = {
@@ -796,7 +800,7 @@ export const StorageManager = {
     _buildSettingsSnapshot() {
         return {
             theme: userSettings.ui.theme,
-            accentColor: userSettings.ui.accentColor || 'blue',
+            accentColor: userSettings.ui.accentColor || 'anthracite',
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             activeView: userSettings.ui.activeView || 'list',
             seatingStatusDots: userSettings.ui.seatingStatusDots || { ...DEFAULT_SEATING_STATUS_DOTS },
@@ -1846,7 +1850,7 @@ export const StorageManager = {
                     const isMerge = Boolean(options.mergeData);
                     Object.assign(appState, {
                         theme: settings.theme || appState.theme,
-                        accentColor: settings.accentColor || appState.accentColor || 'blue',
+                        accentColor: settings.accentColor || appState.accentColor || 'anthracite',
                         isAppreciationFullView: settings.isAppreciationFullView ?? appState.isAppreciationFullView,
                         seatingStatusDots: settings.seatingStatusDots || appState.seatingStatusDots || { ...DEFAULT_SEATING_STATUS_DOTS },
                         useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
@@ -1865,6 +1869,10 @@ export const StorageManager = {
                     });
                     userSettings.api.currentAIModel = appState.currentAIModel;
                     userSettings.api.enableApiFallback = appState.enableApiFallback;
+                    try {
+                        if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
+                        if (appState.accentColor) localStorage.setItem('bulletin_accent', appState.accentColor);
+                    } catch (_) {}
                     stats.settingsImported = true;
                 } else {
                     if (canAdoptModel(settings.currentAIModel)) {

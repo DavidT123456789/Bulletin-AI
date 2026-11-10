@@ -43,7 +43,7 @@
 #seatingChartView[data-has-selection="true"] .sc-cell.empty {
     cursor: pointer;
     opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
-    border-color: rgba(24, 24, 27, 0.25);
+    border-color: rgba(0, 0, 0, 0.25);
     background: rgba(0, 0, 0, 0.02);
 }
 
@@ -155,7 +155,7 @@
     top: -8px;
     right: -8px;
     background: var(--primary-color);
-    color: white;
+    color: var(--text-on-primary);
     font-size: 11px;
     font-weight: bold;
     height: 20px;
@@ -459,7 +459,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     opacity: 1;
     transform: scale(1);
     background: var(--primary-color);
-    color: white;
+    color: var(--text-on-primary);
     border-color: var(--primary-color);
 }
 
@@ -615,14 +615,14 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 /* Neutral ghost/dashed styling for a departed student still occupying a desk */
 .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over) {
     border-style: dashed !important;
-    border-color: rgba(161, 161, 170, 0.45) !important;
+    border-color: rgba(163, 163, 163, 0.45) !important;
     background: rgba(255, 255, 255, 0.55) !important;
     box-shadow: none;
 }
 
 [data-theme="dark"] .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over) {
     border-color: rgba(255, 255, 255, 0.22) !important;
-    background: rgba(38, 38, 40, 0.45) !important;
+    background: rgba(38, 38, 39, 0.45) !important;
 }
 
 .sc-cell.occupied.sc-cell-departed:not(.sc-chip-selected, .sc-context-target, .sc-spotlight-match, .drag-over, :hover) .student-avatar,
@@ -916,7 +916,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-special-btn:hover {
         background: var(--primary-color);
         border-color: var(--primary-color);
-        color: white;
+        color: var(--text-on-primary);
         transform: scale(1.15);
     }
 
@@ -934,7 +934,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-special-btn[data-type="normal"]:hover {
         background: var(--primary-color);
         border-color: var(--primary-color);
-        color: white;
+        color: var(--text-on-primary);
     }
 }
 
@@ -1108,12 +1108,12 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 .sc-onboarding-btn.primary {
     background: var(--primary-color);
-    color: white;
+    color: var(--text-on-primary);
 }
 
 @media (hover: hover) {
     .sc-onboarding-btn.primary:hover {
-        background-color: color-mix(in srgb, var(--primary-color), white 9%);
+        background-color: var(--primary-btn-hover);
         transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
     }
@@ -2308,7 +2308,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 [data-theme="dark"] .sc-toolbar-info,
 [data-theme="dark"] .sc-toolbar-pill,
 [data-theme="dark"] .sc-isolated-btn {
-    background: rgba(30, 30, 30, 0.85);
+    background: var(--surface-elevated);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -2392,7 +2392,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     margin-bottom: auto;
     background: transparent;
     border: none;
-    color: rgba(24, 24, 27, 0.14);
+    color: rgba(0, 0, 0, 0.14);
     display: inline-flex;
     align-items: center;
     justify-content: center;

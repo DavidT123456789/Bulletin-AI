@@ -16,13 +16,17 @@
     border-radius: var(--radius-pill);
     padding: 3px;
     position: relative;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition:
+        background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.2s ease;
     cursor: pointer;
     height: 38px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .header-gen-dashboard:hover {
+    .header-gen-dashboard:not(.generating):hover {
         background-color: var(--surface-color);
         border-color: transparent;
         box-shadow: var(--shadow-elevation);
@@ -36,7 +40,7 @@
     box-shadow: var(--shadow-elevation);
 }
 
-.header-gen-dashboard:active {
+.header-gen-dashboard:not(.generating):active {
     transform: scale(0.97);
     background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
     box-shadow: none;
@@ -64,6 +68,18 @@
     pointer-events: none;
     white-space: nowrap;
     overflow: hidden;
+    transition: padding 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dash-model-chevron {
+    max-width: 14px;
+    overflow: hidden;
+    transition:
+        transform var(--transition-fast),
+        color var(--transition-fast),
+        opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        max-width 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        margin 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Icon styling */
@@ -124,70 +140,16 @@
 
 
 /* ====================================================================
-   BADGE BASE
-   ==================================================================== */
-.dash-badge {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 0 10px;
-    height: 100%;
-    border-radius: var(--radius-pill);
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    white-space: nowrap;
-}
-
-.dash-badge i,
-.dash-badge iconify-icon {
-    font-size: 14px;
-}
-
-.dash-badge:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-1px);
-}
-
-.dash-badge:active {
-    transform: scale(0.95);
-}
-
-/* ====================================================================
-   VALIDATED BADGE - Hidden for ultra-minimalist look
-   ==================================================================== */
-.dash-validated {
-    display: none !important;
-}
-
-/* Error badge removed — errors are now handled by the Smart Action Button in the table */
-
-/* ====================================================================
-   PENDING BADGE - Hidden for ultra-minimalist look
-   (pending count shown in Generate button instead)
-   ==================================================================== */
-.dash-pending {
-    display: none !important;
-}
-
-/* ====================================================================
    GENERATING STATE - Smooth expansion/contraction
    ==================================================================== */
 .dash-generating {
     display: flex;
     align-items: center;
     gap: 10px;
-    /* Ensure text is above shine */
-    padding: 4px 6px 4px 8px;
     /* Hidden by default with smooth transition */
     opacity: 0;
     max-width: 0;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 4px 0;
     overflow: hidden;
     transition:
         opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
@@ -201,105 +163,88 @@
     padding: 4px 6px 4px 8px;
 }
 
-/* Badges fade out smoothly during generation */
-.dash-badge {
-    transition:
-        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.header-gen-dashboard.generating .dash-badge {
-    opacity: 0;
-    transform: scale(0.8);
-    pointer-events: none;
-    max-width: 0;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-}
-
 /* Subtle generating state - border glow */
-/* Standard Dynamic Border (Matching App Inputs) */
-/* Subtle generating state - border glow matches Landing Page feel */
 .header-gen-dashboard.generating {
-    border-color: transparent !important;
-
-    /* Background starts EMPTY (white/transparent) so the bar can fill it */
+    border: none !important;
+    padding: 4px;
     background: var(--surface-color);
-
-    /* Standard Focus Shadow */
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    box-shadow: var(--ai-progress-shadow);
+    cursor: default;
 }
 
-/* Animated gradient border during generation */
+/* Animated orbital comet border during generation */
 .header-gen-dashboard.generating::before {
     content: '';
     position: absolute;
-    inset: -1px;
+    inset: 0;
     border-radius: inherit;
-    padding: 2px;
+    border: 2px solid transparent;
     background: conic-gradient(from var(--gradient-angle, 0deg),
-            var(--primary-color) 0%,
-            rgba(var(--primary-color-rgb), 0.65) 25%,
-            rgba(255, 255, 255, 0.9) 50%,
-            rgba(var(--primary-color-rgb), 0.65) 75%,
-            var(--primary-color) 100%);
-    /* Mask: Inner hole (content-box) excluded from Outer rect (border-box) */
+            var(--ai-progress-base) 0%,
+            var(--ai-progress-base) 50%,
+            var(--ai-progress-mid) 72%,
+            color-mix(in srgb, var(--ai-progress-beam) 82%, var(--ai-progress-mid)) 84%,
+            var(--ai-progress-beam) 90%,
+            color-mix(in srgb, var(--ai-progress-beam) 68%, var(--ai-progress-mid)) 94%,
+            var(--ai-progress-mid) 97%,
+            var(--ai-progress-base) 100%) border-box;
+    /* Mask: Inner hole (padding-box) excluded from Outer rect (border-box) */
     -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
-    -webkit-mask-clip: content-box, border-box;
+    -webkit-mask-clip: padding-box, border-box;
     -webkit-mask-composite: xor;
 
     mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
-    mask-clip: content-box, border-box;
+    mask-clip: padding-box, border-box;
     mask-composite: exclude;
-    animation: rotate-gradient 2s linear infinite;
+    animation: rotate-pill-gradient 3.2s linear infinite;
     pointer-events: none;
     z-index: 2;
 }
 
-/* Model badge with background during generation */
-/* Model badge with background during generation - REMOVED to avoid double pill effect
-.header-gen-dashboard.generating .dash-model-label {
-    background: transparent;
-    animation: none;
-    position: relative;
-    z-index: 1;
-} */
+/* Arc-length compensated rotation for ~4:1 capsule geometry:
+   Tangent-matched cubic-bezier quadrants (m=2.82 across flat top/bottom edges
+   at 0deg/180deg, m=0.49 around semicircular caps at 90deg/270deg). */
+@keyframes rotate-pill-gradient {
+    0% {
+        --gradient-angle: 0deg;
+        animation-timing-function: cubic-bezier(0.22, 0.62, 0.55, 0.78);
+    }
 
-.header-gen-dashboard.generating .dash-model-label {
-    background: transparent;
-    animation: none;
-    position: relative;
-    z-index: 1;
-    /* Ensure label text remains visible and distinct */
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-@keyframes generating-glow {
-
-    0%,
-    100% {
-        border-color: rgba(var(--primary-color-rgb), 0.25);
-        /* Sharp Metamorph shadow */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    25% {
+        --gradient-angle: 90deg;
+        animation-timing-function: cubic-bezier(0.45, 0.22, 0.78, 0.38);
     }
 
     50% {
-        border-color: rgba(var(--primary-color-rgb), 0.5);
-        /* Slightly stronger pulsing, but keeping it contained */
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+        --gradient-angle: 180deg;
+        animation-timing-function: cubic-bezier(0.22, 0.62, 0.55, 0.78);
+    }
+
+    75% {
+        --gradient-angle: 270deg;
+        animation-timing-function: cubic-bezier(0.45, 0.22, 0.78, 0.38);
+    }
+
+    100% {
+        --gradient-angle: 360deg;
     }
 }
 
-/* Progress bar */
-/* Progress bar - ABSOLUTE FILL of the container */
+.header-gen-dashboard.generating .dash-model-label {
+    padding-right: 4px;
+}
+
+.header-gen-dashboard.generating .dash-model-chevron {
+    opacity: 0;
+    max-width: 0;
+    margin-left: -7px;
+    pointer-events: none;
+}
+
+/* Progress bar - ABSOLUTE FILL inside the 2px border ring */
 .dash-progress-bar {
-    display: block !important;
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 2px;
     border-radius: var(--radius-pill);
     background: transparent;
     z-index: 0;
@@ -311,36 +256,34 @@
 /* The actual filling element */
 .dash-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg,
-            rgba(var(--primary-color-rgb), 0.15) 0%,
-            rgba(var(--primary-color-rgb), 0.25) 100%);
-    border-right: 1px solid rgba(var(--primary-color-rgb), 0.3);
+    background: var(--ai-progress-fill);
+    box-shadow: inset -1px 0 0 var(--ai-progress-fill-border);
     transition: width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     /* Shine effect moving inside the fill */
     position: relative;
     overflow: hidden;
 }
 
-/* Shine effect INSIDE the fill */
-.dash-progress-fill::after {
+/* Constant-speed horizontal satin wave inside the fill (active only during generation) */
+.header-gen-dashboard.generating .dash-progress-fill::after {
     content: '';
     position: absolute;
     top: 0;
+    bottom: 0;
     left: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transform: skewX(-20deg) translateX(-150%);
-    animation: fill-shine 2s infinite;
+    width: 72px;
+    background: var(--ai-satin-shine-wide);
+    transform: translateX(-80px);
+    animation: fill-shine 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes fill-shine {
     0% {
-        transform: skewX(-20deg) translateX(-150%);
+        transform: translateX(-80px);
     }
 
     100% {
-        transform: skewX(-20deg) translateX(150%);
+        transform: translateX(160px);
     }
 }
 
@@ -350,18 +293,6 @@
 .dash-model-label {
     position: relative;
     z-index: 1;
-}
-
-/* Old progress-fill definition removed */
-
-@keyframes progress-liquid {
-    0% {
-        background-position: 100% 0;
-    }
-
-    100% {
-        background-position: -100% 0;
-    }
 }
 
 /* Progress text */
@@ -380,7 +311,7 @@
     width: 20px;
     height: 20px;
     min-width: 20px;
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--tonal-bg);
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
@@ -399,35 +330,9 @@
 }
 
 .dash-cancel-btn:hover {
-    background: rgba(var(--error-rgb), 0.15);
+    background: rgba(var(--error-rgb), 0.18);
     color: var(--error-color);
     transform: scale(1.1);
-}
-
-
-/* ====================================================================
-   DARK MODE
-   ==================================================================== */
-
-/* Fix for Dark Mode Generating State - Allow fill to be visible */
-[data-theme="dark"] .header-gen-dashboard.generating {
-    background: var(--surface-color) !important;
-    border-color: transparent !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .dash-progress-bar {
-    background: transparent !important;
-}
-
-[data-theme="dark"] .dash-cancel-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .dash-cancel-btn:hover {
-    background: rgba(var(--error-rgb), 0.25);
-    color: var(--error-color);
 }
 
 /* ====================================================================
@@ -483,18 +388,6 @@
     }
 }
 
-@media (max-width: 480px) {
-    .header-gen-dashboard:not(.generating) {
-        width: 36px;
-        height: 36px;
-    }
-
-    .dash-badge {
-        padding: 5px 8px;
-        font-size: 0.75rem;
-    }
-}
-
 /* ====================================================================
    FAST AI MODEL SWITCHER POPOVER (Apple / Google 2026 Style)
    ==================================================================== */
@@ -507,6 +400,10 @@
 
 .header-gen-dashboard.unconfigured {
     opacity: 0.85;
+}
+
+.header-gen-dashboard.unconfigured .dash-model-chevron {
+    display: none;
 }
 
 .header-gen-dashboard.unconfigured .dash-model-label iconify-icon:not(.dash-model-chevron) {

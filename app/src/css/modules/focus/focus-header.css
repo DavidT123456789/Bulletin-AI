@@ -16,8 +16,8 @@
     /* Adjust height to account for header (matches .header height: 56px) */
     height: calc(100vh - 56px);
     /* Glassmorphism - Remise du flou Premium (transparence) */
-    background: rgba(244, 244, 245, 0.75);
-    /* Zinc 100 with lower opacity */
+    background: rgba(245, 245, 245, 0.75);
+    /* Neutral 100 with lower opacity */
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border-left: 1px solid var(--border-color);

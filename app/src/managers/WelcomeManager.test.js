@@ -338,6 +338,35 @@ describe('WelcomeManager', () => {
 
             expect(mockValidate).toHaveBeenCalledTimes(1);
         });
+
+        it('should keep input editable when a key is already saved and re-enable validation when edited', async () => {
+            const { DOM } = await import('../utils/DOM');
+            appState.albertApiKey = 'sk-existing-albert-key';
+
+            WelcomeManager.setupWelcomeModal();
+
+            expect(DOM.welcomeApiKeyInput.value).toBe('sk-existing-albert-key');
+            expect(DOM.welcomeApiKeyInput.disabled).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('validated')).toBe(true);
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+
+            // Editing the key unlocks the validate button in 'ready' state
+            DOM.welcomeApiKeyInput.value = 'sk-new-albert-key';
+            DOM.welcomeApiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('validated')).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(true);
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.textContent).toBe('Valider');
+
+            // Reverting to the already saved key restores 'validated' state without network call
+            DOM.welcomeApiKeyInput.value = 'sk-existing-albert-key';
+            DOM.welcomeApiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('validated')).toBe(true);
+            expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(false);
+            expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+        });
     });
 
     describe('handleRelaunchWelcomeGuide', () => {

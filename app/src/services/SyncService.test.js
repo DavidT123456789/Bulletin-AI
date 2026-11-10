@@ -209,6 +209,45 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(GoogleDriveProvider.needsReconnect()).toBe(true);
             expect(gapiSpy).not.toHaveBeenCalled();
         });
+
+        it('authorize() should trigger requestAccessToken immediately after GSI loads without waiting for _loadGapiClient()', async () => {
+            let resolveGapiClient;
+            let gapiClientResolved = false;
+            vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded').mockResolvedValue();
+            vi.spyOn(GoogleDriveProvider, '_loadGapiClient').mockImplementation(() => new Promise((r) => {
+                resolveGapiClient = () => {
+                    gapiClientResolved = true;
+                    r();
+                };
+            }));
+            vi.spyOn(GoogleDriveProvider, 'getUserInfo').mockResolvedValue(null);
+
+            let tokenCallback;
+            const requestAccessToken = vi.fn(() => {
+                // At the moment the OAuth popup is requested, _loadGapiClient has not resolved yet
+                expect(gapiClientResolved).toBe(false);
+                tokenCallback({ access_token: 'fresh-token', expires_in: 3600 });
+                resolveGapiClient();
+            });
+            const setToken = vi.fn();
+            window.google = {
+                accounts: {
+                    oauth2: {
+                        initTokenClient: vi.fn((cfg) => {
+                            tokenCallback = cfg.callback;
+                            return { requestAccessToken };
+                        })
+                    }
+                }
+            };
+            window.gapi = { client: { setToken } };
+
+            const result = await GoogleDriveProvider.authorize();
+
+            expect(result).toBe(true);
+            expect(requestAccessToken).toHaveBeenCalledWith({ prompt: '' });
+            expect(setToken).toHaveBeenCalledWith({ access_token: 'fresh-token' });
+        });
     });
 
     describe('GoogleDriveProvider._handleApiError()', () => {

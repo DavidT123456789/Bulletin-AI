@@ -326,7 +326,7 @@
 
     .student-list-table tbody tr {
         background: #ffffff !important;
-        border: 1px solid #d1d5db !important; /* Crisp gray border for print */
+        border: 1px solid #d4d4d4 !important; /* Crisp gray border for print */
         box-shadow: none !important; /* Remove shadows for cleaner print */
         border-radius: 8px !important;
         break-inside: avoid;
@@ -342,7 +342,7 @@
         color: black !important;
         font-weight: 600;
         padding: 6px 8px !important;
-        border-bottom: 2px solid #d1d5db !important;
+        border-bottom: 2px solid #d4d4d4 !important;
         font-size: 9pt;
         position: static !important;
     }
@@ -404,7 +404,7 @@
     .status-cell:not(:empty) {
         margin-right: 24px !important;
         padding-right: 24px !important;
-        border-right: 1px solid #d1d5db !important;
+        border-right: 1px solid #d4d4d4 !important;
     }
 
     /* --- Appreciation Block (Row 2 Full Width) --- */
@@ -424,7 +424,7 @@
         white-space: normal !important;
         font-size: 10pt;
         line-height: 1.5;
-        background: #f9fafb !important;
+        background: #f6f6f6 !important;
         padding: 12px 16px !important;
         border-radius: 6px !important;
         width: 100% !important;
@@ -448,7 +448,7 @@
     .status-badge-tag {
         font-size: 8pt;
         padding: 1px 4px;
-        border: 1px solid #d1d5db;
+        border: 1px solid #d4d4d4;
         background: transparent !important;
         color: black !important;
     }

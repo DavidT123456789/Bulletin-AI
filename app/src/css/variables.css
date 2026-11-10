@@ -3,17 +3,17 @@
    ==================================================================== */
 :root,
 [data-theme="light"] {
-    /* --- Niveau 1 : Primitives (Palette brute — ne jamais utiliser directement dans les composants) --- */
+    /* --- Niveau 1 : Primitives (Palette Neutre Pure "Carbone Mat" R=G=B — ne jamais utiliser directement dans les composants) --- */
     --palette-zinc-50: #fafafa;
-    --palette-zinc-100: #f4f4f5;
-    --palette-zinc-900: #18181b;
-    --palette-zinc-950: #09090b;
+    --palette-zinc-100: #f5f5f5;
+    --palette-zinc-900: #171717;
+    --palette-zinc-950: #0a0a0a;
 
-    /* --- Palette Nebula (Unified Blue/Purple - Light Mode) --- */
-    /* Primary: Blue (Standard Tailwind Blue 500) */
-    --primary-color: #3b82f6;
-    --primary-color-rgb: 59, 130, 246;
-    --primary-hover: #2563eb;
+    /* --- Palette Nebula (Default: Anthracite Graphite Doux - Light Mode) --- */
+    --primary-color: #26272a;
+    --primary-color-rgb: 38, 39, 42;
+    --primary-hover: #18191b;
+    --primary-btn-hover: color-mix(in srgb, var(--primary-color), white 9%);
     --primary-bright: var(--primary-color);
     --primary-bright-rgb: var(--primary-color-rgb);
 
@@ -23,12 +23,12 @@
     --accent-color: var(--brand-accent-color);
     --accent-rgb: var(--brand-accent-rgb);
 
-    /* --- Niveau 2 : Tokens Sémantiques Adaptatifs (Light Mode) --- */
-    --bg-color: #f7f7f8;
-    --bg-color-rgb: 247, 247, 248;
+    /* --- Niveau 2 : Tokens Sémantiques Adaptatifs (Light Mode — Neutre Pur R=G=B) --- */
+    --bg-color: #f6f6f6;
+    --bg-color-rgb: 246, 246, 246;
     /* Aligné avec le script anti-FOUC de app.html et ThemeManager */
     --bg-secondary: #ededed;
-    /* Muted Neutral Control Surfaces */
+    /* Muted Neutral Control Surfaces (Pure Neutral) */
     --bg-tertiary: #e5e5e5;
     /* Neutral 200 */
     --bg-hover: #e5e5e5;
@@ -40,28 +40,28 @@
     --surface-2: var(--palette-zinc-100);
     --surface-elevated: rgba(255, 255, 255, 0.88);
 
-    --border-subtle: rgba(24, 24, 27, 0.05);
-    --border-default: rgba(24, 24, 27, 0.08);
-    --border-color: rgba(24, 24, 27, 0.065);
+    --border-subtle: rgba(0, 0, 0, 0.05);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-color: rgba(0, 0, 0, 0.065);
     /* Crisp Neutral Border for high-precision table lines */
-    --border-color-strong: rgba(24, 24, 27, 0.09);
-    --border-color-hover: rgba(24, 24, 27, 0.18);
+    --border-color-strong: rgba(0, 0, 0, 0.11);
+    --border-color-hover: rgba(0, 0, 0, 0.18);
 
-    /* Texte : Zinc Neutral */
+    /* Texte : Carbone Mat (Neutre Pur R=G=B) */
     --text-primary: var(--palette-zinc-900);
-    /* Zinc 900 */
-    --text-secondary: #52525b;
-    --text-secondary-rgb: 82, 82, 91;
-    /* Zinc 600 */
-    --text-tertiary: #71717a;
-    /* Zinc 500 — WCAG AA compliant on Zinc 50 */
-    --text-quaternary: #a1a1aa;
-    /* Zinc 400 — Softest readable icon tint */
+    /* Neutral 900 (#171717) */
+    --text-secondary: #525252;
+    --text-secondary-rgb: 82, 82, 82;
+    /* Neutral 600 */
+    --text-tertiary: #737373;
+    /* Neutral 500 — WCAG AA compliant on Neutral 50 */
+    --text-quaternary: #a3a3a3;
+    /* Neutral 400 — Softest readable icon tint */
 
     /* --- Système Glassmorphism Unifié (Modern Tech) --- */
     /* Niveau 1 : Base (Panneaux fixes) */
-    --glass-base-bg: rgba(244, 244, 244, 0.8);
-    --glass-base-border: rgba(226, 232, 240, 0.6);
+    --glass-base-bg: rgba(245, 245, 245, 0.82);
+    --glass-base-border: rgba(0, 0, 0, 0.08);
     --glass-base-blur: 24px;
 
     /* Niveau 2 : Surface (Cartes interactions) */
@@ -95,8 +95,8 @@
     --slider-track-height-default: 4px;
     --slider-thumb-size-default: 16px;
     --slider-thumb-bg-default: #ffffff;
-    --slider-thumb-border-default: 1px solid rgba(161, 161, 170, 0.4);
-    --slider-thumb-shadow: 0 1px 4px rgba(15, 23, 42, 0.15), 0 1px 2px rgba(15, 23, 42, 0.1);
+    --slider-thumb-border-default: 1px solid rgba(163, 163, 163, 0.4);
+    --slider-thumb-shadow: 0 1px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
 
     /* Sliders IA / Premium */
     --slider-thumb-size-premium: 18px;
@@ -120,12 +120,13 @@
     --toggle-inset-small: 2px;
     --toggle-translate-small: 14px;
     --toggle-track-off: var(--bg-secondary);
-    --toggle-track-off-hover: #dedee2;
+    --toggle-track-off-hover: #dcdcdc;
     --toggle-track-on: var(--primary-color);
     --toggle-track-on-hover: color-mix(in srgb, var(--primary-color), white 9%);
     --toggle-knob-off: #ffffff;
-    --toggle-knob-on: #ffffff;
+    --toggle-knob-on: var(--text-on-primary);
     --toggle-knob-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --checkbox-check-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='white' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
     /* Input border width (single source of truth) */
     --input-border-width: 1px;
@@ -135,11 +136,11 @@
     --input-fill-bg: var(--bg-secondary);
     --card-input-padding: 12px 16px;
 
-    /* Ombres "Lift" (Satin soft) */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-    --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
-    --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.15);
+    /* Ombres "Lift" (Satin soft — Neutre Pur) */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+    --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.15);
     --shadow-elevation: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
 
     /* --- Couleurs Sémantiques (Vives mais dosées) --- */
@@ -209,24 +210,24 @@
     --icon-btn-color: var(--text-tertiary);
     --icon-stroke-width: 1.3px;
     --icon-btn-hover: var(--text-primary);
-    --icon-btn-muted: rgba(161, 161, 170, 0.7);
+    --icon-btn-muted: rgba(163, 163, 163, 0.7);
 
-    /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
-    --item-idle-bg: rgba(0, 0, 0, 0.02);
-    --item-hover-bg: rgba(0, 0, 0, 0.03);
-    --item-active-bg: rgba(0, 0, 0, 0.05);
+    /* Universal Interactive Item Hover (Neutral Pur R=G=B) */
+    --item-idle-bg: rgba(0, 0, 0, 0.024);
+    --item-hover-bg: rgba(0, 0, 0, 0.04);
+    --item-active-bg: rgba(0, 0, 0, 0.065);
     --item-hover-bg-elevated: var(--bg-tertiary);
 
     /* Tonal Control & Capsule Surfaces (Single Source of Truth) */
-    --tonal-bg: rgba(0, 0, 0, 0.045);
-    --tonal-hover-bg: rgba(0, 0, 0, 0.08);
-    --tonal-active-bg: rgba(0, 0, 0, 0.11);
+    --tonal-bg: rgba(0, 0, 0, 0.048);
+    --tonal-hover-bg: rgba(0, 0, 0, 0.082);
+    --tonal-active-bg: rgba(0, 0, 0, 0.115);
 
     --purple-color: #9333ea;
     --purple-rgb: 147, 51, 234;
     --purple-light: rgba(147, 51, 234, 0.15);
 
-    --neutral-light: rgba(161, 161, 170, 0.15);
+    --neutral-light: rgba(163, 163, 163, 0.15);
 
     --info-color: #3b82f6;
     --info-rgb: 59, 130, 246;
@@ -242,8 +243,8 @@
     --surface-alert-bg: rgba(var(--error-rgb), 0.06);
     --input-background: var(--surface-color);
     --primary-color-light: rgba(var(--primary-color-rgb), 0.12);
-    --text-tertiary-rgb: 113, 113, 122;
-    --text-quaternary-rgb: 161, 161, 170;
+    --text-tertiary-rgb: 115, 115, 115;
+    --text-quaternary-rgb: 163, 163, 163;
     --radius-full: 9999px;
     --warning-light-text: var(--warning-dark);
     --danger-color: var(--error-color);
@@ -313,7 +314,7 @@
     --brand-purple-rgb: var(--brand-accent-rgb);
 
     /* Standard UI Highlight / Drop Target (Neutral Minimalist — Independent of custom accent colors) */
-    --highlight-standard-border: rgba(24, 24, 27, 0.45);
+    --highlight-standard-border: rgba(23, 23, 23, 0.45);
     --highlight-standard-bg: rgba(0, 0, 0, 0.04);
     --highlight-standard-glow: rgba(0, 0, 0, 0.07);
     --highlight-standard-rim: 0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -355,9 +356,9 @@
     --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
     --modal-backdrop-blur: 8px;
     --modal-bg: var(--surface-color);
-    --modal-scene-bg: #f2f2f5;
+    --modal-scene-bg: #f3f3f3;
     --modal-radius: var(--radius-lg);
-    --modal-border: 1px solid rgba(24, 24, 27, 0.07);
+    --modal-border: 1px solid rgba(0, 0, 0, 0.07);
     --modal-shadow: var(--shadow-lg);
 
     /* --- Niveau 3 : Tokens de Composants Préfixés (Sans collision) --- */
@@ -401,10 +402,6 @@
     --close-btn-size: 32px;
     --close-btn-icon-size: 18px;
 
-    /* --- Guide Panel Tokens --- */
-    --guide-panel-bg: rgba(244, 244, 245, 0.5);
-    /* Zinc 100 equiv */
-
     /* --- Card Item Tokens (Single Source of Truth for list items in modals) --- */
     /* Repos : contour fin neutre, pas d'ombre */
     --card-item-bg: var(--surface-color);
@@ -417,27 +414,33 @@
 
     /* --- Identité IA Satin Subtil (Fixe — indépendante de [data-accent]) --- */
     --ai-satin-bg:
-        linear-gradient(112deg, #ffffff 0%, #f4f7fb 52%, #edf2f9 100%) padding-box,
-        linear-gradient(108deg, rgba(59, 130, 246, 0.22) 0%, rgba(148, 163, 184, 0.20) 50%, rgba(99, 102, 241, 0.22) 100%) border-box;
+        linear-gradient(112deg, #ffffff 0%, #f5f7fa 55%, #ebeff5 100%) padding-box,
+        linear-gradient(108deg, rgba(71, 107, 135, 0.22) 0%, rgba(148, 163, 184, 0.22) 50%, rgba(51, 65, 85, 0.25) 100%) border-box;
     --ai-satin-hover-bg:
-        linear-gradient(112deg, #ffffff 0%, #eef3fb 50%, #e5edf8 100%) padding-box,
-        linear-gradient(108deg, rgba(37, 99, 235, 0.35) 0%, rgba(148, 163, 184, 0.28) 50%, rgba(79, 70, 229, 0.35) 100%) border-box;
+        linear-gradient(112deg, #f8fafc 0%, #eef2f7 52%, #e2e9f2 100%) padding-box,
+        linear-gradient(108deg, rgba(71, 107, 135, 0.36) 0%, rgba(100, 116, 139, 0.30) 50%, rgba(42, 51, 61, 0.38) 100%) border-box;
     --ai-satin-text: #1e293b;
     --ai-satin-hover-text: #0f172a;
     --ai-satin-shadow: inset 0 1px 0 #ffffff;
     --ai-satin-shine-small: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
     --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 25%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.28) 75%, transparent 100%);
-    --ai-icon-color: #2563eb;
-    --ai-icon-hover-color: #1d4ed8;
-    --ai-icon-hover-filter: drop-shadow(0 0 4px rgba(37, 99, 235, 0.22));
-    --ai-icon-tint-bg: rgba(37, 99, 235, 0.10);
+    --ai-icon-color: #476b87;
+    --ai-icon-hover-color: #334e68;
+    --ai-icon-hover-filter: drop-shadow(0 0 4px rgba(71, 107, 135, 0.22));
+    --ai-icon-tint-bg: rgba(71, 107, 135, 0.10);
     --ai-kbd-bg: rgba(15, 23, 42, 0.05);
     --ai-kbd-border: rgba(15, 23, 42, 0.09);
     --ai-kbd-color: #64748b;
+    --ai-progress-base: rgba(71, 107, 135, 0.28);
+    --ai-progress-mid: rgba(56, 98, 134, 0.56);
+    --ai-progress-beam: #1f4e78;
+    --ai-progress-shadow: 0 2px 10px rgba(31, 78, 120, 0.12);
+    --ai-progress-fill: linear-gradient(90deg, rgba(71, 107, 135, 0.08) 0%, rgba(56, 98, 134, 0.15) 100%);
+    --ai-progress-fill-border: rgba(71, 107, 135, 0.16);
 }
 
 [data-theme="dark"] {
-    /* Obsidian Graphite Dark Mode (50/50 Zinc–Carbon Calibration) */
+    /* Obsidian Doux Dark Mode (Point médian exact +1/+2 bleu entre Carbone #171717 et l'ancien #18181a) */
 
     --purple-color: #a78bfa;
     /* Violet 400 */
@@ -445,45 +448,45 @@
     --purple-light: rgba(167, 139, 250, 0.15);
 
     /* Dark Mode Neutral Tint */
-    --neutral-light: rgba(162, 162, 166, 0.15);
-    /* Graphite 400 tint */
+    --neutral-light: rgba(162, 162, 164, 0.15);
+    /* Obsidian 400 tint */
 
     --bg-color: #0c0c0d;
     --bg-color-rgb: 12, 12, 13;
-    /* Obsidian 950 */
-    --bg-secondary: #18181a;
-    /* Obsidian 900 */
-    --bg-tertiary: #262628;
-    /* Obsidian 800 */
+    /* Obsidian 950 (+1 bleu) */
+    --bg-secondary: #171718;
+    /* Obsidian 900 (+1 bleu) */
+    --bg-tertiary: #262627;
+    /* Obsidian 800 (+1 bleu) */
 
-    --surface-color: #18181a;
-    /* Obsidian 900 */
-    --surface-color-rgb: 24, 24, 26;
-    --surface-1: #18181a;
-    --surface-2: #262628;
-    --surface-elevated: rgba(24, 24, 26, 0.88);
+    --surface-color: #171718;
+    /* Obsidian 900 (+1 bleu) */
+    --surface-color-rgb: 23, 23, 24;
+    --surface-1: #171718;
+    --surface-2: #262627;
+    --surface-elevated: rgba(23, 23, 24, 0.88);
     --modal-scene-bg: var(--bg-color);
     --modal-border: 1px solid rgba(255, 255, 255, 0.07);
 
-    --bg-hover: #262628;
-    /* Obsidian 800 */
+    --bg-hover: #262627;
+    /* Obsidian 800 (+1 bleu) */
     --border-subtle: rgba(255, 255, 255, 0.045);
     --border-default: rgba(255, 255, 255, 0.08);
     --border-color: rgba(255, 255, 255, 0.06);
     /* Subtle neutral rim */
-    --border-color-strong: rgba(255, 255, 255, 0.085);
+    --border-color-strong: rgba(255, 255, 255, 0.11);
     --border-color-hover: rgba(255, 255, 255, 0.2);
 
-    --text-primary: #f8f8f8;
-    /* Graphite 50 */
-    --text-secondary: #a2a2a6;
-    /* Graphite 400 */
-    --text-secondary-rgb: 162, 162, 166;
-    --text-tertiary: #727276;
-    /* Graphite 500 */
-    --text-tertiary-rgb: 114, 114, 118;
-    --text-quaternary: #a2a2a6;
-    --text-quaternary-rgb: 162, 162, 166;
+    --text-primary: #f6f6f7;
+    /* Obsidian 100 (+1 bleu) */
+    --text-secondary: #a2a2a4;
+    /* Obsidian 400 (+2 bleu) */
+    --text-secondary-rgb: 162, 162, 164;
+    --text-tertiary: #727274;
+    /* Obsidian 500 (+2 bleu) */
+    --text-tertiary-rgb: 114, 114, 116;
+    --text-quaternary: #a2a2a4;
+    --text-quaternary-rgb: 162, 162, 164;
     --surface-alert-bg: rgba(var(--error-rgb), 0.08);
     --warning-light-text: var(--warning-dark);
 
@@ -492,7 +495,7 @@
     /* Obsidian 950 */
     --glass-base-border: rgba(255, 255, 255, 0.06);
 
-    --glass-surface-bg: rgba(24, 24, 26, 0.75);
+    --glass-surface-bg: rgba(23, 23, 24, 0.75);
     /* Obsidian 900 */
     --glass-surface-border: rgba(255, 255, 255, 0.06);
 
@@ -563,9 +566,6 @@
     --color-blue-bright: #93c5fd;
     --color-blue-bright-rgb: 147, 197, 253;
     --color-blue-deep: #3b82f6;
-    --primary-hover: #60a5fa;
-    --primary-bright: var(--color-blue-bright);
-    --primary-bright-rgb: var(--color-blue-bright-rgb);
 
     /* Grade Range Colors (Dark Mode — Luminous & Crisp) */
     --grade-range-0-4: #ef5b54;
@@ -580,11 +580,8 @@
     --grade-range-16-20-rgb: 36, 184, 122;
 
     /* --- Universal Card Style --- */
-    --card-glass-bg: #18181a;
+    --card-glass-bg: #171718;
     --card-glass-border: rgba(255, 255, 255, 0.06);
-
-    /* --- Guide Panel Tokens --- */
-    --guide-panel-bg: rgba(255, 255, 255, 0.03);
 
     /* --- Card Item Tokens (Dark Mode) --- */
     --card-item-hover-border-color: rgba(var(--primary-color-rgb), 0.35);
@@ -605,7 +602,7 @@
     --tonal-active-bg: rgba(255, 255, 255, 0.14);
 
     /* --- Dropdown System Tokens (Dark Mode Single Source of Truth) --- */
-    --dropdown-bg: rgba(24, 24, 26, 0.96);
+    --dropdown-bg: rgba(23, 23, 24, 0.96);
     --dropdown-bg-glass: var(--dropdown-bg);
     --dropdown-border: 1px solid rgba(255, 255, 255, 0.10);
     --dropdown-border-glass: var(--dropdown-border);
@@ -637,18 +634,50 @@
     --ai-kbd-bg: rgba(255, 255, 255, 0.07);
     --ai-kbd-border: rgba(255, 255, 255, 0.11);
     --ai-kbd-color: #94a3b8;
+    --ai-progress-base: rgba(148, 163, 184, 0.22);
+    --ai-progress-mid: rgba(186, 208, 232, 0.54);
+    --ai-progress-beam: rgba(255, 255, 255, 0.94);
+    --ai-progress-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --ai-progress-fill: linear-gradient(90deg, rgba(148, 163, 184, 0.09) 0%, rgba(186, 208, 232, 0.17) 100%);
+    --ai-progress-fill-border: rgba(186, 208, 232, 0.20);
     --toggle-track-off: rgba(255, 255, 255, 0.12);
     --toggle-track-off-hover: rgba(255, 255, 255, 0.18);
     --toggle-track-on: var(--primary-color);
     --toggle-track-on-hover: color-mix(in srgb, var(--primary-color), white 9%);
     --toggle-knob-off: #ffffff;
-    --toggle-knob-on: #ffffff;
+    --toggle-knob-on: var(--text-on-primary);
     --toggle-knob-shadow: 0 1px 2px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.28);
 }
 
 /* ====================================================================
    ACCENT COLOR PRESETS (Pure CSS — Light & Dark Mode Calibrated)
    ==================================================================== */
+[data-theme="dark"]:not([data-accent]) {
+    /* Default Anthracite in Dark Mode: Inverted Obsidian Platinum (+3 bleu) for high contrast on dark surfaces */
+    --primary-color: #ebecee;
+    --primary-color-rgb: 235, 236, 238;
+    --primary-hover: #ffffff;
+    --primary-btn-hover: #ffffff;
+    --primary-bright: #f4f5f6;
+    --primary-bright-rgb: 244, 245, 246;
+    --text-on-primary: #171718;
+    --toggle-track-on-hover: #ffffff;
+    --checkbox-check-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='%23171718' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+[data-accent="blue"] {
+    --primary-color: #3b82f6;
+    --primary-color-rgb: 59, 130, 246;
+    --primary-hover: #2563eb;
+    --primary-bright: #3b82f6;
+    --primary-bright-rgb: 59, 130, 246;
+}
+
+[data-theme="dark"][data-accent="blue"] {
+    --primary-hover: #60a5fa;
+    --primary-bright: var(--color-blue-bright);
+    --primary-bright-rgb: var(--color-blue-bright-rgb);
+}
 [data-accent="purple"] {
     --primary-color: #8b5cf6;
     --primary-color-rgb: 139, 92, 246;

@@ -11,7 +11,7 @@ export const ColorUtils = {
             r: parseInt(result[1], 16),
             g: parseInt(result[2], 16),
             b: parseInt(result[3], 16)
-        } : { r: 59, g: 130, b: 246 };
+        } : { r: 51, g: 59, b: 75 };
     },
 
     rgbToHsl(r, g, b) {
@@ -83,6 +83,7 @@ export const ColorUtils = {
 };
 
 export const PRESET_HEX_MAP = {
+    anthracite: '#26272a',
     blue: '#3b82f6',
     purple: '#8b5cf6',
     pink: '#ec4899',
@@ -94,14 +95,16 @@ export const PRESET_HEX_MAP = {
 export const ThemeManager = {
     currentResolvedTheme: 'light',
     systemMediaQuery: null,
-    VALID_ACCENTS: ['blue', 'purple', 'pink', 'orange', 'green', 'teal'],
+    VALID_ACCENTS: ['anthracite', 'blue', 'purple', 'pink', 'orange', 'green', 'teal'],
     _lastCustomHex: '',
     _CUSTOM_CSS_VARS: [
         '--primary-color',
         '--primary-color-rgb',
         '--primary-hover',
         '--primary-bright',
-        '--primary-bright-rgb'
+        '--primary-bright-rgb',
+        '--text-on-primary',
+        '--checkbox-check-icon'
     ],
 
     isValidHex(val) {
@@ -123,7 +126,7 @@ export const ThemeManager = {
     normalizeAccent(val) {
         if (this.VALID_ACCENTS.includes(val)) return val;
         if (this.isValidHex(val)) return val.trim().toLowerCase();
-        return 'blue';
+        return 'anthracite';
     },
 
     init() {
@@ -144,7 +147,7 @@ export const ThemeManager = {
     hydrateFromLocalStorage() {
         try {
             let storedTheme = localStorage.getItem('bulletin_theme') || '';
-            let storedAccent = '';
+            let storedAccent = localStorage.getItem('bulletin_accent') || '';
 
             const rawState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY) ||
                              localStorage.getItem('bulletin_app_state') ||
@@ -154,7 +157,12 @@ export const ThemeManager = {
                 if (!storedTheme) {
                     storedTheme = state?.settings?.theme || state?.theme || state?.ui?.theme || '';
                 }
-                storedAccent = state?.settings?.accentColor || state?.accentColor || state?.ui?.accentColor || '';
+                if (!storedAccent) {
+                    const stateAccent = state?.settings?.accentColor || state?.accentColor || state?.ui?.accentColor || '';
+                    if (stateAccent && stateAccent !== 'blue') {
+                        storedAccent = stateAccent;
+                    }
+                }
             }
 
             if (['light', 'dark', 'system'].includes(storedTheme)) {
@@ -213,7 +221,7 @@ export const ThemeManager = {
                 const alreadyCustom = this.isValidHex(appState.accentColor);
                 const seedHex = alreadyCustom
                     ? appState.accentColor
-                    : (this.getSavedCustomHex() || PRESET_HEX_MAP[appState.accentColor] || '#3b82f6');
+                    : (this.getSavedCustomHex() || (appState.accentColor !== 'anthracite' && PRESET_HEX_MAP[appState.accentColor]) || '#3b82f6');
 
                 if (panel) {
                     const willOpen = alreadyCustom ? !panel.classList.contains('open') : true;
@@ -362,6 +370,9 @@ export const ThemeManager = {
         if (UIState?.settingsBeforeEdit && UIState.settingsBeforeEdit.accentColor !== undefined) {
             UIState.settingsBeforeEdit.accentColor = validColor;
         }
+        try {
+            if (persist) localStorage.setItem('bulletin_accent', validColor);
+        } catch (e) {}
         this.applyAccentColor(validColor, syncControls);
         if (persist) {
             StorageManager.saveAppState();
@@ -375,7 +386,7 @@ export const ThemeManager = {
 
         if (!isCustom) {
             this._CUSTOM_CSS_VARS.forEach(prop => rootStyle.removeProperty(prop));
-            if (validColor === 'blue') {
+            if (validColor === 'anthracite') {
                 delete document.documentElement.dataset.accent;
             } else {
                 document.documentElement.dataset.accent = validColor;
@@ -397,12 +408,20 @@ export const ThemeManager = {
             const brightL = isDark ? Math.max(70, Math.min(84, hsl.l + 18)) : Math.min(hsl.l, 50);
             const brightRgb = (!isDark && hsl.l <= 50) ? rgb : ColorUtils.hslToRgb(hsl.h, hsl.s, brightL);
             const brightHex = (!isDark && hsl.l <= 50) ? validColor : ColorUtils.rgbToHex(brightRgb.r, brightRgb.g, brightRgb.b);
+            const isLightPrimary = hsl.l > 68;
+            const textOnPrimary = isLightPrimary ? '#171717' : '#ffffff';
 
             rootStyle.setProperty('--primary-color', validColor);
             rootStyle.setProperty('--primary-color-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
             rootStyle.setProperty('--primary-hover', hoverHex);
             rootStyle.setProperty('--primary-bright', brightHex);
             rootStyle.setProperty('--primary-bright-rgb', `${brightRgb.r}, ${brightRgb.g}, ${brightRgb.b}`);
+            rootStyle.setProperty('--text-on-primary', textOnPrimary);
+            if (isLightPrimary) {
+                rootStyle.setProperty('--checkbox-check-icon', `url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='%23171717' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`);
+            } else {
+                rootStyle.removeProperty('--checkbox-check-icon');
+            }
         }
 
         const savedCustom = this.getSavedCustomHex();
@@ -433,7 +452,7 @@ export const ThemeManager = {
             effectiveTheme = 'dark';
         }
 
-        const bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f7f7f8';
+        const bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f6f6f6';
 
         document.documentElement.dataset.theme = effectiveTheme;
         document.documentElement.style.backgroundColor = bgColor;
@@ -454,6 +473,7 @@ export const ThemeManager = {
 
         try {
             if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
+            if (appState.accentColor) localStorage.setItem('bulletin_accent', this.normalizeAccent(appState.accentColor));
         } catch (e) {}
 
         this.currentResolvedTheme = effectiveTheme;

@@ -11,10 +11,10 @@
 
 /* Thème "custom-theme" - Style Premium Inversé (iOS / Material 2026) */
 .tippy-box[data-theme~='custom-theme'] {
-    background-color: rgba(38, 38, 40, 0.88);
-    /* Obsidian 800 avec transparence (Verre dépoli) */
-    color: #f8f8f8;
-    /* Graphite 50 - Texte toujours clair (inversé) */
+    background-color: rgba(38, 38, 38, 0.88);
+    /* Carbon 800 avec transparence (Verre dépoli) */
+    color: #f5f5f5;
+    /* Neutral 100 - Texte toujours clair (inversé) */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);

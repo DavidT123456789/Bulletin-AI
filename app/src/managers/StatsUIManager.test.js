@@ -371,7 +371,7 @@ describe('StatsUIManager', () => {
             `;
         });
 
-        it('should keep evolution legend in blueprint standby ("—") with status badge in S1', async () => {
+        it('should keep evolution legend in blueprint standby ("--") with status badge in S1', async () => {
             const { appState } = await import('../state/State.js');
             const { Utils } = await import('../utils/Utils.js');
             Utils.getPeriods.mockReturnValue(['S1', 'S2']);
@@ -390,9 +390,44 @@ describe('StatsUIManager', () => {
             expect(evolutionCard.classList.contains('is-empty')).toBe(true);
             expect(badge.style.display).toBe('');
             expect(badge.textContent).toBe('Dès le S2');
-            expect(progressStat.textContent).toBe('—');
+            expect(progressStat.textContent).toBe('--');
             expect(progressItem.getAttribute('tabindex')).toBe('-1');
             expect(progressItem.getAttribute('aria-disabled')).toBe('true');
+        });
+
+        it('should keep all 3 cards coherent in empty state ("--", no "0" histogram counts, no "vs S1" badge) when S2 has no grades', async () => {
+            const { appState } = await import('../state/State.js');
+            const { Utils } = await import('../utils/Utils.js');
+            const { StatsService } = await import('../services/StatsService.js');
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            StatsService.getGradeDistribution.mockReturnValue([0, 0, 0, 0, 0]);
+            appState.currentPeriod = 'S2';
+            appState.filteredResults = [
+                { studentData: { periods: { S1: { grade: 12 }, S2: { grade: '' } } } }
+            ];
+
+            const perfCard = document.createElement('div');
+            perfCard.id = 'performanceCard';
+            document.body.appendChild(perfCard);
+
+            await StatsUI.updateStats();
+
+            const evolutionCard = document.getElementById('evolutionCard');
+            const badge = document.getElementById('evolutionStatusBadge');
+            const progressStat = document.getElementById('classEvolutionProgressStat');
+            const stableStat = document.getElementById('classEvolutionStableStat');
+            const regressionStat = document.getElementById('classEvolutionRegressionStat');
+            const bar0_4 = document.querySelector('.hist-bar-group[data-range="0-4"]');
+
+            expect(perfCard.classList.contains('is-empty')).toBe(true);
+            expect(evolutionCard.classList.contains('is-empty')).toBe(true);
+            expect(badge.style.display).toBe('none');
+            expect(badge.textContent).toBe('');
+            expect(progressStat.textContent).toBe('--');
+            expect(stableStat.textContent).toBe('--');
+            expect(regressionStat.textContent).toBe('--');
+            expect(bar0_4.hasAttribute('data-count')).toBe(false);
+            expect(bar0_4.getAttribute('aria-disabled')).toBe('true');
         });
 
         it('should activate evolution legend and show comparison period badge in S2', async () => {

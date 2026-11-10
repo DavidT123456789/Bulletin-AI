@@ -51,7 +51,7 @@ export const MassImportManager = {
                 'info'
             );
 
-            UI.showHeaderProgress(0, studentsToProcess.length, 'Démarrage...');
+            UI.showHeaderProgress(0, studentsToProcess.length);
 
             for (const [index, studentData] of studentsToProcess.entries()) {
                 if (signal.aborted) {
@@ -59,12 +59,7 @@ export const MassImportManager = {
                     break;
                 }
 
-                // Afficher le nom de l'élève en cours dans la barre de progression
-                const studentName = `${studentData.prenom || ''} ${studentData.nom || ''}`.trim();
-                const generationStartTime = performance.now();
-
-                // Mettre à jour l'affichage avec le nom (le temps sera mis à jour après)
-                UI.showHeaderProgress(index + 1, studentsToProcess.length, studentName);
+                UI.showHeaderProgress(index + 1, studentsToProcess.length);
 
                 // Marquer la rangée courante comme "en cours de génération"
                 const resultId = pendingCards[index];
@@ -84,10 +79,6 @@ export const MassImportManager = {
                 try {
                     newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, signal);
                     successCount++;
-
-                    // Calculer et afficher le temps de génération
-                    const generationTime = ((performance.now() - generationStartTime) / 1000).toFixed(1);
-                    UI.showHeaderProgress(index + 1, studentsToProcess.length, `${studentName} (${generationTime}s)`);
 
                 } catch (e) {
                     // Vérifier si c'est une annulation (AbortError, signal aborted, ou message spécifique)
@@ -113,14 +104,9 @@ export const MassImportManager = {
                     if (e.message?.includes('429') || e.message?.toLowerCase().includes('quota')) {
                         const retrySec = typeof parseRetryDelay === 'function' ? parseRetryDelay(e.message) : null;
                         const waitTime = retrySec ? retrySec * 1000 : 5000;
-                        const waitLabel = `${Math.ceil(waitTime / 1000)}s`;
 
                         // Absorb into progress bar instead of spawning a separate toast
-                        UI.showHeaderProgress(
-                            index,
-                            studentsToProcess.length,
-                            `⏱️ Limite API – reprise dans ${waitLabel}`
-                        );
+                        UI.showHeaderProgress(index, studentsToProcess.length);
 
                         try {
                             if (AIService?.sleep) {

@@ -851,13 +851,32 @@ export const UI = {
     //  GENERATION STATUS CHIP (Header) - Progress + Errors unified
     // ====================================================================
 
+    _clearHeaderProgressTimers() {
+        if (this._hideProgressTimeout) {
+            clearTimeout(this._hideProgressTimeout);
+            this._hideProgressTimeout = null;
+        }
+        if (this._trickleProgressTimeout) {
+            clearTimeout(this._trickleProgressTimeout);
+            this._trickleProgressTimeout = null;
+        }
+    },
+
+    _resetHeaderProgressDOM(dashboard) {
+        dashboard.classList.remove('generating');
+        if (DOM.dashProgressFill) {
+            DOM.dashProgressFill.style.transition = '';
+            DOM.dashProgressFill.style.width = '0%';
+        }
+        this.updateDashboardCounts();
+    },
+
     /**
      * Shows the generation status on the dashboard
      * @param {number} current - Current count
      * @param {number} total - Total count
-     * @param {string} [studentName] - Current student name
      */
-    showHeaderProgress(current, total, studentName = '') {
+    showHeaderProgress(current, total) {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
@@ -879,36 +898,48 @@ export const UI = {
             if (isGeneratingBatch) this.updateTooltip(generateBtn, 'Cliquer pour annuler la génération');
         }
 
-        // Clear any pending progress hide timeouts
-        if (this._hideProgressTimeout) {
-            clearTimeout(this._hideProgressTimeout);
-            this._hideProgressTimeout = null;
-            dashboard.classList.remove('all-complete');
+        const stepKey = `${current}/${total}`;
+        const isDuplicateActiveStep =
+            dashboard.classList.contains('generating') &&
+            !this._hideProgressTimeout &&
+            this._lastProgressKey === stepKey;
+
+        // Update text
+        if (DOM.dashProgressText) {
+            DOM.dashProgressText.textContent = stepKey;
         }
+
+        if (isDuplicateActiveStep) {
+            return;
+        }
+
+        this._clearHeaderProgressTimers();
+        this._lastProgressKey = stepKey;
 
         // Show generating state
         dashboard.classList.add('generating');
 
-        // Update progress bar
-        const percent = total > 0 ? (current / total) * 100 : 0;
         if (DOM.dashProgressFill) {
-            DOM.dashProgressFill.style.width = `${percent}%`;
-
-            // Indeterminate state for single generation (active but 0%)
-            // This allows the "shine" animation to be visible even at 0% width if managed by CSS
-            // or forces a visual width for the effect
-            if (total === 1 && current === 0) {
-                DOM.dashProgressFill.classList.add('indeterminate');
-                // Force a visible width for the shine effect
-                DOM.dashProgressFill.style.width = '100%';
+            if (total <= 0 || (current === 0 && total > 1)) {
+                DOM.dashProgressFill.style.transition = '';
+                DOM.dashProgressFill.style.width = '0%';
             } else {
-                DOM.dashProgressFill.classList.remove('indeterminate');
-            }
-        }
+                const completed = Math.max(0, current - 1);
+                const milestonePercent = Math.min(96, Math.round(((completed + 0.25) / total) * 1000) / 10);
+                const tricklePercent = Math.min(98, Math.round(((completed + 0.88) / total) * 1000) / 10);
 
-        // Update text
-        if (DOM.dashProgressText) {
-            DOM.dashProgressText.textContent = `${current}/${total}`;
+                DOM.dashProgressFill.style.transition = 'width 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
+                DOM.dashProgressFill.style.width = `${milestonePercent}%`;
+
+                const trickleDelay = completed === 0 ? 40 : 220;
+                this._trickleProgressTimeout = setTimeout(() => {
+                    this._trickleProgressTimeout = null;
+                    if (DOM.dashProgressFill && dashboard.classList.contains('generating')) {
+                        DOM.dashProgressFill.style.transition = 'width 4.2s cubic-bezier(0.12, 0.55, 0.12, 1)';
+                        DOM.dashProgressFill.style.width = `${tricklePercent}%`;
+                    }
+                }, trickleDelay);
+            }
         }
     },
 
@@ -920,19 +951,11 @@ export const UI = {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
-        // Clear any existing timeouts to prevent overlapping runs
-        if (this._hideProgressTimeout) {
-            clearTimeout(this._hideProgressTimeout);
-            this._hideProgressTimeout = null;
-        }
+        this._clearHeaderProgressTimers();
+        this._lastProgressKey = null;
 
         const cleanup = () => {
-            dashboard.classList.remove('generating');
-            if (DOM.dashProgressFill) {
-                DOM.dashProgressFill.style.width = '0%';
-            }
-            this.updateDashboardCounts();
-            dashboard.classList.remove('all-complete');
+            this._resetHeaderProgressDOM(dashboard);
             this._hideProgressTimeout = null;
 
             // Retirer l'état loading et réactiver
@@ -959,12 +982,11 @@ export const UI = {
                 }
             }
             if (DOM.dashProgressFill) {
-                DOM.dashProgressFill.classList.remove('indeterminate');
+                DOM.dashProgressFill.style.transition = 'width 0.26s cubic-bezier(0.22, 1, 0.36, 1)';
                 DOM.dashProgressFill.style.width = '100%';
             }
 
             // Keep the dynamic pill visible at 100% (e.g. 1/1) for 1 second to let the user see the transition
-            dashboard.classList.add('all-complete');
             this._hideProgressTimeout = setTimeout(() => {
                 cleanup();
             }, 1000); // 1 second visibility delay
@@ -974,112 +996,58 @@ export const UI = {
     },
 
     /**
-     * Updates the dashboard with current class statistics
-     * Called after any generation, import, or data change
+     * Updates the header AI model indicator & onboarding state
+     * Called after any generation, import, or settings change
      */
     updateDashboardCounts() {
-        const results = appState.filteredResults || appState.generatedResults || [];
-        const currentPeriod = appState.currentPeriod;
-
-        let validated = 0;
-        let pending = 0;
-        for (const result of results) {
-            // Skip errors — they are handled by the Smart Action Button in the table
-            if (result.errorMessage && result.errorPeriod === currentPeriod) continue;
-            if (Utils.isStudentDepartedBeforePeriod(result, currentPeriod)) continue;
-
-            if (Utils.isPendingForPeriod(result, currentPeriod)) {
-                pending++;
-            } else if (!Utils.isPlaceholderAppreciation(Utils.getPeriodAppreciation(result, currentPeriod))) {
-                validated++;
-            }
-        }
-
-        // Update validated count
-        if (DOM.dashValidatedCount) {
-            DOM.dashValidatedCount.textContent = validated;
-        }
-
-        // Pending badge hidden in ultra-minimalist mode (count shown in Generate button)
-
-        // Determine provider config & availability for active model
         const model = appState.currentAIModel || '';
         const providerId = getProviderForModel(model);
         const providerConfig = PROVIDER_CONFIG[providerId] || PROVIDER_CONFIG.openrouter;
-
-        // Check availability
         const isKeyConfigured = hasValidApiKey(providerId, { state: appState });
+        const iconEl = DOM.dashModelLabel?.querySelector('.dash-model-icon') || DOM.dashModelLabel?.querySelector('iconify-icon:not(.dash-model-chevron)');
 
-        const chevronEl = DOM.dashModelLabel?.querySelector('.dash-model-chevron');
+        if (iconEl) {
+            iconEl.removeAttribute('style');
+            Array.from(iconEl.classList)
+                .filter(c => c.startsWith('provider-'))
+                .forEach(c => iconEl.classList.remove(c));
+        }
 
+        let tooltip = '';
         if (!isKeyConfigured) {
-            // Unconfigured state
             if (DOM.dashModelName) {
                 DOM.dashModelName.textContent = "Configurer l'IA";
             }
-            if (DOM.headerGenDashboard) {
-                DOM.headerGenDashboard.classList.add('unconfigured');
-                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100% gratuit)</span>`;
-                if (TooltipsUI && TooltipsUI.updateTooltip) {
-                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
-                } else {
-                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
-                }
-            }
-            if (chevronEl) chevronEl.style.display = 'none';
-
-            const iconEl = DOM.dashModelLabel?.querySelector('.dash-model-icon') || DOM.dashModelLabel?.querySelector('iconify-icon:not(.dash-model-chevron)');
             if (iconEl) {
-                iconEl.removeAttribute('style');
-                const classesToRemove = Array.from(iconEl.classList).filter(c => c.startsWith('provider-'));
-                classesToRemove.forEach(c => iconEl.classList.remove(c));
                 iconEl.setAttribute('icon', 'solar:key-linear');
             }
+            tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100% gratuit)</span>`;
         } else {
-            // Configured state
-            if (DOM.headerGenDashboard) {
-                DOM.headerGenDashboard.classList.remove('unconfigured');
-            }
-            if (chevronEl) chevronEl.style.display = '';
-
             const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
             const shortModelName = providerId === 'albert' ? 'Albert' : modelName.split(' ')[0];
 
             if (DOM.dashModelName) {
                 DOM.dashModelName.textContent = shortModelName;
             }
-
-            if (DOM.dashModelLabel && providerConfig) {
-                const iconEl = DOM.dashModelLabel.querySelector('.dash-model-icon') || DOM.dashModelLabel.querySelector('iconify-icon:not(.dash-model-chevron)');
-                if (iconEl) {
-                    iconEl.removeAttribute('style');
-                    const classesToRemove = Array.from(iconEl.classList).filter(c => c.startsWith('provider-'));
-                    classesToRemove.forEach(c => iconEl.classList.remove(c));
-
-                    iconEl.setAttribute('icon', providerConfig.icon);
-                    if (providerConfig.style) {
-                        iconEl.setAttribute('style', providerConfig.style);
-                    }
-                    if (providerConfig.class) {
-                        iconEl.classList.add(providerConfig.class);
-                    }
+            if (iconEl && providerConfig) {
+                iconEl.setAttribute('icon', providerConfig.icon);
+                if (providerConfig.style) {
+                    iconEl.setAttribute('style', providerConfig.style);
+                }
+                if (providerConfig.class) {
+                    iconEl.classList.add(providerConfig.class);
                 }
             }
-
-            if (DOM.headerGenDashboard) {
-                const tooltip = modelName;
-                if (TooltipsUI && TooltipsUI.updateTooltip) {
-                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
-                } else {
-                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
-                }
-            }
+            tooltip = modelName;
         }
 
-        // Add all-complete state if everything is done
         if (DOM.headerGenDashboard) {
-            const allDone = validated > 0 && pending === 0;
-            DOM.headerGenDashboard.classList.toggle('all-complete', allDone);
+            DOM.headerGenDashboard.classList.toggle('unconfigured', !isKeyConfigured);
+            if (TooltipsUI?.updateTooltip) {
+                TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
+            } else {
+                DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
+            }
         }
     },
 
@@ -1090,22 +1058,14 @@ export const UI = {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
-        // Clear any pending timeouts
-        if (this._hideProgressTimeout) {
-            clearTimeout(this._hideProgressTimeout);
-            this._hideProgressTimeout = null;
-        }
+        this._clearHeaderProgressTimers();
+        this._lastProgressKey = null;
 
-        dashboard.classList.remove('generating', 'all-complete');
-
-        if (DOM.dashProgressFill) {
-            DOM.dashProgressFill.style.width = '0%';
-        }
         if (DOM.dashProgressText) {
             DOM.dashProgressText.textContent = '0/0';
         }
 
-        this.updateDashboardCounts();
+        this._resetHeaderProgressDOM(dashboard);
     },
 
     showSettingsTab(tabName) {
@@ -1541,7 +1501,7 @@ export const UI = {
     _supportMilestoneKey: 'bulletin-ai-support-milestone-v1',
     _supportMinGenerations: 30,
     _supportMinSeatingActions: 3,
-    _supportCooldownMs: 60 * 24 * 60 * 60 * 1000, // 60 jours (~1 trimestre)
+    _supportCooldownMs: 40 * 24 * 60 * 60 * 1000, // 40 jours (couvre 1 session de bulletins sans bloquer le trimestre suivant)
     _supportSeatingDebounceMs: 10 * 60 * 1000,    // 10 min entre 2 placements de la même classe
 
     _getSupportMilestoneState() {
@@ -1584,7 +1544,7 @@ export const UI = {
     /**
      * Enregistre un jalon d'usage réel et affiche une notification sobre
      * uniquement en fin de tâche (lot terminé, export/copie de classe ou 3e plan de classe),
-     * avec un délai de grâce trimestriel (60 jours) et zéro rappel après clic.
+     * avec un délai de grâce de 40 jours et zéro rappel après clic.
      *
      * @param {'generation'|'batch-complete'|'bulletin-export'|'seating-action'} event
      * @param {number} [count=1]
@@ -1633,7 +1593,7 @@ export const UI = {
             return false;
         }
 
-        // Garde anti-intrusion : jamais si déjà cliqué ou affiché durant les 60 derniers jours
+        // Garde anti-intrusion : jamais si déjà cliqué ou affiché durant les 40 derniers jours
         if ((Number(state.supportClickedAt) || 0) > 0) return false;
         if ((Number(state.lastShownAt) || 0) > 0 && (now - Number(state.lastShownAt) < this._supportCooldownMs)) {
             return false;

@@ -781,7 +781,7 @@ describe('UIManager', () => {
             spy.mockRestore();
         });
 
-        it('déclenche la notification en fin de lot après >= 30 générations puis applique le cooldown de 60 jours', () => {
+        it('déclenche la notification en fin de lot après >= 30 générations puis applique le cooldown de 40 jours', () => {
             const spy = vi.spyOn(UI, 'showNotification');
             const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
@@ -798,6 +798,19 @@ describe('UIManager', () => {
             // Cooldown immédiat : un export suivant ne doit pas réafficher le toast
             expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(false);
             expect(spy).toHaveBeenCalledTimes(1);
+
+            // À J+39 (< 40 jours) : toujours bloqué par le cooldown
+            const stateAt39d = UI._getSupportMilestoneState();
+            stateAt39d.lastShownAt = Date.now() - (39 * 24 * 60 * 60 * 1000);
+            UI._saveSupportMilestoneState(stateAt39d);
+            expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(false);
+
+            // À J+41 (> 40 jours) : autorisé à nouveau tant que le lien n'a pas été cliqué
+            const stateAt41d = UI._getSupportMilestoneState();
+            stateAt41d.lastShownAt = Date.now() - (41 * 24 * 60 * 60 * 1000);
+            UI._saveSupportMilestoneState(stateAt41d);
+            expect(UI.recordSupportMilestone('bulletin-export', 1, { delayMs: 0 })).toBe(true);
+            expect(spy).toHaveBeenCalledTimes(2);
 
             // Clic sur le bouton d'action ouvre Ko-fi et désactive définitivement le rappel
             spy.mock.calls[0][3].action.onClick();
@@ -907,6 +920,73 @@ describe('UIManager', () => {
 
             expect(btn.classList.contains('btn-neutral')).toBe(true);
             expect(btn.textContent.trim()).toBe('Régénérer');
+        });
+    });
+
+    describe('showHeaderProgress, hideHeaderProgress & resetHeaderProgress (Pilule dynamique)', () => {
+        let dashboard;
+        let fill;
+        let text;
+
+        beforeEach(async () => {
+            const { DOM } = await import('../utils/DOM.js');
+            dashboard = document.createElement('div');
+            fill = document.createElement('div');
+            text = document.createElement('span');
+
+            DOM.headerGenDashboard = dashboard;
+            DOM.dashProgressFill = fill;
+            DOM.dashProgressText = text;
+            UI.resetHeaderProgress();
+        });
+
+        it('anime progressivement la jauge (impulsion puis dérive asymptotique) sur une génération unitaire (0/1)', () => {
+            UI.showHeaderProgress(0, 1);
+
+            expect(dashboard.classList.contains('generating')).toBe(true);
+            expect(text.textContent).toBe('0/1');
+            expect(fill.style.width).toBe('25%');
+
+            vi.advanceTimersByTime(40);
+            expect(fill.style.width).toBe('88%');
+            expect(fill.style.transition).toContain('4.2s');
+
+            UI.hideHeaderProgress(false);
+            expect(text.textContent).toBe('1/1');
+            expect(fill.style.width).toBe('100%');
+
+            vi.advanceTimersByTime(1000);
+            expect(dashboard.classList.contains('generating')).toBe(false);
+            expect(fill.style.width).toBe('0%');
+        });
+
+        it('enchaine les paliers et ignore les appels dupliqués pour un même élève en lot (ex. 1/8 -> 3/8)', () => {
+            UI.showHeaderProgress(0, 8);
+            expect(fill.style.width).toBe('0%');
+            expect(text.textContent).toBe('0/8');
+
+            UI.showHeaderProgress(1, 8);
+            expect(fill.style.width).toBe('3.1%');
+            vi.advanceTimersByTime(40);
+            expect(fill.style.width).toBe('11%');
+
+            // Appel dupliqué pour le même palier : ne réinitialise pas la dérive
+            fill.style.width = '9.5%';
+            UI.showHeaderProgress(1, 8);
+            expect(fill.style.width).toBe('9.5%');
+
+            // Passage à l'élève 3/8 : impulsion de franchissement puis dérive lente
+            UI.showHeaderProgress(3, 8);
+            expect(text.textContent).toBe('3/8');
+            expect(fill.style.width).toBe('28.1%');
+
+            vi.advanceTimersByTime(220);
+            expect(fill.style.width).toBe('36%');
+
+            // En cas d'erreur ou d'annulation, fermeture immédiate sans maintien à 100%
+            UI.hideHeaderProgress(true);
+            expect(dashboard.classList.contains('generating')).toBe(false);
+            expect(fill.style.width).toBe('0%');
         });
     });
 });

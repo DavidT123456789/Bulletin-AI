@@ -37,10 +37,6 @@ export function initDOM() {
     DOM.headerModelDropdown = document.getElementById('headerModelDropdown');
     DOM.dashModelLabel = document.getElementById('dashModelLabel');
     DOM.dashModelName = document.getElementById('dashModelName');
-    DOM.dashValidated = document.getElementById('dashValidated');
-    DOM.dashValidatedCount = document.getElementById('dashValidatedCount');
-    DOM.dashPending = document.getElementById('dashPending');
-    DOM.dashPendingCount = document.getElementById('dashPendingCount');
     DOM.dashGenerating = document.getElementById('dashGenerating');
     DOM.dashProgressFill = document.getElementById('dashProgressFill');
     DOM.dashProgressText = document.getElementById('dashProgressText');

@@ -5,15 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#0c0c0d">
+    <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f6f6f6">
     <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <!-- Immediate Anti-White-Flash & Theme Injection (0ms, before external CSS) -->
     <script>
         (function() {
             try {
                 var standaloneTheme = localStorage.getItem('bulletin_theme');
+                var standaloneAccent = localStorage.getItem('bulletin_accent');
                 var theme = standaloneTheme || '';
-                var accent = '';
+                var accent = standaloneAccent || '';
                 var rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
                                localStorage.getItem('bulletin_app_state') ||
                                localStorage.getItem('appreciationGeneratorState');
@@ -22,22 +23,27 @@
                     if (!theme) {
                         theme = (state.settings && state.settings.theme) || state.theme || (state.ui && state.ui.theme) || '';
                     }
-                    accent = (state.settings && state.settings.accentColor) || state.accentColor || (state.ui && state.ui.accentColor) || '';
+                    if (!accent) {
+                        var stateAccent = (state.settings && state.settings.accentColor) || state.accentColor || (state.ui && state.ui.accentColor) || '';
+                        if (stateAccent && stateAccent !== 'blue') {
+                            accent = stateAccent;
+                        }
+                    }
                 }
 
                 if (!theme) theme = 'light';
                 var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var effectiveTheme = (theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme) === 'dark' ? 'dark' : 'light';
-                var bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f7f7f8';
+                var bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f6f6f6';
 
-                var validAccents = ['blue', 'purple', 'pink', 'orange', 'green', 'teal'];
+                var validAccents = ['anthracite', 'blue', 'purple', 'pink', 'orange', 'green', 'teal'];
                 var customAccentHex = '';
                 var hexRegex = /^#[0-9a-fA-F]{6}$/;
                 if (hexRegex.test(accent)) {
                     customAccentHex = accent.toLowerCase();
-                } else if (accent === 'custom' || !accent) {
+                } else if (accent === 'custom') {
                     var storedCustomAccent = localStorage.getItem('bulletin_custom_accent') || '';
-                    if (accent === 'custom' && hexRegex.test(storedCustomAccent)) {
+                    if (hexRegex.test(storedCustomAccent)) {
                         customAccentHex = storedCustomAccent.toLowerCase();
                     }
                 }
@@ -52,7 +58,8 @@
                     document.documentElement.style.setProperty('--primary-hover', customAccentHex);
                     document.documentElement.style.setProperty('--primary-bright', customAccentHex);
                     document.documentElement.style.setProperty('--primary-bright-rgb', r + ', ' + g + ', ' + b);
-                } else if (validAccents.indexOf(accent) !== -1 && accent !== 'blue') {
+                    document.documentElement.style.setProperty('--text-on-primary', (0.299 * r + 0.587 * g + 0.114 * b) > 175 ? '#171717' : '#ffffff');
+                } else if (validAccents.indexOf(accent) !== -1 && accent !== 'anthracite') {
                     document.documentElement.dataset.accent = accent;
                 }
 
@@ -122,7 +129,7 @@
                 });
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
-                document.documentElement.style.backgroundColor = '#f7f7f8';
+                document.documentElement.style.backgroundColor = '#f6f6f6';
                 document.documentElement.style.colorScheme = 'light';
             }
         })();
@@ -132,7 +139,7 @@
             color-scheme: light dark;
         }
         html {
-            background-color: #f7f7f8;
+            background-color: #f6f6f6;
         }
         @media (prefers-color-scheme: dark) {
             html:not([data-theme="light"]) {
@@ -141,12 +148,12 @@
         }
         html[data-theme="dark"] {
             background-color: #0c0c0d;
-            color: #f8f8f8;
+            color: #f6f6f7;
             color-scheme: dark;
         }
         html[data-theme="light"] {
-            background-color: #f7f7f8;
-            color: #18181b;
+            background-color: #f6f6f6;
+            color: #171717;
             color-scheme: light;
         }
         body {
@@ -344,18 +351,6 @@
                                 <span id="dashModelName">Gemini</span>
                                 <iconify-icon class="dash-model-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                             </div>
-                            <!-- Validated count -->
-                            <span class="dash-badge dash-validated" id="dashValidated"
-                                data-tooltip="Appréciations validées">
-                                <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
-                                <span class="dash-count" id="dashValidatedCount">0</span>
-                            </span>
-                            <!-- Pending count -->
-                            <span class="dash-badge dash-pending" id="dashPending"
-                                data-tooltip="En attente de génération">
-                                <iconify-icon icon="solar:hourglass-line-linear"></iconify-icon>
-                                <span class="dash-count" id="dashPendingCount">0</span>
-                            </span>
                             <!-- Generating state overlay -->
                             <div class="dash-generating" id="dashGenerating">
                                 <div class="dash-progress-bar">
@@ -568,19 +563,19 @@
                                 <div class="legend-item" data-filter-id="progressCount" role="button" tabindex="0">
                                     <div class="legend-text">
                                         <span class="legend-label">Progrès</span>
-                                        <span class="legend-count" id="classEvolutionProgressStat">0</span>
+                                        <span class="legend-count" id="classEvolutionProgressStat">--</span>
                                     </div>
                                 </div>
                                 <div class="legend-item" data-filter-id="stableCount" role="button" tabindex="0">
                                     <div class="legend-text">
                                         <span class="legend-label">Stables</span>
-                                        <span class="legend-count" id="classEvolutionStableStat">0</span>
+                                        <span class="legend-count" id="classEvolutionStableStat">--</span>
                                     </div>
                                 </div>
                                 <div class="legend-item" data-filter-id="regressionCount" role="button" tabindex="0">
                                     <div class="legend-text">
                                         <span class="legend-label">Régression</span>
-                                        <span class="legend-count" id="classEvolutionRegressionStat">0</span>
+                                        <span class="legend-count" id="classEvolutionRegressionStat">--</span>
                                     </div>
                                 </div>
                             </div>
@@ -2467,31 +2462,35 @@
                                             </div>
                                             <div class="settings-row-control">
                                                 <div class="accent-color-selector" id="accentColorSelector" role="radiogroup" aria-label="Couleur d'accentuation">
-                                                    <button type="button" class="accent-color-swatch active" data-color="blue"
-                                                        style="--swatch-color: #3b82f6;" title="Bleu (Par défaut)" aria-label="Bleu">
+                                                    <button type="button" role="radio" aria-checked="true" class="accent-color-swatch active" data-color="anthracite"
+                                                        title="Anthracite (Par défaut)" aria-label="Anthracite">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch" data-color="purple"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="blue"
+                                                        style="--swatch-color: #3b82f6;" title="Bleu" aria-label="Bleu">
+                                                        <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                                    </button>
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="purple"
                                                         style="--swatch-color: #8b5cf6;" title="Violet" aria-label="Violet">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch" data-color="pink"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="pink"
                                                         style="--swatch-color: #ec4899;" title="Rose" aria-label="Rose">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch" data-color="teal"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="teal"
                                                         style="--swatch-color: #06b6d4;" title="Océan" aria-label="Océan">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch" data-color="green"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="green"
                                                         style="--swatch-color: #10b981;" title="Émeraude" aria-label="Émeraude">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch" data-color="orange"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="orange"
                                                         style="--swatch-color: #f97316;" title="Ambre" aria-label="Ambre">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
-                                                    <button type="button" class="accent-color-swatch custom-picker" id="customAccentBtn" data-color="custom"
+                                                    <button type="button" role="radio" aria-checked="false" class="accent-color-swatch custom-picker" id="customAccentBtn" data-color="custom"
                                                         style="--swatch-color: #3b82f6;" title="Couleur personnalisée (Pipette & Curseurs)" aria-label="Couleur personnalisée">
                                                         <iconify-icon icon="ph:eyedropper-bold" class="accent-swatch-picker-icon"></iconify-icon>
                                                         <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
@@ -3555,9 +3554,7 @@
                                 data-form-type="other">
                             <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                         </div>
-                        <div class="error-message" id="welcomeApiKeyError"
-                            style="display: none; justify-content: center; margin-bottom: 10px; font-size: 0.9em;">
-                        </div>
+                        <div class="error-message" id="welcomeApiKeyError" style="display: none;"></div>
 
                         <div class="welcome-action-links">
                             <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer"
@@ -3608,33 +3605,35 @@
                     </div>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
-                    <!-- Transformation Illustration -->
+                    <!-- Transformation Illustration (Identité IA Satin Subtil) -->
                     <div class="welcome-transformation-svg">
                         <svg viewBox="-320 0 1560 280" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Gradients avec dominante orange mais pas exclusif -->
+    <!-- Contour Satin Subtil (Ardoise & Bleu Ciel IA) -->
     <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f97316"/>
-      <stop offset="50%" style="stop-color:#a855f7"/>
-      <stop offset="100%" style="stop-color:#ec4899"/>
+      <stop offset="0%" style="stop-color:var(--svg-border-start)"/>
+      <stop offset="50%" style="stop-color:var(--svg-border-mid)"/>
+      <stop offset="100%" style="stop-color:var(--svg-border-end)"/>
     </linearGradient>
 
-    <linearGradient id="docColorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff"/>
-      <stop offset="100%" style="stop-color:#fefefe"/>
+    <!-- Surface Satin Subtil (alignée sur --ai-satin-bg) -->
+    <linearGradient id="docColorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:var(--svg-doc-start)"/>
+      <stop offset="52%" style="stop-color:var(--svg-doc-mid)"/>
+      <stop offset="100%" style="stop-color:var(--svg-doc-end)"/>
     </linearGradient>
 
-    <!-- Dégradé chromatique adouci pour le rayonnement lumineux subtil de l'ombre (tons plus clairs et aérés) -->
+    <!-- Halo Satin Subtil (Bleu Ciel #7dd3fc & Ardoise) -->
     <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fba04b"/>
-      <stop offset="35%" stop-color="#fdba74"/>
-      <stop offset="65%" stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#f472b6"/>
+      <stop offset="0%" style="stop-color:var(--svg-glow-1)"/>
+      <stop offset="38%" style="stop-color:var(--svg-glow-2)"/>
+      <stop offset="72%" style="stop-color:var(--svg-glow-3)"/>
+      <stop offset="100%" style="stop-color:var(--svg-glow-4)"/>
     </linearGradient>
 
     <!-- Filter for glow -->
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -3643,16 +3642,16 @@
     
     <!-- Ombre neutre raffinée multi-niveaux (iOS style) pour le document -->
     <filter id="docShadowNeutral" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.07"/>
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.03"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.08"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
     </filter>
 
-    <!-- Rayonnement coloré d'ambiance (halo doux, large et aéré) -->
+    <!-- Rayonnement d'ambiance (halo doux, large et aéré) -->
     <filter id="radiantGlow" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="19" result="coloredBlur"/>
     </filter>
 
-    <!-- Ombre portée colorée directionnelle (diffuse et soyeuse) -->
+    <!-- Ombre portée directionnelle (diffuse et soyeuse) -->
     <filter id="intenseGlow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="10" result="sharpBlur"/>
     </filter>
@@ -3661,29 +3660,29 @@
   <!-- === SINGLE DOCUMENT THAT TRANSFORMS === -->
   <g transform="translate(380, 0)">
 
-    <!-- Rayonnement coloré progressif subtil (s'éveille avec délicatesse à mesure de la transformation) -->
+    <!-- Rayonnement Satin progressif subtil -->
     <g>
-      <animate attributeName="opacity" values="0;0;0.20;0.50;0.75;0.85;0.78;0.85;0" keyTimes="0;0.15;0.35;0.60;0.78;0.84;0.88;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <!-- Halo diffus coloré qui rayonne tout autour de la carte -->
-      <rect x="-8" y="32" width="176" height="216" rx="24" fill="url(#glowGradient)" opacity="0.48" filter="url(#radiantGlow)"/>
-      <!-- Ombre colorée directionnelle vers le bas -->
-      <rect x="2" y="46" width="156" height="198" rx="18" fill="url(#glowGradient)" opacity="0.52" filter="url(#intenseGlow)"/>
+      <animate attributeName="opacity" values="0;0;0.18;0.42;0.62;0.72;0.65;0.72;0" keyTimes="0;0.15;0.35;0.60;0.78;0.84;0.88;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <!-- Halo diffus qui rayonne tout autour de la carte -->
+      <rect x="-8" y="32" width="176" height="216" rx="24" fill="url(#glowGradient)" opacity="0.38" filter="url(#radiantGlow)"/>
+      <!-- Ombre directionnelle vers le bas -->
+      <rect x="2" y="46" width="156" height="198" rx="18" fill="url(#glowGradient)" opacity="0.42" filter="url(#intenseGlow)"/>
     </g>
 
     <!-- Base gray document (fades out) - SIMPLE RECTANGLE -->
     <g filter="url(#docShadowNeutral)">
       <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.1;0.2;1" dur="10s" repeatCount="indefinite"/>
-      <rect x="0" y="40" width="160" height="200" rx="16" fill="#e5e5e5" stroke="#ccc" stroke-width="1"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" style="fill:var(--bg-secondary);stroke:var(--border-color-strong)" stroke-width="1"/>
     </g>
 
-    <!-- Colorful document background (fades in) - fond blanc - SIMPLE RECTANGLE -->
+    <!-- Satin document background (fades in) - SIMPLE RECTANGLE -->
     <g filter="url(#docShadowNeutral)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.2;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <rect x="0" y="40" width="160" height="200" rx="16" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="2"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="1.5"/>
     </g>
 
-    <!-- Gray lines (fade out as colored ones appear) -->
-    <g fill="#999">
+    <!-- Gray lines (fade out as satin ones appear) -->
+    <g style="fill:var(--text-quaternary)" opacity="0.55">
       <rect x="20" y="80" width="100" height="8" rx="2">
         <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.15;0.22;1" dur="10s" repeatCount="indefinite"/>
       </rect>
@@ -3707,87 +3706,87 @@
       </rect>
     </g>
 
-    <!-- Colored lines appearing - mix orange et autres -->
-    <rect x="20" y="80" width="100" height="8" rx="2" fill="#f97316">
+    <!-- Satin lines appearing - harmonie Ardoise & Bleu Ciel IA (#7dd3fc / #476b87) -->
+    <rect x="20" y="80" width="100" height="8" rx="2" style="fill:var(--svg-line-title)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
       <animate attributeName="width" values="0;0;100;100;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
     </rect>
 
-    <rect x="20" y="100" width="120" height="8" rx="2" fill="#8b5cf6">
+    <rect x="20" y="100" width="120" height="8" rx="2" style="fill:var(--svg-line-accent-1)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
       <animate attributeName="width" values="0;0;120;120;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
     </rect>
 
-    <rect x="20" y="120" width="80" height="8" rx="2" fill="#fb923c">
+    <rect x="20" y="120" width="80" height="8" rx="2" style="fill:var(--svg-line-duotone)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
       <animate attributeName="width" values="0;0;80;80;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
     </rect>
 
-    <!-- Chart 1 - Bar chart avec vert et orange -->
+    <!-- Chart 1 - Bar chart (Ardoise, Bleu Duotone, Bleu Ciel #7dd3fc) -->
     <g transform="translate(20, 145)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.36;0.43;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <rect width="50" height="35" fill="#fafafa" rx="3" stroke="#e5e5e5" stroke-width="1"/>
-      <rect x="8" width="8" fill="#10b981" rx="1">
+      <rect width="50" height="35" rx="3" style="fill:var(--bg-secondary);stroke:var(--border-color-strong)" stroke-width="1"/>
+      <rect x="8" width="8" fill="#64748b" rx="1">
         <animate attributeName="height" values="0;0;10;10;0" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
         <animate attributeName="y" values="30;30;20;20;30" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
       </rect>
-      <rect x="21" width="8" fill="#f97316" rx="1">
+      <rect x="21" width="8" fill="#476b87" rx="1">
         <animate attributeName="height" values="0;0;18;18;0" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
         <animate attributeName="y" values="30;30;12;12;30" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
       </rect>
-      <rect x="34" width="8" fill="#22c55e" rx="1">
+      <rect x="34" width="8" fill="#38bdf8" rx="1">
         <animate attributeName="height" values="0;0;22;22;0" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
         <animate attributeName="y" values="30;30;8;8;30" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
       </rect>
     </g>
 
-    <!-- Chart 2 - Image area -->
+    <!-- Chart 2 - Courbe d'évolution Satin -->
     <g transform="translate(80, 145)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.50;0.57;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <rect width="55" height="35" fill="url(#magicGradient)" rx="3" opacity="0.3"/>
-      <circle cx="20" cy="15" fill="#fbbf24" opacity="0.8">
-        <animate attributeName="r" values="0;0;8;8;0" keyTimes="0;0.54;0.61;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect width="55" height="35" rx="3" style="fill:var(--bg-secondary);stroke:var(--border-color-strong)" stroke-width="1"/>
+      <circle cx="20" cy="15" fill="#7dd3fc" opacity="0.9">
+        <animate attributeName="r" values="0;0;6.5;6.5;0" keyTimes="0;0.54;0.61;0.92;1" dur="10s" repeatCount="indefinite"/>
       </circle>
-      <path d="M10 30 L25 20 L35 27 L50 18" stroke="#fff" stroke-width="2" fill="none" opacity="0.8" stroke-dasharray="60">
+      <path d="M10 30 L25 20 L35 27 L50 18" stroke="#476b87" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60">
         <animate attributeName="stroke-dashoffset" values="60;60;0;0;60" keyTimes="0;0.56;0.66;0.92;1" dur="10s" repeatCount="indefinite"/>
       </path>
     </g>
 
-    <!-- Bottom lines - mix -->
-    <rect x="20" y="195" width="110" height="8" rx="2" fill="#ec4899">
+    <!-- Bottom lines - Synthèse IA Satin -->
+    <rect x="20" y="195" width="110" height="8" rx="2" style="fill:var(--svg-line-accent-2)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
       <animate attributeName="width" values="0;0;110;110;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
     </rect>
 
-    <rect x="20" y="215" width="90" height="8" rx="2" fill="#fdba74">
+    <rect x="20" y="215" width="90" height="8" rx="2" style="fill:var(--svg-line-accent-3)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
       <animate attributeName="width" values="0;0;90;90;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
     </rect>
 
-    <!-- Sparkle effects - mix orange et autres -->
+    <!-- Sparkle effects (Étoiles IA Duotone : #7dd3fc & #476b87) -->
     <g>
       <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.78;0.85;0.92;1" dur="10s" repeatCount="indefinite"/>
       <g transform="translate(150, 50)">
-        <path d="M0 -6 L0 6 M-6 0 L6 0" stroke="#fbbf24" stroke-width="2" stroke-linecap="round">
+        <path d="M0 -6 L0 6 M-6 0 L6 0" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round">
           <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="7.8s" fill="freeze" repeatCount="indefinite"/>
         </path>
       </g>
       <g transform="translate(10, 185)">
-        <path d="M0 -4 L0 4 M-4 0 L4 0" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round">
+        <path d="M0 -4 L0 4 M-4 0 L4 0" stroke="#476b87" stroke-width="1.5" stroke-linecap="round">
           <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="8s" fill="freeze" repeatCount="indefinite"/>
         </path>
       </g>
       <g transform="translate(155, 230)">
-        <path d="M0 -5 L0 5 M-5 0 L5 0" stroke="#f97316" stroke-width="1.5" stroke-linecap="round">
+        <path d="M0 -5 L0 5 M-5 0 L5 0" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round">
           <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="8.2s" fill="freeze" repeatCount="indefinite"/>
         </path>
       </g>
     </g>
   </g>
 
-  <!-- === PARTICLES === -->
+  <!-- === PARTICLES (Palette Monochrome Duotone IA : #7dd3fc, #38bdf8, #476b87, #64748b, #94a3b8) === -->
   <g filter="url(#glow)">
-    <circle r="4" fill="#f97316">
+    <circle r="4" fill="#7dd3fc">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.6s" begin="0s" repeatCount="indefinite">
         <mpath href="#particlePath1"/>
@@ -3795,7 +3794,7 @@
     </circle>
     <path id="particlePath1" d="M-300 100 Q40 5 380 120" fill="none"/>
 
-    <circle r="3" fill="#8b5cf6">
+    <circle r="3" fill="#476b87">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.0s" begin="-0.5s" repeatCount="indefinite">
         <mpath href="#particlePath2"/>
@@ -3803,7 +3802,7 @@
     </circle>
     <path id="particlePath2" d="M-315 180 Q30 270 380 160" fill="none"/>
 
-    <circle r="3.5" fill="#fbbf24">
+    <circle r="3.5" fill="#38bdf8">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.2s" begin="-1.0s" repeatCount="indefinite">
         <mpath href="#particlePath3"/>
@@ -3811,7 +3810,7 @@
     </circle>
     <path id="particlePath3" d="M-285 140 Q60 140 380 140" fill="none"/>
 
-    <circle r="2.5" fill="#fb923c">
+    <circle r="2.5" fill="#64748b">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.4s" begin="-1.5s" repeatCount="indefinite">
         <mpath href="#particlePath4"/>
@@ -3819,7 +3818,7 @@
     </circle>
     <path id="particlePath4" d="M-310 45 Q20 200 380 100" fill="none"/>
 
-    <circle r="3" fill="#10b981">
+    <circle r="3" fill="#7dd3fc">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.8s" begin="-2.0s" repeatCount="indefinite">
         <mpath href="#particlePath5"/>
@@ -3827,7 +3826,7 @@
     </circle>
     <path id="particlePath5" d="M-290 230 Q50 160 380 190" fill="none"/>
 
-    <circle r="3.5" fill="#fdba74">
+    <circle r="3.5" fill="#476b87">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.2s" begin="-2.5s" repeatCount="indefinite">
         <mpath href="#particlePath6"/>
@@ -3835,7 +3834,7 @@
     </circle>
     <path id="particlePath6" d="M-320 65 Q40 130 380 85" fill="none"/>
 
-    <circle r="2.8" fill="#f59e0b">
+    <circle r="2.8" fill="#94a3b8">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.6s" begin="-3.0s" repeatCount="indefinite">
         <mpath href="#particlePath7"/>
@@ -3843,7 +3842,7 @@
     </circle>
     <path id="particlePath7" d="M-295 255 Q60 195 380 220" fill="none"/>
 
-    <circle r="3.2" fill="#ec4899">
+    <circle r="3.2" fill="#38bdf8">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.4s" begin="-3.5s" repeatCount="indefinite">
         <mpath href="#particlePath8"/>
@@ -3851,7 +3850,7 @@
     </circle>
     <path id="particlePath8" d="M-315 165 Q10 70 380 130" fill="none"/>
 
-    <circle r="2.5" fill="#ea580c">
+    <circle r="2.5" fill="#7dd3fc">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.8s" begin="-4.0s" repeatCount="indefinite">
         <mpath href="#particlePath9"/>
@@ -3859,7 +3858,7 @@
     </circle>
     <path id="particlePath9" d="M-290 30 Q70 155 380 70" fill="none"/>
 
-    <circle r="3" fill="#d97706">
+    <circle r="3" fill="#64748b">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.5s" begin="-4.5s" repeatCount="indefinite">
         <mpath href="#particlePath10"/>
@@ -3867,7 +3866,7 @@
     </circle>
     <path id="particlePath10" d="M-310 210 Q35 110 380 175" fill="none"/>
 
-    <circle r="2.8" fill="#fcd34d">
+    <circle r="2.8" fill="#476b87">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.1s" begin="-5.0s" repeatCount="indefinite">
         <mpath href="#particlePath11"/>
@@ -3875,7 +3874,7 @@
     </circle>
     <path id="particlePath11" d="M-285 85 Q65 40 380 95" fill="none"/>
 
-    <circle r="3.3" fill="#c2410c">
+    <circle r="3.3" fill="#38bdf8">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="6.5s" begin="-5.5s" repeatCount="indefinite">
         <mpath href="#particlePath12"/>

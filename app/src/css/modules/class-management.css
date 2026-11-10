@@ -739,13 +739,13 @@
 /* ⚪ À faire / Non commencé */
 .class-seating-badge.is-empty {
     background: var(--bg-secondary, rgba(0, 0, 0, 0.04));
-    color: var(--text-tertiary, #9ca3af);
+    color: var(--text-tertiary, #737373);
     opacity: 0.7;
 }
 
 [data-theme="dark"] .class-seating-badge.is-empty {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--text-tertiary, #9ca3af);
+    color: var(--text-tertiary, #737373);
 }
 
 /* ====================================================================
@@ -940,7 +940,7 @@
 
 #classManagementModal > .modal-content,
 #classManagementModal .modal-body {
-    background: var(--bg-secondary);
+    background: var(--modal-scene-bg, var(--bg-color));
 }
 
 #classManagementModal .modal-body {
@@ -975,11 +975,6 @@
     .modal-prompt-preview .modal-body:is(.can-scroll-top, .can-scroll-bottom) {
         padding-right: 17px;
     }
-}
-
-[data-theme="dark"] #classManagementModal > .modal-content,
-[data-theme="dark"] #classManagementModal .modal-body {
-    background: var(--bg-color);
 }
 
 /* ====================================================================

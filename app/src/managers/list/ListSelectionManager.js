@@ -498,7 +498,11 @@ export const ListSelectionManager = {
             ids = sortedIds;
         }
 
-        // 1. Initialize AbortController for global cancellation (Cancel button in header)
+        // 1. Clear visual selection immediately so the floating toolbar closes
+        // and rows transition cleanly to their "En file" / "Génération..." state
+        this.clearSelections();
+
+        // 2. Initialize AbortController for global cancellation (Cancel button in header)
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();
         }
@@ -506,16 +510,22 @@ export const ListSelectionManager = {
         MassImportManager.massImportAbortController = new AbortController();
         const signal = MassImportManager.massImportAbortController.signal;
 
+        const isSameBatchContext = () =>
+            (appState.currentClassId ?? null) === (batchClassId ?? null) &&
+            appState.currentPeriod === batchPeriod;
+
         let successCount = 0;
         let errorCount = 0;
         let wasAborted = false;
+        let stoppedIndex = 0;
         const total = ids.length;
 
-        // 2. Set visual state "Pending Skeleton" for all selected rows
+        // 3. Set visual state "Pending Skeleton" for all selected rows
         ids.forEach(id => this.callbacks.setRowStatus(id, 'pending-skeleton'));
 
-        // 3. Sequential processing loop
+        // 4. Sequential processing loop
         for (let i = 0; i < total; i++) {
+            stoppedIndex = i;
             if (signal.aborted) {
                 wasAborted = true;
                 break;
@@ -526,23 +536,18 @@ export const ListSelectionManager = {
             if (resultIndex === -1) continue;
 
             const originalResult = appState.generatedResults[resultIndex];
-            const studentName = `${originalResult.prenom} ${originalResult.nom}`;
 
-            UI.showHeaderProgress(i + 1, total, studentName);
+            UI.showHeaderProgress(i + 1, total);
 
             // Set current row status to "Generating" and sync focus panel if open
-            if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+            if (isSameBatchContext()) {
                 this.callbacks.setRowStatus(id, 'generating');
                 FocusPanelManager?.handleExternalGenerationStart?.(id);
             }
 
             try {
-                // Reset history for regeneration (fresh start)
-                originalResult.historyState = null;
-                originalResult.copied = false;
-
-                // Prepare Data
-                const updatedStudentData = { ...originalResult.studentData };
+                // Prepare Data (deep clone to avoid mutating original state if aborted)
+                const updatedStudentData = Utils.deepClone(originalResult.studentData || {});
                 updatedStudentData.id = id;
                 updatedStudentData.classId = originalResult.classId ?? batchClassId;
                 updatedStudentData.currentPeriod = batchPeriod;
@@ -554,7 +559,10 @@ export const ListSelectionManager = {
                 newResult.classId = originalResult.classId ?? batchClassId;
                 newResult.generationPeriod = batchPeriod;
 
-                // Update State (promptHash auto-computed by updateResult)
+                // Reset history state only after successful regeneration
+                originalResult.historyState = null;
+
+                // Update State (promptHash and copied=false handled by updateResult)
                 const updatedResult = StudentDataManager.updateResult(
                     appState.generatedResults[resultIndex],
                     newResult
@@ -567,7 +575,7 @@ export const ListSelectionManager = {
                 }
 
                 // Update UI Row and Focus Panel only if still on the same class/period
-                if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                if (isSameBatchContext()) {
                     this.callbacks.updateStudentRow(id);
                     await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
                 }
@@ -603,23 +611,29 @@ export const ListSelectionManager = {
                     appState.filteredResults[filteredIndex] = updatedErrorResult;
                 }
 
-                if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+                if (isSameBatchContext()) {
                     this.callbacks.updateStudentRow(id);
                     await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedErrorResult, false);
                 }
             }
         }
 
-        // 4. Cleanup & Feedback
+        // 5. Cleanup & Feedback
         appState.activeMassAction = null;
         MassImportManager.massImportAbortController = null;
         UI.hideHeaderProgress(errorCount > 0 || wasAborted);
-        this.clearSelections();
 
         if (wasAborted) {
-            UI.showNotification("Régénération annulée.", "warning");
-            // Restore visual state for all rows (clears "En file" / "Generated")
-            ids.forEach(id => this.callbacks.updateStudentRow(id));
+            const abortMsg = successCount > 0
+                ? `Régénération interrompue (${successCount}/${total} régénérée${successCount > 1 ? 's' : ''}).`
+                : 'Régénération annulée.';
+            UI.showNotification(abortMsg, 'warning');
+            // Restore visual state only for remaining rows still showing "En file" / "Génération..."
+            if (isSameBatchContext()) {
+                for (let j = stoppedIndex; j < total; j++) {
+                    this.callbacks.updateStudentRow(ids[j]);
+                }
+            }
         } else {
             const resultMsg = errorCount > 0
                 ? `Terminé avec ${errorCount} erreur(s).`
@@ -629,6 +643,9 @@ export const ListSelectionManager = {
         }
 
         StorageManager.saveAppState();
+        UI?.updateStats?.();
+        UI?.updateControlButtons?.();
+        ResultsUIManager?.updateGenerateButtonState?.();
     },
 
     async bulkCopy(ids) {

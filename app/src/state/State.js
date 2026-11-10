@@ -26,7 +26,7 @@ export const userSettings = {
     /** Préférences d'interface */
     ui: {
         theme: 'light',
-        accentColor: 'blue',
+        accentColor: 'anthracite',
         isAppreciationFullView: false,
         activeView: 'list', // 'list' | 'plan'
         seatingStatusDots: { ...DEFAULT_SEATING_STATUS_DOTS },

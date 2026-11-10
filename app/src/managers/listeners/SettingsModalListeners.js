@@ -1026,6 +1026,11 @@ export const SettingsModalListeners = {
         // Cloud sync - Google Drive connection
         if (DOM.connectGoogleBtn) {
             DOM.connectGoogleBtn.addEventListener('click', async () => {
+                if (DOM.connectGoogleBtn.disabled || CloudActionsManager.isBusy()) return;
+                if (!navigator.onLine) {
+                    UI.showNotification('Mode hors-ligne : vos modifications sont enregistrées sur cet appareil.', 'info');
+                    return;
+                }
                 try {
                     DOM.connectGoogleBtn.innerHTML = '<span class="icon-spin-wrapper"><iconify-icon icon="logos:google-drive"></iconify-icon></span> Connexion...';
                     DOM.connectGoogleBtn.disabled = true;

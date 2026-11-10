@@ -119,10 +119,12 @@ export const GoogleDriveProvider = {
                 return false;
             }
 
+            const gapiClientPromise = this._loadGapiClient();
+            gapiClientPromise.catch(() => {});
             await this._ensureGapiLoaded();
-            await this._loadGapiClient();
 
             if (hasValidSavedToken) {
+                await gapiClientPromise;
                 window.gapi.client.setToken({ access_token: this._token.access_token });
                 return true;
             }
@@ -133,7 +135,7 @@ export const GoogleDriveProvider = {
                 const tokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: GOOGLE_SCOPES,
-                    callback: (tokenResponse) => {
+                    callback: async (tokenResponse) => {
                         if (tokenResponse.error) {
                             // If silent refresh failed and we had a saved token, try with consent
                             if (options.silent && savedToken && tokenResponse.error === 'interaction_required') {
@@ -143,6 +145,14 @@ export const GoogleDriveProvider = {
                             } else {
                                 console.error('[GoogleDrive] Auth error:', tokenResponse.error);
                             }
+                            resolve(false);
+                            return;
+                        }
+
+                        try {
+                            await gapiClientPromise;
+                        } catch (error) {
+                            console.error('[GoogleDrive] GAPI client load failed:', error);
                             resolve(false);
                             return;
                         }
@@ -158,9 +168,8 @@ export const GoogleDriveProvider = {
                         this.getUserInfo().catch(() => {});
                         resolve(true);
                     },
-                    error_callback: (error) => {
+                    error_callback: () => {
                         // Called when user closes popup OR access is denied
-
                         resolve(false);
                     },
                 });

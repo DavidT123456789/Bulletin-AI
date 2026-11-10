@@ -1760,11 +1760,24 @@
 
 .accent-color-swatch.custom-picker .accent-swatch-check {
     position: absolute;
+    color: var(--text-on-primary, #ffffff);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .accent-color-swatch:hover {
         transform: scale(1.12);
+    }
+
+    .accent-color-swatch.custom-picker.active:hover .accent-swatch-picker-icon {
+        opacity: 1;
+        transform: scale(1);
+        color: var(--text-on-primary, #ffffff);
+        filter: none;
+    }
+
+    .accent-color-swatch.custom-picker.active:hover .accent-swatch-check {
+        opacity: 0;
+        transform: scale(0.5);
     }
 }
 
@@ -1773,9 +1786,13 @@
     box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--swatch-color, var(--primary-color));
 }
 
-.accent-color-swatch.active {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--swatch-color, var(--primary-color));
+.accent-color-swatch[data-color="anthracite"] {
+    --swatch-color: #262626;
+}
+
+[data-theme="dark"] .accent-color-swatch[data-color="anthracite"] {
+    --swatch-color: #ededed;
+    color: #171717;
 }
 
 .accent-color-swatch.active iconify-icon:not(.accent-swatch-picker-icon) {
@@ -1925,7 +1942,7 @@
 }
 
 .sat-slider-track {
-    background: linear-gradient(to right, var(--sat-start, #71717a), var(--sat-end, #3b82f6));
+    background: linear-gradient(to right, var(--sat-start, #737373), var(--sat-end, #3b82f6));
 }
 
 .lig-slider-track {

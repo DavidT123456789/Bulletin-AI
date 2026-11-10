@@ -281,9 +281,9 @@ export const ExportManager = {
             <div style="display:flex; justify-content:space-between; align-items:baseline;">
                 <h1 style="margin:0; font-size:16pt; font-weight:700; color:#111;">
                     ${classLabel || 'Appréciations'}
-                    <span style="font-weight:400; font-size:12pt; color:#6b7280; margin-left:8px;">${periodLabel}</span>
+                    <span style="font-weight:400; font-size:12pt; color:#525252; margin-left:8px;">${periodLabel}</span>
                 </h1>
-                <span style="font-size:9pt; color:#9ca3af;">${dateStr}</span>
+                <span style="font-size:9pt; color:#737373;">${dateStr}</span>
             </div>
         `;
 

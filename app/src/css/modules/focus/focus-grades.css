@@ -178,7 +178,7 @@
     opacity: 0.6;
     font-style: italic;
     color: var(--text-secondary);
-    border-bottom: 1.5px dotted rgba(var(--primary-color-rgb, 99, 102, 241), 0.5);
+    border-bottom: 1.5px dotted rgba(var(--primary-color-rgb), 0.5);
     transition: opacity 0.15s ease;
 }
 
@@ -195,7 +195,7 @@
 
 .focus-speaker-btn.playing {
     background: var(--primary-color) !important;
-    color: white !important;
+    color: var(--text-on-primary) !important;
     animation: speaker-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.25);
 }

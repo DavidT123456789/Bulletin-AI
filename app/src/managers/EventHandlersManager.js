@@ -120,7 +120,7 @@ export const EventHandlersManager = {
         const statId = element.dataset.filterId || element.dataset.statId;
         const isCurrentlyActive = element.classList.contains('active-filter');
 
-        if (!isCurrentlyActive && (element.closest('#evolutionCard.is-empty') || element.dataset.count === '0')) {
+        if (!isCurrentlyActive && (element.closest('#evolutionCard.is-empty') || element.dataset.count === '0' || element.getAttribute('aria-disabled') === 'true')) {
             return;
         }
 

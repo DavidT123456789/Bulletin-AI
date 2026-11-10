@@ -760,7 +760,7 @@
 }
 
 .sc-mode-tab:focus-visible {
-    outline: 2px solid var(--primary-color, #4f46e5);
+    outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
 
@@ -797,7 +797,7 @@
 }
 
 .sc-status-pill:focus-visible {
-    outline: 2px solid var(--primary-color, #4f46e5);
+    outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
 
@@ -933,7 +933,7 @@
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-virtual {
-    background: rgba(36, 36, 40, 0.65);
+    background: rgba(38, 38, 39, 0.65);
     color: var(--text-primary);
     border-color: rgba(255, 255, 255, 0.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);

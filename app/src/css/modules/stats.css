@@ -842,34 +842,45 @@
     transition: transform 0.35s var(--ease-spring);
 }
 
-/* Couleurs sémantiques minérales directes (actives en S2/T2+) */
-.evolution-card:not(.is-empty) .legend-item[data-filter-id="progressCount"] .legend-count {
+/* Couleurs sémantiques minérales directes (actives en S2/T2+ dès qu'au moins 1 élève est dans la catégorie) */
+.evolution-card:not(.is-empty) .legend-item[data-filter-id="progressCount"]:not([data-count="0"]) .legend-count {
     color: var(--grade-range-16-20);
 }
 
-.evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"] .legend-count {
+.evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"]:not([data-count="0"]) .legend-count {
     color: var(--text-secondary);
 }
 
-.evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"] .legend-count {
+.evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"]:not([data-count="0"]) .legend-count {
     color: var(--grade-range-0-4);
 }
 
-/* État Blueprint / Repos (S1/T1 sans période précédente) : symétrie Bento préservée */
+/* État Blueprint / Repos (aucune donnée ou 0 élève comparé) : symétrie Bento mutualisée */
 .evolution-card.is-empty .evolution-distribution-bar {
-    opacity: 0.65;
+    background-color: var(--border-color-strong);
+    opacity: 0.55;
     pointer-events: none;
 }
 
-.evolution-card.is-empty .legend-item {
+.performance-card.is-empty .detail-item:not(.active-filter),
+.performance-card .detail-item[data-count="0"]:not(.active-filter),
+.evolution-card.is-empty .legend-item:not(.active-filter),
+.evolution-card .legend-item[data-count="0"]:not(.active-filter) {
     opacity: 0.5;
     border-color: transparent;
     pointer-events: none;
     cursor: default;
 }
 
-.evolution-card.is-empty .legend-count {
+.performance-card.is-empty .detail-item .detail-value,
+.performance-card .detail-item[data-count="0"] .detail-value,
+.evolution-card.is-empty .legend-count,
+.evolution-card .legend-item[data-count="0"] .legend-count {
     color: var(--text-tertiary);
+}
+
+.evolution-card.is-empty .legend-item .legend-count::before {
+    content: none;
 }
 
 /* Muted variant for status badges (Dès le S2 / ⩾ 2 notes requises) */
@@ -1053,10 +1064,14 @@
                 opacity 0.2s ease;
 }
 
-.performance-card .detail-item[data-count="0"][role="button"],
-.hist-bar-group[data-count="0"][role="button"],
-.evolution-card .legend-item[data-count="0"][role="button"] {
+.hist-bar-group[data-count="0"]:not(.active-filter),
+.hist-bar-group:not([data-count]):not(.active-filter) {
+    pointer-events: none;
     cursor: default;
+}
+
+.hist-bar-group:not([data-count]) .hist-label {
+    opacity: 0.5;
 }
 
 /* Hover et états actifs unifiés en fin de fichier */
@@ -1351,43 +1366,43 @@
 
 /* 2. Style de survol unifié (Micro-élévation maîtrisée -2px) */
 @media (hover: hover) {
-    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
+    .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    .evolution-card:not(.is-empty) .legend-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover {
         transform: translateY(-2px);
         background: var(--surface-color);
         border-color: var(--border-color-hover);
         box-shadow: var(--shadow-sm);
     }
 
-    [data-theme="dark"] .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    [data-theme="dark"] .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    [data-theme="dark"] .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
+    [data-theme="dark"] .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    [data-theme="dark"] .evolution-card:not(.is-empty) .legend-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    [data-theme="dark"] .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover {
         background: var(--bg-tertiary);
         border-color: var(--border-color-strong);
         box-shadow: var(--shadow-sm);
     }
 
     /* Harmonisation des textes et valeurs (Haute lisibilité neutre au survol) */
-    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .detail-value,
-    .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"][role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-count,
-    .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover .hist-label,
-    .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover::before {
+    .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .detail-value,
+    .evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"][role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .legend-count,
+    .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .hist-label,
+    .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover::before {
         color: var(--text-primary);
     }
 
-    .performance-card .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .detail-label,
-    .evolution-card:not(.is-empty) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover .legend-label {
+    .performance-card .detail-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .detail-label,
+    .evolution-card:not(.is-empty) .legend-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .legend-label {
         color: var(--text-secondary);
     }
 
-    .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover .hist-bar {
+    .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover .hist-bar {
         filter: brightness(1.1) saturate(1.08);
     }
 
-    .performance-details:has(.detail-item.active-filter) .detail-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    .evolution-legend:has(.legend-item.active-filter) .legend-item[role="button"]:not([data-count="0"]):not(.active-filter):hover,
-    .histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group[role="button"]:not([data-count="0"]):not(.active-filter):hover {
+    .performance-details:has(.detail-item.active-filter) .detail-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    .evolution-legend:has(.legend-item.active-filter) .legend-item[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover,
+    .histogram-bars:has(.hist-bar-group.active-filter) .hist-bar-group[role="button"][data-count]:not([data-count="0"]):not(.active-filter):hover {
         opacity: 1;
     }
 }

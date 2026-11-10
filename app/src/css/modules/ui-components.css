@@ -155,7 +155,7 @@
 }
 
 .ui-stepper-step.active .ui-stepper-label {
-    color: #ffffff;
+    color: var(--text-on-primary);
 }
 
 .ui-stepper-step.completed .ui-stepper-label {

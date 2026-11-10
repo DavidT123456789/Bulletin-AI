@@ -933,9 +933,8 @@ export const ResultsUIManager = {
                 }
 
                 const resultToRegen = toRegen[i];
-                const studentName = `${resultToRegen.prenom || ''} ${resultToRegen.nom || ''}`.trim();
 
-                UI.showHeaderProgress(i + 1, total, studentName);
+                UI.showHeaderProgress(i + 1, total);
 
                 let nextResult = null;
                 let isSuccess = false;

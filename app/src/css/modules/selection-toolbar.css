@@ -28,14 +28,14 @@
         box-shadow 0.3s ease;
 
     box-shadow:
-        0 12px 32px -4px rgba(15, 23, 42, 0.12),
-        0 2px 6px -1px rgba(15, 23, 42, 0.05),
-        0 0 0 1px rgba(15, 23, 42, 0.06);
+        0 12px 32px -4px rgba(0, 0, 0, 0.12),
+        0 2px 6px -1px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(0, 0, 0, 0.06);
     pointer-events: none;
 }
 
 [data-theme="dark"] .selection-toolbar {
-    background: rgba(28, 28, 31, 0.94);
+    background: rgba(28, 28, 28, 0.94);
     border-color: rgba(255, 255, 255, 0.14);
     box-shadow:
         0 18px 42px -6px rgba(0, 0, 0, 0.70),
@@ -221,7 +221,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--text-on-primary);
     font-size: 1.5em;
     border-radius: inherit;
     opacity: 0;
@@ -237,41 +237,24 @@
     transform: scale(1);
 }
 
-/* === Row Selection Style === */
+/* === Row Selection Style (Pinned Hover State) === */
 .student-row:focus {
     outline: none;
 }
 
-.student-list-table tbody tr.selected td {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%);
-    border-bottom-color: rgba(var(--primary-color-rgb), 0.15);
-}
-
-[data-theme="dark"] .student-list-table tbody tr.selected td {
-    background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 12%);
-    border-bottom-color: rgba(var(--primary-bright-rgb), 0.18);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr.selected:hover td {
-        background: color-mix(in srgb, var(--surface-color), var(--primary-color) 15%);
-    }
-
-    [data-theme="dark"] .student-list-table tbody tr.selected:hover td {
-        background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 18%);
-    }
+.student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) td {
+    background-color: var(--item-hover-bg);
 }
 
 /* === Responsive Breakpoints (Adaptivity) === */
 @media (max-width: 768px) {
-    .student-list-table tbody tr.selected {
-        background: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--primary-color) 10%);
-        border-color: rgba(var(--primary-color-rgb), 0.3);
+    .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
+        background-color: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--text-primary) 3%);
+        border-color: var(--border-color-strong);
     }
 
-    [data-theme="dark"] .student-list-table tbody tr.selected {
-        background: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--primary-bright) 12%);
-        border-color: rgba(var(--primary-bright-rgb), 0.35);
+    [data-theme="dark"] .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
+        background-color: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--text-primary) 5.5%);
     }
 
     .selection-toolbar {

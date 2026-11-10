@@ -391,23 +391,27 @@ export const StatsUI = {
         // Utilise calculateStats sur l'effectif complet de la classe (stable lors du filtrage)
         const stats = this.calculateStats(statsSource, activePeriod, previousPeriod);
 
-        // --- Empty State & Context Badge: Evolution card ---
-        this._updateEvolutionCardEmptyState(previousPeriod, statsSource.length, stats);
+        // --- Empty State & Context Badge: Performance & Evolution cards ---
+        const hasGrades = typeof stats.avgGrade === 'number' && !isNaN(stats.avgGrade);
+        const performanceCard = document.getElementById('performanceCard');
+        if (performanceCard) {
+            performanceCard.classList.toggle('is-empty', !hasGrades);
+        }
 
-        const avgEvolution = (typeof stats.avgGrade === 'number' && typeof stats.prevAvgGrade === 'number')
+        const hasEvolutionData = this._updateEvolutionCardEmptyState(previousPeriod, statsSource.length, stats);
+
+        const avgEvolution = (hasGrades && typeof stats.prevAvgGrade === 'number')
             ? (stats.avgGrade - stats.prevAvgGrade)
             : null;
-
-        const hasEvolutionData = previousPeriod !== null;
 
         const elementsToAnimate = {
             currentAvgGradeOutput: stats.avgGrade,
             previousAvgGradeOutput: stats.prevAvgGrade,
             minAvgGradeOutput: stats.minGrade,
             maxAvgGradeOutput: stats.maxGrade,
-            classEvolutionProgressStat: hasEvolutionData ? stats.progress : '—',
-            classEvolutionStableStat: hasEvolutionData ? stats.stable : '—',
-            classEvolutionRegressionStat: hasEvolutionData ? stats.regression : '—',
+            classEvolutionProgressStat: hasEvolutionData ? stats.progress : '--',
+            classEvolutionStableStat: hasEvolutionData ? stats.stable : '--',
+            classEvolutionRegressionStat: hasEvolutionData ? stats.regression : '--',
         };
 
         for (const [id, value] of Object.entries(elementsToAnimate)) {
@@ -434,7 +438,7 @@ export const StatsUI = {
                 ...GRADE_BRACKET_CLASSES,
                 'grade-high', 'grade-average', 'grade-low' // Legacy classes cleanup
             );
-            if (typeof stats.avgGrade === 'number' && !isNaN(stats.avgGrade)) {
+            if (hasGrades) {
                 const gradeClass = Utils.getGradeClass(stats.avgGrade);
                 if (gradeClass) {
                     avgGradeEl.classList.add(gradeClass);
@@ -595,6 +599,7 @@ export const StatsUI = {
         if (!distribution || distribution.length !== 5) return;
         const maxCount = Math.max(...distribution);
         const totalCount = distribution.reduce((sum, n) => sum + n, 0);
+        const hasGrades = totalCount > 0;
         const ranges = GRADE_BRACKET_IDS;
 
         ranges.forEach((range, index) => {
@@ -608,8 +613,8 @@ export const StatsUI = {
                 const bar = barGroup.querySelector('.hist-bar');
                 if (bar) bar.style.height = `${Math.max(heightPercent, 4)}%`;
 
-                this._setFilterTileAccessibility(barGroup, count);
-                if (count > 0 && totalCount > 0) {
+                this._setFilterTileAccessibility(barGroup, count, hasGrades);
+                if (count > 0 && hasGrades) {
                     barGroup.setAttribute('data-tooltip', this._formatClassShareTooltip(count, totalCount));
                 } else {
                     barGroup.removeAttribute('data-tooltip');
@@ -667,10 +672,11 @@ export const StatsUI = {
      * @private
      */
     _updateEvolutionCardEmptyState(previousPeriod, studentCount, stats = null) {
+        const comparedCount = stats ? (stats.progress + stats.stable + stats.regression) : 0;
+        const hasEvolutionData = previousPeriod !== null && comparedCount > 0;
         const evolutionCard = document.getElementById('evolutionCard');
-        if (!evolutionCard) return;
+        if (!evolutionCard) return hasEvolutionData;
 
-        const hasEvolutionData = previousPeriod !== null;
         evolutionCard.classList.toggle('is-empty', !hasEvolutionData);
 
         const legendCounts = {
@@ -698,28 +704,28 @@ export const StatsUI = {
         }
 
         if (statusBadge) {
-            if (!hasEvolutionData) {
+            if (!previousPeriod && studentCount > 0) {
                 const isSemestre = appState.periodSystem === 'semestres';
                 statusBadge.className = 'homogeneity-badge muted tooltip';
-                statusBadge.textContent = studentCount === 0
-                    ? 'Aucun élève'
-                    : `Dès le ${isSemestre ? 'S2' : 'T2'}`;
+                statusBadge.textContent = `Dès le ${isSemestre ? 'S2' : 'T2'}`;
                 statusBadge.setAttribute(
                     'data-tooltip',
-                    studentCount === 0
-                        ? 'Ajoutez des élèves pour voir la dynamique'
-                        : `Disponible à partir du prochain ${isSemestre ? 'semestre' : 'trimestre'}`
+                    `Disponible à partir du prochain ${isSemestre ? 'semestre' : 'trimestre'}`
                 );
                 statusBadge.style.display = '';
-            } else {
-                const comparedCount = stats ? (stats.progress + stats.stable + stats.regression) : 0;
+            } else if (hasEvolutionData) {
                 statusBadge.className = 'homogeneity-badge plain-context tooltip';
-                statusBadge.textContent = comparedCount > 0
-                    ? `${comparedCount} élève${comparedCount > 1 ? 's' : ''} vs ${previousPeriod}`
-                    : `vs ${previousPeriod}`;
+                statusBadge.textContent = `${comparedCount} élève${comparedCount > 1 ? 's' : ''} vs ${previousPeriod}`;
                 statusBadge.setAttribute('data-tooltip', `Comparaison des moyennes avec ${previousPeriod}`);
                 statusBadge.style.display = '';
+            } else {
+                statusBadge.textContent = '';
+                statusBadge.removeAttribute('data-tooltip');
+                statusBadge.style.display = 'none';
+                statusBadge.className = 'homogeneity-badge';
             }
         }
+
+        return hasEvolutionData;
     }
 };

@@ -373,6 +373,7 @@ describe('CloudActionsManager', () => {
             expect(await CloudActionsManager.reconnect()).toBe(true);
             expect(SyncServiceMock.connect).toHaveBeenCalledWith('google', { skipStatusCheck: true });
             expect(SyncServiceMock._updateCloudIndicator).toHaveBeenCalledWith('connected');
+            expect(UI.showNotification).toHaveBeenCalledWith('Connecté à Google Drive', 'success');
             expect(SyncServiceMock.refreshStatus).toHaveBeenCalledWith({ showChecking: true });
             expect(SyncServiceMock.saveToCloud).not.toHaveBeenCalled();
             expect(SyncServiceMock.loadFromCloud).not.toHaveBeenCalled();
