@@ -10,6 +10,8 @@ const GOOGLE_CLIENT_ID = '685675322524-qgc51t16ebv68ljcoi5re8mhfmkh1094.apps.goo
 const GOOGLE_API_KEY = ''; // Optional: for additional API calls
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const SYNC_FILENAME = 'bulletin-ai-sync.json';
+/** 403 reasons that really mean the session must be renewed (others: rate limit, quota…) */
+const AUTH_ERROR_REASONS = ['authError', 'insufficientPermissions'];
 
 /** @type {boolean} Enable debug logs (set to false for production) */
 const DEBUG = false;
@@ -130,11 +132,13 @@ export const GoogleDriveProvider = {
             }
 
             // Request new authorization (or refresh expired token)
-            // Use 'none' prompt first to try silent refresh, fallback to 'consent' if needed
+            // login_hint targets the known account so Google skips the account chooser and closes the popup by itself
+            const knownEmail = this._readCachedUser()?.email;
             return new Promise((resolve) => {
                 const tokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: GOOGLE_SCOPES,
+                    ...(knownEmail && { login_hint: knownEmail }),
                     callback: async (tokenResponse) => {
                         if (tokenResponse.error) {
                             // If silent refresh failed and we had a saved token, try with consent
@@ -213,19 +217,29 @@ export const GoogleDriveProvider = {
     },
 
     /**
+     * Read the cached Google profile (survives token expiry, cleared on disconnect).
+     * @private
+     * @returns {{displayName: string, email: string, photo: string}|null}
+     */
+    _readCachedUser() {
+        const cached = localStorage.getItem('bulletin_google_user');
+        if (!cached) return null;
+        try {
+            return JSON.parse(cached);
+        } catch {
+            localStorage.removeItem('bulletin_google_user');
+            return null;
+        }
+    },
+
+    /**
      * Get user info (display name, email, photo) for the connected Google account.
      * Uses cached profile in localStorage if available, or fetches from Drive API about endpoint.
      * @returns {Promise<{displayName: string, email: string, photo: string}|null>}
      */
     async getUserInfo() {
-        const cached = localStorage.getItem('bulletin_google_user');
-        if (cached) {
-            try {
-                return JSON.parse(cached);
-            } catch {
-                localStorage.removeItem('bulletin_google_user');
-            }
-        }
+        const cached = this._readCachedUser();
+        if (cached) return cached;
 
         if (!this.isConnected()) {
             return null;
@@ -278,31 +292,29 @@ export const GoogleDriveProvider = {
     // =========================================================================
 
     /**
-     * Normalize and handle Google API errors (especially auth expiration).
+     * Normalize and handle Google API errors.
+     * Only genuine session failures (401, or 403 with an auth reason) drop the token:
+     * rate limits, quotas or network errors must not log the user out.
+     * The cached profile is kept so the next authorization can target the same account.
      * @private
-     * @param {*} error - Error caught from gapi or fetch
+     * @param {*} error - Error caught from gapi or fetch (fetch errors carry the JSON body in .result)
      * @param {string} [defaultMsg='Erreur Google Drive'] - Default message
      * @returns {Error} Normalized error with .status and .isAuthError
      */
     _handleApiError(error, defaultMsg = 'Erreur Google Drive') {
-        const status = error?.status || error?.result?.error?.code;
-        const statusText = error?.result?.error?.status;
-        const rawMsg = error?.result?.error?.message || error?.message;
+        const apiError = error?.result?.error;
+        const status = error?.status || apiError?.code;
+        const reason = apiError?.errors?.[0]?.reason;
+        const rawMsg = apiError?.message || error?.message;
 
         const isAuthError = status === 401 ||
-                            status === 403 ||
-                            statusText === 'UNAUTHENTICATED' ||
-                            (typeof rawMsg === 'string' && (
-                                rawMsg.includes('invalid authentication credentials') ||
-                                rawMsg.includes('Invalid Credentials') ||
-                                rawMsg.includes('auth')
-                            ));
+                            apiError?.status === 'UNAUTHENTICATED' ||
+                            (status === 403 && AUTH_ERROR_REASONS.includes(reason));
 
         if (isAuthError) {
             this._needsReconnect = true;
             this._token = null;
             localStorage.removeItem('bulletin_google_token');
-            localStorage.removeItem('bulletin_google_user');
         }
 
         const message = rawMsg || (isAuthError ? 'Session Google Drive expirée. Veuillez vous reconnecter.' : defaultMsg);
@@ -441,6 +453,7 @@ export const GoogleDriveProvider = {
                 const errorData = await response.json().catch(() => ({}));
                 const err = new Error(errorData?.error?.message || `Erreur Google Drive: HTTP ${response.status}`);
                 err.status = response.status;
+                err.result = errorData;
                 throw err;
             }
 

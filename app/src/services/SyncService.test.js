@@ -254,7 +254,96 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
         });
     });
 
+    describe('GoogleDriveProvider.authorize() login_hint', () => {
+        it('should pass the cached email as login_hint only when a valid profile is known', async () => {
+            vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded').mockResolvedValue();
+            vi.spyOn(GoogleDriveProvider, '_loadGapiClient').mockResolvedValue();
+            vi.spyOn(GoogleDriveProvider, 'getUserInfo').mockResolvedValue(null);
+            const initTokenClient = vi.fn((cfg) => ({
+                requestAccessToken: () => cfg.callback({ access_token: 'fresh-token', expires_in: 3600 })
+            }));
+            window.google = { accounts: { oauth2: { initTokenClient } } };
+            window.gapi = { client: { setToken: vi.fn() } };
+            const authorizeWithoutSavedToken = () => {
+                localStorage.removeItem('bulletin_google_token');
+                return GoogleDriveProvider.authorize();
+            };
+
+            await authorizeWithoutSavedToken();
+            expect(initTokenClient.mock.calls[0][0]).not.toHaveProperty('login_hint');
+
+            localStorage.setItem('bulletin_google_user', JSON.stringify({ email: 'prof@ac-paris.fr' }));
+            await authorizeWithoutSavedToken();
+            expect(initTokenClient.mock.calls[1][0].login_hint).toBe('prof@ac-paris.fr');
+
+            localStorage.setItem('bulletin_google_user', '{corrupted');
+            await authorizeWithoutSavedToken();
+            expect(initTokenClient.mock.calls[2][0]).not.toHaveProperty('login_hint');
+            expect(localStorage.getItem('bulletin_google_user')).toBeNull();
+        });
+    });
+
     describe('GoogleDriveProvider._handleApiError()', () => {
+        const apiError = (code, reason, message = 'Google error') => ({
+            status: code,
+            result: { error: { code, message, errors: [{ reason }] } }
+        });
+
+        beforeEach(() => {
+            GoogleDriveProvider._token = { access_token: 'valid-token', expiry: Date.now() + 3600000 };
+            localStorage.setItem('bulletin_google_token', JSON.stringify(GoogleDriveProvider._token));
+            localStorage.setItem('bulletin_google_user', JSON.stringify({ email: 'prof@ac-paris.fr' }));
+        });
+
+        it.each([
+            ['403 rate limit', apiError(403, 'userRateLimitExceeded', 'User Rate Limit Exceeded')],
+            ['403 storage quota', apiError(403, 'storageQuotaExceeded')],
+            ['500 with "auth" in message', apiError(500, 'backendError', 'OAuth backend unavailable')],
+            ['network failure', new TypeError('Failed to fetch')]
+        ])('should keep the session on transient error (%s)', (_label, error) => {
+            const err = GoogleDriveProvider._handleApiError(error);
+            expect(err.isAuthError).toBe(false);
+            expect(GoogleDriveProvider._needsReconnect).toBe(false);
+            expect(GoogleDriveProvider.isConnected()).toBe(true);
+            expect(localStorage.getItem('bulletin_google_token')).not.toBeNull();
+        });
+
+        it('should treat 403 insufficientPermissions as auth error but keep the cached profile for login_hint', () => {
+            const err = GoogleDriveProvider._handleApiError(apiError(403, 'insufficientPermissions'));
+            expect(err.isAuthError).toBe(true);
+            expect(GoogleDriveProvider._token).toBeNull();
+            expect(localStorage.getItem('bulletin_google_token')).toBeNull();
+            expect(JSON.parse(localStorage.getItem('bulletin_google_user')).email).toBe('prof@ac-paris.fr');
+        });
+
+        it('write() should not log out on a 403 rate limit returned by fetch', async () => {
+            GoogleDriveProvider._fileId = 'file-1';
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+                ok: false,
+                status: 403,
+                json: () => Promise.resolve(apiError(403, 'rateLimitExceeded', 'Rate Limit Exceeded').result)
+            });
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await expect(GoogleDriveProvider.write({})).rejects.toMatchObject({ status: 403, isAuthError: false });
+            expect(GoogleDriveProvider.isConnected()).toBe(true);
+            GoogleDriveProvider._fileId = null;
+        });
+
+        it('write() should flag a 401 returned by fetch as auth error', async () => {
+            GoogleDriveProvider._fileId = 'file-1';
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+                ok: false,
+                status: 401,
+                json: () => Promise.resolve(apiError(401, 'authError', 'Invalid Credentials').result)
+            });
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await expect(GoogleDriveProvider.write({})).rejects.toMatchObject({ status: 401, isAuthError: true });
+            expect(GoogleDriveProvider.isConnected()).toBe(false);
+            GoogleDriveProvider._fileId = null;
+        });
+
         it('should detect 401 error, mark needsReconnect, remove token, and return Error with message', () => {
             GoogleDriveProvider._token = { access_token: 'old-token' };
             localStorage.setItem('bulletin_google_token', 'old-token');
