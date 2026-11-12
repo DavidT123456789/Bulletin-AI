@@ -15,7 +15,7 @@
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG, hasValidApiKey } from '../config/providers.js';
-import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_LINKS } from '../config/Config.js';
+import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, APP_LINKS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { Utils } from '../utils/Utils.js';
@@ -836,7 +836,6 @@ export const UI = {
         if (App && App.populatePreviewStudentSelect) App.populatePreviewStudentSelect();
     },
     updateSettingsFields() { FormUI.updateSettingsFields(); },
-    updateModelDescription() { FormUI.updateModelDescription(); },
 
     // Stats functions delegated to StatsUIManager
     animateValue(element, start, end, duration) {
@@ -1012,7 +1011,6 @@ export const UI = {
         const iconEl = DOM.dashModelLabel?.querySelector('.dash-model-icon') || DOM.dashModelLabel?.querySelector('iconify-icon:not(.dash-model-chevron)');
 
         if (iconEl) {
-            iconEl.removeAttribute('style');
             Array.from(iconEl.classList)
                 .filter(c => c.startsWith('provider-'))
                 .forEach(c => iconEl.classList.remove(c));
@@ -1036,9 +1034,6 @@ export const UI = {
             }
             if (iconEl && providerConfig) {
                 iconEl.setAttribute('icon', providerConfig.icon);
-                if (providerConfig.style) {
-                    iconEl.setAttribute('style', providerConfig.style);
-                }
                 if (providerConfig.class) {
                     iconEl.classList.add(providerConfig.class);
                 }

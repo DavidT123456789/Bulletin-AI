@@ -217,12 +217,12 @@
 }
 
 #welcomeModal .welcome-api-key-group .api-key-input-container::after {
-    width: 44px;
+    width: 38px;
 }
 
 #welcomeModal .welcome-api-key-group input {
     height: var(--modal-btn-height);
-    padding: 0 22px 0 18px;
+    padding: 0 14px 0 16px;
     font-size: var(--font-base);
 }
 

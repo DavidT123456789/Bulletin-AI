@@ -16,8 +16,10 @@
  *    - Cycle de vie : Mis à jour lors de modifications de données (via saveAppState). Alignée avec bulletin_last_sync après synchro.
  * 
  * 4. bulletin_last_sync_hash :
- *    - Rôle : Empreinte de données (hash JSON) de la configuration (hors clés de navigation/UI) + des élèves au moment de la synchro.
+ *    - Rôle : Empreinte de données (hash JSON) de la configuration (hors DATA_HASH_IGNORED_KEYS) + des élèves au moment de la synchro.
  *    - Cycle de vie : Permet la détection de retour à l'état initial (modify -> cancel -> back to "À jour").
+ *      `bulletin_data_hash_version` (DATA_HASH_VERSION) permet de ré-aligner l'empreinte au premier chargement
+ *      lorsque sa composition change, sans fausse alerte "Non sauvegardé".
  * 
  * 5. bulletin_device_id :
  *    - Rôle : Identifiant unique de l'appareil généré au premier démarrage.
@@ -42,13 +44,8 @@ let App;
 /** @const {string[]} Clés de paramètres correspondant aux clés API des fournisseurs Cloud */
 const API_KEY_SETTINGS_KEYS = API_KEY_PROVIDER_IDS.map(id => `${id}ApiKey`);
 
-/** @const {string[]} Clés de navigation, d'interface et d'exécution locale à ignorer lors du calcul du hash de données */
-const UI_AND_NAV_KEYS = [
-    'theme',
-    'accentColor',
-    'isAppreciationFullView',
-    'activeView',
-    'seatingStatusDots',
+/** @const {string[]} Clés propres à l'appareil (navigation, statut des clés API, Ollama) : jamais exportées ni envoyées au Cloud */
+const DEVICE_ONLY_SETTINGS_KEYS = [
     'currentClassId',
     'currentPeriod',
     'currentSubject',
@@ -60,6 +57,16 @@ const UI_AND_NAV_KEYS = [
     'ollamaInstalledModels',
     'ollamaEnabled'
 ];
+
+/**
+ * @const {string[]} Clés exclues de l'empreinte de données : clés propres à l'appareil + états de vue restaurés
+ * avec la sauvegarde sans compter comme une modification. Les préférences synchronisées (thème, couleur
+ * d'accentuation, pastilles du plan de classe…) font partie de l'empreinte.
+ */
+const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'activeView', 'isAppreciationFullView'];
+
+/** @const {string} Version de la composition de l'empreinte de données, à incrémenter quand des clés y entrent ou en sortent */
+const DATA_HASH_VERSION = '2';
 
 export const StorageManager = {
     TAB_SYNC_CHANNEL_NAME: 'bulletin_ai_state_sync',
@@ -892,7 +899,7 @@ export const StorageManager = {
     computeCurrentDataHash() {
         const settings = this._buildSettingsSnapshot();
         const dataSettings = { ...settings };
-        UI_AND_NAV_KEYS.forEach(k => delete dataSettings[k]);
+        DATA_HASH_IGNORED_KEYS.forEach(k => delete dataSettings[k]);
 
         // Exclure les horodatages transitoires des classes
         if (Array.isArray(dataSettings.classes)) {
@@ -958,20 +965,7 @@ export const StorageManager = {
      */
     getExportableSettings({ includeApiKeys = false } = {}) {
         const settings = this._buildSettingsSnapshot();
-        const keysToRemove = [
-            'apiKeyStatus',
-            'validatedApiKeys',
-            'ollamaEnabled',
-            'ollamaBaseUrl',
-            'ollamaInstalledModels',
-            'classes',
-            'deletedItems',
-            'currentClassId',
-            'currentPeriod',
-            'currentSubject',
-            'currentInputMode',
-            'activeStatFilter'
-        ];
+        const keysToRemove = [...DEVICE_ONLY_SETTINGS_KEYS, 'classes', 'deletedItems'];
         if (!includeApiKeys) {
             keysToRemove.push(...API_KEY_SETTINGS_KEYS);
         }
@@ -1041,12 +1035,14 @@ export const StorageManager = {
             }
         } else {
             this._lastDataHash = currentDataHash;
-            // On first load, initialize sync hash ONLY if missing and no data purge was detected
+            // On first load, initialize sync hash ONLY if missing (or computed with an older composition) and no data purge was detected
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
             const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-            if (!lastSyncHash && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
+            const isLegacyHash = localStorage.getItem('bulletin_data_hash_version') !== DATA_HASH_VERSION;
+            if ((!lastSyncHash || isLegacyHash) && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
                 this._safeLocalStorageSet('bulletin_last_sync_hash', currentDataHash);
             }
+            if (isLegacyHash) this._safeLocalStorageSet('bulletin_data_hash_version', DATA_HASH_VERSION);
         }
         this._isFirstLoadSave = false;
 
@@ -1651,7 +1647,7 @@ export const StorageManager = {
                     ['nom', 'prenom', 'classe'].forEach(field => adoptField(localStudent.studentData, remoteStudent.studentData, field));
                 }
 
-                // Adopte l'historique de la période et rafraîchit le cache racine `appreciation` (même règle que Utils.setPeriodAppreciation)
+                // Adopte l'historique de la période et rafraîchit le cache racine `appreciation` si la période est la période courante de l'élève
                 const adoptRemotePeriodExtras = (period, appreciation) => {
                     if (remoteStudent.historyPerPeriod?.[period]) {
                         if (!localStudent.historyPerPeriod) localStudent.historyPerPeriod = {};

@@ -656,12 +656,12 @@ describe('ModalUIManager', () => {
         });
 
         it('should show unified impact box and list local changes without false appreciation counts when syncState is local-changes', async () => {
-            // Mock local changes with seating chart change (and student._lastModified updated by seat move)
+            // Mock local changes with seating chart change (seat moves are timestamped on the class, not on the student)
             window.appState = {
                 classes: [{ id: 'c1', name: '6A', seatingUpdatedAt: Date.now() }]
             };
             window.runtimeState = {
-                data: { generatedResults: [{ id: 's1', _lastModified: Date.now(), studentData: { periods: {} } }] }
+                data: { generatedResults: [{ id: 's1', seatingPosition: { row: 0, col: 0 }, _lastModified: 1000, studentData: { periods: {} } }] }
             };
 
             const promise = ModalUI.showRestoreConfirmationModal({
@@ -678,7 +678,7 @@ describe('ModalUIManager', () => {
             expect(impactBox).not.toBeNull();
             expect(impactBox.textContent).toContain('Sera remplacé sur cet appareil');
             expect(impactBox.textContent).toContain('Plan de classe réorganisé');
-            expect(impactBox.textContent).not.toContain('appréciations ou notes éditées');
+            expect(impactBox.textContent).not.toContain('fiche');
             expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
 
             // Two-line date display: relative stat and exact timestamp, plus amber target highlight on Local card (sub-stat omitted when volumes match without roster change)
@@ -702,6 +702,42 @@ describe('ModalUIManager', () => {
             cancelBtn.click();
             expect(await promise).toBe(false);
 
+            delete window.appState;
+            delete window.runtimeState;
+        });
+
+        it('should list both the seating change and the student edits when both happened since last sync', async () => {
+            const lastSync = Date.now() - 60000;
+            window.appState = {
+                classes: [{ id: 'c1', name: '6A', seatingUpdatedAt: Date.now() }]
+            };
+            window.runtimeState = {
+                data: {
+                    generatedResults: [
+                        { id: 's1', seatingPosition: { row: 0, col: 0 }, studentData: { periods: {} } },
+                        { id: 's2', _lastModified: Date.now(), studentData: { periods: { T1: { context: 'Absent 2 semaines', _lastModified: Date.now() } } } },
+                        { id: 's3', nom: 'DURAND', prenom: 'Léa', _lastModified: Date.now(), studentPhoto: { data: 'x' }, studentData: { periods: {} } }
+                    ]
+                }
+            };
+
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: lastSync,
+                localDate: Date.now(),
+                remoteStudentCount: 28,
+                localStudentCount: 28,
+                syncState: 'local-changes',
+                lastSyncTime: lastSync
+            });
+
+            const impactText = document.querySelector('#restoreConfirmationModal .restore-impact-box.warning').textContent;
+            expect(impactText).toContain('Plan de classe réorganisé');
+            // Context edit + photo change stay visible even when the seating plan changed too
+            expect(impactText).toContain('2 fiches élèves modifiées');
+            expect(impactText).not.toContain('Réglages ou préférences modifiés');
+
+            document.getElementById('restoreConfirmCancelBtn').click();
+            await promise;
             delete window.appState;
             delete window.runtimeState;
         });
@@ -925,6 +961,49 @@ describe('ModalUIManager', () => {
             expect(await promise).toBe(false);
         });
 
+        it('should not count moved or new students again as modified records, while keeping other record edits', async () => {
+            const syncTime = Date.now() - 3600000;
+            window.appState = { classes: [{ id: 'c1', name: '5B', isGroup: false }] };
+            window.runtimeState = {
+                data: {
+                    generatedResults: [
+                        { id: 'moved-1', nom: 'MOREAU', prenom: 'Emma', classId: 'c1', _lastModified: Date.now(), studentData: { periods: {} } },
+                        { id: 'new-1', nom: 'PETIT', prenom: 'Léo', classId: 'c1', _lastModified: Date.now(), studentData: { periods: {} } },
+                        { id: 'photo-1', nom: 'DURAND', prenom: 'Léa', classId: 'c1', _lastModified: Date.now(), studentData: { periods: {} } }
+                    ]
+                }
+            };
+
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 3,
+                localClassCount: 1,
+                remoteStudentCount: 2,
+                remoteClassCount: 1,
+                lastSyncTime: syncTime,
+                rosterDiff: {
+                    newStudents: 1,
+                    removedStudents: 0,
+                    addedEnrollments: [],
+                    removedEnrollments: [],
+                    movedEnrollments: [{ toClassId: 'c1', toClassName: '5B', isGroup: false, count: 1 }],
+                    addedClasses: [],
+                    removedClasses: [],
+                    changedResultIds: ['moved-1', 'new-1'],
+                    hasAnyChange: true
+                }
+            });
+
+            const impactText = document.querySelector('#saveConfirmationModal .restore-impact-box')?.textContent || '';
+            expect(impactText).toContain('+1 nouvel élève');
+            expect(impactText).toContain('1 élève déplacé vers 5B');
+            expect(impactText).toContain('1 fiche élève modifiée');
+
+            document.getElementById('saveConfirmCancelBtn').click();
+            await promise;
+            delete window.appState;
+            delete window.runtimeState;
+        });
+
         it('should display symmetrical sub-stats and group enrollment diff without false +N students or false appreciation counts when existing students are copied to a group', async () => {
             const syncTime = Date.now() - 3600000;
             window.appState = {
@@ -969,7 +1048,7 @@ describe('ModalUIManager', () => {
             const impactText = modal.querySelector('.restore-impact-box')?.textContent || '';
             expect(impactText).toContain('4 élèves ajoutés à PAPD');
             expect(impactText).not.toContain('par rapport au Cloud');
-            expect(impactText).not.toContain('appréciations ou notes éditées');
+            expect(impactText).not.toContain('fiche');
             expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
 
             document.getElementById('saveConfirmCancelBtn').click();

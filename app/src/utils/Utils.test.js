@@ -717,6 +717,29 @@ describe('Utils', () => {
         });
     });
 
+    describe('markStudentModified', () => {
+        it('devrait horodater la période et la fiche avec le même timestamp', () => {
+            const result = { studentData: { periods: { T2: { context: 'x' } } } };
+            Utils.markStudentModified(result, 'T2');
+            expect(result._lastModified).toBeTypeOf('number');
+            expect(result.studentData.periods.T2._lastModified).toBe(result._lastModified);
+            expect(result.studentData.periods.T2.context).toBe('x');
+        });
+
+        it('devrait créer la structure de période manquante', () => {
+            const result = {};
+            Utils.markStudentModified(result, 'T1');
+            expect(result.studentData.periods.T1._lastModified).toBe(result._lastModified);
+        });
+
+        it('devrait n\'horodater que la fiche sans période', () => {
+            const result = { studentData: { periods: { T1: {} } } };
+            Utils.markStudentModified(result);
+            expect(result._lastModified).toBeTypeOf('number');
+            expect(result.studentData.periods.T1._lastModified).toBeUndefined();
+        });
+    });
+
     describe('isPendingForPeriod', () => {
         const withPeriod = (data, statuses = []) => ({ studentData: { statuses, periods: { T2: data } } });
 

@@ -709,12 +709,6 @@
     box-sizing: border-box;
 }
 
-.journal-note-input::placeholder {
-    color: var(--text-tertiary);
-    opacity: 0.75;
-    font-style: normal;
-}
-
 .journal-input-footer {
     display: flex;
     justify-content: flex-end;

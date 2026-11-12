@@ -12,6 +12,9 @@ vi.mock('../services/DBService.js', () => ({
 
 describe('FocusPanelManager and Save State integrity', () => {
     beforeEach(() => {
+        // Les rafraîchissements UI différés (300ms) d'un test précédent capturent son `result` et pourraient l'écrire dans les données du test courant
+        clearTimeout(FocusPanelManager._uiUpdateTimeout);
+        clearTimeout(FocusPanelManager._appreciationUITimeout);
         localStorage.clear();
         runtimeState.data.generatedResults = [
             {
@@ -190,14 +193,35 @@ describe('FocusPanelManager and Save State integrity', () => {
         localStorage.setItem('bulletin_last_sync_hash', initialHash);
 
         FocusPanelManager.open('student-1');
+        const saveSpy = vi.spyOn(StorageManager, 'saveAppState');
 
         const contextInput = document.getElementById('focusContextInput');
         contextInput.value = 'Nouveau contexte';
         contextInput.dispatchEvent(new Event('input', { bubbles: true }));
         contextInput.dispatchEvent(new Event('blur', { bubbles: true }));
 
+        const student = runtimeState.data.generatedResults[0];
         expect(SyncService._computeSyncState()).toBe('local-changes');
-        expect(runtimeState.data.generatedResults[0].studentData.periods.T1.context).toBe('Nouveau contexte');
+        expect(student.studentData.periods.T1.context).toBe('Nouveau contexte');
+        // Persisté dès la sortie du champ et horodaté pour la fusion Cloud et le récapitulatif Sauvegarder/Restaurer
+        expect(saveSpy).toHaveBeenCalled();
+        expect(student.studentData.periods.T1._lastModified).toBeGreaterThan(now);
+        expect(student._lastModified).toBeGreaterThan(now);
+        saveSpy.mockRestore();
+    });
+
+    it('does not change the data hash when the context is typed then reverted to its original value', () => {
+        const initialHash = StorageManager.computeCurrentDataHash();
+        FocusPanelManager.open('student-1');
+
+        const contextInput = document.getElementById('focusContextInput');
+        contextInput.value = 'Temporaire';
+        contextInput.dispatchEvent(new Event('input', { bubbles: true }));
+        contextInput.value = 'Très investi';
+        contextInput.dispatchEvent(new Event('input', { bubbles: true }));
+        contextInput.dispatchEvent(new Event('blur', { bubbles: true }));
+
+        expect(StorageManager.computeCurrentDataHash()).toBe(initialHash);
     });
 
     describe('Copy feedback and cancellation guard', () => {

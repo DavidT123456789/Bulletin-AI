@@ -155,6 +155,9 @@ describe('SeatingChartManager and Save State integrity', () => {
 
         // Must update seatingValidatedAt because changes actually occurred
         expect(testClass.seatingValidatedAt).toBeGreaterThan(syncTime);
+        // Positions are arbitrated by the class seating timestamp: the student record itself must not look "newer" in a Cloud merge
+        expect(testClass.seatingUpdatedAt).toBeGreaterThan(syncTime);
+        expect(appState.generatedResults.find(s => s.id === 'student-1')._lastModified).toBeUndefined();
         expect(StorageManager.computeCurrentDataHash()).not.toBe(initialHash);
         expect(SyncService._computeSyncState()).toBe('local-changes');
     });

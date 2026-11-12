@@ -764,19 +764,7 @@ export const SeatingRoomLayout = {
                 }
             });
 
-            // Décale également les élèves des autres classes partageant cette grille afin qu'ils restent alignés avec le bureau et leurs places spéciales
-            const currentStudentIds = new Set(this._students.map(s => s.id));
-            (appState.generatedResults || []).forEach(r => {
-                if (!r || currentStudentIds.has(r.id)) return;
-                const pos = r[posKey];
-                if (pos && typeof pos.row === 'number') {
-                    r[posKey] = {
-                        ...pos,
-                        row: pos.row + rowOffset
-                    };
-                    r._lastModified = Date.now();
-                }
-            });
+            this._shiftOtherClassesStudentRows(rowOffset);
         } else if (newRows > oldRows && oldRows > 0 && appState[gridKey]?.specialLayout) {
             const specialLayout = appState[gridKey].specialLayout;
             for (let c = 0; c < newCols; c++) {
@@ -824,10 +812,7 @@ export const SeatingRoomLayout = {
                         ...(placed[s.id].order > 0 ? { order: placed[s.id].order } : {})
                     };
                     const result = appState.generatedResults?.find(r => r.id === s.id);
-                    if (result) {
-                        result[posKey] = shiftedPos;
-                        result._lastModified = Date.now();
-                    }
+                    if (result) result[posKey] = shiftedPos;
                     s[posKey] = shiftedPos;
                 }
             });

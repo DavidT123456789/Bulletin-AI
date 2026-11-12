@@ -364,9 +364,7 @@ export const FocusPanelHistory = {
             result.appreciation = content;
             const currentPeriod = appState.currentPeriod;
             if (result.studentData?.periods) {
-                if (!result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod] = {};
-                }
+                Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].appreciation = content;
             }
 

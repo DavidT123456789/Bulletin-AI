@@ -14,7 +14,7 @@ export const OLLAMA_CONFIG = {
 };
 
 /**
- * Registre unifié des 8 fournisseurs d'IA (Icônes, Noms, Styles, Clés, Endpoints).
+ * Registre unifié des 8 fournisseurs d'IA (Icônes, Noms, Classes CSS, Clés, Endpoints).
  */
 export const AI_PROVIDERS = {
     google: {
@@ -26,7 +26,6 @@ export const AI_PROVIDERS = {
         keyProperty: 'googleApiKey',
         domKey: 'googleApiKey',
         apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        description: '<strong>Google Gemini</strong> : alternative rapide et performante, <strong>100% gratuite et sans carte bancaire</strong> via Google AI Studio.'
     },
     albert: {
         id: 'albert',
@@ -34,11 +33,9 @@ export const AI_PROVIDERS = {
         shortLabel: 'Albert',
         icon: 'solar:shield-check-bold',
         class: 'provider-albert',
-        style: 'color: var(--color-blue);',
         keyProperty: 'albertApiKey',
         domKey: 'albertApiKey',
         apiBaseUrl: 'https://albert.api.etalab.gouv.fr/v1',
-        description: '<strong>Albert API (Gouv.fr / DINUM — Recommandé)</strong> : passerelle gouvernementale souveraine propulsée par les modèles Mistral, <strong>100% gratuite</strong> pour les enseignants et agents publics via ProConnect.'
     },
     groq: {
         id: 'groq',
@@ -46,11 +43,9 @@ export const AI_PROVIDERS = {
         shortLabel: 'Groq',
         icon: 'solar:bolt-circle-bold',
         class: 'provider-groq',
-        style: 'color: #f55036;',
         keyProperty: 'groqApiKey',
         domKey: 'groqApiKey',
         apiBaseUrl: 'https://api.groq.com/openai/v1',
-        description: '<strong>Groq Cloud</strong> : génération ultra-rapide avec des modèles libres, également gratuit sans carte bancaire.'
     },
     openrouter: {
         id: 'openrouter',
@@ -58,11 +53,9 @@ export const AI_PROVIDERS = {
         shortLabel: 'OpenRouter',
         icon: 'solar:bolt-bold-duotone',
         class: 'provider-openrouter',
-        style: 'color: var(--secondary-color);',
         keyProperty: 'openrouterApiKey',
         domKey: 'openrouterApiKey',
         apiBaseUrl: 'https://openrouter.ai/api/v1',
-        description: '<strong>OpenRouter</strong> : passerelle multi-modèles donnant accès à Claude, DeepSeek et aux modèles ouverts.'
     },
     openai: {
         id: 'openai',
@@ -90,11 +83,9 @@ export const AI_PROVIDERS = {
         shortLabel: 'Mistral',
         icon: 'solar:cat-bold',
         class: 'provider-mistral',
-        style: 'color: #fd6f00;',
         keyProperty: 'mistralApiKey',
         domKey: 'mistralApiKey',
         apiBaseUrl: 'https://api.mistral.ai/v1',
-        description: '<strong>Mistral AI</strong> : solution française de grande qualité, <strong>payante</strong> (crédits à acheter sur son site).'
     },
     ollama: {
         id: 'ollama',
@@ -102,7 +93,6 @@ export const AI_PROVIDERS = {
         shortLabel: 'Ollama',
         icon: 'solar:server-square-bold',
         class: 'provider-ollama',
-        style: 'color: #708090;',
         keyProperty: null,
         domKey: null,
         apiBaseUrl: OLLAMA_CONFIG.defaultBaseUrl,
@@ -136,7 +126,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.75, output: 3.75 },
-        description: "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif."
     },
     'gemini-3.8-flash': {
         id: 'gemini-3.8-flash',
@@ -149,7 +138,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0.75, output: 3.75 },
-        description: "<strong>🚀 Nouveau.</strong> Raisonnement multi-étapes et agents autonomes."
     },
     'gemini-3.1-pro-preview': {
         id: 'gemini-3.1-pro-preview',
@@ -162,7 +150,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 2.00, output: 12.00 },
-        description: "<strong>🔥 Synthèses complexes.</strong> Raisonnement approfondi pour dossiers denses."
     },
     // Alias / legacy Google
     'gemini-3.5-flash': {
@@ -174,7 +161,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
-        description: "<strong>Stable.</strong> Flash éprouvé, redirigé vers Gemini 3.6 Flash."
     },
     'gemini-3.7-flash': {
         id: 'gemini-3.7-flash',
@@ -185,7 +171,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0.15, output: 0.60 },
-        description: "<strong>🧠 Raisonnement avancé.</strong> Réflexion hybride adaptative."
     },
     'gemini-2.5-flash': {
         id: 'gemini-2.5-flash',
@@ -196,7 +181,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
-        description: "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix."
     },
     'gemini-2.5-pro': {
         id: 'gemini-2.5-pro',
@@ -207,7 +191,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 30000,
         costs: { input: 1.25, output: 10.00 },
-        description: "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés."
     },
 
     // 1b. ALBERT API (GOUV.FR / DINUM — OPENWEIGHT ALIASES)
@@ -222,7 +205,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 25000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⭐ Recommandé (Albert Medium).</strong> Mistral Small 3.2 24B hébergé sur l'infrastructure gouvernementale souveraine (Gouv.fr / DINUM). Français irréprochable et rapide."
     },
     'albert-openweight-small': {
         id: 'albert-openweight-small',
@@ -235,7 +217,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 20000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Ultra-rapide (Albert Small).</strong> Ministral 3 8B souverain, idéal pour les retouches instantanées et la génération rapide de classes entières."
     },
     'albert-openweight-large': {
         id: 'albert-openweight-large',
@@ -248,7 +229,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0, output: 0 },
-        description: "<strong>🔥 Synthèses & Bilans (Albert Large).</strong> Modèle de raisonnement 120B souverain pour les synthèses globales de conseil de classe."
     },
 
     // 2. GROQ CLOUD
@@ -263,7 +243,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> GPT-OSS 120B via Groq. Modèle ouvert phare d'OpenAI, raisonnement et style de pointe, gratuit sans CB."
     },
     'groq-gpt-oss-20b': {
         id: 'groq-gpt-oss-20b',
@@ -276,7 +255,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Instantané (~1000 t/s)</strong> GPT-OSS 20B via Groq. Modèle ultra-vif, idéal pour retouches rapides, gratuit sans CB."
     },
     // Alias rétrocompatibles Groq
     'groq-llama-3.3-70b': {
@@ -288,7 +266,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> GPT-OSS 120B via Groq. Modèle ouvert phare d'OpenAI, gratuit sans CB."
     },
     'groq-gemma-2-9b': {
         id: 'groq-gemma-2-9b',
@@ -299,7 +276,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Instantané</strong> GPT-OSS 20B via Groq. Gratuit sans CB."
     },
     'groq-llama-3.1-8b': {
         id: 'groq-llama-3.1-8b',
@@ -310,7 +286,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0, output: 0 },
-        description: "<strong>⚡ Instantané</strong> GPT-OSS 20B via Groq. Gratuit sans CB."
     },
 
     // 3. MISTRAL AI DIRECT
@@ -325,7 +300,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
-        description: "<strong>Français ⭐</strong> Mistral Small. Multimodal + raisonnement rapide."
     },
     'mistral-direct-large-latest': {
         id: 'mistral-direct-large-latest',
@@ -338,7 +312,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.50, output: 1.50 },
-        description: "<strong>Français</strong> Mistral Large. Le modèle le plus puissant de Mistral."
     },
 
     // 4. OPENROUTER
@@ -353,7 +326,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0, output: 0 },
-        description: "<strong>🆓 GRATUIT</strong> Llama 3.3 70B. Quota partagé quotidien."
     },
 
     // 5. OPENROUTER — PAYANT
@@ -368,7 +340,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 3.00, output: 15.00 },
-        description: "<strong>✨ Recommandé.</strong> Claude Sonnet 5 (via OpenRouter). Finesse stylistique."
     },
     'claude-3.7-sonnet': {
         id: 'claude-3.7-sonnet',
@@ -381,7 +352,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 3.00, output: 15.00 },
-        description: "Claude 3.7 Sonnet (via OpenRouter). Raisonnement hybride."
     },
     'claude-3.5-sonnet': {
         id: 'claude-3.5-sonnet',
@@ -394,7 +364,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 3.00, output: 15.00 },
-        description: "Claude 3.5 Sonnet (via OpenRouter). Précis et fluide."
     },
     'openrouter': {
         id: 'openrouter',
@@ -407,7 +376,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.14, output: 0.28 },
-        description: "DeepSeek V3. Performant et très économique."
     },
     'deepseek-r1': {
         id: 'deepseek-r1',
@@ -420,7 +388,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0.55, output: 2.19 },
-        description: "<strong>⭐ Raisonnement.</strong> DeepSeek R1 (via OpenRouter)."
     },
     'ministral-3b': {
         id: 'ministral-3b',
@@ -433,7 +400,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.10, output: 0.10 },
-        description: "<strong>~0€</strong> Ministral 3 3B. Ultra économique, excellent français."
     },
     'amazon-nova-v1-lite': {
         id: 'amazon-nova-v1-lite',
@@ -446,7 +412,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.06, output: 0.24 },
-        description: "<strong>Économique.</strong> Amazon Nova Lite 1.0."
     },
     'mistral-small': {
         id: 'mistral-small',
@@ -459,7 +424,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
-        description: "<strong>Français.</strong> Mistral Small (via OpenRouter)."
     },
     'mistral-large': {
         id: 'mistral-large',
@@ -472,7 +436,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 2.00, output: 6.00 },
-        description: "Mistral Large (via OpenRouter). Pour textes nuancés."
     },
 
     // 6. OPENAI DIRECT
@@ -487,7 +450,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 1.10, output: 4.40 },
-        description: "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI."
     },
     'openai-gpt-4o-mini': {
         id: 'openai-gpt-4o-mini',
@@ -500,7 +462,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
-        description: "Économique et performant."
     },
 
     // 7. ANTHROPIC CLAUDE DIRECT
@@ -515,7 +476,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 3.00, output: 15.00 },
-        description: "<strong>✨ Recommandé.</strong> Claude Sonnet 5. Finesse stylistique et équilibre."
     },
     'anthropic-claude-3-7-sonnet-latest': {
         id: 'anthropic-claude-3-7-sonnet-latest',
@@ -528,7 +488,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 3.00, output: 15.00 },
-        description: "Claude 3.7 Sonnet. Raisonnement hybride et style rédactionnel."
     },
     'anthropic-claude-3-5-sonnet-latest': {
         id: 'anthropic-claude-3-5-sonnet-latest',
@@ -541,7 +500,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 3.00, output: 15.00 },
-        description: "Claude 3.5 Sonnet. Rédaction fluide et nuancée."
     },
     'anthropic-claude-3-5-haiku-latest': {
         id: 'anthropic-claude-3-5-haiku-latest',
@@ -554,7 +512,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.80, output: 4.00 },
-        description: "<strong>⚡ Économique & Rapide.</strong> Claude 3.5 Haiku."
     },
     'anthropic-claude-opus-5': {
         id: 'anthropic-claude-opus-5',
@@ -567,7 +524,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: 30000,
         costs: { input: 5.00, output: 25.00 },
-        description: "<strong>🔥 Puissance maximale.</strong> Claude Opus 5. Qualité maximale."
     },
 
     // 8. OLLAMA LOCAL
@@ -582,7 +538,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: OLLAMA_CONFIG.timeoutMs,
         costs: { input: 0, output: 0 },
-        description: "<strong>Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français."
     },
     'ollama-mistral:7b': {
         id: 'ollama-mistral:7b',
@@ -595,7 +550,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: OLLAMA_CONFIG.timeoutMs,
         costs: { input: 0, output: 0 },
-        description: "Local - Équilibré. Le standard Mistral 7B."
     },
     'ollama-deepseek-r1:8b': {
         id: 'ollama-deepseek-r1:8b',
@@ -608,7 +562,6 @@ export const AI_MODELS = {
         isReasoning: true,
         timeoutMs: OLLAMA_CONFIG.timeoutMs,
         costs: { input: 0, output: 0 },
-        description: "<strong>Local.</strong> DeepSeek R1 8B (Raisonnement)."
     },
     'ollama-gemma2:9b': {
         id: 'ollama-gemma2:9b',
@@ -621,7 +574,6 @@ export const AI_MODELS = {
         isReasoning: false,
         timeoutMs: OLLAMA_CONFIG.timeoutMs,
         costs: { input: 0, output: 0 },
-        description: "Local. Google Gemma 2 9B."
     }
 };
 
@@ -640,12 +592,6 @@ export const COSTS_PER_MILLION_TOKENS = Object.fromEntries(
     Object.entries(AI_MODELS)
         .filter(([, m]) => m.costs)
         .map(([id, m]) => [id, m.costs])
-);
-
-export const MODEL_DESCRIPTIONS = Object.fromEntries(
-    Object.entries(AI_MODELS)
-        .filter(([, m]) => m.description)
-        .map(([id, m]) => [id, m.description])
 );
 
 export const MODEL_SHORT_NAMES = Object.fromEntries(

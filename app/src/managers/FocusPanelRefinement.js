@@ -285,11 +285,7 @@ export const FocusPanelRefinement = {
                 result.copied = false;
                 result.wasGenerated = !isProtectedSource;
                 result.appreciationSource = isProtectedSource ? priorSource : 'ai';
-                if (!result.studentData) result.studentData = {};
-                if (!result.studentData.periods) result.studentData.periods = {};
-                if (!result.studentData.periods[refinePeriod]) {
-                    result.studentData.periods[refinePeriod] = {};
-                }
+                Utils.markStudentModified(result, refinePeriod);
                 result.studentData.periods[refinePeriod].appreciation = refined;
 
                 if (appState.currentPeriod === refinePeriod) {

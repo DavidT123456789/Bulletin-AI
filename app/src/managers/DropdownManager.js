@@ -108,7 +108,7 @@ export const DropdownManager = {
             if (hint) {
                 e.stopPropagation();
                 this.closeAll();
-                document.getElementById('apiKeysAccordion')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+                document.getElementById('apiKeysSection')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
                 return;
             }
             const option = e.target.closest('.custom-dropdown-option');
@@ -159,8 +159,7 @@ export const DropdownManager = {
         const config = this.getProviderFromLabel(labelText);
 
         if (config) {
-            const styleAttr = config.style ? ` style="${config.style}"` : '';
-            return `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"${styleAttr}></iconify-icon> <span>${config.name}</span>`;
+            return `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"></iconify-icon> <span>${config.name}</span>`;
         }
 
         return labelText;
@@ -308,8 +307,7 @@ export const DropdownManager = {
             if (selectedOption.parentNode && selectedOption.parentNode.tagName === 'OPTGROUP') {
                 const config = this.getProviderFromLabel(selectedOption.parentNode.label);
                 if (config) {
-                    const baseStyle = config.style || '';
-                    iconHtml = `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}" style="${baseStyle}"></iconify-icon>`;
+                    iconHtml = `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"></iconify-icon>`;
                 }
             }
 

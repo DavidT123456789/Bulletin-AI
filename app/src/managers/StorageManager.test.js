@@ -279,6 +279,30 @@ describe('StorageManager', () => {
             expect(/^[0-9a-f]{16}$/.test(migratedHash)).toBe(true);
         });
 
+        it('should re-align a sync hash computed with an older composition only when no local change happened since the last sync', async () => {
+            DBService.getAll.mockResolvedValue([]);
+
+            // In sync before the update: the legacy hash is re-aligned without a false "Non sauvegardé"
+            Object.assign(mockLocalStorage, {
+                bulletin_last_sync: '5000',
+                bulletin_last_modified: '5000',
+                bulletin_last_sync_hash: 'legacyhash000000'
+            });
+            await StorageManager.loadAppState();
+            expect(mockLocalStorage['bulletin_last_sync_hash']).toBe(StorageManager.computeCurrentDataHash());
+            expect(mockLocalStorage['bulletin_data_hash_version']).toBeDefined();
+
+            // Real unsaved changes before the update: the legacy hash is kept so they stay flagged
+            StorageManager._lastSaveHash = null;
+            Object.assign(mockLocalStorage, {
+                bulletin_last_modified: '9000',
+                bulletin_last_sync_hash: 'legacyhash000000'
+            });
+            delete mockLocalStorage['bulletin_data_hash_version'];
+            await StorageManager.loadAppState();
+            expect(mockLocalStorage['bulletin_last_sync_hash']).toBe('legacyhash000000');
+        });
+
         it('should preserve standalone bulletin_theme when app state is absent', async () => {
             const { userSettings } = await import('../state/State.js');
             mockLocalStorage['bulletin_theme'] = 'dark';
@@ -367,6 +391,31 @@ describe('StorageManager', () => {
             runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation = 'Travail exceptionnel';
             const changedHash = StorageManager.computeCurrentDataHash();
             expect(changedHash).not.toBe(initialHash);
+        });
+
+        it('should include synced preferences (theme, accent, seating dots) in the data hash but ignore view and navigation state', () => {
+            const { theme, accentColor, activeView, isAppreciationFullView, seatingStatusDots } = userSettings.ui;
+            const baseHash = StorageManager.computeCurrentDataHash();
+
+            userSettings.ui.activeView = 'plan';
+            userSettings.ui.isAppreciationFullView = true;
+            runtimeState.navigation.currentPeriod = 'T2';
+            expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
+
+            userSettings.ui.accentColor = '#ff0055';
+            const accentHash = StorageManager.computeCurrentDataHash();
+            expect(accentHash).not.toBe(baseHash);
+
+            userSettings.ui.theme = 'light';
+            const themeHash = StorageManager.computeCurrentDataHash();
+            expect(themeHash).not.toBe(accentHash);
+
+            userSettings.ui.seatingStatusDots = { ppre: false };
+            expect(StorageManager.computeCurrentDataHash()).not.toBe(themeHash);
+
+            Object.assign(userSettings.ui, { theme, accentColor, activeView, isAppreciationFullView, seatingStatusDots });
+            runtimeState.navigation.currentPeriod = 'T1';
+            expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
         });
 
         it('should compute lightweight photo fingerprints and detect photo changes in computeCurrentDataHash', () => {

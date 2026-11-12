@@ -215,11 +215,11 @@ describe('DropdownManager', () => {
                         <option value="or-paid" disabled>Claude 3.7 (Payant)</option>
                     </optgroup>
                 </select>
-                <div id="apiKeysAccordion"></div>
+                <div id="apiKeysSection"></div>
             `;
             const selectEl = document.querySelector('#aiModelSelect');
-            const accordion = document.querySelector('#apiKeysAccordion');
-            accordion.scrollIntoView = vi.fn();
+            const keysSection = document.querySelector('#apiKeysSection');
+            keysSection.scrollIntoView = vi.fn();
 
             const wrapper = DropdownManager.enhance(selectEl);
 
@@ -238,12 +238,12 @@ describe('DropdownManager', () => {
             expect(hint).not.toBeNull();
             expect(hint.textContent).toContain('1 autre fournisseur disponible ci-dessous');
 
-            // Clic sur le hint ferme le menu et scrolle vers #apiKeysAccordion
+            // Clic sur le hint ferme le menu et scrolle vers #apiKeysSection
             DropdownManager.toggle(wrapper);
             expect(wrapper.classList.contains('open')).toBe(true);
             hint.click();
             expect(wrapper.classList.contains('open')).toBe(false);
-            expect(accordion.scrollIntoView).toHaveBeenCalled();
+            expect(keysSection.scrollIntoView).toHaveBeenCalled();
         });
     });
 });

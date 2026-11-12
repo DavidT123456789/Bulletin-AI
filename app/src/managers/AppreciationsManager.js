@@ -140,9 +140,7 @@ export const AppreciationsManager = {
         result.appreciation = currentVersion.content;
         const currentPeriod = appState.currentPeriod;
         if (result.studentData?.periods) {
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
-            }
+            Utils.markStudentModified(result, currentPeriod);
             result.studentData.periods[currentPeriod].appreciation = currentVersion.content;
         }
         const isShowingOlder = state.currentIndex < state.versions.length - 1;

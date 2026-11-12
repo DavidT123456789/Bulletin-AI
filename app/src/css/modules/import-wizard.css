@@ -998,7 +998,6 @@
     background: color-mix(in srgb, var(--surface-color), var(--primary-color) 3.5%);
 }
 
-textarea.import-textarea,
 .import-textarea {
     width: 100%;
     flex: 1;
@@ -1007,10 +1006,9 @@ textarea.import-textarea,
     font-size: 0.76rem;
     font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
+    background: transparent;
+    border: none;
+    outline: none;
     border-radius: 0;
     resize: none;
     line-height: 1.65;
@@ -1022,22 +1020,6 @@ textarea.import-textarea,
 
 .import-textarea::placeholder {
     font-family: inherit;
-    color: var(--text-tertiary);
-    opacity: 0.75;
-}
-
-/* OVERRIDE GLOBAL COMPONENT STYLES (CRITICAL) */
-/* Must match specificity of components.css: textarea:hover:not(:disabled):not(:focus) */
-.import-textarea:hover:not(:disabled):not(:focus),
-.import-textarea:hover,
-.import-textarea:focus {
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    background-origin: initial !important;
-    background-clip: initial !important;
 }
 
 /* Custom Scrollbar for Textarea - Stays inside rounded border */
@@ -1081,10 +1063,25 @@ textarea.import-textarea,
 .import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger,
 .import-wizard-modal .mapping-select-dropdown .custom-dropdown-trigger {
     height: 32px;
-    padding: 0 10px;
+    padding: 0 12px;
     gap: 6px;
     font-size: 0.8rem;
     font-weight: 600;
+}
+
+.import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger {
+    background-color: var(--surface-color);
+    border-color: var(--border-color-strong);
+}
+
+[data-theme="dark"] .import-wizard-modal .import-separator-dropdown .custom-dropdown-trigger {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color-strong);
+}
+
+.import-wizard-modal .mapping-select-dropdown .custom-dropdown-trigger {
+    padding: 0 10px;
+    border-radius: var(--radius-control);
 }
 
 .import-wizard-modal .import-separator-dropdown .custom-dropdown-arrow,

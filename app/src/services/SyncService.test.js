@@ -56,6 +56,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(diff.addedEnrollments).toEqual([
                 { classId: 'g-papd', className: 'PAPD', isGroup: true, count: 2 }
             ]);
+            expect(diff.changedResultIds).toEqual(['3', '4']);
             expect(diff.hasAnyChange).toBe(true);
         });
 
@@ -85,6 +86,9 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(diff.movedEnrollments).toEqual([
                 { toClassId: 'c-32', toClassName: '3°2', isGroup: false, count: 1 }
             ]);
+            expect(diff.movedEnrollments).toHaveLength(1);
+            // Only newly assigned records (moved BARE, new NOUVEAU), not MIRZAI whose remaining record is untouched
+            expect(diff.changedResultIds).toEqual(['3', '5']);
         });
 
         it('should ignore demo class eviction when real students exist and handle null/invalid inputs safely', () => {

@@ -1197,6 +1197,7 @@ export const ModalUI = {
      */
     _getLocalDiffDetails(options = {}) {
         const lastSync = options.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10);
+        const rosterDiff = options.rosterDiff || null;
         const items = [];
 
         // 1. Plan de classe / activité
@@ -1219,13 +1220,15 @@ export const ModalUI = {
             });
         }
 
-        // 2. Appréciations / résultats élèves (distingue les éditions de bulletins des simples déplacements ou copies de groupe vierges)
+        // 2. Fiches élèves (hors copies de groupe vierges ; le plan de classe est horodaté par classe, pas par élève)
         const students = window.runtimeState?.data?.generatedResults || [];
+        // Arrivées, déplacements et inscriptions sont déjà résumés par les lignes d'effectif (section 4)
+        const rosterChangedIds = new Set(rosterDiff?.changedResultIds || []);
         const modifiedRecords = students.filter(s => {
             const periods = s.studentData?.periods ? Object.values(s.studentData.periods) : [];
             const hasPeriodEdit = periods.some(p => p?._lastModified && p._lastModified > lastSync);
             if (hasPeriodEdit) return true;
-            if (seatingChanged || !s._lastModified || s._lastModified <= lastSync) return false;
+            if (rosterChangedIds.has(s.id) || !s._lastModified || s._lastModified <= lastSync) return false;
             const isBlankPendingFicha = Boolean(s.isPending) &&
                 !s.appreciation?.trim() &&
                 !periods.some(p =>
@@ -1239,7 +1242,7 @@ export const ModalUI = {
         if (modifiedStudents > 0) {
             items.push({
                 icon: 'solar:document-text-linear',
-                text: `${modifiedStudents} élève${modifiedStudents > 1 ? 's' : ''} avec appréciations ou notes éditées`
+                text: modifiedStudents > 1 ? `${modifiedStudents} fiches élèves modifiées` : '1 fiche élève modifiée'
             });
         }
 
@@ -1252,114 +1255,54 @@ export const ModalUI = {
         }
 
         // 4. Différence d'effectif / d'affectations (personnes uniques vs inscriptions de groupe)
-        const rosterDiff = options.rosterDiff || null;
+        const pushRoster = (text) => items.push({ icon: 'solar:users-group-rounded-linear', text });
+        // Détaille chaque entrée jusqu'à `max`, puis résume la liste en une seule ligne au-delà
+        const pushRosterList = (list, max, detail, summary) => {
+            const entries = list || [];
+            if (entries.length > max) pushRoster(summary(entries));
+            else entries.forEach(entry => pushRoster(detail(entry)));
+        };
+        const sumCounts = (entries) => entries.reduce((acc, e) => acc + e.count, 0);
         if (rosterDiff) {
-            const addedCls = rosterDiff.addedClasses || [];
-            if (addedCls.length > 0 && addedCls.length <= 2) {
-                addedCls.forEach(cls => {
-                    items.push({
-                        icon: 'solar:users-group-rounded-linear',
-                        text: `${cls.isGroup ? 'Nouveau groupe' : 'Nouvelle classe'} : ${Utils.escapeHtml(cls.name)}`
-                    });
-                });
-            } else if (addedCls.length > 2) {
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${addedCls.length} nouvelles classes ou groupes créés`
-                });
-            }
+            pushRosterList(rosterDiff.addedClasses, 2,
+                cls => `${cls.isGroup ? 'Nouveau groupe' : 'Nouvelle classe'} : ${Utils.escapeHtml(cls.name)}`,
+                entries => `${entries.length} nouvelles classes ou groupes créés`);
+            pushRosterList(rosterDiff.removedClasses, 2,
+                cls => `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} supprimé${cls.isGroup ? '' : 'e'}`,
+                entries => `${entries.length} classes ou groupes supprimés`);
 
-            const removedCls = rosterDiff.removedClasses || [];
-            if (removedCls.length > 0 && removedCls.length <= 2) {
-                removedCls.forEach(cls => {
-                    items.push({
-                        icon: 'solar:users-group-rounded-linear',
-                        text: `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} supprimé${cls.isGroup ? '' : 'e'}`
-                    });
-                });
-            } else if (removedCls.length > 2) {
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${removedCls.length} classes ou groupes supprimés`
-                });
-            }
+            const { newStudents = 0, removedStudents = 0 } = rosterDiff;
+            if (newStudents > 0) pushRoster(`+${newStudents} ${newStudents > 1 ? 'nouveaux élèves' : 'nouvel élève'}`);
+            if (removedStudents > 0) pushRoster(`${removedStudents} élève${removedStudents > 1 ? 's supprimés' : ' supprimé'}`);
 
-            if (rosterDiff.newStudents > 0) {
-                const n = rosterDiff.newStudents;
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `+${n} ${n > 1 ? 'nouveaux élèves' : 'nouvel élève'}`
+            pushRosterList(rosterDiff.addedEnrollments, 3,
+                ({ className, count }) => `${count} élève${count > 1 ? 's ajoutés' : ' ajouté'} à ${Utils.escapeHtml(className)}`,
+                entries => {
+                    const total = sumCounts(entries);
+                    return `${total} inscription${total > 1 ? 's ajoutées' : ' ajoutée'} dans ${entries.length} classes/groupes`;
                 });
-            }
-
-            if (rosterDiff.removedStudents > 0) {
-                const n = rosterDiff.removedStudents;
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${n} élève${n > 1 ? 's supprimés' : ' supprimé'}`
+            pushRosterList(rosterDiff.movedEnrollments, Infinity,
+                ({ toClassName, count }) => `${count} élève${count > 1 ? 's déplacés' : ' déplacé'} vers ${Utils.escapeHtml(toClassName)}`);
+            pushRosterList(rosterDiff.removedEnrollments, 3,
+                ({ className, count }) => `${count} élève${count > 1 ? 's retirés' : ' retiré'} de ${Utils.escapeHtml(className)}`,
+                entries => {
+                    const total = sumCounts(entries);
+                    return `${total} retrait${total > 1 ? 's' : ''} dans ${entries.length} classes/groupes`;
                 });
-            }
-
-            const addedEnr = rosterDiff.addedEnrollments || [];
-            if (addedEnr.length > 0 && addedEnr.length <= 3) {
-                addedEnr.forEach(({ className, count }) => {
-                    items.push({
-                        icon: 'solar:users-group-rounded-linear',
-                        text: `${count} élève${count > 1 ? 's ajoutés' : ' ajouté'} à ${Utils.escapeHtml(className)}`
-                    });
-                });
-            } else if (addedEnr.length > 3) {
-                const total = addedEnr.reduce((acc, e) => acc + e.count, 0);
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${total} inscription${total > 1 ? 's ajoutées' : ' ajoutée'} dans ${addedEnr.length} classes/groupes`
-                });
-            }
-
-            const movedEnr = rosterDiff.movedEnrollments || [];
-            movedEnr.forEach(({ toClassName, count }) => {
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${count} élève${count > 1 ? 's déplacés' : ' déplacé'} vers ${Utils.escapeHtml(toClassName)}`
-                });
-            });
-
-            const removedEnr = rosterDiff.removedEnrollments || [];
-            if (removedEnr.length > 0 && removedEnr.length <= 3) {
-                removedEnr.forEach(({ className, count }) => {
-                    items.push({
-                        icon: 'solar:users-group-rounded-linear',
-                        text: `${count} élève${count > 1 ? 's retirés' : ' retiré'} de ${Utils.escapeHtml(className)}`
-                    });
-                });
-            } else if (removedEnr.length > 3) {
-                const total = removedEnr.reduce((acc, e) => acc + e.count, 0);
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${total} retrait${total > 1 ? 's' : ''} dans ${removedEnr.length} classes/groupes`
-                });
-            }
         } else if (options.legacyRosterChanged) {
-            items.push({
-                icon: 'solar:users-group-rounded-linear',
-                text: 'Affectations élèves mises à jour'
-            });
+            pushRoster('Affectations élèves mises à jour');
         } else {
             const rCount = options.remoteStudentCount ?? null;
             const lCount = options.localStudentCount ?? Utils.countUniqueStudents(students, classes);
             if (typeof rCount === 'number' && rCount > 0 && rCount !== lCount) {
                 const diff = lCount - rCount;
-                const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
-                items.push({
-                    icon: 'solar:users-group-rounded-linear',
-                    text: `${diffStr} élève${Math.abs(diff) > 1 ? 's' : ''} par rapport au Cloud`
-                });
+                pushRoster(`${diff > 0 ? `+${diff}` : diff} élève${Math.abs(diff) > 1 ? 's' : ''} par rapport au Cloud`);
             }
         }
 
-        // Fallback si modifications détectées mais aucun timestamp individuel spécifique (ex. tables, contraintes, réglages IA)
+        // Fallback si modifications détectées sans horodatage individuel : réglages (IA, matières, apparence, salle…)
         if (items.length === 0) {
-            items.push({ icon: 'solar:pen-new-square-linear', text: 'Modifications récentes de la session locale' });
+            items.push({ icon: 'solar:settings-linear', text: 'Réglages ou préférences modifiés' });
         }
 
         return items;

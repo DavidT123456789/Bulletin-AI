@@ -664,14 +664,13 @@ export const FocusPanelManager = {
         if (this._isContextEdited) {
             const contextInput = document.getElementById('focusContextInput');
             if (contextInput) {
-                const newContext = contextInput.value.trim();
-                const existingContext = result.studentData.periods?.[currentPeriod]?.context ?? '';
-                if (newContext !== existingContext) {
-                    if (!result.studentData.periods) result.studentData.periods = {};
-                    if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
-                    result.studentData.periods[currentPeriod].context = newContext === '' ? undefined : newContext;
-                    hasChanged = true;
+                const trimmedContext = contextInput.value.trim();
+                const newContext = trimmedContext === '' ? undefined : trimmedContext;
+                if (result.studentData.periods?.[currentPeriod]?.context !== newContext) {
+                    Utils.markStudentModified(result, currentPeriod);
+                    result.studentData.periods[currentPeriod].context = newContext;
                 }
+                hasChanged = true;
             }
             this._isContextEdited = false;
         }
@@ -679,15 +678,13 @@ export const FocusPanelManager = {
         if (this._isGradeEdited) {
             const gradeInput = document.getElementById('focusCurrentGradeInput');
             if (gradeInput) {
-                const gradeStr = gradeInput.value.trim().replace(',', '.');
-                const newGrade = gradeStr === '' ? null : parseFloat(gradeStr);
-                const existingGrade = result.studentData.periods?.[currentPeriod]?.grade ?? null;
-                if (newGrade !== existingGrade) {
-                    if (!result.studentData.periods) result.studentData.periods = {};
-                    if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
+                const parsedGrade = parseFloat(gradeInput.value.trim().replace(',', '.'));
+                const newGrade = isNaN(parsedGrade) ? null : parsedGrade;
+                if ((result.studentData.periods?.[currentPeriod]?.grade ?? null) !== newGrade) {
+                    Utils.markStudentModified(result, currentPeriod);
                     result.studentData.periods[currentPeriod].grade = newGrade;
-                    hasChanged = true;
                 }
+                hasChanged = true;
             }
             this._isGradeEdited = false;
         }
@@ -712,8 +709,7 @@ export const FocusPanelManager = {
                         result.copied = false;
                         result.errorMessage = null;
                         result.errorPeriod = null;
-                        if (!result.studentData.periods) result.studentData.periods = {};
-                        if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
+                        Utils.markStudentModified(result, currentPeriod);
                         result.studentData.periods[currentPeriod].appreciation = normalizedText;
                         result.isPending = false;
                         this._initialAppreciationHtml = rawHtml;
@@ -721,15 +717,13 @@ export const FocusPanelManager = {
                     }
                 }
             } else if (normalizedText === '') {
-                const existingAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation || '';
-                if (existingAppreciation !== '') {
+                if (result.studentData.periods?.[currentPeriod]?.appreciation) {
+                    Utils.markStudentModified(result, currentPeriod);
+                    result.studentData.periods[currentPeriod].appreciation = '';
                     result.appreciation = '';
-                    if (result.studentData?.periods?.[currentPeriod]) {
-                        result.studentData.periods[currentPeriod].appreciation = '';
-                    }
-                    this._initialAppreciationHtml = '';
-                    hasChanged = true;
                 }
+                this._initialAppreciationHtml = '';
+                hasChanged = true;
             }
             this._isAppreciationEdited = false;
         }

@@ -10,7 +10,7 @@
     border: none;
     padding: 0 20px;
     height: 40px;
-    border-radius: var(--radius-control);
+    border-radius: var(--radius-pill);
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
@@ -176,7 +176,6 @@
 .btn-primary {
     color: var(--text-on-primary);
     border: none;
-    border-radius: var(--radius-control);
     font-weight: 600;
     position: relative;
     overflow: hidden;
@@ -502,12 +501,8 @@
 @media (hover: hover) and (pointer: fine) {
     .btn-icon:hover:not(:disabled) {
         background-color: var(--item-hover-bg);
-        color: var(--icon-btn-hover);
-        border-color: rgba(var(--primary-color-rgb), 0.3);
-    }
-
-    [data-theme="dark"] .btn-icon:hover:not(:disabled) {
         color: var(--text-primary);
+        border-color: var(--border-color-hover);
     }
 
     .btn-icon.danger:hover:not(:disabled) {
@@ -598,38 +593,31 @@ label {
 }
 
 /* Labels primaires (point d'entrée principal) */
-.form-group>label:first-child,
-#loadStudentContainer label {
+.form-group>label:first-child {
     font-weight: 600;
     color: var(--text-primary);
     font-size: 14px;
 }
 
-.label-with-action {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-}
-
-.label-with-action>label {
-    margin-bottom: 0;
-}
-
-/* --- Inputs & Forms (Nebula Style — Unified Inset Well) --- */
+/* --- Inputs & Forms (Nebula Style — Unified Satin Capsule & Surface) --- */
 input:not(:where([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input)),
 textarea:not(:where(.focus-context-textarea, .import-textarea, .class-note-textarea)),
 select {
-    padding: 12.5px 14.5px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-control);
+    padding: 10px 15px;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-pill);
     font-size: 14px;
-    background-color: var(--modal-scene-bg, var(--bg-color));
+    background-color: var(--input-bg);
     color: var(--text-primary);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
     font-family: inherit;
     width: 100%;
     box-shadow: none;
+}
+
+textarea:not(:where(.focus-context-textarea, .import-textarea, .class-note-textarea)) {
+    padding: 10px 14px;
+    border-radius: var(--radius-control);
 }
 
 /* Force native controls (autocomplete, calendar) - Dark mode text color */
@@ -639,12 +627,12 @@ select {
     color: var(--text-primary);
 }
 
-/* --- Hover & Focus States: Progressive Border (Repos -> Hover -> Focus) --- */
+/* --- Hover & Focus States: Progressive Border & Satin Halo --- */
 :where(
     input:not([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input),
     textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
 ):hover:not(:where(:disabled, :focus)) {
-    border-color: var(--border-color-strong);
+    border-color: var(--input-border-hover);
 }
 
 :where(
@@ -652,15 +640,9 @@ select {
     textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
 ):focus {
     outline: none;
-    border-color: var(--border-color-hover);
-    background-color: var(--surface-color);
-}
-
-[data-theme="dark"] :where(
-    input:not([type="range"], [type="checkbox"], [type="radio"], .custom-input, .context-grade-input),
-    textarea:not(.focus-context-textarea, .import-textarea, .class-note-textarea)
-):focus {
-    background-color: var(--bg-color);
+    border-color: var(--input-border-focus);
+    background-color: var(--input-focus-bg);
+    box-shadow: var(--input-focus-ring);
 }
 
 /* --- Container-Embedded Inputs (.custom-input) ---
@@ -922,11 +904,6 @@ textarea {
     resize: vertical;
 }
 
-/* Bouton Micro dans le Textarea */
-.input-with-icon {
-    position: relative;
-}
-
 .input-error {
     border-color: var(--error-color) !important;
     box-shadow: none !important;
@@ -949,224 +926,6 @@ textarea {
     display: flex;
     align-items: center;
     gap: 4px;
-}
-
-.form-separator {
-    border: none;
-    height: 0;
-    /* Invisible, on utilise l'espace blanc */
-    background-color: transparent;
-    margin: 28px 0;
-    /* Plus d'espace pour aérer */
-}
-
-
-
-
-/* --- Drop Zone - Style épuré Apple 2025 --- */
-.drop-zone {
-    border: 2px dashed rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-md);
-    padding: 32px;
-    text-align: center;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    background: rgba(0, 0, 0, 0.02);
-}
-
-[data-theme="dark"] .drop-zone {
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.drop-zone p {
-    font-size: 14px;
-    margin-bottom: 16px;
-    font-weight: 500;
-}
-
-.drop-zone .icon {
-    font-size: 32px;
-    display: block;
-    margin-bottom: 10px;
-    color: var(--text-secondary);
-    opacity: 0.5;
-    transition: all var(--transition-fast);
-}
-
-.drop-zone:hover {
-    border-color: var(--primary-color);
-    border-style: solid;
-    background: rgba(var(--primary-color-rgb), 0.04);
-    color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.12);
-}
-
-[data-theme="dark"] .drop-zone:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-primary);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .drop-zone:hover .icon,
-[data-theme="dark"] .drop-zone.highlight .icon {
-    color: var(--text-primary);
-}
-
-/* Effet "magique" pour le drag & drop actif - Animation rotative préservée */
-.drop-zone.highlight {
-    position: relative;
-    border-color: transparent !important;
-    background: transparent !important;
-    color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.15);
-    z-index: var(--z-normal);
-}
-
-/* Bordure gradient rotative pour le highlight */
-.drop-zone.highlight::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.6) 0%,
-            rgba(var(--primary-color-rgb), 0.6) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.6) 32%,
-            rgba(var(--primary-color-rgb), 0.6) 50%,
-            rgba(var(--primary-color-rgb), 0.6) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.6) 82%,
-            rgba(var(--primary-color-rgb), 0.6) 100%);
-    animation: rotate-gradient 8s linear infinite;
-    opacity: 1;
-    z-index: -2;
-    pointer-events: none;
-}
-
-/* Masque de fond intérieur */
-.drop-zone.highlight::after {
-    content: '';
-    position: absolute;
-    inset: 2.5px;
-    border-radius: var(--radius-md);
-    background: var(--surface-color);
-    z-index: -1;
-    pointer-events: none;
-}
-
-.drop-zone:hover .icon,
-.drop-zone.highlight .icon {
-    color: var(--primary-color);
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.mass-import-textarea {
-    min-height: 180px;
-    /* plus grand */
-    font-family: monospace;
-    font-size: 13px;
-    background-color: var(--bg-color);
-    /* Cohérent avec les autres champs de saisie */
-    border-color: var(--border-color);
-    color: var(--text-primary);
-}
-
-
-.import-separator {
-    margin: 16px 0;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.import-separator::before,
-.import-separator::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-}
-
-.import-separator span {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-
-/* --- Period Input Group --- */
-.period-input-group {
-    /* Suppression du cadre et du fond pour plus de légèreté */
-    border: none;
-    background: none;
-    padding: 0;
-    margin-bottom: 24px;
-}
-
-.period-input-group h3,
-.period-input-group h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-/* --- Status Pills --- */
-.status-pills-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    /* padding réduit, latéral supprimé */
-    /* Suppression totale du cadre "inutile" */
-    border: none;
-    background: transparent;
-    min-height: auto;
-}
-
-.status-pills-container input[type="checkbox"] {
-    display: none;
-}
-
-.status-pills-container label {
-    display: inline-block;
-    padding: 6px 14px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-secondary);
-    /* fond des pilules non sélectionnées */
-    border-radius: var(--radius-pill);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    margin: 0;
-    user-select: none;
-    color: var(--text-secondary);
-}
-
-.status-pills-container label:hover {
-    background-color: var(--bg-color);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.status-pills-container input[type="checkbox"]:checked+label {
-    background-color: var(--primary-color);
-    color: var(--text-on-primary);
-    border-color: var(--primary-color);
-    font-weight: 600;
 }
 
 /* --- Dropdowns --- */

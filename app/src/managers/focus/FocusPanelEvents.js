@@ -7,6 +7,7 @@
 import { appState } from '../../state/State.js';
 import { UI } from '../UIManager.js';
 import { StorageManager } from '../StorageManager.js';
+import { Utils } from '../../utils/Utils.js';
 import { PromptService } from '../../services/PromptService.js';
 import { FocusPanelHistory } from '../FocusPanelHistory.js';
 import { FocusPanelJournal } from '../FocusPanelJournal.js';
@@ -228,16 +229,12 @@ export const FocusPanelEvents = {
                 let numVal = val === '' ? null : parseFloat(val);
                 if (isNaN(numVal)) numVal = null;
 
-                if (!result.studentData.periods) result.studentData.periods = {};
-                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
-
+                Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].grade = numVal;
                 changed = true;
                 panel._isGradeEdited = true;
             } else if (target.id === 'focusContextInput') {
-                if (!result.studentData.periods) result.studentData.periods = {};
-                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
-
+                Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].context = target.value;
                 changed = true;
                 panel._isContextEdited = true;
@@ -359,6 +356,7 @@ export const FocusPanelEvents = {
                 const isGenerating = FocusPanelStatus._isGenerating(panel.currentStudentId);
 
                 if (result && !isGenerating) {
+                    Utils.markStudentModified(result, appState.currentPeriod);
                     const hasRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (hasRealContent) {

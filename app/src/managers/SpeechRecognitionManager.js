@@ -10,6 +10,7 @@
 
 import { UI } from './UIManager.js';
 import { appState } from '../state/State.js';
+import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
@@ -756,8 +757,7 @@ export const SpeechRecognitionManager = {
 
         result.appreciation = content;
         if (result.studentData) {
-            if (!result.studentData.periods) result.studentData.periods = {};
-            if (!result.studentData.periods[appState.currentPeriod]) result.studentData.periods[appState.currentPeriod] = {};
+            Utils.markStudentModified(result, appState.currentPeriod);
             result.studentData.periods[appState.currentPeriod].appreciation = content;
         }
         result.wasGenerated = false;

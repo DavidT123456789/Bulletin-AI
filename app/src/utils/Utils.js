@@ -997,41 +997,21 @@ export const Utils = {
     getPeriods() { return getPeriodsForSystem(appState.periodSystem === 'trimestres' ? 'trimestres' : 'semestres'); },
 
     /**
-     * Met à jour l'appréciation d'une période avec timestamp automatique.
-     * Centralise la logique pour garantir un timestamp cohérent pour la sync.
+     * Horodate une modification utilisateur d'une fiche élève.
+     * Ces timestamps arbitrent la fusion Cloud (StorageManager) et alimentent le récapitulatif
+     * des modifications locales des modales Sauvegarder / Restaurer.
      * @param {Object} result - L'objet résultat de l'élève
-     * @param {string} period - La période (T1, T2, T3, S1, S2)
-     * @param {string} appreciation - Le nouveau texte d'appréciation
-     * @param {Object} [options] - Options supplémentaires
-     * @param {boolean} [options.updateRootLevel=true] - Met aussi à jour result.appreciation
-     * @param {boolean} [options.updateResultTimestamp=true] - Met à jour result._lastModified
+     * @param {string|null} [period=null] - Période modifiée (note, contexte, appréciation)
      */
-    setPeriodAppreciation(result, period, appreciation, options = {}) {
-        const { updateRootLevel = true, updateResultTimestamp = true } = options;
+    markStudentModified(result, period = null) {
         const now = Date.now();
-
-        // Assurer que la structure existe
-        if (!result.studentData) result.studentData = {};
-        if (!result.studentData.periods) result.studentData.periods = {};
-        if (!result.studentData.periods[period]) {
-            result.studentData.periods[period] = { grade: null, appreciation: '' };
+        if (period) {
+            if (!result.studentData) result.studentData = {};
+            if (!result.studentData.periods) result.studentData.periods = {};
+            if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
+            result.studentData.periods[period]._lastModified = now;
         }
-
-        // Mettre à jour l'appréciation et le timestamp de la période
-        result.studentData.periods[period].appreciation = appreciation;
-        result.studentData.periods[period]._lastModified = now;
-
-        // Mettre à jour l'appréciation au niveau racine (cache pour période courante)
-        if (updateRootLevel && result.studentData.currentPeriod === period) {
-            result.appreciation = appreciation;
-        }
-
-        // Mettre à jour le timestamp global du résultat
-        if (updateResultTimestamp) {
-            result._lastModified = now;
-        }
-
-        return now;
+        result._lastModified = now;
     },
 
     /**

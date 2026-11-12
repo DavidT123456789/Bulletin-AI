@@ -8,7 +8,6 @@ import {
     AI_MODELS,
     MODEL_SELECTOR_CONFIG,
     COSTS_PER_MILLION_TOKENS,
-    MODEL_DESCRIPTIONS,
     MODEL_SHORT_NAMES,
     API_MODEL_MAPPINGS,
     FALLBACK_CONFIG,
@@ -61,7 +60,6 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
             expect(meta.inSelector).toBe(true);
             expect(meta.qualifier).toBe(qualifier);
             expect(COSTS_PER_MILLION_TOKENS[id]).toBeDefined();
-            expect(MODEL_DESCRIPTIONS[id]).toBeTruthy();
             expect(MODEL_SHORT_NAMES[id]).toBeTruthy();
         });
 

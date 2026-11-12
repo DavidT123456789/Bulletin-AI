@@ -39,10 +39,6 @@ vi.mock('../config/Config.js', () => ({
         4: 'Exigeant',
         5: 'Strict'
     },
-    MODEL_DESCRIPTIONS: {
-        'gpt-4': 'Modèle GPT-4 puissant',
-        'gemini-pro': 'Modèle Google Gemini'
-    },
     APP_VERSION: '4.3.0',
     DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
@@ -96,7 +92,7 @@ vi.mock('./AppreciationsManager.js', () => ({
 import { FormUI } from './FormUIManager.js';
 import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
-import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG } from '../config/Config.js';
 
 describe('FormUIManager', () => {
     let mockApp;
@@ -114,7 +110,6 @@ describe('FormUIManager', () => {
 
         // Mock getElementById for dynamic elements
         document.getElementById = vi.fn((id) => {
-            if (id === 'aiModelDescription') return { innerHTML: '' };
             if (id === 'missingApiKeyWarning') return { style: { display: '' } };
             if (id === 'missingKeyText') return { textContent: '' };
             return null;
@@ -261,30 +256,6 @@ describe('FormUIManager', () => {
             FormUI.syncStyleControls();
             expect(DOM.iaToneSlider.disabled).toBe(false);
             expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
-        });
-    });
-
-    describe('updateModelDescription()', () => {
-        it('should update model description element', () => {
-            const descEl = { innerHTML: '' };
-            document.getElementById = vi.fn((id) => {
-                if (id === 'aiModelDescription') return descEl;
-                return null;
-            });
-            DOM.aiModelSelect.value = 'gpt-4';
-            FormUI.updateModelDescription();
-            expect(descEl.innerHTML).toBe(MODEL_DESCRIPTIONS['gpt-4']);
-        });
-
-        it('should show default text when model not in descriptions', () => {
-            const descEl = { innerHTML: '' };
-            document.getElementById = vi.fn((id) => {
-                if (id === 'aiModelDescription') return descEl;
-                return null;
-            });
-            DOM.aiModelSelect.value = 'unknown-model';
-            FormUI.updateModelDescription();
-            expect(descEl.innerHTML).toBe('Description...');
         });
     });
 

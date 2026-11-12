@@ -1817,6 +1817,10 @@
         border-color 0.25s ease;
 }
 
+[data-theme="dark"] .custom-picker-panel {
+    background: color-mix(in srgb, var(--bg-color) 45%, var(--surface-color));
+}
+
 .custom-picker-panel.open {
     grid-template-rows: 1fr;
     opacity: 1;
@@ -1959,12 +1963,12 @@
 .picker-live-preview {
     width: 34px;
     height: 34px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     background: var(--primary-color);
     flex-shrink: 0;
     border: 1px solid rgba(128, 128, 128, 0.2);
     cursor: pointer;
-    transition: background 0.1s ease, transform 0.15s ease;
+    transition: background 0.1s ease, transform 0.16s var(--ease-spring);
 }
 
 .picker-live-preview:hover {
@@ -1974,13 +1978,23 @@
 .hex-input-container {
     display: flex;
     align-items: center;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-control);
     padding: 0 12px;
     height: 34px;
     flex: 1;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hex-input-container:hover:not(:focus-within) {
+    border-color: var(--input-border-hover);
+}
+
+.hex-input-container:focus-within {
+    border-color: var(--input-border-focus);
+    background: var(--input-focus-bg);
+    box-shadow: var(--input-focus-ring);
 }
 
 .hex-symbol {
@@ -1992,21 +2006,17 @@
 }
 
 .hex-input-container input.hex-text-input {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: auto !important;
-    flex: 1 !important;
-    height: 100% !important;
-    transition: none !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    color: var(--text-primary) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
+    padding: 0;
+    margin: 0;
+    width: auto;
+    flex: 1;
+    height: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .picker-eyedropper-btn,
@@ -2016,13 +2026,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     font-size: 15px;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
     padding: 0;
     flex-shrink: 0;
 }
@@ -2031,7 +2041,7 @@
 .picker-confirm-btn:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
-    border-color: var(--text-tertiary);
+    border-color: var(--border-color-hover);
 }
 
 @media (max-width: 768px) and (hover: none) and (pointer: coarse) {

@@ -408,7 +408,8 @@ export const SyncService = {
      * un nouvel élève d'une simple inscription à un groupe ou d'un déplacement.
      * @param {Array<Object>} [results=[]]
      * @param {Array<Object>} [classes=[]]
-     * @returns {{ v: number, classes: Object<string, { name: string, isGroup: boolean, isDemo: boolean }>, entries: Array<[string, string]> }}
+     * @returns {{ v: number, classes: Object<string, { name: string, isGroup: boolean, isDemo: boolean }>, entries: Array<[string, string, (string|number|null)]> }}
+     *   Chaque entrée : [classId, clé d'identité de l'élève, id de la fiche]
      */
     buildRosterSnapshot(results = [], classes = []) {
         const safeResults = Array.isArray(results) ? results : [];
@@ -446,7 +447,7 @@ export const SyncService = {
             const pairKey = `${classId}\0${studentKey}`;
             if (!seen.has(pairKey)) {
                 seen.add(pairKey);
-                entries.push([classId, studentKey]);
+                entries.push([classId, studentKey, r.id ?? null]);
             }
         }
 
@@ -472,7 +473,8 @@ export const SyncService = {
      * - les nouveaux élèves / élèves définitivement supprimés (personnes uniques),
      * - les ajouts / retraits d'affectation à une classe ou un groupe (élèves déjà existants),
      * - les déplacements d'une classe vers une autre,
-     * - les classes ou groupes créés / supprimés.
+     * - les classes ou groupes créés / supprimés,
+     * - les fiches de `targetRoster` concernées par ces changements (`changedResultIds`).
      * @param {Object|null} baseRoster
      * @param {Object|null} targetRoster
      * @returns {Object|null}
@@ -522,10 +524,13 @@ export const SyncService = {
 
         let newStudents = 0;
         let removedStudents = 0;
+        const newStudentKeys = new Set();
+        const gainedPairs = new Set();
 
         for (const key of targetByStudent.keys()) {
             if (!baseByStudent.has(key) && !key.startsWith('demo:')) {
                 newStudents++;
+                newStudentKeys.add(key);
             }
         }
         for (const key of baseByStudent.keys()) {
@@ -552,6 +557,7 @@ export const SyncService = {
             for (const cId of baseSet) {
                 if (!targetSet.has(cId)) lost.push(cId);
             }
+            gained.forEach(cId => gainedPairs.add(`${cId}\0${studentKey}`));
 
             if (gained.length === 1 && lost.length === 1) {
                 const toId = gained[0];
@@ -591,6 +597,12 @@ export const SyncService = {
             addedClasses.length > 0 ||
             removedClasses.length > 0;
 
+        // Fiches nouvellement affectées (nouvel élève, déplacement, inscription à un groupe)
+        const changedResultIds = targetRoster.entries
+            .filter(entry => Array.isArray(entry) && entry[2] != null &&
+                (newStudentKeys.has(entry[1]) || gainedPairs.has(`${entry[0]}\0${entry[1]}`)))
+            .map(entry => entry[2]);
+
         return {
             newStudents,
             removedStudents,
@@ -599,6 +611,7 @@ export const SyncService = {
             movedEnrollments,
             addedClasses,
             removedClasses,
+            changedResultIds,
             hasAnyChange
         };
     },

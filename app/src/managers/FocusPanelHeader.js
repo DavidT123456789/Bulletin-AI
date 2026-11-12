@@ -621,6 +621,7 @@ export const FocusPanelHeader = {
             if (nomInput) result.nom = newNom;
             if (prenomInput) result.prenom = newPrenom;
             result.studentData.statuses = mergedStatuses;
+            Utils.markStudentModified(result);
         }
 
         // Update Header View in place (preserve existing .student-avatar DOM node so CSS spring transition plays!)

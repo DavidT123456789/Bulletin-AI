@@ -158,10 +158,6 @@
     height: 34px;
 }
 
-[data-theme="dark"] .settings-group-card #iaVoiceSelector {
-    background: var(--bg-color);
-}
-
 #iaDiscipline,
 #iaStyleInstructions {
     width: 100%;
@@ -170,7 +166,7 @@
 
 #iaDiscipline {
     height: 36px;
-    padding: 0 12px;
+    padding: 0 15px;
     font-size: 0.88rem;
 }
 
@@ -545,14 +541,6 @@
 /* Flex-1 utility */
 .flex-1 {
     flex: 1;
-}
-
-/* === Placeholder styling for settings inputs/textareas === */
-.style-instructions-textarea::placeholder,
-#iaDiscipline::placeholder {
-    color: var(--text-tertiary);
-    font-style: normal;
-    opacity: 0.85;
 }
 
 /* === Settings Focus Highlight Animation (for shortcuts to settings) === */
@@ -1344,21 +1332,13 @@
     gap: 3px;
 }
 
-.settings-row-info .fallback-info {
-    justify-content: flex-start;
-    margin-top: 2px;
-}
-
 #fallbackOrderHint {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 3px 6px;
     line-height: 1.35;
-}
-
-.settings-row-info .fallback-info:empty {
-    display: none;
+    margin-top: 2px;
 }
 
 .settings-row-title {

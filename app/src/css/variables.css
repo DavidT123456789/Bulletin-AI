@@ -128,11 +128,13 @@
     --toggle-knob-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
     --checkbox-check-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='white' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-    /* Input border width (single source of truth) */
-    --input-border-width: 1px;
-    --input-border-width-focus: 2px;
-    /* Thicker for animated gradient focus */
-    --card-input-padding: 12px 16px;
+    /* --- Unified Satin Input Tokens (Single Source of Truth) --- */
+    --input-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 2.5%);
+    --input-focus-bg: var(--surface-color);
+    --input-border: var(--border-default);
+    --input-border-hover: var(--border-color-hover);
+    --input-border-focus: var(--text-tertiary);
+    --input-focus-ring: 0 0 0 3px var(--item-hover-bg);
 
     /* Ombres "Lift" (Satin soft — Neutre Pur) */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -239,7 +241,6 @@
     --bg-secondary-dark: var(--bg-tertiary);
     --surface-secondary: var(--bg-secondary);
     --surface-alert-bg: rgba(var(--error-rgb), 0.06);
-    --input-background: var(--surface-color);
     --primary-color-light: rgba(var(--primary-color-rgb), 0.12);
     --text-tertiary-rgb: 115, 115, 115;
     --text-quaternary-rgb: 163, 163, 163;
@@ -310,6 +311,7 @@
     --brand-primary-rgb: 37, 99, 235;
     --brand-purple: var(--brand-accent-color);
     --brand-purple-rgb: var(--brand-accent-rgb);
+    --brand-groq: #f55036;
 
     /* Standard UI Highlight / Drop Target (Neutral Minimalist — Independent of custom accent colors) */
     --highlight-standard-border: rgba(23, 23, 23, 0.45);
@@ -471,6 +473,9 @@
     --surface-elevated: rgba(23, 23, 24, 0.88);
     --modal-scene-bg: var(--bg-color);
     --modal-border: 1px solid rgba(255, 255, 255, 0.07);
+    --input-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 2.5%);
+    --input-focus-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 4%);
+    --input-border: var(--border-color);
 
     --bg-hover: #262627;
     /* Obsidian 800 (+1 bleu) */

@@ -286,17 +286,16 @@
 .move-mode-segmented {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    padding: 4px;
+    gap: 3px;
+    padding: 3px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
+    border: none;
+    border-radius: var(--radius-pill);
     margin-bottom: 10px;
 }
 
 [data-theme="dark"] .move-mode-segmented {
-    background: var(--bg-tertiary);
-    border-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .move-mode-btn {
@@ -304,16 +303,20 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 9px 12px;
-    min-height: 38px;
+    padding: 7px 12px;
+    min-height: 36px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: transparent;
-    color: var(--text-secondary);
-    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    font-size: 0.86rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast), transform 0.16s var(--ease-spring);
+}
+
+.move-mode-btn:active {
+    transform: scale(0.97);
 }
 
 .move-mode-btn:hover:not(.active) {
@@ -324,12 +327,13 @@
 .move-mode-btn.active {
     background: var(--surface-color);
     color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] .move-mode-btn.active {
-    background: var(--surface-elevated);
+    background: rgba(255, 255, 255, 0.11);
     color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .move-mode-hint {
@@ -339,7 +343,7 @@
     line-height: 1.4;
     color: var(--text-secondary);
     background: var(--bg-secondary);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
 }
 
 [data-theme="dark"] .move-mode-hint {
@@ -369,6 +373,7 @@
     padding: 12px 16px;
     text-align: left;
     min-height: 44px;
+    border-radius: var(--radius-control);
 }
 
 .move-target-btn iconify-icon,
@@ -404,6 +409,7 @@
     justify-content: center;
     gap: 8px;
     min-height: 42px;
+    border-radius: var(--radius-control);
     border-style: dashed;
     color: var(--text-secondary);
 }
@@ -431,7 +437,7 @@
 .move-create-class-submit {
     flex-shrink: 0;
     min-height: 42px;
-    padding: 0 14px;
+    padding: 0 18px;
     gap: 6px;
 }
 
@@ -474,14 +480,20 @@
     position: relative;
     display: flex;
     align-items: center;
-    background: var(--surface-color);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-control);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-pill);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.pick-students-search-box:is(:hover, :focus-within) {
-    border-color: var(--border-color-hover);
+.pick-students-search-box:hover:not(:focus-within) {
+    border-color: var(--input-border-hover);
+}
+
+.pick-students-search-box:focus-within {
+    border-color: var(--input-border-focus);
+    background: var(--input-focus-bg);
+    box-shadow: var(--input-focus-ring);
 }
 
 .pick-search-icon {
@@ -812,11 +824,6 @@
 .pick-students-empty iconify-icon {
     font-size: 2rem;
     opacity: 0.6;
-}
-
-.modal-input {
-    width: 100%;
-    margin-top: 16px;
 }
 
 @keyframes modalslidein {
@@ -1443,15 +1450,15 @@
 
 .api-key-section .api-key-actions .api-key-input-container,
 .welcome-api-key-group .api-key-input-container {
-    --api-input-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 2.5%);
-    --api-input-border: var(--border-default);
+    --api-mask-bg: var(--input-bg);
     flex: 1;
+    min-width: 0;
     position: relative;
 }
 
-[data-theme="dark"] .api-key-section .api-key-actions .api-key-input-container,
-[data-theme="dark"] .welcome-api-key-group .api-key-input-container {
-    --api-input-border: var(--border-color);
+.api-key-section .api-key-actions .api-key-input-container:focus-within,
+.welcome-api-key-group .api-key-input-container:focus-within {
+    --api-mask-bg: var(--input-focus-bg);
 }
 
 .api-key-section .api-key-actions .api-key-input-container::after,
@@ -1459,29 +1466,23 @@
     content: '';
     position: absolute;
     inset: 1px 1px 1px auto;
-    width: 40px;
+    width: 34px;
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-    background: linear-gradient(to right, transparent, var(--api-input-bg) 76%);
+    background: linear-gradient(to right, transparent, var(--api-mask-bg) 62%);
     pointer-events: none;
     transition: opacity var(--transition-fast);
 }
 
-.api-key-section .api-key-actions .api-key-input-container:focus-within::after,
-.welcome-api-key-group .api-key-input-container:focus-within::after,
 .api-key-section .api-key-actions .api-key-input-container:has(.ollama-base-url-input)::after {
     opacity: 0;
 }
 
 .api-key-section .api-key-actions .api-key-input-container input,
 #welcomeModal .welcome-api-key-group input {
-    height: 32px;
-    padding: 0 18px 0 15px;
-    margin: 0 !important;
+    height: 34px;
+    padding: 0 12px 0 15px;
+    margin: 0;
     font-size: 13px;
-    background-color: var(--api-input-bg);
-    border: 1px solid var(--api-input-border);
-    border-radius: var(--radius-pill);
-    box-shadow: none;
     color: var(--text-secondary);
     -webkit-text-security: disc;
     text-security: disc;
@@ -1493,22 +1494,8 @@
     padding-bottom: 2px;
 }
 
-.api-key-section .api-key-actions .api-key-input-container input:hover:not(:disabled):not(:focus),
-#welcomeModal .welcome-api-key-group input:hover:not(:disabled):not(:focus) {
-    border-color: var(--border-color-hover);
-}
-
-.api-key-section .api-key-actions .api-key-input-container input::placeholder,
-#welcomeModal .welcome-api-key-group input::placeholder {
-    font-style: normal !important;
-    color: var(--text-tertiary);
-    opacity: 0.75;
-}
-
 .api-key-section .api-key-actions .api-key-input-container input:focus,
 #welcomeModal .welcome-api-key-group input:focus {
-    border-color: var(--text-tertiary);
-    box-shadow: 0 0 0 3px var(--item-hover-bg);
     color: var(--text-primary);
     -webkit-text-security: none;
     text-security: none;
@@ -1517,7 +1504,7 @@
 .btn-validate-key {
     flex: 0 0 auto;
     width: auto;
-    height: 32px;
+    height: 34px;
     min-width: 96px;
     padding: 0 16px;
     margin: 0;
@@ -1619,14 +1606,7 @@
     padding: 0 15px;
     font-size: 0.95em;
     font-weight: 500;
-    border-radius: var(--radius-pill);
-    margin: 0 !important;
-    background-color: var(--modal-scene-bg, var(--bg-color));
-}
-
-.fallback-info {
-    display: flex;
-    align-items: center;
+    margin: 0;
 }
 
 /* Smart Banner Variations */
@@ -1772,30 +1752,18 @@
 }
 
 .hard-confirm-input {
-    width: 100%;
     box-sizing: border-box;
     text-align: center;
     padding: 10px 14px;
+    border-radius: var(--radius-control);
     font-size: var(--font-base);
     font-weight: 600;
-    font-family: var(--font-sans);
     letter-spacing: 0.08em;
-    color: var(--text-primary);
-    background: var(--modal-scene-bg, var(--bg-color));
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-control);
-    outline: none;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 }
 
 .hard-confirm-input:focus {
     border-color: var(--error-color);
-    background: var(--surface-color);
     box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.15);
-}
-
-[data-theme="dark"] .hard-confirm-input:focus {
-    background: var(--bg-color);
 }
 
 .hard-confirm-input.match {
@@ -1805,10 +1773,7 @@
 
 .hard-confirm-input::placeholder {
     font-weight: normal;
-    font-style: normal;
     letter-spacing: normal;
-    color: var(--text-tertiary);
-    opacity: 0.8;
 }
 
 /* ====================================================================
@@ -2454,11 +2419,6 @@
 }
 
 .model-selector-wrapper .custom-dropdown {
-    flex: 1;
-    min-width: 0;
-}
-
-.api-key-input-container {
     flex: 1;
     min-width: 0;
 }

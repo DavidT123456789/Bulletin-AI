@@ -946,10 +946,10 @@
 .assignment-combobox-btn {
     width: 100%;
     min-width: 0;
-    height: 30px;
-    padding: 0 8px;
+    height: 32px;
+    padding: 0 11px;
     border: 1px solid var(--border-color-strong);
-    border-radius: var(--radius-sm, 6px);
+    border-radius: var(--radius-pill);
     background-color: var(--surface-color);
     color: var(--text-primary);
     font-size: 12.5px;

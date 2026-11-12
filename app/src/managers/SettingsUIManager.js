@@ -415,15 +415,8 @@ export const SettingsUIManager = {
             if (iconEl) {
                 iconEl.setAttribute('icon', config.icon);
 
-                // Appliquer la classe du provider
+                // Appliquer la classe du provider (porte la couleur de marque)
                 iconEl.className = `iconify-inline ${config.class || ''}`;
-
-                // Appliquer le style spécifique (couleur) si défini
-                if (config.style) {
-                    iconEl.setAttribute('style', config.style);
-                } else {
-                    iconEl.removeAttribute('style');
-                }
             }
         });
     },

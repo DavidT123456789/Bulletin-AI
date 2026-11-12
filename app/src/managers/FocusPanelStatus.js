@@ -734,30 +734,6 @@ export const FocusPanelStatus = {
         }
     },
 
-
-
-    /**
-     * Save appreciation edits to result
-     */
-    saveAppreciationEdits() {
-        const currentStudentId = this._getCurrentStudentId();
-        if (!currentStudentId) return;
-
-        const appreciationText = document.getElementById('focusAppreciationText');
-        const result = appState.generatedResults.find(r => r.id === currentStudentId);
-
-        if (appreciationText && result) {
-            const text = appreciationText.textContent?.trim();
-            if (text && !text.includes('Aucune appréciation')) {
-                result.appreciation = text;
-                const currentPeriod = appState.currentPeriod;
-                if (result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod].appreciation = text;
-                }
-            }
-        }
-    },
-
     /**
      * Check if context or grade has been modified for an AI-generated appreciation
      */

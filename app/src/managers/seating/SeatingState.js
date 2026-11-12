@@ -581,6 +581,30 @@ export const SeatingState = {
         } catch (_) { /* never block caller */ }
     },
 
+    /**
+     * Décale les élèves des autres classes partageant la grille pour qu'ils restent alignés avec le bureau,
+     * et horodate le plan de leurs classes (seul arbitre de la fusion Cloud des positions).
+     * @param {number} rowOffset
+     */
+    _shiftOtherClassesStudentRows(rowOffset) {
+        const posKey = this._getActivePositionKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
+        const currentStudentIds = new Set(this._students.map(s => s.id));
+        const shiftedClassIds = new Set();
+        (appState.generatedResults || []).forEach(r => {
+            if (!r || currentStudentIds.has(r.id)) return;
+            const pos = r[posKey];
+            if (pos && typeof pos.row === 'number') {
+                r[posKey] = { ...pos, row: pos.row + rowOffset };
+                shiftedClassIds.add(r.classId);
+            }
+        });
+        const now = Date.now();
+        (appState.classes || []).forEach(cls => {
+            if (cls && shiftedClassIds.has(cls.id)) cls[updatedKey] = now;
+        });
+    },
+
     _undo() {
         if (this._undoStack.length === 0 || this._isLocked) return;
         this._redoStack.push(this._captureSnapshot());
@@ -610,7 +634,6 @@ export const SeatingState = {
     _restoreSnapshot(snapshot) {
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
-        const posKey = this._getActivePositionKey();
         const oldRows = this._gridState?.length || this._getRows();
         const targetRows = snapshot.rows || oldRows;
         const rowOffset = this._isActivityMode() ? 0 : (targetRows - oldRows);
@@ -641,15 +664,7 @@ export const SeatingState = {
                 }
                 cls[classSpecialKey] = nextClassSpecial;
             });
-            const currentStudentIds = new Set(this._students.map(s => s.id));
-            (appState.generatedResults || []).forEach(r => {
-                if (!r || currentStudentIds.has(r.id)) return;
-                const pos = r[posKey];
-                if (pos && typeof pos.row === 'number') {
-                    r[posKey] = { ...pos, row: pos.row + rowOffset };
-                    r._lastModified = Date.now();
-                }
-            });
+            this._shiftOtherClassesStudentRows(rowOffset);
         }
         
         const rowSlider = document.getElementById('scRowsSlider');
@@ -760,7 +775,6 @@ export const SeatingState = {
             if (changed) {
                 anyChanged = true;
                 result[posKey] = newPos;
-                result._lastModified = Date.now();
                 s[posKey] = newPos;
             }
         });
@@ -1017,7 +1031,6 @@ export const SeatingState = {
 
         const nextPinned = !result[posKey].pinned;
         result[posKey].pinned = nextPinned;
-        result._lastModified = Date.now();
 
         const student = this._students.find(s => s.id === resultId);
         if (student) student[posKey] = { ...result[posKey] };
@@ -1055,7 +1068,6 @@ export const SeatingState = {
             const result = appState.generatedResults?.find(r => r.id === id);
             if (result?.[posKey]) {
                 result[posKey].pinned = nextPinned;
-                result._lastModified = Date.now();
             }
             const student = this._students.find(s => s.id === id);
             if (student && result?.[posKey]) {

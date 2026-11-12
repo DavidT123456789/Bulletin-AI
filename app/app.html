@@ -2023,7 +2023,8 @@
                                     <div class="settings-row">
                                         <div class="settings-row-info">
                                             <label for="enableApiFallbackToggle" class="settings-row-title">Relais automatique</label>
-                                            <span class="settings-row-desc fallback-info">
+                                            <span class="settings-row-desc">
+                                                Bascule sur le modèle suivant en cas de quota atteint ou d'erreur.
                                                 <small id="fallbackOrderHint">
                                                     <span id="fallbackOrderText">...</span>
                                                     <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
@@ -2044,14 +2045,13 @@
                                         <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                                         <span id="missingKeyText">Clé manquante.</span>
                                         <button type="button" class="btn-link"
-                                            id="openApiKeysAccordionBtn"><span>Configurer</span><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></button>
+                                            id="openApiKeysSectionBtn"><span>Configurer</span><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></button>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Sections Clés API (1 seul niveau de carte) -->
-                            <div id="apiKeysAccordion">
-                                <small id="aiModelDescription" style="display: none;">Description du modèle sélectionné...</small>
+                            <div id="apiKeysSection">
                                 <form class="api-keys-container" action="javascript:void(0)" autocomplete="off">
                                     
                                     <!-- CATÉGORIE 1: IA SOUVERAINE GOUV.FR -->
@@ -2061,10 +2061,6 @@
                                                 IA Souveraine
                                                 <span class="settings-group-tag">Gouv.fr • ProConnect</span>
                                             </h4>
-                                            <button type="button" class="help-context-trigger" onclick="window.openHelpTab('help-data', 'help-faq-quota')">
-                                                <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
-                                                Aide & Quotas
-                                            </button>
                                         </div>
                                         <div class="settings-group-card settings-providers-card">
                                             <div class="api-key-section" id="albertApiKeyGroup">
@@ -2072,8 +2068,7 @@
                                                     <div class="api-key-title-group">
                                                         <span class="api-key-provider"><iconify-icon
                                                                 class="iconify-inline provider-albert"
-                                                                icon="solar:shield-check-bold"
-                                                                style="color: var(--color-blue);"></iconify-icon> Albert API (Gouv.fr)</span>
+                                                                icon="solar:shield-check-bold"></iconify-icon> Albert API (Gouv.fr)</span>
                                                         <span class="provider-status-badge status-unconfigured" id="albertStatusBadge">
                                                             <span class="status-dot"></span>
                                                             <span class="status-text">Non configuré</span>
@@ -2082,10 +2077,10 @@
                                                     <div class="api-key-links">
                                                         <a href="https://albert.playground.etalab.gouv.fr"
                                                             target="_blank" rel="noopener noreferrer"
-                                                            class="btn-link">Clé ProConnect ↗</a>
+                                                            class="btn-link">Obtenir une clé ↗</a>
                                                         <a href="https://ia.numerique.gouv.fr/outils-ia/albert-api/"
                                                             target="_blank" rel="noopener noreferrer"
-                                                            class="btn-link btn-link-secondary">Portail DINUM ↗</a>
+                                                            class="btn-link btn-link-secondary">Documentation ↗</a>
                                                     </div>
                                                 </div>
                                                 <div class="provider-models-hint">
@@ -2161,8 +2156,7 @@
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
                                                         <span class="api-key-provider"><iconify-icon
-                                                                class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"
-                                                                style="color: #f55036;"></iconify-icon> Groq Cloud</span>
+                                                                class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"></iconify-icon> Groq Cloud</span>
                                                         <span class="provider-status-badge status-unconfigured" id="groqStatusBadge">
                                                             <span class="status-dot"></span>
                                                             <span class="status-text">Non configuré</span>
@@ -2197,7 +2191,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- CATÉGORIE 2: SPÉCIALISÉS & PAY-AS-YOU-GO -->
+                                    <!-- CATÉGORIE 3: SPÉCIALISÉS & PAY-AS-YOU-GO -->
                                     <div class="settings-group">
                                         <div class="settings-group-header">
                                             <h4 class="settings-group-title">Spécialisés & Pay-as-you-go</h4>
@@ -2246,8 +2240,7 @@
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
                                                         <span class="api-key-provider"><iconify-icon
-                                                                class="iconify-inline" icon="solar:cat-bold"
-                                                                style="color: #fd6f00;"></iconify-icon> Mistral AI</span>
+                                                                class="iconify-inline provider-mistral" icon="solar:cat-bold"></iconify-icon> Mistral AI</span>
                                                         <span class="provider-status-badge status-unconfigured" id="mistralStatusBadge">
                                                             <span class="status-dot"></span>
                                                             <span class="status-text">Non configuré</span>
@@ -2322,9 +2315,8 @@
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
                                                         <span class="api-key-provider"><iconify-icon
-                                                                class="iconify-inline"
-                                                                icon="solar:bolt-bold-duotone"
-                                                                style="color: var(--secondary-color);"></iconify-icon>
+                                                                class="iconify-inline provider-openrouter"
+                                                                icon="solar:bolt-bold-duotone"></iconify-icon>
                                                             OpenRouter</span>
                                                         <span class="provider-status-badge status-unconfigured" id="openrouterStatusBadge">
                                                             <span class="status-dot"></span>
@@ -2360,7 +2352,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- CATÉGORIE 3: LOCAL & HORS-LIGNE -->
+                                    <!-- CATÉGORIE 4: LOCAL & HORS-LIGNE -->
                                     <div class="settings-group">
                                         <div class="settings-group-header">
                                             <h4 class="settings-group-title">Exécution locale & Hors-ligne</h4>
@@ -2371,8 +2363,8 @@
                                                 <div class="api-key-header">
                                                     <div class="api-key-title-group">
                                                         <span class="api-key-provider"><iconify-icon
-                                                                class="iconify-inline"
-                                                                icon="solar:server-square-bold" style="color: var(--text-tertiary);"></iconify-icon> Ollama</span>
+                                                                class="iconify-inline provider-ollama"
+                                                                icon="solar:server-square-bold"></iconify-icon> Ollama</span>
                                                         <span class="provider-status-badge status-unconfigured" id="ollamaStatusBadge">
                                                             <span class="status-dot"></span>
                                                             <span class="status-text">Désactivé</span>
@@ -2424,7 +2416,7 @@
                                         </div>
                                     </div>
                                 </form>
-                            </div> <!-- /apiKeysAccordion -->
+                            </div> <!-- /apiKeysSection -->
                         </div> <!-- /settings-engine -->
                         <div id="settings-preferences" class="help-tab-content">
                             <div class="settings-tab-header">
@@ -3501,8 +3493,7 @@
                                 <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert" checked>
                                 <label for="providerAlbert" class="ui-segment">
                                     <iconify-icon class="iconify-inline provider-albert"
-                                        icon="solar:shield-check-bold"
-                                        style="color: var(--color-blue);"></iconify-icon>
+                                        icon="solar:shield-check-bold"></iconify-icon>
                                     <span>Albert</span>
                                 </label>
                                 <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
@@ -3512,14 +3503,12 @@
                                 </label>
                                 <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
                                 <label for="providerMistral" class="ui-segment">
-                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
-                                        style="color: #fd6f00;"></iconify-icon>
+                                    <iconify-icon class="iconify-inline provider-mistral" icon="solar:cat-bold"></iconify-icon>
                                     <span>Mistral</span>
                                 </label>
                                 <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
                                 <label for="providerGroq" class="ui-segment">
-                                    <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold"
-                                        style="color: #f55036;"></iconify-icon>
+                                    <iconify-icon class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"></iconify-icon>
                                     <span>Groq</span>
                                 </label>
                             </div>

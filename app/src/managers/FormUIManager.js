@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, MODEL_DESCRIPTIONS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { ThemeManager } from './ThemeManager.js';
@@ -95,8 +95,6 @@ export const FormUI = {
         // Synchroniser la pastille de couleur d'accentuation et replier le tiroir personnalisé
         document.getElementById('customPickerPanel')?.classList.remove('open');
         ThemeManager.applyAccentColor(appState.accentColor);
-
-        this.updateModelDescription();
     },
 
     /**
@@ -127,16 +125,6 @@ export const FormUI = {
 
         if (DOM.iaStyleInstructionsToggle) DOM.iaStyleInstructionsToggle.checked = instructionsEnabled;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.disabled = !instructionsEnabled;
-    },
-
-    /**
-     * Met à jour la description du modèle IA sélectionné.
-     */
-    updateModelDescription() {
-        const descEl = document.getElementById('aiModelDescription');
-        if (DOM.aiModelSelect && descEl) {
-            descEl.innerHTML = MODEL_DESCRIPTIONS[DOM.aiModelSelect.value] || "Description...";
-        }
     },
 
     // État pour les transitions d'onglets des paramètres

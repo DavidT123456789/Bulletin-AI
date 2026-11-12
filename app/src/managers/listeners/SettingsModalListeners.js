@@ -150,7 +150,7 @@ export const SettingsModalListeners = {
         });
 
         // Bouton pour ouvrir l'accordion des clés API
-        this._setupApiKeysAccordion(addClickListener);
+        this._setupApiKeysSectionLink(addClickListener);
 
         // Configuration Ollama (IA locale)
         this._setupOllamaListeners(addClickListener);
@@ -247,12 +247,12 @@ export const SettingsModalListeners = {
         }
     },
 
-    _setupApiKeysAccordion(addClickListener) {
-        const openApiKeysBtn = document.getElementById('openApiKeysAccordionBtn');
+    _setupApiKeysSectionLink(addClickListener) {
+        const openApiKeysBtn = document.getElementById('openApiKeysSectionBtn');
         if (openApiKeysBtn) {
             openApiKeysBtn.addEventListener('click', () => {
                 // Use centralized highlight utility
-                UI.highlightSettingsElement('apiKeysAccordion', {
+                UI.highlightSettingsElement('apiKeysSection', {
                     tab: 'settings-engine',
                     parentSelector: null
                 });

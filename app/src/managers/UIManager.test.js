@@ -43,7 +43,6 @@ vi.mock('../config/Config.js', () => ({
         'Générique': { iaConfig: { length: 50, tone: 2 } }
     },
     DEFAULT_IA_CONFIG: { length: 50, tone: 3, voice: 'default', styleInstructions: '' },
-    MODEL_DESCRIPTIONS: { 'gemini-2.0-flash': 'Test model description' },
     APP_LINKS: { KOFI: 'https://ko-fi.com/profassistant' }
 }));
 

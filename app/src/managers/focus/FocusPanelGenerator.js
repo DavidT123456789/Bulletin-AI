@@ -298,9 +298,7 @@ export const FocusPanelGenerator = {
                 });
                 result.generationPeriod = generatingForPeriod;
 
-                if (!result.studentData.periods[generatingForPeriod]) {
-                    result.studentData.periods[generatingForPeriod] = {};
-                }
+                Utils.markStudentModified(result, generatingForPeriod);
                 result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
 
                 FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original', {
