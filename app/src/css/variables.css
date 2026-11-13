@@ -53,8 +53,8 @@
     --text-secondary: #525252;
     --text-secondary-rgb: 82, 82, 82;
     /* Neutral 600 */
-    --text-tertiary: #737373;
-    /* Neutral 500 — WCAG AA compliant on Neutral 50 */
+    --text-tertiary: #6e6e72;
+    /* Neutral 500 darkened — WCAG AA >= 4.7:1 on --bg-color (#f6f6f6) & --surface-color */
     --text-quaternary: #a3a3a3;
     /* Neutral 400 — Softest readable icon tint */
 
@@ -242,7 +242,7 @@
     --surface-secondary: var(--bg-secondary);
     --surface-alert-bg: rgba(var(--error-rgb), 0.06);
     --primary-color-light: rgba(var(--primary-color-rgb), 0.12);
-    --text-tertiary-rgb: 115, 115, 115;
+    --text-tertiary-rgb: 110, 110, 114;
     --text-quaternary-rgb: 163, 163, 163;
     --radius-full: 9999px;
     --warning-light-text: var(--warning-dark);
@@ -251,14 +251,19 @@
 
     /* Grade Range Colors (Balanced Modern 2026 Palette — Luminous & Crisp) */
     --grade-range-0-4: #df3f38;
+    --grade-range-0-4-ink: #c82822;
     --grade-range-0-4-rgb: 223, 63, 56;
     --grade-range-4-8: #ec6f1c;
+    --grade-range-4-8-ink: #b54806;
     --grade-range-4-8-rgb: 236, 111, 28;
     --grade-range-8-12: #e2a312;
+    --grade-range-8-12-ink: #9a5b00;
     --grade-range-8-12-rgb: 226, 163, 18;
     --grade-range-12-16: #0f9aa8;
+    --grade-range-12-16-ink: #0a737e;
     --grade-range-12-16-rgb: 15, 154, 168;
     --grade-range-16-20: #129b63;
+    --grade-range-16-20-ink: #0b7449;
     --grade-range-16-20-rgb: 18, 155, 99;
 
     /* Transitions & Animations (Unified Motion System) */
@@ -491,9 +496,9 @@
     --text-secondary: #a2a2a4;
     /* Obsidian 400 (+2 bleu) */
     --text-secondary-rgb: 162, 162, 164;
-    --text-tertiary: #727274;
-    /* Obsidian 500 (+2 bleu) */
-    --text-tertiary-rgb: 114, 114, 116;
+    --text-tertiary: #85858a;
+    /* Obsidian 500 lightened — WCAG AA >= 4.88:1 on --surface-color (#171718) */
+    --text-tertiary-rgb: 133, 133, 138;
     --text-quaternary: #a2a2a4;
     --text-quaternary-rgb: 162, 162, 164;
     --surface-alert-bg: rgba(var(--error-rgb), 0.08);
@@ -578,14 +583,19 @@
 
     /* Grade Range Colors (Dark Mode — Luminous & Crisp) */
     --grade-range-0-4: #ef5b54;
+    --grade-range-0-4-ink: #f4726c;
     --grade-range-0-4-rgb: 239, 91, 84;
     --grade-range-4-8: #f58436;
+    --grade-range-4-8-ink: var(--grade-range-4-8);
     --grade-range-4-8-rgb: 245, 132, 54;
     --grade-range-8-12: #f0b429;
+    --grade-range-8-12-ink: var(--grade-range-8-12);
     --grade-range-8-12-rgb: 240, 180, 41;
     --grade-range-12-16: #22b5c4;
+    --grade-range-12-16-ink: var(--grade-range-12-16);
     --grade-range-12-16-rgb: 34, 181, 196;
     --grade-range-16-20: #24b87a;
+    --grade-range-16-20-ink: var(--grade-range-16-20);
     --grade-range-16-20-rgb: 36, 184, 122;
 
     /* --- Universal Card Style --- */

@@ -270,11 +270,11 @@
 }
 
 /* Couleurs sémantiques - Alignées sur l'histogramme */
-.grade-range-0-4 { --grade-accent: var(--grade-range-0-4); }
-.grade-range-4-8 { --grade-accent: var(--grade-range-4-8); }
-.grade-range-8-12 { --grade-accent: var(--grade-range-8-12); }
-.grade-range-12-16 { --grade-accent: var(--grade-range-12-16); }
-.grade-range-16-20 { --grade-accent: var(--grade-range-16-20); }
+.grade-range-0-4 { --grade-accent: var(--grade-range-0-4); --grade-ink: var(--grade-range-0-4-ink); }
+.grade-range-4-8 { --grade-accent: var(--grade-range-4-8); --grade-ink: var(--grade-range-4-8-ink); }
+.grade-range-8-12 { --grade-accent: var(--grade-range-8-12); --grade-ink: var(--grade-range-8-12-ink); }
+.grade-range-12-16 { --grade-accent: var(--grade-range-12-16); --grade-ink: var(--grade-range-12-16-ink); }
+.grade-range-16-20 { --grade-accent: var(--grade-range-16-20); --grade-ink: var(--grade-range-16-20-ink); }
 
 .grade-bubble[class*="grade-range-"],
 .grade-value[class*="grade-range-"] {
@@ -284,17 +284,11 @@
 }
 
 .grade-bubble[class*="grade-range-"] {
-    --grade-ink: color-mix(in srgb, var(--grade-accent) 88%, #0a0a0a);
     background: color-mix(in srgb, var(--grade-accent) 13%, var(--surface-color));
 }
 
 .grade-value[class*="grade-range-"] {
-    --grade-ink: var(--grade-accent);
     background: transparent;
-}
-
-[data-theme="dark"] .grade-bubble[class*="grade-range-"] {
-    --grade-ink: var(--grade-accent);
 }
 
 /* Hiérarchie temporelle en Vue Liste : Passé (Archive typographique sans fond) vs Période en cours (Pastille premier plan) */
@@ -302,24 +296,19 @@
     background: transparent;
     color: var(--grade-ink);
     font-weight: 500;
-    opacity: 0.8;
 }
 
 [data-theme="dark"] .grade-value.past-period-grade[class*="grade-range-"] {
-    background: transparent;
-    color: color-mix(in srgb, var(--grade-accent) 85%, var(--text-secondary));
-    opacity: 0.8;
+    color: color-mix(in srgb, var(--grade-ink) 88%, var(--text-secondary));
 }
 
 .grade-value.current-period-grade[class*="grade-range-"] {
-    --grade-ink: color-mix(in srgb, var(--grade-accent) 92%, #0a0a0a);
     background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
     color: var(--grade-ink);
     font-weight: 600;
 }
 
 [data-theme="dark"] .grade-value.current-period-grade[class*="grade-range-"] {
-    --grade-ink: var(--grade-accent);
     background: color-mix(in srgb, var(--grade-accent) 16%, var(--surface-color));
 }
 

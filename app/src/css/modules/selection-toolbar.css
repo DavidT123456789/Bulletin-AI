@@ -250,7 +250,6 @@
 @media (max-width: 768px) {
     .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
         background-color: color-mix(in srgb, var(--row-rest-bg, var(--surface-color)), var(--text-primary) 3%);
-        border-color: var(--border-color-strong);
     }
 
     [data-theme="dark"] .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
@@ -262,6 +261,21 @@
         max-width: calc(100vw - 16px);
     }
 
+    .selection-toolbar-content {
+        height: 48px;
+    }
+
+    :is(.btn-deselect, .btn-select-all-link, .btn-selection-action) {
+        height: 44px;
+        position: relative;
+    }
+
+    :is(.btn-deselect, .btn-select-all-link, .btn-selection-action)::after {
+        content: '';
+        position: absolute;
+        inset: 0 -4px;
+    }
+
     .btn-selection-action:not(.primary):not(.icon-only) span,
     .btn-select-all-link span {
         display: none;
@@ -269,7 +283,7 @@
 
     .btn-selection-action:not(.primary),
     .btn-select-all-link {
-        width: 34px;
+        width: 36px;
         padding: 0;
         border-radius: 50%;
     }
@@ -283,13 +297,20 @@
     }
 }
 
+@media (min-width: 601px) and (max-width: 768px) {
+    /* Tablette (cartes détachées) : renforcer la bordure sans altérer la liste groupée smartphone */
+    .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
+        border-color: var(--border-color-strong);
+    }
+}
+
 @media (max-width: 560px) {
     .btn-selection-action.primary span {
         display: none;
     }
 
     .btn-selection-action.primary {
-        width: 34px;
+        width: 36px;
         padding: 0;
         border-radius: 50%;
     }

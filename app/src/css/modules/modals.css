@@ -2433,11 +2433,6 @@
         gap: 8px;
     }
 
-    .api-key-section .api-key-actions .api-key-input-container input,
-    .btn-validate-key {
-        height: 36px;
-    }
-
     .api-key-actions.api-key-actions-wrap {
         flex-wrap: wrap;
     }
@@ -2483,5 +2478,17 @@
         padding: 6px 6px;
         font-size: 0.78rem;
         gap: 4px;
+    }
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .api-key-section .api-key-actions .api-key-input-container input,
+    #welcomeModal .welcome-api-key-group input {
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .btn-validate-key {
+        height: 40px;
     }
 }

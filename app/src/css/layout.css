@@ -1067,10 +1067,29 @@ button > .icon-spin-wrapper {
         display: none;
     }
 
-    .header-actions-pill .pill-segment,
-    .menu-btn {
+    .header-actions-pill .pill-segment {
         width: 36px;
         height: 36px;
+    }
+
+    /* Cible tactile 44x44 sans toucher ::before/::after des 3 points animés de .menu-btn */
+    .header-actions-pill .pill-segment:not(.menu-btn)::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+    }
+
+    .menu-btn {
+        box-sizing: border-box;
+        width: 44px;
+        height: 44px;
+        margin: -4px;
+        border: 4px solid transparent;
+        background-clip: padding-box;
     }
 
     .ui-segmented-control.header-style .ui-segment {
@@ -1121,8 +1140,8 @@ button > .icon-spin-wrapper {
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
-        min-width: 28px;
-        padding: 0 6.5px;
+        min-width: 31px;
+        padding: 0 7px;
     }
 
     .section-title {

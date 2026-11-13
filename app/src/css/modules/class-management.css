@@ -1890,4 +1890,10 @@
         grid-column: 1 / -1;
         justify-content: flex-end;
     }
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .class-note-textarea {
+        font-size: 16px;
+    }
 }

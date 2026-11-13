@@ -1877,8 +1877,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     #seatingChartView .sc-action-btn {
+        position: relative;
         width: 34px;
         height: 34px;
+    }
+
+    #seatingChartView .sc-action-btn::after {
+        content: '';
+        position: absolute;
+        inset: -5px;
     }
 
     #seatingChartView .sc-action-btn iconify-icon {

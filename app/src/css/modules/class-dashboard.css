@@ -127,24 +127,19 @@
 .cohort-header-metric.positive,
 .highlight-count-badge.positive {
     background: rgba(var(--grade-range-16-20-rgb), 0.12);
-    color: var(--grade-range-16-20);
+    color: var(--grade-range-16-20-ink);
 }
 
 .cohort-header-metric.warning,
 .highlight-count-badge.warning {
     background: rgba(var(--grade-range-8-12-rgb), 0.14);
-    color: var(--grade-range-4-8);
-}
-
-[data-theme="dark"] .cohort-header-metric.warning,
-[data-theme="dark"] .highlight-count-badge.warning {
-    color: var(--grade-range-8-12);
+    color: var(--grade-range-8-12-ink);
 }
 
 .cohort-header-metric.negative,
 .highlight-count-badge.negative {
     background: rgba(var(--grade-range-0-4-rgb), 0.12);
-    color: var(--grade-range-0-4);
+    color: var(--grade-range-0-4-ink);
 }
 
 .highlight-count-badge.muted {
@@ -306,19 +301,19 @@
 
 /* Color-code average values based on mineral grade range */
 .cohort-stat-item .stat-value.grade-range-0-4 {
-    color: var(--grade-range-0-4);
+    color: var(--grade-range-0-4-ink);
 }
 .cohort-stat-item .stat-value.grade-range-4-8 {
-    color: var(--grade-range-4-8);
+    color: var(--grade-range-4-8-ink);
 }
 .cohort-stat-item .stat-value.grade-range-8-12 {
-    color: var(--grade-range-8-12);
+    color: var(--grade-range-8-12-ink);
 }
 .cohort-stat-item .stat-value.grade-range-12-16 {
-    color: var(--grade-range-12-16);
+    color: var(--grade-range-12-16-ink);
 }
 .cohort-stat-item .stat-value.grade-range-16-20 {
-    color: var(--grade-range-16-20);
+    color: var(--grade-range-16-20-ink);
 }
 
 .cohort-stat-divider {

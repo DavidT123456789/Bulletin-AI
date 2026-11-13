@@ -180,4 +180,13 @@
         position: absolute;
         inset: -8px 0;
     }
+
+    /* Étend les bords extérieurs horizontalement sans empiéter sur le segment voisin */
+    .ui-segmented-control:is(.header-style, .sc-plan-mode-switch) .ui-segment:first-of-type::after {
+        left: -4px;
+    }
+
+    .ui-segmented-control:is(.header-style, .sc-plan-mode-switch) .ui-segment:last-of-type::after {
+        right: -4px;
+    }
 }

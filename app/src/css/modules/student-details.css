@@ -211,7 +211,7 @@
 .preview-history-table .grade-bubble[class*="grade-range-"],
 .preview-history-table .grade-pill[class*="grade-range-"] {
     background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
-    color: var(--grade-accent);
+    color: var(--grade-ink, var(--grade-accent));
 }
 
 /* --- Unified Data Card & Navigation Capsule --- */

@@ -497,9 +497,9 @@
 
     .ui-tabs-btn,
     .ui-tabs-action-btn {
-        height: 34px;
-        padding: 0 10px;
-        font-size: 0.8rem;
+        height: 44px;
+        padding: 0 12px;
+        font-size: 0.82rem;
         gap: 5px;
     }
 
