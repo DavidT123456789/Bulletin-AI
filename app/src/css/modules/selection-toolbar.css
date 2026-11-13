@@ -298,7 +298,7 @@
 }
 
 @media (min-width: 601px) and (max-width: 768px) {
-    /* Tablette (cartes détachées) : renforcer la bordure sans altérer la liste groupée smartphone */
+    /* Tablette (cartes détachées) : renforcer la bordure sans altérer la liste continue smartphone */
     .student-list-table tbody tr.selected:not(.focus-active):not(:has(.action-dropdown-menu.open)) {
         border-color: var(--border-color-strong);
     }
