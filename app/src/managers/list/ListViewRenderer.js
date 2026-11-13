@@ -407,7 +407,7 @@ export const ListViewRenderer = {
                     </button>
                     <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none;"></span>
                     <div class="header-content-wrapper">
-                        <span class="desktop-appreciation-title">
+                        <span>
                             Appréciation ${activePeriodLabel}
                         </span>
                         <span class="mobile-list-title">Élèves</span>

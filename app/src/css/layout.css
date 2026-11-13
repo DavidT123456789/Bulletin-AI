@@ -1092,6 +1092,12 @@ button > .icon-spin-wrapper {
         background-clip: padding-box;
     }
 
+    .menu-btn.active,
+    [data-theme="dark"] .menu-btn.active {
+        background-color: var(--item-active-bg);
+        box-shadow: none;
+    }
+
     .ui-segmented-control.header-style .ui-segment {
         min-width: 36px;
         padding: 0 10px;

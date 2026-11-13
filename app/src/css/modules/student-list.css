@@ -909,7 +909,7 @@
     align-items: center;
 }
 
-.appreciation-toggle-header .mobile-list-title {
+.appreciation-toggle-header .header-content-wrapper > .mobile-list-title {
     display: none;
 }
 
@@ -2119,7 +2119,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         box-shadow: none;
         border: none;
         border-bottom: 1px solid var(--row-rest-border);
-        padding: 14px var(--space-4);
+        padding: 14px var(--content-padding-x);
     }
 
     .student-list-table tbody tr:first-child {
