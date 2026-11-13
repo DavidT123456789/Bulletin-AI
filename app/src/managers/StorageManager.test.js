@@ -279,10 +279,10 @@ describe('StorageManager', () => {
             expect(/^[0-9a-f]{16}$/.test(migratedHash)).toBe(true);
         });
 
-        it('should re-align a sync hash computed with an older composition only when no local change happened since the last sync', async () => {
+        it('should re-align the sync hash after load-time migrations only when no local change was recorded since the last sync', async () => {
             DBService.getAll.mockResolvedValue([]);
 
-            // In sync before the update: the legacy hash is re-aligned without a false "Non sauvegardé"
+            // Nothing saved since the sync: a hash gap can only come from load-time migrations
             Object.assign(mockLocalStorage, {
                 bulletin_last_sync: '5000',
                 bulletin_last_modified: '5000',
@@ -290,15 +290,13 @@ describe('StorageManager', () => {
             });
             await StorageManager.loadAppState();
             expect(mockLocalStorage['bulletin_last_sync_hash']).toBe(StorageManager.computeCurrentDataHash());
-            expect(mockLocalStorage['bulletin_data_hash_version']).toBeDefined();
 
-            // Real unsaved changes before the update: the legacy hash is kept so they stay flagged
+            // Real unsaved changes since the sync: the sync hash is kept so they stay flagged
             StorageManager._lastSaveHash = null;
             Object.assign(mockLocalStorage, {
                 bulletin_last_modified: '9000',
                 bulletin_last_sync_hash: 'legacyhash000000'
             });
-            delete mockLocalStorage['bulletin_data_hash_version'];
             await StorageManager.loadAppState();
             expect(mockLocalStorage['bulletin_last_sync_hash']).toBe('legacyhash000000');
         });
@@ -333,6 +331,26 @@ describe('StorageManager', () => {
 
             const migrated = StorageManager.migrateData(oldFormatResults);
             expect(migrated[0].studentData.periods.T1.grade).toBe(15);
+        });
+
+        it('should normalize tokenUsage idempotently and repair the nesting left by the former migration', () => {
+            const usage = { total_tokens: 42 };
+            const results = [
+                { id: 'a', studentData: { periods: {} } },
+                { id: 'b', studentData: { periods: {} }, tokenUsage: usage },
+                { id: 'c', studentData: { periods: {} }, tokenUsage: { appreciation: { appreciation: null, sw: null, ns: null }, sw: null, ns: null } },
+                { id: 'd', studentData: { periods: {} }, tokenUsage: { appreciation: usage, sw: { total_tokens: 7 }, ns: null } }
+            ];
+
+            const once = JSON.parse(JSON.stringify(StorageManager.migrateData(results)));
+            expect(once.map(r => r.tokenUsage)).toEqual([
+                { appreciation: null, sw: null, ns: null },
+                { appreciation: usage, sw: null, ns: null },
+                { appreciation: null, sw: null, ns: null },
+                { appreciation: usage, sw: { total_tokens: 7 }, ns: null }
+            ]);
+            // A second load (app reload) must not change anything, otherwise the session drifts to "Non sauvegardé"
+            expect(StorageManager.migrateData(once)).toEqual(once);
         });
     });
 

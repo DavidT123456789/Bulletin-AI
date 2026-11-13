@@ -2,7 +2,9 @@
  * @fileoverview Landing page controller for Bulletin AI (navigation, carousel, hero mockup, PWA/transition).
  */
 
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const prefersReducedMotion = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false, addEventListener: () => {} };
 
 const CAROUSEL_ITEMS = [
     { icon: 'solar:stars-linear', color: 'bg-purple-50 text-purple-600', title: 'Rédaction & Affinage IA', desc: 'Générez sur mesure et ajustez le ton en un clic : concis, encourageant ou peaufiné.', label: 'Rédaction' },
@@ -427,6 +429,7 @@ function initHeroMockup() {
     const mockupToneBtns = Array.from(document.querySelectorAll('[data-mockup-tone]'));
     const mockupRefineBtns = Array.from(document.querySelectorAll('[data-mockup-refine]'));
     const mockupCopyBtn = document.getElementById('mockup-copy-btn');
+    const mockupCopyLabel = mockupCopyBtn?.querySelector('.mockup-copy-label');
 
     let currentStudentId = 'matheo';
     let currentMockupTone = 'bienveillant';
@@ -542,14 +545,23 @@ function initHeroMockup() {
         mockupText.innerHTML = '<div class="shimmer h-2 w-full rounded mb-3"></div><div class="shimmer h-2 w-11/12 rounded mb-3"></div><div class="shimmer h-2 w-2/3 rounded"></div>';
     }
 
-    function resetCopyButton() {
+    function setCopyButtonState(isCopied) {
         if (!mockupCopyBtn) return;
+        const wasCopied = mockupCopyBtn.classList.contains('is-copied');
+        if (wasCopied === isCopied) return;
+        mockupCopyBtn.classList.toggle('is-copied', isCopied);
+        if (mockupCopyLabel) {
+            mockupCopyLabel.textContent = isCopied ? 'Copié' : 'Copier';
+        }
+        mockupCopyBtn.setAttribute('aria-label', isCopied ? 'Appréciation copiée' : "Copier l'appréciation");
+    }
+
+    function resetCopyButton() {
         if (mockupCopyTimeout) {
             clearTimeout(mockupCopyTimeout);
             mockupCopyTimeout = null;
         }
-        mockupCopyBtn.classList.remove('is-copied');
-        mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear" width="12"></iconify-icon><span>Copier</span>';
+        setCopyButtonState(false);
     }
 
     function shouldCycleMockup() {
@@ -686,8 +698,7 @@ function initHeroMockup() {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(textToCopy).catch(() => {});
             }
-            mockupCopyBtn.classList.add('is-copied');
-            mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear" width="12"></iconify-icon><span>Copié</span>';
+            setCopyButtonState(true);
             mockupCopyTimeout = setTimeout(resetCopyButton, 1600);
         });
     }
@@ -829,4 +840,8 @@ function bootLanding() {
     initAppTransition();
 }
 
-bootLanding();
+export { initHeroMockup };
+
+if (!import.meta.env?.VITEST) {
+    bootLanding();
+}

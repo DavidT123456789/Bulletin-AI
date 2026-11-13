@@ -440,6 +440,12 @@ describe('SeatingChartManager and Save State integrity', () => {
         expect(StorageManager.computeCurrentDataHash()).toBe(hashBeforeLoadAppState);
         expect(SyncService._computeSyncState()).toBe('in-sync');
         expect(localStorage.getItem('bulletin_last_modified')).toBe(localStorage.getItem('bulletin_last_sync'));
+
+        // A later app reload must keep the session in sync (load-time migrations must not drift the data hash)
+        StorageManager._lastSaveHash = null;
+        await StorageManager.loadAppState();
+        expect(StorageManager.computeCurrentDataHash()).toBe(hashBeforeLoadAppState);
+        expect(SyncService._computeSyncState()).toBe('in-sync');
     });
 });
 

@@ -18,8 +18,8 @@
  * 4. bulletin_last_sync_hash :
  *    - Rôle : Empreinte de données (hash JSON) de la configuration (hors DATA_HASH_IGNORED_KEYS) + des élèves au moment de la synchro.
  *    - Cycle de vie : Permet la détection de retour à l'état initial (modify -> cancel -> back to "À jour").
- *      `bulletin_data_hash_version` (DATA_HASH_VERSION) permet de ré-aligner l'empreinte au premier chargement
- *      lorsque sa composition change, sans fausse alerte "Non sauvegardé".
+ *      Ré-alignée au premier chargement si aucune modification n'a été enregistrée depuis la synchro
+ *      (migrations de format ou évolution de la composition de l'empreinte : pas de fausse alerte "Non sauvegardé").
  * 
  * 5. bulletin_device_id :
  *    - Rôle : Identifiant unique de l'appareil généré au premier démarrage.
@@ -65,8 +65,20 @@ const DEVICE_ONLY_SETTINGS_KEYS = [
  */
 const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'activeView', 'isAppreciationFullView'];
 
-/** @const {string} Version de la composition de l'empreinte de données, à incrémenter quand des clés y entrent ou en sortent */
-const DATA_HASH_VERSION = '2';
+/**
+ * Normalise `tokenUsage` au format { appreciation, sw, ns } de manière idempotente :
+ * enveloppe l'ancien format (usage brut) et répare l'imbrication produite par l'ancienne migration.
+ * @param {*} tokenUsage
+ * @returns {{ appreciation: *, sw: *, ns: * }}
+ */
+const normalizeTokenUsage = (tokenUsage) => {
+    const isWrapper = (v) => Boolean(v) && typeof v === 'object' && ('appreciation' in v || 'sw' in v || 'ns' in v);
+    if (!tokenUsage || typeof tokenUsage !== 'object') return { appreciation: null, sw: null, ns: null };
+    if (!isWrapper(tokenUsage)) return { appreciation: tokenUsage, sw: null, ns: null };
+    let appreciation = tokenUsage.appreciation ?? null;
+    while (isWrapper(appreciation)) appreciation = appreciation.appreciation ?? null;
+    return { ...tokenUsage, appreciation, sw: tokenUsage.sw ?? null, ns: tokenUsage.ns ?? null };
+};
 
 export const StorageManager = {
     TAB_SYNC_CHANNEL_NAME: 'bulletin_ai_state_sync',
@@ -730,7 +742,7 @@ export const StorageManager = {
             if (sd.quarterMode) { sd.currentPeriod = sd.quarterMode; delete sd.quarterMode; }
             if (result.strengthsWeaknesses === undefined) result.strengthsWeaknesses = null;
             if (result.nextSteps === undefined) result.nextSteps = null;
-            if (result.tokenUsage === undefined || result.tokenUsage === null || !result.tokenUsage.appreciation) result.tokenUsage = { appreciation: result.tokenUsage || null, sw: null, ns: null };
+            result.tokenUsage = normalizeTokenUsage(result.tokenUsage);
             // Migration: negativeInstructions → periods[].context
             if (sd.negativeInstructions) {
                 const hasAnyPeriodContext = Object.values(sd.periods || {}).some(p => p?.context);
@@ -1035,14 +1047,14 @@ export const StorageManager = {
             }
         } else {
             this._lastDataHash = currentDataHash;
-            // On first load, initialize sync hash ONLY if missing (or computed with an older composition) and no data purge was detected
+            // Premier chargement : toute modification utilisateur persistée fait avancer bulletin_last_modified.
+            // Si rien n'a été enregistré depuis la synchro, un écart d'empreinte ne peut venir que des migrations
+            // de chargement (format, composition de l'empreinte) : on ré-aligne l'empreinte de synchro.
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
             const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-            const isLegacyHash = localStorage.getItem('bulletin_data_hash_version') !== DATA_HASH_VERSION;
-            if ((!lastSyncHash || isLegacyHash) && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
+            if (lastSyncHash !== currentDataHash && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
                 this._safeLocalStorageSet('bulletin_last_sync_hash', currentDataHash);
             }
-            if (isLegacyHash) this._safeLocalStorageSet('bulletin_data_hash_version', DATA_HASH_VERSION);
         }
         this._isFirstLoadSave = false;
 
