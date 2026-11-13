@@ -909,6 +909,10 @@
     align-items: center;
 }
 
+.appreciation-toggle-header .mobile-list-title {
+    display: none;
+}
+
 /* Dedicated Action Button - Placed at left of header, perfectly centered vertically (extends .header-action-trigger) */
 .appreciation-toggle-btn {
     left: 16px;
@@ -1607,7 +1611,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         display: flex;
         background: transparent !important;
         border: none;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
     }
 
     .student-list-table thead tr {
@@ -1644,8 +1648,12 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
         display: contents !important;
     }
 
-    /* Afficher le titre de section ("Appréciation Sx") à gauche pour ancrer la barre d'actions */
-    .student-list-table th.appreciation-toggle-header .header-content-wrapper > span {
+    /* Masquer le libellé desktop ("Appréciation Sx") et afficher "Élèves" à gauche sur mobile */
+    .student-list-table th.appreciation-toggle-header .header-content-wrapper > span:not(.mobile-list-title) {
+        display: none !important;
+    }
+
+    .student-list-table th.appreciation-toggle-header .header-content-wrapper > .mobile-list-title {
         display: block !important;
         flex: 1 1 auto;
         min-width: 0;
@@ -1683,8 +1691,8 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .global-actions-dropdown .btn-action-menu-header {
         position: relative !important;
         transform: none !important;
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: var(--radius-pill);
         background: transparent;
         border: none;
@@ -1701,7 +1709,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     .global-actions-dropdown .btn-action-menu-header::after {
         content: '';
         position: absolute;
-        inset: -4px;
+        inset: -6px;
     }
 
     /* Actions line (Titre à gauche + cluster d'actions à droite) */
@@ -1741,10 +1749,11 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) :is(.header-
     }
 
     .appreciation-header-actions .btn-smart-action-inline {
-        height: 36px;
-        padding: 0 12px;
+        height: 28px;
+        padding: 0 10px 0 8px;
+        gap: 4px;
         border-radius: var(--radius-pill);
-        font-size: 13px;
+        font-size: 12px;
     }
 
     /* Spécificités des boutons de la barre d'outils mobile */

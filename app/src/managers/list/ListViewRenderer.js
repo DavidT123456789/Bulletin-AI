@@ -407,9 +407,10 @@ export const ListViewRenderer = {
                     </button>
                     <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none;"></span>
                     <div class="header-content-wrapper">
-                        <span>
+                        <span class="desktop-appreciation-title">
                             Appréciation ${activePeriodLabel}
                         </span>
+                        <span class="mobile-list-title">Élèves</span>
                         <div class="appreciation-header-actions" id="appreciationHeaderActions">
                             <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="${title}" data-tooltip="${title}">
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
