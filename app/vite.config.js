@@ -148,6 +148,9 @@ export default defineConfig({
           if (normalizedId.includes('node_modules')) {
             return 'vendor';
           }
+          if (!normalizedId.endsWith('.css') && normalizedId.includes('/src/landing/')) {
+            return 'landing';
+          }
           if (
             !normalizedId.endsWith('.css') &&
             (normalizedId.includes('/src/') ||

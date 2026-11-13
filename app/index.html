@@ -34,885 +34,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,500;1,6..72,600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="./src/css/landing-tailwind.css">
+    <link rel="stylesheet" href="./src/css/landing.css">
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
-
-    <style>
-        .bg-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.4;
-            animation: orbFloat 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes orbFloat {
-            0% {
-                transform: translate(0, 0);
-            }
-
-            100% {
-                transform: translate(30px, -30px);
-            }
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: scale(0.5);
-                opacity: 0;
-                filter: blur(2px);
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-                filter: blur(0);
-            }
-        }
-
-        .pop-in {
-            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            opacity: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ── Hero Focus Panel Mockup (calqué sur .stat-card / .nebula-card de app.html) ── */
-        .mockup-hero-surface {
-            background: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.065);
-            border-radius: 16px;
-            padding: 20px 22px;
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-        }
-
-        .mockup-header {
-            padding-bottom: 14px;
-        }
-
-        .mockup-section {
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            padding-top: 14px;
-            padding-bottom: 14px;
-        }
-
-        .mockup-section:last-child {
-            padding-bottom: 0;
-        }
-
-        .mockup-section-title {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #525252;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .mockup-rgpd-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            background: rgba(16, 185, 129, 0.12);
-            color: #059669;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .mockup-status-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 1px 7px;
-            border-radius: 9999px;
-            font-size: 10px;
-            font-weight: 600;
-            background: rgba(59, 130, 246, 0.1);
-            color: #2563eb;
-            letter-spacing: 0.01em;
-        }
-
-        .mockup-grade-prev {
-            display: inline-flex;
-            align-items: baseline;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            background: #f5f5f5;
-            font-size: 10px;
-            font-weight: 500;
-            color: #737373;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .mockup-grade-prev strong {
-            font-weight: 600;
-            color: #404040;
-        }
-
-        .mockup-grade-current {
-            display: inline-flex;
-            align-items: baseline;
-            gap: 3px;
-            padding: 2px 9px;
-            border-radius: 9999px;
-            background: rgba(245, 158, 11, 0.12);
-            font-size: 10px;
-            font-weight: 600;
-            color: #d97706;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .mockup-grade-current strong {
-            font-size: 12px;
-            font-weight: 700;
-            color: #d97706;
-        }
-
-        .mockup-grade-current small {
-            font-size: 9px;
-            font-weight: 500;
-            color: #a3a3a3;
-        }
-
-        .mockup-obs-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            height: 22px;
-            border-radius: 9999px;
-            font-size: 10.5px;
-            font-weight: 600;
-        }
-
-        .mockup-obs-badge--warn {
-            background: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-        }
-
-        .mockup-obs-badge--pos {
-            background: rgba(16, 185, 129, 0.12);
-            color: #059669;
-        }
-
-        button.mockup-refine-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3.5px 9px;
-            border-radius: 9999px;
-            background: #f5f5f5;
-            border: 1px solid transparent;
-            font-size: 10.5px;
-            font-weight: 500;
-            color: #525252;
-            cursor: pointer;
-            transition: all 0.18s cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        button.mockup-refine-chip:hover {
-            transform: translateY(-1px);
-        }
-
-        button.mockup-refine-chip[data-mockup-tone="concise"]:hover,
-        button.mockup-refine-chip[data-mockup-tone="concise"].is-active {
-            background: rgba(245, 158, 11, 0.14);
-            color: #d97706;
-        }
-
-        button.mockup-refine-chip[data-mockup-tone="encouraging"]:hover,
-        button.mockup-refine-chip[data-mockup-tone="encouraging"].is-active {
-            background: rgba(244, 63, 94, 0.14);
-            color: #e11d48;
-        }
-
-        button.mockup-refine-chip[data-mockup-tone="polish"]:hover,
-        button.mockup-refine-chip[data-mockup-tone="polish"].is-active {
-            background: rgba(139, 92, 246, 0.14);
-            color: #9333ea;
-        }
-
-        button.mockup-copy-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3.5px 10px;
-            border-radius: 9999px;
-            background: #f5f5f5;
-            border: 1px solid transparent;
-            color: #525252;
-            font-size: 10.5px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        button.mockup-copy-pill:hover {
-            background: #e5e5e5;
-            color: #171717;
-        }
-
-        button.mockup-copy-pill.is-copied {
-            background: rgba(16, 185, 129, 0.16);
-            color: #10b981;
-        }
-
-        /* ── Features Carousel ── */
-        .perspective-container {
-            perspective: 1000px;
-        }
-
-        .carousel-card {
-            width: 320px;
-            height: 300px;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1),
-                        opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1),
-                        box-shadow 0.6s cubic-bezier(0.25, 1, 0.5, 1),
-                        border-color 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-            position: absolute;
-            left: 50%;
-            top: 50%;
-        }
-
-        .carousel-card[data-pos="center"] {
-            z-index: 10;
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-            cursor: default;
-            border-color: rgba(0, 0, 0, 0.08);
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-        }
-
-        .carousel-card[data-pos="left"],
-        .carousel-card[data-pos="right"] {
-            z-index: 5;
-            opacity: 0.78;
-            cursor: pointer;
-        }
-
-        .carousel-card[data-pos="left"]:hover,
-        .carousel-card[data-pos="right"]:hover {
-            opacity: 0.94;
-        }
-
-        .carousel-card[data-pos="left"] {
-            transform: translate(calc(-50% - 320px), -50%) scale(0.88);
-        }
-
-        .carousel-card[data-pos="right"] {
-            transform: translate(calc(-50% + 320px), -50%) scale(0.88);
-        }
-
-        .carousel-card[data-pos="far-left"],
-        .carousel-card[data-pos="far-right"] {
-            opacity: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .carousel-card[data-pos="far-left"] {
-            transform: translate(calc(-50% - 600px), -50%) scale(0.7);
-        }
-
-        .carousel-card[data-pos="far-right"] {
-            transform: translate(calc(-50% + 600px), -50%) scale(0.7);
-        }
-
-        @media (max-width: 768px) {
-            .carousel-card[data-pos="left"] {
-                transform: translate(calc(-50% - 200px), -50%) scale(0.82);
-            }
-
-            .carousel-card[data-pos="right"] {
-                transform: translate(calc(-50% + 200px), -50%) scale(0.82);
-            }
-        }
-
-        @media (max-width: 640px) {
-            .carousel-card {
-                width: 260px;
-                height: 280px;
-            }
-
-            .carousel-card[data-pos="left"] {
-                transform: translate(calc(-50% - 150px), -50%) scale(0.75);
-                opacity: 0.45;
-            }
-
-            .carousel-card[data-pos="right"] {
-                transform: translate(calc(-50% + 150px), -50%) scale(0.75);
-                opacity: 0.45;
-            }
-        }
-
-        .carousel-nav-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #a3a3a3;
-            transition: color 0.18s ease, background-color 0.18s ease, transform 0.18s cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        .carousel-nav-btn:hover {
-            color: #171717;
-            background-color: rgba(229, 229, 229, 0.65);
-            transform: scale(1.06);
-        }
-
-        .carousel-dot {
-            height: 24px;
-            padding: 0 3px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .carousel-dot::before {
-            content: '';
-            height: 6px;
-            width: 6px;
-            border-radius: 9999px;
-            background-color: #e5e5e5;
-            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease;
-        }
-
-        .carousel-dot:hover::before {
-            background-color: #d4d4d4;
-        }
-
-        .carousel-dot[aria-selected="true"]::before {
-            width: 20px;
-            background-color: #262626;
-        }
-
-        .blur-word {
-            display: inline-block;
-            opacity: 0;
-            filter: blur(4px);
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            margin-right: 0.25em;
-        }
-
-        .blur-word.is-visible {
-            opacity: 1;
-            filter: blur(0);
-        }
-
-        .shimmer {
-            background: linear-gradient(90deg, rgba(0, 0, 0, 0.02) 25%, rgba(0, 0, 0, 0.06) 50%, rgba(0, 0, 0, 0.02) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
-        }
-
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .reveal-on-scroll.is-visible {
-            opacity: 1;
-            transform: none;
-        }
-
-        .mobile-menu-enter {
-            transform: translateX(100%);
-        }
-
-        .mobile-menu-active {
-            transform: translateX(0);
-        }
-
-        .accordion-content {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .accordion-item.is-open .accordion-content {
-            grid-template-rows: 1fr;
-        }
-
-        .accordion-icon {
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .accordion-item.is-open .accordion-icon {
-            transform: rotate(180deg);
-            color: #3b82f6;
-        }
-
-        .accordion-item.is-open .accordion-title {
-            color: #3b82f6;
-        }
-
-        .scroll-top-btn {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .scroll-top-btn.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .nav-link.active {
-            color: #171717;
-            font-weight: 600;
-        }
-
-        .footer-action-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            color: #737373;
-            transition: color 0.18s ease, background-color 0.18s ease;
-        }
-
-        .footer-action-link:hover {
-            color: #171717;
-            background-color: rgba(229, 229, 229, 0.65);
-        }
-
-        .footer-action-link:focus-visible {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
-
-        .shine-effect {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .shine-effect::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.7s ease;
-        }
-
-        .shine-effect:hover::after {
-            transform: translateX(100%);
-        }
-
-        /* ── Workflow Section Enhancements ── */
-        .workflow-connector {
-            position: absolute;
-            top: 40px;
-            left: 16%;
-            right: 16%;
-            height: 2px;
-            z-index: 0;
-            overflow: visible;
-        }
-
-        .workflow-connector-line {
-            width: 100%;
-            height: 2px;
-            border-radius: 1px;
-            background: linear-gradient(90deg, #3b82f6 0%, #a855f7 50%, #22c55e 100%);
-            opacity: 0.35;
-        }
-
-        .workflow-connector-trace {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 2px;
-            width: 60px;
-            border-radius: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
-            animation: connectorTrace 3s ease-in-out infinite;
-            opacity: 0;
-        }
-
-        .workflow-connector.is-visible .workflow-connector-trace {
-            opacity: 1;
-        }
-
-        @keyframes connectorTrace {
-            0% { left: -60px; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
-
-        .workflow-step-icon {
-            position: relative;
-        }
-
-        .workflow-step-icon::before {
-            content: '';
-            position: absolute;
-            inset: -6px;
-            border-radius: 1.125rem;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: none;
-        }
-
-        .workflow-step-icon.is-revealed::before {
-            animation: pulseRing 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        .workflow-step-icon--blue::before {
-            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
-        }
-
-        .workflow-step-icon--purple::before {
-            background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);
-        }
-
-        .workflow-step-icon--green::before {
-            background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
-        }
-
-        @keyframes pulseRing {
-            0% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.15);
-            }
-            100% {
-                opacity: 0.6;
-                transform: scale(1);
-            }
-        }
-
-        .workflow-float {
-            animation: workflowFloat 4s ease-in-out infinite;
-        }
-
-        .workflow-float--delay-1 { animation-delay: 0s; }
-        .workflow-float--delay-2 { animation-delay: 1.3s; }
-        .workflow-float--delay-3 { animation-delay: 2.6s; }
-
-        @keyframes workflowFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        /* Smart Spacing System */
-        :root {
-            --spacing-title-subtitle: 0.875rem;
-            /* 14px */
-            --spacing-header-content: 3.5rem;
-            /* 56px */
-        }
-
-        @media (max-width: 768px) {
-            :root {
-                --spacing-header-content: 2.5rem;
-                /* 40px on mobile */
-            }
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: var(--spacing-header-content);
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 48rem;
-            /* max-w-3xl equivalent */
-        }
-
-        .section-header h2 {
-            margin-bottom: var(--spacing-title-subtitle);
-        }
-
-        .section-header p {
-            margin-top: 0;
-            color: #737373;
-            /* text-zinc-500 */
-        }
-
-        /* Rocket smoke animation on hover */
-        .rocket-container {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            margin-right: 6px;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .rocket-container::before {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.75);
-            filter: blur(1px);
-            pointer-events: none;
-            transform: translate(-1.5px, 1.5px) scale(0.9);
-            opacity: 0.7;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .rocket-container::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            filter: blur(1px);
-            pointer-events: none;
-            transform: translate(-3.5px, 3.5px) scale(0.7);
-            opacity: 0.45;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .landing-commencer-btn:hover .rocket-container {
-            transform: translate(2px, -2px) scale(1.08);
-        }
-
-        .landing-commencer-btn:hover .rocket-container::before {
-            animation: rocket-smoke 0.8s infinite linear;
-        }
-
-        .landing-commencer-btn:hover .rocket-container::after {
-            animation: rocket-smoke 0.8s infinite linear;
-            animation-delay: 0.4s;
-        }
-
-        @keyframes rocket-smoke {
-            0% {
-                transform: translate(0, 0) scale(0.6);
-                opacity: 0.8;
-                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
-            }
-            40% {
-                transform: translate(-3px, 3px) scale(1);
-                opacity: 0.6;
-                box-shadow: -2px 2px 2px rgba(255, 255, 255, 0.4);
-            }
-            80% {
-                transform: translate(-6px, 6px) scale(1.3);
-                opacity: 0;
-                box-shadow: -4px 4px 4px rgba(255, 255, 255, 0);
-            }
-        }
-
-        /* Play button circle drawing animation */
-        .play-icon-container {
-            width: 18px;
-            height: 18px;
-            margin-right: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .play-icon-inner {
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
-            color: #737373; /* text-zinc-500 */
-        }
-
-        .play-circle-svg {
-            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        .play-circle-fill {
-            transition: stroke-dashoffset 0.45s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        /* Hover states */
-        .landing-play-btn {
-            transition: all 0.3s var(--transition-timing-function-organic);
-        }
-
-        .landing-play-btn:hover {
-            border-color: rgba(59, 130, 246, 0.35);
-            background-color: rgba(59, 130, 246, 0.02);
-        }
-
-        .landing-play-btn:hover .play-icon-container {
-            transform: translateX(2px);
-        }
-
-        .landing-play-btn:hover .play-icon-inner {
-            transform: scale(1.1);
-            color: #3b82f6; /* primary blue */
-        }
-
-        .landing-play-btn:hover .play-circle-svg {
-            transform: rotate(90deg); /* organic rotate */
-        }
-
-        .landing-play-btn:hover .play-circle-fill {
-            stroke-dashoffset: 0;
-        }
-
-        /* ====================================================================
-           CROSS-PAGE VIEW TRANSITIONS & PAGE EXIT (iOS 2026 Fluidity)
-           ==================================================================== */
-        @view-transition {
-            navigation: auto;
-        }
-
-        ::view-transition-old(root) {
-            animation: 240ms cubic-bezier(0.32, 0.72, 0, 1) both landingExitViewTransition;
-        }
-
-        ::view-transition-new(root) {
-            animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both appEnterViewTransition;
-        }
-
-        @keyframes landingExitViewTransition {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-                filter: blur(0);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0.985);
-                filter: blur(8px);
-            }
-        }
-
-        @keyframes appEnterViewTransition {
-            0% {
-                opacity: 0;
-                transform: scale(1.015);
-                filter: blur(8px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-                filter: blur(0);
-            }
-        }
-
-        /* Tactile launch state for CTA buttons */
-        .landing-commencer-btn.is-launching {
-            transform: scale(0.96) !important;
-            box-shadow: 0 0 0 3px rgba(38, 39, 42, 0.28) !important;
-            pointer-events: none;
-        }
-
-        .landing-commencer-btn.is-launching .rocket-container {
-            transform: translate(8px, -8px) scale(1.2) !important;
-            transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1) !important;
-        }
-
-        /* Smooth page exit for all browsers */
-        body.is-navigating-to-app {
-            pointer-events: none;
-        }
-
-        body.is-navigating-to-app main,
-        body.is-navigating-to-app nav,
-        body.is-navigating-to-app footer,
-        body.is-navigating-to-app .bg-orb {
-            transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-                        opacity 0.22s cubic-bezier(0.32, 0.72, 0, 1),
-                        filter 0.22s cubic-bezier(0.32, 0.72, 0, 1);
-            transform: scale(0.985);
-            filter: blur(8px);
-            opacity: 0;
-        }
-
-        body.is-navigating-to-app.target-dark {
-            background-color: #0c0c0d !important;
-            transition: background-color 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .pop-in,
-            .blur-word,
-            .reveal-on-scroll {
-                animation: none !important;
-                transition: none !important;
-                opacity: 1 !important;
-                transform: none !important;
-                filter: none !important;
-            }
-
-            .carousel-card {
-                transition-duration: 0.1s !important;
-            }
-
-            .mockup-refine-chip {
-                transition: none !important;
-                transform: none !important;
-            }
-
-            .bg-orb,
-            .workflow-float,
-            .shimmer,
-            ::view-transition-old(root),
-            ::view-transition-new(root) {
-                animation: none !important;
-            }
-
-            .workflow-connector-trace {
-                animation: none !important;
-                opacity: 0 !important;
-            }
-
-            .workflow-step-icon.is-revealed::before {
-                animation: none !important;
-                opacity: 0.5 !important;
-                transform: scale(1) !important;
-            }
-
-            .accordion-content,
-            .accordion-icon,
-            .scroll-top-btn,
-            .shine-effect::after {
-                transition: none !important;
-            }
-
-            body.is-navigating-to-app main,
-            body.is-navigating-to-app nav,
-            body.is-navigating-to-app footer,
-            body.is-navigating-to-app .bg-orb {
-                transition: none !important;
-                transform: none !important;
-                filter: none !important;
-                opacity: 1 !important;
-            }
-        }
-    </style>
 </head>
 
 <body
@@ -923,38 +49,34 @@
         Aller au contenu principal
     </a>
 
-    <div class="bg-orb w-[600px] h-[600px] bg-blue-400/10 -top-20 -right-20"></div>
-    <div class="bg-orb w-[500px] h-[500px] bg-purple-400/10 bottom-0 left-0"></div>
-
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent"
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50"
         aria-label="Navigation principale">
-        <div class="absolute inset-0 bg-white/70 backdrop-blur-xl transition-opacity duration-300"></div>
+        <div class="navbar-backdrop" aria-hidden="true"></div>
         <div class="relative max-w-7xl mx-auto px-[34px] h-14 flex items-center justify-between">
             <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
                 <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="w-8 h-8 object-contain transition-transform duration-200 group-hover:scale-105" width="32" height="32">
-                <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin AI</span>
-                <span
-                    class="px-2.5 py-0.5 rounded-full bg-zinc-100/90 text-zinc-600 text-[10px] font-medium tracking-normal ring-1 ring-zinc-900/5 backdrop-blur-sm">
-                    Accès libre
-                </span>
+                <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin <span class="font-medium text-zinc-600">AI</span></span>
             </a>
             <div class="hidden md:flex items-center gap-8">
                 <a href="#how-it-works"
                     class="nav-link text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
-                    data-target="how-it-works">Flux de travail</a>
+                    data-target="how-it-works">Fonctionnement</a>
                 <a href="#features"
                     class="nav-link text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
                     data-target="features">Fonctionnalités</a>
                 <a href="#specs"
                     class="nav-link text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
-                    data-target="specs">Spécifications</a>
+                    data-target="specs">Confidentialité</a>
             </div>
             <div class="flex items-center gap-3">
                 <a href="./app.html"
-                    class="hidden md:inline-flex h-8 items-center justify-center px-4 rounded-full text-xs font-medium text-white bg-zinc-800 hover:bg-zinc-900 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shine-effect landing-commencer-btn">
-                    Ouvrir l'App
+                    class="hidden md:inline-flex h-8 items-center justify-center gap-1.5 px-4 rounded-full text-xs font-medium text-zinc-800 bg-white border border-zinc-200 shadow-sm navbar-cta-btn landing-commencer-btn">
+                    <span>Ouvrir l'application</span>
+                    <svg class="cta-arrow-out" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M7 17L17 7M7 7h10v10"></path>
+                    </svg>
                 </a>
-                <button type="button" class="md:hidden w-8 h-8 flex items-center justify-center text-zinc-600"
+                <button type="button" class="md:hidden flex items-center justify-center mobile-icon-btn mobile-icon-btn--edge"
                     aria-label="Ouvrir le menu" aria-expanded="false" id="menuToggleBtn">
                     <iconify-icon icon="solar:hamburger-menu-linear" width="24" height="24"></iconify-icon>
                 </button>
@@ -970,26 +92,26 @@
             <div class="flex justify-between items-center mb-8">
                 <span class="font-semibold text-sm">Menu</span>
                 <button type="button" id="mobileCloseBtn"
-                    class="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-zinc-800"
+                    class="flex items-center justify-center mobile-icon-btn mobile-icon-btn--edge"
                     aria-label="Fermer le menu">
                     <iconify-icon icon="ph:x" width="24" height="24"></iconify-icon>
                 </button>
             </div>
             <div class="flex flex-col gap-1">
                 <a href="#how-it-works" data-close-menu
-                    class="py-3 text-sm font-medium text-zinc-600 border-b border-zinc-50">Flux de travail</a>
+                    class="py-3 text-sm font-medium text-zinc-600 hover:text-zinc-800 transition-colors border-b border-zinc-100">Fonctionnement</a>
                 <a href="#features" data-close-menu
-                    class="py-3 text-sm font-medium text-zinc-600 border-b border-zinc-50">Fonctionnalités</a>
+                    class="py-3 text-sm font-medium text-zinc-600 hover:text-zinc-800 transition-colors border-b border-zinc-100">Fonctionnalités</a>
                 <a href="#specs" data-close-menu
-                    class="py-3 text-sm font-medium text-zinc-600 border-b border-zinc-50">Spécifications</a>
+                    class="py-3 text-sm font-medium text-zinc-600 hover:text-zinc-800 transition-colors border-b border-zinc-100">Confidentialité</a>
             </div>
             <div class="mt-auto">
                 <a href="./app.html"
-                    class="flex w-full h-10 items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-medium shine-effect landing-commencer-btn">
-                    <span class="rocket-container">
-                        <iconify-icon icon="solar:rocket-linear" width="17"></iconify-icon>
-                    </span>
-                    Ouvrir l'App
+                    class="flex w-full h-12 items-center justify-center gap-2 rounded-full bg-zinc-800 text-white text-sm font-medium shine-effect landing-commencer-btn">
+                    <span>Ouvrir l'application</span>
+                    <svg class="cta-arrow-out" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M7 17L17 7M7 7h10v10"></path>
+                    </svg>
                 </a>
             </div>
         </div>
@@ -998,42 +120,40 @@
     <main>
         <header id="hero" class="relative min-h-[100svh] flex flex-col justify-center pt-20 pb-12 lg:pt-24 lg:pb-20 overflow-hidden">
             <div
-                class="max-w-7xl mx-auto px-[34px] grid lg:grid-cols-[56%_44%] gap-12 lg:gap-8 items-center">
+                class="w-full max-w-7xl mx-auto px-[34px] grid lg:grid-cols-[56%_44%] gap-12 lg:gap-8 items-center">
                 <div class="text-center lg:text-left z-10">
 
-                    <h1 class="text-5xl lg:text-6xl font-semibold tracking-tightest text-zinc-800 leading-[1.1] mb-6">
-                        L'assistant numérique
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">des
-                            enseignants</span>
+                    <p class="hero-eyebrow">
+                        L'assistant numérique des enseignants
+                    </p>
+                    <h1 class="hero-title font-semibold text-zinc-800 mb-6">
+                        Suivez votre classe.
+                        <span class="hero-title-line">Rédigez <span class="hero-accent-serif">avec justesse.</span></span>
                     </h1>
-                    <p class="text-lg text-zinc-500 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
-                        Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations.
+                    <p class="text-lg text-zinc-600 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+                        Importez vos listes Pronote ou Excel, consignez vos observations au fil des séances et formulez des appréciations fidèles à chaque élève.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                         <a href="./app.html"
                             class="h-12 px-8 rounded-full bg-zinc-800 text-white text-sm font-medium flex items-center gap-2 hover:bg-zinc-900 hover:shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto justify-center shine-effect landing-commencer-btn">
-                            <span class="rocket-container">
-                                <iconify-icon icon="solar:rocket-linear" width="18"></iconify-icon>
-                            </span>
-                            Commencer maintenant
+                            <span>Ouvrir l'application</span>
+                            <svg class="cta-arrow-out" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M7 17L17 7M7 7h10v10"></path>
+                            </svg>
                         </a>
                         <a href="#how-it-works"
-                            class="h-12 px-6 rounded-full bg-white border border-zinc-200 text-zinc-600 text-sm font-medium flex items-center gap-2 transition-all w-full sm:w-auto justify-center shadow-sm landing-play-btn">
-                            <span class="play-icon-container">
-                                <iconify-icon icon="solar:play-linear" class="play-icon-inner" width="9" style="position: relative; left: 0.5px;"></iconify-icon>
-                                <svg class="play-circle-svg absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10.5" stroke="rgba(0, 0, 0, 0.12)" stroke-width="1.8" fill="none"></circle>
-                                    <circle class="play-circle-fill" cx="12" cy="12" r="10.5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-dasharray="66" stroke-dashoffset="66" stroke-linecap="round"></circle>
-                                </svg>
-                            </span>
-                            Voir comment ça marche
+                            class="h-12 px-6 rounded-full bg-white border border-zinc-200 text-zinc-700 text-sm font-medium flex items-center gap-2 w-full sm:w-auto justify-center shadow-sm landing-explore-btn">
+                            <span>Voir comment ça marche</span>
+                            <svg class="cta-arrow-down" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 5v14M5 12l7 7 7-7"></path>
+                            </svg>
                         </a>
                     </div>
-                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs font-medium text-zinc-500 list-none p-0"
+                    <ul class="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs font-medium text-zinc-700 list-none p-0"
                         aria-label="Points clés">
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:shield-check-linear" class="text-emerald-600 text-sm"></iconify-icon>
-                            100% local & RGPD
+                            Local & pseudonymisé RGPD
                         </li>
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:shield-star-linear" class="text-emerald-600 text-sm"></iconify-icon>
@@ -1048,61 +168,96 @@
 
                 <div id="mockup-card" class="relative z-0 reveal-on-scroll lg:-ml-8" role="region" aria-label="Aperçu interactif de rédaction d'appréciation">
                     <div class="mockup-hero-surface max-w-md mx-auto flex flex-col text-left">
-                        <!-- En-tête Élève -->
-                        <div class="mockup-header flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <img src="./images/sample-solo-1.png" alt="Mathéo D."
-                                    class="w-10 h-10 rounded-full object-cover ring-1 ring-zinc-900/5 flex-shrink-0">
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="text-sm font-semibold text-zinc-800 tracking-tight">Mathéo D.</h3>
-                                        <span class="mockup-status-pill">PAP</span>
+                        <!-- Sélecteur segmenté d'élèves -->
+                        <div class="mockup-seg-track mockup-seg-track--students" id="mockup-student-tabs" role="tablist" aria-label="Choisir un élève de démonstration">
+                            <div class="mockup-seg-glider" aria-hidden="true"></div>
+                            <button type="button" class="mockup-seg-btn is-active" role="tab" aria-selected="true" tabindex="0" data-mockup-student="matheo">
+                                <img src="./images/sample-solo-1.png" alt="" class="mockup-tab-avatar" width="20" height="20">
+                                <span>Mathéo</span>
+                            </button>
+                            <button type="button" class="mockup-seg-btn" role="tab" aria-selected="false" tabindex="-1" data-mockup-student="sophie">
+                                <img src="./images/Demo/durand.jpg" alt="" class="mockup-tab-avatar" width="20" height="20">
+                                <span>Sophie</span>
+                            </button>
+                            <button type="button" class="mockup-seg-btn" role="tab" aria-selected="false" tabindex="-1" data-mockup-student="lucas">
+                                <img src="./images/Demo/martin.jpg" alt="" class="mockup-tab-avatar" width="20" height="20">
+                                <span>Lucas</span>
+                            </button>
+                        </div>
+
+                        <!-- Classe & Dispositif regroupés près de l'élève -->
+                        <div class="mockup-student-meta-bar">
+                            <span class="mockup-student-class">3e B · 2e trimestre</span>
+                            <span id="mockup-student-badge" class="mockup-status-pill">Dispositif · PAP</span>
+                        </div>
+
+                        <!-- Bandeau 3 métriques & Contexte élève -->
+                        <div class="mockup-metrics-block">
+                            <div class="mockup-metrics-grid">
+                                <div class="mockup-metric">
+                                    <span class="mockup-metric-label">Moyenne</span>
+                                    <span class="mockup-metric-value" id="mockup-grade">8,5<small>/20</small></span>
+                                </div>
+                                <div class="mockup-metric">
+                                    <span class="mockup-metric-label">Évolution</span>
+                                    <span class="mockup-metric-trend is-down" id="mockup-trend">
+                                        <iconify-icon icon="ph:arrow-down-right-bold" width="13"></iconify-icon>
+                                        <span>-2,0</span>
+                                    </span>
+                                </div>
+                                <div class="mockup-metric">
+                                    <span class="mockup-metric-label">Journal</span>
+                                    <div class="mockup-obs-list" id="mockup-obs">
+                                        <span class="mockup-metric-obs">
+                                            <span class="mockup-obs-dot is-warn" aria-hidden="true"></span>
+                                            <span>Bavardages ×3</span>
+                                        </span>
+                                        <span class="mockup-metric-obs">
+                                            <span class="mockup-obs-dot is-pos" aria-hidden="true"></span>
+                                            <span>Oral volontaire</span>
+                                        </span>
                                     </div>
-                                    <p class="text-[10px] text-zinc-500 font-medium">3e B · Trimestre 2</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-1.5 flex-shrink-0" aria-label="Moyennes trimestrielles">
-                                <span class="mockup-grade-prev">T1 <strong>10,5</strong></span>
-                                <span class="mockup-grade-current">T2 <strong>8,5</strong><small>/20</small></span>
+                            <div class="mockup-context-row">
+                                <p class="mockup-context-quote" id="mockup-context">« Bonnes capacités d'analyse, mais un travail personnel trop irrégulier. »</p>
                             </div>
                         </div>
 
-                        <!-- Section 1 : Contexte & Journal (Zéro boîte dans boîte) -->
-                        <div class="mockup-section">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="mockup-section-title">Contexte & Journal</span>
+                        <!-- Paramètre Ton -->
+                        <div class="mockup-tone-section">
+                            <div class="mockup-seg-track" id="mockup-tone-tabs" role="radiogroup" aria-label="Ton de l'appréciation">
+                                <div class="mockup-seg-glider" aria-hidden="true"></div>
+                                <button type="button" class="mockup-seg-btn is-active" role="radio" aria-checked="true" tabindex="0" data-mockup-tone="bienveillant">Bienveillant</button>
+                                <button type="button" class="mockup-seg-btn" role="radio" aria-checked="false" tabindex="-1" data-mockup-tone="neutre">Neutre</button>
+                                <button type="button" class="mockup-seg-btn" role="radio" aria-checked="false" tabindex="-1" data-mockup-tone="exigeant">Exigeant</button>
                             </div>
-                            <p class="text-xs text-zinc-500 italic mb-3">« Inattentif ce trimestre, mais volontaire à l'oral. »</p>
-                            <div id="mockup-analysis" class="flex flex-wrap items-center gap-1.5 min-h-[24px]"></div>
                         </div>
 
-                        <!-- Section 2 : Appréciation & Affinage (Zéro boîte dans boîte) -->
-                        <div class="mockup-section">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="mockup-section-title">Appréciation</span>
-                                <span class="mockup-rgpd-pill">
-                                    <iconify-icon icon="solar:shield-check-linear" width="11"></iconify-icon>
-                                    Pseudonymisé · RGPD
-                                </span>
+                        <!-- Appréciation générée -->
+                        <div class="mockup-appreciation-block">
+                            <div class="mockup-appreciation-head">
+                                <span class="mockup-section-label">Appréciation</span>
+                                <span class="mockup-word-count" id="mockup-word-count">28 mots</span>
                             </div>
-                            <p id="mockup-text" class="text-xs text-zinc-700 leading-relaxed min-h-[60px] mb-3"></p>
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex items-center gap-1.5 flex-wrap" role="group" aria-label="Ajuster le ton de l'appréciation">
-                                    <button type="button" class="mockup-refine-chip" data-mockup-tone="concise" aria-pressed="false">
-                                        <iconify-icon icon="solar:minimize-square-linear" class="text-amber-500" width="12"></iconify-icon>
-                                        Concise
+
+                            <div class="mockup-text-stage" id="mockup-text-stage">
+                                <p id="mockup-text" class="mockup-text-body">Des résultats fragiles ce trimestre, mais Mathéo montre de vraies capacités et participe bien à l'oral. Avec un travail plus régulier et moins de bavardages, il progressera vite.</p>
+                            </div>
+
+                            <div class="mockup-actions-footer">
+                                <div class="mockup-refine-group" role="group" aria-label="Retouches rapides de l'appréciation">
+                                    <button type="button" class="mockup-refine-btn" data-mockup-refine="concise" aria-pressed="false">
+                                        <iconify-icon icon="solar:minimize-square-linear" width="12"></iconify-icon>
+                                        <span>Concise</span>
                                     </button>
-                                    <button type="button" class="mockup-refine-chip" data-mockup-tone="encouraging" aria-pressed="false">
-                                        <iconify-icon icon="solar:heart-linear" class="text-rose-400" width="12"></iconify-icon>
-                                        Encourageante
-                                    </button>
-                                    <button type="button" class="mockup-refine-chip" data-mockup-tone="polish" aria-pressed="false">
-                                        <iconify-icon icon="solar:stars-line-linear" class="text-purple-500" width="12"></iconify-icon>
-                                        Peaufiner
+                                    <button type="button" class="mockup-refine-btn" data-mockup-refine="polish" aria-pressed="false">
+                                        <iconify-icon icon="solar:stars-line-linear" width="12"></iconify-icon>
+                                        <span>Peaufiner</span>
                                     </button>
                                 </div>
-                                <button type="button" id="mockup-copy-btn" class="mockup-copy-pill flex-shrink-0">
-                                    <iconify-icon icon="solar:copy-linear" width="11"></iconify-icon>
+                                <button type="button" id="mockup-copy-btn" class="mockup-copy-btn" aria-label="Copier l'appréciation">
+                                    <iconify-icon icon="solar:copy-linear" width="12"></iconify-icon>
                                     <span>Copier</span>
                                 </button>
                             </div>
@@ -1112,11 +267,10 @@
             </div>
         </header>
 
-        <section id="how-it-works" class="py-20 bg-white">
+        <section id="how-it-works" class="py-20 bg-white landing-divider-top">
             <div class="max-w-7xl mx-auto px-[34px]">
                 <div class="section-header reveal-on-scroll">
-                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Flux de travail
-                    </h2>
+                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Fonctionnement</h2>
                     <p>De l'import de vos listes au suivi quotidien, jusqu'aux bulletins.</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
@@ -1127,14 +281,14 @@
                     </div>
 
                     <div class="relative z-10 group reveal-on-scroll">
-                        <div class="workflow-step-icon workflow-step-icon--blue relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-1">
+                        <div class="workflow-step-icon workflow-step-icon--blue relative w-20 h-20 mx-auto mb-6">
                             <div
                                 class="absolute inset-0 bg-blue-50 rounded-2xl border border-blue-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:import-linear" width="32"
                                     class="text-blue-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-blue-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-zinc-800 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 1</div>
                         </div>
                         <div class="text-center px-4">
@@ -1143,15 +297,15 @@
                         </div>
                     </div>
 
-                    <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 100ms;">
-                        <div class="workflow-step-icon workflow-step-icon--purple relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-2">
+                    <div class="relative z-10 group reveal-on-scroll reveal-delay-100">
+                        <div class="workflow-step-icon workflow-step-icon--purple relative w-20 h-20 mx-auto mb-6">
                             <div
                                 class="absolute inset-0 bg-purple-50 rounded-2xl border border-purple-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:notebook-linear" width="32"
                                     class="text-purple-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-purple-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-zinc-800 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 2</div>
                         </div>
                         <div class="text-center px-4">
@@ -1160,15 +314,15 @@
                         </div>
                     </div>
 
-                    <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 200ms;">
-                        <div class="workflow-step-icon workflow-step-icon--green relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-3">
+                    <div class="relative z-10 group reveal-on-scroll reveal-delay-200">
+                        <div class="workflow-step-icon workflow-step-icon--green relative w-20 h-20 mx-auto mb-6">
                             <div
                                 class="absolute inset-0 bg-green-50 rounded-2xl border border-green-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:export-linear" width="32"
                                     class="text-green-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-green-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-zinc-800 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 3</div>
                         </div>
                         <div class="text-center px-4">
@@ -1180,7 +334,7 @@
             </div>
         </section>
 
-        <section id="features" class="py-20 overflow-hidden bg-zinc-100">
+        <section id="features" class="py-20 overflow-hidden bg-zinc-50 landing-divider-top">
             <div class="section-header reveal-on-scroll">
                 <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Fonctionnalités</h2>
                 <p>Une suite d'outils conçue pour la productivité et la confidentialité.</p>
@@ -1188,7 +342,7 @@
             <div class="h-[290px] sm:h-[300px] relative w-full perspective-container reveal-on-scroll"
                 id="carousel-track" role="region" aria-label="Fonctionnalités de Bulletin AI"
                 aria-roledescription="carousel" aria-live="off" tabindex="0"></div>
-            <div class="flex justify-center items-center mt-[42px] reveal-on-scroll">
+            <div class="flex justify-center items-center mt-8 reveal-on-scroll">
                 <div class="px-4 py-2 flex items-center gap-3">
                     <button type="button" id="prevBtn"
                         class="carousel-nav-btn"
@@ -1206,17 +360,17 @@
             </div>
         </section>
 
-        <section id="specs" class="py-20 bg-white">
+        <section id="specs" class="py-20 bg-white landing-divider-top">
             <div class="max-w-3xl mx-auto px-[34px]">
                 <div class="section-header reveal-on-scroll">
-                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Spécifications</h2>
-                    <p>Confidentialité des données, modèles d'IA compatibles et engagements du projet.</p>
+                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-800">Confidentialité &amp; technique</h2>
+                    <p>Protection des données (RGPD), modèles d'IA compatibles et engagements du projet.</p>
                 </div>
 
                 <div class="space-y-1 reveal-on-scroll" role="region" aria-label="Détails techniques">
 
                     <div class="accordion-item is-open border-b border-zinc-100">
-                        <button type="button" class="w-full flex justify-between items-center py-5 text-left transition-colors"
+                        <button type="button" class="accordion-trigger w-full flex justify-between items-center py-5 text-left transition-colors"
                             aria-expanded="true" aria-controls="acc-panel-1">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <span class="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
@@ -1239,7 +393,7 @@
                     </div>
 
                     <div class="accordion-item border-b border-zinc-100">
-                        <button type="button" class="w-full flex justify-between items-center py-5 text-left transition-colors"
+                        <button type="button" class="accordion-trigger w-full flex justify-between items-center py-5 text-left transition-colors"
                             aria-expanded="false" aria-controls="acc-panel-2">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -1262,7 +416,7 @@
                     </div>
 
                     <div class="accordion-item border-b border-zinc-100">
-                        <button type="button" class="w-full flex justify-between items-center py-5 text-left transition-colors"
+                        <button type="button" class="accordion-trigger w-full flex justify-between items-center py-5 text-left transition-colors"
                             aria-expanded="false" aria-controls="acc-panel-3">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
@@ -1283,7 +437,7 @@
                     </div>
 
                     <div class="accordion-item border-b border-zinc-100">
-                        <button type="button" class="w-full flex justify-between items-center py-5 text-left transition-colors"
+                        <button type="button" class="accordion-trigger w-full flex justify-between items-center py-5 text-left transition-colors"
                             aria-expanded="false" aria-controls="acc-panel-4">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <span class="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0">
@@ -1304,7 +458,7 @@
                     </div>
 
                     <div class="accordion-item border-b border-zinc-100">
-                        <button type="button" class="w-full flex justify-between items-center py-5 text-left transition-colors"
+                        <button type="button" class="accordion-trigger w-full flex justify-between items-center py-5 text-left transition-colors"
                             aria-expanded="false" aria-controls="acc-panel-5">
                             <span class="accordion-title font-medium text-zinc-800 text-sm flex items-center gap-3">
                                 <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center flex-shrink-0">
@@ -1331,17 +485,17 @@
                 <div class="mt-10 pt-4 flex justify-center reveal-on-scroll">
                     <a href="./app.html"
                         class="h-12 px-8 rounded-full bg-zinc-800 text-white text-sm font-medium inline-flex items-center gap-2 hover:bg-zinc-900 hover:shadow-lg hover:-translate-y-0.5 transition-all shine-effect landing-commencer-btn">
-                        <span class="rocket-container">
-                            <iconify-icon icon="solar:rocket-linear" width="18"></iconify-icon>
-                        </span>
-                        Ouvrir l'application
+                        <span>Ouvrir l'application</span>
+                        <svg class="cta-arrow-out" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M7 17L17 7M7 7h10v10"></path>
+                        </svg>
                     </a>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="relative bg-zinc-50 pt-12 pb-10 border-t border-zinc-200">
+    <footer class="relative bg-zinc-50 pt-12 pb-10 landing-divider-top">
         <div class="max-w-7xl mx-auto px-[34px]">
 
             <div class="flex flex-col md:flex-row justify-between items-center gap-8">
@@ -1350,7 +504,7 @@
                     <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
                         <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="w-6 h-6 object-contain opacity-80" width="24"
                             height="24">
-                        <span class="font-semibold text-zinc-700 tracking-tight">Bulletin AI</span>
+                        <span class="font-semibold text-zinc-700 tracking-tight">Bulletin <span class="font-medium text-zinc-600">AI</span></span>
                     </div>
                     <p class="text-sm text-zinc-500">
                         Développé avec <iconify-icon icon="solar:heart-bold"
@@ -1378,7 +532,7 @@
             </div>
 
             <div
-                class="mt-8 pt-8 border-t border-zinc-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
+                class="mt-8 pt-8 landing-divider-top flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
                 <p>© <span id="currentYear"></span> David Trafial. Tous droits réservés.</p>
                 <div class="flex items-center gap-2">
                     <span id="landingVersionDisplay"></span>
@@ -1391,597 +545,12 @@
     </footer>
 
     <button type="button" id="scrollTopBtn"
-        class="scroll-top-btn fixed bottom-8 right-8 w-12 h-12 rounded-full bg-white border border-zinc-200 shadow-xl flex items-center justify-center text-zinc-600 hover:bg-zinc-800 hover:text-white hover:-translate-y-1 transition-all z-40"
+        class="scroll-top-btn flex items-center justify-center z-40"
         aria-label="Retour en haut">
-        <iconify-icon icon="solar:alt-arrow-up-linear" width="24"></iconify-icon>
+        <iconify-icon icon="solar:alt-arrow-up-linear" width="22"></iconify-icon>
     </button>
 
-    <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-        const navbar = document.getElementById('navbar');
-        const scrollTopBtn = document.getElementById('scrollTopBtn');
-        const sections = document.querySelectorAll("section[id], header[id]");
-        const navLinks = document.querySelectorAll(".nav-link");
-
-        let scrollTicking = false;
-        window.addEventListener('scroll', () => {
-            if (!scrollTicking) {
-                requestAnimationFrame(() => {
-                    const scrollY = window.scrollY;
-                    navbar.classList.toggle('border-zinc-200/70', scrollY > 10);
-                    navbar.classList.toggle('shadow-[0_1px_3px_rgba(0,0,0,0.03)]', scrollY > 10);
-                    scrollTopBtn.classList.toggle('is-visible', scrollY > 500);
-                    scrollTicking = false;
-                });
-                scrollTicking = true;
-            }
-        }, { passive: true });
-
-        const sectionObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const activeId = entry.target.id;
-                    navLinks.forEach(link => {
-                        link.classList.remove('active', 'text-zinc-800');
-                        link.classList.add('text-zinc-500');
-                        if (link.getAttribute('data-target') === activeId) {
-                            link.classList.add('active', 'text-zinc-800');
-                            link.classList.remove('text-zinc-500');
-                        }
-                    });
-                }
-            });
-        }, { root: null, rootMargin: '-20% 0px -70% 0px', threshold: 0 });
-        sections.forEach(section => sectionObserver.observe(section));
-
-        scrollTopBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        const mobileMenu = document.getElementById('mobile-menu');
-        const mobileBackdrop = document.getElementById('mobile-backdrop');
-        const mobilePanel = document.getElementById('mobile-panel');
-        const menuToggleBtn = document.getElementById('menuToggleBtn');
-        const mobileCloseBtn = document.getElementById('mobileCloseBtn');
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-        let isMenuOpen = false;
-        let menuFocusTimeout = null;
-
-        function toggleMenu() {
-            if (menuFocusTimeout) {
-                clearTimeout(menuFocusTimeout);
-                menuFocusTimeout = null;
-            }
-            isMenuOpen = !isMenuOpen;
-            menuToggleBtn.setAttribute('aria-expanded', String(isMenuOpen));
-            mobileMenu.setAttribute('aria-hidden', String(!isMenuOpen));
-            mobileMenu.inert = !isMenuOpen;
-            if (isMenuOpen) {
-                mobileMenu.classList.remove('pointer-events-none');
-                mobileBackdrop.classList.remove('opacity-0');
-                mobilePanel.classList.remove('mobile-menu-enter');
-                mobilePanel.classList.add('mobile-menu-active');
-                document.body.style.overflow = 'hidden';
-                const firstLink = mobilePanel.querySelector('a');
-                if (firstLink) menuFocusTimeout = setTimeout(() => firstLink.focus(), 350);
-            } else {
-                mobileMenu.classList.add('pointer-events-none');
-                mobileBackdrop.classList.add('opacity-0');
-                mobilePanel.classList.remove('mobile-menu-active');
-                mobilePanel.classList.add('mobile-menu-enter');
-                document.body.style.overflow = '';
-                menuToggleBtn.focus();
-            }
-        }
-
-        menuToggleBtn.addEventListener('click', toggleMenu);
-        mobileBackdrop.addEventListener('click', toggleMenu);
-        mobileCloseBtn.addEventListener('click', toggleMenu);
-        mobilePanel.querySelectorAll('[data-close-menu]').forEach(link => {
-            link.addEventListener('click', toggleMenu);
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isMenuOpen) toggleMenu();
-        });
-
-        const accordionItems = document.querySelectorAll('.accordion-item');
-        function toggleAccordion(button) {
-            const item = button.parentElement;
-            const isOpen = item.classList.contains('is-open');
-            accordionItems.forEach(other => {
-                other.classList.remove('is-open');
-                const btn = other.querySelector('button');
-                const panel = other.querySelector('.accordion-content');
-                if (btn) btn.setAttribute('aria-expanded', 'false');
-                if (panel) panel.setAttribute('aria-hidden', 'true');
-            });
-            if (!isOpen) {
-                item.classList.add('is-open');
-                button.setAttribute('aria-expanded', 'true');
-                const panel = item.querySelector('.accordion-content');
-                if (panel) panel.setAttribute('aria-hidden', 'false');
-            }
-        }
-        accordionItems.forEach(item => {
-            const btn = item.querySelector('button');
-            if (btn) btn.addEventListener('click', () => toggleAccordion(btn));
-        });
-
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-                    revealObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1 });
-        document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObserver.observe(el));
-
-        const workflowIconObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-revealed');
-                    workflowIconObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.3 });
-        document.querySelectorAll('.workflow-step-icon').forEach(el => workflowIconObserver.observe(el));
-
-        /* ── Carousel ── */
-        const carouselData = [
-            { icon: 'solar:stars-linear', color: 'bg-purple-50 text-purple-600', title: 'Rédaction & Affinage IA', desc: 'Générez sur mesure et ajustez le ton en un clic : concis, détaillé, encourageant ou reformulé.', label: 'Rédaction' },
-            { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Consignez vos observations au fil des séances (clavier ou dictée vocale) pour nourrir le bilan.', label: 'Suivi' },
-            { icon: 'solar:chart-square-linear', color: 'bg-orange-50 text-orange-600', title: 'Statistiques & Dynamique', desc: 'Visualisez moyenne, médiane, répartition et évolution (progrès, stabilité, régression) de la classe.', label: 'Analyse' },
-            { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Import PDF & Tableurs', desc: 'Compatible bilans et trombinoscopes PDF (Pronote, MBN), Excel, CSV ou copier-coller.', label: 'Import' },
-            { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Trombinoscope & Sauvegarde', desc: 'Visualisez vos élèves et archivez vos classes en local ou sur votre Google Drive personnel.', label: 'Stockage' },
-            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
-            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama 100% hors-ligne.', label: 'Flexible' },
-            { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en classe, binômes ou îlots d\'activité équilibrés et export PDF.', label: 'Organisation' }
-        ];
-
-        const track = document.getElementById('carousel-track');
-        const dotsContainer = document.getElementById('carousel-dots');
-
-        carouselData.forEach((item, index) => {
-            const slideId = `carousel-slide-${index}`;
-            const card = document.createElement('div');
-            card.id = slideId;
-            card.addEventListener('click', () => {
-                if (centerIndex !== index) goToSlide(index);
-            });
-            card.className = 'carousel-card bg-white rounded-2xl border border-zinc-100 shadow-sm p-6 flex flex-col items-center text-center select-none';
-            card.setAttribute('role', 'tabpanel');
-            card.setAttribute('aria-label', item.title);
-            card.innerHTML = `
-                <div class="w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center text-2xl mb-4 flex-shrink-0">
-                    <iconify-icon icon="${item.icon}" stroke-width="1.5"></iconify-icon>
-                </div>
-                <h3 class="text-base sm:text-lg font-semibold text-zinc-800 mb-2">${item.title}</h3>
-                <p class="text-sm text-zinc-500 leading-relaxed">${item.desc}</p>
-                <div class="mt-auto pt-4">
-                    <span class="px-3 py-1 rounded-full bg-zinc-50 text-zinc-500 text-[10px] font-bold tracking-widest uppercase border border-zinc-100">${item.label}</span>
-                </div>
-            `;
-            track.appendChild(card);
-
-            const dot = document.createElement('button');
-            dot.type = 'button';
-            dot.className = 'carousel-dot';
-            dot.setAttribute('role', 'tab');
-            dot.setAttribute('aria-controls', slideId);
-            dot.setAttribute('aria-label', `Voir slide ${index + 1}: ${item.title}`);
-            dot.setAttribute('aria-selected', 'false');
-            dot.addEventListener('click', () => goToSlide(index));
-            dotsContainer.appendChild(dot);
-        });
-
-        const cards = Array.from(track.children);
-        const dots = Array.from(dotsContainer.children);
-        let centerIndex = 0;
-        let autoPlay = null;
-        let isHovering = false;
-        let isTouching = false;
-        let isFocused = false;
-        let isVisible = false;
-        let touchResumeTimeout = null;
-
-        function updateCarousel() {
-            const count = cards.length;
-            cards.forEach((card, index) => {
-                let offset = index - centerIndex;
-                if (offset > count / 2) offset -= count;
-                if (offset < -count / 2) offset += count;
-                let pos = 'far-right';
-                if (offset === 0) pos = 'center';
-                else if (offset === -1) pos = 'left';
-                else if (offset === 1) pos = 'right';
-                else if (offset <= -2) pos = 'far-left';
-                card.setAttribute('data-pos', pos);
-                card.setAttribute('aria-hidden', offset === 0 ? 'false' : 'true');
-            });
-            dots.forEach((dot, index) => {
-                dot.setAttribute('aria-selected', index === centerIndex ? 'true' : 'false');
-            });
-        }
-
-        function shouldAutoPlay() {
-            return isVisible && !isHovering && !isTouching && !isFocused && !prefersReducedMotion.matches;
-        }
-
-        function syncAutoPlay() {
-            if (shouldAutoPlay()) {
-                if (!autoPlay) {
-                    autoPlay = setInterval(() => {
-                        centerIndex = (centerIndex + 1) % cards.length;
-                        updateCarousel();
-                    }, 4000);
-                    track.setAttribute('aria-live', 'off');
-                }
-            } else if (autoPlay) {
-                clearInterval(autoPlay);
-                autoPlay = null;
-                track.setAttribute('aria-live', 'polite');
-            }
-        }
-
-        function goToSlide(index) {
-            centerIndex = (index + cards.length) % cards.length;
-            updateCarousel();
-            if (autoPlay) {
-                clearInterval(autoPlay);
-                autoPlay = null;
-                syncAutoPlay();
-            }
-        }
-
-        const featuresSection = document.getElementById('features');
-        featuresSection.addEventListener('mouseenter', () => { isHovering = true; syncAutoPlay(); });
-        featuresSection.addEventListener('mouseleave', () => { isHovering = false; syncAutoPlay(); });
-
-        featuresSection.addEventListener('focusin', () => { isFocused = true; syncAutoPlay(); });
-        featuresSection.addEventListener('focusout', (e) => {
-            if (!featuresSection.contains(e.relatedTarget)) {
-                isFocused = false;
-                syncAutoPlay();
-            }
-        });
-
-        const carouselObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                isVisible = entry.isIntersecting;
-                syncAutoPlay();
-            });
-        }, { threshold: 0.3 });
-        carouselObserver.observe(featuresSection);
-
-        document.getElementById('nextBtn').addEventListener('click', () => goToSlide(centerIndex + 1));
-        document.getElementById('prevBtn').addEventListener('click', () => goToSlide(centerIndex - 1));
-
-        track.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                goToSlide(centerIndex + 1);
-            } else if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                goToSlide(centerIndex - 1);
-            }
-        });
-
-        let touchStartX = 0;
-        track.addEventListener('touchstart', (e) => {
-            if (touchResumeTimeout) {
-                clearTimeout(touchResumeTimeout);
-                touchResumeTimeout = null;
-            }
-            touchStartX = e.changedTouches[0].screenX;
-            isTouching = true;
-            syncAutoPlay();
-        }, { passive: true });
-        track.addEventListener('touchend', (e) => {
-            const diff = touchStartX - e.changedTouches[0].screenX;
-            if (Math.abs(diff) > 50) {
-                goToSlide(diff > 0 ? centerIndex + 1 : centerIndex - 1);
-            }
-            if (touchResumeTimeout) clearTimeout(touchResumeTimeout);
-            touchResumeTimeout = setTimeout(() => {
-                isTouching = false;
-                touchResumeTimeout = null;
-                syncAutoPlay();
-            }, 3000);
-        });
-
-        updateCarousel();
-
-        /* ── Mockup Hero (Interactive Tone Cycle) ── */
-        const mockupCard = document.getElementById('mockup-card');
-        const mockupText = document.getElementById('mockup-text');
-        const mockupAnalysis = document.getElementById('mockup-analysis');
-        const mockupToneBtns = Array.from(document.querySelectorAll('[data-mockup-tone]'));
-        const mockupCopyBtn = document.getElementById('mockup-copy-btn');
-        const mockupTexts = {
-            default: "Les résultats de Mathéo sont fragiles ce trimestre. Malgré une bonne curiosité à l'oral, les bavardages dispersent son attention : il doit se recentrer.",
-            concise: "Ensemble fragile ce trimestre. De la curiosité à l'oral, mais trop de bavardages : Mathéo doit se recentrer en classe.",
-            encouraging: "Des résultats encore fragiles, mais Mathéo montre une belle curiosité à l'oral. En canalisant son attention en classe, il progressera rapidement.",
-            polish: "Trimestre fragile mais perfectible : l'investissement oral est pertinent, il faut désormais canaliser l'attention à l'écrit et cesser les bavardages."
-        };
-        const TONE_SEQUENCE = ['concise', 'encouraging', 'polish', 'default'];
-        let currentMockupTone = 'default';
-        let toneCycleIndex = 0;
-        let hasMockupInitialized = false;
-        let isMockupHovered = false;
-        let isMockupFocused = false;
-        let isHeroVisible = false;
-
-        let mockupActiveTimeouts = [];
-        let mockupCycleTimeout = null;
-        let mockupCopyTimeout = null;
-
-        function clearMockupTimeouts() {
-            mockupActiveTimeouts.forEach(clearTimeout);
-            mockupActiveTimeouts = [];
-            if (mockupCycleTimeout) { clearTimeout(mockupCycleTimeout); mockupCycleTimeout = null; }
-        }
-
-        function setMockupActiveChip(tone) {
-            currentMockupTone = tone;
-            mockupToneBtns.forEach(btn => {
-                const isActive = btn.dataset.mockupTone === tone;
-                btn.classList.toggle('is-active', isActive);
-                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-        }
-
-        function ensureMockupBadges(animated = false) {
-            if (mockupAnalysis.children.length) return;
-            const animClass = animated ? 'pop-in ' : '';
-            const delayAttr = animated ? ' style="animation-delay: 0.14s"' : '';
-            mockupAnalysis.innerHTML = `
-                <span class="${animClass}mockup-obs-badge mockup-obs-badge--warn">
-                    <iconify-icon icon="solar:notebook-linear" width="11"></iconify-icon>
-                    Bavardages ×3
-                </span>
-                <span class="${animClass}mockup-obs-badge mockup-obs-badge--pos"${delayAttr}>
-                    <iconify-icon icon="solar:hand-stars-linear" width="11"></iconify-icon>
-                    Curiosité orale
-                </span>
-            `;
-        }
-
-        function renderMockupText(text, stepDelay = 55) {
-            const words = text.split(' ');
-            let html = '';
-            words.forEach((word, index) => {
-                html += `<span class="blur-word" style="transition-delay: ${index * stepDelay}ms">${word}</span> `;
-            });
-            mockupText.innerHTML = html;
-
-            void mockupText.offsetWidth;
-
-            requestAnimationFrame(() => {
-                mockupText.querySelectorAll('.blur-word').forEach(span => span.classList.add('is-visible'));
-            });
-        }
-
-        function shouldCycleMockup() {
-            return isHeroVisible && !isMockupHovered && !isMockupFocused && !prefersReducedMotion.matches;
-        }
-
-        function scheduleNextToneStep(delay = 4200) {
-            if (mockupCycleTimeout) clearTimeout(mockupCycleTimeout);
-            if (!shouldCycleMockup()) return;
-            mockupCycleTimeout = setTimeout(() => {
-                if (!shouldCycleMockup()) return;
-                const nextTone = TONE_SEQUENCE[toneCycleIndex % TONE_SEQUENCE.length];
-                toneCycleIndex = (toneCycleIndex + 1) % TONE_SEQUENCE.length;
-                setMockupActiveChip(nextTone);
-                renderMockupText(mockupTexts[nextTone], 32);
-                scheduleNextToneStep(4200);
-            }, delay);
-        }
-
-        function initMockupSequence() {
-            clearMockupTimeouts();
-            hasMockupInitialized = true;
-            setMockupActiveChip('default');
-            if (prefersReducedMotion.matches) {
-                ensureMockupBadges(false);
-                renderMockupText(mockupTexts.default, 0);
-                return;
-            }
-            mockupText.innerHTML = '<div class="shimmer h-2 w-full rounded mb-2"></div><div class="shimmer h-2 w-11/12 rounded mb-2"></div><div class="shimmer h-2 w-2/3 rounded"></div>';
-            mockupAnalysis.innerHTML = '';
-
-            const t1 = setTimeout(() => {
-                ensureMockupBadges(true);
-            }, 500);
-            mockupActiveTimeouts.push(t1);
-
-            const t2 = setTimeout(() => {
-                renderMockupText(mockupTexts.default, 55);
-                scheduleNextToneStep(4000);
-            }, 1300);
-            mockupActiveTimeouts.push(t2);
-        }
-
-        if (mockupCard) {
-            mockupCard.addEventListener('mouseenter', () => {
-                isMockupHovered = true;
-                if (mockupCycleTimeout) { clearTimeout(mockupCycleTimeout); mockupCycleTimeout = null; }
-            });
-            mockupCard.addEventListener('mouseleave', () => {
-                isMockupHovered = false;
-                if (hasMockupInitialized) scheduleNextToneStep(4200);
-            });
-            mockupCard.addEventListener('focusin', () => {
-                isMockupFocused = true;
-                if (mockupCycleTimeout) { clearTimeout(mockupCycleTimeout); mockupCycleTimeout = null; }
-            });
-            mockupCard.addEventListener('focusout', (e) => {
-                if (!mockupCard.contains(e.relatedTarget)) {
-                    isMockupFocused = false;
-                    if (hasMockupInitialized) scheduleNextToneStep(4200);
-                }
-            });
-        }
-
-        mockupToneBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                clearMockupTimeouts();
-                hasMockupInitialized = true;
-                const tone = btn.dataset.mockupTone;
-                const nextTone = currentMockupTone === tone ? 'default' : tone;
-                const seqIdx = TONE_SEQUENCE.indexOf(nextTone);
-                if (seqIdx !== -1) toneCycleIndex = (seqIdx + 1) % TONE_SEQUENCE.length;
-                setMockupActiveChip(nextTone);
-                ensureMockupBadges(false);
-                renderMockupText(mockupTexts[nextTone] || mockupTexts.default, 28);
-                scheduleNextToneStep(8000);
-            });
-        });
-
-        if (mockupCopyBtn) {
-            mockupCopyBtn.addEventListener('click', () => {
-                if (mockupCopyTimeout) clearTimeout(mockupCopyTimeout);
-                const textToCopy = mockupTexts[currentMockupTone] || mockupTexts.default;
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(textToCopy).catch(() => {});
-                }
-                mockupCopyBtn.classList.add('is-copied');
-                mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear" width="11"></iconify-icon><span>Copié</span>';
-                mockupCopyTimeout = setTimeout(() => {
-                    mockupCopyBtn.classList.remove('is-copied');
-                    mockupCopyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear" width="11"></iconify-icon><span>Copier</span>';
-                }, 1600);
-            });
-        }
-
-        const heroObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                isHeroVisible = entry.isIntersecting;
-                if (entry.isIntersecting) {
-                    if (!hasMockupInitialized) initMockupSequence();
-                    else scheduleNextToneStep(4200);
-                } else {
-                    clearMockupTimeouts();
-                }
-            });
-        }, { threshold: 0.2 });
-        heroObserver.observe(document.getElementById('hero'));
-
-        // Dynamically fetch and display version from version.json (single source of truth)
-        fetch('./version.json?t=' + Date.now())
-            .then(res => res.ok ? res.json() : null)
-            .then(data => {
-                const badge = document.getElementById('landingVersionDisplay');
-                if (badge && data && data.version) {
-                    badge.textContent = `v${data.version} ·`;
-                }
-            })
-            .catch(() => {});
-
-        // Ensure any existing Service Worker controlling the landing page activates pending updates silently
-        if ('serviceWorker' in navigator) {
-            let isSwReloading = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (isSwReloading || document.body.classList.contains('is-navigating-to-app')) return;
-                isSwReloading = true;
-                window.location.reload();
-            });
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                registrations.forEach(reg => {
-                    if (reg.waiting) {
-                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                    reg.addEventListener('updatefound', () => {
-                        const installing = reg.installing;
-                        if (installing) {
-                            installing.addEventListener('statechange', () => {
-                                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                                    installing.postMessage({ type: 'SKIP_WAITING' });
-                                }
-                            });
-                        }
-                    });
-                    reg.update().catch(() => {});
-                });
-            }).catch(() => {});
-        }
-
-        /* ── Transition vers l'application (fluidité iOS 2026) ── */
-        (function initAppTransition() {
-            const APP_PATH = './app.html';
-
-            // 1. Préchargement spéculatif (prefetch) pour une ouverture instantanée
-            let isPrefetched = false;
-            function prefetchApp() {
-                if (isPrefetched) return;
-                isPrefetched = true;
-                const link = document.createElement('link');
-                link.rel = 'prefetch';
-                link.href = APP_PATH;
-                document.head.appendChild(link);
-                // Modulepreload géré automatiquement par Vite dans app.html
-            }
-
-            if ('requestIdleCallback' in window) {
-                window.requestIdleCallback(() => prefetchApp(), { timeout: 2500 });
-            } else {
-                setTimeout(prefetchApp, 2000);
-            }
-
-            const appLinks = document.querySelectorAll('a[href*="app.html"]');
-            appLinks.forEach(link => {
-                link.addEventListener('mouseenter', prefetchApp, { passive: true, once: true });
-                link.addEventListener('focus', prefetchApp, { passive: true, once: true });
-                link.addEventListener('touchstart', prefetchApp, { passive: true, once: true });
-            });
-
-            // 2. Déclenchement au clic avec rétroaction tactile & fondu spatial
-            appLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    // Respecter les clics avec modificateurs (nouvel onglet, clic molette, etc.)
-                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || link.target === '_blank') {
-                        return;
-                    }
-
-                    // Rétroaction tactile immédiate
-                    link.classList.add('is-launching');
-
-                    // Adaptation au thème de destination si l'utilisateur a configuré le mode sombre
-                    try {
-                        const savedTheme = localStorage.getItem('bulletin_theme');
-                        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                        if (savedTheme === 'dark' || (savedTheme === 'system' && prefersDark)) {
-                            document.body.classList.add('target-dark');
-                            document.documentElement.style.colorScheme = 'dark';
-                            document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
-                                meta.setAttribute('content', '#0c0c0d');
-                            });
-                        }
-                    } catch (_) {}
-
-                    e.preventDefault();
-                    document.body.classList.add('is-navigating-to-app');
-
-                    const targetHref = link.getAttribute('href') || APP_PATH;
-                    setTimeout(() => {
-                        window.location.href = targetHref;
-                    }, 130);
-                });
-            });
-
-            // 3. Réinitialisation en cas de retour arrière navigateur (bfcache)
-            window.addEventListener('pageshow', () => {
-                document.body.classList.remove('is-navigating-to-app', 'target-dark');
-                document.documentElement.style.colorScheme = '';
-                const lightMeta = document.querySelector('meta[name="theme-color"][media*="light"]');
-                if (lightMeta) lightMeta.setAttribute('content', '#f6f6f6');
-                appLinks.forEach(link => link.classList.remove('is-launching'));
-            });
-        })();
-    </script>
+    <script type="module" src="./src/landing/main.js"></script>
 </body>
 
 </html>
