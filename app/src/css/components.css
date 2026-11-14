@@ -247,7 +247,6 @@
     border: 1px solid transparent;
     background: var(--ai-satin-bg);
     color: var(--ai-satin-text);
-    box-shadow: var(--ai-satin-shadow);
 }
 
 /* Icône Étoiles IA : lueur optique pure sans décalage géométrique */

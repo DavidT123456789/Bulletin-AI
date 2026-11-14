@@ -432,7 +432,6 @@
         linear-gradient(108deg, rgba(71, 107, 135, 0.36) 0%, rgba(100, 116, 139, 0.30) 50%, rgba(42, 51, 61, 0.38) 100%) border-box;
     --ai-satin-text: #1e293b;
     --ai-satin-hover-text: #0f172a;
-    --ai-satin-shadow: inset 0 1px 0 #ffffff;
     --ai-satin-shine-small: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
     --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 25%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.28) 75%, transparent 100%);
     --ai-icon-color: #476b87;
@@ -649,7 +648,6 @@
         linear-gradient(108deg, rgba(255, 255, 255, 0.36) 0%, rgba(148, 163, 184, 0.20) 48%, rgba(96, 165, 250, 0.34) 100%) border-box;
     --ai-satin-text: #f1f5f9;
     --ai-satin-hover-text: #ffffff;
-    --ai-satin-shadow: none;
     --ai-satin-shine-small: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.20), transparent);
     --ai-satin-shine-wide: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.06) 75%, transparent 100%);
     --ai-icon-color: #7dd3fc;
