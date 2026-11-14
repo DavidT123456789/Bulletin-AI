@@ -451,11 +451,8 @@
 }
 
 .journal-draft-close-btn {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    font-size: 14px;
+    --close-btn-size: 28px;
+    --close-btn-icon-size: 14px;
 }
 
 /* === Pills Row === */
@@ -1349,11 +1346,8 @@
     }
 
     .journal-draft-close-btn {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        min-height: 36px;
-        font-size: 16px;
+        --close-btn-size: 44px;
+        --close-btn-icon-size: 16px;
     }
 
     .journal-chip-remove {

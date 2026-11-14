@@ -271,77 +271,6 @@
     margin: 0;
 }
 
-/* Smart Banner Variations */
-.missing-key-warning.banner-warning {
-    background: rgba(var(--warning-rgb), 0.08);
-    border-color: rgba(var(--warning-rgb), 0.25);
-    color: var(--warning-color);
-}
-
-.missing-key-warning.banner-warning i,
-.missing-key-warning.banner-warning iconify-icon {
-    color: var(--warning-color);
-}
-
-.missing-key-warning.banner-warning .btn-link {
-    color: var(--color-amber-bright);
-    background: rgba(var(--warning-rgb), 0.12);
-    border-color: rgba(var(--warning-rgb), 0.25);
-}
-
-.missing-key-warning.banner-warning .btn-link:hover {
-    background: rgba(var(--warning-rgb), 0.22);
-    border-color: rgba(var(--warning-rgb), 0.45);
-    color: var(--text-primary);
-}
-
-[data-theme="light"] .missing-key-warning.banner-warning .btn-link {
-    background: rgba(var(--warning-rgb), 0.08);
-    border-color: rgba(var(--warning-rgb), 0.2);
-    color: var(--color-amber-deep);
-}
-
-[data-theme="light"] .missing-key-warning.banner-warning .btn-link:hover {
-    background: rgba(var(--warning-rgb), 0.16);
-    border-color: rgba(var(--warning-rgb), 0.35);
-    color: color-mix(in srgb, var(--color-amber-deep), black 18%);
-}
-
-.missing-key-warning.banner-error {
-    background: rgba(var(--error-rgb), 0.08);
-    border-color: rgba(var(--error-rgb), 0.25);
-    color: var(--error-color);
-}
-
-.missing-key-warning.banner-error i,
-.missing-key-warning.banner-error iconify-icon {
-    color: var(--error-color);
-}
-
-.missing-key-warning.banner-error .btn-link {
-    color: color-mix(in srgb, var(--error-bright), white 30%);
-    background: rgba(var(--error-rgb), 0.12);
-    border-color: rgba(var(--error-rgb), 0.25);
-}
-
-.missing-key-warning.banner-error .btn-link:hover {
-    background: rgba(var(--error-rgb), 0.22);
-    border-color: rgba(var(--error-rgb), 0.45);
-    color: var(--text-primary);
-}
-
-[data-theme="light"] .missing-key-warning.banner-error .btn-link {
-    background: rgba(var(--error-rgb), 0.08);
-    border-color: rgba(var(--error-rgb), 0.2);
-    color: var(--error-dark);
-}
-
-[data-theme="light"] .missing-key-warning.banner-error .btn-link:hover {
-    background: rgba(var(--error-rgb), 0.16);
-    border-color: rgba(var(--error-rgb), 0.35);
-    color: color-mix(in srgb, var(--error-dark), black 16%);
-}
-
 /* Compact Banner Mode (Used in Model Status Summary) */
 .missing-key-warning.compact {
     padding: 9px 13px;
@@ -380,6 +309,77 @@
 
 .missing-key-warning.compact .btn-link:hover iconify-icon {
     transform: translateX(2px);
+}
+
+/* Smart Banner Variations */
+.missing-key-warning.banner-warning {
+    background: rgba(var(--warning-rgb), 0.08);
+    border-color: rgba(var(--warning-rgb), 0.25);
+    color: var(--warning-color);
+}
+
+.missing-key-warning.banner-warning i,
+.missing-key-warning.banner-warning iconify-icon {
+    color: var(--warning-color);
+}
+
+.missing-key-warning.banner-warning .btn-link {
+    background: rgba(var(--warning-rgb), 0.08);
+    border-color: rgba(var(--warning-rgb), 0.2);
+    color: var(--color-amber-deep);
+}
+
+.missing-key-warning.banner-warning .btn-link:hover {
+    background: rgba(var(--warning-rgb), 0.16);
+    border-color: rgba(var(--warning-rgb), 0.35);
+    color: color-mix(in srgb, var(--color-amber-deep), black 18%);
+}
+
+[data-theme="dark"] .missing-key-warning.banner-warning .btn-link {
+    color: var(--color-amber-bright);
+    background: rgba(var(--warning-rgb), 0.12);
+    border-color: rgba(var(--warning-rgb), 0.25);
+}
+
+[data-theme="dark"] .missing-key-warning.banner-warning .btn-link:hover {
+    background: rgba(var(--warning-rgb), 0.22);
+    border-color: rgba(var(--warning-rgb), 0.45);
+    color: var(--text-primary);
+}
+
+.missing-key-warning.banner-error {
+    background: rgba(var(--error-rgb), 0.08);
+    border-color: rgba(var(--error-rgb), 0.25);
+    color: var(--error-color);
+}
+
+.missing-key-warning.banner-error i,
+.missing-key-warning.banner-error iconify-icon {
+    color: var(--error-color);
+}
+
+.missing-key-warning.banner-error .btn-link {
+    background: rgba(var(--error-rgb), 0.08);
+    border-color: rgba(var(--error-rgb), 0.2);
+    color: var(--error-dark);
+}
+
+.missing-key-warning.banner-error .btn-link:hover {
+    background: rgba(var(--error-rgb), 0.16);
+    border-color: rgba(var(--error-rgb), 0.35);
+    color: color-mix(in srgb, var(--error-dark), black 16%);
+}
+
+[data-theme="dark"] .missing-key-warning.banner-error .btn-link {
+    color: color-mix(in srgb, var(--error-bright), white 30%);
+    background: rgba(var(--error-rgb), 0.12);
+    border-color: rgba(var(--error-rgb), 0.25);
+}
+
+[data-theme="dark"] .missing-key-warning.banner-error .btn-link:hover {
+    background: rgba(var(--error-rgb), 0.22);
+    border-color: rgba(var(--error-rgb), 0.45);
+    color: var(--text-primary);
 }
 
 .model-selector-wrapper .custom-dropdown {

@@ -56,7 +56,14 @@
     flex-shrink: 0;
     pointer-events: none;
     filter: grayscale(1);
-    transition: filter var(--transition-fast), color var(--transition-fast);
+    transition: filter var(--transition-fast), opacity var(--transition-fast), color var(--transition-fast);
+}
+
+/* Unselected & unhovered provider icons share a uniform muted monochrome tone at rest */
+.ui-segmented-control button.ui-segment:not(.active):not(:hover) iconify-icon[class*="provider-"],
+.ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:not(:hover) iconify-icon[class*="provider-"] {
+    color: var(--text-tertiary);
+    opacity: 0.75;
 }
 
 .ui-segmented-control:is(.header-style, .sc-plan-mode-switch) .ui-segment i,
@@ -80,7 +87,6 @@
 .ui-segment.active iconify-icon,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment i,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
-    color: currentColor;
     filter: none;
 }
 

@@ -146,6 +146,11 @@
 /* ====================================================================
    RESTORE & SAVE CONFIRMATION MODALS (Cloud Data Safety)
    ==================================================================== */
+.modal-content-restore,
+.modal-content-save {
+    --modal-width: 540px;
+}
+
 .modal-alert-header-icon {
     width: 36px;
     height: 36px;
@@ -496,81 +501,12 @@
     flex-shrink: 0;
 }
 
-/* ====================================================================
-   PRE-RESTORE SNAPSHOT SAFETY ROW (Settings > Data > Local Backup)
-   ==================================================================== */
-.pre-restore-snapshot-row {
-    border-top: 1px dashed var(--border-color);
-    padding: 12px 0;
-    width: 100%;
-}
+@media (max-width: 540px) {
+    .modal-alert-actions.is-in-sync {
+        flex-wrap: wrap-reverse;
+    }
 
-.pre-restore-snapshot-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 2px;
-}
-
-.pre-restore-snapshot-badge {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: var(--radius-pill);
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
-    line-height: 1.2;
-}
-
-[data-theme="dark"] .pre-restore-snapshot-badge {
-    background: rgba(var(--primary-color-rgb), 0.2);
-    color: var(--primary-bright);
-}
-
-.pre-restore-discard-btn {
-    width: 32px !important;
-    min-width: 32px !important;
-    max-width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    color: var(--text-tertiary);
-    background: transparent;
-    border: 1px solid transparent;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
-}
-
-.pre-restore-discard-btn iconify-icon {
-    font-size: 1.15rem;
-    line-height: 1;
-    display: block;
-}
-
-.pre-restore-discard-btn:hover,
-.pre-restore-discard-btn:hover:not(:disabled),
-[data-theme="dark"] .pre-restore-discard-btn:hover,
-[data-theme="dark"] .pre-restore-discard-btn:hover:not(:disabled) {
-    color: var(--error-color) !important;
-    background-color: var(--error-light) !important;
-    border-color: rgba(var(--error-rgb), 0.25) !important;
-    transform: scale(1.05);
-}
-
-.pre-restore-discard-btn:active,
-[data-theme="dark"] .pre-restore-discard-btn:active {
-    transform: scale(0.95);
-    background-color: rgba(var(--error-rgb), 0.25) !important;
-}
-
-.pre-restore-discard-btn:focus-visible {
-    outline: 2px solid var(--error-color);
-    outline-offset: 2px;
+    .modal-alert-actions.is-in-sync .btn {
+        flex: 1 0 auto;
+    }
 }

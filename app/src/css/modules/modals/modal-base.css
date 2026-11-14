@@ -443,6 +443,7 @@
 .modal-body {
     padding: var(--modal-padding);
     overflow-y: auto;
+    overflow-x: hidden;
     flex-grow: 1;
     min-height: 0;
     background: var(--modal-scene-bg, var(--bg-color));
@@ -548,7 +549,6 @@
    Désactivation de l'élévation des cartes au survol dans les modales
    Pour une expérience plus sobre dans l'espace modal confiné
    ==================================================================== */
-.modal .card-content-wrapper:hover,
 .modal .stat-card:hover {
     box-shadow: var(--shadow-sm);
     /* Maintenir l'ombre de base sans élévation */
@@ -556,26 +556,6 @@
 
 .modal-help {
     --modal-height: min(685px, 90vh);
-}
-
-/* Badge "+X" pour l'ordre de secours */
-.fallback-more-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 8px;
-    background: var(--tonal-bg);
-    color: var(--text-secondary);
-    border-radius: var(--radius-pill);
-    font-size: 0.85em;
-    font-weight: 600;
-    cursor: help;
-    transition: all var(--transition-fast);
-}
-
-.fallback-more-badge:hover {
-    background: var(--tonal-hover-bg);
-    color: var(--text-primary);
 }
 
 /* === Modal Choices (Checkbox Group) === */
@@ -863,10 +843,6 @@
    MOBILE & FLEX OVERFLOW SAFEGUARDS (Modals Unified)
    ==================================================================== */
 
-.modal-body {
-    overflow-x: hidden;
-}
-
 .modal-header .modal-title,
 .modal-header h2 {
     min-width: 0;
@@ -893,27 +869,5 @@
         flex: 1;
         min-width: 0;
         justify-content: center;
-    }
-
-    .modal-alert-actions.is-in-sync {
-        flex-wrap: wrap-reverse;
-    }
-
-    .modal-alert-actions.is-in-sync .btn {
-        flex: 1 0 auto;
-    }
-
-    #welcomeModal .welcome-step {
-        padding: 20px 18px 8px;
-    }
-
-    #welcomeModal .welcome-nav-container {
-        padding: 12px 18px max(14px, env(safe-area-inset-bottom));
-    }
-
-    #welcomeProviderSelector .ui-segment {
-        padding: 6px 6px;
-        font-size: 0.78rem;
-        gap: 4px;
     }
 }

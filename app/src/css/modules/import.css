@@ -249,8 +249,22 @@
 }
 
 @media (max-width: 540px) {
+    #welcomeModal .welcome-step {
+        padding: 20px 18px 8px;
+    }
+
+    #welcomeModal .welcome-nav-container {
+        padding: 12px 18px max(14px, env(safe-area-inset-bottom));
+    }
+
     #welcomeModal .ui-segmented-control {
         height: 40px;
+    }
+
+    #welcomeProviderSelector .ui-segment {
+        padding: 6px 6px;
+        font-size: 0.78rem;
+        gap: 4px;
     }
 
     #welcomeModal .welcome-api-key-group input {
@@ -443,24 +457,41 @@
     margin-top: 0;
 }
 
-/* === WELCOME ILLUSTRATION (STEP 4 — Identité IA Satin Subtil) === */
+/* === WELCOME ILLUSTRATION (STEP 4 — Identité IA Satin Subtil & Pilule Dynamique) === */
 
 .welcome-transformation-svg {
-    --svg-doc-start: #ffffff;
-    --svg-doc-mid: #f4f7fb;
-    --svg-doc-end: #edf2f9;
-    --svg-border-start: #93c5fd;
-    --svg-border-mid: #cbd5e1;
-    --svg-border-end: #7dd3fc;
-    --svg-glow-1: #7dd3fc;
-    --svg-glow-2: #93c5fd;
-    --svg-glow-3: #cbd5e1;
-    --svg-glow-4: #38bdf8;
-    --svg-line-title: #1e293b;
-    --svg-line-accent-1: #38bdf8;
-    --svg-line-accent-2: #64748b;
-    --svg-line-accent-3: #7dd3fc;
-    --svg-line-duotone: #476b87;
+    --svg-doc-start: var(--ai-satin-surface-start);
+    --svg-doc-mid: var(--ai-satin-surface-mid);
+    --svg-doc-end: var(--ai-satin-surface-end);
+    --svg-border-start: var(--ai-satin-border-start);
+    --svg-border-mid: var(--ai-satin-border-mid);
+    --svg-border-end: var(--ai-satin-border-end);
+    --svg-glow-1: color-mix(in srgb, var(--ai-icon-color) 42%, transparent);
+    --svg-glow-2: var(--ai-progress-mid);
+    --svg-glow-3: var(--ai-progress-base);
+    --svg-glow-4: color-mix(in srgb, var(--ai-progress-beam) 44%, transparent);
+    --svg-halo-radiant-opacity: 0.22;
+    --svg-halo-intense-opacity: 0.24;
+    --svg-line-title: var(--ai-satin-text);
+    --svg-line-accent-1: var(--ai-icon-color);
+    --svg-line-accent-2: color-mix(in srgb, var(--ai-progress-beam) 88%, var(--ai-progress-mid));
+    --svg-line-accent-3: color-mix(in srgb, var(--ai-kbd-color) 70%, transparent);
+    --svg-line-duotone: var(--ai-kbd-color);
+    --svg-mini-card-bg: color-mix(in srgb, var(--ai-progress-mid) 16%, transparent);
+    --svg-mini-card-border: var(--ai-progress-fill-border);
+    --svg-chart-1: var(--ai-kbd-color);
+    --svg-chart-2: var(--ai-icon-color);
+    --svg-chart-3: var(--ai-progress-beam);
+    --svg-chart-dot: color-mix(in srgb, var(--ai-icon-color) 28%, transparent);
+    --svg-chart-stroke: color-mix(in srgb, var(--ai-progress-beam) 85%, var(--ai-icon-color));
+    --svg-sparkle-primary: var(--ai-icon-color);
+    --svg-sparkle-secondary: color-mix(in srgb, var(--ai-icon-color) 46%, transparent);
+    --svg-sparkle-accent: var(--ai-progress-beam);
+    --svg-particle-1: var(--ai-progress-beam);
+    --svg-particle-2: var(--ai-icon-color);
+    --svg-particle-3: var(--ai-progress-mid);
+    --svg-particle-4: var(--ai-kbd-color);
+    --svg-particle-5: var(--ai-icon-hover-color);
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
@@ -474,21 +505,8 @@
 }
 
 [data-theme="dark"] .welcome-transformation-svg {
-    --svg-doc-start: #282b34;
-    --svg-doc-mid: #1e2027;
-    --svg-doc-end: #191d27;
-    --svg-border-start: #475569;
-    --svg-border-mid: #334155;
-    --svg-border-end: #7dd3fc;
-    --svg-glow-1: #38bdf8;
-    --svg-glow-2: #476b87;
-    --svg-glow-3: #1e293b;
-    --svg-glow-4: #7dd3fc;
-    --svg-line-title: #f1f5f9;
-    --svg-line-accent-1: #7dd3fc;
-    --svg-line-accent-2: #64748b;
-    --svg-line-accent-3: #38bdf8;
-    --svg-line-duotone: #5b82a6;
+    --svg-halo-radiant-opacity: 0.28;
+    --svg-halo-intense-opacity: 0.30;
 }
 
 .welcome-transformation-svg svg {
@@ -498,6 +516,16 @@
     overflow: visible;
     transform: scale(1.3);
     transform-origin: center center;
+}
+
+.welcome-transformation-svg .welcome-orbital-ring {
+    width: 160px;
+    height: 200px;
+    margin: 1px;
+    border-radius: 16px;
+    border-width: 2.2px;
+    box-sizing: border-box;
+    animation: rotate-gradient 3.2s linear infinite;
 }
 
 @media (max-width: 600px) {

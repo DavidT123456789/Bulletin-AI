@@ -172,12 +172,9 @@
     cursor: default;
 }
 
-/* Animated orbital comet border during generation */
-.header-gen-dashboard.generating::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
+/* Animated orbital comet border during generation (mutualisé avec .welcome-orbital-ring) */
+.header-gen-dashboard.generating::before,
+.welcome-orbital-ring {
     border: 2px solid transparent;
     background: conic-gradient(from var(--gradient-angle, 0deg),
             var(--ai-progress-base) 0%,
@@ -196,8 +193,15 @@
     mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
     mask-clip: padding-box, border-box;
     mask-composite: exclude;
-    animation: rotate-pill-gradient 3.2s linear infinite;
     pointer-events: none;
+}
+
+.header-gen-dashboard.generating::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    animation: rotate-pill-gradient 3.2s linear infinite;
     z-index: 2;
 }
 
@@ -362,11 +366,6 @@
         width: 44px;
         height: 44px;
         transform: translate(-50%, -50%);
-    }
-
-    /* Quand le nom du modèle est masqué, garder l'icône monochrome au repos pour l'harmonie du header */
-    .header-gen-wrapper:not(.open) .header-gen-dashboard:not(.generating) .provider-icon {
-        color: var(--text-secondary);
     }
 
     #dashModelName,

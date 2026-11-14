@@ -424,9 +424,15 @@
     --card-item-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 
     /* --- Identité IA Satin Subtil (Fixe — indépendante de [data-accent]) --- */
+    --ai-satin-surface-start: #ffffff;
+    --ai-satin-surface-mid: #f5f7fa;
+    --ai-satin-surface-end: #ebeff5;
+    --ai-satin-border-start: rgba(71, 107, 135, 0.22);
+    --ai-satin-border-mid: rgba(148, 163, 184, 0.22);
+    --ai-satin-border-end: rgba(51, 65, 85, 0.25);
     --ai-satin-bg:
-        linear-gradient(112deg, #ffffff 0%, #f5f7fa 55%, #ebeff5 100%) padding-box,
-        linear-gradient(108deg, rgba(71, 107, 135, 0.22) 0%, rgba(148, 163, 184, 0.22) 50%, rgba(51, 65, 85, 0.25) 100%) border-box;
+        linear-gradient(112deg, var(--ai-satin-surface-start) 0%, var(--ai-satin-surface-mid) 55%, var(--ai-satin-surface-end) 100%) padding-box,
+        linear-gradient(108deg, var(--ai-satin-border-start) 0%, var(--ai-satin-border-mid) 50%, var(--ai-satin-border-end) 100%) border-box;
     --ai-satin-hover-bg:
         linear-gradient(112deg, #f8fafc 0%, #eef2f7 52%, #e2e9f2 100%) padding-box,
         linear-gradient(108deg, rgba(71, 107, 135, 0.36) 0%, rgba(100, 116, 139, 0.30) 50%, rgba(42, 51, 61, 0.38) 100%) border-box;
@@ -640,9 +646,15 @@
     --slider-thumb-shadow-premium-hover: 0 3px 10px rgba(0, 0, 0, 0.58), 0 1px 3px rgba(0, 0, 0, 0.35);
 
     /* --- Identité IA Satin Subtil (Dark Mode — Compromis Doux) --- */
+    --ai-satin-surface-start: #282b34;
+    --ai-satin-surface-mid: #1e2027;
+    --ai-satin-surface-end: #191d27;
+    --ai-satin-border-start: rgba(255, 255, 255, 0.22);
+    --ai-satin-border-mid: rgba(148, 163, 184, 0.12);
+    --ai-satin-border-end: rgba(96, 165, 250, 0.20);
     --ai-satin-bg:
-        linear-gradient(110deg, #282b34 0%, #1e2027 48%, #191d27 100%) padding-box,
-        linear-gradient(108deg, rgba(255, 255, 255, 0.22) 0%, rgba(148, 163, 184, 0.12) 48%, rgba(96, 165, 250, 0.20) 100%) border-box;
+        linear-gradient(110deg, var(--ai-satin-surface-start) 0%, var(--ai-satin-surface-mid) 48%, var(--ai-satin-surface-end) 100%) padding-box,
+        linear-gradient(108deg, var(--ai-satin-border-start) 0%, var(--ai-satin-border-mid) 48%, var(--ai-satin-border-end) 100%) border-box;
     --ai-satin-hover-bg:
         linear-gradient(110deg, #303440 0%, #23262f 48%, #1d2331 100%) padding-box,
         linear-gradient(108deg, rgba(255, 255, 255, 0.36) 0%, rgba(148, 163, 184, 0.20) 48%, rgba(96, 165, 250, 0.34) 100%) border-box;
