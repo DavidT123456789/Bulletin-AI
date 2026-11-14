@@ -82,10 +82,23 @@
 @media (hover: hover) and (pointer: fine) {
     .class-chip:hover .student-count-badge {
         background: var(--item-hover-bg-elevated);
+    }
+
+    .class-dropdown-item:hover .progress-count {
+        background: var(--surface-color);
+    }
+
+    [data-theme="dark"] .class-dropdown-item:hover .progress-count {
+        background: var(--tonal-active-bg);
+    }
+
+    .class-chip:hover .student-count-badge,
+    .class-dropdown-item:hover .progress-count {
         color: var(--text-primary);
     }
 
-    .class-chip:hover .student-count-badge iconify-icon {
+    .class-chip:hover .student-count-badge iconify-icon,
+    .class-dropdown-item:hover .progress-count iconify-icon {
         color: currentColor;
         opacity: 0.9;
     }
@@ -93,10 +106,23 @@
 
 .class-chip.active .student-count-badge {
     background: var(--item-hover-bg-elevated);
+}
+
+.class-dropdown-item.active .progress-count {
+    background: var(--surface-color);
+}
+
+[data-theme="dark"] .class-dropdown-item.active .progress-count {
+    background: var(--tonal-active-bg);
+}
+
+.class-chip.active .student-count-badge,
+.class-dropdown-item.active .progress-count {
     color: var(--text-primary);
 }
 
-.class-chip.active .student-count-badge iconify-icon {
+.class-chip.active .student-count-badge iconify-icon,
+.class-dropdown-item.active .progress-count iconify-icon {
     color: currentColor;
     opacity: 0.9;
 }
@@ -830,15 +856,10 @@
     font-size: 0.8rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    background: var(--bg-secondary);
+    background: var(--item-active-bg);
     color: var(--text-secondary);
     border: none;
-    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-[data-theme="dark"] .progress-count {
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
 .progress-count iconify-icon,
@@ -849,42 +870,8 @@
     opacity: 0.75;
 }
 
-.progress-count.is-complete {
-    background: var(--success-light);
-    color: var(--success-dark);
-}
-
-.progress-count.has-alert {
-    background: var(--error-light);
-    color: var(--error-dark);
-}
-
 .class-progress-badge:hover .progress-count {
     transform: scale(1.05);
-}
-
-.class-dropdown-item:hover .progress-count,
-.class-dropdown-item.active .progress-count {
-    background: var(--surface-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="dark"] .class-dropdown-item:hover .progress-count,
-[data-theme="dark"] .class-dropdown-item.active .progress-count {
-    background: rgba(255, 255, 255, 0.14);
-    box-shadow: none;
-}
-
-.class-dropdown-item:hover .progress-count.is-complete,
-.class-dropdown-item.active .progress-count.is-complete {
-    background: var(--success-light);
-    color: var(--success-dark);
-}
-
-.class-dropdown-item:hover .progress-count.has-alert,
-.class-dropdown-item.active .progress-count.has-alert {
-    background: var(--error-light);
-    color: var(--error-dark);
 }
 
 /* Empty state */
