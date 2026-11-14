@@ -121,15 +121,9 @@
 
 .api-key-section .api-key-actions .api-key-input-container,
 .welcome-api-key-group .api-key-input-container {
-    --api-mask-bg: var(--input-bg);
     flex: 1;
     min-width: 0;
     position: relative;
-}
-
-.api-key-section .api-key-actions .api-key-input-container:focus-within,
-.welcome-api-key-group .api-key-input-container:focus-within {
-    --api-mask-bg: var(--input-focus-bg);
 }
 
 .api-key-section .api-key-actions .api-key-input-container::after,
@@ -137,13 +131,15 @@
     content: '';
     position: absolute;
     inset: 1px 1px 1px auto;
-    width: 34px;
+    width: 40px;
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-    background: linear-gradient(to right, transparent, var(--api-mask-bg) 62%);
+    background: linear-gradient(to right, transparent, var(--input-bg) 62%);
     pointer-events: none;
     transition: opacity var(--transition-fast);
 }
 
+.api-key-section .api-key-actions .api-key-input-container:focus-within::after,
+.welcome-api-key-group .api-key-input-container:focus-within::after,
 .api-key-section .api-key-actions .api-key-input-container:has(.ollama-base-url-input)::after {
     opacity: 0;
 }
@@ -151,7 +147,7 @@
 .api-key-section .api-key-actions .api-key-input-container input,
 #welcomeModal .welcome-api-key-group input {
     height: 34px;
-    padding: 0 12px 0 15px;
+    padding: 0 16px;
     margin: 0;
     font-size: 13px;
     color: var(--text-secondary);

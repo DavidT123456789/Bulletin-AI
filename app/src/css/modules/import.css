@@ -39,9 +39,9 @@
 .welcome-step {
     display: none;
     text-align: center;
-    max-width: 800px;
+    max-width: 660px;
     width: 100%;
-    min-height: 340px;
+    min-height: 316px;
     margin: 0 auto;
     padding: 0 10px;
     position: relative;
@@ -147,9 +147,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--modal-footer-padding);
+    padding: 8px var(--space-6) 20px;
     min-height: var(--modal-footer-height);
-    border-top: 1px solid var(--border-subtle);
+    border-top: none;
     background: var(--modal-bg);
     flex-shrink: 0;
 }
@@ -182,20 +182,15 @@
     gap: 12px;
 }
 
-/* Welcome API Key Row — Mutualized with .api-key-section .api-key-actions in modals.css, scaled to Hero proportions */
+/* Welcome API Key Row — Mutualized with .api-key-section .api-key-actions in modal-api-keys.css, scaled to Hero proportions */
 .welcome-api-key-group {
     width: 100%;
     max-width: 480px;
     margin: 14px 0;
 }
 
-#welcomeModal .welcome-api-key-group .api-key-input-container::after {
-    width: 38px;
-}
-
 #welcomeModal .welcome-api-key-group input {
     height: var(--modal-btn-height);
-    padding: 0 28px 0 16px;
     font-size: var(--font-base);
 }
 
@@ -253,12 +248,12 @@
 /* === WELCOME MODAL STABILIZATION === */
 /* Flex-center centering: centered vertically and horizontally, avoiding viewport jumps */
 #welcomeModal .modal-body {
-    flex: 1 1 416px;
+    flex: 1 1 380px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: var(--space-8) var(--space-6);
+    padding: 28px var(--space-6);
     background: var(--modal-bg);
     position: relative;
     overflow-x: hidden;
@@ -266,7 +261,7 @@
 
 #welcomeModal {
     --modal-shell-width: 95%;
-    --modal-width: 800px;
+    --modal-width: 660px;
 }
 
 #welcomeModal .modal-content {
@@ -282,14 +277,11 @@
     padding: 4px;
     box-sizing: border-box;
     border-radius: 22px;
-    border: none;
+    border: 1px solid var(--border-default);
     background: var(--surface-color);
-    box-shadow: 
-        0 2px 6px rgba(0, 0, 0, 0.04),
-        0 8px 24px rgba(0, 0, 0, 0.08),
-        0 16px 40px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-md);
     filter: none;
-    margin: 0 auto 28px auto;
+    margin: 0 auto 24px auto;
     display: block;
     user-select: none;
     -webkit-user-drag: none;
@@ -298,33 +290,38 @@
 
 [data-theme="dark"] .welcome-app-logo {
     background: var(--text-primary);
+    border-color: transparent;
+    box-shadow: var(--shadow-lg);
 }
 
 .welcome-app-logo:hover {
     transform: scale(1.05) translateY(-2px);
     box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.06),
-        0 12px 32px rgba(0, 0, 0, 0.12),
-        0 20px 48px rgba(0, 0, 0, 0.06);
+        0 4px 10px -2px rgba(0, 0, 0, 0.06),
+        0 10px 22px -6px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .welcome-app-logo:hover {
+    box-shadow: var(--shadow-xl);
 }
 
 /* Specific styling for the welcome step titles (Apple / Linear native sobriety) */
 .welcome-title-premium {
-    font-size: 2.15em;
+    font-size: 2.05em;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     letter-spacing: -0.03em;
     color: var(--text-primary);
     text-align: center;
 }
 
 .welcome-subtitle-premium {
-    font-size: 1.12em;
+    font-size: 1.06em;
     color: var(--text-secondary);
-    max-width: 680px;
-    margin: 0 auto 24px auto;
-    line-height: 1.6;
+    max-width: 520px;
+    margin: 0 auto 22px auto;
+    line-height: 1.55;
     font-weight: 400;
     letter-spacing: -0.01em;
     text-align: center;
@@ -444,8 +441,6 @@
     --svg-glow-2: var(--ai-progress-mid);
     --svg-glow-3: var(--ai-progress-base);
     --svg-glow-4: color-mix(in srgb, var(--ai-progress-beam) 44%, transparent);
-    --svg-halo-radiant-opacity: 0.22;
-    --svg-halo-intense-opacity: 0.24;
     --svg-line-title: var(--ai-satin-text);
     --svg-line-accent-1: var(--ai-icon-color);
     --svg-line-accent-2: color-mix(in srgb, var(--ai-progress-beam) 88%, var(--ai-progress-mid));
@@ -472,10 +467,14 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 226px;
+    height: 210px;
     padding: 0;
     margin-bottom: 12px;
     background: transparent;
+}
+
+.welcome-transformation-svg .welcome-svg-halo {
+    display: none;
 }
 
 [data-theme="dark"] .welcome-transformation-svg {
@@ -483,12 +482,21 @@
     --svg-halo-intense-opacity: 0.30;
 }
 
+[data-theme="dark"] .welcome-transformation-svg .welcome-svg-halo {
+    display: block;
+}
+
+/* Dark-toned particles blurred onto white backgrounds look muddy; keep SVG glow for Dark Mode only */
+:root:not([data-theme="dark"]) .welcome-transformation-svg .welcome-svg-particles {
+    filter: none;
+}
+
 .welcome-transformation-svg svg {
     width: 100%;
     height: 100%;
     filter: none;
     overflow: visible;
-    transform: scale(1.3);
+    transform: scale(1.22);
     transform-origin: center center;
 }
 
@@ -509,7 +517,7 @@
     }
 
     .welcome-transformation-svg svg {
-        transform: scale(1.05);
+        transform: scale(1.32);
     }
 }
 
@@ -517,11 +525,11 @@
 .welcome-start-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 14px;
     width: 100%;
-    max-width: 560px;
-    margin: 24px auto 0 auto;
-    padding: 0 var(--space-4);
+    max-width: 520px;
+    margin: 12px auto 0 auto;
+    padding: 0;
 }
 
 .welcome-start-card {
@@ -531,7 +539,7 @@
     padding: 16px 18px;
     border-radius: var(--radius-md);
     background-color: var(--item-idle-bg);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-subtle);
     box-shadow: none;
     cursor: pointer;
     transition: border-color 0.2s var(--ease-spring),
@@ -543,11 +551,6 @@
     text-align: left;
 }
 
-[data-theme="dark"] .welcome-start-card {
-    background-color: rgba(255, 255, 255, 0.02);
-    border-color: var(--border-color);
-}
-
 @media (hover: hover) and (pointer: fine) {
     .welcome-start-card:hover:not(.active) {
         background-color: var(--surface-color);
@@ -557,22 +560,19 @@
     }
 
     [data-theme="dark"] .welcome-start-card:hover:not(.active) {
-        background-color: rgba(255, 255, 255, 0.04);
-        border-color: var(--border-default);
+        background-color: var(--item-hover-bg);
         box-shadow: none;
     }
 }
 
 .welcome-start-card.active {
     background-color: var(--surface-color);
-    border-color: var(--border-color);
+    border-color: var(--border-color-strong);
     box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .welcome-start-card.active {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+    background-color: var(--item-hover-bg);
 }
 
 .welcome-start-card:active {
@@ -587,7 +587,7 @@
 
 .welcome-start-card__header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
     width: 100%;
@@ -620,61 +620,62 @@
     color: var(--text-secondary);
 }
 
-/* Proportional timeline blocks (3 equal thirds vs 2 equal halves — non-interactive look) */
+/* Proportional timeline blocks inside a unified track (mirrors .ui-segmented-control) */
 .welcome-start-card__segments {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
-    padding: 0;
+    padding: 3px;
+    border-radius: 10px;
+    background-color: var(--tonal-bg);
+}
+
+[data-theme="dark"] .welcome-start-card__segments {
+    background-color: var(--item-idle-bg);
 }
 
 .welcome-period-pill {
     flex: 1;
-    height: 30px;
-    border-radius: var(--radius-sm);
+    height: 24px;
+    border-radius: 7px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-tertiary);
-    background-color: rgba(0, 0, 0, 0.035);
-    border: 1px solid var(--border-subtle);
+    background-color: color-mix(in srgb, var(--surface-color) 60%, transparent);
+    border: none;
     transition: background-color 0.2s var(--ease-spring),
-                border-color 0.2s var(--ease-spring),
-                color 0.2s var(--ease-spring);
+                color 0.2s var(--ease-spring),
+                box-shadow 0.2s var(--ease-spring);
 }
 
 [data-theme="dark"] .welcome-period-pill {
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.04);
-    color: var(--text-tertiary);
+    background-color: rgba(255, 255, 255, 0.045);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .welcome-start-card:hover:not(.active) .welcome-period-pill {
-        background-color: rgba(0, 0, 0, 0.055);
+        background-color: color-mix(in srgb, var(--surface-color) 85%, transparent);
         color: var(--text-secondary);
     }
 
     [data-theme="dark"] .welcome-start-card:hover:not(.active) .welcome-period-pill {
-        background-color: rgba(255, 255, 255, 0.05);
-        color: var(--text-secondary);
+        background-color: rgba(255, 255, 255, 0.07);
     }
 }
 
 .welcome-start-card.active .welcome-period-pill {
     font-weight: 600;
     color: var(--text-primary);
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color);
+    background-color: var(--surface-color);
+    box-shadow: var(--shadow-sm);
 }
 
 [data-theme="dark"] .welcome-start-card.active .welcome-period-pill {
-    color: var(--text-primary);
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Mobile responsive styling */
@@ -688,10 +689,6 @@
     .welcome-start-card {
         padding: 14px 16px;
         gap: 10px;
-    }
-
-    .welcome-period-pill {
-        height: 26px;
     }
 }
 
@@ -721,7 +718,7 @@
     filter: blur(1px);
     pointer-events: none;
     transform: translate(-1.5px, 1.5px) scale(0.9);
-    opacity: 0.7;
+    opacity: 0;
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
@@ -737,7 +734,7 @@
     filter: blur(1px);
     pointer-events: none;
     transform: translate(-3.5px, 3.5px) scale(0.7);
-    opacity: 0.45;
+    opacity: 0;
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
 

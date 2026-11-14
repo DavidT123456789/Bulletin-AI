@@ -3483,7 +3483,7 @@
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">Activez votre Assistant</h3>
                         <p class="welcome-subtitle-premium">
-                            Connectez <strong>Albert</strong> (IA souveraine Gouv.fr via ProConnect) ou l'un des moteurs proposés ci&#8209;dessous. Les modèles locaux (Ollama) et autres fournisseurs sont dans les Paramètres.
+                            Connectez <strong>Albert</strong> (ProConnect) ou un moteur ci&#8209;dessous. Ollama et d'autres options sont dans les Paramètres.
                         </p>
                     </div>
 
@@ -3582,7 +3582,7 @@
                 <div id="welcome-step-4" class="welcome-step">
                     <!-- Transformation Illustration (Identité IA Satin Subtil & Pilule Dynamique) -->
                     <div class="welcome-transformation-svg" aria-hidden="true">
-                        <svg viewBox="-320 0 1560 280" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="-140 0 1200 280" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- Contour Satin Subtil (aligné sur --ai-satin-bg) -->
     <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -3617,8 +3617,8 @@
 
     <!-- Ombre neutre raffinée multi-niveaux (iOS style) pour le document -->
     <filter id="docShadowNeutral" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.08"/>
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.065"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.035"/>
     </filter>
 
     <!-- Rayonnement d'ambiance (halo doux, large et aéré) -->
@@ -3635,8 +3635,8 @@
   <!-- === SINGLE DOCUMENT THAT TRANSFORMS === -->
   <g transform="translate(380, 0)">
 
-    <!-- Rayonnement Satin progressif subtil -->
-    <g>
+    <!-- Rayonnement Satin progressif subtil (Dark Mode uniquement — évite l'auréole grise sur fond blanc) -->
+    <g class="welcome-svg-halo">
       <animate attributeName="opacity" values="0;0;0.18;0.42;0.62;0.72;0.65;0.72;0" keyTimes="0;0.15;0.35;0.60;0.78;0.84;0.88;0.92;1" dur="10s" repeatCount="indefinite"/>
       <!-- Halo diffus qui rayonne tout autour de la carte -->
       <rect x="-8" y="32" width="176" height="216" rx="24" fill="url(#glowGradient)" style="opacity:var(--svg-halo-radiant-opacity)" filter="url(#radiantGlow)"/>
@@ -3774,7 +3774,7 @@
   </g>
 
   <!-- === PARTICLES (Palette alignée sur Générer IA & Pilule Dynamique) === -->
-  <g filter="url(#glow)">
+  <g class="welcome-svg-particles" filter="url(#glow)">
     <circle r="3.8" style="fill:var(--svg-particle-2)">
       <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
       <animateMotion dur="5.6s" begin="0s" repeatCount="indefinite">
