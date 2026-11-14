@@ -630,7 +630,6 @@
     background: var(--tonal-hover-bg);
     border-color: transparent;
     color: var(--text-primary);
-    transform: translateY(-1px);
     box-shadow: none;
 }
 

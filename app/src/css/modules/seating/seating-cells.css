@@ -1089,7 +1089,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 @media (hover: hover) {
     .sc-onboarding-btn.primary:hover {
         background-color: var(--primary-btn-hover);
-        transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
     }
 }
@@ -1110,7 +1109,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         background: var(--bg-tertiary);
         color: var(--text-primary);
         border-color: var(--border-color-hover);
-        transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
     }
 

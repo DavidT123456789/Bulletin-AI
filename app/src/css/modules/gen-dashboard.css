@@ -30,7 +30,6 @@
         background-color: var(--surface-color);
         border-color: transparent;
         box-shadow: var(--shadow-elevation);
-        transform: translateY(-1px);
     }
 }
 

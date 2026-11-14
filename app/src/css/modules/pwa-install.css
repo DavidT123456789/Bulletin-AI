@@ -155,12 +155,11 @@
 
 .pwa-install-banner .btn-install:hover {
     background-color: var(--primary-btn-hover);
-    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
 .pwa-install-banner .btn-install:active {
-    transform: translateY(0) scale(0.97);
+    transform: scale(0.97);
     box-shadow: var(--shadow-sm);
 }
 

@@ -1463,7 +1463,6 @@
     background-color: var(--color-rose);
     background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
     color: var(--text-on-primary, #ffffff);
-    transform: translateY(-1px);
     box-shadow: 0 4px 14px color-mix(in srgb, var(--color-rose) 32%, transparent);
 }
 

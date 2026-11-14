@@ -300,7 +300,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
         border-color: transparent;
         background-color: var(--surface-color);
         box-shadow: var(--shadow-elevation);
-        transform: translateY(-1px);
         color: var(--text-primary);
     }
 
@@ -460,7 +459,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
         background-color: var(--surface-color);
         color: var(--text-primary);
         box-shadow: var(--shadow-elevation);
-        transform: translateY(-1px);
     }
 
     [data-theme="dark"] .header-actions-pill .pill-segment:hover,

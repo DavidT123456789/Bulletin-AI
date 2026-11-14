@@ -773,7 +773,6 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 @media (hover: hover) {
     .sc-quick-group-btn:hover {
         filter: brightness(1.06);
-        transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
     }
 }

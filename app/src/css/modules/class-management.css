@@ -1534,12 +1534,11 @@
 
 .inline-delete-btn.confirm:hover {
     background-color: color-mix(in srgb, var(--error-color), white 9%);
-    transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(var(--error-rgb), 0.3);
 }
 
 .inline-delete-btn.confirm:active {
-    transform: translateY(0);
+    transform: scale(0.97);
 }
 
 .confirm-details-lead {
