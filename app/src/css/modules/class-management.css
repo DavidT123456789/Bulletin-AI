@@ -859,7 +859,7 @@
     background: var(--item-active-bg);
     color: var(--text-secondary);
     border: none;
-    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .progress-count iconify-icon,
@@ -868,10 +868,6 @@
     display: inline-flex;
     align-items: center;
     opacity: 0.75;
-}
-
-.class-progress-badge:hover .progress-count {
-    transform: scale(1.05);
 }
 
 /* Empty state */
