@@ -1,0 +1,551 @@
+/* ====================================================================
+   MODULE: Modales — Transfert & Sélection d'élèves (Move / Copy / Pick)
+   ==================================================================== */
+
+/* === MOVE / COPY STUDENT MODAL === */
+.move-student-modal-content {
+    max-width: 460px;
+}
+
+.move-mode-segmented {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    padding: 3px;
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: var(--radius-pill);
+    margin-bottom: 10px;
+}
+
+[data-theme="dark"] .move-mode-segmented {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.move-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 12px;
+    min-height: 36px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast), transform 0.16s var(--ease-spring);
+}
+
+.move-mode-btn:active {
+    transform: scale(0.97);
+}
+
+.move-mode-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
+}
+
+.move-mode-btn.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .move-mode-btn.active {
+    background: rgba(255, 255, 255, 0.11);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.move-mode-hint {
+    margin: 0 0 14px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-control);
+}
+
+[data-theme="dark"] .move-mode-hint {
+    background: var(--item-idle-bg);
+    color: var(--text-tertiary);
+}
+
+.move-class-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-right: -10px;
+    padding: 2px 10px 2px 0;
+}
+
+@media (max-width: 768px) {
+    .move-class-list {
+        margin-right: 0;
+        padding-right: 0;
+    }
+}
+
+.move-target-btn {
+    justify-content: flex-start;
+    padding: 12px 16px;
+    text-align: left;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+}
+
+.move-target-btn iconify-icon,
+.move-target-btn i {
+    margin-right: 10px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.move-target-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.move-target-year {
+    margin-left: auto;
+    font-size: 0.82em;
+    opacity: 0.65;
+    padding-left: 8px;
+    flex-shrink: 0;
+}
+
+.move-create-class-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.move-create-class-toggle {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    border-radius: var(--radius-control);
+    border-style: dashed;
+    color: var(--text-secondary);
+}
+
+.move-create-class-toggle:hover {
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
+}
+
+.move-create-class-form {
+    display: none;
+    gap: 8px;
+    align-items: center;
+}
+
+.move-create-class-form.open {
+    display: flex;
+}
+
+.move-create-class-input {
+    flex: 1;
+    min-height: 42px;
+}
+
+.move-create-class-submit {
+    flex-shrink: 0;
+    min-height: 42px;
+    padding: 0 18px;
+    gap: 6px;
+}
+
+/* === PICK EXISTING STUDENTS MODAL === */
+.pick-students-modal-content {
+    width: min(94vw, 600px);
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#pickExistingStudentsModal .pick-students-modal-body {
+    --pick-gutter: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px var(--pick-gutter) 0;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    #pickExistingStudentsModal .pick-students-modal-body {
+        --pick-gutter: 14px;
+        padding-top: 14px;
+    }
+}
+
+.pick-students-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.pick-students-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-pill);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pick-students-search-box:hover:not(:focus-within) {
+    border-color: var(--input-border-hover);
+}
+
+.pick-students-search-box:focus-within {
+    border-color: var(--input-border-focus);
+    background: var(--input-focus-bg);
+    box-shadow: var(--input-focus-ring);
+}
+
+.pick-search-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 1.1rem;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    transition: color 0.15s ease;
+}
+
+.pick-students-search-box:focus-within .pick-search-icon {
+    color: var(--text-primary);
+}
+
+.pick-students-search-input {
+    width: 100%;
+    padding: 0 36px 0 40px;
+    min-height: 42px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.pick-students-search-box .sc-search-clear {
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+}
+
+/* Barre de filtres horizontale full-bleed : aucune coupe franche dans la marge, défilement par molette/tactile avec brume latérale */
+.pick-students-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-inline: calc(-1 * var(--pick-gutter));
+    width: calc(100% + 2 * var(--pick-gutter));
+    padding: 2px var(--pick-gutter);
+    scroll-padding-inline: var(--pick-gutter);
+}
+
+.pick-students-chips::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+}
+
+.pick-students-chips:is(.can-scroll-left, .can-scroll-right) {
+    -webkit-mask-image: linear-gradient(to right, var(--scrim-left, #000 0px), var(--scrim-right, #000 100%));
+    mask-image: linear-gradient(to right, var(--scrim-left, #000 0px), var(--scrim-right, #000 100%));
+}
+
+@media (max-width: 768px) {
+    .sc-sidebar:not(.drag-over) .sc-student-list:is(.can-scroll-left, .can-scroll-right) {
+        -webkit-mask-image: linear-gradient(to right, var(--scrim-left, #000 0px), var(--scrim-right, #000 100%));
+        mask-image: linear-gradient(to right, var(--scrim-left, #000 0px), var(--scrim-right, #000 100%));
+    }
+}
+
+:is(.pick-students-chips, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-left {
+    --scrim-left: transparent 0px, rgba(0, 0, 0, 0.18) 6px, rgba(0, 0, 0, 0.5) 13px, rgba(0, 0, 0, 0.82) 20px, #000 28px;
+}
+
+:is(.pick-students-chips, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-right {
+    --scrim-right: #000 calc(100% - 28px), rgba(0, 0, 0, 0.82) calc(100% - 20px), rgba(0, 0, 0, 0.5) calc(100% - 13px), rgba(0, 0, 0, 0.18) calc(100% - 6px), transparent 100%;
+}
+
+.pick-class-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    min-height: 34px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-default);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    font-size: 0.83rem;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+[data-theme="dark"] .pick-class-chip {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+.pick-class-chip:hover:not(.active) {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.pick-class-chip.active {
+    background: var(--text-primary);
+    color: var(--surface-color);
+    border-color: var(--text-primary);
+}
+
+.pick-chip-count {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
+.pick-students-selection-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px;
+}
+
+.pick-visible-count {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.pick-select-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pick-select-all-btn:hover:not(:disabled) {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.pick-select-all-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.pick-students-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    height: 360px;
+    max-height: 360px;
+    flex: 0 1 360px;
+    min-height: 0;
+    margin-right: -10px;
+    padding: 2px 10px 14px 0;
+    scroll-padding-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+    .pick-students-list {
+        margin-right: 0;
+        padding-right: 0;
+    }
+}
+
+.pick-student-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    min-height: 52px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--border-subtle);
+    background: var(--card-item-bg);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+[data-theme="dark"] .pick-student-row {
+    background: var(--item-idle-bg);
+}
+
+.pick-student-row:focus {
+    outline: none;
+}
+
+.pick-student-row:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .pick-student-row:not(.selected):not(.already-present):hover {
+        background: var(--surface-color);
+        border-color: var(--border-color-hover);
+    }
+
+    [data-theme="dark"] .pick-student-row:not(.selected):not(.already-present):hover {
+        background: var(--item-hover-bg);
+        border-color: var(--border-default);
+    }
+
+    .pick-student-row:not(.selected):not(.already-present):hover .pick-student-checkbox {
+        border-color: var(--text-tertiary);
+    }
+}
+
+/* Standard de sélection de l'app (aligné sur selection-toolbar.css & student-list.css) */
+.pick-student-row.selected {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%);
+    border-color: rgba(var(--primary-color-rgb), 0.32);
+}
+
+[data-theme="dark"] .pick-student-row.selected {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 14%);
+    border-color: rgba(var(--primary-bright-rgb), 0.38);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .pick-student-row.selected:not(.already-present):hover {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-color) 15%);
+    }
+
+    [data-theme="dark"] .pick-student-row.selected:not(.already-present):hover {
+        background: color-mix(in srgb, var(--surface-color), var(--primary-bright) 18%);
+    }
+}
+
+.pick-student-row.selected .student-identity-wrapper .student-prenom {
+    color: var(--text-primary);
+}
+
+.pick-student-row.already-present {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* Checkbox CSS/SVG instantanée (zéro clignotement de Web Component, coche blanche haute lisibilité) */
+.pick-student-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid color-mix(in srgb, var(--text-tertiary) 55%, var(--border-color-strong));
+    background: transparent;
+    color: var(--toggle-knob-on);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pick-student-checkbox svg {
+    width: 11px;
+    height: 11px;
+    opacity: 0;
+    transform: scale(0.55);
+    transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pick-student-row.selected .pick-student-checkbox {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .pick-student-row.selected .pick-student-checkbox {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.pick-student-row.already-present .pick-student-checkbox {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-strong);
+    color: var(--text-secondary);
+}
+
+.pick-student-row.selected .pick-student-checkbox svg,
+.pick-student-row.already-present .pick-student-checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.pick-student-row .student-identity-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+.pick-student-row .student-avatar {
+    cursor: inherit;
+}
+
+.pick-student-row .avatar-selection-overlay {
+    display: none;
+}
+
+.pick-student-statuses {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.pick-student-present-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.pick-students-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 8px;
+    padding: 36px 16px;
+    color: var(--text-tertiary);
+    text-align: center;
+}
+
+.pick-students-empty iconify-icon {
+    font-size: 2rem;
+    opacity: 0.6;
+}

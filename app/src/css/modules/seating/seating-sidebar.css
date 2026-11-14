@@ -795,18 +795,6 @@
     color: #fbbf24;
 }
 
-.sc-footer-all-placed {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: #10b981;
-    font-weight: 600;
-}
-
-[data-theme="dark"] .sc-footer-all-placed {
-    color: #34d399;
-}
-
 .sc-status-pill iconify-icon {
     font-size: 1rem;
     display: inline-flex;

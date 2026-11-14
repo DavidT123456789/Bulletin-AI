@@ -13,6 +13,8 @@ export {
     FALLBACK_CONFIG,
     PROVIDER_DEFAULT_MODELS,
     PROVIDER_SHOWCASE_MODELS,
+    LEGACY_MODEL_MIGRATIONS,
+    migrateLegacyModelId,
     getModelMeta,
     getProviderForModel,
     getApiModelName,

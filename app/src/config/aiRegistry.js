@@ -111,16 +111,29 @@ export const API_KEY_PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', '
 export const FALLBACK_PROVIDER_ORDER = ['albert', 'google', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
 
 /**
- * Registre unifié des modèles IA (27 modèles actifs dans le sélecteur + 7 alias historiques).
+ * Registre unifié des modèles IA (30 modèles actifs dans le sélecteur + 17 alias historiques).
  */
 export const AI_MODELS = {
     // 1. GOOGLE GEMINI
+    'gemini-4-hydrogen': {
+        id: 'gemini-4-hydrogen',
+        providerId: 'google',
+        apiModelId: 'gemini-4-hydrogen',
+        shortName: 'Gemini 4 Hydrogen',
+        qualifier: 'Recommandé',
+        selectorGroup: 'Google Gemini — QUOTA GRATUIT',
+        inSelector: true,
+        isReasoning: true,
+        thinkingLevel: 'MEDIUM',
+        timeoutMs: 40000,
+        costs: { input: 1.50, output: 7.50 },
+    },
     'gemini-3.6-flash': {
         id: 'gemini-3.6-flash',
         providerId: 'google',
         apiModelId: 'gemini-3.6-flash',
         shortName: 'Gemini 3.6 Flash',
-        qualifier: 'Recommandé',
+        qualifier: 'Rapide',
         selectorGroup: 'Google Gemini — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: false,
@@ -132,26 +145,36 @@ export const AI_MODELS = {
         providerId: 'google',
         apiModelId: 'gemini-3.8-flash',
         shortName: 'Gemini 3.8 Flash',
-        qualifier: 'Raisonnement',
+        qualifier: 'Économique',
         selectorGroup: 'Google Gemini — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: true,
+        thinkingLevel: 'LOW',
         timeoutMs: 40000,
         costs: { input: 0.75, output: 3.75 },
+    },
+    // Alias / legacy Google
+    'gemini-4-argon': {
+        id: 'gemini-4-argon',
+        providerId: 'google',
+        apiModelId: 'gemini-4-argon',
+        shortName: 'Gemini 4 Argon',
+        inSelector: false,
+        isReasoning: true,
+        thinkingLevel: 'MEDIUM',
+        timeoutMs: 40000,
+        costs: { input: 2.00, output: 10.00 },
     },
     'gemini-3.1-pro-preview': {
         id: 'gemini-3.1-pro-preview',
         providerId: 'google',
         apiModelId: 'gemini-3.1-pro-preview',
         shortName: 'Gemini 3.1 Pro',
-        qualifier: 'Synthèses',
-        selectorGroup: 'Google Gemini — QUOTA GRATUIT',
-        inSelector: true,
+        inSelector: false,
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 2.00, output: 12.00 },
     },
-    // Alias / legacy Google
     'gemini-3.5-flash': {
         id: 'gemini-3.5-flash',
         providerId: 'google',
@@ -206,18 +229,6 @@ export const AI_MODELS = {
         timeoutMs: 25000,
         costs: { input: 0, output: 0 },
     },
-    'albert-openweight-small': {
-        id: 'albert-openweight-small',
-        providerId: 'albert',
-        apiModelId: 'openweight-small',
-        shortName: 'Ministral 3 8B',
-        qualifier: 'Ultra-rapide',
-        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
-        inSelector: true,
-        isReasoning: false,
-        timeoutMs: 20000,
-        costs: { input: 0, output: 0 },
-    },
     'albert-openweight-large': {
         id: 'albert-openweight-large',
         providerId: 'albert',
@@ -228,6 +239,17 @@ export const AI_MODELS = {
         inSelector: true,
         isReasoning: true,
         timeoutMs: 40000,
+        costs: { input: 0, output: 0 },
+    },
+    // Alias rétrocompatible Albert
+    'albert-openweight-small': {
+        id: 'albert-openweight-small',
+        providerId: 'albert',
+        apiModelId: 'openweight-small',
+        shortName: 'Ministral 3 8B',
+        inSelector: false,
+        isReasoning: false,
+        timeoutMs: 20000,
         costs: { input: 0, output: 0 },
     },
 
@@ -311,7 +333,7 @@ export const AI_MODELS = {
         inSelector: true,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 0.50, output: 1.50 },
+        costs: { input: 0.70, output: 2.10 },
     },
 
     // 4. OPENROUTER
@@ -323,59 +345,77 @@ export const AI_MODELS = {
         qualifier: 'Gratuit',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 0,
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0, output: 0 },
     },
 
     // 5. OPENROUTER — PAYANT
-    'claude-sonnet-5': {
-        id: 'claude-sonnet-5',
+    'claude-sonnet-5.5': {
+        id: 'claude-sonnet-5.5',
         providerId: 'openrouter',
-        apiModelId: 'anthropic/claude-sonnet-5',
-        shortName: 'Claude Sonnet 5 (OR)',
+        apiModelId: 'anthropic/claude-sonnet-5.5',
+        shortName: 'Claude Sonnet 5.5 (OR)',
         qualifier: 'Recommandé',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 9,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 3.00, output: 15.00 },
+        costs: { input: 2.00, output: 10.00 },
     },
-    'claude-3.7-sonnet': {
-        id: 'claude-3.7-sonnet',
+    'claude-haiku-5.5': {
+        id: 'claude-haiku-5.5',
         providerId: 'openrouter',
-        apiModelId: 'anthropic/claude-3.7-sonnet',
-        shortName: 'Claude 3.7 Sonnet (OR)',
-        qualifier: 'Raisonnement',
+        apiModelId: 'anthropic/claude-haiku-5.5',
+        shortName: 'Claude Haiku 5.5 (OR)',
+        qualifier: 'Rapide',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 3,
+        isReasoning: false,
+        timeoutMs: 22000,
+        costs: { input: 0.10, output: 0.50 },
+    },
+    'claude-opus-5.5': {
+        id: 'claude-opus-5.5',
+        providerId: 'openrouter',
+        apiModelId: 'anthropic/claude-opus-5.5',
+        shortName: 'Claude Opus 5.5 (OR)',
+        qualifier: 'Puissant',
+        selectorGroup: 'OpenRouter — PAYANT',
+        inSelector: true,
+        excludeFromFallback: true,
         isReasoning: true,
         timeoutMs: 40000,
-        costs: { input: 3.00, output: 15.00 },
+        costs: { input: 4.00, output: 20.00 },
     },
-    'claude-3.5-sonnet': {
-        id: 'claude-3.5-sonnet',
+    'deepseek-v4-flash': {
+        id: 'deepseek-v4-flash',
         providerId: 'openrouter',
-        apiModelId: 'anthropic/claude-3.5-sonnet',
-        shortName: 'Claude 3.5 Sonnet (OR)',
-        qualifier: 'Stable',
+        apiModelId: 'deepseek/deepseek-v4-flash-latest',
+        shortName: 'DeepSeek V4 Flash',
+        qualifier: 'Économique',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 1,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 3.00, output: 15.00 },
+        costs: { input: 0.06, output: 0.30 },
     },
     'openrouter': {
         id: 'openrouter',
         providerId: 'openrouter',
         apiModelId: 'deepseek/deepseek-chat',
         shortName: 'DeepSeek V3',
-        qualifier: 'Économique',
+        qualifier: 'Standard',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 4,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 0.14, output: 0.28 },
+        costs: { input: 0.25, output: 1.00 },
     },
     'deepseek-r1': {
         id: 'deepseek-r1',
@@ -385,6 +425,7 @@ export const AI_MODELS = {
         qualifier: 'Raisonnement',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 8,
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0.55, output: 2.19 },
@@ -397,6 +438,7 @@ export const AI_MODELS = {
         qualifier: 'Économique',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 7,
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.10, output: 0.10 },
@@ -404,11 +446,12 @@ export const AI_MODELS = {
     'amazon-nova-v1-lite': {
         id: 'amazon-nova-v1-lite',
         providerId: 'openrouter',
-        apiModelId: 'amazon/nova-lite-v1:1.0',
+        apiModelId: 'amazon/nova-lite-v1',
         shortName: 'Nova Lite',
         qualifier: 'Économique',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 6,
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.06, output: 0.24 },
@@ -416,37 +459,106 @@ export const AI_MODELS = {
     'mistral-small': {
         id: 'mistral-small',
         providerId: 'openrouter',
-        apiModelId: 'mistralai/mistral-small-24b-instruct-2501',
+        apiModelId: 'mistralai/mistral-small-3.2-24b-instruct',
         shortName: 'Mistral Small (OR)',
         qualifier: 'Standard',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 2,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 0.15, output: 0.60 },
+        costs: { input: 0.08, output: 0.25 },
     },
     'mistral-large': {
         id: 'mistral-large',
         providerId: 'openrouter',
-        apiModelId: 'mistralai/mistral-large-2411',
+        apiModelId: 'mistralai/mistral-large-4-0',
         shortName: 'Mistral Large (OR)',
         qualifier: 'Puissant',
         selectorGroup: 'OpenRouter — PAYANT',
         inSelector: true,
+        fallbackRank: 5,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 2.00, output: 6.00 },
+        costs: { input: 0.70, output: 2.10 },
+    },
+    // Alias rétrocompatibles OpenRouter
+    'claude-sonnet-5': {
+        id: 'claude-sonnet-5',
+        providerId: 'openrouter',
+        apiModelId: 'anthropic/claude-sonnet-5.5',
+        shortName: 'Claude Sonnet 5 (OR)',
+        inSelector: false,
+        isReasoning: false,
+        timeoutMs: 22000,
+        costs: { input: 3.00, output: 15.00 },
+    },
+    'claude-3.7-sonnet': {
+        id: 'claude-3.7-sonnet',
+        providerId: 'openrouter',
+        apiModelId: 'anthropic/claude-3.7-sonnet',
+        shortName: 'Claude 3.7 Sonnet (OR)',
+        inSelector: false,
+        isReasoning: true,
+        timeoutMs: 40000,
+        costs: { input: 3.00, output: 15.00 },
+    },
+    'claude-3.5-sonnet': {
+        id: 'claude-3.5-sonnet',
+        providerId: 'openrouter',
+        apiModelId: 'anthropic/claude-3.5-sonnet',
+        shortName: 'Claude 3.5 Sonnet (OR)',
+        inSelector: false,
+        isReasoning: false,
+        timeoutMs: 22000,
+        costs: { input: 3.00, output: 15.00 },
     },
 
     // 6. OPENAI DIRECT
+    'openai-gpt-6-luna': {
+        id: 'openai-gpt-6-luna',
+        providerId: 'openai',
+        apiModelId: 'gpt-6-luna',
+        shortName: 'GPT-6 Luna',
+        qualifier: 'Recommandé',
+        selectorGroup: 'OpenAI — PAYANT',
+        inSelector: true,
+        isReasoning: true,
+        timeoutMs: 30000,
+        costs: { input: 0.10, output: 0.50 },
+    },
+    'openai-gpt-6.1-terra': {
+        id: 'openai-gpt-6.1-terra',
+        providerId: 'openai',
+        apiModelId: 'gpt-6.1-terra',
+        shortName: 'GPT-6.1 Terra',
+        qualifier: 'Rédaction',
+        selectorGroup: 'OpenAI — PAYANT',
+        inSelector: true,
+        isReasoning: true,
+        timeoutMs: 30000,
+        costs: { input: 1.00, output: 5.00 },
+    },
+    'openai-gpt-6.1-sol': {
+        id: 'openai-gpt-6.1-sol',
+        providerId: 'openai',
+        apiModelId: 'gpt-6.1-sol',
+        shortName: 'GPT-6.1 Sol',
+        qualifier: 'Raisonnement',
+        selectorGroup: 'OpenAI — PAYANT',
+        inSelector: true,
+        isReasoning: true,
+        excludeFromFallback: true,
+        timeoutMs: 40000,
+        costs: { input: 2.00, output: 10.00 },
+    },
+    // Alias rétrocompatibles OpenAI
     'openai-o3-mini': {
         id: 'openai-o3-mini',
         providerId: 'openai',
         apiModelId: 'o3-mini',
         shortName: 'o3 Mini',
-        qualifier: 'Raisonnement',
-        selectorGroup: 'OpenAI — PAYANT',
-        inSelector: true,
+        inSelector: false,
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 1.10, output: 4.40 },
@@ -456,71 +568,67 @@ export const AI_MODELS = {
         providerId: 'openai',
         apiModelId: 'gpt-4o-mini',
         shortName: 'GPT-4o Mini',
-        qualifier: 'Économique',
-        selectorGroup: 'OpenAI — PAYANT',
-        inSelector: true,
+        inSelector: false,
         isReasoning: false,
         timeoutMs: 22000,
         costs: { input: 0.15, output: 0.60 },
     },
 
     // 7. ANTHROPIC CLAUDE DIRECT
-    'anthropic-claude-sonnet-5': {
-        id: 'anthropic-claude-sonnet-5',
+    'anthropic-claude-sonnet-5-5': {
+        id: 'anthropic-claude-sonnet-5-5',
         providerId: 'anthropic',
-        apiModelId: 'claude-sonnet-5',
-        shortName: 'Claude Sonnet 5',
+        apiModelId: 'claude-sonnet-5-5',
+        shortName: 'Claude Sonnet 5.5',
         qualifier: 'Recommandé',
         selectorGroup: 'Anthropic Claude — PAYANT',
         inSelector: true,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 3.00, output: 15.00 },
+        costs: { input: 2.00, output: 10.00 },
     },
-    'anthropic-claude-3-7-sonnet-latest': {
-        id: 'anthropic-claude-3-7-sonnet-latest',
+    'anthropic-claude-haiku-5-5': {
+        id: 'anthropic-claude-haiku-5-5',
         providerId: 'anthropic',
-        apiModelId: 'claude-3-7-sonnet-latest',
-        shortName: 'Claude 3.7 Sonnet',
-        qualifier: 'Raisonnement',
-        selectorGroup: 'Anthropic Claude — PAYANT',
-        inSelector: true,
-        isReasoning: true,
-        timeoutMs: 40000,
-        costs: { input: 3.00, output: 15.00 },
-    },
-    'anthropic-claude-3-5-sonnet-latest': {
-        id: 'anthropic-claude-3-5-sonnet-latest',
-        providerId: 'anthropic',
-        apiModelId: 'claude-3-5-sonnet-latest',
-        shortName: 'Claude 3.5 Sonnet',
-        qualifier: 'Stable',
-        selectorGroup: 'Anthropic Claude — PAYANT',
-        inSelector: true,
-        isReasoning: false,
-        timeoutMs: 22000,
-        costs: { input: 3.00, output: 15.00 },
-    },
-    'anthropic-claude-3-5-haiku-latest': {
-        id: 'anthropic-claude-3-5-haiku-latest',
-        providerId: 'anthropic',
-        apiModelId: 'claude-3-5-haiku-latest',
-        shortName: 'Claude 3.5 Haiku',
+        apiModelId: 'claude-haiku-5-5',
+        shortName: 'Claude Haiku 5.5',
         qualifier: 'Rapide',
         selectorGroup: 'Anthropic Claude — PAYANT',
         inSelector: true,
         isReasoning: false,
         timeoutMs: 22000,
-        costs: { input: 0.80, output: 4.00 },
+        costs: { input: 0.10, output: 0.50 },
+    },
+    'anthropic-claude-opus-5-5': {
+        id: 'anthropic-claude-opus-5-5',
+        providerId: 'anthropic',
+        apiModelId: 'claude-opus-5-5',
+        shortName: 'Claude Opus 5.5',
+        qualifier: 'Puissant',
+        selectorGroup: 'Anthropic Claude — PAYANT',
+        inSelector: true,
+        isReasoning: true,
+        excludeFromFallback: true,
+        timeoutMs: 30000,
+        costs: { input: 4.00, output: 20.00 },
+    },
+    // Alias rétrocompatibles Anthropic
+    'anthropic-claude-sonnet-5': {
+        id: 'anthropic-claude-sonnet-5',
+        providerId: 'anthropic',
+        apiModelId: 'claude-sonnet-5',
+        shortName: 'Claude Sonnet 5',
+        inSelector: false,
+        isReasoning: false,
+        timeoutMs: 22000,
+        costs: { input: 3.00, output: 15.00 },
     },
     'anthropic-claude-opus-5': {
         id: 'anthropic-claude-opus-5',
         providerId: 'anthropic',
         apiModelId: 'claude-opus-5',
         shortName: 'Claude Opus 5',
-        qualifier: 'Puissant',
-        selectorGroup: 'Anthropic Claude — PAYANT',
-        inSelector: true,
+        inSelector: false,
         isReasoning: false,
         timeoutMs: 30000,
         costs: { input: 5.00, output: 25.00 },
@@ -667,12 +775,15 @@ export const FALLBACK_CONFIG = (() => {
 
     MODEL_SELECTOR_CONFIG.forEach(group => {
         group.models.forEach(({ id }) => {
+            if (AI_MODELS[id]?.excludeFromFallback) return;
             const provider = getProviderForModel(id);
             if (config[provider] && !config[provider].includes(id)) {
                 config[provider].push(id);
             }
         });
     });
+
+    config.openrouter.sort((a, b) => (AI_MODELS[a]?.fallbackRank ?? 99) - (AI_MODELS[b]?.fallbackRank ?? 99));
 
     return config;
 })();
@@ -689,15 +800,70 @@ export const PROVIDER_DEFAULT_MODELS = {
 };
 
 export const PROVIDER_SHOWCASE_MODELS = {
-    google: ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
-    albert: ['albert-openweight-medium', 'albert-openweight-small', 'albert-openweight-large'],
+    google: ['gemini-4-hydrogen', 'gemini-3.6-flash', 'gemini-3.8-flash'],
+    albert: ['albert-openweight-medium', 'albert-openweight-large'],
     groq: ['groq-gpt-oss-120b', 'groq-gpt-oss-20b'],
-    anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-opus-5'],
+    anthropic: ['anthropic-claude-sonnet-5-5', 'anthropic-claude-haiku-5-5', 'anthropic-claude-opus-5-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
-    openai: ['openai-gpt-4o-mini', 'openai-o3-mini'],
-    openrouter: ['openrouter', 'deepseek-r1', 'llama-3.3-70b-free'],
+    openai: ['openai-gpt-6-luna', 'openai-gpt-6.1-terra', 'openai-gpt-6.1-sol'],
+    openrouter: ['deepseek-v4-flash', 'claude-sonnet-5.5', 'llama-3.3-70b-free'],
     ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b'],
 };
+
+/**
+ * Table de migration déclarative des identifiants de modèles obsolètes ou retirés.
+ */
+export const LEGACY_MODEL_MIGRATIONS = Object.freeze({
+    'gemini-1.5-flash': 'gemini-4-hydrogen',
+    'gemini-1.5-flash-001': 'gemini-4-hydrogen',
+    'gemini-2.0-flash-lite': 'gemini-4-hydrogen',
+    'gemini-2.5-flash': 'gemini-4-hydrogen',
+    'gemini-3.1-flash': 'gemini-4-hydrogen',
+    'gemini-3-flash-preview': 'gemini-4-hydrogen',
+    'gemini-3.1-flash-lite-preview': 'gemini-4-hydrogen',
+    'gemini-3.5-flash': 'gemini-4-hydrogen',
+    'gemini-3-pro': 'gemini-4-hydrogen',
+    'gemini-2.5-pro': 'gemini-4-hydrogen',
+    'gemini-3.1-pro-preview': 'gemini-4-hydrogen',
+    'gemini-4-argon': 'gemini-4-hydrogen',
+    'anthropic-claude-3-5-sonnet-latest': 'anthropic-claude-sonnet-5-5',
+    'anthropic-claude-3-7-sonnet-latest': 'anthropic-claude-sonnet-5-5',
+    'anthropic-claude-3-5-haiku-latest': 'anthropic-claude-haiku-5-5',
+    'anthropic-claude-sonnet-4.5': 'anthropic-claude-sonnet-5-5',
+    'anthropic-claude-sonnet-4.6': 'anthropic-claude-sonnet-5-5',
+    'anthropic-claude-sonnet-5': 'anthropic-claude-sonnet-5-5',
+    'anthropic-claude-opus-4.5': 'anthropic-claude-opus-5-5',
+    'anthropic-claude-opus-4.6': 'anthropic-claude-opus-5-5',
+    'anthropic-claude-opus-5': 'anthropic-claude-opus-5-5',
+    'claude-sonnet-4.6': 'claude-sonnet-5.5',
+    'claude-sonnet-5': 'claude-sonnet-5.5',
+    'claude-3.5-sonnet': 'claude-sonnet-5.5',
+    'claude-3.7-sonnet': 'claude-sonnet-5.5',
+    'devstral-free': 'llama-3.3-70b-free',
+    'ollama-qwen3:8b': 'ollama-qwen2.5:7b',
+    'ollama-qwen3:4b': 'ollama-qwen2.5:7b',
+    'ollama-gemma3:4b': 'ollama-gemma2:9b',
+    'ollama-mistral': 'ollama-mistral:7b',
+    'openai-gpt-4o': 'openai-gpt-6-luna',
+    'openai-gpt-3.5-turbo': 'openai-gpt-6-luna',
+    'openai-gpt-4-turbo': 'openai-gpt-6-luna',
+    'openai-gpt-4o-mini': 'openai-gpt-6-luna',
+    'openai-o3-mini': 'openai-gpt-6.1-sol',
+    'groq-llama-3.3-70b': 'groq-gpt-oss-120b',
+    'groq-llama-3.1-8b': 'groq-gpt-oss-20b',
+    'groq-gemma-2-9b': 'groq-gpt-oss-20b',
+    'albert-openweight-small': 'albert-openweight-medium',
+});
+
+/**
+ * Migre un identifiant de modèle obsolète vers son successeur actuel si applicable.
+ * @param {string|null|undefined} modelId
+ * @returns {string|null|undefined}
+ */
+export function migrateLegacyModelId(modelId) {
+    if (!modelId || typeof modelId !== 'string') return modelId;
+    return LEGACY_MODEL_MIGRATIONS[modelId] || modelId;
+}
 
 /**
  * Construit la file ordonnée de fallback pour un modèle donné.
@@ -757,12 +923,12 @@ export function getModelTimeout(model, ollamaTimeoutMs = OLLAMA_CONFIG.timeoutMs
     const meta = AI_MODELS[m];
     if (meta) {
         if (meta.providerId === 'ollama') return ollamaTimeoutMs;
-        if (meta.isReasoning) return 40000;
         if (meta.timeoutMs && meta.timeoutMs !== 22000) return meta.timeoutMs;
+        if (meta.isReasoning) return 40000;
         return defaultTimeoutMs;
     }
     if (m.startsWith('ollama')) return ollamaTimeoutMs;
-    const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3') || m.includes('gpt-oss');
+    const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('gemini-4') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3') || m.includes('gpt-6') || m.includes('gpt-oss');
     if (isReasoningModel) return 40000;
     if (m.includes('pro') || m.includes('opus')) return 30000;
     return defaultTimeoutMs;

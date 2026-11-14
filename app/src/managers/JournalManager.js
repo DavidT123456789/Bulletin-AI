@@ -544,7 +544,7 @@ export const JournalManager = {
                             </svg>
                         </button>
                     </div>
-                    <button type="button" class="close-btn journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
+                    <button type="button" class="close-button journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>

@@ -29,7 +29,7 @@
  */
 
 import { appState, userSettings, runtimeState } from '../state/State.js';
-import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS, PROVIDER_DEFAULT_MODELS, migrateLegacyModelId } from '../config/Config.js';
 import { API_KEY_PROVIDER_IDS, getProviderForModel, hasValidApiKey } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
@@ -316,10 +316,7 @@ export const StorageManager = {
         if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
 
         if (settings.currentAIModel !== undefined) {
-            let model = settings.currentAIModel;
-            if (model === 'groq-llama-3.3-70b') model = 'groq-gpt-oss-120b';
-            else if (model === 'groq-llama-3.1-8b' || model === 'groq-gemma-2-9b') model = 'groq-gpt-oss-20b';
-            userSettings.api.currentAIModel = model;
+            userSettings.api.currentAIModel = migrateLegacyModelId(settings.currentAIModel);
         }
         if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
         if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
@@ -677,50 +674,8 @@ export const StorageManager = {
             runtimeState.navigation.currentPeriod = validPeriods[0];
         }
 
-        // Migration de modèles obsolètes vers la version stable actuelle
-        const deprecatedGeminiFlash = [
-            'gemini-1.5-flash', 'gemini-1.5-flash-001', 
-            'gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
-            'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash'
-        ];
-        if (deprecatedGeminiFlash.includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-3.6-flash';
-        }
-        // Migration Claude legacy
-        if (['anthropic-claude-sonnet-4.5', 'anthropic-claude-sonnet-4.6', 'claude-sonnet-4.6'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'anthropic-claude-sonnet-5';
-        }
-        if (['anthropic-claude-opus-4.5', 'anthropic-claude-opus-4.6'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'anthropic-claude-opus-5';
-        }
-        // Migration Devstral free (déprécié 27 jan 2026)
-        if (userSettings.api.currentAIModel === 'devstral-free') {
-            userSettings.api.currentAIModel = 'llama-3.3-70b-free';
-        }
-        // Migration anciens Gemini Pro vers 3.1 Pro
-        if (['gemini-3-pro', 'gemini-2.5-pro'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-3.1-pro-preview';
-        }
-        // Migration anciens Ollama
-        if (['ollama-qwen3:8b', 'ollama-qwen3:4b'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'ollama-qwen2.5:7b';
-        }
-        if (['ollama-gemma3:4b'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'ollama-gemma2:9b';
-        }
-        if (userSettings.api.currentAIModel === 'ollama-mistral') {
-            userSettings.api.currentAIModel = 'ollama-mistral:7b';
-        }
-        // Migration OpenAI legacy (GPT-4o retiré fév 2026)
-        if (['openai-gpt-4o', 'openai-gpt-3.5-turbo', 'openai-gpt-4-turbo'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'openai-o3-mini';
-        }
-        // Migration Groq legacy (identique à _applyLoadedSettings)
-        if (userSettings.api.currentAIModel === 'groq-llama-3.3-70b') {
-            userSettings.api.currentAIModel = 'groq-gpt-oss-120b';
-        } else if (['groq-llama-3.1-8b', 'groq-gemma-2-9b'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'groq-gpt-oss-20b';
-        }
+        // Migration déclarative des modèles obsolètes ou retirés via le registre central (aiRegistry.js)
+        userSettings.api.currentAIModel = migrateLegacyModelId(userSettings.api.currentAIModel);
     },
 
 
@@ -1221,7 +1176,7 @@ export const StorageManager = {
 
             if (resetPreferences) {
                 appState.periodSystem = 'trimestres';
-                appState.currentAIModel = 'gemini-3.6-flash';
+                appState.currentAIModel = PROVIDER_DEFAULT_MODELS.google;
                 appState.seatingStatusDots = { ...DEFAULT_SEATING_STATUS_DOTS };
                 parts.push('préférences');
             }

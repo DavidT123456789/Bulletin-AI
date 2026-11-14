@@ -191,7 +191,24 @@ describe('ApiValidationManager', () => {
                 expect.objectContaining({
                     isValidation: true,
                     validationProvider: 'openai',
-                    modelOverride: 'openai-o3-mini'
+                    modelOverride: 'openai-gpt-6-luna'
+                })
+            );
+        });
+
+        it('should validate Anthropic key with active Claude 5.5 model (not retired 3.7)', async () => {
+            AIService.callAI.mockResolvedValue({ text: 'ok' });
+
+            await ApiValidationManager.validateApiKeyUI(
+                'anthropic', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(AIService.callAI).toHaveBeenCalledWith(
+                'Validation',
+                expect.objectContaining({
+                    isValidation: true,
+                    validationProvider: 'anthropic',
+                    modelOverride: 'anthropic-claude-sonnet-5-5'
                 })
             );
         });

@@ -417,6 +417,7 @@ export const PromptService = {
         if (!hasNoData) {
             styleParts.push(`Ne cite ni les moyennes ni les statistiques de classe, et ne compare pas explicitement l'élève à la classe : sers-t'en uniquement pour ajuster ton degré d'exigence ou d'encouragement.`);
         }
+        styleParts.push(`Rédige en français courant sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`);
         styleParts.push(`Réponds uniquement avec le texte de l'appréciation, sans titre, préambule ni guillemets.`);
 
         if (effectiveStyle.styleInstructions) {

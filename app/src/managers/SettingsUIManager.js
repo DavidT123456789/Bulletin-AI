@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { FormUI } from './FormUIManager.js';
@@ -430,13 +430,13 @@ export const SettingsUIManager = {
         // Injecter les icônes à jour avant d'afficher le statut
         this.injectProviderIcons();
 
-        let model = appState.currentAIModel || 'gemini-3.6-flash';
+        let model = appState.currentAIModel || PROVIDER_DEFAULT_MODELS.google;
 
         // Si le modèle actif n'est pas disponible (clé absente ou supprimée),
         // basculer vers le premier modèle disponible, ou revenir au modèle par défaut (Gemini) si aucune clé n'existe.
         if (!this._isModelAvailable(model)) {
             const firstAvailable = buildFallbackQueue(model).find(m => this._isModelAvailable(m));
-            model = firstAvailable || 'gemini-3.6-flash';
+            model = firstAvailable || PROVIDER_DEFAULT_MODELS.google;
             if (appState.currentAIModel !== model) {
                 appState.currentAIModel = model;
             }
@@ -560,7 +560,7 @@ export const SettingsUIManager = {
      * Aligné avec AIService._getProviderForModel() pour garantir la cohérence.
      * Seuls les modèles 'mistral-direct-*' utilisent l'API Mistral directe.
      * Les autres (ministral-3b, mistral-small, etc.) passent par OpenRouter.
-     * @param {string} model - ID du modèle (ex: 'gemini-3.6-flash', 'ollama-llama3')
+     * @param {string} model - ID du modèle (ex: 'gemini-3.8-flash', 'ollama-llama3')
      * @returns {string} ID du provider (ex: 'google', 'ollama', 'openrouter')
      * @private
      */

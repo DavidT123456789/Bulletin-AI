@@ -453,20 +453,9 @@
 .journal-draft-close-btn {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-tertiary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.journal-draft-close-btn:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 14px;
 }
 
 /* === Pills Row === */
@@ -1362,6 +1351,8 @@
     .journal-draft-close-btn {
         width: 36px;
         height: 36px;
+        min-width: 36px;
+        min-height: 36px;
         font-size: 16px;
     }
 

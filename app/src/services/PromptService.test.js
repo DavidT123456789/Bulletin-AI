@@ -80,6 +80,8 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain("première personne du singulier"); // voice je
             expect(prompts.appreciation).toContain("Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »)");
             expect(prompts.appreciation).toContain("ne compare pas explicitement l'élève à la classe");
+            expect(prompts.appreciation).toContain("sans écriture inclusive (ni point médian)");
+            expect(prompts.appreciation).toContain("sans sigles de période");
             expect(prompts.appreciation).not.toContain("Si la période courante n'a pas de moyenne");
             expect(prompts.appreciation).not.toContain("appréciations des périodes précédentes");
         });

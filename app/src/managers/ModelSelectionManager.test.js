@@ -26,8 +26,8 @@ describe('ModelSelectionManager', () => {
                 <div id="headerModelDropdown" class="header-model-dropdown" style="display: none;"></div>
             </div>
             <select id="aiModelSelect" style="display: none;">
-                <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                 <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-4-hydrogen">Gemini 4 Hydrogen</option>
                 <option value="groq-llama-3.3-70b">Llama 3.3 70B</option>
             </select>
             <div id="appSettingsModal" style="display: none;"></div>
@@ -41,7 +41,7 @@ describe('ModelSelectionManager', () => {
         DOM.aiModelSelect = document.getElementById('aiModelSelect');
         DOM.settingsModal = document.getElementById('appSettingsModal');
 
-        appState.currentAIModel = 'gemini-3.6-flash';
+        appState.currentAIModel = 'gemini-3.8-flash';
         appState.googleApiKey = 'AIzaSyFakeGoogleApiKey1234567';
         appState.groqApiKey = '';
         appState.ollamaEnabled = false;
@@ -94,10 +94,10 @@ describe('ModelSelectionManager', () => {
         expect(groupLabels.length).toBe(1);
         expect(groupLabels[0].textContent).toContain('Google Gemini');
 
-        // Doit contenir le vrai modèle Gemini 3.6 Flash
-        const flashItem = Array.from(items).find(item => item.getAttribute('data-model-id') === 'gemini-3.6-flash');
+        // Doit contenir le vrai modèle Gemini 3.8 Flash
+        const flashItem = Array.from(items).find(item => item.getAttribute('data-model-id') === 'gemini-3.8-flash');
         expect(flashItem).toBeTruthy();
-        expect(flashItem.textContent).toContain('Gemini 3.6 Flash');
+        expect(flashItem.textContent).toContain('Gemini 3.8 Flash');
         expect(flashItem.classList.contains('active')).toBe(true);
 
         // Ne doit pas contenir Groq GPT-OSS car la clé n'est pas configurée

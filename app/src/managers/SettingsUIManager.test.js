@@ -450,10 +450,11 @@ describe('SettingsUIManager', () => {
             expect(tooltip).toContain('Ordre complet :');
             expect(tooltip).toContain('Mistral Small');
             expect(tooltip).toContain('Mistral Large');
-            expect(tooltip).toContain('Gemini 3.6 Flash');
             expect(tooltip).toContain('Gemini 3.8 Flash');
-            expect(tooltip).toContain('Gemini 3.1 Pro');
-            // Ne doit PAS contenir les modèles fantômes
+            expect(tooltip).toContain('Gemini 3.6 Flash');
+            expect(tooltip).toContain('Gemini 4 Hydrogen');
+            // Ne doit PAS contenir les modèles fantômes ou retirés
+            expect(tooltip).not.toContain('Gemini 4 Argon');
             expect(tooltip).not.toContain('Gemini 3.7 Flash');
             expect(tooltip).not.toContain('Gemini 2.5');
         });
@@ -558,7 +559,7 @@ describe('SettingsUIManager', () => {
             `;
         });
 
-        it('devrait réinitialiser currentAIModel vers gemini-3.6-flash et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
+        it('devrait réinitialiser currentAIModel vers gemini-4-hydrogen et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
             appState.currentAIModel = 'mistral-direct-small-latest';
             appState.mistralApiKey = '';
             appState.googleApiKey = '';
@@ -566,8 +567,8 @@ describe('SettingsUIManager', () => {
 
             SettingsUIManager.updateApiStatusDisplay();
 
-            expect(appState.currentAIModel).toBe('gemini-3.6-flash');
-            expect(DOM.aiModelSelect.value).toBe('gemini-3.6-flash');
+            expect(appState.currentAIModel).toBe('gemini-4-hydrogen');
+            expect(DOM.aiModelSelect.value).toBe('gemini-4-hydrogen');
             expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
         });
 
@@ -578,13 +579,13 @@ describe('SettingsUIManager', () => {
 
             SettingsUIManager.updateApiStatusDisplay();
 
-            expect(appState.currentAIModel).toBe('gemini-3.6-flash');
-            expect(DOM.aiModelSelect.value).toBe('gemini-3.6-flash');
+            expect(appState.currentAIModel).toBe('gemini-4-hydrogen');
+            expect(DOM.aiModelSelect.value).toBe('gemini-4-hydrogen');
             expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
         });
 
         it('devrait afficher le bandeau d\'alerte uniquement si le fournisseur du modèle actif a un souci de quota ou d\'invalidation', () => {
-            appState.currentAIModel = 'gemini-3.6-flash';
+            appState.currentAIModel = 'gemini-4-hydrogen';
             appState.googleApiKey = 'AIzaSyValidGoogleKey123';
             appState.apiKeyStatus.google = 'quota-warning';
 

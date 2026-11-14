@@ -72,7 +72,7 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const defaultModel = PROVIDER_DEFAULT_MODELS[provider] || (provider === 'albert' ? 'albert-openweight-medium' : 'gemini-3.6-flash');
+                    const defaultModel = PROVIDER_DEFAULT_MODELS[provider] || PROVIDER_DEFAULT_MODELS.google;
                     const isSameProvider = provider === 'google'
                         ? appState.currentAIModel.startsWith('gemini')
                         : appState.currentAIModel.startsWith('albert-');
@@ -105,12 +105,12 @@ export const ApiValidationManager = {
                 }
             } else {
                 // Pour OpenAI, OpenRouter, Anthropic, Mistral, Groq: validation centralisée via PROVIDER_DEFAULT_MODELS
+                // OpenRouter utilise un modèle payant léger pour éviter les rate-limits des endpoints :free lors du check de clé
                 const testModels = {
                     ...PROVIDER_DEFAULT_MODELS,
-                    openrouter: 'deepseek/deepseek-chat',
-                    anthropic: 'anthropic-claude-3-7-sonnet-latest'
+                    openrouter: 'deepseek/deepseek-chat'
                 };
-                const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || 'gemini-3.6-flash';
+                const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || PROVIDER_DEFAULT_MODELS.google;
                 await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
 
                 appState.apiKeyStatus[provider] = 'valid';
@@ -201,7 +201,7 @@ export const ApiValidationManager = {
                     const modelIds = models.map(m => m.name.replace('models/', ''));
 
                     // Check if we can fallback to a known working model
-                    const fallbackModel = PROVIDER_DEFAULT_MODELS.google || 'gemini-3.6-flash';
+                    const fallbackModel = PROVIDER_DEFAULT_MODELS.google;
                     if (modelIds.includes(fallbackModel)) {
                         appState.currentAIModel = fallbackModel;
 

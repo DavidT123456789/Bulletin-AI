@@ -5,7 +5,7 @@
 
 import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
-import { AI_PROVIDERS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
+import { AI_PROVIDERS, OLLAMA_CONFIG, PROVIDER_DEFAULT_MODELS, getModelMeta, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
 
 /**
  * Extrait le délai d'attente (en secondes) d'un message d'erreur ou des en-têtes HTTP de rate-limit (429/quota).
@@ -92,7 +92,7 @@ export function sleep(ms, signal = null) {
 
 /**
  * @typedef {Object} GoogleModel
- * @property {string} name - Nom du modèle (ex: "models/gemini-3.6-flash")
+ * @property {string} name - Nom du modèle (ex: "models/gemini-3.8-flash")
  * @property {string} displayName - Nom d'affichage
  */
 
@@ -139,7 +139,7 @@ export const AIService = {
             },
             google: {
                 apiKey: appState.googleApiKey, 
-                apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent`,
+                apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${getApiModelName(m)}:generateContent`,
                 headers: (key) => ({ 
                     'Content-Type': 'application/json',
                     'x-goog-api-key': key || appState.googleApiKey
@@ -148,6 +148,12 @@ export const AIService = {
                     const body = { contents: [{ role: "user", parts: [{ text: p }] }] };
                     if (sys) {
                         body.systemInstruction = { parts: [{ text: sys }] };
+                    }
+                    const thinkingLevel = getModelMeta(m)?.thinkingLevel;
+                    if (thinkingLevel) {
+                        body.generationConfig = {
+                            thinkingConfig: { thinkingLevel }
+                        };
                     }
                     return body;
                 },
@@ -162,6 +168,8 @@ export const AIService = {
                 payload: (p, m, sys) => ({
                     model: getApiModelName(m),
                     messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
+                    temperature: 0.45,
+                    top_p: 0.9,
                     max_tokens: m === 'albert-openweight-large' ? 2048 : MAX_RESPONSE_TOKENS
                 }),
             },
@@ -260,12 +268,12 @@ export const AIService = {
             if (!providerConfig) throw new Error("Fournisseur de validation inconnu.");
             const apiKey = providerConfig.apiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
-            const validationModel = modelOverride || 'gemini-3.6-flash';
+            const validationModel = modelOverride || PROVIDER_DEFAULT_MODELS[validationProvider] || PROVIDER_DEFAULT_MODELS.google;
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
             if (payload && typeof payload === 'object') {
                 if (validationProvider === 'google') {
-                    payload.generationConfig = { maxOutputTokens: 5 };
+                    payload.generationConfig = { ...(payload.generationConfig || {}), maxOutputTokens: 5 };
                 } else if ('max_tokens' in payload) {
                     payload.max_tokens = 5;
                 }
@@ -667,13 +675,18 @@ export const AIService = {
             : [appState.currentAIModel];
         let lastError = null;
         let attemptedModels = [];
-
-        // Log conditionnel (visible uniquement en développement)
-
+        // Évite d'enchaîner tous les modèles payants d'un même fournisseur si le compte renvoie HTTP 402 (crédit insuffisant)
+        const exhaustedPaidProviders = new Set();
 
         try {
 
             for (const model of fallbackModels) {
+                const modelProvider = getProviderForModel(model);
+                const isFreeModel = model.endsWith('-free') || model.endsWith(':free');
+                if (exhaustedPaidProviders.has(modelProvider) && !isFreeModel) {
+                    continue;
+                }
+
                 // Vérifier si la clé API est disponible pour ce modèle
                 if (!this._hasApiKeyForModel(model)) {
                     // Modèle ignoré : pas de clé API disponible
@@ -717,6 +730,12 @@ export const AIService = {
                         throw error;
                     }
 
+                    // Si paiement requis / crédits épuisés (HTTP 402), inutile de tester les autres modèles payants du même provider
+                    const errLower = error.message.toLowerCase();
+                    if (error.message.includes('402') || errLower.includes('insufficient credits') || errLower.includes('payment required')) {
+                        exhaustedPaidProviders.add(modelProvider);
+                    }
+
                     // Pour TOUTES les autres erreurs (timeout, quota, 429, 404, etc.)
                     // → Continuer avec le modèle suivant
                     // Le fallback doit toujours essayer les alternatives disponibles
@@ -732,6 +751,7 @@ export const AIService = {
             // Créer un message d'erreur clair et actionnable
             const attemptedCount = attemptedModels.length;
             const missingKeysCount = fallbackModels.length - attemptedCount;
+            const attemptedProviders = new Set(attemptedModels.map(m => getProviderForModel(m)));
 
             // Déterminer la cause principale
             const isQuotaError = lastError?.message?.includes('429') || lastError?.message?.toLowerCase().includes('quota');
@@ -744,9 +764,8 @@ export const AIService = {
                 const retryInfo = retrySeconds ? `Réessayez dans ~${retrySeconds}s` : 'Réessayez dans quelques instants';
                 errorMessage = `Quota atteint (${attemptedCount} modèles testés). ${retryInfo}.`;
 
-                // Ajouter un conseil si pas de provider de secours
-                if (missingKeysCount > 0 && attemptedCount === missingKeysCount) {
-                    // Tous les modèles testés sont du même provider
+                // Ajouter un conseil si un seul provider est configuré sans OpenRouter en secours
+                if (missingKeysCount > 0 && attemptedProviders.size === 1 && !hasValidApiKey('openrouter', { state: appState })) {
                     errorMessage += ` Ajoutez une clé OpenRouter pour un fallback automatique.`;
                 }
             } else if (is404Error) {

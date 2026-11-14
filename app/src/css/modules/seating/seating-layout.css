@@ -313,17 +313,6 @@
     pointer-events: auto;
 }
 
-.sc-toolbar-dot {
-    display: inline-flex;
-    align-items: center;
-    color: var(--text-tertiary);
-    font-weight: 700;
-    opacity: 0.45;
-    font-size: 0.9em;
-    user-select: none;
-    line-height: 1;
-}
-
 .sc-toolbar-info strong {
     font-weight: 600;
 }

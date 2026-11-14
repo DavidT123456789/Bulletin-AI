@@ -671,31 +671,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     padding-bottom: var(--content-padding-x, 24px);
 }
 
-/* Unplaced indicator styling */
-.sc-unplaced-hint {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 500;
-    color: var(--error-color);
-    font-size: 0.8rem;
-}
-
-.sc-unplaced-hint iconify-icon {
-    font-size: 1.15em;
-}
-
-.sc-footer-students,
-.sc-footer-seats,
-.sc-unplaced-text {
-    font-weight: 500;
-}
-
-.sc-footer-students,
-.sc-footer-seats {
-    color: var(--text-secondary);
-}
-
 /* ────────── CHIP SELECTION ────────── */
 .sc-student-chip.sc-chip-selected,
 .sc-student-chip.sc-context-target {
@@ -1610,7 +1585,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 4. Hide interactive elements ── */
-    .sc-toolbar,
     .sc-sidebar,
     .sc-cell-remove,
     .sc-stacked-member-remove,
@@ -2114,15 +2088,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         height: 6px;
     }
 
-    .sc-toolbar {
-        flex-wrap: wrap;
-        gap: 6px;
-        padding: 8px 12px;
-    }
-
-
-    .sc-toolbar-btn span { display: none; }
-
     /* ── Floating elements: aligned on mobile, never overlapping ── */
     .sc-top-left-bar,
     #seatingChartView[data-locked="false"] .sc-top-left-bar {
@@ -2195,15 +2160,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         display: inline-flex !important;
         align-items: center !important;
         gap: 5px;
-    }
-
-    .sc-floating-status .sc-toolbar-info .sc-footer-all-placed,
-    .sc-floating-status .sc-toolbar-info .sc-unplaced-hint,
-    .sc-floating-status .sc-toolbar-info .sc-footer-seats {
-        white-space: nowrap !important;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
     }
 
     /* ── Mobile Drag-Over Desk Pop: Magnify target cell under touch so user clearly sees destination ── */
@@ -2301,16 +2257,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     box-shadow: var(--shadow-md);
 }
 
-[data-theme="dark"] .sc-toolbar-info,
-[data-theme="dark"] .sc-toolbar-pill,
-[data-theme="dark"] .sc-isolated-btn {
+[data-theme="dark"] .sc-toolbar-info {
     background: var(--surface-elevated);
     border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .sc-stat-value,
-[data-theme="dark"] .sc-badge-pinned {
-    color: var(--primary-bright);
 }
 
 /* Dark theme empty desks: subtle visible silhouette in consultation, clear in edit */
@@ -2505,7 +2454,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-classroom-board.sc-mode-carousel-in-left .sc-desk,
     .sc-board-carousel-ghost,
     .sc-action-btn.sc-orientation-btn.active iconify-icon,
-    #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
     .sc-empty-sidebar,

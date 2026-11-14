@@ -9,7 +9,7 @@
  * @module state/State
  */
 
-import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS, PROVIDER_DEFAULT_MODELS } from '../config/Config.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
 export { bus, EVENTS };
@@ -52,7 +52,7 @@ export const userSettings = {
 
     /** Configuration API */
     api: {
-        currentAIModel: 'gemini-3.6-flash',
+        currentAIModel: PROVIDER_DEFAULT_MODELS.google,
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',

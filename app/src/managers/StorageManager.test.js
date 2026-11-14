@@ -101,21 +101,25 @@ vi.mock('../state/State.js', () => {
     return { userSettings, runtimeState, appState };
 });
 
-// Mock config module
-vi.mock('../config/Config.js', () => ({
-    CONFIG: {
-        LS_APP_STATE_KEY: 'bulletin-assistant-state'
-    },
-    APP_VERSION: '4.3.0',
-    DEFAULT_PROMPT_TEMPLATES: {
-        'Français': { iaConfig: { length: 50, tone: 2, voice: 'il' } },
-        'Générique': { iaConfig: { length: 50, tone: 2, voice: 'il' } }
-    },
-    DEFAULT_IA_CONFIG: { length: 50, tone: 2, voice: 'il', styleInstructions: '' },
-    DEFAULT_EVOLUTION_THRESHOLDS: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
-    DEFAULT_PRIVACY_SETTINGS: { anonymizeData: false },
-    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
-}));
+// Mock config module (preserve PROVIDER_DEFAULT_MODELS & migrateLegacyModelId from actual Config)
+vi.mock('../config/Config.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...actual,
+        CONFIG: {
+            LS_APP_STATE_KEY: 'bulletin-assistant-state'
+        },
+        APP_VERSION: '4.3.0',
+        DEFAULT_PROMPT_TEMPLATES: {
+            'Français': { iaConfig: { length: 50, tone: 2, voice: 'il' } },
+            'Générique': { iaConfig: { length: 50, tone: 2, voice: 'il' } }
+        },
+        DEFAULT_IA_CONFIG: { length: 50, tone: 2, voice: 'il', styleInstructions: '' },
+        DEFAULT_EVOLUTION_THRESHOLDS: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
+        DEFAULT_PRIVACY_SETTINGS: { anonymizeData: false },
+        DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
+    };
+});
 
 // Mock UIManager
 vi.mock('./UIManager.js', () => ({
@@ -309,13 +313,41 @@ describe('StorageManager', () => {
             await StorageManager.loadAppState();
 
             expect(userSettings.ui.theme).toBe('dark');
-            // Verify deprecated gemini-3.5-flash migration to gemini-3.6-flash
+            // Verify deprecated model migrations to current catalog models
             mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
                 version: '4.3.0',
                 settings: { currentAIModel: 'gemini-3.5-flash' }
             });
             await StorageManager.loadAppState();
+            expect(userSettings.api.currentAIModel).toBe('gemini-4-hydrogen');
+
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { currentAIModel: 'gemini-3.6-flash' }
+            });
+            await StorageManager.loadAppState();
             expect(userSettings.api.currentAIModel).toBe('gemini-3.6-flash');
+
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { currentAIModel: 'gemini-4-argon' }
+            });
+            await StorageManager.loadAppState();
+            expect(userSettings.api.currentAIModel).toBe('gemini-4-hydrogen');
+
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { currentAIModel: 'anthropic-claude-3-7-sonnet-latest' }
+            });
+            await StorageManager.loadAppState();
+            expect(userSettings.api.currentAIModel).toBe('anthropic-claude-sonnet-5-5');
+
+            mockLocalStorage['bulletin-assistant-state'] = JSON.stringify({
+                version: '4.3.0',
+                settings: { currentAIModel: 'openai-o3-mini' }
+            });
+            await StorageManager.loadAppState();
+            expect(userSettings.api.currentAIModel).toBe('openai-gpt-6.1-sol');
         });
     });
 
@@ -1171,8 +1203,8 @@ describe('StorageManager', () => {
         it('should accept a pre-parsed object in importBackup and restore Albert API key + model when includeApiKeys is true (Cloud restore flow)', async () => {
             userSettings.api.albertApiKey = '';
             appState.albertApiKey = '';
-            userSettings.api.currentAIModel = 'gemini-3.6-flash';
-            appState.currentAIModel = 'gemini-3.6-flash';
+            userSettings.api.currentAIModel = 'gemini-4-hydrogen';
+            appState.currentAIModel = 'gemini-4-hydrogen';
 
             const cloudPayload = {
                 _meta: { appVersion: '4.3.0', exportedAt: new Date().toISOString() },
@@ -1241,13 +1273,13 @@ describe('StorageManager', () => {
         });
 
         it('should adopt remote currentAIModel when local device is on default model without a local API key for that provider', async () => {
-            // Fresh smartphone state: default model is gemini-3.6-flash, but no Google API key is configured locally
+            // Fresh smartphone state: default model is gemini-4-hydrogen, but no Google API key is configured locally
             userSettings.api.googleApiKey = '';
             appState.googleApiKey = '';
             userSettings.api.albertApiKey = '';
             appState.albertApiKey = '';
-            userSettings.api.currentAIModel = 'gemini-3.6-flash';
-            appState.currentAIModel = 'gemini-3.6-flash';
+            userSettings.api.currentAIModel = 'gemini-4-hydrogen';
+            appState.currentAIModel = 'gemini-4-hydrogen';
 
             await StorageManager.mergeRemoteData({
                 settings: {

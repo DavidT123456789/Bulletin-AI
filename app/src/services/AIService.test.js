@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AIService, parseRetryDelay, sleep } from './AIService.js';
+import { AI_MODELS, PROVIDER_DEFAULT_MODELS } from '../config/aiRegistry.js';
 
 // Mock state module
 vi.mock('../state/State.js', () => ({
@@ -87,6 +88,69 @@ describe('AIService', () => {
             expect(config.payload.contents[0].parts[0].text).toBe('Test prompt');
         });
 
+        it('should resolve Google apiUrl via getApiModelName(m) when apiModelId differs from id', async () => {
+            const { appState } = await import('../state/State.js');
+            const originalApiModelId = AI_MODELS['gemini-4-hydrogen'].apiModelId;
+            AI_MODELS['gemini-4-hydrogen'].apiModelId = 'gemini-4-hydrogen-preview';
+            try {
+                appState.googleApiKey = 'test-google-key';
+                appState.currentAIModel = 'gemini-4-hydrogen';
+
+                const config = AIService._getApiConfig('Test prompt');
+                expect(config.apiUrl).toContain('/models/gemini-4-hydrogen-preview:generateContent');
+            } finally {
+                AI_MODELS['gemini-4-hydrogen'].apiModelId = originalApiModelId;
+            }
+        });
+
+        it('should fallback Google validation model to PROVIDER_DEFAULT_MODELS.google when modelOverride is omitted', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.googleApiKey = 'test-google-key';
+            appState.currentAIModel = 'openrouter';
+
+            const config = AIService._getApiConfig('Validation', {
+                isValidation: true,
+                validationProvider: 'google'
+            });
+
+            expect(config.apiUrl).toContain(`/models/${PROVIDER_DEFAULT_MODELS.google}:generateContent`);
+            expect(config.payload.generationConfig).toEqual({
+                thinkingConfig: { thinkingLevel: 'MEDIUM' },
+                maxOutputTokens: 5
+            });
+        });
+
+        it('should fallback validation model to PROVIDER_DEFAULT_MODELS[validationProvider] when modelOverride is omitted', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.albertApiKey = 'sk-albert-test-key';
+
+            const config = AIService._getApiConfig('Validation', {
+                isValidation: true,
+                validationProvider: 'albert'
+            });
+
+            expect(config.payload.model).toBe('openweight-medium');
+            expect(config.payload.max_tokens).toBe(5);
+        });
+
+        it('should inject thinkingConfig.thinkingLevel from aiRegistry for Google models when configured', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.googleApiKey = 'test-google-key';
+
+            appState.currentAIModel = 'gemini-3.8-flash';
+            expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
+                thinkingConfig: { thinkingLevel: 'LOW' }
+            });
+
+            appState.currentAIModel = 'gemini-4-hydrogen';
+            expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
+                thinkingConfig: { thinkingLevel: 'MEDIUM' }
+            });
+
+            appState.currentAIModel = 'gemini-3.6-flash';
+            expect(AIService._getApiConfig('Test').payload.generationConfig).toBeUndefined();
+        });
+
         it('should return correct config for OpenAI provider', async () => {
             const { appState } = await import('../state/State.js');
             appState.openaiApiKey = 'test-openai-key';
@@ -127,6 +191,8 @@ describe('AIService', () => {
             expect(config.apiUrl).toBe('https://albert.api.etalab.gouv.fr/v1/chat/completions');
             expect(config.headers['Authorization']).toBe('Bearer sk-albert-test-key');
             expect(config.payload.model).toBe('openweight-medium');
+            expect(config.payload.temperature).toBe(0.45);
+            expect(config.payload.top_p).toBe(0.9);
             expect(config.payload.messages).toEqual([
                 { role: 'system', content: 'Tu es enseignant.' },
                 { role: 'user', content: 'Test prompt' }
@@ -533,6 +599,73 @@ describe('AIService', () => {
             const failReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'GET' });
             const failRes = await onRequest({ request: failReq, params: { path: ['models'] } });
             expect(failRes.status).toBe(502);
+        });
+    });
+
+    describe('callAIWithFallback()', () => {
+        const resetAllProviderKeys = (appState) => {
+            appState.openaiApiKey = '';
+            appState.googleApiKey = '';
+            appState.albertApiKey = '';
+            appState.groqApiKey = '';
+            appState.openrouterApiKey = '';
+            appState.mistralApiKey = '';
+            appState.anthropicApiKey = '';
+            appState.ollamaUrl = '';
+        };
+
+        it('should short-circuit remaining paid OpenRouter models after HTTP 402 while still allowing -free and switching provider', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'mistral-small';
+            appState.openrouterApiKey = 'sk-or-test-key';
+            appState.googleApiKey = 'test-google-key';
+
+            const calledModels = [];
+            vi.spyOn(AIService, 'callAI').mockImplementation(async (_prompt, opts) => {
+                calledModels.push(opts.modelOverride);
+                if (opts.modelOverride === 'mistral-small') {
+                    throw new Error('Erreur API 402: Insufficient credits');
+                }
+                if (opts.modelOverride === 'llama-3.3-70b-free') {
+                    throw new Error('Erreur API 429: Rate limit');
+                }
+                if (opts.modelOverride === 'gemini-4-hydrogen') {
+                    return { text: 'Réponse Google', usedModel: 'gemini-4-hydrogen', tokens: 42 };
+                }
+                throw new Error(`Unexpected model attempted: ${opts.modelOverride}`);
+            });
+
+            const result = await AIService.callAIWithFallback('Test prompt');
+
+            expect(result.usedModel).toBe('gemini-4-hydrogen');
+            expect(calledModels).toEqual([
+                'mistral-small',
+                'llama-3.3-70b-free',
+                'gemini-4-hydrogen'
+            ]);
+        });
+
+        it('should suggest adding an OpenRouter key when only one provider fails and OpenRouter is unconfigured, and omit it when configured', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'gemini-4-hydrogen';
+            appState.googleApiKey = 'test-google-key';
+
+            vi.spyOn(AIService, 'callAI').mockRejectedValue(new Error('Erreur API 429: Quota exceeded'));
+
+            await expect(AIService.callAIWithFallback('Test prompt'))
+                .rejects.toThrow('Ajoutez une clé OpenRouter pour un fallback automatique.');
+
+            appState.openrouterApiKey = 'sk-or-test-key';
+            let secondError = '';
+            try {
+                await AIService.callAIWithFallback('Test prompt');
+            } catch (err) {
+                secondError = err.message;
+            }
+            expect(secondError).toContain('Quota atteint (13 modèles testés)');
+            expect(secondError).not.toContain('Ajoutez une clé OpenRouter');
         });
     });
 });

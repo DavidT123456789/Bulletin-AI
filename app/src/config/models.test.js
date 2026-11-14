@@ -22,9 +22,10 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should correctly identify google gemini models', () => {
-            expect(getProviderForModel('gemini-3.6-flash')).toBe('google');
             expect(getProviderForModel('gemini-3.8-flash')).toBe('google');
-            expect(getProviderForModel('gemini-3.1-pro-preview')).toBe('google');
+            expect(getProviderForModel('gemini-4-hydrogen')).toBe('google');
+            expect(getProviderForModel('gemini-4-argon')).toBe('google');
+            expect(getProviderForModel('gemini-3.6-flash')).toBe('google');
         });
 
         it('should correctly identify groq models', () => {
@@ -36,12 +37,16 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should correctly identify openai models', () => {
+            expect(getProviderForModel('openai-gpt-6-luna')).toBe('openai');
+            expect(getProviderForModel('openai-gpt-6.1-terra')).toBe('openai');
+            expect(getProviderForModel('openai-gpt-6.1-sol')).toBe('openai');
             expect(getProviderForModel('openai-o3-mini')).toBe('openai');
-            expect(getProviderForModel('openai-gpt-4o-mini')).toBe('openai');
         });
 
         it('should correctly identify anthropic models', () => {
-            expect(getProviderForModel('anthropic-claude-sonnet-5')).toBe('anthropic');
+            expect(getProviderForModel('anthropic-claude-sonnet-5-5')).toBe('anthropic');
+            expect(getProviderForModel('anthropic-claude-haiku-5-5')).toBe('anthropic');
+            expect(getProviderForModel('anthropic-claude-opus-5-5')).toBe('anthropic');
             expect(getProviderForModel('anthropic-claude-3-7-sonnet-latest')).toBe('anthropic');
         });
 
@@ -52,7 +57,8 @@ describe('models.js configuration & helpers', () => {
 
         it('should route -free and openrouter-hosted models to openrouter', () => {
             expect(getProviderForModel('llama-3.3-70b-free')).toBe('openrouter');
-            expect(getProviderForModel('claude-sonnet-5')).toBe('openrouter');
+            expect(getProviderForModel('claude-sonnet-5.5')).toBe('openrouter');
+            expect(getProviderForModel('deepseek-v4-flash')).toBe('openrouter');
             expect(getProviderForModel('openrouter')).toBe('openrouter');
             expect(getProviderForModel('deepseek-r1')).toBe('openrouter');
             expect(getProviderForModel('ministral-3b')).toBe('openrouter');
@@ -78,14 +84,16 @@ describe('models.js configuration & helpers', () => {
         });
 
         it('should NOT contain deprecated or unlisted models in google', () => {
+            expect(FALLBACK_CONFIG.google).not.toContain('gemini-4-argon');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-3.5-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-3.7-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-2.5-flash');
             expect(FALLBACK_CONFIG.google).not.toContain('gemini-2.5-pro');
+            expect(FALLBACK_CONFIG.google).not.toContain('gemini-3.1-pro-preview');
             expect(FALLBACK_CONFIG.google).toEqual([
+                'gemini-4-hydrogen',
                 'gemini-3.6-flash',
-                'gemini-3.8-flash',
-                'gemini-3.1-pro-preview'
+                'gemini-3.8-flash'
             ]);
         });
 
@@ -103,31 +111,47 @@ describe('models.js configuration & helpers', () => {
             expect(FALLBACK_CONFIG.providerOrder[3]).toBe('openrouter');
             expect(FALLBACK_CONFIG.providerOrder[4]).toBe('mistral');
         });
+
+        it('should order openrouter fallback models by cost/quality priority', () => {
+            expect(FALLBACK_CONFIG.openrouter[0]).toBe('llama-3.3-70b-free');
+            expect(FALLBACK_CONFIG.openrouter.indexOf('deepseek-v4-flash'))
+                .toBeLessThan(FALLBACK_CONFIG.openrouter.indexOf('mistral-small'));
+            expect(FALLBACK_CONFIG.openrouter.indexOf('mistral-small'))
+                .toBeLessThan(FALLBACK_CONFIG.openrouter.indexOf('claude-haiku-5.5'));
+            expect(FALLBACK_CONFIG.openrouter.indexOf('claude-haiku-5.5'))
+                .toBeLessThan(FALLBACK_CONFIG.openrouter.indexOf('claude-sonnet-5.5'));
+        });
+
+        it('should exclude expensive frontier models (excludeFromFallback) from FALLBACK_CONFIG', () => {
+            expect(FALLBACK_CONFIG.openrouter).not.toContain('claude-opus-5.5');
+            expect(FALLBACK_CONFIG.anthropic).not.toContain('anthropic-claude-opus-5-5');
+            expect(FALLBACK_CONFIG.openai).not.toContain('openai-gpt-6.1-sol');
+        });
     });
 
     describe('PROVIDER_DEFAULT_MODELS', () => {
         it('should map each provider to its primary recommended model', () => {
-            expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.6-flash');
+            expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-4-hydrogen');
             expect(PROVIDER_DEFAULT_MODELS.albert).toBe('albert-openweight-medium');
             expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-gpt-oss-120b');
             expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.openrouter).toBe('llama-3.3-70b-free');
-            expect(PROVIDER_DEFAULT_MODELS.openai).toBe('openai-o3-mini');
-            expect(PROVIDER_DEFAULT_MODELS.anthropic).toBe('anthropic-claude-sonnet-5');
+            expect(PROVIDER_DEFAULT_MODELS.openai).toBe('openai-gpt-6-luna');
+            expect(PROVIDER_DEFAULT_MODELS.anthropic).toBe('anthropic-claude-sonnet-5-5');
             expect(PROVIDER_DEFAULT_MODELS.ollama).toBe('ollama-qwen2.5:7b');
         });
     });
 
     describe('buildFallbackQueue()', () => {
         it('should place current active model first', () => {
-            const queue = buildFallbackQueue('gemini-3.8-flash');
-            expect(queue[0]).toBe('gemini-3.8-flash');
+            const queue = buildFallbackQueue('gemini-4-hydrogen');
+            expect(queue[0]).toBe('gemini-4-hydrogen');
         });
 
         it('should prioritize other models from the same provider before switching providers', () => {
-            const queue = buildFallbackQueue('gemini-3.8-flash');
+            const queue = buildFallbackQueue('gemini-4-hydrogen');
             expect(queue[1]).toBe('gemini-3.6-flash');
-            expect(queue[2]).toBe('gemini-3.1-pro-preview');
+            expect(queue[2]).toBe('gemini-3.8-flash');
             // Next provider should be albert (since albert is next in providerOrder after google)
             expect(queue[3]).toBe('albert-openweight-medium');
         });
@@ -143,6 +167,14 @@ describe('models.js configuration & helpers', () => {
             expect(Array.isArray(queue)).toBe(true);
             expect(queue.length).toBeGreaterThan(0);
         });
+
+        it('should keep an excluded frontier model first when manually selected without duplicating it', () => {
+            const queue = buildFallbackQueue('claude-opus-5.5');
+            expect(queue[0]).toBe('claude-opus-5.5');
+            expect(queue.filter(id => id === 'claude-opus-5.5')).toHaveLength(1);
+            expect(queue).not.toContain('openai-gpt-6.1-sol');
+            expect(queue).not.toContain('anthropic-claude-opus-5-5');
+        });
     });
 
     describe('MODEL_SHORT_NAMES display clarity', () => {
@@ -151,8 +183,8 @@ describe('models.js configuration & helpers', () => {
             expect(MODEL_SHORT_NAMES['mistral-small']).toBe('Mistral Small (OR)');
             expect(MODEL_SHORT_NAMES['mistral-direct-large-latest']).toBe('Mistral Large');
             expect(MODEL_SHORT_NAMES['mistral-large']).toBe('Mistral Large (OR)');
-            expect(MODEL_SHORT_NAMES['anthropic-claude-sonnet-5']).toBe('Claude Sonnet 5');
-            expect(MODEL_SHORT_NAMES['claude-sonnet-5']).toBe('Claude Sonnet 5 (OR)');
+            expect(MODEL_SHORT_NAMES['anthropic-claude-sonnet-5-5']).toBe('Claude Sonnet 5.5');
+            expect(MODEL_SHORT_NAMES['claude-sonnet-5.5']).toBe('Claude Sonnet 5.5 (OR)');
         });
     });
 
@@ -173,21 +205,27 @@ describe('models.js configuration & helpers', () => {
 
         it('should map OpenRouter models to their technical API model names', () => {
             expect(getApiModelName('openrouter')).toBe('deepseek/deepseek-chat');
+            expect(getApiModelName('deepseek-v4-flash')).toBe('deepseek/deepseek-v4-flash-latest');
             expect(getApiModelName('deepseek-r1')).toBe('deepseek/deepseek-r1');
-            expect(getApiModelName('claude-sonnet-5')).toBe('anthropic/claude-sonnet-5');
+            expect(getApiModelName('claude-sonnet-5.5')).toBe('anthropic/claude-sonnet-5.5');
+            expect(getApiModelName('amazon-nova-v1-lite')).toBe('amazon/nova-lite-v1');
+            expect(getApiModelName('mistral-small')).toBe('mistralai/mistral-small-3.2-24b-instruct');
+            expect(getApiModelName('mistral-large')).toBe('mistralai/mistral-large-4-0');
             expect(getApiModelName('llama-3.3-70b-free')).toBe('meta-llama/llama-3.3-70b-instruct:free');
             expect(getApiModelName('ministral-3b')).toBe('mistralai/ministral-3b-2512');
         });
 
         it('should strip prefixes for direct providers', () => {
-            expect(getApiModelName('openai-o3-mini')).toBe('o3-mini');
+            expect(getApiModelName('openai-gpt-6-luna')).toBe('gpt-6-luna');
+            expect(getApiModelName('openai-gpt-6.1-terra')).toBe('gpt-6.1-terra');
             expect(getApiModelName('mistral-direct-small-latest')).toBe('mistral-small-latest');
-            expect(getApiModelName('anthropic-claude-sonnet-5')).toBe('claude-sonnet-5');
+            expect(getApiModelName('anthropic-claude-sonnet-5-5')).toBe('claude-sonnet-5-5');
             expect(getApiModelName('ollama-qwen2.5:7b')).toBe('qwen2.5:7b');
         });
 
         it('should preserve model name if already in target format', () => {
-            expect(getApiModelName('gemini-3.6-flash')).toBe('gemini-3.6-flash');
+            expect(getApiModelName('gemini-3.8-flash')).toBe('gemini-3.8-flash');
+            expect(getApiModelName('gemini-4-hydrogen')).toBe('gemini-4-hydrogen');
         });
 
         it('should return default model if model is null or undefined', () => {
