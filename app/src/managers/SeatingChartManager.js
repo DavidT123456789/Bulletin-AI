@@ -302,14 +302,14 @@ export const SeatingChartManager = {
                 </div>
 
                 <!-- Floating Actions Capsule (Top-Right) -->
-                <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
-                    <button type="button" class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
+                <div class="sc-floating-actions ui-floating-capsule" id="scFloatingActions">
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
-                    <button type="button" class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
-                    <button type="button" class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
                     </button>
                 </div>

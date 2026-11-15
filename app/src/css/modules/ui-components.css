@@ -3,93 +3,6 @@
    Composants UI génériques réutilisables
    ========================================================================== */
 
-/* === UI ACCORDION === */
-.ui-accordion {
-    background-color: var(--card-glass-bg);
-    backdrop-filter: blur(var(--glass-surface-blur));
-    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
-}
-
-.ui-accordion:last-of-type {
-    margin-bottom: 0;
-}
-
-.ui-accordion:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.ui-accordion[open] {
-    box-shadow: var(--shadow-md);
-}
-
-.ui-accordion summary {
-    cursor: pointer;
-    padding: 14px 18px;
-    font-weight: 600;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    transition: background-color var(--transition-fast);
-    border-radius: calc(var(--radius-md) - 1px);
-}
-
-.ui-accordion[open]:not(.is-closing)>summary {
-    background-color: var(--bg-secondary);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.ui-accordion summary:hover {
-    background-color: var(--bg-secondary);
-}
-
-.ui-accordion summary::-webkit-details-marker {
-    display: none;
-}
-
-.ui-accordion summary::before {
-    content: '';
-    width: 20px;
-    height: 20px;
-    background-color: var(--text-secondary);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
-    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-left: auto;
-    flex-shrink: 0;
-    order: 1;
-}
-
-.ui-accordion[open]:not(.is-closing)>summary::before {
-    transform: rotate(90deg);
-}
-
-.ui-accordion-content {
-    overflow: hidden;
-    border-top: 1px solid var(--border-subtle);
-}
-
-.ui-accordion-content-inner {
-    min-height: 0;
-    padding: 12px 14px;
-}
-
-.ui-accordion.danger-accordion>summary {
-    color: var(--danger-color);
-}
-
-.ui-accordion.danger-accordion>summary::before {
-    background-color: var(--danger-color);
-}
-
-
 /* === UI STEPPER === */
 .ui-stepper {
     display: flex;
@@ -970,4 +883,87 @@
     .sc-toggle-switch[aria-checked="true"]:hover {
         background-color: var(--toggle-track-on-hover);
     }
+}
+
+/* ==========================================================================
+   UI FLOATING CAPSULE (Minimalist Frosted Glass HUD Overlay)
+   Composant générique réutilisé par Plan de classe et Trombinoscope
+   ========================================================================== */
+
+.ui-floating-capsule {
+    --hud-blur: 20px;
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    gap: 2px;
+    padding: 3px;
+    box-sizing: border-box;
+    border-radius: var(--radius-pill);
+    background: var(--floating-capsule-bg);
+    background-clip: padding-box;
+    backdrop-filter: blur(var(--hud-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--hud-blur)) saturate(180%);
+    border: var(--floating-capsule-border);
+    box-shadow: var(--floating-capsule-shadow);
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background var(--transition-fast),
+                color var(--transition-fast),
+                transform 0.15s ease;
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn iconify-icon {
+    font-size: 1rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ui-floating-capsule .ui-floating-capsule-btn:not(:disabled):not(.disabled):hover {
+        background: var(--tonal-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn:active {
+    transform: scale(0.9);
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn:disabled,
+.ui-floating-capsule .ui-floating-capsule-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@keyframes hudZoomIconPop {
+    0% {
+        transform: scale(0.76);
+    }
+    60% {
+        transform: scale(1.14);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn.zoom-icon-pop iconify-icon {
+    animation: hudZoomIconPop 0.36s cubic-bezier(0.28, 1.35, 0.5, 1);
 }

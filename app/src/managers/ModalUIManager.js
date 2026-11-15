@@ -2099,13 +2099,10 @@ export const ModalUI = {
             setTimeout(() => {
                 const section = document.getElementById(sectionId);
                 if (!section) return;
-                if (section.tagName === 'DETAILS') {
-                    DOM.helpModal?.querySelectorAll('.help-accordion[open]').forEach(acc => {
-                        if (acc !== section) acc.open = false;
-                    });
-                    section.open = true;
+                if (section.classList.contains('help-accordion')) {
+                    UI.toggleAccordion?.(section, true);
                 }
-                section.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+                section.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
             }, 150);
         }
     },

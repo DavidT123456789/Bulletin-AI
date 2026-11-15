@@ -8,7 +8,7 @@ import { appState } from '../../state/State.js';
 import { ModalUI } from '../ModalUIManager.js';
 
 export const TrombiZoneEditor = {
-    setupControlPanel(manager) {
+    setupControlPanel(manager, options = {}) {
         if (manager._controlPanelAbortController) {
             manager._controlPanelAbortController.abort();
         }
@@ -23,20 +23,23 @@ export const TrombiZoneEditor = {
 
         const isPdf = !!manager._parsedPdfData;
         const hasDetectedStudents = Boolean(manager._parsedPdfData?.students?.length > 0);
+        const shouldPreserve = Boolean(options?.preserveState && hasExistingControls);
 
-        if (isPdf) {
-            const currentPage = manager._parsedPdfData.pages[manager._currentPageIndex];
-            const count = currentPage?.studentsCount || manager._zones.length || 8;
-            manager._gridCols = 4;
-            manager._gridRows = Math.ceil(count / 4);
-        } else {
-            // Default values
-            manager._gridCols = 4;
-            manager._gridRows = Math.ceil((manager._getStudentsForImport().length || 8) / 4);
+        if (!shouldPreserve) {
+            if (isPdf) {
+                const currentPage = manager._parsedPdfData.pages[manager._currentPageIndex];
+                const count = currentPage?.studentsCount || manager._zones.length || 8;
+                manager._gridCols = 4;
+                manager._gridRows = Math.ceil(count / 4);
+            } else {
+                // Default values
+                manager._gridCols = 4;
+                manager._gridRows = Math.ceil((manager._getStudentsForImport().length || 8) / 4);
+            }
+            manager._gapH = 0;  // Horizontal spacing between zones (%)
+            manager._gapV = 0;  // Vertical spacing between zones (%)
+            manager._groupedDrag = true; // Grouped drag mode (default = true)
         }
-        manager._gapH = 0;  // Horizontal spacing between zones (%)
-        manager._gapV = 0;  // Vertical spacing between zones (%)
-        manager._groupedDrag = true; // Grouped drag mode (default = true)
 
         const isAdvancedOpen = !hasDetectedStudents;
         const resetLabel = hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille';
@@ -316,6 +319,7 @@ export const TrombiZoneEditor = {
         const rowsValue = document.getElementById('rowsValue');
         const gapHValue = document.getElementById('gapHValue');
         const gapVValue = document.getElementById('gapVValue');
+        const groupedToggle = document.getElementById('groupedDragToggle');
 
         if (colsSlider && manager._gridCols) {
             colsSlider.value = manager._gridCols;
@@ -332,6 +336,9 @@ export const TrombiZoneEditor = {
         if (gapVSlider) {
             gapVSlider.value = manager._gapV ?? 0;
             if (gapVValue) gapVValue.textContent = Number.isInteger(manager._gapV) ? manager._gapV : (manager._gapV ?? 0).toFixed(1);
+        }
+        if (groupedToggle && typeof manager._groupedDrag === 'boolean') {
+            groupedToggle.checked = manager._groupedDrag;
         }
         manager._updateSizeSliderValue();
     },

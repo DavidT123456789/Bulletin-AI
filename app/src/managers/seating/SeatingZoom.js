@@ -288,9 +288,9 @@ export const SeatingZoom = {
 
         if (icon && icon.getAttribute('icon') !== nextIcon) {
             icon.setAttribute('icon', nextIcon);
-            zoomBtn.classList.remove('sc-zoom-icon-pop');
+            zoomBtn.classList.remove('zoom-icon-pop');
             void zoomBtn.offsetWidth;
-            zoomBtn.classList.add('sc-zoom-icon-pop');
+            zoomBtn.classList.add('zoom-icon-pop');
         }
 
         const prevLabel = zoomBtn.getAttribute('data-tooltip');

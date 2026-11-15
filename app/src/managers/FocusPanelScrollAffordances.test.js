@@ -163,24 +163,6 @@ describe('FocusPanelManager - Scroll Affordances (Edge Scrims)', () => {
         expect(scrollEl.classList.contains('can-scroll-right')).toBe(false);
     });
 
-    it('updates scroll affordances when a nested <details> accordion dispatches toggle', () => {
-        const scrollEl = document.createElement('div');
-        const detailsEl = document.createElement('details');
-        scrollEl.appendChild(detailsEl);
-
-        Object.defineProperty(scrollEl, 'scrollHeight', { value: 300, configurable: true });
-        Object.defineProperty(scrollEl, 'clientHeight', { value: 300, configurable: true });
-        scrollEl.scrollTop = 0;
-
-        FocusPanelManager.bindScrollAffordances(scrollEl);
-        expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(false);
-
-        // Expanding the accordion increases scrollHeight
-        Object.defineProperty(scrollEl, 'scrollHeight', { value: 650, configurable: true });
-        detailsEl.dispatchEvent(new Event('toggle', { bubbles: false }));
-        expect(scrollEl.classList.contains('can-scroll-bottom')).toBe(true);
-    });
-
     it('observes container and direct children via ResizeObserver to refresh scrims when dynamic content grows', () => {
         const observed = [];
         let roCallback = null;

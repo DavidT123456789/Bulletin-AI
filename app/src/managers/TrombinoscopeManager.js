@@ -103,6 +103,7 @@ export const TrombinoscopeManager = {
     _selectionBoxDragActive: false,
     _restoreGroupedDrag: false,
     _isTransitioning: false,
+    _transitionCleanup: null,
     _zoomAnimCleanup: null,
     _lastViewportW: 0,
     _lastViewportH: 0,
@@ -271,12 +272,27 @@ export const TrombinoscopeManager = {
             });
         }
 
-        // Update class badge in header
+        // Update class badge in header and contextual guide copy
         const classBadge = document.getElementById('trombiClassBadge');
         if (classBadge) {
             const currentClass = ClassManager.getCurrentClass();
             classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
+        this._updateGuideContext();
+    },
+
+    _updateGuideContext() {
+        const guideText = document.getElementById('trombiGuideText');
+        if (!guideText) return;
+
+        const currentClass = ClassManager.getCurrentClass?.();
+        const isDemo = Boolean(currentClass && ClassManager.isDemoClass?.(currentClass.id));
+        const { existingClassStudents } = this._getTargetClassInfo?.() || {};
+        const hasStudents = !isDemo && Array.isArray(existingClassStudents) && existingClassStudents.length > 0;
+
+        guideText.textContent = hasStudents
+            ? 'Importez un trombinoscope pour détecter et associer automatiquement les photos à vos élèves.'
+            : 'Importez un trombinoscope pour créer la classe et associer les photos.';
     },
 
     close(options = {}) {
@@ -327,7 +343,7 @@ export const TrombinoscopeManager = {
         this._selectionBox = null;
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
-        this._isTransitioning = false;
+        this._cancelStepTransition();
         this._lastViewportW = 0;
         this._lastViewportH = 0;
         if (this._zoomAnimCleanup) {
@@ -382,7 +398,10 @@ export const TrombinoscopeManager = {
 
         if (placeholder) placeholder.style.display = '';
         if (preview) preview.style.display = 'none';
-        if (previewImg) previewImg.src = '';
+        if (previewImg) {
+            previewImg.classList.remove('is-revealing');
+            previewImg.src = '';
+        }
         dropZone?.classList.remove('has-image');
 
         document.getElementById('trombiImageInfo')?.replaceChildren();
@@ -485,7 +504,41 @@ export const TrombinoscopeManager = {
         this._updateStepperUI();
     },
 
+    _cancelStepTransition() {
+        if (this._transitionCleanup) {
+            const cleanup = this._transitionCleanup;
+            this._transitionCleanup = null;
+            cleanup();
+        }
+        if (typeof document !== 'undefined') {
+            document.querySelectorAll('.trombi-flip-ghost').forEach(el => el.remove());
+        }
+        this._isTransitioning = false;
+    },
+
+    _createFlipGhost(sourceRect, clipInsets = null) {
+        const ghost = document.createElement('div');
+        ghost.className = 'trombi-flip-ghost';
+        ghost.style.top = `${sourceRect.top}px`;
+        ghost.style.left = `${sourceRect.left}px`;
+        ghost.style.width = `${sourceRect.width}px`;
+        ghost.style.height = `${sourceRect.height}px`;
+        if (clipInsets) {
+            ghost.style.clipPath = `inset(${clipInsets.top}px ${clipInsets.right}px ${clipInsets.bottom}px ${clipInsets.left}px round var(--radius-sm, 6px))`;
+        }
+
+        const img = document.createElement('img');
+        img.alt = '';
+        img.decoding = 'sync';
+        img.src = this._imageSrc;
+        ghost.appendChild(img);
+        document.body.appendChild(ghost);
+        return { ghost, img };
+    },
+
     _animateStepTransition(fromStep, toStep, direction) {
+        this._cancelStepTransition();
+
         const fromContent = document.getElementById(`trombiStep${fromStep}`);
         const toContent = document.getElementById(`trombiStep${toStep}`);
 
@@ -517,244 +570,183 @@ export const TrombinoscopeManager = {
     },
 
     _animateStep1Step2Transition(fromContent, toContent, direction) {
-        if (direction === 'forward') {
-            // STEP 1 -> STEP 2
-            const sourceImageEl = fromContent.querySelector('#trombiPreviewImg, .drop-zone-image');
-            if (!sourceImageEl || !this._imageSrc) {
-                this._animateGenericTransition(fromContent, toContent, direction, 2);
-                return;
+        const isForward = direction === 'forward';
+        const targetStep = isForward ? 2 : 1;
+        const sourceEl = isForward
+            ? fromContent.querySelector('#trombiPreviewImg, .drop-zone-image')
+            : fromContent.querySelector('.trombi-content-wrapper');
+
+        if (!sourceEl || !this._imageSrc) {
+            this._animateGenericTransition(fromContent, toContent, direction, targetStep);
+            return;
+        }
+
+        const sourceRect = sourceEl.getBoundingClientRect();
+        if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
+            this._animateGenericTransition(fromContent, toContent, direction, targetStep);
+            return;
+        }
+
+        let clipInsets = null;
+        if (!isForward) {
+            const viewportRect = fromContent.querySelector('.trombi-viewport')?.getBoundingClientRect();
+            if (viewportRect && viewportRect.width > 0 && viewportRect.height > 0) {
+                const top = Math.max(0, viewportRect.top - sourceRect.top);
+                const right = Math.max(0, sourceRect.right - viewportRect.right);
+                const bottom = Math.max(0, sourceRect.bottom - viewportRect.bottom);
+                const left = Math.max(0, viewportRect.left - sourceRect.left);
+                if (top + bottom >= sourceRect.height || left + right >= sourceRect.width) {
+                    this._animateGenericTransition(fromContent, toContent, direction, 1);
+                    return;
+                }
+                if (top > 0.5 || right > 0.5 || bottom > 0.5 || left > 0.5) {
+                    clipInsets = { top, right, bottom, left };
+                }
             }
+        }
 
-            const sourceRect = sourceImageEl.getBoundingClientRect();
-            if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
-                this._animateGenericTransition(fromContent, toContent, direction, 2);
-                return;
+        this._isTransitioning = true;
+        // Keep fromContent visible underneath the ghost until the ghost bitmap is decoded to avoid a 1-frame blank flash
+        const { ghost, img: ghostImg } = this._createFlipGhost(sourceRect, clipInsets);
+
+        let targetEl = null;
+        let activeItems = [];
+        let rafId = null;
+        let timerId = null;
+        let cleaned = false;
+
+        const onTransitionEnd = (e) => {
+            if (e.target === ghost && e.propertyName === 'transform') {
+                cleanup();
             }
+        };
 
-            this._isTransitioning = true;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            if (timerId !== null) clearTimeout(timerId);
+            ghost.removeEventListener('transitionend', onTransitionEnd);
+            if (targetEl) targetEl.style.opacity = '';
+            ghost.remove();
+            activeItems.forEach(({ el }) => {
+                el.style.transition = '';
+                el.style.transform = '';
+                el.style.opacity = '';
+            });
+            this._isTransitioning = false;
+            if (this._transitionCleanup === cleanup) {
+                this._transitionCleanup = null;
+            }
+        };
+        this._transitionCleanup = cleanup;
 
-            const ghost = document.createElement('div');
-            ghost.className = 'trombi-flip-ghost';
-            ghost.style.cssText = `
-                position: fixed;
-                z-index: 9999;
-                pointer-events: none;
-                top: ${sourceRect.top}px;
-                left: ${sourceRect.left}px;
-                width: ${sourceRect.width}px;
-                height: ${sourceRect.height}px;
-                border-radius: var(--radius-sm, 6px);
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-                overflow: hidden;
-                background: transparent;
-                transition: none;
-                will-change: top, left, width, height, opacity;
-            `;
-            ghost.innerHTML = `<img src="${this._imageSrc}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
-            document.body.appendChild(ghost);
+        const startFlip = () => {
+            if (cleaned) return;
 
             fromContent.style.display = 'none';
-
             toContent.style.display = 'flex';
             toContent.style.opacity = '';
-            this._initStep2();
-            this._applyZoom();
 
-            const targetWrapper = toContent.querySelector('.trombi-content-wrapper');
-            const targetRect = targetWrapper?.getBoundingClientRect();
+            if (isForward) {
+                this._initStep2();
+                this._applyZoom();
+            }
 
+            targetEl = isForward
+                ? toContent.querySelector('.trombi-content-wrapper')
+                : toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
+
+            if (targetEl && !isForward) {
+                targetEl.classList.remove('is-revealing');
+            }
+
+            const targetRect = targetEl?.getBoundingClientRect();
             if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
-                ghost.remove();
-                this._isTransitioning = false;
+                cleanup();
                 return;
             }
 
-            targetWrapper.style.opacity = '0';
+            // Pre-decode destination image while it glides behind the ghost so revealing it at the end is instantaneous
+            const targetImg = targetEl.tagName === 'IMG' ? targetEl : targetEl.querySelector('img');
+            targetImg?.decode?.().catch(() => {});
 
-            const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
-            const zoomControls = toContent.querySelector('.trombi-zoom-controls');
-            const pageBar = toContent.querySelector('#trombiPageSelectorBar');
-            const gridPanel = toContent.querySelector('.grid-control-panel');
+            targetEl.style.opacity = '0';
 
-            if (assignmentPanel) {
-                assignmentPanel.style.transform = 'translateX(28px)';
-                assignmentPanel.style.opacity = '0';
-            }
-            if (zoomControls) {
-                zoomControls.style.opacity = '0';
-            }
-            if (pageBar && pageBar.style.display !== 'none') {
-                pageBar.style.opacity = '0';
-            }
-            if (gridPanel) {
-                gridPanel.style.opacity = '0';
-            }
+            const slideElements = isForward
+                ? [
+                    { el: toContent.querySelector('.trombi-assignment-panel'), fromTransform: 'translateX(28px)', isSlide: true },
+                    { el: toContent.querySelector('.trombi-zoom-controls') },
+                    { el: toContent.querySelector('#trombiPageSelectorBar'), skipIfHidden: true },
+                    { el: toContent.querySelector('.grid-control-panel') }
+                ]
+                : [
+                    { el: toContent.querySelector('.wizard-guide-panel'), fromTransform: 'translateX(-24px)', isSlide: true },
+                    { el: toContent.querySelector('#trombiRemoveImageBtn') },
+                    { el: toContent.querySelector('#trombiStep1PageSelectorBar'), skipIfHidden: true }
+                ];
 
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    const duration = '0.36s';
-                    const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
-
-                    ghost.style.transition = `top ${duration} ${easing}, left ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`;
-                    ghost.style.top = `${targetRect.top}px`;
-                    ghost.style.left = `${targetRect.left}px`;
-                    ghost.style.width = `${targetRect.width}px`;
-                    ghost.style.height = `${targetRect.height}px`;
-
-                    if (assignmentPanel) {
-                        assignmentPanel.style.transition = `opacity ${duration} ${easing}, transform ${duration} ${easing}`;
-                        assignmentPanel.style.transform = 'translateX(0)';
-                        assignmentPanel.style.opacity = '1';
-                    }
-                    if (zoomControls) {
-                        zoomControls.style.transition = 'opacity 0.28s ease 0.08s';
-                        zoomControls.style.opacity = '1';
-                    }
-                    if (pageBar && pageBar.style.display !== 'none') {
-                        pageBar.style.transition = 'opacity 0.28s ease 0.08s';
-                        pageBar.style.opacity = '1';
-                    }
-                    if (gridPanel) {
-                        gridPanel.style.transition = 'opacity 0.28s ease 0.08s';
-                        gridPanel.style.opacity = '1';
-                    }
-
-                    setTimeout(() => {
-                        targetWrapper.style.opacity = '';
-                        ghost.remove();
-
-                        if (assignmentPanel) {
-                            assignmentPanel.style.transition = '';
-                            assignmentPanel.style.transform = '';
-                            assignmentPanel.style.opacity = '';
-                        }
-                        if (zoomControls) {
-                            zoomControls.style.transition = '';
-                            zoomControls.style.opacity = '';
-                        }
-                        if (pageBar) {
-                            pageBar.style.transition = '';
-                            pageBar.style.opacity = '';
-                        }
-                        if (gridPanel) {
-                            gridPanel.style.transition = '';
-                            gridPanel.style.opacity = '';
-                        }
-                        this._isTransitioning = false;
-                    }, 380);
-                });
+            activeItems = slideElements.filter(item => {
+                if (!item.el) return false;
+                if (item.skipIfHidden && item.el.style.display === 'none') return false;
+                return true;
             });
+
+            activeItems.forEach(({ el, fromTransform }) => {
+                if (fromTransform) el.style.transform = fromTransform;
+                el.style.opacity = '0';
+            });
+
+            // Position ghost at targetRect and invert back to sourceRect for GPU-only transform animation
+            const dx = sourceRect.left - targetRect.left;
+            const dy = sourceRect.top - targetRect.top;
+            const sx = sourceRect.width / targetRect.width;
+            const sy = sourceRect.height / targetRect.height;
+
+            ghost.style.transition = 'none';
+            ghost.style.top = `${targetRect.top}px`;
+            ghost.style.left = `${targetRect.left}px`;
+            ghost.style.width = `${targetRect.width}px`;
+            ghost.style.height = `${targetRect.height}px`;
+            ghost.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
+            if (clipInsets) {
+                ghost.style.clipPath = `inset(${clipInsets.top / sy}px ${clipInsets.right / sx}px ${clipInsets.bottom / sy}px ${clipInsets.left / sx}px round var(--radius-sm, 6px))`;
+            }
+
+            void ghost.offsetWidth;
+
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                if (cleaned) return;
+                const duration = '0.36s';
+                const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+                const clipTransition = clipInsets ? `, clip-path ${duration} ${easing}` : '';
+
+                ghost.addEventListener('transitionend', onTransitionEnd);
+                ghost.style.transition = `transform ${duration} ${easing}${clipTransition}`;
+                ghost.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+                if (clipInsets) {
+                    ghost.style.clipPath = 'inset(0px 0px 0px 0px round var(--radius-sm, 6px))';
+                }
+
+                activeItems.forEach(({ el, isSlide }) => {
+                    if (isSlide) {
+                        el.style.transition = `opacity ${duration} ${easing}, transform ${duration} ${easing}`;
+                        el.style.transform = 'translateX(0)';
+                    } else {
+                        el.style.transition = 'opacity 0.28s ease 0.08s';
+                    }
+                    el.style.opacity = '1';
+                });
+
+                timerId = setTimeout(cleanup, 420);
+            });
+        };
+
+        if (typeof ghostImg.decode === 'function') {
+            ghostImg.decode().then(startFlip, startFlip);
         } else {
-            // STEP 2 -> STEP 1 (Backward)
-            const sourceWrapper = fromContent.querySelector('.trombi-content-wrapper');
-            if (!sourceWrapper || !this._imageSrc) {
-                this._animateGenericTransition(fromContent, toContent, direction, 1);
-                return;
-            }
-
-            const sourceRect = sourceWrapper.getBoundingClientRect();
-            if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
-                this._animateGenericTransition(fromContent, toContent, direction, 1);
-                return;
-            }
-
-            this._isTransitioning = true;
-
-            const ghost = document.createElement('div');
-            ghost.className = 'trombi-flip-ghost';
-            ghost.style.cssText = `
-                position: fixed;
-                z-index: 9999;
-                pointer-events: none;
-                top: ${sourceRect.top}px;
-                left: ${sourceRect.left}px;
-                width: ${sourceRect.width}px;
-                height: ${sourceRect.height}px;
-                border-radius: var(--radius-sm, 6px);
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-                overflow: hidden;
-                background: transparent;
-                transition: none;
-                will-change: top, left, width, height, opacity;
-            `;
-            ghost.innerHTML = `<img src="${this._imageSrc}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
-            document.body.appendChild(ghost);
-
-            fromContent.style.display = 'none';
-
-            toContent.style.display = 'flex';
-            toContent.style.opacity = '';
-
-            const targetImageEl = toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
-            const targetRect = targetImageEl?.getBoundingClientRect();
-
-            if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
-                ghost.remove();
-                this._isTransitioning = false;
-                return;
-            }
-
-            targetImageEl.style.opacity = '0';
-
-            const guidePanel = toContent.querySelector('.wizard-guide-panel');
-            const removeBtn = toContent.querySelector('#trombiRemoveImageBtn');
-            const step1PageBar = toContent.querySelector('#trombiStep1PageSelectorBar');
-            if (guidePanel) {
-                guidePanel.style.transform = 'translateX(-24px)';
-                guidePanel.style.opacity = '0';
-            }
-            if (removeBtn) {
-                removeBtn.style.opacity = '0';
-            }
-            if (step1PageBar && step1PageBar.style.display !== 'none') {
-                step1PageBar.style.opacity = '0';
-            }
-
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    const duration = '0.36s';
-                    const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
-
-                    ghost.style.transition = `top ${duration} ${easing}, left ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`;
-                    ghost.style.top = `${targetRect.top}px`;
-                    ghost.style.left = `${targetRect.left}px`;
-                    ghost.style.width = `${targetRect.width}px`;
-                    ghost.style.height = `${targetRect.height}px`;
-
-                    if (guidePanel) {
-                        guidePanel.style.transition = `opacity ${duration} ${easing}, transform ${duration} ${easing}`;
-                        guidePanel.style.transform = 'translateX(0)';
-                        guidePanel.style.opacity = '1';
-                    }
-                    if (removeBtn) {
-                        removeBtn.style.transition = 'opacity 0.28s ease 0.08s';
-                        removeBtn.style.opacity = '1';
-                    }
-                    if (step1PageBar && step1PageBar.style.display !== 'none') {
-                        step1PageBar.style.transition = 'opacity 0.28s ease 0.08s';
-                        step1PageBar.style.opacity = '1';
-                    }
-
-                    setTimeout(() => {
-                        targetImageEl.style.opacity = '';
-                        ghost.remove();
-                        if (guidePanel) {
-                            guidePanel.style.transition = '';
-                            guidePanel.style.transform = '';
-                            guidePanel.style.opacity = '';
-                        }
-                        if (removeBtn) {
-                            removeBtn.style.transition = '';
-                            removeBtn.style.opacity = '';
-                        }
-                        if (step1PageBar) {
-                            step1PageBar.style.transition = '';
-                            step1PageBar.style.opacity = '';
-                        }
-                        this._isTransitioning = false;
-                    }, 380);
-                });
-            });
+            startFlip();
         }
     },
 
@@ -762,11 +754,39 @@ export const TrombinoscopeManager = {
         this._isTransitioning = true;
         const offset = direction === 'forward' ? -24 : 24;
 
+        let timerOut = null;
+        let timerIn = null;
+        let raf1 = null;
+        let raf2 = null;
+        let cleaned = false;
+
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (timerOut !== null) clearTimeout(timerOut);
+            if (timerIn !== null) clearTimeout(timerIn);
+            if (raf1 !== null) cancelAnimationFrame(raf1);
+            if (raf2 !== null) cancelAnimationFrame(raf2);
+            [fromContent, toContent].forEach(el => {
+                el.style.transition = '';
+                el.style.transform = '';
+                el.style.opacity = '';
+            });
+            this._isTransitioning = false;
+            if (this._transitionCleanup === cleanup) {
+                this._transitionCleanup = null;
+            }
+        };
+        this._transitionCleanup = cleanup;
+
         fromContent.style.transition = 'opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)';
         fromContent.style.opacity = '0';
         fromContent.style.transform = `translateX(${offset}px)`;
 
-        setTimeout(() => {
+        timerOut = setTimeout(() => {
+            timerOut = null;
+            if (cleaned) return;
+
             fromContent.style.display = 'none';
             fromContent.style.transform = '';
             fromContent.style.opacity = '';
@@ -782,22 +802,24 @@ export const TrombinoscopeManager = {
                 this._initStep3();
             }
 
-            requestAnimationFrame(() => {
-                toContent.style.transition = 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
-                toContent.style.opacity = '1';
-                toContent.style.transform = 'translateX(0)';
+            void toContent.offsetWidth;
 
-                if (toStep === 3) {
-                    this._animateStepChildren(toContent, 3);
-                }
+            raf1 = requestAnimationFrame(() => {
+                raf1 = null;
+                raf2 = requestAnimationFrame(() => {
+                    raf2 = null;
+                    if (cleaned) return;
+                    toContent.style.transition = 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+                    toContent.style.opacity = '1';
+                    toContent.style.transform = 'translateX(0)';
+
+                    if (toStep === 3) {
+                        this._animateStepChildren(toContent, 3);
+                    }
+
+                    timerIn = setTimeout(cleanup, 300);
+                });
             });
-
-            setTimeout(() => {
-                toContent.style.transition = '';
-                toContent.style.transform = '';
-                toContent.style.opacity = '';
-                this._isTransitioning = false;
-            }, 300);
         }, 200);
     },
 
@@ -883,7 +905,7 @@ export const TrombinoscopeManager = {
     _initStep2() { return TrombiViewportZoom.initStep2(this); },
 
     // --- TrombiZoneEditor ---
-    _setupControlPanel() { return TrombiZoneEditor.setupControlPanel(this); },
+    _setupControlPanel(options) { return TrombiZoneEditor.setupControlPanel(this, options); },
     _syncSlidersToState() { return TrombiZoneEditor.syncSlidersToState(this); },
     _applyGaps() { return TrombiZoneEditor.applyGaps(this); },
     _applyGapsInternal(baseCellW, baseCellH) { return TrombiZoneEditor.applyGapsInternal(this, baseCellW, baseCellH); },

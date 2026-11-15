@@ -94,7 +94,16 @@
     border-radius: var(--radius-sm, 6px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
     display: block;
+}
+
+.drop-zone-image.is-revealing {
     animation: trombiImageReveal 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .drop-zone-image.is-revealing {
+        animation: none;
+    }
 }
 
 /* Dropzone with image loaded - strictly locked static studio canvas (zero hover shift, zero background brightening) */
@@ -1643,7 +1652,8 @@ input.trombi-popover-search-input::placeholder {
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     background: transparent;
-    will-change: top, left, width, height, opacity;
+    transform-origin: 0 0;
+    will-change: transform, clip-path;
 }
 
 .trombi-flip-ghost img {
@@ -1653,26 +1663,6 @@ input.trombi-popover-search-input::placeholder {
     background: transparent;
     border-radius: inherit;
     display: block;
-}
-
-/* Step content transition states */
-.trombi-step-content.animating-out {
-    opacity: 0;
-    transform: translateX(-24px) scale(0.99);
-    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.trombi-step-content.animating-in {
-    opacity: 0;
-    transform: translateX(24px) scale(0.99);
-}
-
-.trombi-step-content.animating-in.active {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Preview grid stagger animation */
@@ -1686,11 +1676,6 @@ input.trombi-popover-search-input::placeholder {
     transform: translateY(0) scale(1);
     transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Footer fade animation */
-.trombi-step-footer.fade-transition {
-    transition: opacity 0.25s ease;
 }
 
 /* Responsive */
@@ -1729,27 +1714,13 @@ input.trombi-popover-search-input::placeholder {
 
 }
 
-/* Floating overlay HUD bars (Multi-page navigation, Zoom controls & Remove button — Minimalist Frosted Glass) */
+/* Floating overlay HUD bars (Multi-page navigation, Zoom controls & Remove button — surface & buttons in ui-components.css) */
 .trombi-page-selector-bar,
 .trombi-zoom-controls,
 .drop-zone-remove-btn {
-    --hud-blur: 20px;
-    position: absolute;
     top: 10px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    padding: 3px;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.76);
-    backdrop-filter: blur(var(--hud-blur)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--hud-blur)) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     z-index: 30;
-    box-sizing: border-box;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform 0.15s ease;
 }
 
 .trombi-page-selector-bar {
@@ -1761,46 +1732,35 @@ input.trombi-popover-search-input::placeholder {
     right: 10px;
 }
 
-/* Dark Mode: Minimalist Translucent Frosted Glass (X / iOS 2026 style, zero 3D bevel) */
-[data-theme="dark"] .trombi-page-selector-bar,
-[data-theme="dark"] .trombi-zoom-controls,
-[data-theme="dark"] .drop-zone-remove-btn {
-    background: rgba(38, 38, 38, 0.65);
-    border-color: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
-}
-
 /* Step 1 Remove Image Button — Circular HUD variant with calibrated 6px optical blur & flat danger hover */
 .drop-zone-remove-btn {
     --hud-blur: 6px;
     right: 10px;
-    width: 32px;
+    width: 34px;
     padding: 0;
     justify-content: center;
     color: var(--text-secondary);
-    font-size: 15px;
+    font-size: 1rem;
     cursor: pointer;
     z-index: 25;
 }
 
-[data-theme="dark"] .drop-zone-remove-btn {
-    color: rgba(255, 255, 255, 0.72);
-}
+@media (hover: hover) and (pointer: fine) {
+    .drop-zone-remove-btn:hover {
+        background: rgba(var(--error-rgb), 0.14);
+        border-color: rgba(var(--error-rgb), 0.22);
+        color: var(--error-color);
+    }
 
-.drop-zone-remove-btn:hover {
-    background: rgba(var(--error-rgb), 0.14);
-    border-color: rgba(var(--error-rgb), 0.22);
-    color: var(--error-color);
-}
-
-[data-theme="dark"] .drop-zone-remove-btn:hover {
-    background: rgba(var(--error-rgb), 0.24);
-    border-color: rgba(var(--error-rgb), 0.32);
-    color: var(--error-bright);
+    [data-theme="dark"] .drop-zone-remove-btn:hover {
+        background: rgba(var(--error-rgb), 0.24);
+        border-color: rgba(var(--error-rgb), 0.32);
+        color: var(--error-bright);
+    }
 }
 
 .drop-zone-remove-btn:active {
-    transform: scale(0.94);
+    transform: scale(0.9);
 }
 
 /* Multi-page Navigation Bar Buttons */
@@ -1809,7 +1769,7 @@ input.trombi-popover-search-input::placeholder {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    height: 26px;
+    height: 28px;
     padding: 0 10px;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -1818,14 +1778,16 @@ input.trombi-popover-search-input::placeholder {
     border: none;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: background var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
     white-space: nowrap;
     box-sizing: border-box;
 }
 
-.trombi-page-selector-bar .page-tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.05);
+@media (hover: hover) and (pointer: fine) {
+    .trombi-page-selector-bar .page-tab-btn:not(.active):hover {
+        color: var(--text-primary);
+        background: var(--tonal-hover-bg);
+    }
 }
 
 .trombi-page-selector-bar .page-tab-btn:active {
@@ -1854,21 +1816,11 @@ input.trombi-popover-search-input::placeholder {
     opacity: 0.75;
 }
 
-/* Dark Mode: Tab buttons high-contrast & flat active pill (zero 3D rim) */
-[data-theme="dark"] .trombi-page-selector-bar .page-tab-btn {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-[data-theme="dark"] .trombi-page-selector-bar .page-tab-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-}
-
+/* Dark Mode: Flat active pill (zero 3D rim) */
 [data-theme="dark"] .trombi-page-selector-bar .page-tab-btn.active {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--tonal-active-bg);
     border: none;
     box-shadow: none;
-    color: #ffffff;
 }
 
 /* Multi-page transition: Directional Slide & Reveal (iOS 2026 style) */
@@ -1909,82 +1861,21 @@ input.trombi-popover-search-input::placeholder {
     }
 }
 
-/* Zoom Control Buttons */
-.trombi-zoom-controls .zoom-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    min-width: 26px;
-    height: 26px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 500;
-    transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-    box-sizing: border-box;
-}
-
+/* Optical calibration for Phosphor zoom icons vs Solar icons */
 .trombi-zoom-controls .zoom-btn iconify-icon {
-    font-size: 14px;
+    font-size: 0.9375rem;
 }
 
-.trombi-zoom-controls .zoom-btn.zoom-icon-pop iconify-icon {
-    animation: trombiZoomIconPop 0.36s cubic-bezier(0.28, 1.35, 0.5, 1);
-}
-
-@keyframes trombiZoomIconPop {
-    0% {
-        transform: scale(0.76);
-    }
-    60% {
-        transform: scale(1.14);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-.trombi-zoom-controls .zoom-btn:hover {
-    color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="dark"] .trombi-zoom-controls .zoom-btn {
-    color: rgba(255, 255, 255, 0.72);
-}
-
-[data-theme="dark"] .trombi-zoom-controls .zoom-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
-}
-
-.trombi-zoom-controls .zoom-btn:active {
-    transform: scale(0.92);
-}
-
-.trombi-zoom-controls .zoom-btn:disabled,
-.trombi-zoom-controls .zoom-btn.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
+/* Zoom Readout Button Variant */
 .trombi-zoom-controls .zoom-value-btn {
+    width: auto;
     min-width: 38px;
+    padding: 0 6px;
     font-size: 0.6875rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     color: var(--text-primary);
-}
-
-[data-theme="dark"] .trombi-zoom-controls .zoom-value-btn {
-    color: #ffffff;
 }
 
 @media (max-width: 600px) {

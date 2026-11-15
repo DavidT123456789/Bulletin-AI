@@ -1295,148 +1295,44 @@ export const UI = {
     },
 
     /**
-     * Anime l'ouverture ou la fermeture d'un élément <details> avec fluidité (WAAPI).
-     * Anime la hauteur externe de <details> (sans plancher de padding) pour éviter toute saccade.
-     * @param {HTMLDetailsElement} details
+     * Ouvre ou ferme un accordéon (.help-accordion) via l'état CSS (.is-open) et les attributs ARIA.
+     * L'animation (grid 0fr -> 1fr, fondu du contenu et rotation du chevron) est pilotée en CSS pur.
+     * @param {HTMLElement|null} accordion
      * @param {boolean} shouldOpen
      */
-    toggleAccordion(details, shouldOpen) {
-        if (!details) return;
-        const summary = details.querySelector(':scope > summary') || details.querySelector('summary');
-        const content = Array.from(details.children).find(el => el.tagName !== 'SUMMARY');
-        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    toggleAccordion(accordion, shouldOpen) {
+        if (!accordion) return;
+        const isOpen = Boolean(shouldOpen);
 
-        if (!summary || !content || reducedMotion || typeof details.animate !== 'function') {
-            details.classList.remove('is-closing');
-            details.open = shouldOpen;
-            return;
-        }
-
-        const currentHeight = details.getBoundingClientRect().height;
-
-        if (details._accordionAnim) {
-            details._accordionAnim.cancel();
-            details._accordionAnim = null;
-        }
-        if (details._accordionContentAnim) {
-            details._accordionContentAnim.cancel();
-            details._accordionContentAnim = null;
-        }
-
-        const style = window.getComputedStyle(details);
-        const borderAndPadding =
-            (parseFloat(style.borderTopWidth) || 0) +
-            (parseFloat(style.borderBottomWidth) || 0) +
-            (parseFloat(style.paddingTop) || 0) +
-            (parseFloat(style.paddingBottom) || 0);
-        const closedHeight = summary.getBoundingClientRect().height + borderAndPadding;
-
-        if (shouldOpen) {
-            const startHeight = details.open ? currentHeight : closedHeight;
-            details.classList.remove('is-closing');
-            details.open = true;
-            const endHeight = details.getBoundingClientRect().height;
-            if (Math.abs(endHeight - startHeight) < 1) return;
-
-            details.style.overflow = 'hidden';
-            const anim = details.animate([
-                { height: `${startHeight}px` },
-                { height: `${endHeight}px` }
-            ], {
-                duration: 260,
-                easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+        if (isOpen) {
+            const group = accordion.closest('.help-accordions-group') || accordion.parentElement;
+            group?.querySelectorAll('.help-accordion.is-open').forEach(other => {
+                if (other !== accordion) this.toggleAccordion(other, false);
             });
-            details._accordionAnim = anim;
-            if (typeof content.animate === 'function') {
-                details._accordionContentAnim = content.animate([
-                    { opacity: 0, transform: 'translateY(-4px)' },
-                    { opacity: 1, transform: 'translateY(0)' }
-                ], {
-                    duration: 220,
-                    easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
-                });
-            }
-            const cleanup = () => {
-                details.style.overflow = '';
-                details._accordionAnim = null;
-                details._accordionContentAnim = null;
-            };
-            anim.onfinish = cleanup;
-            anim.oncancel = cleanup;
-        } else {
-            const startHeight = currentHeight;
-            const endHeight = closedHeight;
-            if (Math.abs(startHeight - endHeight) < 1) {
-                details.classList.remove('is-closing');
-                details.open = false;
-                return;
-            }
-
-            details.classList.add('is-closing');
-            details.style.overflow = 'hidden';
-            const anim = details.animate([
-                { height: `${startHeight}px` },
-                { height: `${endHeight}px` }
-            ], {
-                duration: 240,
-                easing: 'cubic-bezier(0.32, 0.72, 0, 1)'
-            });
-            details._accordionAnim = anim;
-            if (typeof content.animate === 'function') {
-                details._accordionContentAnim = content.animate([
-                    { opacity: 1, transform: 'translateY(0)' },
-                    { opacity: 0, transform: 'translateY(-3px)' }
-                ], {
-                    duration: 180,
-                    easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
-                    fill: 'forwards'
-                });
-            }
-            anim.onfinish = () => {
-                details.open = false;
-                details.classList.remove('is-closing');
-                details.style.overflow = '';
-                details._accordionContentAnim?.cancel();
-                details._accordionAnim = null;
-                details._accordionContentAnim = null;
-            };
-            anim.oncancel = () => {
-                details.classList.remove('is-closing');
-                details.style.overflow = '';
-                details._accordionContentAnim?.cancel();
-                details._accordionAnim = null;
-                details._accordionContentAnim = null;
-            };
         }
+
+        accordion.classList.toggle('is-open', isOpen);
+        const trigger = accordion.querySelector('.help-accordion-trigger');
+        const panel = accordion.querySelector('.help-accordion-panel');
+        if (trigger) trigger.setAttribute('aria-expanded', String(isOpen));
+        if (panel) panel.setAttribute('aria-hidden', String(!isOpen));
     },
 
     /**
-     * Initialise les accordéons (<details>) de toute l'application avec une animation fluide.
+     * Initialise les accordéons de l'application via délégation de clic.
      */
     initAccordions() {
         if (this._accordionsDelegated) return;
         this._accordionsDelegated = true;
 
         document.addEventListener('click', (e) => {
-            const summary = e.target.closest('details > summary');
-            if (!summary) return;
-            if (e.target.closest('a, button, input, select')) return;
+            const trigger = e.target.closest('.help-accordion-trigger');
+            if (!trigger) return;
 
-            const details = summary.parentElement;
-            if (!details || details.tagName !== 'DETAILS') return;
+            const accordion = trigger.closest('.help-accordion');
+            if (!accordion) return;
 
-            e.preventDefault();
-            const isClosing = details.open && !details.classList.contains('is-closing');
-            const shouldOpen = !isClosing;
-
-            if (shouldOpen && details.classList.contains('help-accordion')) {
-                const group = details.closest('.help-accordions-group') || details.parentElement;
-                group?.querySelectorAll('details.help-accordion[open]').forEach(other => {
-                    if (other !== details) this.toggleAccordion(other, false);
-                });
-            }
-
-            this.toggleAccordion(details, shouldOpen);
+            this.toggleAccordion(accordion, !accordion.classList.contains('is-open'));
         });
     },
 

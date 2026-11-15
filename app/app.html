@@ -1066,46 +1066,24 @@
                     <div class="guide-content active" data-guide-step="1">
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                Cible de l'import
-                            </div>
-                            <p class="guide-text">Les données seront importées pour la période sélectionnée.</p>
-                            <p class="guide-hint">Cliquez sur la période dans l'en-tête pour la modifier.</p>
-                        </div>
-                        <div class="guide-divider"></div>
-                        <div class="guide-section">
-                            <div class="guide-section-title">
                                 <iconify-icon icon="solar:import-linear"></iconify-icon>
                                 Sources acceptées
                             </div>
-                            <div class="guide-format-chips">
-                                <div class="guide-format-chip tooltip" data-format="pdf"
-                                    data-tooltip="PDF MBN / Pronote">
-                                    <iconify-icon icon="ph:file-pdf"></iconify-icon>
-                                </div>
-                                <div class="guide-format-chip tooltip" data-format="csv" data-tooltip="Fichier CSV">
-                                    <iconify-icon icon="ph:file-csv"></iconify-icon>
-                                </div>
-                                <div class="guide-format-chip tooltip" data-format="clipboard"
-                                    data-tooltip="Presse-papier (Excel, Pronote)">
-                                    <iconify-icon icon="ph:clipboard-text"></iconify-icon>
-                                </div>
-                            </div>
-                            <p class="guide-hint guide-hint-margin">Compatible PDF MBN / Pronote</p>
+                            <p class="guide-text">PDF (Pronote, MBN), fichier CSV ou copier-coller (Excel, Pronote).</p>
                             <button type="button" class="help-context-trigger" data-action="open-help" data-target-tab="help-data" data-target-section="help-faq-import">
                                 <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
                                 Fichier non reconnu ? Aide
                             </button>
                         </div>
                         <div class="guide-divider"></div>
-                        <div class="guide-section">
+                        <div class="guide-section guide-section-bottom">
                             <div class="guide-section-title">
                                 <iconify-icon icon="solar:test-tube-linear"></iconify-icon>
-                                Tester l'import
+                                Tester
                             </div>
-                            <p class="guide-text">Chargez un exemple fictif pour découvrir et tester le fonctionnement.</p>
+                            <p class="guide-text">Chargez des données fictives pour tester l'import.</p>
                             <button type="button" class="guide-sample-btn btn-full" id="guideSampleBtn">
-                                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                                <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                                 Charger un exemple
                             </button>
                         </div>
@@ -1113,23 +1091,12 @@
 
                     <!-- Step 2 Guide Content -->
                     <div class="guide-content" data-guide-step="2">
-                        <div class="guide-section">
+                        <div class="guide-section guide-section-separator">
                             <div class="guide-section-title">
-                                <iconify-icon icon="solar:list-bold"></iconify-icon>
-                                Mapping des colonnes
-                            </div>
-                            <p class="guide-text">Associez chaque colonne de vos données à un champ de l'application.
-                            </p>
-                        </div>
-                        <div class="guide-divider"></div>
-
-                        <!-- Moved Separator Control -->
-                        <div class="guide-section">
-                            <div class="guide-section-title">
-                                <iconify-icon icon="solar:hashtag-bold"></iconify-icon>
+                                <iconify-icon icon="solar:tuning-2-linear"></iconify-icon>
                                 Séparateur
                             </div>
-                            <p class="guide-text">Si les colonnes sont mal découpées, changez ce paramètre.</p>
+                            <p class="guide-hint">Modifiez si les colonnes sont mal découpées.</p>
                             <div class="import-separator-row-guide">
                                 <select id="wizardSeparatorSelect" class="import-separator-select full-width">
                                     <option value="tab">Tabulation</option>
@@ -1141,16 +1108,14 @@
                         </div>
 
                         <div class="guide-divider"></div>
-                        <div class="guide-section">
+                        <div class="guide-section guide-section-detect">
                             <div class="guide-section-title">
                                 <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                 Détection automatique
                             </div>
-                            <p class="guide-text">Les colonnes sont pré-remplies automatiquement. Ajustez si nécessaire.
-                            </p>
-                            <!-- Moved Auto-detect Button -->
+                            <p class="guide-text">Ajustez les colonnes dans le tableau ou réinitialisez le mapping.</p>
                             <button type="button" class="guide-sample-btn btn-full" id="wizardAutoDetectBtn">
-                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                 Relancer la détection
                             </button>
                         </div>
@@ -1160,17 +1125,16 @@
                     <div class="guide-content" data-guide-step="3">
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <iconify-icon icon="ph:check"></iconify-icon>
-                                Récapitulatif
+                                <iconify-icon icon="solar:clipboard-check-linear"></iconify-icon>
+                                Colonnes
                             </div>
-                            <p class="guide-text">Vérifiez les données et décochez les colonnes que vous ne souhaitez
-                                pas importer.</p>
+                            <p class="guide-text">Décochez une colonne pour l'ignorer sans modifier vos données existantes.</p>
                         </div>
                         <div class="guide-divider"></div>
-                        <div class="guide-section">
+                        <div class="guide-section guide-section-impact">
                             <div class="guide-section-title">
-                                <iconify-icon icon="solar:palette-linear"></iconify-icon>
-                                Légende
+                                <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                Impact sur la classe
                             </div>
                             <div class="guide-legend-list">
                                 <div class="guide-legend-item">
@@ -1180,8 +1144,7 @@
                                 </div>
                                 <div class="guide-legend-item">
                                     <span class="guide-legend-dot dot-updated"></span>
-                                    <span>Mis à jour <span
-                                            class="guide-legend-overwrite-hint">(écrasement)</span></span>
+                                    <span>Mis à jour</span>
                                     <strong id="wizardUpdatedCount" class="guide-legend-count count-updated">0</strong>
                                 </div>
                                 <div class="guide-legend-item">
@@ -1200,15 +1163,16 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="guide-divider"></div>
-                        <div class="guide-section">
+                        <div class="guide-divider" id="wizardRulesDivider" style="display: none;"></div>
+                        <div class="guide-section guide-section-rules" id="wizardRulesSection" style="display: none;">
                             <div class="guide-section-title">
                                 <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 Règles de mise à jour
                             </div>
-                            <p class="guide-text" id="wizardDepartedRuleText">Les élèves absents du fichier sont conservés. Seules les colonnes cochées seront importées.</p>
-                            <p class="guide-hint guide-hint-warning" id="wizardOverwriteWarning" style="display:none;">
-                                <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Les données existantes seront écrasées.
+                            <p class="guide-text" id="wizardDepartedRuleText" style="display: none;">Les élèves absents du fichier sont conservés.</p>
+                            <p class="guide-hint guide-hint-warning" id="wizardOverwriteWarning" style="display: none;">
+                                <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>
+                                <span>Les données existantes des colonnes cochées seront écrasées.</span>
                             </p>
                         </div>
                     </div>
@@ -1449,25 +1413,24 @@
                     <div class="import-wizard-layout">
                         <!-- Left Guide Panel -->
                         <aside class="wizard-guide-panel" id="trombiGuidePanel">
-                            <div class="guide-content active" style="display: flex;">
+                            <div class="guide-content active">
                                 <div class="guide-section">
                                     <div class="guide-section-title">
                                         <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                         Trombinoscope
                                     </div>
-                                    <p class="guide-text">Importez un trombinoscope pour générer automatiquement la classe et les photos.</p>
-                                    <p class="guide-hint">Formats acceptés : PDF Pronote, JPG, PNG, WebP.</p>
+                                    <p class="guide-text" id="trombiGuideText">Importez un trombinoscope pour créer la classe et associer les photos.</p>
+                                    <p class="guide-hint">PDF Pronote ou image (JPG, PNG, WebP).</p>
                                 </div>
                                 <div class="guide-divider"></div>
-                                <div class="guide-section">
+                                <div class="guide-section guide-section-bottom">
                                     <div class="guide-section-title">
-                                        <iconify-icon class="iconify-inline"
-                                            icon="solar:test-tube-linear"></iconify-icon>
+                                        <iconify-icon icon="solar:test-tube-linear"></iconify-icon>
                                         Tester
                                     </div>
-                                    <p class="guide-text">Utilisez une image d'exemple pour tester la détection :</p>
-                                    <button type="button" class="guide-sample-btn" id="trombiSampleBtn">
-                                        <iconify-icon class="iconify-inline" icon="solar:gallery-linear"></iconify-icon>
+                                    <p class="guide-text">Chargez une image d'exemple pour tester la détection.</p>
+                                    <button type="button" class="guide-sample-btn btn-full" id="trombiSampleBtn">
+                                        <iconify-icon icon="solar:gallery-linear"></iconify-icon>
                                         Charger un exemple
                                     </button>
                                 </div>
@@ -1490,9 +1453,9 @@
                                 </div>
                                 <!-- Preview content (shown when image loaded) -->
                                 <div class="drop-zone-preview" id="trombiDropPreview">
-                                    <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar floating-overlay" style="display: none;"></div>
+                                    <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar ui-floating-capsule" style="display: none;"></div>
                                     <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
-                                    <button type="button" class="drop-zone-remove-btn" id="trombiRemoveImageBtn"
+                                    <button type="button" class="drop-zone-remove-btn ui-floating-capsule" id="trombiRemoveImageBtn"
                                         aria-label="Supprimer l'image">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
@@ -1508,7 +1471,7 @@
                 <div class="trombi-step-content" id="trombiStep2" style="display: none;">
                     <div class="trombi-split-view">
                         <div class="trombi-image-panel">
-                            <div id="trombiPageSelectorBar" class="trombi-page-selector-bar floating-overlay" style="display: none;"></div>
+                            <div id="trombiPageSelectorBar" class="trombi-page-selector-bar ui-floating-capsule" style="display: none;"></div>
                             <div id="trombiImageWithZones" class="trombi-image-wrapper">
                                 <!-- Image with zone overlay will be cloned here -->
                             </div>
@@ -3077,121 +3040,145 @@
                             </div>
                             <div class="help-accordions-group">
                                 <!-- FAQ 1 : Pronote & Export -->
-                                <details class="help-accordion" id="help-faq-pronote" data-faq-accent="emerald" open>
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:clipboard-check-bold"></iconify-icon>
+                                <div class="help-accordion is-open" id="help-faq-pronote" data-faq-accent="emerald">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-pronote-trigger" aria-expanded="true" aria-controls="help-faq-pronote-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:clipboard-check-bold" aria-hidden="true"></iconify-icon>
                                             <span>Comment transférer mes appréciations vers Pronote ou Excel ?</span>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-pronote-panel" role="region" aria-labelledby="help-faq-pronote-trigger" aria-hidden="false">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li><strong>Élève par élève :</strong> Cliquez sur <strong>Copier</strong> dans la fiche élève (ou via le menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> de la ligne) pour coller directement dans Pronote.</li>
+                                                    <li><strong>En lot :</strong> Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> en haut de liste pour copier <em>Toutes les appréciations</em> ou exporter en <em>Tableau (CSV)</em> / <em>Imprimer / PDF</em>.</li>
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Élève par élève :</strong> Cliquez sur <strong>Copier</strong> dans la fiche élève (ou via le menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> de la ligne) pour coller directement dans Pronote.</li>
-                                            <li><strong>En lot :</strong> Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> en haut de liste pour copier <em>Toutes les appréciations</em> ou exporter en <em>Tableau (CSV)</em> / <em>Imprimer / PDF</em>.</li>
-                                        </ul>
                                     </div>
-                                </details>
+                                </div>
 
                                 <!-- FAQ 2 : Erreur 429 / Quota dépassé -->
-                                <details class="help-accordion" id="help-faq-quota" data-faq-accent="amber">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:bolt-bold"></iconify-icon>
+                                <div class="help-accordion" id="help-faq-quota" data-faq-accent="amber">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-quota-trigger" aria-expanded="false" aria-controls="help-faq-quota-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:bolt-bold" aria-hidden="true"></iconify-icon>
                                             <span>Erreur 429 « Quota dépassé » ou lenteur de l'IA : que faire ?</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais automatique</em> pour basculer sans coupure, ou changez de modèle dans l'en-tête.</li>
-                                            <li><strong>100 % hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
-                                        </ul>
-                                        <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="apiStatusSummary">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer l'IA & le Relais
-                                            </button>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-quota-panel" role="region" aria-labelledby="help-faq-quota-trigger" aria-hidden="true">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais automatique</em> pour basculer sans coupure, ou changez de modèle dans l'en-tête.</li>
+                                                    <li><strong>100 % hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
+                                                </ul>
+                                                <div class="help-btn-row">
+                                                    <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="apiStatusSummary">
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer l'IA & le Relais
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </details>
+                                </div>
 
                                 <!-- FAQ 3 : Clé API refusée -->
-                                <details class="help-accordion" id="help-faq-apikey" data-faq-accent="primary">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:key-bold"></iconify-icon>
+                                <div class="help-accordion" id="help-faq-apikey" data-faq-accent="primary">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-apikey-trigger" aria-expanded="false" aria-controls="help-faq-apikey-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:key-bold" aria-hidden="true"></iconify-icon>
                                             <span>Ma clé API est indiquée comme invalide ou refusée</span>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-apikey-panel" role="region" aria-labelledby="help-faq-apikey-trigger" aria-hidden="true">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li>Vérifiez que la clé est complète et collée dans le <strong>bon moteur</strong> (<code>AIzaSy…</code> pour Google, <code>sk-…</code> pour Albert ou OpenAI, <code>gsk_…</code> pour Groq).</li>
+                                                    <li>Régénérez gratuitement une clé neuve sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a>, <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="help-inline-link">Albert Playground (ProConnect)</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li>Vérifiez que la clé est complète et collée dans le <strong>bon moteur</strong> (<code>AIzaSy…</code> pour Google, <code>sk-…</code> pour Albert ou OpenAI, <code>gsk_…</code> pour Groq).</li>
-                                            <li>Régénérez gratuitement une clé neuve sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a>, <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="help-inline-link">Albert Playground (ProConnect)</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
-                                        </ul>
                                     </div>
-                                </details>
+                                </div>
 
                                 <!-- FAQ 4 : Import non reconnu -->
-                                <details class="help-accordion" id="help-faq-import" data-faq-accent="sky">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold"></iconify-icon>
+                                <div class="help-accordion" id="help-faq-import" data-faq-accent="sky">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-import-trigger" aria-expanded="false" aria-controls="help-faq-import-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold" aria-hidden="true"></iconify-icon>
                                             <span>Mon fichier PDF, CSV ou tableau collé est mal découpé à l'import</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>CSV ou tableau collé :</strong> À l'étape 2 (<em>Mapping</em>), changez le <strong>Séparateur</strong> (Tabulation, Point-virgule, Virgule).</li>
-                                            <li><strong>PDF ou Excel (.xlsx) :</strong> Seuls les PDF texte (Pronote, MBN) sont lus directement. Depuis Excel ou un autre ENT, copiez vos lignes (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les dans l'Assistant.</li>
-                                        </ul>
-                                        <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-import-wizard">
-                                                <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon> Ouvrir l'Assistant d'import
-                                            </button>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-import-panel" role="region" aria-labelledby="help-faq-import-trigger" aria-hidden="true">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li><strong>CSV ou tableau collé :</strong> À l'étape 2 (<em>Mapping</em>), changez le <strong>Séparateur</strong> (Tabulation, Point-virgule, Virgule).</li>
+                                                    <li><strong>PDF ou Excel (.xlsx) :</strong> Seuls les PDF texte (Pronote, MBN) sont lus directement. Depuis Excel ou un autre ENT, copiez vos lignes (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les dans l'Assistant.</li>
+                                                </ul>
+                                                <div class="help-btn-row">
+                                                    <button type="button" class="btn btn-secondary btn-small" data-action="open-import-wizard">
+                                                        <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon> Ouvrir l'Assistant d'import
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </details>
+                                </div>
 
                                 <!-- FAQ 5 : Confidentialité & RGPD -->
-                                <details class="help-accordion" id="help-faq-privacy" data-faq-accent="emerald">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="solar:shield-check-bold"></iconify-icon>
+                                <div class="help-accordion" id="help-faq-privacy" data-faq-accent="emerald">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-privacy-trigger" aria-expanded="false" aria-controls="help-faq-privacy-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="solar:shield-check-bold" aria-hidden="true"></iconify-icon>
                                             <span>Quelles données sont envoyées à l'IA ? (Confidentialité & RGPD)</span>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-privacy-panel" role="region" aria-labelledby="help-faq-privacy-trigger" aria-hidden="true">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont remplacés par <code>[PRÉNOM]</code> par défaut).</li>
+                                                    <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes restent dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Pour un traitement 100 % souverain ou hors-ligne, privilégiez <strong>Albert API (DINUM / ProConnect)</strong> ou <em>Ollama</em> (et désactivez le <em>Relais automatique</em> si d'autres clés non européennes sont enregistrées).</li>
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont remplacés par <code>[PRÉNOM]</code> par défaut).</li>
-                                            <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes restent dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Pour un traitement 100 % souverain ou hors-ligne, privilégiez <strong>Albert API (DINUM / ProConnect)</strong> ou <em>Ollama</em> (et désactivez le <em>Relais automatique</em> si d'autres clés non européennes sont enregistrées).</li>
-                                        </ul>
                                     </div>
-                                </details>
+                                </div>
 
                                 <!-- FAQ 6 : Sauvegardes & Changement de PC -->
-                                <details class="help-accordion" id="help-faq-backup" data-faq-accent="violet">
-                                    <summary>
-                                        <div class="help-accordion-title">
-                                            <iconify-icon class="help-accordion-icon" icon="lucide:cloud-upload"></iconify-icon>
+                                <div class="help-accordion" id="help-faq-backup" data-faq-accent="violet">
+                                    <button type="button" class="help-accordion-trigger" id="help-faq-backup-trigger" aria-expanded="false" aria-controls="help-faq-backup-panel">
+                                        <span class="help-accordion-title">
+                                            <iconify-icon class="help-accordion-icon" icon="lucide:cloud-upload" aria-hidden="true"></iconify-icon>
                                             <span>Sauvegarder mes classes ou changer d'ordinateur</span>
-                                        </div>
-                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
-                                    </summary>
-                                    <div class="help-accordion-body">
-                                        <ul class="help-detail-list">
-                                            <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un poste à l'autre.</li>
-                                            <li><strong>Archive JSON :</strong> Vos classes restant dans ce navigateur, exportez une sauvegarde sur clé USB depuis <em>Paramètres &gt; Données</em> avant de changer d'appareil.</li>
-                                        </ul>
-                                        <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-data" data-target-element="backupSection">
-                                                <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer mes sauvegardes
-                                            </button>
+                                        </span>
+                                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                                    </button>
+                                    <div class="help-accordion-panel" id="help-faq-backup-panel" role="region" aria-labelledby="help-faq-backup-trigger" aria-hidden="true">
+                                        <div class="help-accordion-panel-inner">
+                                            <div class="help-accordion-body">
+                                                <ul class="help-detail-list">
+                                                    <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un poste à l'autre.</li>
+                                                    <li><strong>Archive JSON :</strong> Vos classes restant dans ce navigateur, exportez une sauvegarde sur clé USB depuis <em>Paramètres &gt; Données</em> avant de changer d'appareil.</li>
+                                                </ul>
+                                                <div class="help-btn-row">
+                                                    <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-data" data-target-element="backupSection">
+                                                        <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer mes sauvegardes
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </details>
+                                </div>
                             </div>
 
                             <!-- Raccourcis clavier (grille 2×3 épurée) -->

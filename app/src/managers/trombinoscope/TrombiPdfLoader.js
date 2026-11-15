@@ -366,6 +366,12 @@ export const TrombiPdfLoader = {
         // Show preview, hide placeholder
         placeholder.style.display = 'none';
         preview.style.display = 'flex';
+        previewImg.classList.remove('is-revealing');
+        void previewImg.offsetWidth;
+        previewImg.classList.add('is-revealing');
+        previewImg.addEventListener('animationend', () => {
+            previewImg.classList.remove('is-revealing');
+        }, { once: true });
         previewImg.src = manager._imageSrc;
 
         // Add loaded state to dropzone for styling
@@ -398,7 +404,10 @@ export const TrombiPdfLoader = {
 
         if (placeholder) placeholder.style.display = '';
         if (preview) preview.style.display = 'none';
-        if (previewImg) previewImg.src = '';
+        if (previewImg) {
+            previewImg.classList.remove('is-revealing');
+            previewImg.src = '';
+        }
         dropZone?.classList.remove('has-image');
         if (fileInput) fileInput.value = '';
         if (footerInfo) footerInfo.textContent = '';

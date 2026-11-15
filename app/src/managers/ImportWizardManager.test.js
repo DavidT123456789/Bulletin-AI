@@ -74,11 +74,14 @@ vi.mock('./DropdownManager.js', () => ({
 }));
 
 import { ImportWizardManager } from './ImportWizardManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { UI } from './UIManager.js';
+
+const realUpdatePreview = ImportWizardManager._updatePreview;
 
 describe('ImportWizardManager — Harmonisation des animations d\'ouverture & handoff Hub', () => {
     beforeEach(() => {
@@ -281,5 +284,109 @@ describe('ImportWizardManager — Sécurité XSS DOM & Rejet Excel (.xlsx/.xls)'
         sandbox.innerHTML = `${statusHtml}${textHtml}`;
         expect(sandbox.querySelector('img')).toBeNull();
         expect(sandbox.textContent).toContain(xssPayload);
+    });
+});
+
+describe('ImportWizardManager — Affichage conditionnel du panneau Règles (Étape 3)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        ImportWizardManager._updatePreview = realUpdatePreview;
+        document.body.innerHTML = `
+            <div id="importWizardModal" class="modal import-wizard-modal">
+                <div class="wizard-guide-panel" id="wizardGuidePanel">
+                    <div class="guide-content" data-guide-step="3">
+                        <strong id="wizardNewCount">0</strong>
+                        <strong id="wizardUpdatedCount">0</strong>
+                        <strong id="wizardDepartedCount">0</strong>
+                        <div id="wizardDepartedAction" style="display: none;">
+                            <input type="checkbox" id="wizardDeleteDepartedToggle" />
+                        </div>
+                        <div class="guide-divider" id="wizardRulesDivider" style="display: none;"></div>
+                        <div class="guide-section guide-section-rules" id="wizardRulesSection" style="display: none;">
+                            <p id="wizardDepartedRuleText" style="display: none;">Les élèves absents du fichier sont conservés.</p>
+                            <p id="wizardOverwriteWarning" style="display: none;">Les données existantes des colonnes cochées seront écrasées.</p>
+                        </div>
+                    </div>
+                </div>
+                <textarea id="wizardDataTextarea"></textarea>
+                <div id="wizardStep1LineCount" style="display:none;"></div>
+                <span id="wizardSelectedColsBadge">0</span>
+                <span id="wizardSelectedColsInfo"></span>
+                <span id="wizardImportCount">0</span>
+                <button id="wizardImportOnlyBtn"></button>
+            </div>
+        `;
+        ImportWizardManager.state.lines = [['MARTIN Lucas', '12.5']];
+        ImportWizardManager.state.hasHeader = false;
+        vi.spyOn(ImportWizardManager, '_buildPreviewTable').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('masque entièrement la section Règles sur une nouvelle classe (0 mis à jour, 0 absent)', async () => {
+        vi.spyOn(AppreciationsManager, '_prepareStudentListForImport').mockReturnValue({
+            studentsToProcess: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            newStudents: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            updatedStudents: [],
+            departedStudents: [],
+            ignoredCount: 0
+        });
+
+        await ImportWizardManager._updatePreview();
+
+        expect(document.getElementById('wizardNewCount').textContent).toBe('1');
+        expect(document.getElementById('wizardRulesDivider').style.display).toBe('none');
+        expect(document.getElementById('wizardRulesSection').style.display).toBe('none');
+        expect(document.getElementById('wizardDepartedRuleText').style.display).toBe('none');
+        expect(document.getElementById('wizardOverwriteWarning').style.display).toBe('none');
+        expect(document.getElementById('wizardDepartedAction').style.display).toBe('none');
+    });
+
+    it('affiche uniquement l\'alerte d\'écrasement quand il y a des mises à jour sans absents', async () => {
+        vi.spyOn(AppreciationsManager, '_prepareStudentListForImport').mockReturnValue({
+            studentsToProcess: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            newStudents: [],
+            updatedStudents: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            departedStudents: [],
+            ignoredCount: 0
+        });
+
+        await ImportWizardManager._updatePreview();
+
+        expect(document.getElementById('wizardRulesDivider').style.display).toBe('');
+        expect(document.getElementById('wizardRulesSection').style.display).toBe('');
+        expect(document.getElementById('wizardOverwriteWarning').style.display).toBe('');
+        expect(document.getElementById('wizardDepartedRuleText').style.display).toBe('none');
+        expect(document.getElementById('wizardDepartedAction').style.display).toBe('none');
+    });
+
+    it('affiche la règle sur les absents + le toggle quand absents > 0 et réinitialise au _reset()', async () => {
+        vi.spyOn(AppreciationsManager, '_prepareStudentListForImport').mockReturnValue({
+            studentsToProcess: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            newStudents: [{ nom: 'MARTIN', prenom: 'Lucas' }],
+            updatedStudents: [],
+            departedStudents: [{ nom: 'DURAND', prenom: 'Sophie' }],
+            ignoredCount: 0
+        });
+
+        await ImportWizardManager._updatePreview();
+
+        expect(document.getElementById('wizardRulesSection').style.display).toBe('');
+        expect(document.getElementById('wizardDepartedAction').style.display).toBe('');
+        expect(document.getElementById('wizardDepartedRuleText').style.display).toBe('');
+        expect(document.getElementById('wizardOverwriteWarning').style.display).toBe('none');
+
+        ImportWizardManager._syncDepartedToggleState(true);
+        expect(document.getElementById('wizardDepartedRuleText').textContent).toBe(
+            'Les élèves absents du fichier seront supprimés de la classe.'
+        );
+
+        ImportWizardManager._reset();
+        expect(document.getElementById('wizardRulesDivider').style.display).toBe('none');
+        expect(document.getElementById('wizardRulesSection').style.display).toBe('none');
+        expect(document.getElementById('wizardDepartedRuleText').style.display).toBe('none');
+        expect(document.getElementById('wizardOverwriteWarning').style.display).toBe('none');
     });
 });

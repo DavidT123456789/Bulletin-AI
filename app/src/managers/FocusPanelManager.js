@@ -214,9 +214,6 @@ export const FocusPanelManager = {
                 scrollEl._scrollAffordanceCallback?.();
                 this.updateScrollAffordances(scrollEl);
             }, { passive: true });
-            scrollEl.addEventListener('toggle', () => {
-                this.updateScrollAffordances(scrollEl);
-            }, { capture: true, passive: true });
             if (typeof ResizeObserver === 'function') {
                 scrollEl._scrollAffordanceRo = new ResizeObserver(() => {
                     this.updateScrollAffordances(scrollEl);

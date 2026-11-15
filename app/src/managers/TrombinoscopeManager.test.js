@@ -2520,4 +2520,151 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
             vi.useRealTimers();
         });
     });
+
+    describe('Volet guide contextuel (_updateGuideContext)', () => {
+        it('adapte le message du volet gauche selon que la classe active est vide, démo ou déjà peuplée', async () => {
+            const { ClassManager } = await import('./ClassManager.js');
+            ClassManager.isDemoClass = vi.fn(() => false);
+
+            document.body.innerHTML = `<p class="guide-text" id="trombiGuideText"></p>`;
+            const textEl = document.getElementById('trombiGuideText');
+
+            // 1. Classe vide
+            ClassManager.getCurrentClass.mockReturnValue({ id: 'c1', name: '6e A' });
+            appState.generatedResults = [];
+            appState.filteredResults = [];
+            TrombinoscopeManager._updateGuideContext();
+            expect(textEl.textContent).toContain('créer la classe');
+
+            // 2. Classe existante avec élèves
+            appState.generatedResults = [{ id: 's1', classId: 'c1', nom: 'MARTIN', prenom: 'Lucas' }];
+            TrombinoscopeManager._updateGuideContext();
+            expect(textEl.textContent).toContain('associer automatiquement les photos à vos élèves');
+
+            // 3. Classe démo -> reste en formulation création
+            ClassManager.isDemoClass.mockReturnValue(true);
+            TrombinoscopeManager._updateGuideContext();
+            expect(textEl.textContent).toContain('créer la classe');
+        });
+    });
+
+    describe('Transitions retour (Étape 2 -> 1 et Étape 3 -> 2)', () => {
+        it('retire .is-revealing avant de mesurer la cible, clippe le ghost si zoomé et nettoie en cas d\'interruption', () => {
+            vi.useFakeTimers();
+            const rafQueue = [];
+            vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+                const id = rafQueue.length + 1;
+                rafQueue.push({ id, cb });
+                return id;
+            });
+            vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+                const idx = rafQueue.findIndex(item => item.id === id);
+                if (idx !== -1) rafQueue.splice(idx, 1);
+            });
+            const flushOneRaf = () => {
+                const batch = rafQueue.splice(0, rafQueue.length);
+                batch.forEach(item => item.cb(performance.now()));
+            };
+
+            document.body.innerHTML = `
+                <div id="trombiStep1" style="display: none;">
+                    <aside class="wizard-guide-panel"></aside>
+                    <img id="trombiPreviewImg" class="drop-zone-image is-revealing" />
+                    <button id="trombiRemoveImageBtn"></button>
+                    <div id="trombiStep1PageSelectorBar" style="display: none;"></div>
+                </div>
+                <div id="trombiStep2" style="display: flex;">
+                    <div class="trombi-viewport">
+                        <div class="trombi-content-wrapper"></div>
+                    </div>
+                </div>
+                <div id="trombiStep1Footer" style="display: none;"></div>
+                <div id="trombiStep2Footer" style="display: flex;"></div>
+            `;
+
+            const step2Wrapper = document.querySelector('#trombiStep2 .trombi-content-wrapper');
+            const step2Viewport = document.querySelector('#trombiStep2 .trombi-viewport');
+            const previewImg = document.getElementById('trombiPreviewImg');
+
+            step2Wrapper.getBoundingClientRect = () => ({ top: 10, left: -100, right: 900, bottom: 610, width: 1000, height: 600 });
+            step2Viewport.getBoundingClientRect = () => ({ top: 50, left: 20, right: 720, bottom: 550, width: 700, height: 500 });
+            previewImg.getBoundingClientRect = () => ({ top: 150, left: 300, right: 800, bottom: 450, width: 500, height: 300 });
+
+            TrombinoscopeManager._currentStep = 2;
+            TrombinoscopeManager._imageSrc = 'data:image/png;base64,AAA';
+
+            TrombinoscopeManager._goToStep(1);
+
+            expect(previewImg.classList.contains('is-revealing')).toBe(false);
+            const ghost = document.querySelector('.trombi-flip-ghost');
+            expect(ghost).not.toBeNull();
+            expect(ghost.style.top).toBe('150px');
+            expect(ghost.style.left).toBe('300px');
+            expect(ghost.style.width).toBe('500px');
+            expect(ghost.style.height).toBe('300px');
+            expect(ghost.style.transform).toContain('translate3d(-400px, -140px, 0) scale(2, 2)');
+            expect(ghost.style.clipPath).toContain('inset(20px 90px 30px 60px');
+
+            flushOneRaf();
+
+            expect(ghost.style.transform).toBe('translate3d(0, 0, 0) scale(1, 1)');
+            expect(ghost.style.clipPath).toContain('inset(0px');
+
+            // Interruption avant la fin (ex: _reset) nettoie le ghost et _isTransitioning
+            TrombinoscopeManager._reset();
+            expect(document.querySelector('.trombi-flip-ghost')).toBeNull();
+            expect(TrombinoscopeManager._isTransitioning).toBe(false);
+
+            vi.restoreAllMocks();
+            vi.useRealTimers();
+        });
+
+        it('préserve les réglages grille/écarts/groupé et le scroll zoom lors du retour vers l\'étape 2', () => {
+            document.body.innerHTML = `
+                <div class="trombi-image-panel">
+                    <div id="trombiImageWithZones">
+                        <div class="trombi-viewport"></div>
+                    </div>
+                </div>
+                <div id="trombiAssignmentGrid"></div>
+            `;
+
+            TrombinoscopeManager._imageSrc = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+            TrombinoscopeManager._imageNaturalWidth = 400;
+            TrombinoscopeManager._imageNaturalHeight = 300;
+            TrombinoscopeManager._zones = [{ id: 1, cx: 50, cy: 50, r: 20, studentId: 's1' }];
+            TrombinoscopeManager._isNewUpload = false;
+
+            // Premier passage à l'étape 2 : crée les contrôles
+            TrombinoscopeManager._initStep2();
+
+            // Simuler personnalisation utilisateur + zoom/scroll
+            TrombinoscopeManager._gridCols = 5;
+            TrombinoscopeManager._gridRows = 3;
+            TrombinoscopeManager._gapH = 12.5;
+            TrombinoscopeManager._gapV = -5;
+            TrombinoscopeManager._groupedDrag = false;
+            TrombinoscopeManager._zoomLevel = 1.5;
+
+            const viewportBefore = document.querySelector('#trombiImageWithZones .trombi-viewport');
+            viewportBefore.scrollLeft = 85;
+            viewportBefore.scrollTop = 42;
+
+            // Retour depuis l'étape 3 vers l'étape 2
+            TrombinoscopeManager._initStep2();
+            document.getElementById('trombiStep2Image')?.onload?.();
+
+            expect(TrombinoscopeManager._gridCols).toBe(5);
+            expect(TrombinoscopeManager._gridRows).toBe(3);
+            expect(TrombinoscopeManager._gapH).toBe(12.5);
+            expect(TrombinoscopeManager._gapV).toBe(-5);
+            expect(TrombinoscopeManager._groupedDrag).toBe(false);
+            expect(document.getElementById('colsSlider').value).toBe('5');
+            expect(document.getElementById('gapHSlider').value).toBe('12.5');
+            expect(document.getElementById('groupedDragToggle').checked).toBe(false);
+            const viewportAfter = document.querySelector('#trombiImageWithZones .trombi-viewport');
+            expect(viewportAfter.scrollLeft).toBe(85);
+            expect(viewportAfter.scrollTop).toBe(42);
+        });
+    });
 });

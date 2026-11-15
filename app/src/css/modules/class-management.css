@@ -943,7 +943,7 @@
             linear-gradient(to left, #000 var(--scrollbar-width), transparent var(--scrollbar-width));
     }
 
-    :is(.class-dropdown-list, .modal-body, .ui-tabs-content, .trombi-popover-list, .history-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, .modal-body, .trombi-popover-list, .history-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
         margin-right: 2px;
     }
 

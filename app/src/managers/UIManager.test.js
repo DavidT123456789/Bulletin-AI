@@ -982,5 +982,94 @@ describe('UIManager', () => {
             expect(section.classList.contains('settings-focus-highlight')).toBe(false);
         });
     });
+
+    describe('toggleAccordion & initAccordions', () => {
+        const createAccordionGroup = (count = 2) => {
+            const group = document.createElement('div');
+            group.className = 'help-accordions-group';
+            const items = [];
+
+            for (let i = 0; i < count; i++) {
+                const accordion = document.createElement('div');
+                accordion.className = 'help-accordion';
+                accordion.innerHTML = `
+                    <button type="button" class="help-accordion-trigger" aria-expanded="false">
+                        <span>Question ${i + 1}</span>
+                        <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                    </button>
+                    <div class="help-accordion-panel" role="region" aria-hidden="true">
+                        <div class="help-accordion-panel-inner">
+                            <div class="help-accordion-body">Réponse ${i + 1}</div>
+                        </div>
+                    </div>
+                `;
+                group.appendChild(accordion);
+                items.push({
+                    accordion,
+                    trigger: accordion.querySelector('.help-accordion-trigger'),
+                    label: accordion.querySelector('span'),
+                    panel: accordion.querySelector('.help-accordion-panel')
+                });
+            }
+
+            document.body.appendChild(group);
+            return { group, items };
+        };
+
+        it('bascule .is-open et met à jour aria-expanded / aria-hidden', () => {
+            const { items: [first] } = createAccordionGroup(1);
+
+            UI.toggleAccordion(first.accordion, true);
+            expect(first.accordion.classList.contains('is-open')).toBe(true);
+            expect(first.trigger.getAttribute('aria-expanded')).toBe('true');
+            expect(first.panel.getAttribute('aria-hidden')).toBe('false');
+
+            UI.toggleAccordion(first.accordion, false);
+            expect(first.accordion.classList.contains('is-open')).toBe(false);
+            expect(first.trigger.getAttribute('aria-expanded')).toBe('false');
+            expect(first.panel.getAttribute('aria-hidden')).toBe('true');
+        });
+
+        it('ferme automatiquement les autres accordéons ouverts du même groupe', () => {
+            const { items: [first, second] } = createAccordionGroup(2);
+
+            UI.toggleAccordion(first.accordion, true);
+            expect(first.accordion.classList.contains('is-open')).toBe(true);
+
+            UI.toggleAccordion(second.accordion, true);
+            expect(first.accordion.classList.contains('is-open')).toBe(false);
+            expect(first.trigger.getAttribute('aria-expanded')).toBe('false');
+            expect(first.panel.getAttribute('aria-hidden')).toBe('true');
+
+            expect(second.accordion.classList.contains('is-open')).toBe(true);
+            expect(second.trigger.getAttribute('aria-expanded')).toBe('true');
+            expect(second.panel.getAttribute('aria-hidden')).toBe('false');
+        });
+
+        it('gère les cas limites (null ou trigger/panel absents) sans erreur', () => {
+            expect(() => UI.toggleAccordion(null, true)).not.toThrow();
+
+            const bareAccordion = document.createElement('div');
+            bareAccordion.className = 'help-accordion';
+            expect(() => UI.toggleAccordion(bareAccordion, true)).not.toThrow();
+            expect(bareAccordion.classList.contains('is-open')).toBe(true);
+        });
+
+        it('délègue les clics sur un enfant du bouton .help-accordion-trigger', () => {
+            const { items: [first, second] } = createAccordionGroup(2);
+            UI._accordionsDelegated = false;
+            UI.initAccordions();
+
+            first.label.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(first.accordion.classList.contains('is-open')).toBe(true);
+
+            second.label.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(first.accordion.classList.contains('is-open')).toBe(false);
+            expect(second.accordion.classList.contains('is-open')).toBe(true);
+
+            second.trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(second.accordion.classList.contains('is-open')).toBe(false);
+        });
+    });
 });
 

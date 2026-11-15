@@ -86,23 +86,32 @@
     padding: 11px 0;
 }
 
+.guide-section:first-child {
+    padding-top: 2px;
+}
+
+.guide-section > .guide-text:last-child {
+    margin-bottom: 0;
+}
+
 .guide-section-title {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     margin-bottom: 6px;
 }
 
-.guide-section-title i,
 .guide-section-title iconify-icon {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     width: 16px;
-    text-align: center;
-    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .guide-text {
@@ -113,111 +122,20 @@
 }
 
 .guide-hint {
-    font-size: 0.72rem;
+    font-size: 0.73rem;
     color: var(--text-tertiary);
-    font-style: italic;
-    margin: 0;
-    line-height: 1.4;
-}
-
-.guide-hint.warning {
-    color: var(--warning-color);
     font-style: normal;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.guide-hint.warning i {
-    font-size: 0.7rem;
+    margin: 0;
+    line-height: 1.45;
 }
 
 .guide-divider {
     height: 1px;
-    background: var(--border-color);
+    background: var(--border-subtle);
     margin: 2px 0;
-    opacity: 0.4;
 }
 
-/* === FORMAT CHIPS (Visual format indicators) === */
-.guide-format-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-}
-
-.guide-format-chip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: help;
-    transition: all 0.2s ease;
-    opacity: 1;
-}
-
-[data-theme="dark"] .guide-format-chip {
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.guide-format-chip i {
-    font-size: 0.95rem;
-}
-
-.guide-format-chip span {
-    display: none;
-}
-
-.guide-format-chip i,
-.guide-format-chip iconify-icon {
-    color: var(--text-secondary);
-    transition: color 0.2s ease;
-    opacity: 0.8;
-}
-
-.guide-format-chip:hover[data-format="pdf"] {
-    border-color: var(--error-color);
-    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.04);
-}
-
-.guide-format-chip:hover[data-format="pdf"] iconify-icon {
-    color: var(--error-color);
-}
-
-
-.guide-format-chip:hover[data-format="csv"] {
-    border-color: var(--info-color, #3b82f6);
-    background: rgba(var(--primary-color-rgb), 0.04);
-}
-
-.guide-format-chip:hover[data-format="csv"] iconify-icon {
-    color: var(--info-color, #3b82f6);
-}
-
-.guide-format-chip:hover[data-format="clipboard"] {
-    border-color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.04);
-}
-
-.guide-format-chip:hover[data-format="clipboard"] iconify-icon {
-    color: var(--text-primary);
-}
-
-.guide-format-chip:hover {
-    /* Base hover fallbacks if no specific data-format matches (should not happen if HTML is correct) */
-    opacity: 1;
-    transform: translateY(-1px);
-}
-
-/* Light theme adjustments */
-/* Light theme adjustments handled in base style (default) */
-
-/* Guide sample button */
+/* Guide sample & detect buttons */
 .guide-sample-btn {
     display: inline-flex;
     align-items: center;
@@ -258,29 +176,19 @@
     margin-top: 8px;
 }
 
-.guide-sample-btn i,
 .guide-sample-btn iconify-icon {
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
-.guide-sample-btn:hover i,
 .guide-sample-btn:hover iconify-icon {
     color: var(--text-primary);
 }
 
-.guide-hint-margin {
-    margin-top: 8px;
-}
-
 .wizard-guide-panel .help-context-trigger {
-    width: 100%;
-    align-self: stretch;
-    justify-content: center;
-    min-height: 30px;
-    margin-top: 10px;
-    padding: 6px 14px;
-    font-size: 0.75rem;
+    margin-top: 8px;
+    padding: 5px 11px;
+    font-size: 0.74rem;
     font-weight: 500;
     border-radius: var(--radius-pill);
 }
@@ -317,15 +225,13 @@
     .wizard-guide-panel .guide-divider,
     .wizard-guide-panel .guide-text,
     .wizard-guide-panel .guide-hint,
-    .wizard-guide-panel [data-guide-step="1"] .guide-section:not(:last-child),
-    #trombiGuidePanel .guide-section:not(:last-child),
-    .wizard-guide-panel [data-guide-step="2"] .guide-section:first-child,
-    .wizard-guide-panel [data-guide-step="3"] .guide-section:not(:nth-of-type(2)),
+    .wizard-guide-panel [data-guide-step="1"] .guide-section:not(.guide-section-bottom),
+    #trombiGuidePanel .guide-section:not(.guide-section-bottom),
+    .wizard-guide-panel [data-guide-step="3"] .guide-section:not(.guide-section-impact),
     .wizard-guide-panel [data-guide-step="1"] .guide-section-title,
     #trombiGuidePanel .guide-section-title,
-    .wizard-guide-panel [data-guide-step="2"] .guide-section:last-child .guide-section-title,
-    .wizard-guide-panel [data-guide-step="3"] .guide-section-title,
-    .wizard-guide-panel .guide-legend-overwrite-hint {
+    .wizard-guide-panel .guide-section-detect .guide-section-title,
+    .wizard-guide-panel [data-guide-step="3"] .guide-section-title {
         display: none;
     }
 
@@ -345,9 +251,9 @@
         gap: 8px;
     }
 
-    .wizard-guide-panel [data-guide-step="1"] .guide-section:last-child,
-    #trombiGuidePanel .guide-section:last-child,
-    .wizard-guide-panel [data-guide-step="3"] .guide-section:nth-of-type(2) {
+    .wizard-guide-panel [data-guide-step="1"] .guide-section-bottom,
+    #trombiGuidePanel .guide-section-bottom,
+    .wizard-guide-panel .guide-section-impact {
         width: 100%;
         justify-content: space-between;
     }
@@ -1869,7 +1775,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
 }
 
@@ -1914,29 +1820,22 @@
     color: var(--warning-color);
 }
 
-/* Overwrite hint in legend label */
-.guide-legend-overwrite-hint {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    opacity: 0.75;
-}
-
 /* Warning hint variant (with icon) */
 .guide-hint-warning {
-    font-size: 0.72rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.73rem;
     color: var(--warning-color);
     font-style: normal;
-    margin-top: 8px;
-    line-height: 1.5;
+    margin: 0;
+    line-height: 1.45;
 }
 
 .guide-hint-warning iconify-icon {
-    vertical-align: middle;
-    margin-right: 3px;
-    font-size: 0.8rem;
-    position: relative;
-    top: -1px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 0.85rem;
 }
 
 /* Departed toggle — uses standard .toggle-switch.small */

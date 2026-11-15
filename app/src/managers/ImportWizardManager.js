@@ -1287,7 +1287,7 @@ export const ImportWizardManager = {
         if (useSavedFormat) {
             // Only show notification if not already shown this session
             if (!this.state._formatNotificationShown) {
-                UI.showNotification('Format précédent appliqué • Cliquez "Détection auto" pour changer', 'info');
+                UI.showNotification('Format précédent appliqué • Cliquez sur « Relancer la détection » pour réinitialiser', 'info');
                 this.state._formatNotificationShown = true;
             }
             autoDetectBtn?.classList.add('format-applied');
@@ -1768,17 +1768,16 @@ export const ImportWizardManager = {
         updateCount('wizardUpdatedCount', preview.updatedStudents.length);
         updateCount('wizardDepartedCount', preview.departedStudents.length);
 
-        // Show/hide departed toggle
+        // Show/hide departed toggle and Step 3 update rules
+        const hasUpdated = preview.updatedStudents.length > 0;
+        const hasDeparted = preview.departedStudents.length > 0;
+
         const departedAction = document.getElementById('wizardDepartedAction');
         if (departedAction) {
-            departedAction.style.display = preview.departedStudents.length > 0 ? '' : 'none';
+            departedAction.style.display = hasDeparted ? '' : 'none';
         }
 
-        // Show/hide overwrite warning
-        const overwriteWarning = document.getElementById('wizardOverwriteWarning');
-        if (overwriteWarning) {
-            overwriteWarning.style.display = preview.updatedStudents.length > 0 ? '' : 'none';
-        }
+        this._updateStep3RulesVisibility(hasUpdated, hasDeparted);
 
         // Update footer info
         const mappedCols = Object.keys(formatMap);
@@ -2028,6 +2027,25 @@ export const ImportWizardManager = {
     },
 
     /**
+     * Show/hide Step 3 update rules and warnings based on actual class impact
+     * @param {boolean} hasUpdated
+     * @param {boolean} hasDeparted
+     * @private
+     */
+    _updateStep3RulesVisibility(hasUpdated, hasDeparted) {
+        const showRules = hasUpdated || hasDeparted;
+        const rulesDivider = document.getElementById('wizardRulesDivider');
+        const rulesSection = document.getElementById('wizardRulesSection');
+        const departedRuleText = document.getElementById('wizardDepartedRuleText');
+        const overwriteWarning = document.getElementById('wizardOverwriteWarning');
+
+        if (rulesDivider) rulesDivider.style.display = showRules ? '' : 'none';
+        if (rulesSection) rulesSection.style.display = showRules ? '' : 'none';
+        if (departedRuleText) departedRuleText.style.display = hasDeparted ? '' : 'none';
+        if (overwriteWarning) overwriteWarning.style.display = hasUpdated ? '' : 'none';
+    },
+
+    /**
      * Sync Step 3 table and rule text with the "Supprimer les absents" toggle
      * @param {boolean} isDeleting
      * @private
@@ -2039,8 +2057,8 @@ export const ImportWizardManager = {
         const ruleText = document.getElementById('wizardDepartedRuleText');
         if (ruleText) {
             ruleText.textContent = isDeleting
-                ? 'Les élèves absents du fichier seront supprimés de la classe. Seules les colonnes cochées seront importées.'
-                : 'Les élèves absents du fichier sont conservés. Seules les colonnes cochées seront importées.';
+                ? 'Les élèves absents du fichier seront supprimés de la classe.'
+                : 'Les élèves absents du fichier sont conservés.';
         }
     },
 
@@ -2167,12 +2185,13 @@ export const ImportWizardManager = {
         // Reset Drop Zone UI
         this._resetFileUI();
 
-        // Reset departed toggle
+        // Reset departed toggle and Step 3 update rules
         const departedToggle = document.getElementById('wizardDeleteDepartedToggle');
         if (departedToggle) departedToggle.checked = false;
         this._syncDepartedToggleState(false);
         const departedAction = document.getElementById('wizardDepartedAction');
         if (departedAction) departedAction.style.display = 'none';
+        this._updateStep3RulesVisibility(false, false);
 
         // Clean up dynamically created warning elements
         document.getElementById('wizardMappingWarning')?.remove();

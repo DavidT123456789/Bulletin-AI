@@ -1155,20 +1155,18 @@
         pointer-events: auto;
     }
 
-    #appSettingsModal .ui-tabs-content {
-        padding: 18px 46px 26px 46px;
+    #appSettingsModal .ui-tabs-content,
+    #helpModal .ui-tabs-content {
+        scrollbar-gutter: stable;
+        margin-right: 2px;
     }
 
-    #appSettingsModal .ui-tabs-content:is(.can-scroll-top, .can-scroll-bottom) {
-        padding-right: 39px;
+    #appSettingsModal .ui-tabs-content {
+        padding: 18px 39px 26px 46px;
     }
 
     #helpModal .ui-tabs-content {
-        padding: 18px 44px 20px 44px;
-    }
-
-    #helpModal .ui-tabs-content:is(.can-scroll-top, .can-scroll-bottom) {
-        padding-right: 37px;
+        padding: 18px 37px 20px 44px;
     }
 
     #appSettingsModal .ui-tabs-content::-webkit-scrollbar-track,

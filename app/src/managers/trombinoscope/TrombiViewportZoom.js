@@ -302,6 +302,12 @@ export const TrombiViewportZoom = {
         const imagePanel = document.getElementById('trombiImageWithZones');
         if (!imagePanel) return;
 
+        const isNewUpload = Boolean(manager._isNewUpload);
+        const prevViewport = imagePanel.querySelector('.trombi-viewport');
+        const savedScroll = (!isNewUpload && manager._zoomLevel > 1.0 && prevViewport)
+            ? { left: prevViewport.scrollLeft, top: prevViewport.scrollTop }
+            : null;
+
         if (manager._step2AbortController) {
             manager._step2AbortController.abort();
         }
@@ -379,17 +385,17 @@ export const TrombiViewportZoom = {
 
         // Setup image with overlay - wrapped in a container for correct aspect ratio positioning
         imagePanel.innerHTML = `
-            <div class="trombi-zoom-controls">
-                <button type="button" class="zoom-btn" id="trombiZoomOutBtn" aria-label="Dézoomer (-25%)" data-tooltip="Dézoomer (-25%)">
+            <div class="trombi-zoom-controls ui-floating-capsule">
+                <button type="button" class="zoom-btn ui-floating-capsule-btn" id="trombiZoomOutBtn" aria-label="Dézoomer (-25%)" data-tooltip="Dézoomer (-25%)">
                     <iconify-icon icon="ph:minus"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn" id="trombiZoomInBtn" aria-label="Zoomer (+25%)" data-tooltip="Zoomer (+25%)">
+                <button type="button" class="zoom-btn ui-floating-capsule-btn" id="trombiZoomInBtn" aria-label="Zoomer (+25%)" data-tooltip="Zoomer (+25%)">
                     <iconify-icon icon="ph:plus"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn" id="trombiZoomFitBtn" aria-label="Pleine largeur / Vue complète" data-tooltip="Pleine largeur / Vue complète">
+                <button type="button" class="zoom-btn ui-floating-capsule-btn" id="trombiZoomFitBtn" aria-label="Pleine largeur / Vue complète" data-tooltip="Pleine largeur / Vue complète">
                     <iconify-icon icon="ph:arrows-out-simple"></iconify-icon>
                 </button>
-                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" style="display: none;" aria-hidden="true" data-tooltip="Réinitialiser le zoom (100%)">
+                <button type="button" class="zoom-btn ui-floating-capsule-btn zoom-value-btn" id="trombiZoomResetBtn" style="display: none;" aria-hidden="true" data-tooltip="Réinitialiser le zoom (100%)">
                     <span id="trombiZoomLevel">${Math.round(manager._zoomLevel * 100)}%</span>
                 </button>
             </div>
@@ -402,7 +408,7 @@ export const TrombiViewportZoom = {
         `;
 
         // Setup control panel first so its height is accounted for in viewport layout before measuring zoom fit
-        manager._setupControlPanel();
+        manager._setupControlPanel({ preserveState: !isNewUpload });
 
         // Bind zoom controls
         document.getElementById('trombiZoomInBtn')?.addEventListener('click', (e) => {
@@ -439,6 +445,13 @@ export const TrombiViewportZoom = {
                 manager._isNewUpload = false; // Reset upload flag
             }
             manager._applyZoom();
+            if (savedScroll) {
+                const nextViewport = imagePanel.querySelector('.trombi-viewport');
+                if (nextViewport) {
+                    nextViewport.scrollLeft = savedScroll.left;
+                    nextViewport.scrollTop = savedScroll.top;
+                }
+            }
         };
 
         if (img.complete && img.naturalWidth > 0) {
@@ -454,10 +467,12 @@ export const TrombiViewportZoom = {
         manager._viewportResizeObserver = new ResizeObserver(() => {
             const vpW = viewport?.offsetWidth || viewport?.clientWidth || 0;
             const vpH = viewport?.offsetHeight || viewport?.clientHeight || 0;
+            if (vpW <= 0 || vpH <= 0) return;
             if (vpW === manager._lastViewportW && vpH === manager._lastViewportH) return;
             if (manager._viewportResizeRaf) cancelAnimationFrame(manager._viewportResizeRaf);
             manager._viewportResizeRaf = window.requestAnimationFrame(() => {
                 manager._viewportResizeRaf = null;
+                if ((viewport?.offsetWidth || viewport?.clientWidth || 0) <= 0) return;
                 manager._applyZoom();
             });
         });
