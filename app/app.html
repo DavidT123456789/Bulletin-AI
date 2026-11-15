@@ -1359,7 +1359,7 @@
                         <iconify-icon icon="solar:info-circle-bold" class="demo-alert-icon"></iconify-icon>
                         <div class="demo-alert-text">
                             <strong>Vous êtes sur la classe d'exemple</strong>
-                            <span>Créez votre propre classe pour importer vos élèves :</span>
+                            <span>Créez votre propre classe pour importer vos élèves</span>
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary btn-sm" id="importHubCreateClassBtn">
@@ -1596,6 +1596,7 @@
                         data-tooltip="Réinitialiser les réglages" aria-label="Réinitialiser les réglages">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon>
                     </button>
+                    <div class="modal-header-actions-divider" aria-hidden="true"></div>
                     <button type="button" class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
@@ -1621,13 +1622,13 @@
                                 </div>
 
                                 <div class="settings-row settings-row-field">
-                                    <div class="settings-row-head">
-                                        <div class="settings-row-info">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-title-wrap">
                                             <label for="iaLengthSlider" class="settings-row-title">Longueur cible</label>
-                                            <span class="settings-row-desc">Nombre de mots visé par appréciation.</span>
+                                            <output id="iaLengthSliderValue" class="settings-row-value"
+                                                for="iaLengthSlider">~40 mots • ~260 car.</output>
                                         </div>
-                                        <output id="iaLengthSliderValue" class="settings-row-value"
-                                            for="iaLengthSlider">~40 mots • ~260 car.</output>
+                                        <span class="settings-row-desc">Nombre de mots visé par appréciation.</span>
                                     </div>
                                     <div class="slider-container">
                                         <input type="range" id="iaLengthSlider" min="10" max="90" value="40" step="5">
@@ -2582,7 +2583,7 @@
                                 <div class="settings-group-header">
                                     <h4 class="settings-group-title">Sauvegarde locale & Restauration</h4>
                                 </div>
-                                <div class="settings-group-card">
+                                <div class="settings-group-card" id="backupSection">
                                     <div class="data-action-row">
                                         <div class="data-action-info">
                                             <strong class="data-action-title">Données complètes</strong>
@@ -2631,7 +2632,7 @@
                                                 <iconify-icon icon="solar:restart-linear" aria-hidden="true"></iconify-icon>
                                                 <span>Rétablir cet état</span>
                                             </button>
-                                            <button type="button" class="pre-restore-discard-btn" id="discardSnapshotBtn" title="Supprimer cette copie de secours" aria-label="Supprimer la copie de secours">
+                                            <button type="button" class="pre-restore-discard-btn tooltip" id="discardSnapshotBtn" data-tooltip="Supprimer cette copie de secours" aria-label="Supprimer la copie de secours">
                                                 <iconify-icon icon="solar:trash-bin-trash-linear" aria-hidden="true"></iconify-icon>
                                             </button>
                                         </div>
@@ -2754,7 +2755,7 @@
                                                 </span>
                                             </div>
                                             <div class="help-step-footer-row">
-                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Albert API</strong> (IA souveraine Gouv.fr via ProConnect), <strong>Google Gemini</strong> ou <strong>Groq&nbsp;Cloud</strong> : 100% gratuit, sans carte bancaire.</p>
+                                                <p class="help-step-inline-desc" id="helpProviderDesc"><strong>Albert API</strong> (IA souveraine Gouv.fr via ProConnect), <strong>Google Gemini</strong> ou <strong>Groq&nbsp;Cloud</strong> : 100&nbsp;% gratuit, sans carte bancaire.</p>
                                                 <div class="help-btn-row">
                                                     <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                         <iconify-icon class="iconify-inline" icon="solar:shield-check-linear"></iconify-icon> Clé Albert (ProConnect)
@@ -2810,7 +2811,7 @@
                                                         <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                                                         <span>En série ou élève par élève</span>
                                                     </div>
-                                                    <p>Bouton <span class="help-ui-pill is-ai"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> 28</span> en haut de liste pour toute la classe, ou clic sur un élève pour sa fiche.</p>
+                                                    <p>Bouton <span class="help-ui-pill is-ai"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon></span> en en-tête de colonne pour toute la classe, ou clic sur un élève pour sa fiche.</p>
                                                 </div>
                                                 <div class="help-step3-box">
                                                     <div class="help-step3-label is-emerald">
@@ -2899,10 +2900,10 @@
                                         </div>
                                     </div>
                                     <div class="help-preview-text-area">
-                                        <p class="text-preview" id="helpRefineDemoText">Un bon deuxième trimestre. Lucas s'investit avec sérieux, participe activement en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p>
+                                        <p class="text-preview" id="helpRefineDemoText" aria-live="polite">Un bon deuxième trimestre. Lucas s'investit avec sérieux, participe activement en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.</p>
                                     </div>
                                     <div class="help-preview-meta">
-                                        <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus</span>
+                                        <span class="help-demo-hint-inline" id="helpRefineDemoHint">Premier jet issu des notes · Testez une retouche ci-dessus</span>
                                         <span class="word-count" id="helpRefineDemoWords">24 mots</span>
                                     </div>
                                 </div>
@@ -2914,8 +2915,8 @@
                                     <div class="help-pillar-icon"><iconify-icon icon="solar:tuning-2-bold"></iconify-icon></div>
                                     <div class="help-pillar-body">
                                         <div class="help-pillar-title-row">
-                                            <h4>Style & Ton sur-mesure</h4>
-                                            <button type="button" class="btn btn-primary btn-small help-pillar-cta" id="helpToPersonalizationBtn">
+                                            <h4>Style & Ton</h4>
+                                            <button type="button" class="btn btn-secondary btn-small help-pillar-cta" id="helpToPersonalizationBtn">
                                                 <iconify-icon class="iconify-inline" icon="solar:tuning-2-linear"></iconify-icon>
                                                 Personnaliser
                                             </button>
@@ -2944,7 +2945,7 @@
                                     <div class="help-pillar-icon is-emerald"><iconify-icon icon="solar:chart-square-bold"></iconify-icon></div>
                                     <div class="help-pillar-body">
                                         <h4>Synthèse du conseil</h4>
-                                        <p>Bouton <em>Analyser</em> en haut de liste pour générer le bilan global de la classe.</p>
+                                        <p>Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> → <em>Analyser la classe</em> pour générer le bilan global.</p>
                                     </div>
                                 </div>
                             </div>
@@ -2994,7 +2995,7 @@
                                             <iconify-icon icon="solar:ghost-linear" class="sc-special-icon"></iconify-icon>
                                             <span class="sc-cell-name">Allée</span>
                                         </div>
-                                        <span class="help-sc-col-tag"><iconify-icon icon="solar:ghost-linear"></iconify-icon> Case Allée</span>
+                                        <span class="help-sc-col-tag"><iconify-icon icon="solar:ghost-linear"></iconify-icon> Espace libre</span>
                                     </div>
 
                                     <!-- 4. Élève placé (.sc-cell.occupied) -->
@@ -3039,7 +3040,7 @@
                                         <div>
                                             <h4>Plan de classe & Mode Activité</h4>
                                             <p><strong>Cours & Activité :</strong> placez vos élèves en classe ou formez des binômes/groupes (2 à 4 par poste), épinglez les places fixes.</p>
-                                            <p><strong>Consultation :</strong> un clic sur une table ou un élève ouvre sa fiche ou le Journal (+/−).</p>
+                                            <p><strong>Consultation :</strong> un clic sur un élève ouvre sa fiche (appréciation, notes et Journal <span class="help-nowrap">(+/−)</span>).</p>
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
@@ -3054,8 +3055,8 @@
                                     <div class="help-seating-card-top">
                                         <div class="help-feature-icon is-emerald"><iconify-icon icon="solar:camera-bold"></iconify-icon></div>
                                         <div>
-                                            <h4>Trombinoscope IA · Détection locale</h4>
-                                            <p>Découpe et associe automatiquement les visages depuis un PDF Pronote ou une photo de classe, directement dans votre navigateur sans envoi à l'IA.</p>
+                                            <h4>Trombinoscope · Détection locale</h4>
+                                            <p>Découpe et associe automatiquement les visages depuis un PDF Pronote ou une image de trombinoscope, directement dans votre navigateur sans envoi à l'IA.</p>
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
@@ -3072,11 +3073,11 @@
                         <div id="help-data" class="help-tab-content" role="tabpanel" aria-labelledby="helpTabBtnData">
                             <div class="settings-tab-header">
                                 <h3 class="settings-tab-title">Dépannage & FAQ</h3>
-                                <p class="settings-tab-subtitle">Solutions aux questions fréquentes et raccourcis clavier essentiels.</p>
+                                <p class="settings-tab-subtitle">Solutions aux questions fréquentes<span class="help-shortcuts-subtitle-suffix"> et raccourcis clavier essentiels</span>.</p>
                             </div>
                             <div class="help-accordions-group">
                                 <!-- FAQ 1 : Pronote & Export -->
-                                <details class="help-accordion" id="help-faq-pronote" data-faq-accent="emerald">
+                                <details class="help-accordion" id="help-faq-pronote" data-faq-accent="emerald" open>
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:clipboard-check-bold"></iconify-icon>
@@ -3086,8 +3087,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Élève par élève :</strong> Cliquez sur <strong>Copier</strong> dans la fiche élève (ou via le menu <kbd class="help-kbd-badge">⋮</kbd> de la ligne) pour coller directement dans Pronote.</li>
-                                            <li><strong>En lot :</strong> Menu <kbd class="help-kbd-badge">⋮</kbd> en haut de liste pour <em>Toutes les appréciations</em>, <em>Tableau (CSV)</em> ou <em>Imprimer / PDF</em>.</li>
+                                            <li><strong>Élève par élève :</strong> Cliquez sur <strong>Copier</strong> dans la fiche élève (ou via le menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> de la ligne) pour coller directement dans Pronote.</li>
+                                            <li><strong>En lot :</strong> Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> en haut de liste pour copier <em>Toutes les appréciations</em> ou exporter en <em>Tableau (CSV)</em> / <em>Imprimer / PDF</em>.</li>
                                         </ul>
                                     </div>
                                 </details>
@@ -3103,12 +3104,12 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais auto.</em> pour basculer sans coupure en cas de pic de débit.</li>
-                                            <li><strong>100% hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
+                                            <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais automatique</em> pour basculer sans coupure, ou changez de modèle dans l'en-tête.</li>
+                                            <li><strong>100 % hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
                                         </ul>
                                         <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="groqApiKey">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer Groq & le Relais IA
+                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="apiStatusSummary">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer l'IA & le Relais
                                             </button>
                                         </div>
                                     </div>
@@ -3125,7 +3126,7 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li>Vérifiez qu'aucun espace ne s'est glissé au début ou à la fin (format : <code>AIzaSy…</code> pour Google, <code>sk-…</code> pour Albert, <code>gsk_…</code> pour Groq).</li>
+                                            <li>Vérifiez que la clé est complète et collée dans le <strong>bon moteur</strong> (<code>AIzaSy…</code> pour Google, <code>sk-…</code> pour Albert ou OpenAI, <code>gsk_…</code> pour Groq).</li>
                                             <li>Régénérez gratuitement une clé neuve sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="help-inline-link">Google AI Studio</a>, <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="help-inline-link">Albert Playground (ProConnect)</a> ou <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="help-inline-link">Groq Cloud</a>.</li>
                                         </ul>
                                     </div>
@@ -3142,8 +3143,8 @@
                                     </summary>
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
-                                            <li><strong>Séparateur :</strong> À l'étape 2 de l'import, changez le séparateur (Tabulation, Point-virgule, Virgule).</li>
-                                            <li><strong>Astuce universelle :</strong> Copiez vos lignes dans Excel ou Pronote (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les directement dans l'Assistant.</li>
+                                            <li><strong>CSV ou tableau collé :</strong> À l'étape 2 (<em>Mapping</em>), changez le <strong>Séparateur</strong> (Tabulation, Point-virgule, Virgule).</li>
+                                            <li><strong>PDF ou Excel (.xlsx) :</strong> Seuls les PDF texte (Pronote, MBN) sont lus directement. Depuis Excel ou un autre ENT, copiez vos lignes (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les dans l'Assistant.</li>
                                         </ul>
                                         <div class="help-btn-row">
                                             <button type="button" class="btn btn-secondary btn-small" data-action="open-import-wizard">
@@ -3182,7 +3183,7 @@
                                     <div class="help-accordion-body">
                                         <ul class="help-detail-list">
                                             <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un poste à l'autre.</li>
-                                            <li><strong>Archive JSON :</strong> Exportez une sauvegarde complète sur clé USB depuis <em>Paramètres &gt; Données</em>.</li>
+                                            <li><strong>Archive JSON :</strong> Vos classes restant dans ce navigateur, exportez une sauvegarde sur clé USB depuis <em>Paramètres &gt; Données</em> avant de changer d'appareil.</li>
                                         </ul>
                                         <div class="help-btn-row">
                                             <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-data" data-target-element="backupSection">
@@ -3201,27 +3202,27 @@
                                 </div>
                                 <div class="help-shortcut-list">
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Générer le bilan</span>
+                                        <span class="help-shortcut-desc">Générer (fiche élève)</span>
                                         <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">Entrée</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Élève préc. / suiv.</span>
+                                        <span class="help-shortcut-desc">Élève préc. / suiv. (fiche)</span>
                                         <span class="help-shortcut-keys"><kbd class="help-kbd-badge">←</kbd> <kbd class="help-kbd-badge">→</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Version préc. / suiv.</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">Z</kbd>/<kbd class="help-kbd-badge">Y</kbd></span>
+                                        <span class="help-shortcut-desc">Annuler / rétablir (fiche)</span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">Z</kbd> <span class="help-shortcut-or">/</span> <kbd class="help-kbd-badge">Y</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
                                         <span class="help-shortcut-desc">Chercher un élève</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">F</kbd></span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd>+<kbd class="help-kbd-badge">F</kbd> <span class="help-shortcut-or">ou</span> <kbd class="help-kbd-badge">/</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
                                         <span class="help-shortcut-desc">Sélection multiple</span>
-                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Maj</kbd>+<kbd class="help-kbd-badge">Clic</kbd></span>
+                                        <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Ctrl</kbd> <span class="help-shortcut-or">ou</span> <kbd class="help-kbd-badge">Maj</kbd>+<kbd class="help-kbd-badge">Clic</kbd></span>
                                     </div>
                                     <div class="help-shortcut-row">
-                                        <span class="help-shortcut-desc">Fermer la fenêtre</span>
+                                        <span class="help-shortcut-desc">Fermer la fiche / modale</span>
                                         <span class="help-shortcut-keys"><kbd class="help-kbd-badge">Échap</kbd></span>
                                     </div>
                                 </div>
@@ -3292,7 +3293,7 @@
                                     </div>
                                     <div class="about-pillar-text">
                                         <h4>Code ouvert &amp; indépendant</h4>
-                                        <p>Application open-source gratuite, utilisable sans création de compte, sans pistage ni publicité. Vos clés d'IA (dont Albert / ProConnect) restent strictement personnelles.</p>
+                                        <p>Application gratuite à code source ouvert (usage non commercial), utilisable sans création de compte, sans pistage ni publicité. Vos clés d'IA (dont Albert / ProConnect) restent strictement personnelles.</p>
                                     </div>
                                 </div>
                             </div>
@@ -3324,10 +3325,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="closeHelpModalFooterBtn" tabindex="0">Fermer</button>
             </div>
         </div>
     </div>
@@ -3490,44 +3487,40 @@
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.035"/>
     </filter>
 
-    <!-- Rayonnement d'ambiance (halo doux, large et aéré) -->
-    <filter id="radiantGlow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="19" result="coloredBlur"/>
-    </filter>
-
-    <!-- Ombre portée directionnelle (diffuse et soyeuse) -->
-    <filter id="intenseGlow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="10" result="sharpBlur"/>
+    <!-- Diffusion large et sans bord pour la lueur finale -->
+    <filter id="conclusionGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="18"/>
     </filter>
   </defs>
 
   <!-- === SINGLE DOCUMENT THAT TRANSFORMS === -->
   <g transform="translate(380, 0)">
 
-    <!-- Rayonnement Satin progressif subtil (Dark Mode uniquement — évite l'auréole grise sur fond blanc) -->
-    <g class="welcome-svg-halo">
-      <animate attributeName="opacity" values="0;0;0.18;0.42;0.62;0.72;0.65;0.72;0" keyTimes="0;0.15;0.35;0.60;0.78;0.84;0.88;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <!-- Halo diffus qui rayonne tout autour de la carte -->
-      <rect x="-8" y="32" width="176" height="216" rx="24" fill="url(#glowGradient)" style="opacity:var(--svg-halo-radiant-opacity)" filter="url(#radiantGlow)"/>
-      <!-- Ombre directionnelle vers le bas -->
-      <rect x="2" y="46" width="156" height="198" rx="18" fill="url(#glowGradient)" style="opacity:var(--svg-halo-intense-opacity)" filter="url(#intenseGlow)"/>
+    <!-- Lueur dynamique douce en conclusion lorsque le document est terminé (~7.05s, Dark Mode uniquement) -->
+    <g transform="translate(80, 140)">
+      <g class="welcome-svg-glow" filter="url(#conclusionGlow)">
+        <rect x="-80" y="-100" width="160" height="200" rx="22" fill="url(#glowGradient)" opacity="0">
+          <animate attributeName="opacity" values="0;0.28;0" keyTimes="0;0.32;1" calcMode="spline" keySplines="0.22 1 0.36 1; 0.4 0 0.2 1" dur="1.45s" begin="7.05s" repeatCount="1" fill="freeze"/>
+          <animateTransform attributeName="transform" type="scale" values="0.98;1.08" keyTimes="0;1" calcMode="spline" keySplines="0.22 1 0.36 1" dur="1.45s" begin="7.05s" repeatCount="1" fill="freeze"/>
+        </rect>
+      </g>
     </g>
 
-    <!-- Base gray document (fades out) - SIMPLE RECTANGLE -->
+    <!-- Base gray document (fades out dès l'impact de la première particule à ~2.4s) -->
     <g filter="url(#docShadowNeutral)">
-      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.1;0.2;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.30;0.39;1" dur="8s" repeatCount="1" fill="freeze"/>
       <rect x="0" y="40" width="160" height="200" rx="16" style="fill:var(--bg-secondary);stroke:var(--border-color-strong)" stroke-width="1"/>
     </g>
 
-    <!-- Satin document background (fades in) -->
-    <g filter="url(#docShadowNeutral)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.2;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <!-- Satin document background (fades in and stays built) -->
+    <g filter="url(#docShadowNeutral)" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.30;0.39;1" dur="8s" repeatCount="1" fill="freeze"/>
       <rect x="0" y="40" width="160" height="200" rx="16" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="1.25"/>
     </g>
 
-    <!-- Contour orbital comète (mutualisé avec .header-gen-dashboard.generating::before, s'estompe une fois le document construit) -->
-    <g>
-      <animate attributeName="opacity" values="0;0;0.9;1;0.95;0;0" keyTimes="0;0.14;0.24;0.55;0.70;0.80;1" dur="10s" repeatCount="indefinite"/>
+    <!-- Contour orbital comète (s'allume avec la 1ère particule à 2.4s et s'efface dès la dernière reçue à 7.1s) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0.9;1;0.95;0;0" keyTimes="0;0.30;0.38;0.64;0.80;0.89;1" dur="8s" repeatCount="1" fill="freeze"/>
       <foreignObject x="-1" y="39" width="162" height="202">
         <div xmlns="http://www.w3.org/1999/xhtml" class="welcome-orbital-ring"></div>
       </foreignObject>
@@ -3536,209 +3529,309 @@
     <!-- Gray lines (fade out as satin ones appear) -->
     <g style="fill:var(--text-quaternary)" opacity="0.55">
       <rect x="20" y="80" width="100" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.15;0.22;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.32;0.40;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="100" width="120" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.22;0.29;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.38;0.46;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="120" width="80" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.29;0.36;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.44;0.52;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="140" width="110" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.36;0.43;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.50;0.58;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="160" width="60" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.50;0.57;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.61;0.69;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="200" width="100" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.64;0.71;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.74;0.82;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
       <rect x="20" y="220" width="90" height="8" rx="2">
-        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.71;0.78;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.81;0.89;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
     </g>
 
     <!-- Satin lines appearing (alignées sur Générer IA & Pilule Dynamique) -->
-    <rect x="20" y="80" width="100" height="8" rx="2" style="fill:var(--svg-line-title)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <animate attributeName="width" values="0;0;100;100;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <rect x="20" y="80" width="0" height="8" rx="2" opacity="0" style="fill:var(--svg-line-title)">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.32;0.40;1" dur="8s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="width" values="0;0;100;100" keyTimes="0;0.32;0.40;1" dur="8s" repeatCount="1" fill="freeze"/>
     </rect>
 
-    <rect x="20" y="100" width="120" height="8" rx="2" style="fill:var(--svg-line-accent-1)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <animate attributeName="width" values="0;0;120;120;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <rect x="20" y="100" width="0" height="8" rx="2" opacity="0" style="fill:var(--svg-line-accent-1)">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.38;0.46;1" dur="8s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="width" values="0;0;120;120" keyTimes="0;0.38;0.46;1" dur="8s" repeatCount="1" fill="freeze"/>
     </rect>
 
-    <rect x="20" y="120" width="80" height="8" rx="2" style="fill:var(--svg-line-duotone)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <animate attributeName="width" values="0;0;80;80;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <rect x="20" y="120" width="0" height="8" rx="2" opacity="0" style="fill:var(--svg-line-duotone)">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.44;0.52;1" dur="8s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="width" values="0;0;80;80" keyTimes="0;0.44;0.52;1" dur="8s" repeatCount="1" fill="freeze"/>
     </rect>
 
     <!-- Chart 1 - Bar chart (Satin & Pilule Dynamique) -->
-    <g transform="translate(20, 145)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.36;0.43;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <g transform="translate(20, 145)" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.50;0.58;1" dur="8s" repeatCount="1" fill="freeze"/>
       <rect width="50" height="35" rx="4" style="fill:var(--svg-mini-card-bg);stroke:var(--svg-mini-card-border)" stroke-width="1"/>
-      <rect x="8" width="8" rx="1.5" style="fill:var(--svg-chart-1)">
-        <animate attributeName="height" values="0;0;10;10;0" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
-        <animate attributeName="y" values="30;30;20;20;30" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="8" y="30" width="8" height="0" rx="1.5" style="fill:var(--svg-chart-1)">
+        <animate attributeName="height" values="0;0;10;10" keyTimes="0;0.52;0.60;1" dur="8s" repeatCount="1" fill="freeze"/>
+        <animate attributeName="y" values="30;30;20;20" keyTimes="0;0.52;0.60;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
-      <rect x="21" width="8" rx="1.5" style="fill:var(--svg-chart-2)">
-        <animate attributeName="height" values="0;0;18;18;0" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
-        <animate attributeName="y" values="30;30;12;12;30" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="21" y="30" width="8" height="0" rx="1.5" style="fill:var(--svg-chart-2)">
+        <animate attributeName="height" values="0;0;18;18" keyTimes="0;0.55;0.63;1" dur="8s" repeatCount="1" fill="freeze"/>
+        <animate attributeName="y" values="30;30;12;12" keyTimes="0;0.55;0.63;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
-      <rect x="34" width="8" rx="1.5" style="fill:var(--svg-chart-3)">
-        <animate attributeName="height" values="0;0;22;22;0" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
-        <animate attributeName="y" values="30;30;8;8;30" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="34" y="30" width="8" height="0" rx="1.5" style="fill:var(--svg-chart-3)">
+        <animate attributeName="height" values="0;0;22;22" keyTimes="0;0.58;0.66;1" dur="8s" repeatCount="1" fill="freeze"/>
+        <animate attributeName="y" values="30;30;8;8" keyTimes="0;0.58;0.66;1" dur="8s" repeatCount="1" fill="freeze"/>
       </rect>
     </g>
 
     <!-- Chart 2 - Courbe d'évolution Satin -->
-    <g transform="translate(80, 145)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.50;0.57;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <g transform="translate(80, 145)" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.61;0.69;1" dur="8s" repeatCount="1" fill="freeze"/>
       <rect width="55" height="35" rx="4" style="fill:var(--svg-mini-card-bg);stroke:var(--svg-mini-card-border)" stroke-width="1"/>
-      <circle cx="20" cy="15" style="fill:var(--svg-chart-dot)">
-        <animate attributeName="r" values="0;0;6.5;6.5;0" keyTimes="0;0.54;0.61;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <circle cx="20" cy="15" r="0" style="fill:var(--svg-chart-dot)">
+        <animate attributeName="r" values="0;0;6.5;6.5" keyTimes="0;0.64;0.72;1" dur="8s" repeatCount="1" fill="freeze"/>
       </circle>
-      <path d="M10 30 L25 20 L35 27 L50 18" style="stroke:var(--svg-chart-stroke)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60">
-        <animate attributeName="stroke-dashoffset" values="60;60;0;0;60" keyTimes="0;0.56;0.66;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <path d="M10 30 L25 20 L35 27 L50 18" style="stroke:var(--svg-chart-stroke)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60" stroke-dashoffset="60">
+        <animate attributeName="stroke-dashoffset" values="60;60;0;0" keyTimes="0;0.66;0.78;1" dur="8s" repeatCount="1" fill="freeze"/>
       </path>
     </g>
 
-    <!-- Bottom lines - Synthèse IA Satin -->
-    <rect x="20" y="195" width="110" height="8" rx="2" style="fill:var(--svg-line-accent-2)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <animate attributeName="width" values="0;0;110;110;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <!-- Bottom lines - Synthèse IA Satin (terminent à 7.12s avec la dernière particule) -->
+    <rect x="20" y="195" width="0" height="8" rx="2" opacity="0" style="fill:var(--svg-line-accent-2)">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.74;0.82;1" dur="8s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="width" values="0;0;110;110" keyTimes="0;0.74;0.82;1" dur="8s" repeatCount="1" fill="freeze"/>
     </rect>
 
-    <rect x="20" y="215" width="90" height="8" rx="2" style="fill:var(--svg-line-accent-3)">
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <animate attributeName="width" values="0;0;90;90;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
+    <rect x="20" y="215" width="0" height="8" rx="2" opacity="0" style="fill:var(--svg-line-accent-3)">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.81;0.89;1" dur="8s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="width" values="0;0;90;90" keyTimes="0;0.81;0.89;1" dur="8s" repeatCount="1" fill="freeze"/>
     </rect>
 
-    <!-- Sparkle effects (Étoiles IA Duotone 4 branches alignées sur Générer IA) -->
-    <g>
-      <animate attributeName="opacity" values="0;0;1;0.9;0;0" keyTimes="0;0.74;0.82;0.88;0.93;1" dur="10s" repeatCount="indefinite"/>
+    <!-- Sparkle effects (apparaissent à la fin de la construction puis scintillent subtilement en continu) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.87;0.95;1" dur="8s" repeatCount="1" fill="freeze"/>
       <!-- Paire duotone en haut à droite (signature solar:stars-bold-duotone) -->
       <g transform="translate(142, 56)">
-        <path d="M0 -7 Q0 0 7 0 Q0 0 0 7 Q0 0 -7 0 Q0 0 0 -7 Z" style="fill:var(--svg-sparkle-primary)">
-          <animateTransform attributeName="transform" type="scale" values="0.6;0.6;1.12;1;0.6;0.6" keyTimes="0;0.74;0.81;0.86;0.93;1" dur="10s" repeatCount="indefinite"/>
-        </path>
-        <g transform="translate(9, 8)">
-          <path d="M0 -4 Q0 0 4 0 Q0 0 0 4 Q0 0 -4 0 Q0 0 0 -4 Z" style="fill:var(--svg-sparkle-secondary)">
-            <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;0.5;0.5" keyTimes="0;0.75;0.82;0.87;0.93;1" dur="10s" repeatCount="indefinite"/>
+        <g>
+          <animateTransform attributeName="transform" type="scale" values="0.6;0.6;1.12;1;1" keyTimes="0;0.87;0.93;0.97;1" dur="8s" repeatCount="1" fill="freeze"/>
+          <path d="M0 -7 Q0 0 7 0 Q0 0 0 7 Q0 0 -7 0 Q0 0 0 -7 Z" style="fill:var(--svg-sparkle-primary)">
+            <animate attributeName="opacity" values="1;0.45;1" keyTimes="0;0.5;1" dur="3.4s" begin="7.8s" repeatCount="indefinite"/>
+            <animateTransform attributeName="transform" type="scale" values="1;0.86;1" keyTimes="0;0.5;1" dur="3.4s" begin="7.8s" repeatCount="indefinite"/>
           </path>
+        </g>
+        <g transform="translate(9, 8)">
+          <g>
+            <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;1" keyTimes="0;0.88;0.94;0.98;1" dur="8s" repeatCount="1" fill="freeze"/>
+            <path d="M0 -4 Q0 0 4 0 Q0 0 0 4 Q0 0 -4 0 Q0 0 0 -4 Z" style="fill:var(--svg-sparkle-secondary)">
+              <animate attributeName="opacity" values="1;0.40;1" keyTimes="0;0.5;1" dur="3.8s" begin="8.6s" repeatCount="indefinite"/>
+              <animateTransform attributeName="transform" type="scale" values="1;0.84;1" keyTimes="0;0.5;1" dur="3.8s" begin="8.6s" repeatCount="indefinite"/>
+            </path>
+          </g>
         </g>
       </g>
       <g transform="translate(12, 184)">
-        <path d="M0 -4.5 Q0 0 4.5 0 Q0 0 0 4.5 Q0 0 -4.5 0 Q0 0 0 -4.5 Z" style="fill:var(--svg-sparkle-secondary)">
-          <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;0.5;0.5" keyTimes="0;0.76;0.83;0.88;0.93;1" dur="10s" repeatCount="indefinite"/>
-        </path>
+        <g>
+          <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;1" keyTimes="0;0.89;0.95;0.98;1" dur="8s" repeatCount="1" fill="freeze"/>
+          <path d="M0 -4.5 Q0 0 4.5 0 Q0 0 0 4.5 Q0 0 -4.5 0 Q0 0 0 -4.5 Z" style="fill:var(--svg-sparkle-secondary)">
+            <animate attributeName="opacity" values="1;0.42;1" keyTimes="0;0.5;1" dur="3.6s" begin="8.2s" repeatCount="indefinite"/>
+            <animateTransform attributeName="transform" type="scale" values="1;0.85;1" keyTimes="0;0.5;1" dur="3.6s" begin="8.2s" repeatCount="indefinite"/>
+          </path>
+        </g>
       </g>
       <g transform="translate(149, 228)">
-        <path d="M0 -5.5 Q0 0 5.5 0 Q0 0 0 5.5 Q0 0 -5.5 0 Q0 0 0 -5.5 Z" style="fill:var(--svg-sparkle-accent)">
-          <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;0.5;0.5" keyTimes="0;0.77;0.84;0.89;0.93;1" dur="10s" repeatCount="indefinite"/>
-        </path>
+        <g>
+          <animateTransform attributeName="transform" type="scale" values="0.5;0.5;1.15;1;1" keyTimes="0;0.90;0.96;0.99;1" dur="8s" repeatCount="1" fill="freeze"/>
+          <path d="M0 -5.5 Q0 0 5.5 0 Q0 0 0 5.5 Q0 0 -5.5 0 Q0 0 0 -5.5 Z" style="fill:var(--svg-sparkle-accent)">
+            <animate attributeName="opacity" values="1;0.45;1" keyTimes="0;0.5;1" dur="4.0s" begin="9.0s" repeatCount="indefinite"/>
+            <animateTransform attributeName="transform" type="scale" values="1;0.86;1" keyTimes="0;0.5;1" dur="4.0s" begin="9.0s" repeatCount="indefinite"/>
+          </path>
+        </g>
       </g>
     </g>
   </g>
 
-  <!-- === PARTICLES (Palette alignée sur Générer IA & Pilule Dynamique) === -->
+  <!-- === PARTICLES (20 particules scintillantes depuis le bord gauche, impact ~2.4s–7.1s) === -->
   <g class="welcome-svg-particles" filter="url(#glow)">
-    <circle r="3.8" style="fill:var(--svg-particle-2)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="5.6s" begin="0s" repeatCount="indefinite">
+    <circle r="3.6" opacity="0" style="fill:var(--svg-particle-2)">
+      <animate attributeName="opacity" values="0;1;0.42;1;0.48;0.95;0" keyTimes="0;0.14;0.32;0.52;0.70;0.84;1" dur="2.8s" begin="0s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.4;4.3;2.3;4.1;2.7" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="0s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="0s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath1"/>
       </animateMotion>
     </circle>
-    <path id="particlePath1" d="M-300 100 Q40 5 380 120" fill="none"/>
+    <path id="particlePath1" d="M-160 105 Q110 35 380 120" fill="none"/>
 
-    <circle r="3" style="fill:var(--svg-particle-5)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.0s" begin="-0.5s" repeatCount="indefinite">
+    <circle r="2.8" opacity="0" style="fill:var(--svg-particle-5)">
+      <animate attributeName="opacity" values="0;0.95;0.38;1;0.45;1;0" keyTimes="0;0.14;0.35;0.55;0.72;0.85;1" dur="2.9s" begin="0.22s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.6;3.5;1.8;3.4;2.2" keyTimes="0;0.25;0.5;0.75;1" dur="2.9s" begin="0.22s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.9s" begin="0.22s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath2"/>
       </animateMotion>
     </circle>
-    <path id="particlePath2" d="M-315 180 Q30 270 380 160" fill="none"/>
+    <path id="particlePath2" d="M-170 175 Q105 245 380 160" fill="none"/>
 
-    <circle r="3.5" style="fill:var(--svg-particle-1)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="5.2s" begin="-1.0s" repeatCount="indefinite">
+    <circle r="3.4" opacity="0" style="fill:var(--svg-particle-1)">
+      <animate attributeName="opacity" values="0;1;0.45;0.95;0.40;1;0" keyTimes="0;0.14;0.30;0.50;0.68;0.84;1" dur="2.7s" begin="0.44s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.2;4.0;2.1;3.9;2.6" keyTimes="0;0.25;0.5;0.75;1" dur="2.7s" begin="0.44s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.7s" begin="0.44s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath3"/>
       </animateMotion>
     </circle>
-    <path id="particlePath3" d="M-285 140 Q60 140 380 140" fill="none"/>
+    <path id="particlePath3" d="M-155 140 Q115 140 380 140" fill="none"/>
 
-    <circle r="2.5" style="fill:var(--svg-particle-4)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.4s" begin="-1.5s" repeatCount="indefinite">
+    <circle r="2.5" opacity="0" style="fill:var(--svg-particle-4)">
+      <animate attributeName="opacity" values="0;0.95;0.40;1;0.42;0.95;0" keyTimes="0;0.14;0.33;0.53;0.71;0.85;1" dur="3.0s" begin="0.66s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.4;3.3;1.7;3.1;2.0" keyTimes="0;0.25;0.5;0.75;1" dur="3.0s" begin="0.66s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="3.0s" begin="0.66s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath4"/>
       </animateMotion>
     </circle>
-    <path id="particlePath4" d="M-310 45 Q20 200 380 100" fill="none"/>
+    <path id="particlePath4" d="M-165 55 Q100 185 380 100" fill="none"/>
 
-    <circle r="3" style="fill:var(--svg-particle-3)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="5.8s" begin="-2.0s" repeatCount="indefinite">
+    <circle r="3.0" opacity="0" style="fill:var(--svg-particle-3)">
+      <animate attributeName="opacity" values="0;1;0.42;1;0.48;0.95;0" keyTimes="0;0.14;0.32;0.52;0.70;0.84;1" dur="2.8s" begin="0.88s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.9;3.7;2.0;3.6;2.4" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="0.88s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="0.88s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath5"/>
       </animateMotion>
     </circle>
-    <path id="particlePath5" d="M-290 230 Q50 160 380 190" fill="none"/>
+    <path id="particlePath5" d="M-160 220 Q110 165 380 190" fill="none"/>
 
-    <circle r="3.5" style="fill:var(--svg-particle-2)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.2s" begin="-2.5s" repeatCount="indefinite">
+    <circle r="3.5" opacity="0" style="fill:var(--svg-particle-2)">
+      <animate attributeName="opacity" values="0;0.95;0.38;1;0.44;1;0" keyTimes="0;0.14;0.34;0.54;0.72;0.85;1" dur="2.9s" begin="1.10s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.3;4.2;2.2;4.0;2.7" keyTimes="0;0.25;0.5;0.75;1" dur="2.9s" begin="1.10s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.9s" begin="1.10s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath6"/>
       </animateMotion>
     </circle>
-    <path id="particlePath6" d="M-320 65 Q40 130 380 85" fill="none"/>
+    <path id="particlePath6" d="M-175 75 Q105 125 380 85" fill="none"/>
 
-    <circle r="2.8" style="fill:var(--svg-particle-4)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.6s" begin="-3.0s" repeatCount="indefinite">
+    <circle r="2.7" opacity="0" style="fill:var(--svg-particle-4)">
+      <animate attributeName="opacity" values="0;1;0.44;0.95;0.40;1;0" keyTimes="0;0.14;0.31;0.51;0.69;0.84;1" dur="3.1s" begin="1.32s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.6;3.5;1.8;3.3;2.2" keyTimes="0;0.25;0.5;0.75;1" dur="3.1s" begin="1.32s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="3.1s" begin="1.32s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath7"/>
       </animateMotion>
     </circle>
-    <path id="particlePath7" d="M-295 255 Q60 195 380 220" fill="none"/>
+    <path id="particlePath7" d="M-160 245 Q115 195 380 220" fill="none"/>
 
-    <circle r="3.2" style="fill:var(--svg-particle-1)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="5.4s" begin="-3.5s" repeatCount="indefinite">
+    <circle r="3.2" opacity="0" style="fill:var(--svg-particle-1)">
+      <animate attributeName="opacity" values="0;0.95;0.40;1;0.46;0.95;0" keyTimes="0;0.14;0.33;0.53;0.71;0.85;1" dur="2.7s" begin="1.54s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.0;3.9;2.0;3.7;2.5" keyTimes="0;0.25;0.5;0.75;1" dur="2.7s" begin="1.54s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.7s" begin="1.54s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath8"/>
       </animateMotion>
     </circle>
-    <path id="particlePath8" d="M-315 165 Q10 70 380 130" fill="none"/>
+    <path id="particlePath8" d="M-170 160 Q95 85 380 130" fill="none"/>
 
-    <circle r="2.5" style="fill:var(--svg-particle-3)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.8s" begin="-4.0s" repeatCount="indefinite">
+    <circle r="2.5" opacity="0" style="fill:var(--svg-particle-3)">
+      <animate attributeName="opacity" values="0;1;0.42;1;0.48;0.95;0" keyTimes="0;0.14;0.32;0.52;0.70;0.84;1" dur="3.0s" begin="1.76s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.4;3.2;1.7;3.1;2.1" keyTimes="0;0.25;0.5;0.75;1" dur="3.0s" begin="1.76s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="3.0s" begin="1.76s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath9"/>
       </animateMotion>
     </circle>
-    <path id="particlePath9" d="M-290 30 Q70 155 380 70" fill="none"/>
+    <path id="particlePath9" d="M-160 40 Q120 145 380 70" fill="none"/>
 
-    <circle r="3" style="fill:var(--svg-particle-5)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="5.5s" begin="-4.5s" repeatCount="indefinite">
+    <circle r="3.0" opacity="0" style="fill:var(--svg-particle-5)">
+      <animate attributeName="opacity" values="0;0.95;0.38;1;0.45;1;0" keyTimes="0;0.14;0.35;0.55;0.72;0.85;1" dur="2.8s" begin="1.98s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.9;3.7;2.0;3.6;2.4" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="1.98s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="1.98s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath10"/>
       </animateMotion>
     </circle>
-    <path id="particlePath10" d="M-310 210 Q35 110 380 175" fill="none"/>
+    <path id="particlePath10" d="M-165 205 Q105 120 380 175" fill="none"/>
 
-    <circle r="2.8" style="fill:var(--svg-particle-2)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.1s" begin="-5.0s" repeatCount="indefinite">
+    <circle r="2.8" opacity="0" style="fill:var(--svg-particle-2)">
+      <animate attributeName="opacity" values="0;1;0.45;0.95;0.40;1;0" keyTimes="0;0.14;0.30;0.50;0.68;0.84;1" dur="2.9s" begin="2.20s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.7;3.6;1.9;3.4;2.2" keyTimes="0;0.25;0.5;0.75;1" dur="2.9s" begin="2.20s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.9s" begin="2.20s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath11"/>
       </animateMotion>
     </circle>
-    <path id="particlePath11" d="M-285 85 Q65 40 380 95" fill="none"/>
+    <path id="particlePath11" d="M-155 90 Q115 50 380 95" fill="none"/>
 
-    <circle r="3.3" style="fill:var(--svg-particle-3)">
-      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
-      <animateMotion dur="6.5s" begin="-5.5s" repeatCount="indefinite">
+    <circle r="3.3" opacity="0" style="fill:var(--svg-particle-3)">
+      <animate attributeName="opacity" values="0;0.95;0.40;1;0.42;0.95;0" keyTimes="0;0.14;0.33;0.53;0.71;0.85;1" dur="3.0s" begin="2.42s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.1;4.0;2.1;3.8;2.5" keyTimes="0;0.25;0.5;0.75;1" dur="3.0s" begin="2.42s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="3.0s" begin="2.42s" repeatCount="1" fill="freeze">
         <mpath href="#particlePath12"/>
       </animateMotion>
     </circle>
-    <path id="particlePath12" d="M-320 265 Q25 175 380 210" fill="none"/>
+    <path id="particlePath12" d="M-175 250 Q100 180 380 210" fill="none"/>
+
+    <circle r="2.6" opacity="0" style="fill:var(--svg-particle-5)">
+      <animate attributeName="opacity" values="0;1;0.42;1;0.48;0.95;0" keyTimes="0;0.14;0.32;0.52;0.70;0.84;1" dur="2.8s" begin="2.64s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.5;3.4;1.8;3.2;2.1" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="2.64s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="2.64s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath13"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath13" d="M-160 120 Q115 60 380 112" fill="none"/>
+
+    <circle r="3.4" opacity="0" style="fill:var(--svg-particle-1)">
+      <animate attributeName="opacity" values="0;0.95;0.38;1;0.45;1;0" keyTimes="0;0.14;0.34;0.54;0.72;0.85;1" dur="2.9s" begin="2.86s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.2;4.1;2.1;3.9;2.6" keyTimes="0;0.25;0.5;0.75;1" dur="2.9s" begin="2.86s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.9s" begin="2.86s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath14"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath14" d="M-170 190 Q100 230 380 182" fill="none"/>
+
+    <circle r="2.4" opacity="0" style="fill:var(--svg-particle-4)">
+      <animate attributeName="opacity" values="0;1;0.44;0.95;0.40;1;0" keyTimes="0;0.14;0.31;0.51;0.69;0.84;1" dur="2.7s" begin="3.08s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.3;3.1;1.6;3.0;2.0" keyTimes="0;0.25;0.5;0.75;1" dur="2.7s" begin="3.08s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.7s" begin="3.08s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath15"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath15" d="M-155 60 Q115 95 380 78" fill="none"/>
+
+    <circle r="3.1" opacity="0" style="fill:var(--svg-particle-2)">
+      <animate attributeName="opacity" values="0;0.95;0.40;1;0.46;0.95;0" keyTimes="0;0.14;0.33;0.53;0.71;0.85;1" dur="3.0s" begin="3.30s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.0;3.8;2.0;3.7;2.4" keyTimes="0;0.25;0.5;0.75;1" dur="3.0s" begin="3.30s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="3.0s" begin="3.30s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath16"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath16" d="M-165 235 Q95 160 380 202" fill="none"/>
+
+    <circle r="2.7" opacity="0" style="fill:var(--svg-particle-3)">
+      <animate attributeName="opacity" values="0;1;0.42;1;0.48;0.95;0" keyTimes="0;0.14;0.32;0.52;0.70;0.84;1" dur="2.8s" begin="3.52s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.6;3.5;1.8;3.3;2.2" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="3.52s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="3.52s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath17"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath17" d="M-160 150 Q120 115 380 148" fill="none"/>
+
+    <circle r="3.3" opacity="0" style="fill:var(--svg-particle-5)">
+      <animate attributeName="opacity" values="0;0.95;0.38;1;0.45;1;0" keyTimes="0;0.14;0.35;0.55;0.72;0.85;1" dur="2.9s" begin="3.74s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.1;4.0;2.1;3.8;2.5" keyTimes="0;0.25;0.5;0.75;1" dur="2.9s" begin="3.74s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.9s" begin="3.74s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath18"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath18" d="M-175 45 Q105 155 380 90" fill="none"/>
+
+    <circle r="2.9" opacity="0" style="fill:var(--svg-particle-1)">
+      <animate attributeName="opacity" values="0;1;0.45;0.95;0.40;1;0" keyTimes="0;0.14;0.30;0.50;0.68;0.84;1" dur="2.8s" begin="3.96s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="2.8;3.6;1.9;3.5;2.3" keyTimes="0;0.25;0.5;0.75;1" dur="2.8s" begin="3.96s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.8s" begin="3.96s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath19"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath19" d="M-160 198 Q110 138 380 168" fill="none"/>
+
+    <circle r="3.2" opacity="0" style="fill:var(--svg-particle-4)">
+      <animate attributeName="opacity" values="0;0.95;0.40;1;0.44;0.95;0" keyTimes="0;0.14;0.33;0.53;0.71;0.85;1" dur="2.92s" begin="4.18s" repeatCount="1" fill="freeze"/>
+      <animate attributeName="r" values="3.0;3.9;2.0;3.7;2.5" keyTimes="0;0.25;0.5;0.75;1" dur="2.92s" begin="4.18s" repeatCount="1" fill="freeze"/>
+      <animateMotion dur="2.92s" begin="4.18s" repeatCount="1" fill="freeze">
+        <mpath href="#particlePath20"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath20" d="M-170 258 Q100 185 380 215" fill="none"/>
   </g>
 </svg>
                     </div>

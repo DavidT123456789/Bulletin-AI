@@ -19,7 +19,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { StorageManager } from './StorageManager.js';
-import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { loadTrombinoscope, withLazyManager } from '../utils/LazyManagers.js';
 import { DropdownManager } from './DropdownManager.js';
 import { getSampleImportData } from '../data/SampleData.js';
 import { bus, EVENTS } from '../core/EventBus.js';
@@ -46,10 +46,13 @@ export const ImportWizardManager = {
         this._bindEvents();
 
         // Listen to global period changed event to sync dropdown header badge and mapping table
-        bus.on(EVENTS.PERIOD_CHANGED, (detail) => {
-            const newPeriod = detail?.period;
-            this._handlePeriodChanged(newPeriod);
-        });
+        if (!this._periodListenerBound) {
+            this._periodListenerBound = true;
+            bus.on(EVENTS.PERIOD_CHANGED, (detail) => {
+                const newPeriod = detail?.period;
+                this._handlePeriodChanged(newPeriod);
+            });
+        }
     },
 
     /**
@@ -57,15 +60,8 @@ export const ImportWizardManager = {
      */
     _bindHubEvents() {
         const backdrop = document.getElementById('importHubBackdrop');
-        if (!backdrop) return;
-
-        // Also open hub from FAB button
-        const fabBtn = document.getElementById('addStudentFab');
-        fabBtn?.addEventListener('click', (e) => {
-            if (fabBtn.classList.contains('is-scroll-top') || fabBtn.dataset.mode === 'scroll-top') return;
-            e.stopPropagation();
-            this.openHub();
-        });
+        if (!backdrop || backdrop.dataset.hubEventsBound) return;
+        backdrop.dataset.hubEventsBound = '1';
 
         // Close hub
         document.getElementById('importHubCloseBtn')?.addEventListener('click', () => this.closeHub());
@@ -108,13 +104,13 @@ export const ImportWizardManager = {
                     window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
                 const delay = (isDrawerTarget && !prefersReducedMotion) ? 140 : 0;
 
-                const runAction = () => {
+                const runAction = async () => {
                     if (action === 'individual') {
                         FocusPanelManager.openNew();
                     } else if (action === 'mass') {
                         this.open();
                     } else if (action === 'photos') {
-                        TrombinoscopeManager.open();
+                        await withLazyManager(loadTrombinoscope, (trombi) => trombi.open());
                     } else if (action === 'existing') {
                         ClassUIManager.showPickExistingStudentsModal();
                     }
@@ -137,11 +133,15 @@ export const ImportWizardManager = {
         });
 
         // Escape key closes hub
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && backdrop.classList.contains('active')) {
-                this.closeHub();
-            }
-        });
+        if (!this._hubEscapeBound) {
+            this._hubEscapeBound = true;
+            document.addEventListener('keydown', (e) => {
+                const currentBackdrop = document.getElementById('importHubBackdrop');
+                if (e.key === 'Escape' && currentBackdrop?.classList.contains('active')) {
+                    this.closeHub();
+                }
+            });
+        }
     },
 
     /**
@@ -233,7 +233,8 @@ export const ImportWizardManager = {
      */
     _bindEvents() {
         const modal = document.getElementById('importWizardModal');
-        if (!modal) return;
+        if (!modal || modal.dataset.wizardEventsBound) return;
+        modal.dataset.wizardEventsBound = '1';
 
         // Period Dropdown events
         const dropdown = document.getElementById('wizardPeriodDropdown');
@@ -830,11 +831,14 @@ export const ImportWizardManager = {
                     );
 
                     if (shouldSwitch) {
-                        this.close();
-                        this._resetFile();
-                        TrombinoscopeManager.open();
-                        TrombinoscopeManager._loadFile(file);
-                        return;
+                        const switched = await withLazyManager(loadTrombinoscope, (trombi) => {
+                            this.close();
+                            this._resetFile();
+                            trombi.open();
+                            trombi._loadFile(file);
+                            return true;
+                        });
+                        if (switched) return;
                     }
                     setLoading(true, 'Extraction du PDF...');
                 }

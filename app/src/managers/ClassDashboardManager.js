@@ -361,13 +361,12 @@ export const ClassDashboardManager = {
         const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
 
         const withEvolution = students.filter(s => s.evolution !== null);
-        let avgEvolution = null;
+        const avgEvolution = StatsService.computeAverageEvolution(withEvolution.map(s => s.evolution));
         let progressCount = 0;
         let stableCount = 0;
         let regressionCount = 0;
 
         if (withEvolution.length > 0) {
-            avgEvolution = withEvolution.reduce((a, s) => a + s.evolution, 0) / withEvolution.length;
             withEvolution.forEach(s => {
                 const category = StatsService.classifyEvolutionCategory(s.evolution);
                 if (category === 'progress') progressCount++;

@@ -16,7 +16,7 @@ import { extractTextFromPdf, isPdf } from '../utils/PdfUtils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { MassImportManager } from './MassImportManager.js';
-import { ImportWizardManager } from './ImportWizardManager.js';
+import { loadImportWizard, withLazyManager } from '../utils/LazyManagers.js';
 
 export const FileImportManager = {
     /**
@@ -37,7 +37,7 @@ export const FileImportManager = {
      * Déclenche l'import avec des données fournies directement
      * @param {string} dataText - Les données texte à importer
      */
-    handleMassImportWithData(dataText) {
+    async handleMassImportWithData(dataText) {
         if (!dataText || !dataText.trim()) {
             UI.showNotification('Aucune donnée à importer.', 'warning');
             return;
@@ -55,7 +55,7 @@ export const FileImportManager = {
         setMassImportMappingState({ rawData: rawLines, lines, columnCount, separator, formatMap: {} });
 
         // Open the new Import Wizard instead of old modal
-        ImportWizardManager.openWithData(dataText);
+        await withLazyManager(loadImportWizard, (wizard) => wizard.openWithData(dataText));
     },
 
     /**
@@ -78,7 +78,8 @@ export const FileImportManager = {
                 const textContent = await extractTextFromPdf(file);
 
                 // Ouvre l'assistant d'import avec le texte extrait
-                ImportWizardManager.openWithData(textContent);
+                const wizard = await loadImportWizard();
+                wizard.openWithData(textContent);
 
                 UI.showNotification('PDF importé avec succès', 'success');
             } catch (error) {
@@ -96,7 +97,7 @@ export const FileImportManager = {
                 StorageManager.importSettings(content);
             } else {
                 // Open import wizard with file content
-                ImportWizardManager.openWithData(content);
+                await withLazyManager(loadImportWizard, (wizard) => wizard.openWithData(content));
             }
         };
         reader.readAsText(file);

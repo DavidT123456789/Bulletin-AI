@@ -25,6 +25,7 @@ import { bus, EVENTS } from '../core/EventBus.js';
 
 let validateApiKeyCallback = null;
 let welcomeModalAbortController = null;
+const FINAL_SVG_END_TIME_SECONDS = 8.6;
 
 export const WelcomeManager = {
     /**
@@ -42,7 +43,34 @@ export const WelcomeManager = {
         if (!SafeStorage.get(CONFIG.LS_FIRST_VISIT_KEY)) {
             this.setupWelcomeModal();
             UI.openModal(DOM.welcomeModal);
+        } else {
+            this._syncFinalIllustrationAnimation(false);
         }
+    },
+
+    /**
+     * Synchronise l'animation SMIL de l'étape finale pour qu'elle démarre à t=0 à l'affichage
+     * et reste en pause tant que l'étape 4 n'est pas active.
+     * @param {boolean} play
+     * @private
+     */
+    _syncFinalIllustrationAnimation(play) {
+        const svg = document.querySelector('#welcome-step-4 .welcome-transformation-svg svg');
+        if (!svg) return;
+
+        if (!play) {
+            svg.pauseAnimations?.();
+            return;
+        }
+
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            svg.setCurrentTime?.(FINAL_SVG_END_TIME_SECONDS);
+            svg.pauseAnimations?.();
+            return;
+        }
+
+        svg.setCurrentTime?.(0);
+        svg.unpauseAnimations?.();
     },
 
     /**
@@ -305,7 +333,10 @@ export const WelcomeManager = {
                         ? "Tout est configuré. Lancez l'application pour commencer."
                         : "Tout est prêt. Vous pourrez activer l'IA à tout moment dans les réglages.";
                 }
+                this._syncFinalIllustrationAnimation(true);
                 DOM.welcomeFinishAndHideBtn?.focus?.();
+            } else {
+                this._syncFinalIllustrationAnimation(false);
             }
 
             DOM.welcomeNextBtn.disabled = false;
@@ -337,6 +368,7 @@ export const WelcomeManager = {
         const completeWelcome = async ({ showLoading = false, skipCloseModal = false } = {}) => {
             if (isWelcomeCompleted) return;
             isWelcomeCompleted = true;
+            this._syncFinalIllustrationAnimation(false);
 
             if (HistoryManager.isOpen('welcomeWizardStep')) {
                 HistoryManager.handleManualClose('welcomeWizardStep');
@@ -448,6 +480,7 @@ export const WelcomeManager = {
             DOM.welcomeFinishOptions.style.display = 'none';
             DOM.welcomeNextBtn.disabled = false;
             currentWelcomeStep = 1;
+            this._syncFinalIllustrationAnimation(false);
             if (HistoryManager.isOpen('welcomeWizardStep')) {
                 HistoryManager.handleManualClose('welcomeWizardStep');
             }

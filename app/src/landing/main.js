@@ -15,7 +15,7 @@ const CAROUSEL_ITEMS = [
     { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Import PDF & Tableurs', desc: 'Compatible bilans et trombinoscopes PDF (Pronote, MBN), CSV ou copier-coller depuis Excel.', label: 'Import' },
     { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Trombinoscope & Sauvegarde', desc: 'Visualisez vos élèves et archivez vos classes en local ou sur votre Google Drive personnel.', label: 'Stockage' },
     { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
-    { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama 100% hors-ligne.', label: 'Flexible' },
+    { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama 100\u00A0% hors-ligne.', label: 'Flexible' },
     { icon: 'solar:users-group-rounded-linear', color: 'bg-indigo-50 text-indigo-600', title: 'Plan & Groupes', desc: 'Placement en classe, binômes ou îlots d\'activité équilibrés et export PDF.', label: 'Organisation' }
 ];
 

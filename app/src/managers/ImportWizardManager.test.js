@@ -160,7 +160,7 @@ describe('ImportWizardManager — Harmonisation des animations d\'ouverture & ha
         expect(HistoryManager.handleManualClose).toHaveBeenCalledWith('importWizardStep');
     });
 
-    it('abaisse le z-index du Hub (.is-handing-off) sans délai mort pour les 3 modales centrées et le nettoie après transition', () => {
+    it('abaisse le z-index du Hub (.is-handing-off) sans délai mort pour les 3 modales centrées et le nettoie après transition', async () => {
         ImportWizardManager._bindHubEvents();
         const backdrop = document.getElementById('importHubBackdrop');
 
@@ -179,10 +179,10 @@ describe('ImportWizardManager — Harmonisation des animations d\'ouverture & ha
             expect(backdrop.classList.contains('active')).toBe(false);
             expect(backdrop.classList.contains('is-handing-off')).toBe(true);
 
-            vi.advanceTimersByTime(0);
+            await vi.advanceTimersByTimeAsync(0);
             expect(targetMock).toHaveBeenCalledTimes(1);
 
-            vi.advanceTimersByTime(250);
+            await vi.advanceTimersByTimeAsync(250);
             expect(backdrop.classList.contains('is-handing-off')).toBe(false);
         }
     });

@@ -63,22 +63,27 @@
     pointer-events: none;
 }
 
-.btn-secondary {
+.btn-secondary,
+.btn.btn-neutral {
     background: var(--tonal-bg);
     color: var(--text-secondary);
-    border: none;
+    border: 1px solid transparent;
     box-shadow: none;
+    font-weight: 500;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .btn-secondary:hover:not(:disabled) {
+    .btn-secondary:hover:not(:disabled):not(.disabled),
+    .btn.btn-neutral:hover:not(:disabled):not(.disabled) {
         background: var(--tonal-hover-bg);
         color: var(--text-primary);
+        border-color: transparent;
         box-shadow: none;
     }
 }
 
-.btn-secondary:active:not(:disabled) {
+.btn-secondary:active:not(:disabled):not(.disabled),
+.btn.btn-neutral:active:not(:disabled):not(.disabled) {
     transform: scale(0.97);
     background: var(--tonal-active-bg);
     color: var(--text-primary);
@@ -310,27 +315,9 @@
     filter: brightness(0.92);
 }
 
-/* État 2 : Régénérer & Actions tonales secondaires (Copier) */
+/* État 2 : Régénérer & Actions tonales secondaires (Copier) — couleurs factorisées avec .btn-secondary */
 .btn.btn-neutral {
-    background: var(--tonal-bg);
-    border: 1px solid transparent;
-    color: var(--text-secondary);
-    box-shadow: none;
     animation: none !important;
-}
-
-.btn.btn-neutral i,
-.btn.btn-neutral iconify-icon {
-    color: inherit;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .btn.btn-neutral:hover:not(:disabled):not(.disabled) {
-        background: var(--tonal-hover-bg);
-        border-color: transparent;
-        color: var(--text-primary);
-        box-shadow: none;
-    }
 }
 
 /* État désactivé partagé (maintient pointer-events: auto pour les tooltips Tippy) */

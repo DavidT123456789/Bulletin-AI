@@ -129,7 +129,6 @@ export function initDOM() {
     DOM.prevStudentBtn = document.getElementById('prevStudentBtn');
     DOM.helpModal = document.getElementById('helpModal');
     DOM.closeHelpModalBtn = document.getElementById('closeHelpModalBtn');
-    DOM.closeHelpModalFooterBtn = document.getElementById('closeHelpModalFooterBtn');
     DOM.linkGithub = document.getElementById('linkGithub');
     DOM.linkKofi = document.getElementById('linkKofi');
     DOM.linkFeedback = document.getElementById('linkFeedback');

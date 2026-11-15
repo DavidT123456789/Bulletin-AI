@@ -391,8 +391,7 @@
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
                                     Les données sensibles (identités des élèves, notes brutes, photos) sont stockées
-                                    <strong>exclusivement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, sans serveur intermédiaire, avec sauvegarde optionnelle sur votre propre Google Drive (clés API isolées). L'application
-                                    applique par défaut une <strong>pseudonymisation à la volée</strong> (masquage des noms/prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres) avant tout appel vers l'IA — compatible avec <strong>Albert API</strong> (infrastructure gouvernementale souveraine Gouv.fr / DINUM) ou <strong>Ollama</strong> (100% hors-ligne).
+                                    <strong>exclusivement dans votre navigateur (IndexedDB &amp; LocalStorage)</strong>, sans serveur intermédiaire, avec sauvegarde optionnelle sur votre propre Google Drive (clés API isolées). L'application applique par défaut une <strong>pseudonymisation à la volée</strong> avant tout appel vers l'IA (exclusion des noms de famille, remplacement des prénoms par <code>[PRÉNOM]</code> et traduction locale des statuts médico-scolaires <em>PAI, PAP, ULIS…</em> en consignes pédagogiques neutres), tandis que la découpe des photos du trombinoscope reste 100&nbsp;% locale.
                                 </div>
                             </div>
                         </div>
@@ -413,9 +412,8 @@
                         <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
-                                    Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA gouvernementale souveraine Gouv.fr / DINUM, gratuite pour les enseignants via ProConnect), <strong>Mistral AI</strong>, <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi qu'OpenAI, Claude et
-                                    OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
-                                    100% hors ligne (Air-Gapped).
+                                    Compatible nativement avec <strong>Albert API</strong> (passerelle d'IA gouvernementale souveraine Gouv.fr / DINUM, gratuite pour les enseignants via ProConnect), <strong>Google Gemini</strong> et <strong>Groq Cloud</strong> (offres gratuites sans carte bancaire), ainsi que <strong>Mistral AI</strong>, OpenAI, Claude et
+                                    OpenRouter. Le <strong>Relais automatique</strong> bascule vers un autre moteur configuré en cas de quota atteint, et l'intégration d'<strong>Ollama</strong> permet une exécution 100&nbsp;% hors-ligne en local.
                                 </div>
                             </div>
                         </div>
@@ -436,7 +434,7 @@
                         <div class="accordion-content" id="acc-panel-3" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
-                                    L'application utilise des consignes calibrées pour garantir un ton professionnel et synthétise automatiquement vos observations du <strong>Journal de bord</strong> (avec seuil de signalement réglable) ainsi que l'historique des trimestres. Trois retouches rapides (<em>Concise, Encourageante, Peaufiner</em>) ajustent l'appréciation à la volée.
+                                    L'application utilise des consignes calibrées pour garantir un ton professionnel et synthétise automatiquement vos observations du <strong>Journal de bord</strong> (avec seuil de signalement réglable) ainsi que l'historique des périodes (trimestres ou semestres). Trois retouches rapides (<em>Concise, Encourageante, Peaufiner</em>) ajustent l'appréciation à la volée.
                                 </div>
                             </div>
                         </div>
@@ -457,7 +455,7 @@
                         <div class="accordion-content" id="acc-panel-4" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
-                                    Extraction locale des bilans périodiques et trombinoscopes <strong>PDF (Pronote, MBN)</strong> et détection automatique de colonnes depuis tout tableur (CSV ou copier-coller Excel). Export des plans de classe en PDF et copie rapide formatée pour les logiciels de vie scolaire.
+                                    Extraction locale des bilans périodiques et trombinoscopes <strong>PDF (Pronote, MBN)</strong> et détection automatique de colonnes depuis tout tableur (CSV ou copier-coller Excel). Export en <strong>Tableau (CSV)</strong>, impression / PDF (appréciations et plans de classe), copie rapide formatée pour la vie scolaire et sauvegarde complète au format <strong>JSON</strong>.
                                 </div>
                             </div>
                         </div>

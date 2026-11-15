@@ -1041,22 +1041,8 @@
     gap: 8px;
 }
 
-#classManagementModal .modal-header-actions-divider {
-    width: 1px;
-    height: 18px;
-    background: var(--border-color);
-    margin: 0 4px;
-    flex-shrink: 0;
-}
-
 #classManageMoreWrapper {
     position: relative;
-}
-
-#classManageMoreBtn {
-    width: var(--close-btn-size);
-    height: var(--close-btn-size);
-    font-size: var(--close-btn-icon-size);
 }
 
 #classManageMoreMenu {

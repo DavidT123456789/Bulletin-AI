@@ -16,8 +16,8 @@ import { ExportManager } from '../ExportManager.js';
 import { MassImportManager } from '../MassImportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
-import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
+import { loadClassDashboard, prefetchOnHover, withLazyManager } from '../../utils/LazyManagers.js';
 
 export const ListViewEvents = {
 
@@ -673,7 +673,11 @@ export const ListViewEvents = {
         addAction('#exportPdfBtn', () => ExportManager.exportToPdf());
 
         // Analyze class (in dropdown menu)
-        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
+        const analyzeBtn = listContainer.querySelector('#analyzeClassBtn-shortcut');
+        prefetchOnHover(analyzeBtn, loadClassDashboard);
+        addAction('#analyzeClassBtn-shortcut', () =>
+            withLazyManager(loadClassDashboard, (dashboard) => dashboard.openDashboard())
+        );
 
         // Copy All Appreciations
         addAction('#copyAllAppreciationsBtn', () => {

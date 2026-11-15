@@ -77,6 +77,7 @@ export const SettingsModalListeners = {
                 requestAnimationFrame(() => {
                     this._updateStudentContextAndPrompt();
                     this._autoResizeStyleInstructions();
+                    this._syncLeftPaneScrollHint();
                 });
             }
         });
@@ -337,6 +338,17 @@ export const SettingsModalListeners = {
             this._applyStyleChange({ enableTone: DOM.iaToneToggle.checked });
         });
 
+        const leftPane = document.getElementById('settings-controls-panel');
+        if (leftPane) {
+            leftPane.addEventListener('scroll', () => this._syncLeftPaneScrollHint(), { passive: true });
+            document.getElementById('iaToneCollapsible')?.addEventListener('transitionend', () => {
+                this._syncLeftPaneScrollHint();
+            });
+            window.addEventListener('resize', () => {
+                if (this._isPersonalizationOpen()) this._syncLeftPaneScrollHint();
+            });
+        }
+
         if (DOM.iaStyleInstructions) {
             const refreshPromptDebounced = Utils.debounce(() => this._refreshPromptPreview(), 300);
             DOM.iaStyleInstructions.addEventListener('input', () => {
@@ -489,6 +501,18 @@ export const SettingsModalListeners = {
         const targetHeight = Math.min(Math.max(textarea.scrollHeight + borders, min), max);
         textarea.style.height = `${targetHeight}px`;
         textarea.style.overflowY = textarea.scrollHeight + borders > max ? 'auto' : 'hidden';
+        this._syncLeftPaneScrollHint();
+    },
+
+    /**
+     * Affiche un fondu subtil en bas du volet gauche s'il reste des réglages sous le pli.
+     * @private
+     */
+    _syncLeftPaneScrollHint() {
+        const panel = document.getElementById('settings-controls-panel');
+        if (!panel) return;
+        const hasScrollBelow = panel.scrollHeight - panel.scrollTop - panel.clientHeight > 8;
+        panel.classList.toggle('has-scroll-below', hasScrollBelow);
     },
 
     /**

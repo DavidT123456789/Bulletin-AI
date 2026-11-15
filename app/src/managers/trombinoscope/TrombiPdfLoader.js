@@ -6,9 +6,17 @@
 
 import { UI } from '../UIManager.js';
 import { ClassManager } from '../ClassManager.js';
-import { ImportWizardManager } from '../ImportWizardManager.js';
+import { loadImportWizard, withLazyManager } from '../../utils/LazyManagers.js';
 import { Utils } from '../../utils/Utils.js';
 import { parsePronoteTrombiPdf } from '../../utils/PronoteTrombiParser.js';
+
+async function switchToImportWizard(manager, file) {
+    await withLazyManager(loadImportWizard, (wizard) => {
+        manager.close();
+        wizard.open();
+        wizard._handleFile(file);
+    });
+}
 
 export const TrombiPdfLoader = {
     async loadFile(manager, file) {
@@ -37,9 +45,7 @@ export const TrombiPdfLoader = {
                 }
             );
             if (shouldSwitch) {
-                manager.close();
-                ImportWizardManager.open();
-                ImportWizardManager._handleFile(file);
+                await switchToImportWizard(manager, file);
             }
             return;
         }
@@ -145,9 +151,7 @@ export const TrombiPdfLoader = {
                     }
                 );
                 if (shouldSwitch) {
-                    manager.close();
-                    ImportWizardManager.open();
-                    ImportWizardManager._handleFile(file);
+                    await switchToImportWizard(manager, file);
                 }
                 return;
             }
@@ -242,9 +246,7 @@ export const TrombiPdfLoader = {
                 }
             );
             if (shouldSwitch) {
-                manager.close();
-                ImportWizardManager.open();
-                ImportWizardManager._handleFile(file);
+                await switchToImportWizard(manager, file);
             }
         }
     },

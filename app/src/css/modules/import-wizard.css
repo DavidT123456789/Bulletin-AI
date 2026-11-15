@@ -1294,10 +1294,6 @@
     min-width: 120px;
 }
 
-.import-wizard-footer .btn-secondary {
-    border: none;
-}
-
 
 
 /* Local specifity only for button layout/spacing, not Visuals */

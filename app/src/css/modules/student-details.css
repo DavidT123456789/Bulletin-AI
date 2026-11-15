@@ -34,20 +34,17 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-secondary);
-    background: var(--surface-color);
+    background: transparent;
     border: none;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
+    border-right: 1px solid var(--border-color);
+    padding: 0 10px 0 0;
+    border-radius: 0;
     flex-shrink: 0;
-}
-
-[data-theme="dark"] .preview-context-tag {
-    background: rgba(255, 255, 255, 0.06);
 }
 
 .preview-context-tag iconify-icon {
     font-size: 13px;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
 }
 
 .preview-context-text {
@@ -67,7 +64,7 @@
 }
 
 .preview-history-table th {
-    padding: 8px 10px;
+    padding: 6px 0 7px;
     text-align: left;
     font-size: 11px;
     font-weight: 600;
@@ -82,7 +79,8 @@
 .preview-history-table td.period-cell {
     width: 1%;
     white-space: nowrap;
-    padding-right: 14px;
+    padding-left: 0;
+    padding-right: 22px;
 }
 
 .preview-history-table th.col-grade,
@@ -90,7 +88,13 @@
     width: 1%;
     white-space: nowrap;
     text-align: center;
-    padding-inline: 12px;
+    padding-inline: 18px;
+}
+
+.preview-history-table th:last-child,
+.preview-history-table td.lab-app-cell {
+    padding-left: 20px;
+    padding-right: 0;
 }
 
 .preview-history-table td.lab-app-cell {
@@ -104,7 +108,7 @@
 }
 
 .preview-history-table td {
-    padding: 9px 10px;
+    padding: 7px 0;
     border-bottom: 1px solid var(--border-subtle, var(--border-color));
     color: var(--text-primary);
     vertical-align: middle;
@@ -114,22 +118,21 @@
     border-bottom: none;
 }
 
-.preview-row {
-    transition: background-color var(--transition-fast);
-}
+@media (max-width: 600px) {
+    .preview-history-table th.col-period,
+    .preview-history-table td.period-cell {
+        padding-right: 12px;
+    }
 
-.preview-row td:first-child {
-    border-top-left-radius: var(--radius-sm);
-    border-bottom-left-radius: var(--radius-sm);
-}
+    .preview-history-table th.col-grade,
+    .preview-history-table td.grade-cell {
+        padding-inline: 10px;
+    }
 
-.preview-row td:last-child {
-    border-top-right-radius: var(--radius-sm);
-    border-bottom-right-radius: var(--radius-sm);
-}
-
-.preview-row:hover {
-    background: var(--item-idle-bg);
+    .preview-history-table th:last-child,
+    .preview-history-table td.lab-app-cell {
+        padding-left: 12px;
+    }
 }
 
 .period-name {
@@ -168,7 +171,7 @@
     font-weight: 500;
     border-radius: var(--radius-pill);
     background: var(--tonal-bg);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     border: none;
     line-height: 1.4;
     user-select: none;
@@ -353,7 +356,7 @@
 }
 
 .nav-arrow-custom:disabled {
-    opacity: 0.25;
+    opacity: 0.42;
     cursor: not-allowed;
     transform: none;
 }

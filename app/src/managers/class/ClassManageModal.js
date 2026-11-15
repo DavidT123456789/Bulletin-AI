@@ -11,7 +11,7 @@ import { appState, userSettings } from '../../state/State.js';
 import { ClassManager } from '../ClassManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { sortClassesByLevel } from '../../utils/LevelDetector.js';
-import { ClassDashboardManager } from '../ClassDashboardManager.js';
+import { StatsService } from '../../services/StatsService.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
@@ -800,7 +800,10 @@ export const ClassManageModal = {
                 <div class="class-management-list" role="listbox" aria-label="Liste des classes">
                     ${currentClasses.map(cls => {
                         const stats = this._getClassStats(cls.id);
-                        const pedagoStats = ClassDashboardManager.getStatsForClass(cls.id);
+                        const pedagoStats = StatsService.computeClassQuickStats(
+                            ClassManager.getStudentsForClass(cls.id),
+                            appState.currentPeriod
+                        );
                         const hasGrades = pedagoStats && pedagoStats.count > 0;
                         const isActive = cls.id === appState.currentClassId;
 

@@ -3,15 +3,14 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { StorageManager } from './StorageManager.js';
 import { ListViewManager } from './ListViewManager.js';
-import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
-import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { StatsService } from '../services/StatsService.js';
+import { loadImportWizard, loadTrombinoscope, prefetchOnHover, withLazyManager } from '../utils/LazyManagers.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
 let Am; // AppreciationsManager reference
@@ -726,12 +725,15 @@ export const ResultsUIManager = {
 
         const hubActions = {
             individual: () => FocusPanelManager.openNew(),
-            mass: () => ImportWizardManager.open(),
-            photos: () => TrombinoscopeManager.open(),
+            mass: () => withLazyManager(loadImportWizard, (wizard) => wizard.open()),
+            photos: () => withLazyManager(loadTrombinoscope, (trombi) => trombi.open()),
             existing: () => ClassUIManager.showPickExistingStudentsModal()
         };
 
         hubCards.forEach(card => {
+            if (card.dataset.action === 'mass') prefetchOnHover(card, loadImportWizard);
+            if (card.dataset.action === 'photos') prefetchOnHover(card, loadTrombinoscope);
+
             card.addEventListener('click', () => {
                 container.querySelector('#emptyStateClassInput')?.blur();
                 hubActions[card.dataset.action]?.();

@@ -307,6 +307,14 @@
     flex-shrink: 0;
 }
 
+.modal-header-actions-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border-color);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
 /* Harmonized Modal Header (Subtitle Style) */
 .modal-title-group {
     display: flex;
@@ -401,7 +409,8 @@
     font-weight: 500;
 }
 
-.close-button {
+.close-button,
+.modal-header-actions :is(.icon-button, .btn-icon-small) {
     background: var(--close-btn-bg, transparent);
     border: none;
     font-size: var(--close-btn-icon-size);
@@ -421,13 +430,12 @@
     flex-shrink: 0;
 }
 
-.close-button i,
-.close-button iconify-icon {
+:is(.close-button, .modal-header-actions :is(.icon-button, .btn-icon-small)) :is(i, iconify-icon) {
     font-size: var(--close-btn-icon-size);
     line-height: 1;
 }
 
-.close-button:hover {
+:is(.close-button, .modal-header-actions :is(.icon-button, .btn-icon-small)):hover {
     background-color: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
     transform: none;
@@ -436,7 +444,7 @@
     outline: none;
 }
 
-.close-button:active {
+:is(.close-button, .modal-header-actions :is(.icon-button, .btn-icon-small)):active {
     transform: none;
 }
 
@@ -484,10 +492,12 @@
 .modal-footer .btn,
 .modal-alert-actions .btn,
 .import-wizard-footer .btn,
-.trombi-step-footer .btn {
+.trombi-step-footer .btn,
+.welcome-nav-container .btn {
     height: var(--modal-btn-height) !important;
     padding: 0 16px !important;
     font-size: 13px !important;
+    font-weight: 600;
     border-radius: var(--radius-pill) !important;
 }
 

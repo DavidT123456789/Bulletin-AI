@@ -22,10 +22,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { ModelSelectionManager } from './ModelSelectionManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
-import { ImportWizardManager } from './ImportWizardManager.js';
-import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
-import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -114,23 +111,11 @@ export const App = {
             FocusPanelManager.init(AppreciationsManager, ListViewManager);
         });
 
-        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard)
-        await this._safeInit('ImportWizardManager', () => {
-            window.ImportWizardManager = ImportWizardManager;
-            ImportWizardManager.init();
-        });
-        await this._safeInit('TrombinoscopeManager', () => {
-            window.TrombinoscopeManager = TrombinoscopeManager;
-            TrombinoscopeManager.init();
-        });
+        // 9. Plan de classe (les vues secondaires ImportWizard, Trombinoscope et ClassDashboard sont lazy-loadées)
         await this._safeInit('SeatingChartManager', () => {
             window.SeatingChartManager = SeatingChartManager;
             SeatingChartManager.init();
             SeatingChartManager.restoreActiveView();
-        });
-        await this._safeInit('ClassDashboardManager', () => {
-            window.ClassDashboardManager = ClassDashboardManager;
-            ClassDashboardManager.init();
         });
 
         // 10. Transitions de restauration iOS / post-rechargement
@@ -164,9 +149,9 @@ export const App = {
         if (FocusPanelManager?.closePanel) {
             FocusPanelManager.closePanel();
         }
-        if (ClassDashboardManager?.restoreOrResetAISection) {
+        if (window.ClassDashboardManager?.restoreOrResetAISection) {
             try {
-                ClassDashboardManager.restoreOrResetAISection();
+                window.ClassDashboardManager.restoreOrResetAISection();
             } catch {
                 // Ignore silent error
             }
@@ -297,8 +282,6 @@ export const App = {
 
     handleHelpButtonClick() {
         UI.openModal(DOM.helpModal);
-        // Peupler les exemples de format d'import
-        UI.updateHelpImportFormat();
     },
 
     handleAiModelSelectChange() {

@@ -115,6 +115,9 @@ describe('WelcomeManager', () => {
                 <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio" value="semestres">
             </div>
             <div id="welcome-step-4" class="welcome-step">
+                <div class="welcome-transformation-svg">
+                    <svg></svg>
+                </div>
                 <p id="welcomeFinalSubtitle"></p>
             </div>
         `;
@@ -423,6 +426,99 @@ describe('WelcomeManager', () => {
 
             expect(mockEvent.preventDefault).toHaveBeenCalled();
             expect(UI.openModal).toHaveBeenCalledWith(DOM.welcomeModal);
+        });
+    });
+
+    describe('Step 4 SVG animation lifecycle', () => {
+        it('should pause Step 4 SVG animations when already visited', () => {
+            const svg = document.querySelector('#welcome-step-4 .welcome-transformation-svg svg');
+            svg.pauseAnimations = vi.fn();
+            localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
+
+            WelcomeManager.handleFirstVisit();
+
+            expect(svg.pauseAnimations).toHaveBeenCalledTimes(1);
+        });
+
+        it('should pause on init, restart from t=0 on Step 4, and pause again on back or completion', async () => {
+            vi.useFakeTimers();
+            const { DOM } = await import('../utils/DOM');
+            const { ClassManager } = await import('./ClassManager');
+            const injectSpy = vi.spyOn(WelcomeManager, '_injectDemoClass').mockResolvedValue();
+            ClassManager.getAllClasses.mockReturnValue([]);
+
+            const svg = document.querySelector('#welcome-step-4 .welcome-transformation-svg svg');
+            svg.pauseAnimations = vi.fn();
+            svg.unpauseAnimations = vi.fn();
+            svg.setCurrentTime = vi.fn();
+
+            WelcomeManager.setupWelcomeModal();
+            expect(svg.pauseAnimations).toHaveBeenCalledTimes(1);
+            expect(svg.unpauseAnimations).not.toHaveBeenCalled();
+
+            // Step 1 -> 2 -> 3 -> 4
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            expect(svg.unpauseAnimations).not.toHaveBeenCalled();
+
+            DOM.welcomeNextBtn.click();
+            expect(svg.setCurrentTime).toHaveBeenCalledWith(0);
+            expect(svg.unpauseAnimations).toHaveBeenCalledTimes(1);
+
+            // Step 4 -> 3 (Précédent) pauses again
+            vi.advanceTimersByTime(500);
+            const pauseCountBeforeBack = svg.pauseAnimations.mock.calls.length;
+            DOM.welcomePrevBtn.click();
+            expect(svg.pauseAnimations).toHaveBeenCalledTimes(pauseCountBeforeBack + 1);
+
+            // Return to Step 4 -> restarts cleanly from 0
+            vi.advanceTimersByTime(500);
+            DOM.welcomeNextBtn.click();
+            expect(svg.setCurrentTime).toHaveBeenCalledTimes(2);
+            expect(svg.unpauseAnimations).toHaveBeenCalledTimes(2);
+
+            // Completing the modal pauses animations
+            const pauseCountBeforeFinish = svg.pauseAnimations.mock.calls.length;
+            DOM.welcomeFinishAndHideBtn.click();
+            expect(svg.pauseAnimations).toHaveBeenCalledTimes(pauseCountBeforeFinish + 1);
+
+            injectSpy.mockRestore();
+            vi.useRealTimers();
+        });
+
+        it('should jump directly to the final built state and stay paused when prefers-reduced-motion is enabled', async () => {
+            vi.useFakeTimers();
+            const { DOM } = await import('../utils/DOM');
+            const originalMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockImplementation((query) => ({
+                matches: query === '(prefers-reduced-motion: reduce)',
+                media: query,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
+            }));
+
+            const svg = document.querySelector('#welcome-step-4 .welcome-transformation-svg svg');
+            svg.pauseAnimations = vi.fn();
+            svg.unpauseAnimations = vi.fn();
+            svg.setCurrentTime = vi.fn();
+
+            WelcomeManager.setupWelcomeModal();
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+            DOM.welcomeNextBtn.click();
+            vi.advanceTimersByTime(500);
+
+            svg.pauseAnimations.mockClear();
+            DOM.welcomeNextBtn.click();
+
+            expect(svg.setCurrentTime).toHaveBeenCalledWith(8.6);
+            expect(svg.pauseAnimations).toHaveBeenCalledTimes(1);
+            expect(svg.unpauseAnimations).not.toHaveBeenCalled();
+
+            window.matchMedia = originalMatchMedia;
+            vi.useRealTimers();
         });
     });
 });

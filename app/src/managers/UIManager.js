@@ -1025,7 +1025,7 @@ export const UI = {
             if (iconEl) {
                 iconEl.setAttribute('icon', 'solar:key-linear');
             }
-            tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100% gratuit)</span>`;
+            tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100&nbsp;% gratuit)</span>`;
         } else {
             const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
             const shortModelName = providerId === 'albert' ? 'Albert' : modelName.split(' ')[0];
@@ -1114,27 +1114,6 @@ export const UI = {
         if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
         return true;
     },
-    updateHelpImportFormat(period) {
-        const struct = document.getElementById('helpFormatStructure'), ex = document.getElementById('helpFormatExample');
-        if (!struct || !ex) return;
-
-        // Fallback si la période n'est pas définie
-        const periods = Utils.getPeriods();
-        const effectivePeriod = period || appState.currentPeriod || periods[periods.length - 1];
-        const periodIndex = periods.indexOf(effectivePeriod);
-        const prev = periodIndex > 0 ? periods.slice(0, periodIndex) : [];
-
-        let sParts = ["NOM Prénom", "Statut"], eParts = ["DUPONT Chloé", ""];
-        prev.forEach((p, i) => { sParts.push(`Moy ${p}`, `App ${p}`); eParts.push(`${14.5 + i}`, `Bonne période.`); });
-        sParts.push(`Moy ${effectivePeriod}`, 'Instructions'); eParts.push(`${15.0 + prev.length}`, 'Sérieux.');
-        struct.textContent = sParts.join(' | '); ex.textContent = eParts.join(' | ');
-
-        const sel = document.getElementById('helpFormatSelector');
-        if (sel) {
-            sel.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            sel.querySelector(`button[data-format="${effectivePeriod}"]`)?.classList.add('active');
-        }
-    },
     updateWordCount(id, text) {
         const el = document.getElementById(id);
         if (el) {
@@ -1157,14 +1136,14 @@ export const UI = {
      * @param {boolean} [options.scrollIntoView=true] - Whether to scroll to the element
      * @param {number} [options.duration=2400] - Duration of the highlight in ms (3 iterations × 800ms)
      * @param {string} [options.tab] - Tab to switch to before highlighting (e.g., 'templates', 'advanced')
-     * @param {string|null} [options.parentSelector='.form-group'] - Highlight the closest matching ancestor (null: the element itself)
+     * @param {string|null} [options.parentSelector='.form-group, .api-key-section'] - Highlight the closest matching ancestor (null: the element itself)
      */
     highlightSettingsElement(elementOrId, options = {}) {
         const {
             scrollIntoView = true,
             duration = 2400,  // 3 iterations × 800ms animation
             tab = null,
-            parentSelector = '.form-group'
+            parentSelector = '.form-group, .api-key-section'
         } = options;
 
         // Switch tab if specified

@@ -228,5 +228,57 @@ describe('StatsService', () => {
                 '16-20': 0
             });
         });
+
+        it('should compute average evolution cleanly and return null when empty', () => {
+            expect(StatsService.computeAverageEvolution([])).toBeNull();
+            expect(StatsService.computeAverageEvolution([null, undefined, NaN])).toBeNull();
+            expect(StatsService.computeAverageEvolution([1.5, null, -0.5, 2])).toBe(1);
+        });
+
+        it('should compute class quick stats (count, average, avgEvolution) and ignore departed/ungraded students', () => {
+            expect(StatsService.computeClassQuickStats(null, 'T2')).toBeNull();
+            expect(StatsService.computeClassQuickStats([], 'T2')).toBeNull();
+            expect(StatsService.computeClassQuickStats([{}], '')).toBeNull();
+
+            const students = [
+                {
+                    studentData: {
+                        periods: {
+                            T1: { grade: '10' },
+                            T2: { grade: '14' } // +4
+                        }
+                    }
+                },
+                {
+                    studentData: {
+                        periods: {
+                            T1: { grade: '14' },
+                            T2: { grade: '12' } // -2
+                        }
+                    }
+                },
+                {
+                    studentData: {
+                        periods: {
+                            T2: { grade: '0' } // valide mais sans T1
+                        }
+                    }
+                },
+                {
+                    studentData: {
+                        periods: {
+                            T2: { grade: '' } // ignoré
+                        }
+                    }
+                }
+            ];
+
+            const stats = StatsService.computeClassQuickStats(students, 'T2');
+            expect(stats).toEqual({
+                count: 3,
+                average: (14 + 12 + 0) / 3,
+                avgEvolution: 1
+            });
+        });
     });
 });

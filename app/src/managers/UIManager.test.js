@@ -513,38 +513,6 @@ describe('UIManager', () => {
         });
     });
 
-    describe('updateHelpImportFormat', () => {
-        beforeEach(() => {
-            document.body.innerHTML = `
-                <div id="helpFormatStructure"></div>
-                <div id="helpFormatExample"></div>
-                <div id="helpFormatSelector">
-                    <button data-format="T1" class="active">T1</button>
-                    <button data-format="T2">T2</button>
-                </div>
-            `;
-        });
-
-        it('should update structure text for given period', () => {
-            UI.updateHelpImportFormat('T2');
-
-            const struct = document.getElementById('helpFormatStructure');
-            expect(struct.textContent).toContain('NOM Prénom');
-        });
-
-        it('should update example text for given period', () => {
-            UI.updateHelpImportFormat('T2');
-
-            const example = document.getElementById('helpFormatExample');
-            expect(example.textContent).toContain('DUPONT');
-        });
-
-        it('should not throw if elements are missing', () => {
-            document.body.innerHTML = '';
-            expect(() => UI.updateHelpImportFormat('T1')).not.toThrow();
-        });
-    });
-
     describe('updateDarkModeButtonIcon', () => {
         it('should delegate to ThemeManager.updateUI', async () => {
             const { ThemeManager } = await import('./ThemeManager.js');
@@ -985,6 +953,33 @@ describe('UIManager', () => {
             UI.hideHeaderProgress(true);
             expect(dashboard.classList.contains('generating')).toBe(false);
             expect(fill.style.width).toBe('0%');
+        });
+    });
+
+    describe('highlightSettingsElement', () => {
+        it('surbrille la carte .api-key-section parente tout en focalisant le champ de clé', () => {
+            const section = document.createElement('div');
+            section.className = 'api-key-section';
+            section.id = 'albertApiKeyGroup';
+            section.scrollIntoView = vi.fn();
+
+            const input = document.createElement('input');
+            input.id = 'albertApiKey';
+            input.focus = vi.fn();
+
+            section.appendChild(input);
+            document.body.appendChild(section);
+
+            UI.highlightSettingsElement('albertApiKey', { duration: 1000 });
+
+            vi.advanceTimersByTime(150);
+            expect(section.scrollIntoView).toHaveBeenCalled();
+            expect(input.focus).toHaveBeenCalled();
+            expect(section.classList.contains('settings-focus-highlight')).toBe(true);
+            expect(input.classList.contains('settings-focus-highlight')).toBe(false);
+
+            vi.advanceTimersByTime(1000);
+            expect(section.classList.contains('settings-focus-highlight')).toBe(false);
         });
     });
 });

@@ -109,7 +109,8 @@ export const FormUI = {
 
         if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
             const words = parseInt(DOM.iaLengthSlider.value, 10);
-            DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${Math.round(words * APPROX_CHARS_PER_WORD)} car.`;
+            const approxChars = Math.round((words * APPROX_CHARS_PER_WORD) / 10) * 10;
+            DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${approxChars} car.`;
         }
 
         if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;

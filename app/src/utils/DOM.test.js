@@ -120,7 +120,6 @@ describe('DOM', () => {
                 <div id="refinement-error-actions"></div>
                 <div id="helpModal"></div>
                 <button id="closeHelpModalBtn"></button>
-                <button id="closeHelpModalFooterBtn"></button>
 
                 <button id="helpGoToSettingsBtn"></button>
                 <select id="helpFormatSelector"></select>

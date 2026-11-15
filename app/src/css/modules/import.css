@@ -473,22 +473,13 @@
     background: transparent;
 }
 
-.welcome-transformation-svg .welcome-svg-halo {
-    display: none;
-}
-
-[data-theme="dark"] .welcome-transformation-svg {
-    --svg-halo-radiant-opacity: 0.28;
-    --svg-halo-intense-opacity: 0.30;
-}
-
-[data-theme="dark"] .welcome-transformation-svg .welcome-svg-halo {
-    display: block;
-}
-
-/* Dark-toned particles blurred onto white backgrounds look muddy; keep SVG glow for Dark Mode only */
+/* Dark-toned glow blurred onto white backgrounds looks muddy; keep SVG glow for Dark Mode only */
 :root:not([data-theme="dark"]) .welcome-transformation-svg .welcome-svg-particles {
     filter: none;
+}
+
+:root:not([data-theme="dark"]) .welcome-transformation-svg .welcome-svg-glow {
+    display: none;
 }
 
 .welcome-transformation-svg svg {

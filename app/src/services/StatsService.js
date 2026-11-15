@@ -1,6 +1,6 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { computeGradeDistributionArray, computeGradeDistributionMap } from '../config/academicConstants.js';
+import { computeGradeDistributionArray, computeGradeDistributionMap, getPreviousPeriod } from '../config/academicConstants.js';
 
 export const StatsService = {
     /**
@@ -191,5 +191,66 @@ export const StatsService = {
     getRelevantEvolution(evolutions, currentPeriod) {
         if (!evolutions || !Array.isArray(evolutions)) return null;
         return evolutions.find(e => e.periode.endsWith(`-${currentPeriod}`));
+    },
+
+    /**
+     * Calcule la moyenne d'un tableau d'écarts numériques (ignore null/NaN).
+     * @param {Array<number|null|undefined>} evolutions
+     * @returns {number|null}
+     */
+    computeAverageEvolution(evolutions) {
+        const valid = (evolutions || []).filter(e => typeof e === 'number' && !isNaN(e));
+        if (valid.length === 0) return null;
+        return valid.reduce((acc, e) => acc + e, 0) / valid.length;
+    },
+
+    /**
+     * Calcule les statistiques rapides d'une classe (effectif noté, moyenne, évolution moyenne)
+     * pour une période donnée sans dépendre de ClassDashboardManager.
+     * @param {Array<Object>} students - Élèves de la classe
+     * @param {string} currentPeriod - Période active (ex: 'T2')
+     * @returns {{ count: number, average: number, avgEvolution: number|null }|null}
+     */
+    computeClassQuickStats(students, currentPeriod) {
+        if (!Array.isArray(students) || students.length === 0 || !currentPeriod) return null;
+
+        const previousPeriod = getPreviousPeriod(currentPeriod);
+        const grades = [];
+        const evolutions = [];
+
+        for (const student of students) {
+            if (!student || Utils.isStudentDepartedBeforePeriod?.(student, currentPeriod)) continue;
+
+            const periodData = student.studentData?.periods?.[currentPeriod];
+            if (!periodData) continue;
+
+            const rawGrade = periodData.grade;
+            if (rawGrade === undefined || rawGrade === null || rawGrade === '') continue;
+
+            const currentGrade = this.parseGrade(rawGrade);
+            if (isNaN(currentGrade)) continue;
+
+            grades.push(currentGrade);
+
+            const previousRawGrade = previousPeriod
+                ? student.studentData?.periods?.[previousPeriod]?.grade
+                : null;
+            const prevGrade = (previousRawGrade !== null && previousRawGrade !== undefined)
+                ? this.parseGrade(previousRawGrade)
+                : null;
+            const evolution = this.computeEvolutionDiff(currentGrade, prevGrade);
+            if (evolution !== null) {
+                evolutions.push(evolution);
+            }
+        }
+
+        const summary = this.summarizeGrades(grades);
+        if (!summary) return null;
+
+        return {
+            count: summary.count,
+            average: summary.average,
+            avgEvolution: this.computeAverageEvolution(evolutions)
+        };
     }
 };

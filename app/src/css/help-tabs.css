@@ -4,10 +4,6 @@
    ==================================================================== */
 
 /* --- Coque Modale Guide & Contenu d'onglet --- */
-#helpModal > .modal-content > .modal-footer {
-    display: none;
-}
-
 .ui-tabs-btn::before,
 .ui-tabs-btn.active::before {
     display: none !important;
@@ -455,6 +451,10 @@
     transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+.help-demo-reset-pill[hidden] {
+    display: none;
+}
+
 .help-demo-reset-pill:hover {
     background: var(--tonal-hover-bg);
     color: var(--text-primary);
@@ -541,7 +541,7 @@
 
 .help-preview-text-area {
     padding: 18px 20px;
-    min-height: 82px;
+    min-height: 108px;
     display: flex;
     align-items: center;
     background: var(--surface-color);
@@ -957,6 +957,10 @@
 /* ====================================================================
    ONGLET 4 : DÉPANNAGE & FAQ (Accordéons épurés + Raccourcis 2×3)
    ==================================================================== */
+#help-data.help-tab-content.active {
+    justify-content: flex-start;
+}
+
 .help-accordions-group {
     display: flex;
     flex-direction: column;
@@ -1118,6 +1122,7 @@
 
 /* Raccourcis clavier (Grille 2×3 épurée sans sous-bordures) */
 .help-shortcuts-card {
+    margin-top: auto;
     background: var(--surface-color);
     border: none;
     border-radius: var(--radius-md);
@@ -1184,6 +1189,16 @@
     flex-shrink: 0;
 }
 
+.help-nowrap {
+    white-space: nowrap;
+}
+
+.help-shortcut-or {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    padding: 0 2px;
+}
+
 .help-kbd-badge {
     display: inline-flex;
     align-items: center;
@@ -1239,7 +1254,7 @@
 }
 
 [data-theme="dark"] .about-logo-tile {
-    background: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 88%, var(--surface-color));
     border-color: transparent;
     box-shadow: var(--shadow-md);
 }
@@ -2044,7 +2059,8 @@
 }
 
 @media (max-width: 768px) and (hover: none) and (pointer: coarse) {
-    .help-shortcuts-card {
+    .help-shortcuts-card,
+    .help-shortcuts-subtitle-suffix {
         display: none;
     }
 }
@@ -2227,8 +2243,9 @@
     }
 
     .help-btn-row .btn.btn-small {
-        height: 34px;
-        padding: 0 10px;
+        min-height: 44px;
+        height: auto;
+        padding: 6px 12px;
         font-size: 0.78rem;
     }
 

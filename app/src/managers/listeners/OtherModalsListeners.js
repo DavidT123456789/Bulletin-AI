@@ -5,18 +5,18 @@
 
 import { DOM } from '../../utils/DOM.js';
 import { UI } from '../UIManager.js';
-import { ClassDashboardManager } from '../ClassDashboardManager.js';
+import { loadClassDashboard, withLazyManager } from '../../utils/LazyManagers.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
-import { getConfiguredProviders } from '../../config/providers.js';
+import { getConfiguredProviders, getProviderConfig, getProviderForModel } from '../../config/providers.js';
 import { appState } from '../../state/State.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
 
 const HELP_REFINE_DEMO_DATA = {
     initial: {
         words: '24 mots',
-        hint: 'Premier jet généré à partir des notes et du contexte · Cliquez sur une retouche ci-dessus',
+        hint: 'Premier jet issu des notes · Testez une retouche ci-dessus',
         text: 'Un bon deuxième trimestre. Lucas s\'investit avec sérieux, participe activement en classe et ses résultats progressent régulièrement. Il faut poursuivre ainsi au prochain trimestre.'
     },
     concise: {
@@ -50,7 +50,6 @@ export const OtherModalsListeners = {
 
     _setupHelpModal(addClickListener) {
         addClickListener(DOM.closeHelpModalBtn, () => UI.closeModal(DOM.helpModal));
-        addClickListener(DOM.closeHelpModalFooterBtn, () => UI.closeModal(DOM.helpModal));
         DOM.helpModal?.addEventListener('click', (e) => {
             if (e.target === DOM.helpModal) {
                 UI.closeModal(DOM.helpModal);
@@ -59,7 +58,7 @@ export const OtherModalsListeners = {
 
         const helpToPersonalizationBtn = document.getElementById('helpToPersonalizationBtn');
         helpToPersonalizationBtn?.addEventListener('click', () => {
-            SettingsModalListeners.openPersonalization('settings-controls-panel');
+            SettingsModalListeners.openPersonalization('iaVoiceSelector');
         });
 
         addClickListener(DOM.relaunchWelcomeGuideBtn, (e) => WelcomeManager.handleRelaunchWelcomeGuide(e));
@@ -88,19 +87,8 @@ export const OtherModalsListeners = {
             });
         });
 
-        // Mise à jour dynamique du badge de statut IA (Étape 1)
-        const updateHelpProviderStatus = () => {
-            const statusBadge = document.getElementById('helpProviderStatusBadge');
-            if (!statusBadge) return;
-
-            const configured = getConfiguredProviders({ state: appState, dom: DOM });
-            const hasOllama = appState?.ollamaEnabled === true;
-            const isReady = configured.length > 0 || hasOllama;
-
-            statusBadge.classList.toggle('status-connected', isReady);
-            statusBadge.classList.toggle('status-unconfigured', !isReady);
-            statusBadge.innerHTML = `<span class="status-dot"></span><span>${isReady ? 'Clé configurée' : 'À configurer'}</span>`;
-        };
+        // Mise à jour dynamique du badge de statut IA et du CTA (Étape 1)
+        const updateHelpProviderStatus = () => this.updateHelpProviderStatus();
 
         setTimeout(updateHelpProviderStatus, 200);
         DOM.helpBtn?.addEventListener('click', updateHelpProviderStatus);
@@ -186,9 +174,44 @@ export const OtherModalsListeners = {
             const resetDemoQuietly = () => applyDemoMode('initial', false);
             DOM.helpBtn?.addEventListener('click', resetDemoQuietly);
             DOM.closeHelpModalBtn?.addEventListener('click', resetDemoQuietly);
-            DOM.closeHelpModalFooterBtn?.addEventListener('click', resetDemoQuietly);
             bus.on(EVENTS.MODAL_HELP_OPENED, resetDemoQuietly);
         }
+    },
+
+    /**
+     * Synchronise le badge de statut IA et la cible du bouton Configurer/Gérer les clés (Onglet Démarrage).
+     */
+    updateHelpProviderStatus() {
+        const statusBadge = document.getElementById('helpProviderStatusBadge');
+        if (!statusBadge) return;
+
+        const configured = getConfiguredProviders({ state: appState, dom: DOM });
+        const hasOllama = appState?.ollamaEnabled === true;
+        const isReady = configured.length > 0 || hasOllama;
+
+        statusBadge.classList.toggle('status-connected', isReady);
+        statusBadge.classList.toggle('status-unconfigured', !isReady);
+        statusBadge.innerHTML = `<span class="status-dot"></span><span>${isReady ? 'Clé configurée' : 'À configurer'}</span>`;
+
+        const engineBtn = document.getElementById('helpOpenSettingsEngineBtn');
+        if (!engineBtn) return;
+
+        engineBtn.classList.toggle('btn-primary', !isReady);
+        engineBtn.classList.toggle('btn-secondary', isReady);
+        engineBtn.innerHTML = isReady
+            ? '<iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Gérer les clés'
+            : '<iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> Configurer l\'IA';
+
+        let targetElement = 'albertApiKey';
+        if (isReady) {
+            const activeProviderId = getProviderForModel(appState?.currentAIModel);
+            const activeIsReady = (activeProviderId === 'ollama' && hasOllama) ||
+                configured.some(p => p.id === activeProviderId);
+            const chosenProviderId = activeIsReady ? activeProviderId : configured[0]?.id;
+            targetElement = getProviderConfig(chosenProviderId)?.domKey ||
+                (hasOllama ? 'ollamaEnabledToggle' : 'albertApiKey');
+        }
+        engineBtn.dataset.targetElement = targetElement;
     },
 
     /**
@@ -201,15 +224,21 @@ export const OtherModalsListeners = {
         // Close buttons
         const closeBtnHeader = document.getElementById('closeDashboardModalBtn');
 
-        addClickListener(closeBtnHeader, () => ClassDashboardManager.closeDashboard());
+        addClickListener(closeBtnHeader, () =>
+            withLazyManager(loadClassDashboard, (dashboard) => dashboard.closeDashboard())
+        );
 
         // Generate AI Synthesis button
         const generateBtn = document.getElementById('generateSynthesisBtn');
-        addClickListener(generateBtn, () => ClassDashboardManager.generateAISynthesis());
+        addClickListener(generateBtn, () =>
+            withLazyManager(loadClassDashboard, (dashboard) => dashboard.generateAISynthesis())
+        );
 
         // Copy button
         const copyBtn = document.getElementById('copyDashboardSynthesisBtn');
-        addClickListener(copyBtn, () => ClassDashboardManager.copySynthesis());
+        addClickListener(copyBtn, () =>
+            withLazyManager(loadClassDashboard, (dashboard) => dashboard.copySynthesis())
+        );
 
         // Click handlers for interactive elements
         modal.addEventListener('click', (e) => {
@@ -217,18 +246,20 @@ export const OtherModalsListeners = {
             const highlightItem = e.target.closest('.highlight-item[data-student-id]');
             if (highlightItem) {
                 const studentId = highlightItem.dataset.studentId;
-                ClassDashboardManager.closeDashboard();
-                // Open focus panel for this student
-                setTimeout(() => {
-                    FocusPanelManager.open(studentId);
-                }, 300);
+                withLazyManager(loadClassDashboard, (dashboard) => {
+                    dashboard.closeDashboard();
+                    // Open focus panel for this student
+                    setTimeout(() => {
+                        FocusPanelManager.open(studentId);
+                    }, 300);
+                });
             }
         });
 
         // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                ClassDashboardManager.closeDashboard();
+                withLazyManager(loadClassDashboard, (dashboard) => dashboard.closeDashboard());
             }
         });
     }

@@ -128,6 +128,19 @@ export default defineConfig({
           if (!normalizedId.endsWith('.css') && normalizedId.includes('/src/landing/')) {
             return 'landing';
           }
+          // Modules chargés paresseusement via import() : ne pas forcer dans app-core
+          const isLazyAppModule =
+            normalizedId.includes('/src/services/SyncService.js') ||
+            normalizedId.includes('/src/services/providers/') ||
+            normalizedId.includes('/src/managers/ImportWizardManager.js') ||
+            normalizedId.includes('/src/utils/PdfParsers.js') ||
+            normalizedId.includes('/src/managers/TrombinoscopeManager.js') ||
+            normalizedId.includes('/src/managers/trombinoscope/') ||
+            normalizedId.includes('/src/utils/PronoteTrombiParser.js') ||
+            normalizedId.includes('/src/managers/ClassDashboardManager.js');
+          if (isLazyAppModule) {
+            return undefined;
+          }
           if (
             !normalizedId.endsWith('.css') &&
             (normalizedId.includes('/src/') ||

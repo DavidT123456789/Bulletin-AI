@@ -228,13 +228,18 @@ describe('FormUIManager', () => {
     });
 
     describe('syncStyleControls()', () => {
-        it('should format length display with words and estimated characters', () => {
+        it('should format length display with words and estimated characters rounded to nearest 10', () => {
             DOM.iaLengthSlider.value = '40';
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, enableStyleInstructions: true } };
 
             FormUI.syncStyleControls();
 
             expect(DOM.iaLengthSliderValue.textContent).toBe('~40 mots • ~260 car.');
+
+            DOM.iaLengthSlider.value = '45';
+            FormUI.syncStyleControls();
+
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~45 mots • ~290 car.');
         });
 
         it('should sync style instructions toggle and disabled state', () => {

@@ -18,8 +18,7 @@ import { DropdownManager } from '../DropdownManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { HistoryManager } from '../HistoryManager.js';
-import { ImportWizardManager } from '../ImportWizardManager.js';
-import { TrombinoscopeManager } from '../TrombinoscopeManager.js';
+import { loadImportWizard, loadTrombinoscope, prefetchOnHover, withLazyManager } from '../../utils/LazyManagers.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const GlobalListeners = {
@@ -137,13 +136,6 @@ export const GlobalListeners = {
                     e.preventDefault();
                     navButtons[e.key].click();
                 }
-            } else if (!UI.isAnyModalOpen() && !FocusPanelManager.isOpen?.()) {
-                // Global keyboard shortcuts when no modal is open
-                if (e.ctrlKey && (e.key === 'g' || e.key === 'G' || e.key === 'Enter')) {
-                    e.preventDefault();
-                    DOM.importGenerateBtn?.click();
-                    return;
-                }
             }
         });
     },
@@ -232,14 +224,21 @@ export const GlobalListeners = {
         this.updateMainScrollAffordances();
 
         const fab = document.getElementById('addStudentFab') || DOM.addStudentFab;
-        fab?.addEventListener('click', (e) => {
-            if (!fab.classList.contains('is-scroll-top') && fab.dataset.mode !== 'scroll-top') return;
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            TooltipsUI?.hideAll?.();
-            window.scrollTo?.({ top: 0, behavior: 'smooth' });
-            mainContent?.scrollTo?.({ top: 0, behavior: 'smooth' });
-        });
+        if (fab) {
+            prefetchOnHover(fab, loadImportWizard);
+            fab.addEventListener('click', async (e) => {
+                if (fab.classList.contains('is-scroll-top') || fab.dataset.mode === 'scroll-top') {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    TooltipsUI?.hideAll?.();
+                    window.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    mainContent?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                e.stopPropagation();
+                await withLazyManager(loadImportWizard, (wizard) => wizard.openHub());
+            });
+        }
     },
 
     _aiFallbackListenerAttached: false,
@@ -433,30 +432,7 @@ export const GlobalListeners = {
             const link = e.target.closest('.link-to-settings, [data-action="open-help"], [data-action="open-settings-tab"], [data-action="open-import-wizard"], [data-action="open-trombi-wizard"], [data-action="open-seating-chart"]');
             if (link) {
                 e.preventDefault();
-                const action = link.dataset.action;
-                if (action === 'open-help') {
-                    UI.openHelpTab(link.dataset.targetTab, link.dataset.targetSection);
-                } else if (action === 'open-import-wizard') {
-                    ImportWizardManager.open();
-                } else if (action === 'open-trombi-wizard') {
-                    TrombinoscopeManager.open();
-                } else if (action === 'open-seating-chart') {
-                    UI.closeAllModals();
-                    document.querySelector('#viewToggle [data-view="plan"]')?.click();
-                } else {
-                    // Explicitly close actions dropdown and custom dropdowns
-                    DOM.actionsDropdown?.classList.remove('show');
-                    DropdownManager.closeAll();
-
-                    UI.openModal(DOM.settingsModal);
-                    if (link.dataset.targetElement) {
-                        UI.highlightSettingsElement(link.dataset.targetElement, {
-                            tab: link.dataset.targetTab
-                        });
-                    } else if (link.dataset.targetTab) {
-                        UI.showSettingsTab(link.dataset.targetTab);
-                    }
-                }
+                this._handleActionLink(link);
             }
 
             // Fermer les menus actions et custom dropdowns au clic extérieur
@@ -473,6 +449,42 @@ export const GlobalListeners = {
                 DOM.actionsDropdown?.classList.remove('show');
             }
         });
+    },
+
+    /**
+     * Aiguille les clics sur les boutons et liens d'action (`[data-action]`, `.link-to-settings`).
+     * @param {HTMLElement} link
+     * @private
+     */
+    _handleActionLink(link) {
+        const action = link.dataset.action;
+        if (action === 'open-help') {
+            UI.openHelpTab(link.dataset.targetTab, link.dataset.targetSection);
+        } else if (action === 'open-import-wizard') {
+            const suspendedWizard = document.getElementById('importWizardModal');
+            if (suspendedWizard?.classList.contains('modal-suspended')) {
+                UI.closeModal(DOM.helpModal);
+            } else {
+                withLazyManager(loadImportWizard, (wizard) => wizard.open());
+            }
+        } else if (action === 'open-trombi-wizard') {
+            withLazyManager(loadTrombinoscope, (trombi) => trombi.open());
+        } else if (action === 'open-seating-chart') {
+            UI.closeAllModals();
+            document.querySelector('#viewToggle [data-view="plan"]')?.click();
+        } else {
+            DOM.actionsDropdown?.classList.remove('show');
+            DropdownManager.closeAll();
+
+            UI.openModal(DOM.settingsModal);
+            if (link.dataset.targetElement) {
+                UI.highlightSettingsElement(link.dataset.targetElement, {
+                    tab: link.dataset.targetTab
+                });
+            } else if (link.dataset.targetTab) {
+                UI.showSettingsTab(link.dataset.targetTab);
+            }
+        }
     },
 
 
