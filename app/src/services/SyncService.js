@@ -1008,6 +1008,11 @@ export const SyncService = {
             SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, studentCount.toString());
         }
 
+        if (Number.isFinite(timestamp) && timestamp > 0) {
+            this.remoteSyncTime = timestamp;
+        }
+        this._lastSyncState = this._computeSyncState();
+
         return {
             success: true,
             remoteData,

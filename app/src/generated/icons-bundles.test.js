@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -54,5 +54,41 @@ describe('Local Iconify offline bundles integrity', () => {
         expect(() =>
             extractIconCollections({ solar: ['definitely-nonexistent-icon-xyz'] }, APP_ROOT)
         ).toThrow(/Unknown Iconify icon\(s\) referenced in source/);
+    });
+
+    it('disables IntersectionObserver on iconify-icon so reparenting preserves rendering', async () => {
+        const IconifyIconClass = customElements.get('iconify-icon');
+        expect(IconifyIconClass?.prototype.__observerPatched).toBe(true);
+
+        const observeSpy = vi.fn();
+        const originalIO = globalThis.IntersectionObserver;
+        globalThis.IntersectionObserver = vi.fn(() => ({
+            observe: observeSpy,
+            disconnect: vi.fn()
+        }));
+
+        const container = document.createElement('div');
+        container.style.display = 'none';
+        const icon = document.createElement('iconify-icon');
+        icon.setAttribute('icon', 'ph:plus');
+
+        try {
+            container.appendChild(icon);
+            document.body.appendChild(container);
+            await new Promise((r) => setTimeout(r, 20));
+
+            // Reparent (simulating teleport to document.body and back)
+            document.body.appendChild(icon);
+            await new Promise((r) => setTimeout(r, 20));
+
+            expect(observeSpy).not.toHaveBeenCalled();
+            expect(icon._observer).toBeFalsy();
+            expect(icon._visible).toBe(true);
+            expect(icon.shadowRoot?.querySelector('svg')).not.toBeNull();
+        } finally {
+            icon.remove();
+            container.remove();
+            globalThis.IntersectionObserver = originalIO;
+        }
     });
 });

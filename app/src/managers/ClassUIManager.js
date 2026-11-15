@@ -12,7 +12,7 @@ import { CONFIG } from '../config/Config.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
-import { detectLevelFromName, sortClassesByLevel } from '../utils/LevelDetector.js';
+import { detectLevelFromName, getClassSortRank, compareClassesPedagogically, sortClassesByLevel } from '../utils/LevelDetector.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
@@ -275,28 +275,83 @@ export const ClassUIManager = {
             : [];
 
         if (userSettings.academic?.classesCustomOrder) {
-            const allItems = [...regularItems];
-            if (virtualItems.length > 0) {
-                virtualItems.forEach(vItem => {
-                    const firstSourceIndex = allItems.findIndex(item =>
-                        vItem.sourceGroupIds?.includes(item.id)
-                    );
-                    if (firstSourceIndex !== -1) {
-                        let insertAt = firstSourceIndex + 1;
-                        while (insertAt < allItems.length && vItem.sourceGroupIds?.includes(allItems[insertAt].id)) {
-                            insertAt++;
-                        }
-                        allItems.splice(insertAt, 0, vItem);
-                    } else {
-                        allItems.push(vItem);
-                    }
-                });
-            }
-            return allItems;
+            return this._mergeVirtualIntoCustomOrder(regularItems, virtualItems);
         }
 
         const sortDirection = userSettings.academic?.classesSortDirection || 'asc';
         return sortClassesByLevel([...regularItems, ...virtualItems], sortDirection);
+    },
+
+    /**
+     * Insère les classes reconstituées dans un ordre personnalisé sans fragmenter
+     * ni inverser les classes dont les groupes sources se chevauchent.
+     * @private
+     */
+    _mergeVirtualIntoCustomOrder(regularItems, virtualItems) {
+        if (virtualItems.length === 0) return regularItems;
+
+        const indexById = new Map(regularItems.map((item, idx) => [item.id, idx]));
+        const anchored = [];
+        const unanchored = [];
+
+        for (const vItem of virtualItems) {
+            let minIdx = Infinity;
+            let maxIdx = -1;
+            for (const sourceId of vItem.sourceGroupIds || []) {
+                const idx = indexById.get(sourceId);
+                if (idx !== undefined) {
+                    if (idx < minIdx) minIdx = idx;
+                    if (idx > maxIdx) maxIdx = idx;
+                }
+            }
+
+            if (maxIdx === -1) {
+                unanchored.push(vItem);
+                continue;
+            }
+
+            anchored.push({
+                vItem,
+                minIdx,
+                maxIdx,
+                rank: getClassSortRank(vItem.displayName || vItem.name)
+            });
+        }
+
+        // Regrouper les classes reconstituées d'un même niveau dont les groupes sources se chevauchent ou se suivent
+        anchored.sort((a, b) => a.minIdx - b.minIdx);
+
+        const clusters = [];
+        for (const entry of anchored) {
+            const prev = clusters[clusters.length - 1];
+            const sameAnchor = prev && entry.minIdx === prev.anchorIdx;
+            const sameRank = prev && entry.rank < 500 && entry.rank === prev.rank;
+
+            if (sameAnchor || (sameRank && entry.minIdx <= prev.maxIdx + 1)) {
+                if (entry.maxIdx > prev.maxIdx) prev.maxIdx = entry.maxIdx;
+                prev.items.push(entry.vItem);
+            } else {
+                clusters.push({ anchorIdx: entry.minIdx, maxIdx: entry.maxIdx, rank: entry.rank, items: [entry.vItem] });
+            }
+        }
+
+        const allItems = [];
+        let clusterPtr = 0;
+        for (let idx = 0; idx < regularItems.length; idx++) {
+            while (clusterPtr < clusters.length && clusters[clusterPtr].anchorIdx === idx) {
+                const { items } = clusters[clusterPtr++];
+                if (items.length > 1) {
+                    items.sort((a, b) => compareClassesPedagogically(a, b, 'asc'));
+                }
+                allItems.push(...items);
+            }
+            allItems.push(regularItems[idx]);
+        }
+
+        if (unanchored.length > 0) {
+            allItems.push(...unanchored);
+        }
+        return allItems;
     },
 
     /**

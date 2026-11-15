@@ -300,6 +300,7 @@ export const CloudActionsManager = {
                 return false;
             }
 
+            const syncState = SyncService._lastSyncState || SyncService._computeSyncState?.();
             const localResults = runtimeState.data.generatedResults || [];
             const localClasses = userSettings.academic.classes || [];
             const localStudentCount = Utils.countUniqueStudents(localResults, localClasses);
@@ -313,8 +314,16 @@ export const CloudActionsManager = {
             const localRoster = (remoteRoster && SyncService.buildRosterSnapshot)
                 ? SyncService.buildRosterSnapshot(localResults, localClasses)
                 : null;
-            const rosterDiff = (remoteRoster && localRoster && SyncService.diffRoster)
-                ? SyncService.diffRoster(remoteRoster, localRoster)
+            const lastSyncRoster = SyncService.getLastSyncRoster?.() || null;
+            // En conflit, comparer à l'ancêtre commun évite d'imputer au local des ajouts faits sur le Cloud
+            const localBaseRoster = (syncState === 'conflict' && lastSyncRoster)
+                ? lastSyncRoster
+                : (remoteRoster || lastSyncRoster);
+            const rosterDiff = (localBaseRoster && localRoster && SyncService.diffRoster)
+                ? SyncService.diffRoster(localBaseRoster, localRoster)
+                : null;
+            const remoteRosterDiff = (localRoster && remoteRoster && SyncService.diffRoster)
+                ? SyncService.diffRoster(localRoster, remoteRoster)
                 : null;
 
             const confirmed = await UI.showRestoreConfirmationModal({
@@ -326,8 +335,9 @@ export const CloudActionsManager = {
                 localDate: parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10) || null,
                 lastSyncTime: SyncService.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10) || null,
                 providerName: this._providerName(SyncService),
-                syncState: SyncService._lastSyncState || SyncService._computeSyncState(),
-                rosterDiff
+                syncState,
+                rosterDiff,
+                remoteRosterDiff
             });
             if (!confirmed) return false;
 

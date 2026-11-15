@@ -230,6 +230,19 @@ function writeTargetBundle(appRoot, target, filename) {
         'for (const collection of COLLECTIONS) {',
         '    addCollection(collection);',
         '}',
+        '',
+        '// Workaround iconify-icon@3.0.5 IntersectionObserver bug on hidden/reparented elements:',
+        '// stopObserver() sets _visible=true while disconnected, causing reconnect to skip rendering.',
+        "const IconifyIconElement = typeof customElements !== 'undefined' ? customElements.get('iconify-icon') : null;",
+        'if (IconifyIconElement?.prototype && !IconifyIconElement.prototype.__observerPatched) {',
+        '    IconifyIconElement.prototype.__observerPatched = true;',
+        '    IconifyIconElement.prototype.startObserver = function () {',
+        '        this._visible = true;',
+        '    };',
+        "    if (typeof document !== 'undefined') {",
+        "        document.querySelectorAll('iconify-icon').forEach((el) => el.stopObserver?.());",
+        '    }',
+        '}',
         ''
     ].join('\n');
 

@@ -677,10 +677,11 @@ describe('ModalUIManager', () => {
             const modal = document.getElementById('restoreConfirmationModal');
             const impactBox = modal.querySelector('.restore-impact-box.warning');
             expect(impactBox).not.toBeNull();
-            expect(impactBox.textContent).toContain('Sera remplacé sur cet appareil');
+            expect(impactBox.textContent).toContain('Modifications locales qui seront annulées');
             expect(impactBox.textContent).toContain('Plan de classe réorganisé');
             expect(impactBox.textContent).not.toContain('fiche');
             expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Votre session locale contient des modifications plus récentes qui seront remplacées.');
 
             // Two-line date display: relative stat and exact timestamp, plus amber target highlight on Local card (sub-stat omitted when volumes match without roster change)
             expect(modal.querySelector('.restore-comparison-card.cloud .restore-card-exact-date')).not.toBeNull();
@@ -786,8 +787,137 @@ describe('ModalUIManager', () => {
             expect(modal.textContent).toContain('Aucun élève sur cet appareil');
             expect(modal.textContent).toContain('Restauration recommandée');
             expect(modal.textContent).toContain('307 élèves');
+            expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
 
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            cancelBtn.click();
+            await promise;
+        });
+
+        it('should read student and journal edits from State.js runtimeState even when window.runtimeState is undefined', async () => {
+            const { runtimeState } = await import('../state/State.js');
+            const prevResults = runtimeState.data.generatedResults;
+            const lastSync = Date.now() - 60000;
+            delete window.runtimeState;
+            runtimeState.data.generatedResults = [
+                {
+                    id: 's-real-1',
+                    nom: 'MARTIN',
+                    prenom: 'Chloé',
+                    _lastModified: Date.now(),
+                    journal: [{ id: 'j1', text: 'Bavardages', _lastModified: Date.now() }],
+                    studentData: { periods: { T1: { appreciation: 'Bon trimestre', _lastModified: Date.now() } } }
+                }
+            ];
+
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: lastSync,
+                localDate: Date.now(),
+                remoteStudentCount: 1,
+                localStudentCount: 1,
+                syncState: 'local-changes',
+                lastSyncTime: lastSync
+            });
+
+            const impactText = document.querySelector('#restoreConfirmationModal .restore-impact-box.warning').textContent;
+            expect(impactText).toContain('1 fiche élève modifiée');
+            expect(impactText).toContain('Journal de bord mis à jour');
+            expect(impactText).not.toContain('Réglages ou préférences modifiés');
+
+            document.getElementById('restoreConfirmCancelBtn').click();
+            await promise;
+            runtimeState.data.generatedResults = prevResults;
+        });
+
+        it('should render a neutral incoming-changes box without warning when syncState is cloud-changes', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: Date.now() - 60000,
+                localDate: Date.now() - 3600000,
+                remoteStudentCount: 30,
+                remoteClassCount: 2,
+                localStudentCount: 28,
+                localClassCount: 1,
+                syncState: 'cloud-changes',
+                remoteRosterDiff: {
+                    newStudents: 2,
+                    removedStudents: 0,
+                    addedEnrollments: [],
+                    removedEnrollments: [],
+                    movedEnrollments: [],
+                    addedClasses: [{ id: 'c2', name: '5C', isGroup: false }],
+                    removedClasses: [],
+                    hasAnyChange: true
+                }
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal.querySelector('.restore-impact-box.warning')).toBeNull();
+            expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
+
+            const impactBox = modal.querySelector('.restore-impact-box');
+            expect(impactBox).not.toBeNull();
+            expect(impactBox.textContent).toContain('Sera récupéré depuis le Cloud');
+            expect(impactBox.textContent).toContain('Nouvelle classe : 5C');
+            expect(impactBox.textContent).toContain('+2 nouveaux élèves');
+            expect(document.activeElement).toBe(document.getElementById('restoreConfirmOkBtn'));
+
+            document.getElementById('restoreConfirmCancelBtn').click();
+            await promise;
+        });
+
+        it('should escalate to warning box and focus cancel when cloud-changes deletes local students', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: Date.now() - 60000,
+                localDate: Date.now() - 3600000,
+                remoteStudentCount: 25,
+                remoteClassCount: 1,
+                localStudentCount: 28,
+                localClassCount: 2,
+                syncState: 'cloud-changes',
+                remoteRosterDiff: {
+                    newStudents: 0,
+                    removedStudents: 3,
+                    addedEnrollments: [],
+                    removedEnrollments: [],
+                    movedEnrollments: [],
+                    addedClasses: [],
+                    removedClasses: [{ id: 'c2', name: '3eB', isGroup: false }],
+                    hasAnyChange: true
+                }
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            const impactBox = modal.querySelector('.restore-impact-box.warning');
+            expect(impactBox).not.toBeNull();
+            expect(impactBox.textContent).toContain('Changements issus du Cloud');
+            expect(impactBox.textContent).not.toContain('Sera récupéré depuis le Cloud');
+            expect(impactBox.textContent).toContain('Classe 3eB retirée du Cloud');
+            expect(impactBox.textContent).toContain('3 élèves supprimés sur le Cloud');
+            expect(impactBox.textContent).toContain('Une copie de secours de votre session sera créée automatiquement');
+            expect(modal.querySelector('.restore-comparison-card.local.is-target.is-warning')).not.toBeNull();
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            expect(document.activeElement).toBe(cancelBtn);
+            cancelBtn.click();
+            await promise;
+        });
+
+        it('should mention lossless merge via Sauvegarder in subtitle when syncState is conflict', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: '2026-11-15T14:00:00.000Z',
+                localDate: '2026-11-15T15:00:00.000Z',
+                remoteStudentCount: 30,
+                localStudentCount: 30,
+                syncState: 'conflict'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('fusionner sans perte');
+            expect(modal.querySelector('.modal-alert-message').textContent).toContain('Sauvegarder');
+            expect(modal.querySelector('.restore-impact-box.warning').textContent).toContain('Modifications locales qui seront annulées');
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            expect(document.activeElement).toBe(cancelBtn);
             cancelBtn.click();
             await promise;
         });

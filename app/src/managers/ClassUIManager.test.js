@@ -37,6 +37,8 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
 
         // Reset state
         userSettings.academic.classes = [];
+        userSettings.academic.classesCustomOrder = false;
+        userSettings.academic.classesSortDirection = 'asc';
         userSettings.academic.currentClassId = null;
         appState.currentClassId = null;
         appState.generatedResults = [];
@@ -106,6 +108,85 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         expect(itemNames[1]).toContain('Reconstituée');
         expect(itemNames[2]).toContain('3ᵉG1');
         expect(itemNames[3]).toContain('3ᵉG2');
+    });
+
+    it('devrait regrouper les classes reconstituées dans l\'ordre sans inversion quand classesCustomOrder est actif et les groupes se chevauchent', () => {
+        const class44 = ClassManager.createClass('4 4');
+        const g1 = ClassManager.createClass('3 G1');
+        const g2 = ClassManager.createClass('3 G2');
+        const g3 = ClassManager.createClass('3 G3');
+        const g4 = ClassManager.createClass('3 G4');
+        const g5 = ClassManager.createClass('3 G5');
+
+        ClassManager.reorderClasses([class44.id, g1.id, g2.id, g3.id, g4.id, g5.id]);
+
+        appState.generatedResults = [
+            { id: 's1', nom: 'A', prenom: 'One', classId: g1.id, studentData: { classe: '3 1' } },
+            { id: 's2', nom: 'B', prenom: 'Two', classId: g2.id, studentData: { classe: '3 1' } },
+            { id: 's3', nom: 'C', prenom: 'Three', classId: g2.id, studentData: { classe: '3 2' } },
+            { id: 's4', nom: 'D', prenom: 'Four', classId: g3.id, studentData: { classe: '3 2' } },
+            { id: 's5', nom: 'E', prenom: 'Five', classId: g3.id, studentData: { classe: '3 3' } },
+            { id: 's6', nom: 'F', prenom: 'Six', classId: g4.id, studentData: { classe: '3 3' } },
+            { id: 's7', nom: 'G', prenom: 'Seven', classId: g4.id, studentData: { classe: '3 4' } },
+            { id: 's8', nom: 'H', prenom: 'Eight', classId: g5.id, studentData: { classe: '3 4' } }
+        ];
+
+        ClassUIManager.renderClassList();
+
+        const labels = Array.from(DOM.classDropdownList.querySelectorAll('.class-name-text'))
+            .map(el => el.textContent.trim());
+
+        expect(labels).toEqual(['4ᵉ4', '3ᵉ1', '3ᵉ2', '3ᵉ3', '3ᵉ4', '3ᵉG1', '3ᵉG2', '3ᵉG3', '3ᵉG4', '3ᵉG5']);
+    });
+
+    it('devrait séparer les blocs de classes reconstituées selon l\'ordre personnalisé et placer les orphelines en fin', () => {
+        const g31 = ClassManager.createClass('3 G1');
+        const g32 = ClassManager.createClass('3 G2');
+        const class44 = ClassManager.createClass('4 4');
+        const g51 = ClassManager.createClass('5 G1');
+        const g52 = ClassManager.createClass('5 G2');
+
+        ClassManager.reorderClasses([g31.id, g32.id, class44.id, g51.id, g52.id]);
+
+        const ordered = ClassUIManager._getOrderedClassItems(
+            ClassManager.getAllClasses(),
+            [
+                { id: 'virtual_32', name: '3ᵉ2', sourceGroupIds: [g31.id, g32.id] },
+                { id: 'virtual_31', name: '3ᵉ1', sourceGroupIds: [g31.id, g32.id] },
+                { id: 'virtual_51', name: '5ᵉ1', sourceGroupIds: [g51.id, g52.id] },
+                { id: 'virtual_orphan', name: '6ᵉ1', sourceGroupIds: ['missing-id'] }
+            ]
+        );
+
+        expect(ordered.map(c => c.displayName)).toEqual([
+            '3ᵉ1', '3ᵉ2', '3ᵉG1', '3ᵉG2',
+            '4ᵉ4',
+            '5ᵉ1', '5ᵉG1', '5ᵉG2',
+            '6ᵉ1'
+        ]);
+    });
+
+    it('ne devrait pas fusionner deux niveaux distincts même si leurs groupes sources sont imbriqués', () => {
+        const g31 = ClassManager.createClass('3 G1');
+        const g51 = ClassManager.createClass('5 G1');
+        const g52 = ClassManager.createClass('5 G2');
+        const g32 = ClassManager.createClass('3 G2');
+
+        ClassManager.reorderClasses([g31.id, g51.id, g52.id, g32.id]);
+
+        const ordered = ClassUIManager._getOrderedClassItems(
+            ClassManager.getAllClasses(),
+            [
+                { id: 'virtual_31', name: '3ᵉ1', sourceGroupIds: [g31.id, g32.id] },
+                { id: 'virtual_51', name: '5ᵉ1', sourceGroupIds: [g51.id, g52.id] }
+            ]
+        );
+
+        expect(ordered.map(c => c.displayName)).toEqual([
+            '3ᵉ1', '3ᵉG1',
+            '5ᵉ1', '5ᵉG1', '5ᵉG2',
+            '3ᵉG2'
+        ]);
     });
 
     it('devrait masquer les classes reconstituées si le filtre est désactivé', () => {

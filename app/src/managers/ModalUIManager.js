@@ -10,6 +10,7 @@
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
+import { appState, runtimeState } from '../state/State.js';
 import { HistoryManager } from './HistoryManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { UI } from './UIManager.js';
@@ -1191,6 +1192,85 @@ export const ModalUI = {
     },
 
     /**
+     * Formate les écarts d'effectif / de classes (`rosterDiff`) selon le sens de l'action.
+     * @param {Object|null} rosterDiff
+     * @param {Object} [options]
+     * @param {'local'|'cloud'} [options.direction='local']
+     * @param {boolean} [options.legacyRosterChanged=false]
+     * @param {number|null} [options.remoteStudentCount=null]
+     * @param {number} [options.localStudentCount=0]
+     * @returns {Array<{icon: string, text: string}>}
+     * @private
+     */
+    _formatRosterDiffItems(rosterDiff, {
+        direction = 'local',
+        legacyRosterChanged = false,
+        remoteStudentCount = null,
+        localStudentCount = 0
+    } = {}) {
+        const items = [];
+        const isCloud = direction === 'cloud';
+        const pushRoster = (text) => items.push({ icon: 'solar:users-group-rounded-linear', text });
+        // Détaille chaque entrée jusqu'à `max`, puis résume la liste en une seule ligne au-delà
+        const pushRosterList = (list, max, detail, summary) => {
+            const entries = list || [];
+            if (entries.length > max) pushRoster(summary(entries));
+            else entries.forEach(entry => pushRoster(detail(entry)));
+        };
+        const sumCounts = (entries) => entries.reduce((acc, e) => acc + e.count, 0);
+
+        if (rosterDiff) {
+            pushRosterList(rosterDiff.addedClasses, 2,
+                cls => `${cls.isGroup ? 'Nouveau groupe' : 'Nouvelle classe'} : ${Utils.escapeHtml(cls.name)}`,
+                entries => `${entries.length} nouvelles classes ou groupes créés`);
+            pushRosterList(rosterDiff.removedClasses, 2,
+                cls => isCloud
+                    ? `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} retiré${cls.isGroup ? '' : 'e'} du Cloud`
+                    : `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} supprimé${cls.isGroup ? '' : 'e'}`,
+                entries => isCloud
+                    ? `${entries.length} classes ou groupes retirés du Cloud`
+                    : `${entries.length} classes ou groupes supprimés`);
+
+            const { newStudents = 0, removedStudents = 0 } = rosterDiff;
+            if (newStudents > 0) pushRoster(`+${newStudents} ${newStudents > 1 ? 'nouveaux élèves' : 'nouvel élève'}`);
+            if (removedStudents > 0) {
+                pushRoster(isCloud
+                    ? `${removedStudents} élève${removedStudents > 1 ? 's supprimés' : ' supprimé'} sur le Cloud`
+                    : `${removedStudents} élève${removedStudents > 1 ? 's supprimés' : ' supprimé'}`);
+            }
+
+            pushRosterList(rosterDiff.addedEnrollments, 3,
+                ({ className, count }) => `${count} élève${count > 1 ? 's ajoutés' : ' ajouté'} à ${Utils.escapeHtml(className)}`,
+                entries => {
+                    const total = sumCounts(entries);
+                    return `${total} inscription${total > 1 ? 's ajoutées' : ' ajoutée'} dans ${entries.length} classes/groupes`;
+                });
+            pushRosterList(rosterDiff.movedEnrollments, Infinity,
+                ({ toClassName, count }) => `${count} élève${count > 1 ? 's déplacés' : ' déplacé'} vers ${Utils.escapeHtml(toClassName)}`);
+            pushRosterList(rosterDiff.removedEnrollments, 3,
+                ({ className, count }) => `${count} élève${count > 1 ? 's retirés' : ' retiré'} de ${Utils.escapeHtml(className)}${isCloud ? ' sur le Cloud' : ''}`,
+                entries => {
+                    const total = sumCounts(entries);
+                    return `${total} retrait${total > 1 ? 's' : ''} dans ${entries.length} classes/groupes${isCloud ? ' sur le Cloud' : ''}`;
+                });
+        } else if (legacyRosterChanged) {
+            pushRoster('Affectations élèves mises à jour');
+        } else if (typeof remoteStudentCount === 'number' && remoteStudentCount > 0 && remoteStudentCount !== localStudentCount) {
+            if (isCloud) {
+                const diff = remoteStudentCount - localStudentCount;
+                pushRoster(diff > 0
+                    ? `+${diff} ${diff > 1 ? 'nouveaux élèves' : 'nouvel élève'}`
+                    : `${Math.abs(diff)} élève${Math.abs(diff) > 1 ? 's' : ''} en moins sur le Cloud`);
+            } else {
+                const diff = localStudentCount - remoteStudentCount;
+                pushRoster(`${diff > 0 ? `+${diff}` : diff} élève${Math.abs(diff) > 1 ? 's' : ''} par rapport au Cloud`);
+            }
+        }
+
+        return items;
+    },
+
+    /**
      * Calcule la liste synthétique des modifications locales (macro-diff).
      * @param {Object} options
      * @returns {Array<{icon: string, text: string}>}
@@ -1199,10 +1279,12 @@ export const ModalUI = {
     _getLocalDiffDetails(options = {}) {
         const lastSync = options.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10);
         const rosterDiff = options.rosterDiff || null;
+        const activeAppState = window.appState || appState;
+        const activeRuntimeState = window.runtimeState || runtimeState;
         const items = [];
 
         // 1. Plan de classe / activité
-        const classes = window.appState?.classes || [];
+        const classes = activeAppState?.classes || [];
         const seatingChanged = classes.some(c =>
             (c.seatingUpdatedAt && c.seatingUpdatedAt > lastSync) ||
             (c.seatingValidatedAt && c.seatingValidatedAt > lastSync) ||
@@ -1222,7 +1304,7 @@ export const ModalUI = {
         }
 
         // 2. Fiches élèves (hors copies de groupe vierges ; le plan de classe est horodaté par classe, pas par élève)
-        const students = window.runtimeState?.data?.generatedResults || [];
+        const students = activeRuntimeState?.data?.generatedResults || [];
         // Arrivées, déplacements et inscriptions sont déjà résumés par les lignes d'effectif (section 4)
         const rosterChangedIds = new Set(rosterDiff?.changedResultIds || []);
         const modifiedRecords = students.filter(s => {
@@ -1256,50 +1338,12 @@ export const ModalUI = {
         }
 
         // 4. Différence d'effectif / d'affectations (personnes uniques vs inscriptions de groupe)
-        const pushRoster = (text) => items.push({ icon: 'solar:users-group-rounded-linear', text });
-        // Détaille chaque entrée jusqu'à `max`, puis résume la liste en une seule ligne au-delà
-        const pushRosterList = (list, max, detail, summary) => {
-            const entries = list || [];
-            if (entries.length > max) pushRoster(summary(entries));
-            else entries.forEach(entry => pushRoster(detail(entry)));
-        };
-        const sumCounts = (entries) => entries.reduce((acc, e) => acc + e.count, 0);
-        if (rosterDiff) {
-            pushRosterList(rosterDiff.addedClasses, 2,
-                cls => `${cls.isGroup ? 'Nouveau groupe' : 'Nouvelle classe'} : ${Utils.escapeHtml(cls.name)}`,
-                entries => `${entries.length} nouvelles classes ou groupes créés`);
-            pushRosterList(rosterDiff.removedClasses, 2,
-                cls => `${cls.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(cls.name)} supprimé${cls.isGroup ? '' : 'e'}`,
-                entries => `${entries.length} classes ou groupes supprimés`);
-
-            const { newStudents = 0, removedStudents = 0 } = rosterDiff;
-            if (newStudents > 0) pushRoster(`+${newStudents} ${newStudents > 1 ? 'nouveaux élèves' : 'nouvel élève'}`);
-            if (removedStudents > 0) pushRoster(`${removedStudents} élève${removedStudents > 1 ? 's supprimés' : ' supprimé'}`);
-
-            pushRosterList(rosterDiff.addedEnrollments, 3,
-                ({ className, count }) => `${count} élève${count > 1 ? 's ajoutés' : ' ajouté'} à ${Utils.escapeHtml(className)}`,
-                entries => {
-                    const total = sumCounts(entries);
-                    return `${total} inscription${total > 1 ? 's ajoutées' : ' ajoutée'} dans ${entries.length} classes/groupes`;
-                });
-            pushRosterList(rosterDiff.movedEnrollments, Infinity,
-                ({ toClassName, count }) => `${count} élève${count > 1 ? 's déplacés' : ' déplacé'} vers ${Utils.escapeHtml(toClassName)}`);
-            pushRosterList(rosterDiff.removedEnrollments, 3,
-                ({ className, count }) => `${count} élève${count > 1 ? 's retirés' : ' retiré'} de ${Utils.escapeHtml(className)}`,
-                entries => {
-                    const total = sumCounts(entries);
-                    return `${total} retrait${total > 1 ? 's' : ''} dans ${entries.length} classes/groupes`;
-                });
-        } else if (options.legacyRosterChanged) {
-            pushRoster('Affectations élèves mises à jour');
-        } else {
-            const rCount = options.remoteStudentCount ?? null;
-            const lCount = options.localStudentCount ?? Utils.countUniqueStudents(students, classes);
-            if (typeof rCount === 'number' && rCount > 0 && rCount !== lCount) {
-                const diff = lCount - rCount;
-                pushRoster(`${diff > 0 ? `+${diff}` : diff} élève${Math.abs(diff) > 1 ? 's' : ''} par rapport au Cloud`);
-            }
-        }
+        items.push(...this._formatRosterDiffItems(rosterDiff, {
+            direction: 'local',
+            legacyRosterChanged: options.legacyRosterChanged,
+            remoteStudentCount: options.remoteStudentCount ?? null,
+            localStudentCount: options.localStudentCount ?? Utils.countUniqueStudents(students, classes)
+        }));
 
         // Fallback si modifications détectées sans horodatage individuel : réglages (IA, matières, apparence, salle…)
         if (items.length === 0) {
@@ -1571,7 +1615,8 @@ export const ModalUI = {
             providerLabel = null,
             providerIcon = null,
             syncState = null,
-            rosterDiff = null
+            rosterDiff = null,
+            remoteRosterDiff = null
         } = options;
 
         const { label: resolvedProviderLabel, icon: resolvedProviderIcon } =
@@ -1584,26 +1629,39 @@ export const ModalUI = {
         const lClassCount = toCount(localClassCount);
 
         const isVolumeIdentical = (rStudentCount === lStudentCount) && (rClassCount === lClassCount);
-        const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange);
+        const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange || remoteRosterDiff?.hasAnyChange);
         const isMissingLocalStudents = rStudentCount > 0 && lStudentCount === 0;
 
         const resolvedSyncState = syncState ||
             window.SyncService?._lastSyncState ||
             (typeof window.SyncService?._computeSyncState === 'function' ? window.SyncService._computeSyncState() : null);
         const hasLocalChanges = !isMissingLocalStudents && (resolvedSyncState === 'local-changes' || resolvedSyncState === 'conflict');
+        const isConflict = !isMissingLocalStudents && resolvedSyncState === 'conflict';
         const hasSyncContext = resolvedSyncState === 'in-sync' || remoteDate !== null || rStudentCount > 0;
         const isInSync = hasSyncContext && !hasLocalChanges && isVolumeIdentical && !hasRosterChanges && resolvedSyncState !== 'cloud-changes';
 
+        const isIncomingDiffState = !hasLocalChanges && !isInSync && !isMissingLocalStudents;
+        const hasIncomingDeletions = isIncomingDiffState && (
+            remoteRosterDiff
+                ? (remoteRosterDiff.removedStudents > 0 || (remoteRosterDiff.removedClasses?.length || 0) > 0 || (remoteRosterDiff.removedEnrollments?.length || 0) > 0)
+                : (rStudentCount < lStudentCount)
+        );
+        const hasIncomingStudentLoss = isIncomingDiffState && (
+            remoteRosterDiff
+                ? remoteRosterDiff.removedStudents > 0
+                : (rStudentCount < lStudentCount)
+        );
+
         const comparisonGridHtml = this._renderCloudComparisonGrid({
             direction: 'cloud-to-local',
-            isTargetWarning: hasLocalChanges,
+            isTargetWarning: hasLocalChanges || hasIncomingStudentLoss,
             remoteDate,
             localDate,
             rStudentCount,
             rClassCount,
             lStudentCount,
             lClassCount,
-            showSubStats: !isVolumeIdentical || (hasLocalChanges && hasRosterChanges) || (isInSync && lStudentCount > 0),
+            showSubStats: !isVolumeIdentical || hasRosterChanges || (isInSync && lStudentCount > 0),
             isMissingLocalStudents,
             hasLocalChanges,
             isInSync,
@@ -1611,25 +1669,56 @@ export const ModalUI = {
             resolvedProviderIcon
         });
 
-        const noticeHtml = hasLocalChanges
-            ? this._renderImpactBox({
+        let noticeHtml = null;
+        if (hasLocalChanges) {
+            noticeHtml = this._renderImpactBox({
                 isWarning: true,
                 icon: 'solar:danger-triangle-bold',
-                title: 'Sera remplacé sur cet appareil :',
+                title: 'Modifications locales qui seront annulées :',
                 items: this._getLocalDiffDetails(options),
                 footerText: 'Une copie de secours de votre session sera créée automatiquement.'
-            })
-            : isInSync
-                ? null
-                : `
-                    <div class="restore-safety-notice warning">
+            });
+        } else if (!isInSync) {
+            if (isMissingLocalStudents) {
+                noticeHtml = `
+                    <div class="restore-safety-notice">
                         <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                         <div>
-                            ${isMissingLocalStudents
-                                ? `<strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.`
-                                : `<strong>Différence détectée :</strong> Votre sauvegarde Cloud (${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}) diffère de votre session locale.`}
+                            <strong>Restauration recommandée :</strong> Vos élèves sont absents de cet appareil. La sauvegarde Cloud permet de récupérer vos <strong>${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}</strong>.
                         </div>
                     </div>`;
+            } else {
+                const cloudDiffItems = this._formatRosterDiffItems(remoteRosterDiff, {
+                    direction: 'cloud',
+                    remoteStudentCount: rStudentCount,
+                    localStudentCount: lStudentCount
+                });
+                if (cloudDiffItems.length === 0) {
+                    cloudDiffItems.push({
+                        icon: 'lucide:refresh-cw',
+                        text: rStudentCount > 0
+                            ? `Données mises à jour (${rStudentCount} élève${rStudentCount > 1 ? 's' : ''}${rClassCount > 0 ? ` · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}` : ''})`
+                            : 'Données et réglages mis à jour depuis la dernière sauvegarde'
+                    });
+                }
+                noticeHtml = this._renderImpactBox({
+                    isWarning: hasIncomingStudentLoss,
+                    icon: hasIncomingStudentLoss ? 'solar:danger-triangle-bold' : 'lucide:cloud-download',
+                    title: hasIncomingDeletions ? 'Changements issus du Cloud :' : 'Sera récupéré depuis le Cloud :',
+                    items: cloudDiffItems,
+                    footerText: hasIncomingStudentLoss ? 'Une copie de secours de votre session sera créée automatiquement.' : null
+                });
+            }
+        }
+
+        const parseDateMs = (v) => {
+            if (!v) return 0;
+            const ms = typeof v === 'string' && /^\d+$/.test(v.trim()) ? Number(v) : new Date(v).getTime();
+            return Number.isFinite(ms) ? ms : 0;
+        };
+        const localTs = parseDateMs(localDate);
+        const remoteTs = parseDateMs(remoteDate);
+        const isLocalNewer = localTs > 0 && remoteTs > 0 && localTs > remoteTs;
 
         return this._openCloudConfirmModal({
             modalId: 'restoreConfirmationModal',
@@ -1638,9 +1727,15 @@ export const ModalUI = {
             title: 'Restaurer depuis le Cloud',
             subtitle: isInSync
                 ? 'Aucune modification depuis votre dernière synchronisation.'
-                : hasLocalChanges
-                    ? 'Vérifiez les dates avant de recharger votre espace de travail.'
-                    : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.',
+                : isConflict
+                    ? 'Le Cloud et cet appareil ont tous deux été modifiés. Pour fusionner sans perte, annulez et utilisez Sauvegarder.'
+                    : hasLocalChanges
+                        ? (isLocalNewer
+                            ? 'Votre session locale contient des modifications plus récentes qui seront remplacées.'
+                            : 'Vérifiez les dates avant de recharger votre espace de travail.')
+                        : hasIncomingStudentLoss
+                            ? 'Vérifiez les écarts avant de recharger votre espace de travail.'
+                            : 'Rechargez votre espace de travail depuis votre sauvegarde en ligne.',
             comparisonGridHtml,
             noticeHtml,
             isInSync,
@@ -1648,7 +1743,7 @@ export const ModalUI = {
             cancelBtnId: 'restoreConfirmCancelBtn',
             confirmLabel: 'Restaurer',
             forceConfirmLabel: 'Restaurer quand même',
-            focusCancel: hasLocalChanges || isInSync
+            focusCancel: hasLocalChanges || hasIncomingStudentLoss || isInSync
         });
     },
 

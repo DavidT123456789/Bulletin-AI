@@ -288,6 +288,37 @@ describe('CloudActionsManager', () => {
         });
     });
 
+    describe('restore() conflict and diff baseline', () => {
+        it('should open comparative restore modal directly on conflict using lastSyncRoster as local baseline', async () => {
+            const lastSyncRoster = { v: 1, classes: {}, entries: [['c1', 'real:a']] };
+            const remoteRoster = { v: 1, classes: {}, entries: [['c1', 'real:a'], ['c1', 'real:b']] };
+            const localRoster = { v: 1, classes: {}, entries: [['c1', 'real:a']] };
+            const localDiff = { newStudents: 0, removedStudents: 0, hasAnyChange: false };
+            const cloudDiff = { newStudents: 1, removedStudents: 0, hasAnyChange: true };
+
+            SyncServiceMock._lastSyncState = 'conflict';
+            SyncServiceMock.getLastSyncRoster.mockReturnValueOnce(lastSyncRoster);
+            SyncServiceMock.buildRosterSnapshot
+                .mockReturnValueOnce(remoteRoster)
+                .mockReturnValueOnce(localRoster);
+            SyncServiceMock.diffRoster
+                .mockReturnValueOnce(localDiff)
+                .mockReturnValueOnce(cloudDiff);
+            SyncServiceMock.getRemoteBackupSummary.mockResolvedValueOnce(summary({ timestamp: 9000 }));
+            UI.showRestoreConfirmationModal.mockResolvedValueOnce(true);
+
+            expect(await CloudActionsManager.restore()).toBe(true);
+            expect(UI.showConflictResolutionModal).not.toHaveBeenCalled();
+            expect(SyncServiceMock.diffRoster).toHaveBeenNthCalledWith(1, lastSyncRoster, localRoster);
+            expect(SyncServiceMock.diffRoster).toHaveBeenNthCalledWith(2, localRoster, remoteRoster);
+            expect(UI.showRestoreConfirmationModal).toHaveBeenCalledWith(expect.objectContaining({
+                syncState: 'conflict',
+                rosterDiff: localDiff,
+                remoteRosterDiff: cloudDiff
+            }));
+        });
+    });
+
     describe('shared group students (unique count & rosterDiff)', () => {
         it('should count shared students once and pass rosterDiff without false shrinkage when saving or restoring', async () => {
             userSettings.academic.classes = [

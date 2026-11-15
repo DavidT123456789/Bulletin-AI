@@ -441,6 +441,26 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
     });
 
     describe('SyncService.getRemoteBackupSummary() and loadFromCloud()', () => {
+        it('should update remoteSyncTime and _lastSyncState when reading remote backup summary', async () => {
+            const mockRemote = {
+                _meta: { exportedAt: '2026-09-23T14:30:00.000Z' },
+                generatedResults: [{ id: 1 }, { id: 2 }],
+                classes: [{ id: 'c1' }]
+            };
+            SyncService.lastSyncTime = new Date('2026-09-22T10:00:00.000Z').getTime();
+            localStorage.setItem('bulletin_last_sync', String(SyncService.lastSyncTime));
+            localStorage.setItem('bulletin_last_modified', String(SyncService.lastSyncTime));
+            localStorage.setItem('bulletin_last_sync_hash', 'mock-hash');
+            SyncService.currentProviderName = 'google';
+            SyncService._provider = {
+                read: vi.fn().mockResolvedValue(mockRemote)
+            };
+
+            const summary = await SyncService.getRemoteBackupSummary();
+            expect(summary.success).toBe(true);
+            expect(SyncService.remoteSyncTime).toBe(new Date('2026-09-23T14:30:00.000Z').getTime());
+            expect(SyncService._lastSyncState).toBe('cloud-changes');
+        });
         it('should return backup summary without applying it', async () => {
             const mockRemote = {
                 _meta: { exportedAt: '2026-09-23T14:30:00.000Z' },
