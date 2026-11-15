@@ -619,69 +619,66 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     }
 }
 
-/* ── Cours ↔ Activité Directional Carousel (iOS 2026 Supple Spring + Column Inertia) ── */
+/* ── Cours ↔ Activité Directional Carousel (Non-overlapping synced rail) ── */
 @keyframes scBoardCarouselInRight {
     0% {
         opacity: 0;
-        transform: translate3d(52px, 0, 0) scale(0.97);
+        transform: translate3d(calc(100% + 64px), 0, 0);
     }
-    70% {
+    22% {
         opacity: 1;
-        transform: translate3d(-1.2px, 0, 0) scale(1.002);
     }
     100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
     }
 }
 
 @keyframes scBoardCarouselInLeft {
     0% {
         opacity: 0;
-        transform: translate3d(-52px, 0, 0) scale(0.97);
+        transform: translate3d(calc(-100% - 64px), 0, 0);
     }
-    70% {
+    22% {
         opacity: 1;
-        transform: translate3d(1.2px, 0, 0) scale(1.002);
     }
     100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
     }
 }
 
 @keyframes scBoardCarouselOutLeft {
     0% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-        filter: blur(0);
+        transform: translate3d(0, 0, 0);
+    }
+    55% {
+        opacity: 0.7;
     }
     100% {
         opacity: 0;
-        transform: translate3d(-54px, 0, 0) scale(0.955);
-        filter: blur(3px);
+        transform: translate3d(calc(-115% - 64px), 0, 0);
     }
 }
 
 @keyframes scBoardCarouselOutRight {
     0% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-        filter: blur(0);
+        transform: translate3d(0, 0, 0);
+    }
+    55% {
+        opacity: 0.7;
     }
     100% {
         opacity: 0;
-        transform: translate3d(54px, 0, 0) scale(0.955);
-        filter: blur(3px);
+        transform: translate3d(calc(115% + 64px), 0, 0);
     }
 }
 
 @keyframes scCellCarouselWaveRight {
     0% {
-        transform: translate3d(10px, 0, 0);
-    }
-    70% {
-        transform: translate3d(-0.6px, 0, 0);
+        transform: translate3d(6px, 0, 0);
     }
     100% {
         transform: translate3d(0, 0, 0);
@@ -690,10 +687,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 @keyframes scCellCarouselWaveLeft {
     0% {
-        transform: translate3d(-10px, 0, 0);
-    }
-    70% {
-        transform: translate3d(0.6px, 0, 0);
+        transform: translate3d(-6px, 0, 0);
     }
     100% {
         transform: translate3d(0, 0, 0);
@@ -701,40 +695,38 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right {
-    animation: scBoardCarouselInRight 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
-    will-change: translate, transform, scale, opacity;
+    animation: scBoardCarouselInRight 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left {
-    animation: scBoardCarouselInLeft 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
-    will-change: translate, transform, scale, opacity;
+    animation: scBoardCarouselInLeft 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right .sc-cell:not([class*="sc-cell-special-"]) {
-    animation: scCellCarouselWaveRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--carousel-col-i, 0) * 6ms);
+    animation: scCellCarouselWaveRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--carousel-col-i, 0) * 3ms) both;
     will-change: transform;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left .sc-cell:not([class*="sc-cell-special-"]) {
-    animation: scCellCarouselWaveLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--carousel-col-i, 0) * 6ms);
+    animation: scCellCarouselWaveLeft 0.34s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--carousel-col-i, 0) * 3ms) both;
     will-change: transform;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-right .sc-desk {
-    animation: scCellCarouselWaveRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: scCellCarouselWaveRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .sc-classroom-board.sc-mode-carousel-in-left .sc-desk {
-    animation: scCellCarouselWaveLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: scCellCarouselWaveLeft 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .sc-board-carousel-ghost {
     z-index: 5;
     pointer-events: none !important;
     user-select: none !important;
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
 }
 
 .sc-board-carousel-ghost * {
@@ -744,11 +736,11 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-board-carousel-ghost.sc-mode-carousel-out-left {
-    animation: scBoardCarouselOutLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: scBoardCarouselOutLeft 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .sc-board-carousel-ghost.sc-mode-carousel-out-right {
-    animation: scBoardCarouselOutRight 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: scBoardCarouselOutRight 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .sc-station-badge {

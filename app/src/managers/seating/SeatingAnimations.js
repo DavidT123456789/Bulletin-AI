@@ -5,7 +5,11 @@
  */
 
 export const SeatingAnimations = {
-    _clearListViewTransitionClasses() {
+    _prefersReducedMotion() {
+        return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    },
+
+    _clearListViewTransitionClasses({ preserveSwipeOffset = false } = {}) {
         if (this._listEnterCleanupTimer) {
             clearTimeout(this._listEnterCleanupTimer);
             this._listEnterCleanupTimer = null;
@@ -14,11 +18,18 @@ export const SeatingAnimations = {
             clearTimeout(this._listStaggerCleanupTimer);
             this._listStaggerCleanupTimer = null;
         }
+        if (this._listExitPrimaryEl && this._listExitEndHandler) {
+            this._listExitPrimaryEl.removeEventListener('animationend', this._listExitEndHandler);
+        }
+        this._listExitPrimaryEl = null;
+        this._listExitEndHandler = null;
         document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination').forEach(el => {
             el.classList.remove('view-slide-out-left', 'view-slide-in-left');
-            el.style.removeProperty('--swipe-offset-x');
-            el.style.removeProperty('transform');
-            el.style.removeProperty('transition');
+            if (!preserveSwipeOffset) {
+                el.style.removeProperty('--swipe-offset-x');
+                el.style.removeProperty('transform');
+                el.style.removeProperty('transition');
+            }
         });
         document.querySelectorAll('#outputList .student-list-view.table-fade-in').forEach(view => {
             view.classList.remove('table-fade-in');
@@ -42,52 +53,92 @@ export const SeatingAnimations = {
             return style.display !== 'none' && style.visibility !== 'hidden';
         });
 
-        if (containers.length === 0) {
+        if (containers.length === 0 || this._prefersReducedMotion()) {
             onComplete();
             return;
         }
 
+        let needsReflow = false;
         containers.forEach(el => {
-            el.classList.remove('view-slide-in-left');
+            if (el.classList.contains('view-slide-in-left') || el.classList.contains('view-slide-out-left')) {
+                needsReflow = true;
+            }
+            el.classList.remove('view-slide-in-left', 'view-slide-out-left');
+        });
+        if (needsReflow) {
+            void containers[0]?.offsetWidth;
+        }
+        containers.forEach(el => {
+            el.classList.add('view-slide-out-left');
             el.style.removeProperty('transform');
             el.style.removeProperty('transition');
         });
-        void containers[0]?.offsetWidth;
-        containers.forEach(el => el.classList.add('view-slide-out-left'));
 
+        const primaryEl = containers[0];
         let called = false;
-        const done = () => {
+        const done = (e) => {
+            if (e && e.target !== primaryEl) return;
             if (called) return;
             called = true;
-            this._viewExitTimeout = null;
+            if (this._viewExitTimeout) {
+                clearTimeout(this._viewExitTimeout);
+                this._viewExitTimeout = null;
+            }
+            if (primaryEl && this._listExitEndHandler) {
+                primaryEl.removeEventListener('animationend', this._listExitEndHandler);
+            }
+            this._listExitPrimaryEl = null;
+            this._listExitEndHandler = null;
             containers.forEach(el => {
                 el.classList.remove('view-slide-out-left');
                 el.style.removeProperty('--swipe-offset-x');
             });
             onComplete();
         };
-        this._viewExitTimeout = setTimeout(done, 95);
+        this._listExitPrimaryEl = primaryEl;
+        this._listExitEndHandler = done;
+        primaryEl?.addEventListener('animationend', done);
+        this._viewExitTimeout = setTimeout(() => done(), 95);
     },
 
     /** List view entrance — horizontal micro-slide from left + progressive card/row reveal after Plan exits to right */
     _animateListViewEnter() {
+        if (this._prefersReducedMotion()) return;
+
         const containers = Array.from(
             document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
         ).filter(el => {
             const style = window.getComputedStyle(el);
             return style.display !== 'none' && style.visibility !== 'hidden';
         });
+        if (containers.length === 0) return;
 
-        containers.forEach(el => el.classList.remove('view-slide-out-left'));
-        void containers[0]?.offsetWidth;
+        let needsReflow = false;
+        containers.forEach(el => {
+            if (el.classList.contains('view-slide-out-left') || el.classList.contains('view-slide-in-left')) {
+                needsReflow = true;
+            }
+            el.classList.remove('view-slide-out-left', 'view-slide-in-left');
+        });
+        if (needsReflow) {
+            void containers[0]?.offsetWidth;
+        }
         containers.forEach(el => el.classList.add('view-slide-in-left'));
 
         this._staggerListViewEntrance();
 
-        this._listEnterCleanupTimer = setTimeout(() => {
-            this._listEnterCleanupTimer = null;
+        const primaryEl = containers[0];
+        const cleanup = (e) => {
+            if (e && e.target !== primaryEl) return;
+            if (this._listEnterCleanupTimer) {
+                clearTimeout(this._listEnterCleanupTimer);
+                this._listEnterCleanupTimer = null;
+            }
+            primaryEl?.removeEventListener('animationend', cleanup);
             containers.forEach(el => el.classList.remove('view-slide-in-left'));
-        }, 260);
+        };
+        primaryEl?.addEventListener('animationend', cleanup);
+        this._listEnterCleanupTimer = setTimeout(() => cleanup(), 260);
     },
 
     /** Stagger stat cards and student rows entrance when returning to List view (Plan -> Liste) */
@@ -101,16 +152,22 @@ export const SeatingAnimations = {
             view.classList.remove('table-fade-in');
         });
 
+        if (this._prefersReducedMotion()) return;
+
         const cards = document.querySelectorAll('.stats-container .stat-card, #empty-state-card .empty-state-hub-card');
         const rows = document.querySelectorAll('#outputList .student-list-table tbody tr.student-row');
         if (cards.length === 0 && rows.length === 0) return;
 
         const maxStaggerRows = 18;
+        let needsCardReflow = false;
+        let needsRowReflow = false;
         cards.forEach((card, i) => {
+            if (card.classList.contains('stat-card-stagger')) needsCardReflow = true;
             card.classList.remove('stat-card-stagger', 'stat-card-animate-in');
             card.style.setProperty('--card-i', i);
         });
         rows.forEach((row, i) => {
+            if (row.classList.contains('row-stagger-enter')) needsRowReflow = true;
             row.classList.remove(
                 'row-stagger-enter',
                 'row-animate-in',
@@ -123,15 +180,15 @@ export const SeatingAnimations = {
             row.style.setProperty('--row-i', Math.min(i, maxStaggerRows));
         });
 
-        void cards[0]?.offsetWidth;
-        void rows[0]?.offsetWidth;
+        if (needsCardReflow) void cards[0]?.offsetWidth;
+        if (needsRowReflow) void rows[0]?.offsetWidth;
 
         cards.forEach(card => card.classList.add('stat-card-stagger'));
         rows.forEach(row => row.classList.add('row-stagger-enter'));
 
-        const maxRowDelay = Math.min(rows.length, maxStaggerRows) * 17;
-        const maxCardDelay = cards.length * 35;
-        const duration = Math.max(maxRowDelay, maxCardDelay) + 420;
+        const maxRowDelay = Math.min(rows.length, maxStaggerRows) * 5;
+        const maxCardDelay = cards.length * 8;
+        const duration = Math.max(maxRowDelay, maxCardDelay) + 260;
 
         this._listStaggerCleanupTimer = setTimeout(() => {
             this._listStaggerCleanupTimer = null;
@@ -146,42 +203,28 @@ export const SeatingAnimations = {
         }, duration);
     },
 
-    /** View entrance — horizontal micro-slide from right + progressive cell reveal (Liste -> Plan) */
+    /** View entrance — horizontal micro-slide from right (Liste -> Plan) */
     _animateViewEnter(viewEl) {
         if (this._viewEnterTimeout) {
             clearTimeout(this._viewEnterTimeout);
             this._viewEnterTimeout = null;
         }
-        viewEl.classList.remove('sc-exiting');
-        void viewEl.offsetWidth;
+        if (this._prefersReducedMotion()) {
+            viewEl.classList.remove('sc-exiting', 'sc-entering');
+            return;
+        }
+        const needsReflow = viewEl.classList.contains('sc-entering') || viewEl.classList.contains('sc-exiting');
+        viewEl.classList.remove('sc-exiting', 'sc-entering');
+        if (needsReflow) {
+            void viewEl.offsetWidth;
+        }
         viewEl.classList.add('sc-entering');
-
-        this._staggerCellEntrance(40);
-        this._staggerSidebarEntrance(40);
 
         const cleanup = (e) => {
             if (e && e.target !== viewEl) return;
             if (this._viewEnterTimeout) {
                 clearTimeout(this._viewEnterTimeout);
                 this._viewEnterTimeout = null;
-            }
-            if (this._staggerCellTimer) {
-                clearTimeout(this._staggerCellTimer);
-                this._staggerCellTimer = null;
-                document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').forEach(c => {
-                    c.classList.remove('sc-cell-stagger');
-                    c.style.removeProperty('--cell-i');
-                    c.style.removeProperty('animation-delay');
-                });
-            }
-            if (this._staggerSidebarTimer) {
-                clearTimeout(this._staggerSidebarTimer);
-                this._staggerSidebarTimer = null;
-                document.querySelectorAll('#scStudentList .sc-student-chip.sc-chip-stagger').forEach(c => {
-                    c.classList.remove('sc-chip-stagger');
-                    c.style.removeProperty('--chip-i');
-                    c.style.removeProperty('animation-delay');
-                });
             }
             viewEl.removeEventListener('animationend', cleanup);
             viewEl.classList.remove('sc-entering');
@@ -200,8 +243,16 @@ export const SeatingAnimations = {
             clearTimeout(this._viewEnterTimeout);
             this._viewEnterTimeout = null;
         }
-        viewEl.classList.remove('sc-entering');
-        void viewEl.offsetWidth;
+        if (this._prefersReducedMotion()) {
+            viewEl.classList.remove('sc-entering', 'sc-exiting');
+            onComplete();
+            return;
+        }
+        const needsReflow = viewEl.classList.contains('sc-entering') || viewEl.classList.contains('sc-exiting');
+        viewEl.classList.remove('sc-entering', 'sc-exiting');
+        if (needsReflow) {
+            void viewEl.offsetWidth;
+        }
         viewEl.classList.add('sc-exiting');
 
         let called = false;
@@ -209,8 +260,11 @@ export const SeatingAnimations = {
             if (e && e.target !== viewEl) return;
             if (called) return;
             called = true;
+            if (this._viewExitTimeout) {
+                clearTimeout(this._viewExitTimeout);
+                this._viewExitTimeout = null;
+            }
             viewEl.removeEventListener('animationend', done);
-            this._viewExitTimeout = null;
             viewEl.classList.remove('sc-exiting');
             onComplete();
         };
@@ -224,10 +278,15 @@ export const SeatingAnimations = {
             clearTimeout(this._modeCarouselTimer);
             this._modeCarouselTimer = null;
         }
+        if (this._modeCarouselBoard && this._modeCarouselEndHandler) {
+            this._modeCarouselBoard.removeEventListener('animationend', this._modeCarouselEndHandler);
+        }
+        this._modeCarouselBoard = null;
+        this._modeCarouselEndHandler = null;
         document.querySelectorAll('#seatingChartView .sc-board-carousel-ghost').forEach(el => el.remove());
         const board = document.getElementById('scClassroomBoard');
         if (board) {
-            board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left', 'sc-mode-switching');
+            board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left');
             board.querySelectorAll('.sc-cell').forEach(cell => {
                 cell.style.removeProperty('--carousel-col-i');
             });
@@ -263,7 +322,7 @@ export const SeatingAnimations = {
         const wasAlreadyTransitioning = Boolean(this._foldTransitionTimer);
         this._cleanupFoldContinuum();
 
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        if (this._prefersReducedMotion()) {
             return;
         }
 
@@ -400,6 +459,10 @@ export const SeatingAnimations = {
 
     /** Play directional horizontal carousel with supple column wave inertia between Cours and Activité */
     _playModeCarousel(ghost, isForward) {
+        if (this._prefersReducedMotion()) {
+            this._cleanupModeCarousel();
+            return;
+        }
         const board = document.getElementById('scClassroomBoard');
         const bodyEl = document.querySelector('#seatingChartView .sc-body');
         if (!board) return;
@@ -431,13 +494,23 @@ export const SeatingAnimations = {
             bodyEl.appendChild(ghost);
         }
 
-        board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left', 'sc-mode-switching');
-        void board.offsetWidth;
+        const needsReflow = board.classList.contains('sc-mode-carousel-in-right') || board.classList.contains('sc-mode-carousel-in-left');
+        board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left');
+        if (needsReflow) {
+            void board.offsetWidth;
+        }
         board.classList.add(enterClass);
 
+        const onAnimEnd = (e) => {
+            if (e && e.target !== board) return;
+            this._cleanupModeCarousel();
+        };
+        this._modeCarouselBoard = board;
+        this._modeCarouselEndHandler = onAnimEnd;
+        board.addEventListener('animationend', onAnimEnd);
         this._modeCarouselTimer = setTimeout(() => {
             this._cleanupModeCarousel();
-        }, 640);
+        }, 500);
     },
 
     /** Stagger cell entrance (used after render) */
@@ -617,7 +690,7 @@ export const SeatingAnimations = {
             return;
         }
 
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        if (this._prefersReducedMotion()) {
             onComplete?.();
             return;
         }

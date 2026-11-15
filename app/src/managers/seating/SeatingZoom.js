@@ -767,7 +767,7 @@ export const SeatingZoom = {
             if (Math.abs(excess) < 1) return 0;
             const sign = Math.sign(excess);
             const abs = Math.abs(excess);
-            const scaleComp = Math.max(1, this._zoomScale || 1);
+            const scaleComp = this._isFitted ? 1 : Math.max(1, this._zoomScale || 1);
             const damped = ((abs * resistance) / (1 + (abs * resistance) / maxOvershoot)) / scaleComp;
             return Math.round(sign * damped * 10) / 10;
         };
@@ -1268,6 +1268,19 @@ export const SeatingZoom = {
                 gridArea.scrollTop = virtualScrollTop;
             }
 
+            const isFittedSwipeSurface = Boolean(
+                maxScrollX === 0 &&
+                maxScrollY === 0 &&
+                this._isActive &&
+                this._isFitted &&
+                !isEdgeSwipe &&
+                !startedOnOverlayControl &&
+                !this._activeMobileSheet &&
+                !this._isSearchOpen?.()
+            );
+            const canNavLeft = isFittedSwipeSurface && this._isLocked && this._planMode === 'course' && Boolean(this._canSwitchPlanMode?.('activity'));
+            const canNavRight = isFittedSwipeSurface && (this._isLocked || canSwipeUnlockedEmpty);
+
             if (maxScrollX > 0) {
                 if (gridArea.scrollLeft <= 1 && unabsorbedStepX > 0 && rawExcessX >= 0 && Math.abs(dScrollY) < 1) {
                     rawExcessX = clamp(rawExcessX + unabsorbedStepX, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
@@ -1287,8 +1300,14 @@ export const SeatingZoom = {
                     }
                 }
             } else if (lockedAxis !== 'y' && Math.abs(dScrollY) < 1) {
-                const factorX = (rawExcessX !== 0 && Math.sign(stepX) !== Math.sign(rawExcessX)) ? 1.5 : 1;
-                rawExcessX = clamp(rawExcessX + stepX * factorX, -MAX_RAW_EXCESS, MAX_RAW_EXCESS);
+                const projected = rawExcessX + stepX;
+                const nextSign = projected !== 0 ? Math.sign(projected) : Math.sign(stepX);
+                const isNavDirection = (nextSign < 0 && canNavLeft) || (nextSign > 0 && canNavRight);
+                const maxRawX = isNavDirection
+                    ? Math.max(MAX_RAW_EXCESS, 400)
+                    : MAX_RAW_EXCESS;
+                const factorX = (!isNavDirection && rawExcessX !== 0 && Math.sign(stepX) !== Math.sign(rawExcessX)) ? 1.5 : 1;
+                rawExcessX = clamp(rawExcessX + stepX * factorX, -maxRawX, maxRawX);
             }
 
             if (maxScrollY > 0) {
@@ -1328,29 +1347,14 @@ export const SeatingZoom = {
             const effY = effectiveExcess(rawExcessY, 5);
 
             if (effX !== 0 || effY !== 0) {
-                const isFittedSwipeSurface = Boolean(
-                    maxScrollX === 0 &&
-                    maxScrollY === 0 &&
-                    this._isActive &&
-                    this._isFitted &&
-                    !isEdgeSwipe &&
-                    !startedOnOverlayControl &&
-                    !this._activeMobileSheet &&
-                    !this._isSearchOpen?.()
-                );
-                const canNavigateView = isFittedSwipeSurface && (this._isLocked || canSwipeUnlockedEmpty);
-
                 let ox = 0;
                 let oy = 0;
                 if (maxScrollX > 0 || maxScrollY > 0) {
                     ox = clampOverscroll(effX);
                     oy = clampOverscroll(effY);
                 } else {
-                    const isNavX = Boolean(
-                        (effX < 0 && isFittedSwipeSurface && this._isLocked && this._planMode === 'course' && this._canSwitchPlanMode?.('activity')) ||
-                        (effX > 0 && canNavigateView)
-                    );
-                    ox = clampOverscroll(effX, isNavX ? 84 : 28, isNavX ? 0.56 : 0.25);
+                    const isNavX = (effX < 0 && canNavLeft) || (effX > 0 && canNavRight);
+                    ox = clampOverscroll(effX, isNavX ? 150 : 28, isNavX ? 0.78 : 0.25);
                     oy = clampOverscroll(effY, 28, 0.25);
                 }
 

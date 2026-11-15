@@ -222,4 +222,108 @@ describe('FocusPanelNavigation', () => {
             expect(SpeechRecognitionManager.abort).toHaveBeenCalled();
         });
     });
+
+    describe('Touch Swipe Navigation', () => {
+        const dispatchTouch = (el, type, x, y) => {
+            const evt = new Event(type);
+            if (type === 'touchend' || type === 'touchcancel') {
+                evt.touches = [];
+                evt.changedTouches = [{ clientX: x, clientY: y }];
+            } else {
+                evt.touches = [{ clientX: x, clientY: y }];
+            }
+            el.dispatchEvent(evt);
+        };
+
+        const setupSwipeDom = () => {
+            document.body.innerHTML = `
+                <div id="focusPagesContainer">
+                    <div class="focus-main-page">
+                        <div class="focus-content"></div>
+                    </div>
+                </div>
+            `;
+            const container = document.getElementById('focusPagesContainer');
+            const content = document.querySelector('.focus-main-page .focus-content');
+            Object.defineProperty(container, 'clientWidth', { value: 480, configurable: true });
+            Object.defineProperty(window, 'innerWidth', { value: 1440, configurable: true });
+            return { container, content };
+        };
+
+        it('switches student after a moderate swipe (~60px) even on a wide viewport', () => {
+            const { container } = setupSwipeDom();
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 0;
+            const setCurrentStudentIdSpy = vi.fn();
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: setCurrentStudentIdSpy,
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn()
+            });
+
+            dispatchTouch(container, 'touchstart', 300, 200);
+            dispatchTouch(container, 'touchmove', 238, 200);
+            dispatchTouch(container, 'touchend', 238, 200);
+
+            expect(currentIndex).toBe(1);
+            expect(setCurrentStudentIdSpy).toHaveBeenCalledWith('s2');
+        });
+
+        it('supports quick flicks (~30px) while snapping back on slow small drags and touchcancel', () => {
+            vi.useFakeTimers();
+            const { container, content } = setupSwipeDom();
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 0;
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: vi.fn(),
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn()
+            });
+
+            // 1. Petit glissement lent (30px en 250ms) -> rebond sans changer d'élève
+            dispatchTouch(container, 'touchstart', 300, 200);
+            vi.advanceTimersByTime(250);
+            dispatchTouch(container, 'touchmove', 270, 200);
+            dispatchTouch(container, 'touchend', 270, 200);
+            expect(currentIndex).toBe(0);
+            expect(content.style.transform).toContain('translate3d(0, 0, 0)');
+
+            // 2. Flick rapide (32px en 40ms -> 0.8 px/ms) -> passe à l'élève suivant
+            dispatchTouch(container, 'touchstart', 300, 200);
+            vi.advanceTimersByTime(40);
+            dispatchTouch(container, 'touchmove', 268, 200);
+            dispatchTouch(container, 'touchend', 268, 200);
+            expect(currentIndex).toBe(1);
+
+            // 3. touchcancel pendant un grand swipe -> revient sans naviguer
+            dispatchTouch(container, 'touchstart', 200, 200);
+            vi.advanceTimersByTime(50);
+            dispatchTouch(container, 'touchmove', 320, 200);
+            dispatchTouch(container, 'touchcancel', 320, 200);
+            expect(currentIndex).toBe(1);
+            expect(content.style.transform).toContain('translate3d(0, 0, 0)');
+
+            vi.useRealTimers();
+        });
+    });
 });

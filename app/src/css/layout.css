@@ -1310,14 +1310,14 @@ button > .icon-spin-wrapper {
     }
     to {
         opacity: 0;
-        transform: translate3d(calc(var(--swipe-offset-x, 0px) - 28px), 0, 0);
+        transform: translate3d(calc(var(--swipe-offset-x, 0px) - 18px), 0, 0);
     }
 }
 
 @keyframes view-slide-in-left {
     from {
         opacity: 0;
-        transform: translate3d(-32px, 0, 0);
+        transform: translate3d(-22px, 0, 0);
     }
     to {
         opacity: 1;
@@ -1332,7 +1332,7 @@ button > .icon-spin-wrapper {
 }
 
 .view-slide-in-left {
-    animation: view-slide-in-left 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: view-slide-in-left 0.24s var(--ease-spring) both;
     will-change: transform, opacity;
 }
 
@@ -1356,14 +1356,14 @@ button > .icon-spin-wrapper {
 
 .stat-card.stat-card-stagger,
 .empty-state-hub-card.stat-card-stagger {
-    animation: list-card-stagger-reveal 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: list-card-stagger-reveal 0.24s var(--ease-spring) both;
     animation-delay: calc(var(--card-i, 0) * 8ms);
     will-change: transform;
 }
 
 .student-list-table tbody tr.student-row.row-stagger-enter,
 .student-list-table tbody tr.row-stagger-enter {
-    animation: list-row-stagger-reveal 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: list-row-stagger-reveal 0.22s var(--ease-spring) both;
     animation-delay: calc(var(--row-i, 0) * 5ms);
     will-change: transform;
 }

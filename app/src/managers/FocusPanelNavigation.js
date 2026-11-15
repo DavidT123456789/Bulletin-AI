@@ -43,22 +43,59 @@ export const FocusPanelNavigation = {
      */
     _initSwipeNavigation() {
         const targetArea = document.getElementById('focusPagesContainer') || document.getElementById('focusPanel');
-        if (!targetArea) return;
+        if (!targetArea || targetArea.dataset.swipeBound === 'true') return;
+        targetArea.dataset.swipeBound = 'true';
 
         let touchStartX = null;
         let touchStartY = null;
+        let lastMoveX = 0;
+        let lastMoveTime = 0;
+        let velocityX = 0;
         let isSwiping = false;
         let swipeContent = null;
         let currentIndex = -1;
         let totalItems = -1;
         let currentTranslateX = 0;
+        let snapBackTimer = null;
+
+        const clearSwipeStyles = (el) => {
+            if (!el) return;
+            el.style.transition = '';
+            el.style.transform = '';
+            el.style.opacity = '';
+            el.style.willChange = '';
+        };
+
+        const snapBack = (el) => {
+            if (!el) return;
+            el.style.transition = 'transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease';
+            el.style.transform = 'translate3d(0, 0, 0) scale(1)';
+            el.style.opacity = '1';
+
+            if (snapBackTimer) clearTimeout(snapBackTimer);
+            snapBackTimer = setTimeout(() => {
+                snapBackTimer = null;
+                window.requestAnimationFrame(() => {
+                    clearSwipeStyles(el);
+                });
+            }, 380);
+        };
+
+        const resetGestureVars = () => {
+            touchStartX = null;
+            touchStartY = null;
+            velocityX = 0;
+            isSwiping = false;
+        };
 
         targetArea.addEventListener('touchstart', e => {
             if (e.touches.length > 1) return; // Ignore multi-touch
 
-            touchStartX = null;
-            touchStartY = null;
-            isSwiping = false;
+            if (snapBackTimer) {
+                clearTimeout(snapBackTimer);
+                snapBackTimer = null;
+            }
+            resetGestureVars();
             currentTranslateX = 0;
 
             const header = document.querySelector('.focus-header');
@@ -78,6 +115,8 @@ export const FocusPanelNavigation = {
 
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            lastMoveX = touchStartX;
+            lastMoveTime = Date.now();
 
             // Determine active content cleanly
             const isAnalysisMode = FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible();
@@ -107,13 +146,23 @@ export const FocusPanelNavigation = {
                 if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
                     isSwiping = true;
                 } else if (Math.abs(diffY) > 10) {
-                    touchStartX = null; // Vertical scroll, abort swipe
+                    clearSwipeStyles(swipeContent);
+                    resetGestureVars(); // Vertical scroll, abort swipe
                     return;
                 }
             }
 
             if (isSwiping) {
                 if (e.cancelable) e.preventDefault(); // Prevent vertical scroll bouncing
+
+                const now = Date.now();
+                const dt = now - lastMoveTime;
+                if (dt >= 4) {
+                    const instVx = (currentX - lastMoveX) / dt;
+                    velocityX = velocityX === 0 ? instVx : (velocityX * 0.4 + instVx * 0.6);
+                    lastMoveX = currentX;
+                    lastMoveTime = now;
+                }
 
                 let translateX = diffX;
                 const resistance = 0.25;
@@ -125,55 +174,49 @@ export const FocusPanelNavigation = {
 
                 currentTranslateX = translateX;
 
-                // iOS 2026 Premium Effect: slight scale down and fade
-                const progress = Math.min(Math.abs(translateX) / window.innerWidth, 1);
+                // iOS 2026 Premium Effect: slight scale down and fade proportional to panel width
+                const panelWidth = targetArea.clientWidth || swipeContent.clientWidth || window.innerWidth || 400;
+                const progress = Math.min(Math.abs(translateX) / panelWidth, 1);
                 const scale = 1 - (progress * 0.04);
                 const opacity = 1 - (progress * 0.4);
 
-                swipeContent.style.transform = `translateX(${translateX}px) scale(${scale})`;
+                swipeContent.style.transform = `translate3d(${translateX}px, 0, 0) scale(${scale})`;
                 swipeContent.style.opacity = opacity.toString();
             }
         }, { passive: false }); // false so preventDefault works
 
-        targetArea.addEventListener('touchend', e => {
+        const finishSwipe = (shouldEvaluateNavigation) => {
             if (touchStartX === null || !swipeContent) return;
 
-            if (isSwiping) {
-                const threshold = window.innerWidth * 0.25; // 25% screen width threshold
+            if (isSwiping && shouldEvaluateNavigation) {
+                const panelWidth = targetArea.clientWidth || swipeContent.clientWidth || Math.min(window.innerWidth || 400, 480);
+                const distanceThreshold = Math.min(56, Math.max(40, Math.round(panelWidth * 0.14)));
+                const isFreshFlick = (Date.now() - lastMoveTime) <= 100 &&
+                    Math.abs(velocityX) >= 0.35 &&
+                    Math.sign(velocityX) === Math.sign(currentTranslateX) &&
+                    Math.abs(currentTranslateX) >= 24;
 
-                if (currentTranslateX > threshold && currentIndex > 0) {
+                const canTriggerPrev = (currentTranslateX > distanceThreshold || (isFreshFlick && currentTranslateX > 0)) && currentIndex > 0;
+                const canTriggerNext = (currentTranslateX < -distanceThreshold || (isFreshFlick && currentTranslateX < 0)) && currentIndex < totalItems - 1;
+
+                if (canTriggerPrev) {
                     this._navigateWithAnimation('prev', currentTranslateX);
-                } else if (currentTranslateX < -threshold && currentIndex < totalItems - 1) {
+                } else if (canTriggerNext) {
                     this._navigateWithAnimation('next', currentTranslateX);
                 } else {
-                    // Snap back (Elastic spring)
-                    swipeContent.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
-                    swipeContent.style.transform = 'translateX(0) scale(1)';
-                    swipeContent.style.opacity = '1';
-
-                    setTimeout(() => {
-                        window.requestAnimationFrame(() => {
-                            if (swipeContent) {
-                                swipeContent.style.transition = '';
-                                swipeContent.style.transform = '';
-                                swipeContent.style.opacity = '';
-                                swipeContent.style.willChange = '';
-                            }
-                        });
-                    }, 450);
+                    snapBack(swipeContent);
                 }
+            } else if (isSwiping) {
+                snapBack(swipeContent);
             } else {
-                // Clean reset
-                swipeContent.style.transition = '';
-                swipeContent.style.transform = '';
-                swipeContent.style.opacity = '';
-                swipeContent.style.willChange = '';
+                clearSwipeStyles(swipeContent);
             }
 
-            touchStartX = null;
-            touchStartY = null;
-            isSwiping = false;
-        }, { passive: true });
+            resetGestureVars();
+        };
+
+        targetArea.addEventListener('touchend', () => finishSwipe(true), { passive: true });
+        targetArea.addEventListener('touchcancel', () => finishSwipe(false), { passive: true });
     },
 
     /**

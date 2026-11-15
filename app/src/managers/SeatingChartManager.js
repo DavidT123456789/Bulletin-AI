@@ -68,6 +68,10 @@ export const SeatingChartManager = {
     _fitScale: 1,
     _resizeDebounceTimer: null,
     _modeCarouselTimer: null,
+    _modeCarouselBoard: null,
+    _modeCarouselEndHandler: null,
+    _listExitPrimaryEl: null,
+    _listExitEndHandler: null,
     _foldTransitionTimer: null,
     _wasCompactLayout: null,
     _lastViewportW: 0,
@@ -420,7 +424,7 @@ export const SeatingChartManager = {
             clearTimeout(this._viewEnterTimeout);
             this._viewEnterTimeout = null;
         }
-        this._clearListViewTransitionClasses();
+        this._clearListViewTransitionClasses({ preserveSwipeOffset: !isList && !immediate });
 
         if (!isList) {
             this._students = this._getCurrentClassStudents();

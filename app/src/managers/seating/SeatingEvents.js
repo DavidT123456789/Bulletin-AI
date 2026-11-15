@@ -501,8 +501,8 @@ export const SeatingEvents = {
 
             const dampListSwipe = (delta, isNavigable) => {
                 const abs = Math.abs(delta);
-                const maxOvershoot = isNavigable ? 76 : 22;
-                const resistance = isNavigable ? 0.54 : 0.22;
+                const maxOvershoot = isNavigable ? 135 : 22;
+                const resistance = isNavigable ? 0.76 : 0.22;
                 const damped = (abs * resistance) / (1 + (abs * resistance) / maxOvershoot);
                 return Math.round(Math.sign(delta) * damped * 10) / 10;
             };

@@ -956,7 +956,7 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         const viewEl = document.getElementById('seatingChartView');
         const wrapper = document.querySelector('.main-content-wrapper');
 
-        // 1. Liste -> Plan : sortie gauche de la liste puis entrée droite du plan + apparition progressive des cellules
+        // 1. Liste -> Plan : sortie gauche de la liste puis entrée droite du plan (sans stagger redondant sur les cellules)
         SeatingChartManager.switchToView('plan');
         expect(outputList.classList.contains('view-slide-out-left')).toBe(true);
 
@@ -965,7 +965,7 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         expect(viewEl.classList.contains('sc-entering')).toBe(true);
         const cells = document.querySelectorAll('#scGridContainer .sc-cell');
         expect(cells.length).toBeGreaterThan(0);
-        expect(cells[0].classList.contains('sc-cell-stagger')).toBe(true);
+        expect(cells[0].classList.contains('sc-cell-stagger')).toBe(false);
 
         await vi.advanceTimersByTimeAsync(260);
         expect(viewEl.classList.contains('sc-entering')).toBe(false);
@@ -982,14 +982,49 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         expect(statCards[0].classList.contains('stat-card-stagger')).toBe(true);
         expect(studentRows[0].classList.contains('row-stagger-enter')).toBe(true);
 
-        await vi.advanceTimersByTimeAsync(260);
+        await vi.advanceTimersByTimeAsync(280);
         expect(outputList.classList.contains('view-slide-in-left')).toBe(false);
-
-        await vi.advanceTimersByTimeAsync(600);
         expect(statCards[0].classList.contains('stat-card-stagger')).toBe(false);
         expect(studentRows[0].classList.contains('row-stagger-enter')).toBe(false);
 
         vi.useRealTimers();
+    });
+
+    it('devrait basculer instantanément Liste <-> Plan lorsque prefers-reduced-motion est actif', () => {
+        appState.currentClassId = classA.id;
+        SeatingChartManager._isActive = false;
+        const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+            matches: query === '(prefers-reduced-motion: reduce)',
+            media: query,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
+        }));
+
+        const outputSection = document.querySelector('.output-section');
+        const outputList = document.createElement('div');
+        outputList.id = 'outputList';
+        outputList.innerHTML = '<table class="student-list-table"><tbody><tr class="student-row"></tr></tbody></table>';
+        outputSection.insertBefore(outputList, document.getElementById('seatingChartView'));
+
+        const viewEl = document.getElementById('seatingChartView');
+        const wrapper = document.querySelector('.main-content-wrapper');
+
+        try {
+            SeatingChartManager.switchToView('plan');
+            expect(wrapper.dataset.view).toBe('plan');
+            expect(outputList.classList.contains('view-slide-out-left')).toBe(false);
+            expect(viewEl.classList.contains('sc-entering')).toBe(false);
+
+            SeatingChartManager.switchToView('list');
+            expect(wrapper.dataset.view).toBe('list');
+            expect(viewEl.classList.contains('sc-exiting')).toBe(false);
+            expect(outputList.classList.contains('view-slide-in-left')).toBe(false);
+        } finally {
+            matchMediaSpy.mockRestore();
+        }
     });
 
     it('devrait nettoyer table-fade-in et les classes résiduelles pour animer les 5 premières lignes lors du retour Plan -> Liste', async () => {
@@ -3814,6 +3849,34 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(parseFloat(lastColCellCourse.style.getPropertyValue('--carousel-col-i'))).toBeLessThan(
                 parseFloat(firstColCellCourse.style.getPropertyValue('--carousel-col-i'))
             );
+
+            // Un animationend sur une cellule enfant ne doit pas nettoyer prématurément ; seul animationend sur le plateau (ou le fallback 400ms) nettoie
+            firstColCellCourse.dispatchEvent(new Event('animationend', { bubbles: true }));
+            expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(true);
+            board.dispatchEvent(new Event('animationend', { bubbles: false }));
+            expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(false);
+            expect(document.querySelector('#seatingChartView .sc-board-carousel-ghost')).toBeNull();
+        });
+
+        it('devrait nettoyer le carrousel Cours <-> Activité via le fallback 500ms si animationend ne se déclenche pas', async () => {
+            vi.useFakeTimers();
+            const board = document.getElementById('scClassroomBoard');
+            const bodyEl = document.querySelector('#seatingChartView .sc-body');
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 120, top: 80, width: 520, height: 340, right: 640, bottom: 420
+            });
+            vi.spyOn(bodyEl, 'getBoundingClientRect').mockReturnValue({
+                left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
+            });
+
+            SeatingChartManager.switchPlanMode('activity', { animate: true });
+            expect(board.classList.contains('sc-mode-carousel-in-right')).toBe(true);
+            expect(document.querySelector('#seatingChartView .sc-board-carousel-ghost')).not.toBeNull();
+
+            await vi.advanceTimersByTimeAsync(500);
+            expect(board.classList.contains('sc-mode-carousel-in-right')).toBe(false);
+            expect(document.querySelector('#seatingChartView .sc-board-carousel-ghost')).toBeNull();
+            vi.useRealTimers();
         });
 
         it('devrait figer les transitions enfants via sc-lock-sliding pendant le glissement FLIP de _toggleLock pour garantir le 120Hz', () => {
@@ -4423,6 +4486,109 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             outputSection.dispatchEvent(teList);
             expect(switchToViewSpy).toHaveBeenCalledWith('plan');
             switchToViewSpy.mockRestore();
+        });
+
+        it('devrait suivre librement le doigt sur un grand swipe navigable sans butée prématurée', () => {
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 300, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 300, configurable: true });
+
+            SeatingChartManager._isFitted = true;
+            SeatingChartManager._isLocked = true;
+            appState.generatedResults[0].seatingActivityPosition = { row: 0, col: 0, slot: 0 };
+
+            const ts = new Event('touchstart');
+            ts.touches = [{ clientX: 300, clientY: 200 }];
+            gridArea.dispatchEvent(ts);
+
+            const tm = new Event('touchmove');
+            tm.touches = [{ clientX: 100, clientY: 200 }];
+            gridArea.dispatchEvent(tm);
+
+            const navMatch = board.style.transform.match(/translate3d\(([^p]+)px/);
+            expect(navMatch).not.toBeNull();
+            const offsetAt200 = Math.abs(parseFloat(navMatch[1]));
+            expect(offsetAt200).toBeGreaterThan(68);
+            expect(offsetAt200).toBeLessThan(120);
+
+            const tmFar = new Event('touchmove');
+            tmFar.touches = [{ clientX: -20, clientY: 200 }];
+            gridArea.dispatchEvent(tmFar);
+            const farMatch = board.style.transform.match(/translate3d\(([^p]+)px/);
+            const offsetAt320 = Math.abs(parseFloat(farMatch[1]));
+            expect(offsetAt320).toBeGreaterThan(offsetAt200);
+            expect(offsetAt320).toBeLessThan(150);
+
+            const tc = new Event('touchcancel');
+            tc.touches = [];
+            tc.changedTouches = [{ clientX: 100, clientY: 200 }];
+            gridArea.dispatchEvent(tc);
+
+            // Direction sans page suivante (gauche depuis Activité) : la butée élastique reste active (< 28px)
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._isFitted = true;
+            SeatingChartManager._isLocked = true;
+
+            const tsDead = new Event('touchstart');
+            tsDead.touches = [{ clientX: 300, clientY: 200 }];
+            gridArea.dispatchEvent(tsDead);
+
+            const tmDead = new Event('touchmove');
+            tmDead.touches = [{ clientX: 100, clientY: 200 }];
+            gridArea.dispatchEvent(tmDead);
+
+            const deadMatch = board.style.transform.match(/translate3d\(([^p]+)px/);
+            expect(deadMatch).not.toBeNull();
+            expect(Math.abs(parseFloat(deadMatch[1]))).toBeLessThan(28);
+
+            const tcDead = new Event('touchcancel');
+            tcDead.touches = [];
+            tcDead.changedTouches = [{ clientX: 100, clientY: 200 }];
+            gridArea.dispatchEvent(tcDead);
+        });
+
+        it('devrait préserver le décalage tactile de la vue liste pendant la sortie view-slide-out-left puis nettoyer après transition', async () => {
+            vi.useFakeTimers();
+            try {
+                SeatingChartManager.switchToView('list', { immediate: true });
+                const outputSection = document.querySelector('.main-content .output-section');
+                const outputList = document.createElement('div');
+                outputList.id = 'outputList';
+                outputSection.appendChild(outputList);
+                const wrapper = document.querySelector('.main-content-wrapper');
+
+                const ts = new Event('touchstart');
+                ts.touches = [{ clientX: 260, clientY: 200 }];
+                outputSection.dispatchEvent(ts);
+
+                const tm = new Event('touchmove');
+                tm.touches = [{ clientX: 140, clientY: 200 }];
+                outputSection.dispatchEvent(tm);
+
+                const draggedOffset = outputList.style.getPropertyValue('--swipe-offset-x');
+                expect(parseFloat(draggedOffset)).toBeLessThan(0);
+
+                const te = new Event('touchend');
+                te.changedTouches = [{ clientX: 140, clientY: 200 }];
+                outputSection.dispatchEvent(te);
+
+                expect(outputList.classList.contains('view-slide-out-left')).toBe(true);
+                expect(outputList.style.getPropertyValue('--swipe-offset-x')).toBe(draggedOffset);
+
+                await vi.advanceTimersByTimeAsync(95);
+                expect(wrapper.dataset.view).toBe('plan');
+                expect(outputList.classList.contains('view-slide-out-left')).toBe(false);
+                expect(outputList.style.getPropertyValue('--swipe-offset-x')).toBe('');
+                expect(outputList.style.transform).toBe('');
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('devrait chaîner Liste ↔ Plan (Cours) ↔ Plan (Activité) avec les flèches Gauche/Droite (avec ou sans Ctrl) sans contour focus parasite', () => {
