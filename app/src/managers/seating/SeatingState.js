@@ -190,6 +190,7 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._closeRandomPicker?.();
         this._closeContextMenu?.();
         this._closeMobileSheet(true);
         this._closeConfigPopover();
@@ -266,6 +267,10 @@ export const SeatingState = {
             floatingUnlockBtn.setAttribute('aria-label', floatLabel);
             floatingUnlockBtn.setAttribute('data-tooltip', floatLabel);
             TooltipsUI?.updateTooltip?.(floatingUnlockBtn, floatLabel);
+        }
+
+        if (!locked) {
+            this._closeRandomPicker?.();
         }
 
         // [UX Mobile] History integration for Edit Mode
@@ -372,6 +377,7 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._closeRandomPicker?.();
         this._closeContextMenu?.();
         this._closeMobileSheet();
         if (this._isLocked) {

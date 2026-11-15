@@ -198,6 +198,21 @@ export const SeatingEvents = {
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
 
+        const randomBtn = document.getElementById('scFloatingRandomBtn');
+        randomBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        randomBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._drawNextRandomStudent?.();
+        });
+
+        const randomCloseBtn = document.getElementById('scFloatingRandomCloseBtn');
+        randomCloseBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        randomCloseBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            randomCloseBtn._tippy?.hide?.();
+            this._closeRandomPicker?.();
+        });
+
         const sidebar = document.getElementById('scSidebar');
         if (sidebar && !sidebar._hasDragDropListeners) {
             sidebar._hasDragDropListeners = true;
@@ -824,16 +839,38 @@ export const SeatingEvents = {
                     return;
                 }
 
+                if (e.key === ' ' && hasNoModifier && !e.repeat && !isTyping && this._isActive && this._isLocked && this._isRandomPickerActive?.()) {
+                    const hasBlockingOverlay = Boolean(
+                        ClassUIManager?._isDropdownOpen ||
+                        this._isSearchOpen() ||
+                        this._activeMobileSheet ||
+                        this._placementPopoverOpen ||
+                        this._configPopoverOpen ||
+                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
+                    );
+                    if (!hasBlockingOverlay && !activeEl?.closest?.('button, a, [role="button"], [role="tab"]')) {
+                        e.preventDefault();
+                        this._drawNextRandomStudent?.();
+                        return;
+                    }
+                }
+
                 if (e.key === 'Escape') {
                     if (this._isSearchOpen()) {
                         e.preventDefault();
                         this._handleSearchEscape();
                         return;
                     }
-                    if (this._activeMobileSheet) this._closeMobileSheet();
+                    if (this._activeMobileSheet) {
+                        this._closeMobileSheet();
+                    }
                     if (this._placementPopoverOpen) this._closePlacementPopover();
                     if (this._configPopoverOpen) this._closeConfigPopover();
                     if (this._selectedChipIds.length > 0) this._clearSelection();
+                    if (this._isRandomPickerActive?.()) {
+                        e.preventDefault();
+                        this._closeRandomPicker?.();
+                    }
                 }
             });
 

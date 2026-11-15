@@ -21,6 +21,9 @@ export const SeatingSearch = {
     // ========================================================================
 
     _openSearch() {
+        if (this._isRandomPickerActive?.()) {
+            this._closeRandomPicker({ fromHistory: false });
+        }
         const wrap = document.getElementById('scFloatingSearch');
         const input = document.getElementById('scFloatingSearchInput');
         const btn = document.getElementById('scFloatingSearchBtn');
@@ -306,32 +309,34 @@ export const SeatingSearch = {
         return { matchedStudentIds, matchCount };
     },
 
-    _applySearchHighlight(term) {
-        const cleaned = (term || '').trim();
-        this._activeSearchTerm = cleaned;
-        appState.searchQuery = cleaned;
-        this._searchMatchIndex = 0;
-
+    _clearSpotlight(activeClass = 'sc-search-active') {
         const view = document.getElementById('seatingChartView');
-        const { matchedStudentIds, matchCount } = this._updateSearchCountAndSuggestions(cleaned);
+        if (view) view.classList.remove(activeClass);
+        document.querySelectorAll('#scGridContainer .sc-cell').forEach(cell => {
+            cell.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed', 'sc-spotlight-single');
+        });
+        document.querySelectorAll('#scGridContainer .sc-stacked-member, #scGridContainer .sc-stacked-avatar').forEach(el => {
+            el.classList.remove('sc-member-match', 'sc-member-dimmed');
+        });
+        document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
+            chip.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed');
+        });
+    },
 
-        if (!cleaned) {
-            if (view) view.classList.remove('sc-search-active');
-            document.querySelectorAll('#scGridContainer .sc-cell').forEach(cell => {
-                cell.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed', 'sc-spotlight-single');
-            });
-            document.querySelectorAll('#scGridContainer .sc-stacked-member, #scGridContainer .sc-stacked-avatar').forEach(el => {
-                el.classList.remove('sc-member-match', 'sc-member-dimmed');
-            });
-            document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
-                chip.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed');
-            });
+    _renderSpotlight(matchedStudentIds, {
+        activeClass = 'sc-search-active',
+        matchCount = matchedStudentIds?.size ?? 0,
+        scrollToSingle = true,
+        dimSidebar = true
+    } = {}) {
+        const view = document.getElementById('seatingChartView');
+        if (!matchedStudentIds) {
+            this._clearSpotlight(activeClass);
             return;
         }
 
-        if (view) view.classList.add('sc-search-active');
+        if (view) view.classList.add(activeClass);
 
-        // 2. Grid cells
         const cells = document.querySelectorAll('#scGridContainer .sc-cell');
         cells.forEach(cell => {
             const r = Number(cell.dataset.row);
@@ -358,24 +363,45 @@ export const SeatingSearch = {
             }
         });
 
-        // Auto-scroll to single match if out of view
-        if (matchCount === 1) {
+        if (scrollToSingle && matchCount === 1) {
             const singleCell = document.querySelector('#scGridContainer .sc-cell.sc-spotlight-match');
             if (singleCell && typeof singleCell.scrollIntoView === 'function') {
                 singleCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
             }
         }
 
-        // 3. Sidebar chips
-        document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
-            const chipId = chip.dataset.resultId;
-            if (matchedStudentIds.has(chipId)) {
-                chip.classList.remove('sc-spotlight-dimmed');
-                chip.classList.add('sc-spotlight-match');
-            } else {
-                chip.classList.remove('sc-spotlight-match');
-                chip.classList.add('sc-spotlight-dimmed');
-            }
+        if (dimSidebar) {
+            document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
+                const chipId = chip.dataset.resultId;
+                if (matchedStudentIds.has(chipId)) {
+                    chip.classList.remove('sc-spotlight-dimmed');
+                    chip.classList.add('sc-spotlight-match');
+                } else {
+                    chip.classList.remove('sc-spotlight-match');
+                    chip.classList.add('sc-spotlight-dimmed');
+                }
+            });
+        }
+    },
+
+    _applySearchHighlight(term) {
+        const cleaned = (term || '').trim();
+        this._activeSearchTerm = cleaned;
+        appState.searchQuery = cleaned;
+        this._searchMatchIndex = 0;
+
+        const { matchedStudentIds, matchCount } = this._updateSearchCountAndSuggestions(cleaned);
+
+        if (!cleaned) {
+            this._clearSpotlight('sc-search-active');
+            return;
+        }
+
+        this._renderSpotlight(matchedStudentIds, {
+            activeClass: 'sc-search-active',
+            matchCount,
+            scrollToSingle: true,
+            dimSidebar: true
         });
     },
 

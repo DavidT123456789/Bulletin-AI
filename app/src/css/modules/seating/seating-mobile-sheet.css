@@ -485,7 +485,7 @@
 }
 
 /* ────────── SPOTLIGHT HIGHLIGHTING (VUE PLAN) ────────── */
-#seatingChartView.sc-search-active .sc-cell {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell {
     transition: opacity var(--transition-base),
                 transform var(--transition-spring),
                 filter var(--transition-base),
@@ -500,54 +500,105 @@
     transform: scale(0.97) !important;
 }
 
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match {
     opacity: 1 !important;
-    transform: scale(1.06) translateY(-2px) translateZ(0) !important;
+    transform: scale(1.06) translateY(-2px) translateZ(0);
     box-shadow: var(--shadow-xl), var(--highlight-standard-rim) !important;
     z-index: 25 !important;
 }
 
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-single {
-    animation: scSpotlightPulse 2s var(--ease-spring) infinite;
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-single {
+    animation: scSpotlightPulse 2.8s ease-in-out infinite;
+}
+
+/* Rapid decelerating hop phase during random picker suspense */
+#seatingChartView.sc-random-rolling .sc-cell {
+    transition: opacity 75ms ease,
+                transform 90ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 75ms ease,
+                border-color 75ms ease !important;
+}
+
+/* Soft focus dimming held through rolling and the ~1s winner reveal, then cleared */
+#seatingChartView:is(.sc-random-rolling, .sc-random-revealed) .sc-cell.sc-spotlight-dimmed {
+    opacity: 0.5 !important;
+    filter: none;
+    transform: scale(0.985) !important;
+}
+
+#seatingChartView.sc-random-rolling .sc-cell.sc-spotlight-match {
+    transform: scale(1.03) translateY(-1px) translateZ(0);
+}
+
+#seatingChartView.sc-random-rolling .sc-cell.sc-spotlight-single {
+    animation: none;
+}
+
+/* Supple reveal swell on the final selected student before settling to gentle breathing */
+#seatingChartView.sc-random-revealed .sc-cell.sc-spotlight-match.sc-spotlight-single {
+    animation: scRandomWinnerBounce 0.95s ease-in-out forwards;
+    z-index: 30 !important;
+}
+
+@keyframes scRandomWinnerBounce {
+    0% {
+        transform: scale(1.02) translateY(0) translateZ(0);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    34% {
+        transform: scale(1.15) translateY(-4px) translateZ(0);
+        animation-timing-function: ease-in-out;
+    }
+    64% {
+        transform: scale(1.04) translateY(-1px) translateZ(0);
+        animation-timing-function: ease-in-out;
+    }
+    84% {
+        transform: scale(1.085) translateY(-2.5px) translateZ(0);
+        animation-timing-function: ease-in-out;
+    }
+    100% {
+        transform: scale(1.06) translateY(-2px) translateZ(0);
+    }
 }
 
 @keyframes scSpotlightPulse {
     0%, 100% {
-        transform: scale(1.06) translateY(-2px);
+        transform: scale(1.06) translateY(-2px) translateZ(0);
         border-color: var(--highlight-standard-border);
         box-shadow: var(--shadow-xl), var(--highlight-standard-rim);
     }
     50% {
-        transform: scale(1.10) translateY(-3px);
+        transform: scale(1.09) translateY(-3.5px) translateZ(0);
         border-color: var(--text-primary);
         box-shadow: var(--shadow-xl), var(--highlight-standard-rim);
     }
 }
 
 /* Precision spotlight inside multi-student group cards */
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-dimmed,
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-dimmed {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-dimmed,
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-dimmed {
     opacity: 0.42;
 }
 
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
     font-weight: 700;
     color: var(--primary-color);
 }
 
-[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
+[data-theme="dark"] #seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match .sc-stacked-member.sc-member-match .sc-stacked-name-text {
     color: #ffffff;
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-match {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match .sc-stacked-avatar.sc-member-match {
     z-index: 6;
     transform: translateY(-2px) scale(1.06);
 }
 
-/* Dimming tableau desk row during active search */
-#seatingChartView.sc-search-active .sc-desk-row {
+/* Dimming tableau desk row during search, rolling suspense, or ~1s winner reveal */
+#seatingChartView:is(.sc-search-active, .sc-random-rolling, .sc-random-revealed) .sc-desk-row {
     opacity: 0.35;
     transition: opacity var(--transition-base);
 }

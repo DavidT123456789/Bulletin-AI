@@ -326,10 +326,11 @@
     transition: opacity 0.35s ease, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1), background var(--transition-fast);
 }
 
-/* In Edit mode (or Activity mode for orientation): smoothly collapse action buttons in floating capsule */
-#seatingChartView[data-locked="false"] .sc-floating-actions .sc-orientation-btn,
-#seatingChartView[data-locked="false"] .sc-floating-actions .sc-print-btn,
-#seatingChartView[data-plan-mode="activity"] .sc-floating-actions .sc-orientation-btn {
+/* In Edit mode, Activity mode, or Random Picker mode: smoothly collapse action buttons in floating capsule */
+#seatingChartView[data-locked="false"] .sc-floating-actions :is(.sc-orientation-btn, .sc-print-btn, .sc-random-btn, .sc-random-close-btn),
+#seatingChartView[data-plan-mode="activity"] .sc-floating-actions .sc-orientation-btn,
+#seatingChartView:not(.sc-random-active) .sc-floating-actions .sc-random-close-btn,
+#seatingChartView.sc-random-active .sc-floating-actions :is(.sc-zoom-btn, .sc-orientation-btn, .sc-print-btn) {
     width: 0 !important;
     margin-left: -2px !important;
     opacity: 0;
@@ -348,6 +349,117 @@
                 margin-left var(--sc-drawer-transition),
                 opacity 0.25s ease,
                 visibility 0.25s;
+}
+
+.sc-floating-actions .sc-action-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* In-place random picker readout inside floating actions capsule */
+.sc-floating-actions .sc-random-readout {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    max-width: 0;
+    padding: 0;
+    margin-right: -2px;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(6px) scale(0.95);
+    transition: max-width var(--sc-drawer-transition),
+                padding var(--sc-drawer-transition),
+                margin-right var(--sc-drawer-transition),
+                opacity 0.22s ease,
+                transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+                visibility 0.25s;
+}
+
+#seatingChartView.sc-random-active .sc-floating-actions .sc-random-readout {
+    max-width: 240px;
+    padding: 0 6px 0 9px;
+    margin-right: 0;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0) scale(1);
+}
+
+.sc-random-student-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+    transition: color 0.14s ease, opacity 0.14s ease;
+}
+
+#seatingChartView.sc-random-rolling .sc-random-student-name {
+    color: var(--text-secondary);
+    opacity: 0.78;
+}
+
+#seatingChartView.sc-random-revealed .sc-random-student-name {
+    animation: scRandomNameReveal 0.32s cubic-bezier(0.22, 1.25, 0.36, 1);
+}
+
+.sc-random-sep,
+.sc-random-counter {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.sc-random-counter {
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes scRandomNameReveal {
+    0% {
+        opacity: 0.35;
+        transform: translateY(4px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes scDiceSuspenseLoop {
+    0% {
+        transform: scale(0.92) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.12) rotate(180deg);
+    }
+    100% {
+        transform: scale(0.92) rotate(360deg);
+    }
+}
+
+@keyframes scDiceRoll {
+    0% {
+        transform: scale(0.82) rotate(0deg);
+    }
+    45% {
+        transform: scale(1.16) rotate(190deg);
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+    }
+}
+
+#seatingChartView.sc-random-rolling .sc-action-btn.sc-random-btn.rolling iconify-icon {
+    animation: scDiceSuspenseLoop 0.42s linear infinite;
+}
+
+.sc-action-btn.sc-random-btn.rolling iconify-icon {
+    animation: scDiceRoll 0.42s cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 
 /* Sidebar drag-over target highlight (drag to unseat/remove) */

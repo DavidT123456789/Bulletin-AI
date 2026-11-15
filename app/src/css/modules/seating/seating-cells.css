@@ -104,14 +104,14 @@
 
 .sc-cell.sc-chip-selected,
 .sc-cell.occupied.sc-context-target,
-#seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+#seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match {
     border: 1.5px solid var(--highlight-standard-border) !important;
     background: var(--surface-color) !important;
 }
 
 [data-theme="dark"] .sc-cell.sc-chip-selected,
 [data-theme="dark"] .sc-cell.occupied.sc-context-target,
-[data-theme="dark"] #seatingChartView.sc-search-active .sc-cell.sc-spotlight-match {
+[data-theme="dark"] #seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-match {
     background: var(--bg-tertiary) !important;
 }
 
@@ -2132,6 +2132,25 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         top: calc(56px + 10px) !important;
         right: 12px !important;
         left: auto !important;
+        max-width: calc(100vw - 24px);
+    }
+
+    #seatingChartView.sc-random-active .sc-top-left-bar {
+        opacity: 0;
+        transform: translateX(-8px);
+        transition: translate var(--sc-drawer-transition), opacity 0.22s ease, transform 0.25s ease;
+    }
+
+    #seatingChartView.sc-random-active .sc-top-left-bar .sc-plan-mode-switch {
+        pointer-events: none;
+    }
+
+    #seatingChartView.sc-random-active .sc-floating-actions .sc-random-readout {
+        max-width: calc(100vw - 98px);
+    }
+
+    #seatingChartView.sc-random-active .sc-floating-actions .sc-random-student-name {
+        max-width: calc(100vw - 156px);
     }
 
     .sc-floating-status .sc-toolbar-info {
@@ -2436,6 +2455,10 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-classroom-board.sc-mode-carousel-in-left .sc-desk,
     .sc-board-carousel-ghost,
     .sc-action-btn.sc-orientation-btn.active iconify-icon,
+    .sc-action-btn.sc-random-btn.rolling iconify-icon,
+    #seatingChartView.sc-random-revealed .sc-random-student-name,
+    #seatingChartView.sc-random-revealed .sc-cell.sc-spotlight-match.sc-spotlight-single,
+    #seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-single,
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
     .sc-empty-sidebar,

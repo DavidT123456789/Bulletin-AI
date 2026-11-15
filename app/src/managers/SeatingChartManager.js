@@ -32,6 +32,7 @@ import { SeatingDragDrop } from './seating/SeatingDragDrop.js';
 import { SeatingMobileSheet } from './seating/SeatingMobileSheet.js';
 import { SeatingContextMenu } from './seating/SeatingContextMenu.js';
 import { SeatingPrintExporter } from './seating/SeatingPrintExporter.js';
+import { SeatingRandomPicker } from './seating/SeatingRandomPicker.js';
 
 export const SeatingChartManager = {
     _isActive: false,
@@ -78,6 +79,10 @@ export const SeatingChartManager = {
     _activeSearchTerm: '',
     _searchQueryAtPlanEnter: '',
     _searchMatchIndex: 0,
+    _randomPickerState: null,
+    _randomSuspenseTimer: null,
+    _randomRevealTimer: null,
+    _randomRollAnimTimer: null,
     _onboardingStep: null,
 
     // ========================================================================
@@ -303,6 +308,11 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions Capsule (Top-Right) -->
                 <div class="sc-floating-actions ui-floating-capsule" id="scFloatingActions">
+                    <div class="sc-random-readout" id="scRandomReadout" aria-live="polite" aria-hidden="true">
+                        <span class="sc-random-student-name" id="scRandomStudentName"></span>
+                        <span class="sc-random-sep" aria-hidden="true">·</span>
+                        <span class="sc-random-counter" id="scRandomCounter"></span>
+                    </div>
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
@@ -311,6 +321,12 @@ export const SeatingChartManager = {
                     </button>
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                    </button>
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-random-btn" id="scFloatingRandomBtn" aria-label="Tirer un élève au sort" data-tooltip="Tirer un élève au sort">
+                        <iconify-icon icon="solar:dice-linear"></iconify-icon>
+                    </button>
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-random-close-btn" id="scFloatingRandomCloseBtn" aria-label="Fermer le tirage au sort" data-tooltip="Fermer (Échap)">
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             </div>
@@ -447,9 +463,11 @@ export const SeatingChartManager = {
             if (HistoryManager.isOpen('scContextMenu')) HistoryManager.handleManualClose('scContextMenu');
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
             if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
+            if (HistoryManager.isOpen('scRandomPicker')) HistoryManager.handleManualClose('scRandomPicker');
 
             const finishList = (animateEnter = false) => {
                 const wasActive = this._isActive;
+                this._closeRandomPicker?.({ fromHistory: true });
                 this._cleanupModeCarousel();
                 this._cleanupFoldContinuum();
                 if (this._staggerCellTimer) {
@@ -610,6 +628,7 @@ export const SeatingChartManager = {
         this._clearSelection();
         this._closeContextMenu?.();
         this._closeMobileSheet(true);
+        this._closeRandomPicker?.();
         this._closeSearch();
         this._closeConfigPopover();
         this._closePlacementPopover();
@@ -668,5 +687,6 @@ export const SeatingChartManager = {
     ...SeatingDragDrop,
     ...SeatingMobileSheet,
     ...SeatingContextMenu,
-    ...SeatingPrintExporter
+    ...SeatingPrintExporter,
+    ...SeatingRandomPicker
 };

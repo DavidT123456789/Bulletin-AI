@@ -29,6 +29,8 @@ export const SeatingRenderer = {
 
         if (this._activeSearchTerm) {
             this._applySearchHighlight(this._activeSearchTerm);
+        } else if (this._isRandomPickerActive?.()) {
+            this._syncRandomPickerAfterRefresh?.();
         }
 
         if (this._getPlacedIds().size > 0 || (this._isLocked && !this._isVirtualClass())) {
