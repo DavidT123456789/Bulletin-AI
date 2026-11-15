@@ -8,132 +8,7 @@
     <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f6f6f6">
     <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0c0c0d">
     <!-- Immediate Anti-White-Flash & Theme Injection (0ms, before external CSS) -->
-    <script>
-        (function() {
-            try {
-                var standaloneTheme = localStorage.getItem('bulletin_theme');
-                var standaloneAccent = localStorage.getItem('bulletin_accent');
-                var theme = standaloneTheme || '';
-                var accent = standaloneAccent || '';
-                var rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
-                               localStorage.getItem('bulletin_app_state') ||
-                               localStorage.getItem('appreciationGeneratorState');
-                if (rawState) {
-                    var state = JSON.parse(rawState);
-                    if (!theme) {
-                        theme = (state.settings && state.settings.theme) || state.theme || (state.ui && state.ui.theme) || '';
-                    }
-                    if (!accent) {
-                        var stateAccent = (state.settings && state.settings.accentColor) || state.accentColor || (state.ui && state.ui.accentColor) || '';
-                        if (stateAccent && stateAccent !== 'blue') {
-                            accent = stateAccent;
-                        }
-                    }
-                }
-
-                if (!theme) theme = 'light';
-                var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var effectiveTheme = (theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme) === 'dark' ? 'dark' : 'light';
-                var bgColor = effectiveTheme === 'dark' ? '#0c0c0d' : '#f6f6f6';
-
-                var validAccents = ['anthracite', 'blue', 'purple', 'pink', 'orange', 'green', 'teal'];
-                var customAccentHex = '';
-                var hexRegex = /^#[0-9a-fA-F]{6}$/;
-                if (hexRegex.test(accent)) {
-                    customAccentHex = accent.toLowerCase();
-                } else if (accent === 'custom') {
-                    var storedCustomAccent = localStorage.getItem('bulletin_custom_accent') || '';
-                    if (hexRegex.test(storedCustomAccent)) {
-                        customAccentHex = storedCustomAccent.toLowerCase();
-                    }
-                }
-
-                if (customAccentHex) {
-                    document.documentElement.dataset.accent = 'custom';
-                    var r = parseInt(customAccentHex.slice(1, 3), 16);
-                    var g = parseInt(customAccentHex.slice(3, 5), 16);
-                    var b = parseInt(customAccentHex.slice(5, 7), 16);
-                    document.documentElement.style.setProperty('--primary-color', customAccentHex);
-                    document.documentElement.style.setProperty('--primary-color-rgb', r + ', ' + g + ', ' + b);
-                    document.documentElement.style.setProperty('--primary-hover', customAccentHex);
-                    document.documentElement.style.setProperty('--primary-bright', customAccentHex);
-                    document.documentElement.style.setProperty('--primary-bright-rgb', r + ', ' + g + ', ' + b);
-                    document.documentElement.style.setProperty('--text-on-primary', (0.299 * r + 0.587 * g + 0.114 * b) > 175 ? '#171717' : '#ffffff');
-                } else if (validAccents.indexOf(accent) !== -1 && accent !== 'anthracite') {
-                    document.documentElement.dataset.accent = accent;
-                }
-
-                document.documentElement.dataset.theme = effectiveTheme;
-                document.documentElement.style.backgroundColor = bgColor;
-                document.documentElement.style.colorScheme = effectiveTheme;
-
-                var colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
-                if (colorSchemeMeta) colorSchemeMeta.setAttribute('content', effectiveTheme);
-
-                var themeMetas = document.querySelectorAll('meta[name="theme-color"]');
-                for (var i = 0; i < themeMetas.length; i++) {
-                    themeMetas[i].setAttribute('content', bgColor);
-                }
-
-                // Restore Transition Check (0ms pre-paint)
-                try {
-                    var restoreTransitionRaw = sessionStorage.getItem('bulletin_restore_transition');
-                    if (restoreTransitionRaw) {
-                        var restoreData = JSON.parse(restoreTransitionRaw);
-                        if (restoreData && restoreData.timestamp && (Date.now() - restoreData.timestamp) < 5000) {
-                            document.documentElement.classList.add('is-restoring-transition');
-                        }
-                    }
-                    if (!localStorage.getItem('appreciationGeneratorFirstVisit_v8')) {
-                        document.documentElement.classList.add('is-first-visit');
-                    }
-                } catch (_) {}
-
-                // Self-healing boot watchdog: if a stale Service Worker cache blocks ES module execution,
-                // automatically purge SW + Cache Storage once per session and reload cleanly.
-                var recoverFromStaleSW = function() {
-                    if (window.App) return;
-                    try {
-                        if (sessionStorage.getItem('bulletin_sw_recovery') === '1') return;
-                        sessionStorage.setItem('bulletin_sw_recovery', '1');
-                    } catch (_) {
-                        return;
-                    }
-                    var tasks = [];
-                    if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
-                        tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
-                            return Promise.all(regs.map(function(r) { return r.unregister(); }));
-                        }).catch(function() {}));
-                    }
-                    if (window.caches && window.caches.keys) {
-                        tasks.push(window.caches.keys().then(function(keys) {
-                            return Promise.all(keys.map(function(k) { return window.caches.delete(k); }));
-                        }).catch(function() {}));
-                    }
-                    Promise.all(tasks).then(function() {
-                        window.location.reload();
-                    });
-                };
-
-                window.addEventListener('error', function(e) {
-                    var t = e && e.target;
-                    if (t && ((t.tagName === 'SCRIPT' && t.type === 'module') || (t.tagName === 'LINK' && t.rel === 'modulepreload'))) {
-                        recoverFromStaleSW();
-                    }
-                }, true);
-
-                window.addEventListener('load', function() {
-                    setTimeout(function() {
-                        if (!window.App) recoverFromStaleSW();
-                    }, 3500);
-                });
-            } catch (e) {
-                document.documentElement.dataset.theme = 'light';
-                document.documentElement.style.backgroundColor = '#f6f6f6';
-                document.documentElement.style.colorScheme = 'light';
-            }
-        })();
-    </script>
+    <script src="./boot-theme.js"></script>
     <style>
         :root {
             color-scheme: light dark;
@@ -202,9 +77,6 @@
     <link rel="icon" type="image/x-icon" href="./favicon.ico?v=2">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700&display=swap">
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
-    <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
-    <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
     <link rel="stylesheet" href="src/css/main.css">
 
 </head>
@@ -290,10 +162,10 @@
                                     </button>
                                 </div>
                                 <div class="class-dropdown-header-actions">
-                                    <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
+                                    <button type="button" id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
                                         <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
                                     </button>
-                                    <button id="manageClassesBtn" class="btn-icon-small tooltip" data-tooltip="Gérer les classes" aria-label="Gérer les classes">
+                                    <button type="button" id="manageClassesBtn" class="btn-icon-small tooltip" data-tooltip="Gérer les classes" aria-label="Gérer les classes">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                 </div>
@@ -311,11 +183,11 @@
                 <!-- 2. ZONE CENTRALE : PERSPECTIVE / MODE DE VISUALISATION (Liste ↔ Plan) -->
                 <div class="header-center">
                     <div class="ui-segmented-control header-style view-toggle" id="viewToggle">
-                        <button class="ui-segment view-toggle-btn active" data-view="list" aria-label="Vue liste">
+                        <button type="button" class="ui-segment view-toggle-btn active" data-view="list" aria-label="Vue liste">
                             <iconify-icon icon="solar:list-linear"></iconify-icon>
                             <span>Liste</span>
                         </button>
-                        <button class="ui-segment view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
+                        <button type="button" class="ui-segment view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
                             <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>
                             <span>Plan</span>
                         </button>
@@ -370,7 +242,7 @@
                     <div class="header-actions-pill">
 
                         <div class="dropdown-wrapper">
-                            <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu" aria-label="Ouvrir le menu">
+                            <button type="button" id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu" aria-label="Ouvrir le menu">
                                 <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
                             </button>
 
@@ -378,42 +250,42 @@
                                 <div class="theme-control-wrapper">
                                     <div class="ui-segmented-control css-driven" id="themeSegmentedControl"
                                         data-active="light">
-                                        <button class="ui-segment" data-value="light" aria-label="Mode clair"
+                                        <button type="button" class="ui-segment" data-value="light" aria-label="Mode clair"
                                             title="Mode clair">
                                             <iconify-icon icon="solar:sun-linear"></iconify-icon>
                                         </button>
-                                        <button class="ui-segment" data-value="system" aria-label="Mode système"
+                                        <button type="button" class="ui-segment" data-value="system" aria-label="Mode système"
                                             title="Mode système">
                                             <iconify-icon icon="solar:monitor-linear"></iconify-icon>
                                         </button>
-                                        <button class="ui-segment" data-value="dark" aria-label="Mode sombre"
+                                        <button type="button" class="ui-segment" data-value="dark" aria-label="Mode sombre"
                                             title="Mode sombre">
                                             <iconify-icon icon="solar:moon-linear"></iconify-icon>
                                         </button>
                                         <div class="ui-glider"></div>
                                     </div>
                                 </div>
-                                <button id="updateMenuItem" class="menu-item update-item" style="display: none;">
+                                <button type="button" id="updateMenuItem" class="menu-item update-item" style="display: none;">
                                     <iconify-icon icon="solar:gift-linear"></iconify-icon>
                                     <span>Mise à jour disponible</span>
                                 </button>
                                 <div class="menu-separator"></div>
-                                <button id="personalizationBtn" class="menu-item">
+                                <button type="button" id="personalizationBtn" class="menu-item">
                                     <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Personnalisation
                                 </button>
-                                <button id="settingsButton" class="menu-item">
+                                <button type="button" id="settingsButton" class="menu-item">
                                     <iconify-icon icon="solar:settings-linear"></iconify-icon> Paramètres
                                 </button>
-                                <button id="helpButton" class="menu-item">
+                                <button type="button" id="helpButton" class="menu-item">
                                     <iconify-icon icon="solar:question-circle-linear"></iconify-icon> Guide
                                 </button>
                                 <div id="cloudSeparator" class="menu-separator"></div>
-                                <button id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
+                                <button type="button" id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
                                     style="display: none;" data-tooltip="Sauvegardez vos données dans votre espace personnel pour ne jamais les perdre et y accéder partout.">
                                     <iconify-icon icon="logos:google-drive"></iconify-icon>
                                     <span>Connecter Google Drive</span>
                                 </button>
-                                <button id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item tooltip"
+                                <button type="button" id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item tooltip"
                                     style="display: none;" data-tooltip="Envoyer vos données vers le Cloud">
                                     <iconify-icon icon="lucide:cloud-upload"></iconify-icon>
                                     <div class="cloud-btn-content">
@@ -421,7 +293,7 @@
                                         <span class="cloud-btn-hint" id="cloudSaveHint" style="display: none;"></span>
                                     </div>
                                 </button>
-                                <button id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item tooltip"
+                                <button type="button" id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item tooltip"
                                     style="display: none;" data-tooltip="Récupérer vos données depuis le Cloud">
                                     <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                                     <div class="cloud-btn-content">
@@ -431,7 +303,7 @@
                                 </button>
 
                                 <div id="pwaInstallSeparator" class="menu-separator" style="display: none;"></div>
-                                <button id="installPwaBtn" class="menu-item" style="display: none;">
+                                <button type="button" id="installPwaBtn" class="menu-item" style="display: none;">
                                     <iconify-icon icon="solar:download-minimalistic-linear"></iconify-icon> Installer
                                 </button>
                             </div>
@@ -454,8 +326,8 @@
                         </span>
                     </div>
                     <div class="pwa-banner-actions">
-                        <button id="pwaUpdateBtn" class="btn btn-sm btn-primary">Installer</button>
-                        <button id="pwaUpdateDismissBtn" class="pwa-close-btn" aria-label="Fermer">
+                        <button type="button" id="pwaUpdateBtn" class="btn btn-sm btn-primary">Installer</button>
+                        <button type="button" id="pwaUpdateDismissBtn" class="pwa-close-btn" aria-label="Fermer">
                             <iconify-icon icon="ph:x-bold"></iconify-icon>
                         </button>
                     </div>
@@ -749,7 +621,7 @@
             </main>
 
             <!-- Floating Action Button for Adding Student -->
-            <button id="addStudentFab" class="fab-add-student" data-mode="add" data-tooltip="Compléter la classe"
+            <button type="button" id="addStudentFab" class="fab-add-student" data-mode="add" data-tooltip="Compléter la classe"
                 aria-label="Compléter la classe">
                 <span class="fab-icon-stack" aria-hidden="true">
                     <svg class="fab-icon fab-icon-add" aria-hidden="true">
@@ -816,7 +688,7 @@
             </div>
 
             <!-- Analyze button (icon in pill, navigates to analysis page) -->
-            <button id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
+            <button type="button" id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
                 aria-label="Analyser l'élève">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
@@ -826,14 +698,14 @@
 
             <!-- NAVIGATION: Compact nav group (← 1/8 →) -->
             <div class="focus-nav-buttons">
-                <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
+                <button type="button" id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
                         <path d="m15 18-6-6 6-6"></path>
                     </svg>
                 </button>
                 <span id="focusPosition" class="focus-position">1/8</span>
-                <button id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
+                <button type="button" id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
                         <path d="m9 18 6-6-6-6"></path>
@@ -842,7 +714,7 @@
             </div>
 
             <!-- EDIT MODE: Save button (hidden in read mode) -->
-            <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
+            <button type="button" id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -850,7 +722,7 @@
             </button>
 
             <!-- RIGHT ZONE: Close button flush into pill rounded edge -->
-            <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
+            <button type="button" id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
                     <path d="M18 6 6 18" />
@@ -911,7 +783,7 @@
                                     <span>Journal de bord</span>
                                 </div>
                                 <!-- Manual note button (Add observation icon) -->
-                                <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
+                                <button type="button" class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
                                     data-tooltip="Ajouter une observation" aria-label="Ajouter une observation">
                                     <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
                                 </button>
@@ -921,7 +793,7 @@
 
                                 <!-- Threshold quick control -->
                                 <div class="journal-threshold-control" id="journalThresholdControl">
-                                    <button class="journal-threshold-btn journal-header-btn tooltip"
+                                    <button type="button" class="journal-threshold-btn journal-header-btn tooltip"
                                         id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
                                         <iconify-icon icon="solar:filter-linear"></iconify-icon>
                                         <span id="journalThresholdValue">≥2</span>
@@ -931,9 +803,9 @@
                                         <div class="threshold-popover-desc">Observations répétées transmises à l'IA
                                         </div>
                                         <div class="threshold-popover-controls">
-                                            <button class="threshold-adjust-btn" data-delta="-1">−</button>
+                                            <button type="button" class="threshold-adjust-btn" data-delta="-1">−</button>
                                             <span class="threshold-current" id="thresholdCurrentValue">2</span>
-                                            <button class="threshold-adjust-btn" data-delta="+1">+</button>
+                                            <button type="button" class="threshold-adjust-btn" data-delta="+1">+</button>
                                         </div>
                                         <div class="threshold-popover-hint">
                                             <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
@@ -979,18 +851,18 @@
                                 <!-- History Navigation Group (Segmented Stepper Pill) -->
                                 <div class="history-navigation-group" id="historyNavigationGroup"
                                     style="display: none;">
-                                    <button id="focusHistoryPrevBtn" class="history-nav-btn tooltip"
+                                    <button type="button" id="focusHistoryPrevBtn" class="history-nav-btn tooltip"
                                         data-tooltip="Version précédente (Ctrl+Z)" disabled>
                                         <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
                                     </button>
 
                                     <!-- Central Indicator -->
-                                    <button id="focusHistoryIndicator" class="history-indicator-btn tooltip"
+                                    <button type="button" id="focusHistoryIndicator" class="history-indicator-btn tooltip"
                                         data-tooltip="Historique des modifications">
                                         <span class="history-count">0</span>
                                     </button>
 
-                                    <button id="focusHistoryNextBtn" class="history-nav-btn tooltip"
+                                    <button type="button" id="focusHistoryNextBtn" class="history-nav-btn tooltip"
                                         data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" disabled>
                                         <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                                     </button>
@@ -1010,15 +882,15 @@
 
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
+                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
                                 data-tooltip="Raccourcir et aller à l'essentiel">
                                 <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
+                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
                                 data-tooltip="Ton plus bienveillant et valorisant">
                                 <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
+                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
                                 data-tooltip="Corriger et fluidifier la rédaction">
                                 <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                             </button>
@@ -1026,13 +898,13 @@
 
                         <!-- Inline actions: Copy (icon) + Generate (wide pill) -->
                         <div class="focus-appreciation-actions">
-                            <button id="focusCopyBtn" class="btn btn-neutral tooltip" disabled style="display: none;"
+                            <button type="button" id="focusCopyBtn" class="btn btn-neutral tooltip" disabled style="display: none;"
                                 data-tooltip="Clic droit : copier le prompt"
                                 aria-label="Copier l'appréciation">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                 <span class="btn-copy-label">Copier</span>
                             </button>
-                            <button id="focusGenerateBtn" class="btn btn-ai tooltip"
+                            <button type="button" id="focusGenerateBtn" class="btn btn-ai tooltip"
                                 data-tooltip="Clic droit : prévisualiser le prompt">
                                 <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Générer <kbd class="kbd-hint">Ctrl ↵</kbd>
                             </button>
@@ -1057,13 +929,13 @@
 
                     <!-- RIGHT ZONE: Generate + Nav + Close -->
                     <div class="focus-analysis-header-right">
-                        <button id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn">
+                        <button type="button" id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn">
                             <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                         </button>
 
                         <!-- Navigation Add -->
                         <div class="focus-nav-buttons analysis-nav-buttons">
-                            <button id="focusAnalysisPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
+                            <button type="button" id="focusAnalysisPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
                                     stroke-linejoin="round" width="1em" height="1em">
@@ -1071,7 +943,7 @@
                                 </svg>
                             </button>
                             <span id="focusAnalysisPosition" class="focus-position">1/8</span>
-                            <button id="focusAnalysisNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
+                            <button type="button" id="focusAnalysisNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
                                     stroke-linejoin="round" width="1em" height="1em">
@@ -1080,7 +952,7 @@
                             </button>
                         </div>
 
-                        <button id="focusAnalysisBackBtn" class="focus-nav-btn focus-close-btn"
+                        <button type="button" id="focusAnalysisBackBtn" class="focus-nav-btn focus-close-btn"
                             aria-label="Fermer l'analyse">
                             <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
                         </button>
@@ -1181,7 +1053,7 @@
                         </button>
                         <div class="wizard-period-menu" id="wizardPeriodMenu"></div>
                     </div>
-                    <button class="close-button" id="closeImportWizardBtn" aria-label="Fermer">
+                    <button type="button" class="close-button" id="closeImportWizardBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -1211,19 +1083,16 @@
                                     data-tooltip="PDF MBN / Pronote">
                                     <iconify-icon icon="ph:file-pdf"></iconify-icon>
                                 </div>
-                                <div class="guide-format-chip tooltip" data-format="excel" data-tooltip="Fichier Excel">
-                                    <iconify-icon icon="ph:file-xls"></iconify-icon>
-                                </div>
                                 <div class="guide-format-chip tooltip" data-format="csv" data-tooltip="Fichier CSV">
                                     <iconify-icon icon="ph:file-csv"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="clipboard"
-                                    data-tooltip="Presse-papier">
+                                    data-tooltip="Presse-papier (Excel, Pronote)">
                                     <iconify-icon icon="ph:clipboard-text"></iconify-icon>
                                 </div>
                             </div>
                             <p class="guide-hint guide-hint-margin">Compatible PDF MBN / Pronote</p>
-                            <button type="button" class="help-context-trigger" onclick="window.openHelpTab('help-data', 'help-faq-import')">
+                            <button type="button" class="help-context-trigger" data-action="open-help" data-target-tab="help-data" data-target-section="help-faq-import">
                                 <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
                                 Fichier non reconnu ? Aide
                             </button>
@@ -1235,7 +1104,7 @@
                                 Tester l'import
                             </div>
                             <p class="guide-text">Chargez un exemple fictif pour découvrir et tester le fonctionnement.</p>
-                            <button class="guide-sample-btn btn-full" id="guideSampleBtn">
+                            <button type="button" class="guide-sample-btn btn-full" id="guideSampleBtn">
                                 <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                 Charger un exemple
                             </button>
@@ -1280,7 +1149,7 @@
                             <p class="guide-text">Les colonnes sont pré-remplies automatiquement. Ajustez si nécessaire.
                             </p>
                             <!-- Moved Auto-detect Button -->
-                            <button class="guide-sample-btn btn-full" id="wizardAutoDetectBtn">
+                            <button type="button" class="guide-sample-btn btn-full" id="wizardAutoDetectBtn">
                                 <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                                 Relancer la détection
                             </button>
@@ -1380,7 +1249,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button class="file-remove-btn" id="wizardRemoveFileBtn"
+                                            <button type="button" class="file-remove-btn" id="wizardRemoveFileBtn"
                                                 aria-label="Supprimer le fichier">
                                                 <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                             </button>
@@ -1392,7 +1261,7 @@
                                         <div class="status-spinner"></div>
                                         <span class="status-text" id="wizardStatusText">Extraction du PDF...</span>
                                     </div>
-                                    <input type="file" id="wizardFileInput" accept=".csv,.xlsx,.xls,.txt,.pdf"
+                                    <input type="file" id="wizardFileInput" accept=".csv,.txt,.tsv,.pdf"
                                         style="display: none;">
                                 </div>
 
@@ -1432,40 +1301,40 @@
             <!-- UNIFIED WIZARD FOOTER - Single source of truth -->
             <!-- Step 1 Footer -->
             <div class="import-wizard-footer" id="wizardStep1Footer">
-                <button class="btn btn-secondary" id="wizardStep1CancelBtn">Annuler</button>
+                <button type="button" class="btn btn-secondary" id="wizardStep1CancelBtn">Annuler</button>
                 <div class="modal-footer-info" id="wizardStep1LineCount" style="display: none;">
                     <strong id="wizardLineCountBadge">0</strong>
                     <span>lignes détectées</span>
                 </div>
-                <button class="btn btn-primary" id="wizardStep1NextBtn" disabled>
+                <button type="button" class="btn btn-primary" id="wizardStep1NextBtn" disabled>
                     Suivant <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
                 </button>
             </div>
 
             <!-- Step 2 Footer -->
             <div class="import-wizard-footer" id="wizardStep2Footer">
-                <button class="btn btn-secondary" id="wizardStep2PrevBtn">
+                <button type="button" class="btn btn-secondary" id="wizardStep2PrevBtn">
                     <iconify-icon icon="ph:arrow-left-bold"></iconify-icon> Précédent
                 </button>
                 <div class="modal-footer-info">
                     <strong id="wizardCountBadge2">0</strong>
                     <span>élèves détectés</span>
                 </div>
-                <button class="btn btn-primary" id="wizardStep2NextBtn">
+                <button type="button" class="btn btn-primary" id="wizardStep2NextBtn">
                     Suivant <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
                 </button>
             </div>
 
             <!-- Step 3 Footer -->
             <div class="import-wizard-footer" id="wizardStep3Footer">
-                <button class="btn btn-secondary" id="wizardStep3PrevBtn">
+                <button type="button" class="btn btn-secondary" id="wizardStep3PrevBtn">
                     <iconify-icon icon="ph:arrow-left-bold"></iconify-icon> Précédent
                 </button>
                 <div class="modal-footer-info" id="wizardStep3FooterInfo">
                     <strong id="wizardSelectedColsBadge">0</strong>
                     <span id="wizardSelectedColsInfo">colonnes sélectionnées</span>
                 </div>
-                <button class="btn btn-primary btn-import-confirm" id="wizardImportOnlyBtn">
+                <button type="button" class="btn btn-primary btn-import-confirm" id="wizardImportOnlyBtn">
                     <span>Importer les <span id="wizardImportCount">0</span> élèves</span>
                 </button>
             </div>
@@ -1479,7 +1348,7 @@
     <div id="importHubBackdrop" class="import-hub-backdrop" role="dialog" aria-modal="true"
         aria-labelledby="importHubTitle">
         <div class="import-hub-modal">
-            <button class="close-button import-hub-close" id="importHubCloseBtn" aria-label="Fermer">
+            <button type="button" class="close-button import-hub-close" id="importHubCloseBtn" aria-label="Fermer">
                 <iconify-icon icon="ph:x"></iconify-icon>
             </button>
 
@@ -1510,12 +1379,12 @@
                 </div>
 
                 <!-- Mass Import Card -->
-                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis Excel, CSV ou PDF (Pronote, ENT / MBN)">
+                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                     </div>
                     <h3 class="import-hub-card-title">Liste &amp; Notes</h3>
-                    <p class="import-hub-card-desc">Excel, CSV, PDF ou texte</p>
+                    <p class="import-hub-card-desc">PDF, CSV ou copier-coller</p>
                 </div>
 
                 <!-- Trombinoscope Import Card -->
@@ -1568,7 +1437,7 @@
                     </div>
                 </div>
                 <div class="trombi-header-actions">
-                    <button class="close-button" id="closeTrombiWizardBtn" aria-label="Fermer">
+                    <button type="button" class="close-button" id="closeTrombiWizardBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -1597,7 +1466,7 @@
                                         Tester
                                     </div>
                                     <p class="guide-text">Utilisez une image d'exemple pour tester la détection :</p>
-                                    <button class="guide-sample-btn" id="trombiSampleBtn">
+                                    <button type="button" class="guide-sample-btn" id="trombiSampleBtn">
                                         <iconify-icon class="iconify-inline" icon="solar:gallery-linear"></iconify-icon>
                                         Charger un exemple
                                     </button>
@@ -1623,7 +1492,7 @@
                                 <div class="drop-zone-preview" id="trombiDropPreview">
                                     <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar floating-overlay" style="display: none;"></div>
                                     <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
-                                    <button class="drop-zone-remove-btn" id="trombiRemoveImageBtn"
+                                    <button type="button" class="drop-zone-remove-btn" id="trombiRemoveImageBtn"
                                         aria-label="Supprimer l'image">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
@@ -1678,29 +1547,29 @@
 
             <!-- FOOTERS - Ancrés en bas, hors du body scrollable -->
             <div class="trombi-step-footer" id="trombiStep1Footer">
-                <button class="btn btn-secondary" id="trombiStep1CancelBtn">Annuler</button>
+                <button type="button" class="btn btn-secondary" id="trombiStep1CancelBtn">Annuler</button>
                 <span class="modal-footer-info" id="trombiImageInfo"></span>
-                <button class="btn btn-primary" id="trombiStep1NextBtn" disabled>
+                <button type="button" class="btn btn-primary" id="trombiStep1NextBtn" disabled>
                     Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>
                 </button>
             </div>
 
             <div class="trombi-step-footer" id="trombiStep2Footer" style="display: none;">
-                <button class="btn btn-secondary" id="trombiStep2PrevBtn">
+                <button type="button" class="btn btn-secondary" id="trombiStep2PrevBtn">
                     <iconify-icon class="iconify-inline" icon="ph:arrow-left-bold"></iconify-icon> Précédent
                 </button>
                 <span class="modal-footer-info" id="trombiZonesInfo"></span>
-                <button class="btn btn-primary" id="trombiStep2NextBtn">
+                <button type="button" class="btn btn-primary" id="trombiStep2NextBtn">
                     Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>
                 </button>
             </div>
 
             <div class="trombi-step-footer" id="trombiStep3Footer" style="display: none;">
-                <button class="btn btn-secondary" id="trombiStep3PrevBtn">
+                <button type="button" class="btn btn-secondary" id="trombiStep3PrevBtn">
                     <iconify-icon class="iconify-inline" icon="ph:arrow-left-bold"></iconify-icon> Précédent
                 </button>
                 <span class="modal-footer-info" id="trombiConfirmInfo"></span>
-                <button class="btn btn-primary" id="trombiConfirmBtn">
+                <button type="button" class="btn btn-primary" id="trombiConfirmBtn">
                     <iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos
                 </button>
             </div>
@@ -1719,7 +1588,7 @@
                 </h2>
                 <div class="modal-header-actions">
                     <button type="button" class="icon-button tooltip"
-                        onclick="window.openHelpTab('help-writing')"
+                        data-action="open-help" data-target-tab="help-writing"
                         data-tooltip="Guide Rédaction &amp; Style" aria-label="Ouvrir le guide Rédaction &amp; Style">
                         <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
                     </button>
@@ -1727,7 +1596,7 @@
                         data-tooltip="Réinitialiser les réglages" aria-label="Réinitialiser les réglages">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon>
                     </button>
-                    <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">
+                    <button type="button" class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -1894,7 +1763,7 @@
                                             Réglages modifiés : actualisez pour voir leur effet.
                                         </p>
                                     </div>
-                                    <button id="refreshPreviewBtn" class="btn btn-ai btn-small">
+                                    <button type="button" id="refreshPreviewBtn" class="btn btn-ai btn-small">
                                         <iconify-icon class="iconify-inline"
                                             icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                     </button>
@@ -1934,8 +1803,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelPersonalizationBtn">Annuler</button>
-                <button class="btn btn-primary" id="savePersonalizationBtn">Enregistrer</button>
+                <button type="button" class="btn btn-secondary" id="cancelPersonalizationBtn">Annuler</button>
+                <button type="button" class="btn btn-primary" id="savePersonalizationBtn">Enregistrer</button>
             </div>
         </div>
     </div>
@@ -1950,7 +1819,7 @@
                             icon="solar:settings-bold"></iconify-icon></span>
                     <span class="modal-title-text">Paramètres</span>
                 </h2>
-                <button class="close-button" id="closeSettingsModalBtn" aria-label="Fermer les paramètres">
+                <button type="button" class="close-button" id="closeSettingsModalBtn" aria-label="Fermer les paramètres">
                     <iconify-icon class="iconify-inline" icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -1960,22 +1829,22 @@
                     <!-- Sidebar Navigation -->
                     <div class="ui-tabs-sidebar">
                         <div class="ui-tabs-sidebar-heading">Paramètres</div>
-                        <button class="ui-tabs-btn active" onclick="switchHelpTab(this, 'settings-engine')">
+                        <button type="button" class="ui-tabs-btn active" data-tab="settings-engine">
                             <iconify-icon class="iconify-inline icon-key" icon="solar:cpu-linear"></iconify-icon> IA &
                             Clés
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-preferences')">
+                        <button type="button" class="ui-tabs-btn" data-tab="settings-preferences">
                             <iconify-icon class="iconify-inline icon-customize"
                                 icon="solar:tuning-2-linear"></iconify-icon> Préférences
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-data')">
+                        <button type="button" class="ui-tabs-btn" data-tab="settings-data">
                             <iconify-icon class="iconify-inline icon-format" icon="solar:database-linear"></iconify-icon>
                             Données
                         </button>
 
                         <div class="ui-tabs-actions-wrapper">
                             <button type="button" class="ui-tabs-action-btn"
-                                onclick="window.openHelpTab('help-apikey')">
+                                data-action="open-help" data-target-tab="help-apikey">
                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"></iconify-icon>
                                 Guide
                             </button>
@@ -1984,7 +1853,7 @@
                                 <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
                                 Soutenir le projet
                             </a>
-                            <button class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build 4558af8)">
+                            <button type="button" class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build 4558af8)">
                                 <span class="ui-tabs-action-btn-main">
                                     <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
                                     <span>Mises à jour</span>
@@ -2052,7 +1921,7 @@
 
                             <!-- Sections Clés API (1 seul niveau de carte) -->
                             <div id="apiKeysSection">
-                                <form class="api-keys-container" action="javascript:void(0)" autocomplete="off">
+                                <form class="api-keys-container" autocomplete="off">
                                     
                                     <!-- CATÉGORIE 1: IA SOUVERAINE GOUV.FR -->
                                     <div class="settings-group">
@@ -2821,7 +2690,7 @@
                             icon="solar:question-circle-bold"></iconify-icon></span>
                     <span class="modal-title-text">Guide</span>
                 </h2>
-                <button class="close-button" id="closeHelpModalBtn" aria-label="Fermer le guide"><iconify-icon
+                <button type="button" class="close-button" id="closeHelpModalBtn" aria-label="Fermer le guide"><iconify-icon
                         class="iconify-inline" icon="ph:x"></iconify-icon></button>
             </div>
             <div class="modal-body modal-body-flex">
@@ -2829,23 +2698,23 @@
                     <!-- Navigation latérale accessible (5 onglets) -->
                     <div class="ui-tabs-sidebar" role="tablist" aria-label="Rubriques du guide">
                         <div class="ui-tabs-sidebar-heading">Guide & Aide</div>
-                        <button class="ui-tabs-btn active" id="helpTabBtnApikey" role="tab" aria-selected="true" aria-controls="help-apikey" onclick="switchHelpTab(this, 'help-apikey')">
+                        <button type="button" class="ui-tabs-btn active" id="helpTabBtnApikey" role="tab" aria-selected="true" aria-controls="help-apikey" data-tab="help-apikey">
                             <iconify-icon class="iconify-inline icon-key" icon="solar:rocket-2-linear"></iconify-icon>
                             Démarrage
                         </button>
-                        <button class="ui-tabs-btn" id="helpTabBtnWriting" role="tab" aria-selected="false" aria-controls="help-writing" onclick="switchHelpTab(this, 'help-writing')">
+                        <button type="button" class="ui-tabs-btn" id="helpTabBtnWriting" role="tab" aria-selected="false" aria-controls="help-writing" data-tab="help-writing">
                             <iconify-icon class="iconify-inline icon-customize" icon="solar:pen-new-square-linear"></iconify-icon>
                             Rédaction & IA
                         </button>
-                        <button class="ui-tabs-btn" id="helpTabBtnSeating" role="tab" aria-selected="false" aria-controls="help-seating" onclick="switchHelpTab(this, 'help-seating')">
+                        <button type="button" class="ui-tabs-btn" id="helpTabBtnSeating" role="tab" aria-selected="false" aria-controls="help-seating" data-tab="help-seating">
                             <iconify-icon class="iconify-inline icon-actions" icon="solar:streets-map-point-linear"></iconify-icon>
                             Plan & Trombi
                         </button>
-                        <button class="ui-tabs-btn" id="helpTabBtnData" role="tab" aria-selected="false" aria-controls="help-data" onclick="switchHelpTab(this, 'help-data')">
+                        <button type="button" class="ui-tabs-btn" id="helpTabBtnData" role="tab" aria-selected="false" aria-controls="help-data" data-tab="help-data">
                             <iconify-icon class="iconify-inline icon-privacy" icon="solar:question-circle-linear"></iconify-icon>
                             Dépannage & FAQ
                         </button>
-                        <button class="ui-tabs-btn" id="helpTabBtnAbout" role="tab" aria-selected="false" aria-controls="help-about" onclick="switchHelpTab(this, 'help-about')">
+                        <button type="button" class="ui-tabs-btn" id="helpTabBtnAbout" role="tab" aria-selected="false" aria-controls="help-about" data-tab="help-about">
                             <iconify-icon class="iconify-inline icon-about" icon="solar:info-circle-linear"></iconify-icon>
                             À propos
                         </button>
@@ -2890,7 +2759,7 @@
                                                     <a href="https://albert.playground.etalab.gouv.fr" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                         <iconify-icon class="iconify-inline" icon="solar:shield-check-linear"></iconify-icon> Clé Albert (ProConnect)
                                                     </a>
-                                                    <button type="button" class="btn btn-primary btn-small" id="helpOpenSettingsEngineBtn" onclick="window.openSettingsTab('settings-engine', 'albertApiKey')">
+                                                    <button type="button" class="btn btn-primary btn-small" id="helpOpenSettingsEngineBtn" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="albertApiKey">
                                                         <iconify-icon class="iconify-inline" icon="solar:key-linear"></iconify-icon> Configurer l'IA
                                                     </button>
                                                 </div>
@@ -2908,18 +2777,18 @@
                                                 <h3 class="help-quick-card-title">Importer votre classe</h3>
                                                 <div class="help-format-tags">
                                                     <span class="help-chip-tag"><iconify-icon icon="solar:file-text-bold"></iconify-icon> PDF Pronote / MBN</span>
-                                                    <span class="help-chip-tag"><iconify-icon icon="solar:document-bold"></iconify-icon> Excel & CSV</span>
-                                                    <span class="help-chip-tag"><iconify-icon icon="solar:clipboard-text-bold"></iconify-icon> Copier-coller</span>
+                                                    <span class="help-chip-tag"><iconify-icon icon="solar:document-bold"></iconify-icon> CSV / TXT</span>
+                                                    <span class="help-chip-tag"><iconify-icon icon="solar:clipboard-text-bold"></iconify-icon> Copier-coller Excel</span>
                                                 </div>
                                             </div>
                                             <div class="help-step-footer-row">
                                                 <p class="help-step-inline-desc">Glissez un relevé de notes ou trombinoscope PDF : élèves, moyennes et visages sont associés sans écraser&nbsp;l'existant.</p>
                                                 <div class="help-btn-row">
-                                                    <button type="button" class="btn btn-secondary btn-small" onclick="window.openTrombiWizardFromHelp()">
+                                                    <button type="button" class="btn btn-secondary btn-small" data-action="open-trombi-wizard">
                                                         <iconify-icon class="iconify-inline" icon="solar:camera-linear"></iconify-icon>
                                                         Trombinoscope
                                                     </button>
-                                                    <button type="button" class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
+                                                    <button type="button" class="btn btn-primary btn-small" data-action="open-import-wizard">
                                                         <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon>
                                                         Importer des élèves
                                                     </button>
@@ -3174,7 +3043,7 @@
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
-                                        <button type="button" class="btn btn-primary btn-small" onclick="window.openSeatingChartFromHelp()">
+                                        <button type="button" class="btn btn-primary btn-small" data-action="open-seating-chart">
                                             <iconify-icon class="iconify-inline" icon="solar:streets-map-point-linear"></iconify-icon>
                                             Ouvrir le Plan
                                         </button>
@@ -3190,7 +3059,7 @@
                                         </div>
                                     </div>
                                     <div class="help-seating-card-actions">
-                                        <button type="button" class="btn btn-secondary btn-small" onclick="window.openTrombiWizardFromHelp()">
+                                        <button type="button" class="btn btn-secondary btn-small" data-action="open-trombi-wizard">
                                             <iconify-icon class="iconify-inline" icon="solar:camera-linear"></iconify-icon>
                                             Importer un Trombi
                                         </button>
@@ -3238,7 +3107,7 @@
                                             <li><strong>100% hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
                                         </ul>
                                         <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
+                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="groqApiKey">
                                                 <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer Groq & le Relais IA
                                             </button>
                                         </div>
@@ -3267,7 +3136,7 @@
                                     <summary>
                                         <div class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold"></iconify-icon>
-                                            <span>Mon fichier PDF, Excel ou CSV est mal découpé à l'import</span>
+                                            <span>Mon fichier PDF, CSV ou tableau collé est mal découpé à l'import</span>
                                         </div>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                                     </summary>
@@ -3277,7 +3146,7 @@
                                             <li><strong>Astuce universelle :</strong> Copiez vos lignes dans Excel ou Pronote (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les directement dans l'Assistant.</li>
                                         </ul>
                                         <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openImportWizardFromHelp()">
+                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-import-wizard">
                                                 <iconify-icon class="iconify-inline" icon="solar:import-linear"></iconify-icon> Ouvrir l'Assistant d'import
                                             </button>
                                         </div>
@@ -3316,7 +3185,7 @@
                                             <li><strong>Archive JSON :</strong> Exportez une sauvegarde complète sur clé USB depuis <em>Paramètres &gt; Données</em>.</li>
                                         </ul>
                                         <div class="help-btn-row">
-                                            <button type="button" class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
+                                            <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-data" data-target-element="backupSection">
                                                 <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon> Gérer mes sauvegardes
                                             </button>
                                         </div>
@@ -3458,7 +3327,7 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="closeHelpModalFooterBtn" tabindex="0">Fermer</button>
+                <button type="button" class="btn btn-secondary" id="closeHelpModalFooterBtn" tabindex="0">Fermer</button>
             </div>
         </div>
     </div>
@@ -3467,7 +3336,7 @@
     <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-label="Guide de bienvenue">
         <div class="modal-content">
             <div class="modal-header">
-                <button class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
+                <button type="button" class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -3527,7 +3396,7 @@
                                     data-bwignore="true"
                                     data-form-type="other">
                             </div>
-                            <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
+                            <button type="button" class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                         </div>
                         <div class="error-message" id="welcomeApiKeyError" style="display: none;"></div>
 
@@ -3881,12 +3750,12 @@
                 </div>
             </div>
             <div class="welcome-nav-container">
-                <button class="btn btn-secondary" id="welcomePrevBtn" style="visibility: hidden;">Précédent</button>
+                <button type="button" class="btn btn-secondary" id="welcomePrevBtn" style="visibility: hidden;">Précédent</button>
                 <div id="welcome-dots"><span class="dot active"></span><span class="dot"></span><span
                         class="dot"></span><span class="dot"></span></div>
-                <button class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
+                <button type="button" class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
                 <div id="welcome-finish-options">
-                    <button class="btn btn-primary" id="welcomeFinishAndHideBtn">
+                    <button type="button" class="btn btn-primary" id="welcomeFinishAndHideBtn">
                         <span class="rocket-container">
                             <iconify-icon icon="solar:rocket-linear"></iconify-icon>
                         </span>
@@ -3942,13 +3811,13 @@
                     <p>Saisie manuelle</p>
                 </div>
             </div>
-            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis Excel, CSV ou PDF (Pronote, ENT / MBN)">
+            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Liste &amp; Notes</h4>
-                    <p>Excel, CSV, PDF ou texte</p>
+                    <p>PDF, CSV ou copier-coller</p>
                 </div>
             </div>
             <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Créez la classe et associez les photos de vos élèves depuis un PDF Pronote ou une photo de classe">
@@ -4011,7 +3880,7 @@
                         <span id="dashboardStudentCount" class="context-item">--</span>
                     </div>
                 </div>
-                <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
+                <button type="button" class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -4025,10 +3894,10 @@
                                 <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse Qualitative (IA)
                             </h3>
                             <div class="panel-header-actions">
-                                <button class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
+                                <button type="button" class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
                                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                                 </button>
-                                <button class="btn btn-ai btn-small" id="generateSynthesisBtn" style="display: none;">
+                                <button type="button" class="btn btn-ai btn-small" id="generateSynthesisBtn" style="display: none;">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                 </button>
                             </div>
@@ -4041,7 +3910,7 @@
                                 </div>
                                 <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
                                 <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
-                                <button class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
+                                <button type="button" class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
                                 </button>
                             </div>
@@ -4049,17 +3918,17 @@
                         <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;">
                             <span class="refinement-label"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Affiner</span>
                             <div class="refinement-pills-group">
-                                <button class="btn-refinement" data-refine-type="summarize">
+                                <button type="button" class="btn-refinement" data-refine-type="summarize">
                                     <iconify-icon icon="solar:minimize-square-minimalistic-linear"></iconify-icon> Plus concis
                                 </button>
-                                <button class="btn-refinement" data-refine-type="actionable">
+                                <button type="button" class="btn-refinement" data-refine-type="actionable">
                                     <iconify-icon icon="solar:clipboard-check-linear"></iconify-icon> Plan d'action
                                 </button>
-                                <button class="btn-refinement" data-refine-type="positive">
+                                <button type="button" class="btn-refinement" data-refine-type="positive">
                                     <iconify-icon icon="solar:heart-angle-linear"></iconify-icon> Tonalité positive
                                 </button>
                             </div>
-                            <button class="btn-refinement btn-refinement--revert" id="revertSynthesisBtn" style="display: none;" title="Revenir à la synthèse d'origine">
+                            <button type="button" class="btn-refinement btn-refinement--revert" id="revertSynthesisBtn" style="display: none;" title="Revenir à la synthèse d'origine">
                                 <iconify-icon icon="solar:restart-linear"></iconify-icon> Rétablir
                             </button>
                         </div>
@@ -4110,7 +3979,7 @@
                                         <div class="highlight-list" id="highlightProgressList">
                                             <!-- Generated by JS -->
                                         </div>
-                                        <button class="scroll-top-btn" data-target="highlightProgressList" style="opacity: 0; pointer-events: none;" title="Remonter">
+                                        <button type="button" class="scroll-top-btn" data-target="highlightProgressList" style="opacity: 0; pointer-events: none;" title="Remonter">
                                             <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
                                         </button>
                                     </div>
@@ -4128,7 +3997,7 @@
                                         <div class="highlight-list" id="highlightRiskList">
                                             <!-- Generated by JS -->
                                         </div>
-                                        <button class="scroll-top-btn" data-target="highlightRiskList" style="opacity: 0; pointer-events: none;" title="Remonter">
+                                        <button type="button" class="scroll-top-btn" data-target="highlightRiskList" style="opacity: 0; pointer-events: none;" title="Remonter">
                                             <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
                                         </button>
                                     </div>
@@ -4156,13 +4025,13 @@
                 <p class="pwa-banner-subtitle">Accès rapide depuis votre écran d'accueil</p>
             </div>
             <div class="pwa-banner-actions">
-                <button id="pwaInstallBtn" class="btn-install">
+                <button type="button" id="pwaInstallBtn" class="btn-install">
                     <iconify-icon class="iconify-inline" icon="solar:download-bold"></iconify-icon> Installer
                 </button>
-                <button id="pwaLaterBtn" class="btn-dismiss" aria-label="Plus tard" title="Plus tard">
+                <button type="button" id="pwaLaterBtn" class="btn-dismiss" aria-label="Plus tard" title="Plus tard">
                     <iconify-icon class="iconify-inline" icon="solar:clock-circle-bold"></iconify-icon>
                 </button>
-                <button id="pwaDismissBtn" class="btn-dismiss" aria-label="Ne plus afficher" title="Ne plus afficher">
+                <button type="button" id="pwaDismissBtn" class="btn-dismiss" aria-label="Ne plus afficher" title="Ne plus afficher">
                     <iconify-icon class="iconify-inline" icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -4182,24 +4051,6 @@
 
     <!-- Hidden file inputs -->
     <input type="file" id="importSettingsInput" accept=".json" style="display: none;">
-
-
-    <!-- Landing Return Transition -->
-    <script>
-        (function initLandingReturn() {
-            const returnLink = document.getElementById('linkLanding');
-            if (returnLink) {
-                returnLink.addEventListener('click', (e) => {
-                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                    e.preventDefault();
-                    document.body.classList.add('is-navigating-to-landing');
-                    setTimeout(() => {
-                        window.location.href = returnLink.href;
-                    }, 220);
-                });
-            }
-        })();
-    </script>
 </body>
 
 </html>

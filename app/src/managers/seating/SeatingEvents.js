@@ -9,6 +9,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ListSelectionManager } from '../list/ListSelectionManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const SeatingEvents = {
     /**
@@ -836,10 +837,10 @@ export const SeatingEvents = {
                 }
             });
 
-            window.addEventListener('student-updated', () => this.refreshStudents());
-            window.addEventListener('studentsUpdated', () => this.refreshStudents());
-            document.addEventListener('app-settings-changed', () => this.refreshStudents());
-            document.addEventListener('periodChanged', () => this.refreshStudents());
+            bus.on(EVENTS.STUDENT_UPDATED, () => this.refreshStudents());
+            bus.on(EVENTS.STUDENTS_UPDATED, () => this.refreshStudents());
+            bus.on(EVENTS.APP_SETTINGS_CHANGED, () => this.refreshStudents());
+            bus.on(EVENTS.PERIOD_CHANGED, () => this.refreshStudents());
         }
     }
 };

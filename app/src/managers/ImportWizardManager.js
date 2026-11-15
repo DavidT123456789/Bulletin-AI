@@ -7,9 +7,9 @@
 
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular } from '../utils/ImportUtils.js';
+import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular, isExcelSpreadsheetFile, EXCEL_UNSUPPORTED_IMPORT_MESSAGE } from '../utils/ImportUtils.js';
 import { autoConvertPdf } from '../utils/PdfParsers.js';
-import { extractTextFromPdf } from '../utils/PdfUtils.js';
+import { extractTextFromPdf, isPdf } from '../utils/PdfUtils.js';
 import { DBService } from '../services/DBService.js';
 import { UI } from './UIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
@@ -22,6 +22,7 @@ import { StorageManager } from './StorageManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { getSampleImportData } from '../data/SampleData.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Import Wizard Manager
@@ -45,8 +46,8 @@ export const ImportWizardManager = {
         this._bindEvents();
 
         // Listen to global period changed event to sync dropdown header badge and mapping table
-        document.addEventListener('periodChanged', (e) => {
-            const newPeriod = e.detail.period;
+        bus.on(EVENTS.PERIOD_CHANGED, (detail) => {
+            const newPeriod = detail?.period;
             this._handlePeriodChanged(newPeriod);
         });
     },
@@ -782,6 +783,15 @@ export const ImportWizardManager = {
      * Handle file drop/select
      */
     async _handleFile(file) {
+        if (!file) return;
+
+        if (isExcelSpreadsheetFile(file)) {
+            this._resetFileUI();
+            this.state.currentSource = null;
+            UI.showNotification(EXCEL_UNSUPPORTED_IMPORT_MESSAGE, 'warning');
+            return;
+        }
+
         const dropZone = document.getElementById('wizardDropZone');
         const statusText = document.getElementById('wizardStatusText');
 
@@ -796,7 +806,7 @@ export const ImportWizardManager = {
         };
 
         // Gestion des PDFs avec extraction de texte
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        if (isPdf(file)) {
             try {
                 setLoading(true, 'Extraction du PDF...');
 
@@ -897,13 +907,10 @@ export const ImportWizardManager = {
                 fileIconEl.innerHTML = ''; // Reset content
 
                 if (type === 'file' && file) {
-                    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                    if (isPdf(file)) {
                         fileIconEl.classList.add('type-pdf');
                         fileIconEl.innerHTML = '<iconify-icon icon="ph:file-pdf"></iconify-icon>';
-                    } else if (file.name.match(/\.(xlsx|xls)$/i)) {
-                        fileIconEl.classList.add('type-excel');
-                        fileIconEl.innerHTML = '<iconify-icon icon="ph:file-xls"></iconify-icon>';
-                    } else if (file.name.endsWith('.csv')) {
+                    } else if (file.name.toLowerCase().endsWith('.csv')) {
                         fileIconEl.classList.add('type-csv');
                         fileIconEl.innerHTML = '<iconify-icon icon="ph:file-csv"></iconify-icon>';
                     } else {
@@ -1128,7 +1135,7 @@ export const ImportWizardManager = {
 
         const icons = {
             'mbn': 'solar:square-academic-cap-linear',
-            'pronote': 'solar:mortarboard-linear',
+            'pronote': 'solar:diploma-linear',
             'vertical': 'solar:list-linear'
         };
         const icon = icons[format.type] || 'solar:document-text-linear';
@@ -1305,13 +1312,15 @@ export const ImportWizardManager = {
         previewLines.forEach(line => {
             html += `<tr>`;
             for (let i = 0; i < cols; i++) {
-                const fullContent = (line[i] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const isEmpty = !fullContent.trim();
+                const rawContent = String(line[i] || '');
+                const isEmpty = !rawContent.trim();
+                const escapedAttr = Utils.escapeHtml(rawContent);
+                const displayText = rawContent.length > 50 ? rawContent.substring(0, 47) + '...' : rawContent;
                 const cellContent = isEmpty
                     ? '<span class="preview-empty-cell">—</span>'
-                    : (fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent);
-                const needsTooltip = !isEmpty && (fullContent.length > 50 || i === 0);
-                html += `<td data-raw="${fullContent}"${needsTooltip ? ` class="has-tooltip" data-tooltip="${fullContent}"` : ''}>${cellContent}</td>`;
+                    : Utils.escapeHtml(displayText);
+                const needsTooltip = !isEmpty && (rawContent.length > 50 || i === 0);
+                html += `<td data-raw="${escapedAttr}"${needsTooltip ? ` class="has-tooltip" data-tooltip="${escapedAttr}"` : ''}>${cellContent}</td>`;
             }
             html += `</tr>`;
         });
@@ -1452,13 +1461,9 @@ export const ImportWizardManager = {
                 if (!truncated.trim()) {
                     td.innerHTML = '<span class="preview-empty-cell">—</span>';
                 } else if (cls === 'col-status') {
-                    const statusValues = truncated.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
-                    td.innerHTML = statusValues.map(status => {
-                        const badgeInfo = Utils.getStatusBadgeInfo(status);
-                        return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
-                    }).join(' ');
+                    td.innerHTML = this._renderStatusBadgesHtml(truncated, { includeDataAttr: true });
                 } else if (td.querySelector('.tag-badge--sm, .preview-empty-cell')) {
-                    td.innerHTML = truncated;
+                    td.textContent = truncated;
                 }
             });
         });
@@ -1980,6 +1985,22 @@ export const ImportWizardManager = {
     },
 
     /**
+     * Render escaped HTML badges for one or more status values
+     * @param {string} rawStatuses - Raw status string (comma/semicolon/plus separated)
+     * @param {{ includeDataAttr?: boolean }} [options={}]
+     * @returns {string} Escaped HTML string
+     * @private
+     */
+    _renderStatusBadgesHtml(rawStatuses, { includeDataAttr = false } = {}) {
+        const statusValues = String(rawStatuses || '').split(/[,;+]/).map(s => s.trim()).filter(Boolean);
+        return statusValues.map(status => {
+            const badgeInfo = Utils.getStatusBadgeInfo(status);
+            const dataAttr = includeDataAttr ? ` data-status="${Utils.escapeHtml(status)}"` : '';
+            return `<span class="${badgeInfo.className} tag-badge--sm"${dataAttr}>${Utils.escapeHtml(badgeInfo.label)}</span>`;
+        }).join(' ');
+    },
+
+    /**
      * Format a cell value for display in the preview table
      */
     _formatCellValue(value, tag) {
@@ -1989,18 +2010,14 @@ export const ImportWizardManager = {
 
         // Status badge
         if (tag === 'STATUT' && value) {
-            const statusValues = value.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
-            return statusValues.map(status => {
-                const badgeInfo = Utils.getStatusBadgeInfo(status);
-                return `<span class="${badgeInfo.className} tag-badge--sm">${badgeInfo.label}</span>`;
-            }).join(' ');
+            return this._renderStatusBadgesHtml(value);
         }
 
         const str = String(value);
-        const escaped = str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escaped = Utils.escapeHtml(str);
         const isTextCol = tag?.startsWith('APP_') || tag?.startsWith('CTX_');
         if (isTextCol || str.length > 25) {
-            return `<span data-tooltip="${escaped.replace(/"/g, '&quot;')}">${escaped}</span>`;
+            return `<span data-tooltip="${escaped}">${escaped}</span>`;
         }
 
         return `<span>${escaped}</span>`;

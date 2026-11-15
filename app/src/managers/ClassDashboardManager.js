@@ -790,7 +790,7 @@ export const ClassDashboardManager = {
                     </div>
                     <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
                     <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
-                    <button class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
+                    <button type="button" class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
                         <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
                     </button>
                 </div>
@@ -1704,7 +1704,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
                 const config = sections.find(s =>
                     currentSection.includes(s.emoji) ||
                     currentSection.toLowerCase().includes(s.title.toLowerCase())
-                ) || { icon: 'info-circle', color: 'primary' };
+                ) || { icon: 'solar:info-circle-linear', color: 'primary' };
 
                 const cleanTitle = currentSection
                     .replace(/\*\*/g, '')

@@ -59,6 +59,24 @@ describe('EventBus', () => {
             eventBus.emit('test-event', 'second');
             expect(callback).toHaveBeenCalledTimes(1);
         });
+
+        it('should automatically unsubscribe when AbortSignal aborts and ignore already-aborted signals', () => {
+            const controller = new AbortController();
+            const callback = vi.fn();
+            eventBus.on('abortable', callback, { signal: controller.signal });
+
+            eventBus.emit('abortable', 1);
+            expect(callback).toHaveBeenCalledTimes(1);
+
+            controller.abort();
+            eventBus.emit('abortable', 2);
+            expect(callback).toHaveBeenCalledTimes(1);
+
+            const skipped = vi.fn();
+            eventBus.on('abortable', skipped, { signal: controller.signal });
+            eventBus.emit('abortable', 3);
+            expect(skipped).not.toHaveBeenCalled();
+        });
     });
 
     describe('once()', () => {

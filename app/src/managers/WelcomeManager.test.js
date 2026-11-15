@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WelcomeManager } from './WelcomeManager';
 import { appState } from '../state/State';
 import { CONFIG } from '../config/Config';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock dependencies with proper HTMLElements
 vi.mock('../utils/DOM', () => {
@@ -239,7 +240,7 @@ describe('WelcomeManager', () => {
 
             WelcomeManager.setupWelcomeModal();
 
-            document.dispatchEvent(new CustomEvent('welcome-modal-close', { detail: { modalId: 'welcomeModal' } }));
+            bus.emit(EVENTS.MODAL_WELCOME_CLOSE, { modalId: 'welcomeModal' });
             await Promise.resolve();
 
             expect(localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)).toBe('true');

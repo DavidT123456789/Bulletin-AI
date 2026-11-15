@@ -6,15 +6,26 @@
   "author": "David Trafial",
   "scripts": {
     "generate-version": "node scripts/generate-version.js",
-    "dev": "npm run generate-version && vite",
-    "build": "npm run generate-version && vite build",
+    "generate-icons": "node scripts/generate-icons.js",
+    "dev": "npm run generate-version && npm run generate-icons && vite",
+    "build": "npm run generate-version && npm run generate-icons && vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@iconify-json/line-md": "^1.2.16",
+    "@iconify-json/logos": "^1.2.20",
+    "@iconify-json/lucide": "^1.2.155",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/ph": "^1.2.2",
+    "@iconify-json/simple-icons": "^1.2.102",
+    "@iconify-json/solar": "^1.2.16",
+    "@iconify-json/svg-spinners": "^1.2.4",
+    "@iconify/utils": "^3.1.7",
     "@playwright/test": "^1.57.0",
     "@vitest/coverage-v8": "^1.6.1",
     "fake-indexeddb": "^6.2.6",
@@ -25,6 +36,8 @@
     "workbox-window": "^7.0.0"
   },
   "dependencies": {
-    "pdfjs-dist": "^5.4.530"
+    "iconify-icon": "^3.0.5",
+    "pdfjs-dist": "^5.4.530",
+    "tippy.js": "^6.3.7"
   }
 }

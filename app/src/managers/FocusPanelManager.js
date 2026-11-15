@@ -23,6 +23,7 @@ import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ModalUI } from './ModalUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
@@ -494,7 +495,7 @@ export const FocusPanelManager = {
         }
 
         if (wasOpen) {
-            window.dispatchEvent(new CustomEvent('student-updated'));
+            bus.emit(EVENTS.STUDENT_UPDATED);
             setTimeout(() => {
                 this._isClosing = false;
                 if (this._deferredRowUpdates && this._deferredRowUpdates.size > 0) {

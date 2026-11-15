@@ -17,18 +17,20 @@ import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { ClassDropdown } from './class/ClassDropdown.js';
 import { ClassNotePopover } from './class/ClassNotePopover.js';
 import { ClassManageModal } from './class/ClassManageModal.js';
 import { ClassStudentTransferModal } from './class/ClassStudentTransferModal.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 export const ClassUIManager = {
     _ui: null,
     _storage: null,
     _isDropdownOpen: false,
     _isNotePopoverOpen: false,
-    _showVirtualClasses: localStorage.getItem('bulletin_show_virtual_classes') !== 'false',
+    _showVirtualClasses: SafeStorage.get(STORAGE_KEYS.SHOW_VIRTUAL_CLASSES) !== 'false',
     _originalDropdownParent: null, // Store original parent for teleportation
     _originalNotePopoverParent: null,
     _virtualAnimationTimer: null,
@@ -185,7 +187,7 @@ export const ClassUIManager = {
         });
 
         // Mise à jour réactive des pastilles de plan de classe lors d'un changement de statut
-        window.addEventListener('seating-chart:status-changed', () => {
+        bus.on(EVENTS.SEATING_STATUS_CHANGED, () => {
             if (this._isDropdownOpen) {
                 const classes = ClassManager.getAllClasses();
                 this._updateClassProgressIndicators(classes);
@@ -636,7 +638,7 @@ export const ClassUIManager = {
         // Si pas de classes :
         if (classes.length === 0) {
             // Si première visite en cours, laisser le WelcomeModal injecter la classe démo
-            if (!localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)) {
+            if (!SafeStorage.get(CONFIG.LS_FIRST_VISIT_KEY)) {
                 return;
             }
 

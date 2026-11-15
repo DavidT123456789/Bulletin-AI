@@ -19,6 +19,7 @@ import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, APP_LINKS 
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { ModalUI } from './ModalUIManager.js';
@@ -33,6 +34,7 @@ import { AnimationManager } from './AnimationManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
 import { ClassManager } from './ClassManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -538,9 +540,7 @@ export const UI = {
 
         StorageManager?.saveAppState();
 
-        document.dispatchEvent(new CustomEvent('periodChanged', {
-            detail: { period: appState.currentPeriod }
-        }));
+        bus.emit(EVENTS.PERIOD_CHANGED, { period: appState.currentPeriod });
     },
     getPeriods() {
         return Utils.getPeriods();
@@ -828,6 +828,7 @@ export const UI = {
     closeModal(modalOrId, options = {}) { ModalUI.closeModal(modalOrId, options); },
     closeAllModals() { ModalUI.closeAllModals(); },
     openHelpTab(tabId, sectionId) { ModalUI.openHelpTab(tabId, sectionId); },
+    switchVerticalTab(btn, tabId) { ModalUI.switchVerticalTab(btn, tabId); },
     isAnyModalOpen() { return ModalUI.isAnyModalOpen(); },
 
     // Settings form functions delegated to FormUIManager
@@ -1071,10 +1072,9 @@ export const UI = {
     showSettingsTab(tabName) {
         const modal = DOM.settingsModal || document.getElementById('appSettingsModal');
         if (modal) {
-            const targetBtn = modal.querySelector(`.ui-tabs-btn[onclick*="'${tabName}'"]`) ||
-                              modal.querySelector(`.ui-tabs-btn[onclick*='"${tabName}"']`);
-            if (targetBtn && typeof window.switchHelpTab === 'function') {
-                window.switchHelpTab(targetBtn, tabName);
+            const targetBtn = modal.querySelector(`.ui-tabs-btn[data-tab="${tabName}"]`);
+            if (targetBtn) {
+                ModalUI.switchVerticalTab(targetBtn, tabName);
                 return;
             }
         }
@@ -1265,6 +1265,7 @@ export const UI = {
         // Add close button on the active element if not already present
         if (activeElement && !activeElement.querySelector('.filter-close-btn')) {
             const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
             closeBtn.className = 'filter-close-btn';
             closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
             closeBtn.setAttribute('aria-label', 'Retirer le filtre');
@@ -1514,7 +1515,7 @@ export const UI = {
     //  Notification sobre en fin de tâche après un volume réel d'usage
     // ====================================================================
 
-    _supportMilestoneKey: 'bulletin-ai-support-milestone-v1',
+    _supportMilestoneKey: STORAGE_KEYS.SUPPORT_MILESTONE,
     _supportMinGenerations: 30,
     _supportMinSeatingActions: 3,
     _supportCooldownMs: 40 * 24 * 60 * 60 * 1000, // 40 jours (couvre 1 session de bulletins sans bloquer le trimestre suivant)
@@ -1529,22 +1530,12 @@ export const UI = {
             lastShownAt: 0,
             supportClickedAt: 0
         };
-        try {
-            const raw = localStorage.getItem(this._supportMilestoneKey);
-            if (!raw) return defaults;
-            const parsed = JSON.parse(raw);
-            return (parsed && typeof parsed === 'object') ? { ...defaults, ...parsed } : defaults;
-        } catch (_) {
-            return defaults;
-        }
+        const parsed = SafeStorage.getJSON(this._supportMilestoneKey, null);
+        return (parsed && typeof parsed === 'object') ? { ...defaults, ...parsed } : defaults;
     },
 
     _saveSupportMilestoneState(state) {
-        try {
-            localStorage.setItem(this._supportMilestoneKey, JSON.stringify(state));
-        } catch (_) {
-            // Ignorer silencieusement en navigation privée ou quota plein
-        }
+        SafeStorage.setJSON(this._supportMilestoneKey, state);
     },
 
     /**

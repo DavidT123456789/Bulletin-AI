@@ -17,6 +17,7 @@ import { FocusPanelNavigation } from '../FocusPanelNavigation.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
 import { SettingsModalListeners } from '../listeners/SettingsModalListeners.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 const isPanelOpen = (panel) => (typeof panel.isOpen === 'function' ? panel.isOpen() : Boolean(panel.isOpen));
 
@@ -198,7 +199,7 @@ export const FocusPanelEvents = {
             });
         }
 
-        document.addEventListener('app-settings-changed', () => {
+        bus.on(EVENTS.APP_SETTINGS_CHANGED, () => {
             if (panel.currentStudentId) {
                 FocusPanelStatus.refreshAppreciationStatus();
             }

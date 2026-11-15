@@ -9,6 +9,7 @@ import { CrossClassSearchManager } from './CrossClassSearchManager';
 import { TooltipsUI } from './TooltipsManager';
 import { UI } from './UIManager';
 import { ListSelectionManager } from './list/ListSelectionManager';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -1225,7 +1226,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             targetStudent.studentData.statuses = ['Départ'];
 
             // Déclenchement de l'événement de mise à jour
-            window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: 'act1' } }));
+            bus.emit(EVENTS.STUDENT_UPDATED, { studentId: 'act1' });
 
             // Vérification que la cellule créée reflète immédiatement le statut Départ
             cell = SeatingChartManager._createCell(0, 0);
@@ -4251,7 +4252,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             const unplacedResult = appState.generatedResults.find(r => r.id === 'st-unplaced');
             unplacedResult.studentData.statuses = ['Départ'];
-            window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: 'st-unplaced' } }));
+            bus.emit(EVENTS.STUDENT_UPDATED, { studentId: 'st-unplaced' });
 
             // L'étiquette est passée dans la sous-section "Élève parti (1)", la sélection est purgée, et tous les élèves actifs sont placés
             expect(SeatingChartManager._selectedChipIds).toEqual([]);
@@ -5630,5 +5631,26 @@ describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève
 
         expect(SeatingChartManager._isActive).toBe(false);
         expect(document.querySelector('.main-content-wrapper')?.dataset.view).toBe('list');
+    });
+
+    it('doit échapper le nom de classe dans l’en-tête d’impression _printChart() contre les XSS DOM', () => {
+        const classXss = ClassManager.createClass('<img src=x onerror=alert(1)>');
+        appState.currentClassId = classXss.id;
+        userSettings.academic.currentClassId = classXss.id;
+        document.body.innerHTML = '<div id="seatingChartView"></div>';
+
+        let printedHeader = null;
+        const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {
+            printedHeader = document.querySelector('#seatingChartView .sc-print-header');
+        });
+
+        SeatingChartManager._printChart();
+
+        expect(printedHeader).not.toBeNull();
+        expect(printedHeader.querySelector('img')).toBeNull();
+        expect(printedHeader.querySelector('.sc-print-class')?.textContent).toContain('<img src=x onerror=alert(1)>');
+        window.onafterprint?.();
+        printSpy.mockRestore();
+        document.body.innerHTML = '';
     });
 });

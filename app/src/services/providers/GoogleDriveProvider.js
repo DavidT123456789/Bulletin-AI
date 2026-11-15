@@ -5,6 +5,8 @@
  * @module services/providers/GoogleDriveProvider
  */
 
+import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
+
 // Google API configuration
 const GOOGLE_CLIENT_ID = '685675322524-qgc51t16ebv68ljcoi5re8mhfmkh1094.apps.googleusercontent.com';
 const GOOGLE_API_KEY = ''; // Optional: for additional API calls
@@ -100,18 +102,18 @@ export const GoogleDriveProvider = {
     async authorize(options = {}) {
         try {
             // Check for saved token first (avoids loading external Google scripts at boot if token is already expired)
-            const savedToken = localStorage.getItem('bulletin_google_token');
+            const savedToken = SafeStorage.get(STORAGE_KEYS.GOOGLE_TOKEN);
             let hasValidSavedToken = false;
             if (savedToken) {
-                try {
-                    this._token = JSON.parse(savedToken);
+                const parsedToken = SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_TOKEN, null, { removeOnCorrupt: true });
+                if (parsedToken) {
+                    this._token = parsedToken;
                     if (this._token.expiry && (Date.now() + 60000) < this._token.expiry) {
                         hasValidSavedToken = true;
                     } else {
                         this._needsReconnect = true;
                     }
-                } catch {
-                    localStorage.removeItem('bulletin_google_token');
+                } else {
                     this._token = null;
                 }
             }
@@ -166,7 +168,7 @@ export const GoogleDriveProvider = {
                             expiry: Date.now() + (tokenResponse.expires_in * 1000)
                         };
 
-                        localStorage.setItem('bulletin_google_token', JSON.stringify(this._token));
+                        SafeStorage.setJSON(STORAGE_KEYS.GOOGLE_TOKEN, this._token);
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         this._needsReconnect = false;
                         this.getUserInfo().catch(() => {});
@@ -204,14 +206,7 @@ export const GoogleDriveProvider = {
      */
     isConnected() {
         if (!this._token) {
-            const savedToken = localStorage.getItem('bulletin_google_token');
-            if (savedToken) {
-                try {
-                    this._token = JSON.parse(savedToken);
-                } catch {
-                    return false;
-                }
-            }
+            this._token = SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_TOKEN, null);
         }
         return this._token !== null && (Date.now() + 60000) < (this._token.expiry || 0);
     },
@@ -222,14 +217,7 @@ export const GoogleDriveProvider = {
      * @returns {{displayName: string, email: string, photo: string}|null}
      */
     _readCachedUser() {
-        const cached = localStorage.getItem('bulletin_google_user');
-        if (!cached) return null;
-        try {
-            return JSON.parse(cached);
-        } catch {
-            localStorage.removeItem('bulletin_google_user');
-            return null;
-        }
+        return SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_USER, null, { removeOnCorrupt: true });
     },
 
     /**
@@ -263,7 +251,7 @@ export const GoogleDriveProvider = {
                         email: data.user.emailAddress || '',
                         photo: data.user.photoLink || ''
                     };
-                    localStorage.setItem('bulletin_google_user', JSON.stringify(info));
+                    SafeStorage.setJSON(STORAGE_KEYS.GOOGLE_USER, info);
                     return info;
                 }
             }
@@ -283,8 +271,8 @@ export const GoogleDriveProvider = {
         }
         this._token = null;
         this._fileId = null;
-        localStorage.removeItem('bulletin_google_token');
-        localStorage.removeItem('bulletin_google_user');
+        SafeStorage.remove(STORAGE_KEYS.GOOGLE_TOKEN);
+        SafeStorage.remove(STORAGE_KEYS.GOOGLE_USER);
     },
 
     // =========================================================================
@@ -314,7 +302,7 @@ export const GoogleDriveProvider = {
         if (isAuthError) {
             this._needsReconnect = true;
             this._token = null;
-            localStorage.removeItem('bulletin_google_token');
+            SafeStorage.remove(STORAGE_KEYS.GOOGLE_TOKEN);
         }
 
         const message = rawMsg || (isAuthError ? 'Session Google Drive expirée. Veuillez vous reconnecter.' : defaultMsg);

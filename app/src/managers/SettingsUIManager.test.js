@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock des dépendances
 vi.mock('../state/State.js', () => ({
@@ -266,8 +267,7 @@ describe('SettingsUIManager', () => {
             document.body.appendChild(selector);
 
             const events = [];
-            const onSettingsChanged = (e) => events.push(e);
-            document.addEventListener('app-settings-changed', onSettingsChanged);
+            const unsubscribe = bus.on(EVENTS.APP_SETTINGS_CHANGED, (data) => events.push(data));
 
             try {
                 appState.seatingStatusDots = { movements: true, devices: false, delegates: true };
@@ -281,12 +281,12 @@ describe('SettingsUIManager', () => {
                 expect(selector.querySelector('[data-dot-category="devices"]').closest('.seating-dot-option').classList.contains('active')).toBe(true);
                 expect(events.length).toBe(1);
 
-                // saveSettings() ne doit émettre qu'un seul événement app-settings-changed
+                // saveSettings() ne doit émettre qu'un seul événement APP_SETTINGS_CHANGED
                 events.length = 0;
                 SettingsUIManager.saveSettings(false);
                 expect(events.length).toBe(1);
             } finally {
-                document.removeEventListener('app-settings-changed', onSettingsChanged);
+                unsubscribe();
                 selector.remove();
             }
         });

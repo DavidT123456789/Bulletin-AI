@@ -2,6 +2,8 @@
  * @fileoverview Landing page controller for Bulletin AI (navigation, carousel, hero mockup, PWA/transition).
  */
 
+import '../generated/icons-landing.js';
+
 const prefersReducedMotion = typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)')
     : { matches: false, addEventListener: () => {} };
@@ -10,7 +12,7 @@ const CAROUSEL_ITEMS = [
     { icon: 'solar:stars-linear', color: 'bg-purple-50 text-purple-600', title: 'Rédaction & Affinage IA', desc: 'Générez sur mesure et ajustez le ton en un clic : concis, encourageant ou peaufiné.', label: 'Rédaction' },
     { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Consignez vos observations au fil des séances (clavier ou dictée vocale) pour nourrir le bilan.', label: 'Suivi' },
     { icon: 'solar:chart-square-linear', color: 'bg-orange-50 text-orange-600', title: 'Statistiques & Dynamique', desc: 'Visualisez moyenne, médiane, répartition et évolution (progrès, stabilité, régression) de la classe.', label: 'Analyse' },
-    { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Import PDF & Tableurs', desc: 'Compatible bilans et trombinoscopes PDF (Pronote, MBN), Excel, CSV ou copier-coller.', label: 'Import' },
+    { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Import PDF & Tableurs', desc: 'Compatible bilans et trombinoscopes PDF (Pronote, MBN), CSV ou copier-coller depuis Excel.', label: 'Import' },
     { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Trombinoscope & Sauvegarde', desc: 'Visualisez vos élèves et archivez vos classes en local ou sur votre Google Drive personnel.', label: 'Stockage' },
     { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Pseudonymisation RGPD', desc: 'Prénoms masqués par défaut, noms et statuts sensibles (PAP, ULIS…) filtrés localement avant tout envoi IA.', label: 'Sécurité' },
     { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Compatible Albert (IA Gouv.fr via ProConnect), Gemini, Groq, Mistral ou Ollama 100% hors-ligne.', label: 'Flexible' },

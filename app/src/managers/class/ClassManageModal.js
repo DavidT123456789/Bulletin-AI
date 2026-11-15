@@ -54,7 +54,7 @@ export const ClassManageModal = {
                             </button>
                             <div class="action-dropdown-menu" id="classManageMoreMenu"></div>
                         </div>
-                        <button class="close-button close-manage-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
+                        <button type="button" class="close-button close-manage-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>
                 </div>
                 <div class="modal-body">
@@ -891,15 +891,15 @@ export const ClassManageModal = {
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Renommer" aria-label="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}"
                                             data-tooltip="Supprimer la classe" aria-label="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>

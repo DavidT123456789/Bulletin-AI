@@ -12,6 +12,7 @@ import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { JournalManager } from './JournalManager.js';
 import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Module de gestion des badges et indicateurs du Focus Panel
@@ -478,9 +479,7 @@ export const FocusPanelStatus = {
             this._callbacks?.onUpdateListRow?.(result);
 
             // FALLBACK: Emit event for decoupled sync (works even if callbacks not set)
-            window.dispatchEvent(new CustomEvent('studentDirtyStateChanged', {
-                detail: { studentId: currentStudentId, result }
-            }));
+            bus.emit(EVENTS.STUDENT_DIRTY_STATE_CHANGED, { studentId: currentStudentId, result });
         }
     },
 

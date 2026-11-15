@@ -4,7 +4,7 @@
  * Contrat de cycle de vie et rôles des clés LocalStorage utilisées pour la synchronisation :
  * 
  * 1. bulletin_sync_provider :
- *    - Rôle : Identifiant du fournisseur Cloud actif (ex: 'google', 'dropbox').
+ *    - Rôle : Identifiant du fournisseur Cloud actif (ex: 'google').
  *    - Cycle de vie : Configuré à la connexion, persisté, supprimé lors d'une déconnexion/factory reset.
  * 
  * 2. bulletin_last_sync :
@@ -33,6 +33,7 @@ import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAU
 import { API_KEY_PROVIDER_IDS, getProviderForModel, hasValidApiKey } from '../config/providers.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 import { ClassManager } from './ClassManager.js';
 import { ModalUI as ModalUIManager } from './ModalUIManager.js';
@@ -226,22 +227,6 @@ export const StorageManager = {
         }
     },
 
-    _safeLocalStorageSet(key, value, { notifyOnQuota = false } = {}) {
-        try {
-            localStorage.setItem(key, value);
-            return true;
-        } catch (error) {
-            console.warn(`[StorageManager] Échec écriture localStorage (${key}):`, error);
-            if (notifyOnQuota && UI?.showNotification) {
-                UI.showNotification(
-                    'Espace de stockage local saturé. Les données élèves restent sauvegardées dans IndexedDB.',
-                    'warning'
-                );
-            }
-            return false;
-        }
-    },
-
     _ensureStudentId(student) {
         if (student && typeof student.id === 'string' && student.id.trim() !== '') {
             return student;
@@ -286,8 +271,7 @@ export const StorageManager = {
         // UI Settings
         if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
         if (settings.accentColor !== undefined) {
-            let explicitAccent = '';
-            try { explicitAccent = localStorage.getItem('bulletin_accent') || ''; } catch (_) {}
+            const explicitAccent = SafeStorage.get(STORAGE_KEYS.ACCENT, '');
             userSettings.ui.accentColor = (settings.accentColor === 'blue' && explicitAccent !== 'blue') ? 'anthracite' : settings.accentColor;
         }
         if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
@@ -361,7 +345,7 @@ export const StorageManager = {
 
         // Fallback thème si non défini - respecte bulletin_theme ou 'light' par défaut
         if (!userSettings.ui.theme) {
-            userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
+            userSettings.ui.theme = SafeStorage.get(STORAGE_KEYS.THEME) || 'light';
         }
     },
 
@@ -369,16 +353,16 @@ export const StorageManager = {
         let loadFailed = false;
         try {
             try {
-                const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
+                const lastSyncHash = SafeStorage.get(STORAGE_KEYS.LAST_SYNC_HASH);
                 if (lastSyncHash && (lastSyncHash.length > 64 || lastSyncHash.startsWith('{'))) {
-                    this._safeLocalStorageSet('bulletin_last_sync_hash', this._hashString(lastSyncHash));
+                    SafeStorage.set(STORAGE_KEYS.LAST_SYNC_HASH, this._hashString(lastSyncHash));
                 }
             } catch (e) {
                 console.warn('[StorageManager] Failed to migrate old sync hash:', e);
-                localStorage.removeItem('bulletin_last_sync_hash');
+                SafeStorage.remove(STORAGE_KEYS.LAST_SYNC_HASH);
             }
 
-            const savedState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY);
+            const savedState = SafeStorage.get(CONFIG.LS_APP_STATE_KEY);
             let hasLoadedSettingsFromLS = false;
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
@@ -396,11 +380,11 @@ export const StorageManager = {
                     runtimeState.data.generatedResults = migratedResults;
 
                     delete parsedState.generatedResults;
-                    this._safeLocalStorageSet(CONFIG.LS_APP_STATE_KEY, JSON.stringify(parsedState));
+                    SafeStorage.setJSON(CONFIG.LS_APP_STATE_KEY, parsedState);
                 }
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
-                userSettings.ui.theme = localStorage.getItem('bulletin_theme') || 'light';
+                userSettings.ui.theme = SafeStorage.get(STORAGE_KEYS.THEME) || 'light';
             }
 
             // 1. Chargement des élèves depuis le store 'generatedResults' (toujours en premier)
@@ -469,8 +453,8 @@ export const StorageManager = {
             const classes = userSettings.academic.classes || [];
             const hasClasses = classes.length > 0;
             const hasNoStudents = runtimeState.data.generatedResults.length === 0;
-            const hadSyncBefore = !!localStorage.getItem('bulletin_sync_provider');
-            const lastSyncStudents = parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10);
+            const hadSyncBefore = Boolean(SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER));
+            const lastSyncStudents = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC_STUDENTS, '0') || '0', 10);
 
             if (hasNoStudents && ((hasClasses && hadSyncBefore) || lastSyncStudents > 0)) {
                 runtimeState._dataPurgeDetected = true;
@@ -981,7 +965,7 @@ export const StorageManager = {
 
         // Use computeCurrentDataHash to check only structural/data settings changes
         const currentDataHash = this.computeCurrentDataHash();
-        const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
+        const lastSyncHash = SafeStorage.get(STORAGE_KEYS.LAST_SYNC_HASH);
 
         const isFirstLoad = this._isFirstLoadSave;
         const prevDataHash = this._lastDataHash;
@@ -990,11 +974,11 @@ export const StorageManager = {
                 (!prevDataHash && lastSyncHash && lastSyncHash !== currentDataHash);
             if (lastSyncHash && currentDataHash === lastSyncHash) {
                 // If we reverted back to the exact cloud version, clear local changes
-                const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
-                this._safeLocalStorageSet('bulletin_last_modified', lastSync.toString());
+                const lastSync = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10);
+                SafeStorage.set(STORAGE_KEYS.LAST_MODIFIED, lastSync.toString());
             } else if (hasChangedSinceLastSave) {
                 // If data has changed since our last save, update modified timestamp
-                this._safeLocalStorageSet('bulletin_last_modified', Date.now().toString());
+                SafeStorage.set(STORAGE_KEYS.LAST_MODIFIED, Date.now().toString());
             }
             this._lastDataHash = currentDataHash;
             if (hasChangedSinceLastSave || (lastSyncHash && currentDataHash === lastSyncHash)) {
@@ -1005,15 +989,21 @@ export const StorageManager = {
             // Premier chargement : toute modification utilisateur persistée fait avancer bulletin_last_modified.
             // Si rien n'a été enregistré depuis la synchro, un écart d'empreinte ne peut venir que des migrations
             // de chargement (format, composition de l'empreinte) : on ré-aligne l'empreinte de synchro.
-            const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
-            const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+            const lastSync = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10);
+            const lastMod = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10);
             if (lastSyncHash !== currentDataHash && !runtimeState._dataPurgeDetected && lastSync > 0 && lastMod <= lastSync) {
-                this._safeLocalStorageSet('bulletin_last_sync_hash', currentDataHash);
+                SafeStorage.set(STORAGE_KEYS.LAST_SYNC_HASH, currentDataHash);
             }
         }
         this._isFirstLoadSave = false;
 
-        const lsSaved = this._safeLocalStorageSet(CONFIG.LS_APP_STATE_KEY, stringifiedSettings, { notifyOnQuota: true });
+        const lsSaved = SafeStorage.set(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
+        if (!lsSaved && UI?.showNotification) {
+            UI.showNotification(
+                'Espace de stockage local saturé. Les données élèves restent sauvegardées dans IndexedDB.',
+                'warning'
+            );
+        }
 
         let idbSaved = true;
         if (!isFirstLoad && resultsChanged && runtimeState.data.generatedResults) {
@@ -1234,28 +1224,20 @@ export const StorageManager = {
                 await DBService.clear?.('classes');
                 await DBService.clear?.('appData');
             } catch (_) { /* ignore if mocked */ }
-            localStorage.removeItem(CONFIG.LS_APP_STATE_KEY);
-
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (
-                    key.startsWith('bulletin') ||
-                    key.startsWith('appState') ||
-                    key.startsWith('appreciation') ||
-                    key.includes('Generator')
-                )) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(key => localStorage.removeItem(key));
-
-            localStorage.removeItem('bulletin_device_id');
-            localStorage.removeItem('bulletin_sync_provider');
-            localStorage.removeItem('bulletin_sync_auto');
-            localStorage.removeItem('bulletin_last_sync');
-            localStorage.removeItem('bulletin_google_token');
-            localStorage.removeItem('bulletin_dropbox_token');
+            SafeStorage.removeMatching({
+                prefixes: ['bulletin', 'appState', 'appreciation'],
+                contains: ['Generator'],
+                explicitKeys: [
+                    CONFIG.LS_APP_STATE_KEY,
+                    STORAGE_KEYS.DEVICE_ID,
+                    STORAGE_KEYS.SYNC_PROVIDER,
+                    STORAGE_KEYS.SYNC_AUTO,
+                    STORAGE_KEYS.LAST_SYNC,
+                    STORAGE_KEYS.GOOGLE_TOKEN,
+                    STORAGE_KEYS.LAB_PREVIEW_TAB,
+                    STORAGE_KEYS.PWA_INSTALL_DISMISSED
+                ]
+            });
 
             UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
 
@@ -1332,10 +1314,10 @@ export const StorageManager = {
      * @returns {string} Unique device identifier
      */
     getDeviceId() {
-        let deviceId = localStorage.getItem('bulletin_device_id');
+        let deviceId = SafeStorage.get(STORAGE_KEYS.DEVICE_ID);
         if (!deviceId) {
             deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem('bulletin_device_id', deviceId);
+            SafeStorage.set(STORAGE_KEYS.DEVICE_ID, deviceId);
         }
         return deviceId;
     },
@@ -1832,10 +1814,8 @@ export const StorageManager = {
                     });
                     userSettings.api.currentAIModel = appState.currentAIModel;
                     userSettings.api.enableApiFallback = appState.enableApiFallback;
-                    try {
-                        if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
-                        if (appState.accentColor) localStorage.setItem('bulletin_accent', appState.accentColor);
-                    } catch (_) {}
+                    if (appState.theme) SafeStorage.set(STORAGE_KEYS.THEME, appState.theme);
+                    if (appState.accentColor) SafeStorage.set(STORAGE_KEYS.ACCENT, appState.accentColor);
                     stats.settingsImported = true;
                 } else {
                     if (canAdoptModel(settings.currentAIModel)) {

@@ -12,6 +12,7 @@
 import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -96,9 +97,7 @@ export const EventHandlersManager = {
 
         // MàJ des sliders si on change de système (bien que config globale pour l'instant)
         UI.updateSettingsFields();
-        document.dispatchEvent(new CustomEvent('periodChanged', {
-            detail: { period: appState.currentPeriod }
-        }));
+        bus.emit(EVENTS.PERIOD_CHANGED, { period: appState.currentPeriod });
         AppreciationsManager.renderResults();
     },
 

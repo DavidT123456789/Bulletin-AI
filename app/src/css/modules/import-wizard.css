@@ -189,14 +189,6 @@
     color: var(--error-color);
 }
 
-.guide-format-chip:hover[data-format="excel"] {
-    border-color: var(--success-color);
-    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.04);
-}
-
-.guide-format-chip:hover[data-format="excel"] iconify-icon {
-    color: var(--success-color);
-}
 
 .guide-format-chip:hover[data-format="csv"] {
     border-color: var(--info-color, #3b82f6);
@@ -760,10 +752,6 @@
     color: var(--error-color, #ef4444);
 }
 
-.file-preview-icon.type-excel {
-    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.1);
-    color: var(--success-color, #10b981);
-}
 
 .file-preview-icon.type-csv {
     background: rgba(var(--info-color-rgb, 59, 130, 246), 0.1);

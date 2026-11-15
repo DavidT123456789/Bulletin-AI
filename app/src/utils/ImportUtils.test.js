@@ -2,7 +2,7 @@
  * @fileoverview Tests for ImportUtils
  */
 import { describe, it, expect } from 'vitest';
-import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular } from './ImportUtils.js';
+import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular, isExcelSpreadsheetFile, EXCEL_UNSUPPORTED_IMPORT_MESSAGE } from './ImportUtils.js';
 
 describe('ImportUtils', () => {
     describe('detectSeparator()', () => {
@@ -248,6 +248,19 @@ Marie AUTRE - T1 - Maths`;
             expect(lines).toHaveLength(2);
             expect(lines[0]).toContain('15.5');
             expect(lines[1]).toContain('18.0');
+        });
+    });
+
+    describe('isExcelSpreadsheetFile()', () => {
+        it('détecte .xlsx et .xls quelle que soit la casse et ignore les autres formats/cas limites', () => {
+            expect(isExcelSpreadsheetFile({ name: 'classe.xlsx' })).toBe(true);
+            expect(isExcelSpreadsheetFile({ name: 'NOTES.XLS' })).toBe(true);
+            expect(isExcelSpreadsheetFile({ name: 'classe.csv' })).toBe(false);
+            expect(isExcelSpreadsheetFile({ name: 'trombi.pdf' })).toBe(false);
+            expect(isExcelSpreadsheetFile({})).toBe(false);
+            expect(isExcelSpreadsheetFile(null)).toBe(false);
+            expect(isExcelSpreadsheetFile(undefined)).toBe(false);
+            expect(EXCEL_UNSUPPORTED_IMPORT_MESSAGE).toContain('CSV');
         });
     });
 });

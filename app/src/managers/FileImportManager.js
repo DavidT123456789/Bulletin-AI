@@ -11,8 +11,8 @@
 
 import { appState, massImportMappingState, setMassImportMappingState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
-import { detectSeparator, parseLine } from '../utils/ImportUtils.js';
-import { extractTextFromPdf } from '../utils/PdfUtils.js';
+import { detectSeparator, parseLine, isExcelSpreadsheetFile, EXCEL_UNSUPPORTED_IMPORT_MESSAGE } from '../utils/ImportUtils.js';
+import { extractTextFromPdf, isPdf } from '../utils/PdfUtils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { MassImportManager } from './MassImportManager.js';
@@ -65,8 +65,13 @@ export const FileImportManager = {
     async handleFileImport(file) {
         if (!file) return;
 
+        if (isExcelSpreadsheetFile(file)) {
+            UI.showNotification(EXCEL_UNSUPPORTED_IMPORT_MESSAGE, 'warning');
+            return;
+        }
+
         // Gestion des PDFs avec extraction de texte
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        if (isPdf(file)) {
             try {
                 UI.showNotification('Extraction du texte PDF en cours...', 'info');
 

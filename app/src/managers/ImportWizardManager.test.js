@@ -26,7 +26,8 @@ vi.mock('./UIManager.js', () => ({
 vi.mock('./FocusPanelManager.js', () => ({
     FocusPanelManager: {
         openNew: vi.fn(),
-        bindScrollAffordances: vi.fn()
+        bindScrollAffordances: vi.fn(),
+        updateScrollAffordances: vi.fn()
     }
 }));
 
@@ -65,6 +66,9 @@ vi.mock('./TrombinoscopeManager.js', () => ({
 
 vi.mock('./DropdownManager.js', () => ({
     DropdownManager: {
+        instances: new Map(),
+        enhance: vi.fn(),
+        updateDisplay: vi.fn(),
         closeAll: vi.fn()
     }
 }));
@@ -196,5 +200,86 @@ describe('ImportWizardManager — Harmonisation des animations d\'ouverture & ha
 
         vi.advanceTimersByTime(140);
         expect(FocusPanelManager.openNew).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('ImportWizardManager — Sécurité XSS DOM & Rejet Excel (.xlsx/.xls)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.body.innerHTML = `
+            <div id="importWizardModal" class="modal import-wizard-modal">
+                <div class="wizard-step-content active" id="wizardStep1">
+                    <div id="wizardDropZone" class="has-file">
+                        <div id="wizardDropZoneEmpty" style="display:none;"></div>
+                        <div id="wizardDropZoneFilled" style="display:block;">
+                            <div id="wizardFileIcon"></div>
+                            <span id="wizardFileName"></span>
+                            <div id="wizardFileBadgeSlot"></div>
+                        </div>
+                        <input type="file" id="wizardFileInput" />
+                    </div>
+                    <span id="wizardDividerText"></span>
+                    <textarea id="wizardDataTextarea"></textarea>
+                </div>
+                <div class="wizard-step-content" id="wizardStep2">
+                    <div id="wizardMappingContainer"></div>
+                </div>
+            </div>
+        `;
+        ImportWizardManager.state.currentSource = null;
+        ImportWizardManager.state.lines = [];
+        ImportWizardManager.state.columnCount = 0;
+        ImportWizardManager._updatePreview = vi.fn();
+    });
+
+    it('rejette les fichiers .xlsx/.xls sans lire le binaire et guide vers CSV / copier-coller', async () => {
+        const readSpy = vi.spyOn(FileReader.prototype, 'readAsText');
+        const xlsxFile = new File(['PK\x03\x04'], 'notes.xlsx', {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        await ImportWizardManager._handleFile(xlsxFile);
+
+        expect(readSpy).not.toHaveBeenCalled();
+        expect(ImportWizardManager.state.currentSource).toBeNull();
+        expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('CSV'), 'warning');
+        readSpy.mockRestore();
+    });
+
+    it('échappe les vecteurs XSS dans _buildMappingTable, _applyColumnClasses et _formatCellValue', () => {
+        const xssPayload = '<img src=x onerror=alert(1)>';
+        ImportWizardManager.state.lines = [
+            ['DUPONT Jean', xssPayload, '14']
+        ];
+        ImportWizardManager.state.columnCount = 3;
+        ImportWizardManager.state.hasHeader = false;
+        ImportWizardManager.state.detectedFormat = null;
+        ImportWizardManager._guessTypeTag = vi.fn((_, idx) => (['NOM_PRENOM', 'STATUT', 'MOY_T1'][idx] || 'IGNORE'));
+
+        ImportWizardManager._buildMappingTable(true);
+
+        const table = document.querySelector('.import-mapping-table');
+        expect(table).not.toBeNull();
+        expect(table.querySelector('img')).toBeNull();
+        expect(table.querySelector('tbody td .tag-badge--sm')?.textContent).toBe(xssPayload);
+
+        // Changement de type de colonne : STATUT -> APP_T1 puis retour à STATUT
+        const selects = table.querySelectorAll('.mapping-select');
+        selects[1].value = 'APP_T1';
+        ImportWizardManager._applyColumnClasses();
+        expect(table.querySelector('img')).toBeNull();
+        expect(table.querySelectorAll('tbody td')[1].textContent).toBe(xssPayload);
+
+        selects[1].value = 'STATUT';
+        ImportWizardManager._applyColumnClasses();
+        expect(table.querySelector('img')).toBeNull();
+
+        // Étape 3 : _formatCellValue sur STATUT et sur texte libre
+        const statusHtml = ImportWizardManager._formatCellValue(xssPayload, 'STATUT');
+        const textHtml = ImportWizardManager._formatCellValue(xssPayload, 'APP_T1');
+        const sandbox = document.createElement('div');
+        sandbox.innerHTML = `${statusHtml}${textHtml}`;
+        expect(sandbox.querySelector('img')).toBeNull();
+        expect(sandbox.textContent).toContain(xssPayload);
     });
 });

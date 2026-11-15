@@ -51,7 +51,7 @@ export const SeatingPrintExporter = {
         header.className = 'sc-print-header';
         header.innerHTML = `
             <span class="sc-print-date">${dateStr}</span>
-            <span class="sc-print-class">${className}${modeLabel}${orientationLabel} <span class="sc-print-count">${countLabel}</span></span>
+            <span class="sc-print-class">${Utils.escapeHtml(className)}${modeLabel}${orientationLabel} <span class="sc-print-count">${countLabel}</span></span>
             <span class="sc-print-brand">Bulletin AI</span>
             ${unplacedHtml}
         `;

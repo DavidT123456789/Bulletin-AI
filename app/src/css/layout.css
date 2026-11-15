@@ -391,8 +391,6 @@ body:has(#headerGenWrapper.open) .header :is(.header-left, #scFloatingSearch, .h
     transform: rotate(180deg);
 }
 
-/* Badge d'erreur dans le header - MOVED to modules/generation-status.css */
-
 /* ====================================================================
    Pilule segmentée pour actions système (Aide, Thème, Paramètres)
    ==================================================================== */

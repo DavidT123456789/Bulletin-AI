@@ -13,6 +13,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { UI } from '../UIManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 // Mock dependencies
 vi.mock('../../state/State.js', () => ({
@@ -508,7 +509,7 @@ describe('ListSelectionManager', () => {
             });
 
             const updatedSpy = vi.fn();
-            window.addEventListener('student-updated', updatedSpy);
+            const unsubscribe = bus.on(EVENTS.STUDENT_UPDATED, updatedSpy);
             try {
                 await ListSelectionManager.bulkReset(['s-photo']);
                 expect(appState.generatedResults[0].studentPhoto).toBeNull();
@@ -519,7 +520,7 @@ describe('ListSelectionManager', () => {
                 expect(appState.generatedResults[0].studentPhoto).toEqual({ data: 'data:image/png;base64,abc' });
                 expect(updatedSpy).toHaveBeenCalledTimes(2);
             } finally {
-                window.removeEventListener('student-updated', updatedSpy);
+                unsubscribe();
             }
         });
     });

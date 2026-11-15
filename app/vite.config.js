@@ -46,22 +46,6 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'cdn-cache',
-              expiration: { maxAgeSeconds: 86400 * 30 }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/unpkg\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'unpkg-cache',
-              expiration: { maxAgeSeconds: 86400 * 30 }
-            }
-          },
-          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -75,22 +59,6 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts-static',
               expiration: { maxAgeSeconds: 86400 * 365 }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/code\.iconify\.design\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'iconify-cdn-cache',
-              expiration: { maxAgeSeconds: 86400 * 30 }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/api\.iconify\.design\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'iconify-api-cache',
-              expiration: { maxEntries: 500, maxAgeSeconds: 86400 * 30 }
             }
           }
         ]
@@ -145,8 +113,17 @@ export default defineConfig({
           if (normalizedId.includes('pdfjs-dist') || normalizedId.includes('pdf.mjs') || normalizedId.includes('pdf.worker.mjs')) {
             return 'pdfjs-lib';
           }
+          if (normalizedId.includes('node_modules/iconify-icon')) {
+            return 'iconify';
+          }
           if (normalizedId.includes('node_modules')) {
             return 'vendor';
+          }
+          if (!normalizedId.endsWith('.css') && normalizedId.includes('/src/generated/icons-landing')) {
+            return 'icons-landing';
+          }
+          if (!normalizedId.endsWith('.css') && normalizedId.includes('/src/generated/icons-app')) {
+            return 'icons-app';
           }
           if (!normalizedId.endsWith('.css') && normalizedId.includes('/src/landing/')) {
             return 'landing';

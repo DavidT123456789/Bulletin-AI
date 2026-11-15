@@ -1,5 +1,6 @@
 import { appState, UIState } from '../state/State.js';
 import { CONFIG } from '../config/constants.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { StorageManager } from './StorageManager.js';
 
 export const ColorUtils = {
@@ -113,13 +114,11 @@ export const ThemeManager = {
 
     getSavedCustomHex() {
         if (this.isValidHex(this._lastCustomHex)) return this._lastCustomHex;
-        try {
-            const stored = localStorage.getItem('bulletin_custom_accent');
-            if (this.isValidHex(stored)) {
-                this._lastCustomHex = stored.trim().toLowerCase();
-                return this._lastCustomHex;
-            }
-        } catch (e) {}
+        const stored = SafeStorage.get(STORAGE_KEYS.CUSTOM_ACCENT);
+        if (this.isValidHex(stored)) {
+            this._lastCustomHex = stored.trim().toLowerCase();
+            return this._lastCustomHex;
+        }
         return '';
     },
 
@@ -145,40 +144,37 @@ export const ThemeManager = {
     },
 
     hydrateFromLocalStorage() {
-        try {
-            let storedTheme = localStorage.getItem('bulletin_theme') || '';
-            let storedAccent = localStorage.getItem('bulletin_accent') || '';
+        let storedTheme = SafeStorage.get(STORAGE_KEYS.THEME, '');
+        let storedAccent = SafeStorage.get(STORAGE_KEYS.ACCENT, '');
 
-            const rawState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY) ||
-                             localStorage.getItem('bulletin_app_state') ||
-                             localStorage.getItem('appreciationGeneratorState');
-            if (rawState) {
-                const state = JSON.parse(rawState);
-                if (!storedTheme) {
-                    storedTheme = state?.settings?.theme || state?.theme || state?.ui?.theme || '';
-                }
-                if (!storedAccent) {
-                    const stateAccent = state?.settings?.accentColor || state?.accentColor || state?.ui?.accentColor || '';
-                    if (stateAccent && stateAccent !== 'blue') {
-                        storedAccent = stateAccent;
-                    }
+        const state = SafeStorage.getJSON(CONFIG.LS_APP_STATE_KEY, null) ||
+            SafeStorage.getJSON(STORAGE_KEYS.LEGACY_APP_STATES[0], null) ||
+            SafeStorage.getJSON(STORAGE_KEYS.LEGACY_APP_STATES[1], null);
+        if (state && typeof state === 'object') {
+            if (!storedTheme) {
+                storedTheme = state?.settings?.theme || state?.theme || state?.ui?.theme || '';
+            }
+            if (!storedAccent) {
+                const stateAccent = state?.settings?.accentColor || state?.accentColor || state?.ui?.accentColor || '';
+                if (stateAccent && stateAccent !== 'blue') {
+                    storedAccent = stateAccent;
                 }
             }
+        }
 
-            if (['light', 'dark', 'system'].includes(storedTheme)) {
-                appState.theme = storedTheme;
+        if (['light', 'dark', 'system'].includes(storedTheme)) {
+            appState.theme = storedTheme;
+        }
+        const storedCustom = SafeStorage.get(STORAGE_KEYS.CUSTOM_ACCENT, '');
+        if (this.isValidHex(storedCustom)) {
+            this._lastCustomHex = storedCustom.trim().toLowerCase();
+        }
+        if (this.VALID_ACCENTS.includes(storedAccent) || this.isValidHex(storedAccent)) {
+            appState.accentColor = this.normalizeAccent(storedAccent);
+            if (this.isValidHex(appState.accentColor)) {
+                this._lastCustomHex = appState.accentColor;
             }
-            const storedCustom = localStorage.getItem('bulletin_custom_accent') || '';
-            if (this.isValidHex(storedCustom)) {
-                this._lastCustomHex = storedCustom.trim().toLowerCase();
-            }
-            if (this.VALID_ACCENTS.includes(storedAccent) || this.isValidHex(storedAccent)) {
-                appState.accentColor = this.normalizeAccent(storedAccent);
-                if (this.isValidHex(appState.accentColor)) {
-                    this._lastCustomHex = appState.accentColor;
-                }
-            }
-        } catch (e) {}
+        }
     },
 
     initSegmentedControl() {
@@ -357,9 +353,7 @@ export const ThemeManager = {
         if (UIState?.settingsBeforeEdit && UIState.settingsBeforeEdit.theme !== undefined) {
             UIState.settingsBeforeEdit.theme = themeName;
         }
-        try {
-            localStorage.setItem('bulletin_theme', themeName);
-        } catch (e) {}
+        SafeStorage.set(STORAGE_KEYS.THEME, themeName);
         this.applyTheme();
         StorageManager.saveAppState();
     },
@@ -370,9 +364,7 @@ export const ThemeManager = {
         if (UIState?.settingsBeforeEdit && UIState.settingsBeforeEdit.accentColor !== undefined) {
             UIState.settingsBeforeEdit.accentColor = validColor;
         }
-        try {
-            if (persist) localStorage.setItem('bulletin_accent', validColor);
-        } catch (e) {}
+        if (persist) SafeStorage.set(STORAGE_KEYS.ACCENT, validColor);
         this.applyAccentColor(validColor, syncControls);
         if (persist) {
             StorageManager.saveAppState();
@@ -394,9 +386,7 @@ export const ThemeManager = {
         } else {
             document.documentElement.dataset.accent = 'custom';
             this._lastCustomHex = validColor;
-            try {
-                localStorage.setItem('bulletin_custom_accent', validColor);
-            } catch (e) {}
+            SafeStorage.set(STORAGE_KEYS.CUSTOM_ACCENT, validColor);
             const isDark = (document.documentElement.dataset.theme || this.currentResolvedTheme) === 'dark';
             const rgb = ColorUtils.hexToRgb(validColor);
             const hsl = ColorUtils.rgbToHsl(rgb.r, rgb.g, rgb.b);
@@ -471,10 +461,8 @@ export const ThemeManager = {
             meta.setAttribute('content', bgColor);
         });
 
-        try {
-            if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
-            if (appState.accentColor) localStorage.setItem('bulletin_accent', this.normalizeAccent(appState.accentColor));
-        } catch (e) {}
+        if (appState.theme) SafeStorage.set(STORAGE_KEYS.THEME, appState.theme);
+        if (appState.accentColor) SafeStorage.set(STORAGE_KEYS.ACCENT, this.normalizeAccent(appState.accentColor));
 
         this.currentResolvedTheme = effectiveTheme;
 

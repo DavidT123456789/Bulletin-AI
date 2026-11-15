@@ -1,6 +1,6 @@
 /**
  * @fileoverview Service de synchronisation cloud pour Bulletin AI.
- * Architecture provider-agnostic permettant Google Drive, Dropbox, etc.
+ * Architecture provider-agnostic (Google Drive).
  * 
  * @module services/SyncService
  */
@@ -11,6 +11,7 @@ import { SettingsModalListeners } from '../managers/listeners/SettingsModalListe
 import { APP_VERSION } from '../config/Config.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 
 /** @type {boolean} Enable debug logs (set to false for production) */
 const DEBUG = false;
@@ -74,8 +75,8 @@ export const SyncService = {
      */
     async init() {
         // Load saved provider preference
-        const savedProvider = localStorage.getItem('bulletin_sync_provider');
-        this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync')) || null;
+        const savedProvider = SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER);
+        this.lastSyncTime = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC), 10) || null;
         this._isOnline = navigator.onLine;
         this._wasConfigured = Boolean(savedProvider && PROVIDERS[savedProvider]);
 
@@ -175,14 +176,14 @@ export const SyncService = {
      */
     async _refreshStatus(options) {
         const { showChecking = false } = options;
-        const savedProvider = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
+        const savedProvider = this.currentProviderName || SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER);
         if (!savedProvider || !this._isOnline) {
             this._updateCloudIndicator('local');
             return 'local';
         }
 
         // Always re-read lastSyncTime from localStorage
-        this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync') || '0') || null;
+        this.lastSyncTime = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10) || null;
 
         // Auto-reconnect silently if not connected but configured and online
         if (!this.isConnected() && this._isOnline) {
@@ -631,13 +632,9 @@ export const SyncService = {
         const uniqueStudents = Utils.countUniqueStudents(safeResults, safeClasses);
         const snapshot = this.buildRosterSnapshot(safeResults, safeClasses);
 
-        localStorage.setItem('bulletin_last_sync_students', uniqueStudents.toString());
-        localStorage.setItem('bulletin_last_sync_classes', safeClasses.length.toString());
-        try {
-            localStorage.setItem('bulletin_last_sync_roster', JSON.stringify(snapshot));
-        } catch (e) {
-            console.warn('[SyncService] Could not persist sync roster snapshot:', e);
-        }
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, uniqueStudents.toString());
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC_CLASSES, safeClasses.length.toString());
+        SafeStorage.setJSON(STORAGE_KEYS.LAST_SYNC_ROSTER, snapshot);
     },
 
     /**
@@ -655,24 +652,24 @@ export const SyncService = {
         }
 
         const currentHash = StorageManager.computeCurrentDataHash();
-        const syncHash = localStorage.getItem('bulletin_last_sync_hash');
+        const syncHash = SafeStorage.get(STORAGE_KEYS.LAST_SYNC_HASH);
 
-        let lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-        const lSync = this.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0');
+        let lMod = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10);
+        const lSync = this.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10);
         const rMod = this.remoteSyncTime || 0;
 
         // If data hash matches the cloud sync hash, local data is strictly identical
         if (syncHash && currentHash === syncHash) {
             if (lMod > lSync) {
                 lMod = lSync;
-                localStorage.setItem('bulletin_last_modified', lSync.toString());
+                SafeStorage.set(STORAGE_KEYS.LAST_MODIFIED, lSync.toString());
             }
-            if (!localStorage.getItem('bulletin_last_sync_roster') && localResults.length > 0) {
+            if (!SafeStorage.get(STORAGE_KEYS.LAST_SYNC_ROSTER) && localResults.length > 0) {
                 this._saveSyncRosterSnapshot(localResults, localClasses);
             }
         } else if (!syncHash && lSync > 0 && lMod <= lSync) {
-            localStorage.setItem('bulletin_last_sync_hash', currentHash);
-            if (!localStorage.getItem('bulletin_last_sync_roster') && localResults.length > 0) {
+            SafeStorage.set(STORAGE_KEYS.LAST_SYNC_HASH, currentHash);
+            if (!SafeStorage.get(STORAGE_KEYS.LAST_SYNC_ROSTER) && localResults.length > 0) {
                 this._saveSyncRosterSnapshot(localResults, localClasses);
             }
         }
@@ -735,20 +732,15 @@ export const SyncService = {
             const info = await this._provider.getUserInfo();
             if (info) return info;
         }
-        const cached = localStorage.getItem('bulletin_google_user');
-        if (cached) {
-            try { return JSON.parse(cached); } catch { return null; }
-        }
-        return null;
+        return SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_USER, null);
     },
 
     /**
      * Update UI to show connected status after successful reconnection.
      * @private
-     * @param {string} providerName - 'google' or 'dropbox'
+     * @param {string} providerName - 'google'
      */
     _updateUIConnected(providerName) {
-        document.dispatchEvent(new CustomEvent('sync-status-changed', { detail: { providerName, connected: true } }));
         bus.emit(EVENTS.SYNC_CONNECTED, { providerName, connected: true });
         setTimeout(async () => {
             if (providerName === 'google') {
@@ -781,7 +773,7 @@ export const SyncService = {
 
     /**
      * Connect to a cloud provider.
-     * @param {string} providerName - 'google' or 'dropbox'
+     * @param {string} providerName - 'google'
      * @param {Object} [options] - { silent: boolean, skipStatusCheck: boolean }
      * @returns {Promise<boolean>} Success status
      */
@@ -805,7 +797,7 @@ export const SyncService = {
             }
 
             // Save preference and mark as configured
-            localStorage.setItem('bulletin_sync_provider', providerName);
+            SafeStorage.set(STORAGE_KEYS.SYNC_PROVIDER, providerName);
             this._wasConfigured = true;
             this._updateCloudIndicator('connected');
             this._updateUIConnected(providerName);
@@ -834,7 +826,7 @@ export const SyncService = {
         this.currentProviderName = null;
         this.remoteSyncTime = null;
         this._wasConfigured = false;
-        localStorage.removeItem('bulletin_sync_provider');
+        SafeStorage.remove(STORAGE_KEYS.SYNC_PROVIDER);
         this._updateCloudIndicator('disconnected');
         bus.emit(EVENTS.SYNC_DISCONNECTED, {});
     },
@@ -857,7 +849,7 @@ export const SyncService = {
      */
     getConnectionState() {
         if (this.isConnected()) return 'connected';
-        const isConfigured = Boolean(this._wasConfigured || this.currentProviderName || localStorage.getItem('bulletin_sync_provider'));
+        const isConfigured = Boolean(this._wasConfigured || this.currentProviderName || SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER));
         if (!isConfigured) return 'disconnected';
         return (this._isOnline && navigator.onLine !== false) ? 'expired' : 'local';
     },
@@ -888,12 +880,12 @@ export const SyncService = {
      * puis rafraîchit l'indicateur Cloud.
      */
     alignLocalSyncBaseline() {
-        const syncTime = this.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || Date.now();
+        const syncTime = this.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10) || Date.now();
         this.lastSyncTime = syncTime;
         const syncHash = StorageManager.computeCurrentDataHash();
-        localStorage.setItem('bulletin_last_sync', syncTime.toString());
-        localStorage.setItem('bulletin_last_sync_hash', syncHash);
-        localStorage.setItem('bulletin_last_modified', syncTime.toString());
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC, syncTime.toString());
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC_HASH, syncHash);
+        SafeStorage.set(STORAGE_KEYS.LAST_MODIFIED, syncTime.toString());
         StorageManager._lastDataHash = syncHash;
         StorageManager._lastSaveHash = null;
         this._updateCloudIndicator('connected');
@@ -916,7 +908,7 @@ export const SyncService = {
         };
         await this._provider.write(localData);
         this.lastSyncTime = Date.now();
-        localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
         this._saveSyncRosterSnapshot(localData.generatedResults, localData.classes);
 
         // Update remote time since we just wrote the file
@@ -949,11 +941,11 @@ export const SyncService = {
         }
 
         this.lastSyncTime = Date.now();
-        localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+        SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
         if (Array.isArray(remoteData?.generatedResults)) {
             this._saveSyncRosterSnapshot(remoteData.generatedResults, remoteData.classes);
         } else {
-            localStorage.setItem('bulletin_last_sync_students', importedCount.toString());
+            SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, importedCount.toString());
         }
 
         // Update remote time to match since local is now strictly aligned with remote
@@ -1012,8 +1004,8 @@ export const SyncService = {
 
         const providerLabel = this.currentProviderName === 'google' ? 'Google Drive' : 'Cloud';
 
-        if (typeof studentCount === 'number' && studentCount > 0 && !localStorage.getItem('bulletin_last_sync_roster')) {
-            localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
+        if (typeof studentCount === 'number' && studentCount > 0 && !SafeStorage.get(STORAGE_KEYS.LAST_SYNC_ROSTER)) {
+            SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, studentCount.toString());
         }
 
         return {
@@ -1032,7 +1024,7 @@ export const SyncService = {
      * @returns {number|null}
      */
     getLastSyncStudentCount() {
-        const val = localStorage.getItem('bulletin_last_sync_students');
+        const val = SafeStorage.get(STORAGE_KEYS.LAST_SYNC_STUDENTS);
         return val ? parseInt(val, 10) : null;
     },
 
@@ -1041,7 +1033,7 @@ export const SyncService = {
      * @returns {number|null}
      */
     getLastSyncClassCount() {
-        const val = localStorage.getItem('bulletin_last_sync_classes');
+        const val = SafeStorage.get(STORAGE_KEYS.LAST_SYNC_CLASSES);
         if (val === null) return null;
         const parsed = parseInt(val, 10);
         return Number.isNaN(parsed) ? null : parsed;
@@ -1052,14 +1044,8 @@ export const SyncService = {
      * @returns {Object|null}
      */
     getLastSyncRoster() {
-        const raw = localStorage.getItem('bulletin_last_sync_roster');
-        if (!raw) return null;
-        try {
-            const parsed = JSON.parse(raw);
-            return (parsed && Array.isArray(parsed.entries)) ? parsed : null;
-        } catch {
-            return null;
-        }
+        const parsed = SafeStorage.getJSON(STORAGE_KEYS.LAST_SYNC_ROSTER, null);
+        return (parsed && Array.isArray(parsed.entries)) ? parsed : null;
     },
 
     /**

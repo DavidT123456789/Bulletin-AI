@@ -11,6 +11,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
 import { PromptService } from '../services/PromptService.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 let Am;
 let App;
@@ -240,7 +241,7 @@ export const MassImportManager = {
 
             Am.renderResults();
 
-            window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            bus.emit(EVENTS.STUDENTS_UPDATED);
         }
     },
 
@@ -344,7 +345,7 @@ export const MassImportManager = {
         UI?.showNotification(message || 'Import terminé', 'success');
 
         // Émettre l'événement pour synchroniser l'UI (compteur, liste, stats)
-        window.dispatchEvent(new CustomEvent('studentsUpdated'));
+        bus.emit(EVENTS.STUDENTS_UPDATED);
     },
 
     /**

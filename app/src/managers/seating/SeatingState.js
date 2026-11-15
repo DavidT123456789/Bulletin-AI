@@ -12,6 +12,7 @@ import { Utils } from '../../utils/Utils.js';
 import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { HistoryManager } from '../HistoryManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const DEFAULT_COLS = 6;
 export const DEFAULT_ROWS = 5;
@@ -464,9 +465,11 @@ export const SeatingState = {
                 if (this._isActive) TooltipsUI?.initTooltips?.(document.getElementById('seatingChartView'));
             }, 540);
         }
-        window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
-            detail: { classId: currentClass?.id, locked: this._isLocked, planMode: this._planMode }
-        }));
+        bus.emit(EVENTS.SEATING_STATUS_CHANGED, {
+            classId: currentClass?.id,
+            locked: this._isLocked,
+            planMode: this._planMode
+        });
     },
     _getCurrentClass() {
         const classId = appState.currentClassId;

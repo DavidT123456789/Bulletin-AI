@@ -593,7 +593,7 @@ export const JournalManager = {
 
         const renderPillDropdown = (category, label, icon, tags, color) => {
             const optionsHTML = tags.map(tag => `
-                <button class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
+                <button type="button" class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
                     <iconify-icon icon="${tag.icon}"></iconify-icon>
                     <span>${tag.label}</span>
                 </button>
@@ -601,7 +601,7 @@ export const JournalManager = {
 
             return `
                 <div class="journal-pill-dropdown" data-category="${category}">
-                    <button class="journal-pill-btn" style="--pill-color: ${color}">
+                    <button type="button" class="journal-pill-btn" style="--pill-color: ${color}">
                         <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
                         <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-pill-arrow"></iconify-icon>
@@ -615,7 +615,7 @@ export const JournalManager = {
 
         // Neutral tags are rendered as direct buttons (no dropdown)
         const neutralBtnsHTML = neutralTags.map(tag => `
-            <button class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}">
+            <button type="button" class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}">
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
             </button>

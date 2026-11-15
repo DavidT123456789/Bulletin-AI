@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ModalUI } from './ModalUIManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock DOM module
 vi.mock('../utils/DOM.js', () => ({
@@ -232,18 +233,18 @@ describe('ModalUIManager', () => {
             document.body.appendChild(welcomeEl);
 
             const listener = vi.fn();
-            document.addEventListener('welcome-modal-close', listener);
+            const unsub = bus.on(EVENTS.MODAL_WELCOME_CLOSE, listener);
 
             ModalUI.openModal(welcomeEl);
             ModalUI.closeModal(welcomeEl, { causedByHistory: true });
 
             expect(listener).toHaveBeenCalledTimes(1);
-            expect(listener.mock.calls[0][0].detail).toEqual({
+            expect(listener.mock.calls[0][0]).toEqual({
                 modalId: 'welcomeModal',
                 options: { causedByHistory: true }
             });
 
-            document.removeEventListener('welcome-modal-close', listener);
+            unsub();
         });
 
         it('should seamlessly un-suspend and restore underlying workspace modal when closing contextual helpModal', () => {
@@ -1328,8 +1329,7 @@ describe('ModalUIManager', () => {
 
         it('should dispatch settings-modal-close when personalizationModal or appSettingsModal is closed via Mobile Back (causedByHistory)', () => {
             const closeEvents = [];
-            const handler = (e) => closeEvents.push(e.detail);
-            document.addEventListener('settings-modal-close', handler);
+            const unsub = bus.on(EVENTS.MODAL_SETTINGS_CLOSE, (detail) => closeEvents.push(detail));
 
             const personalizationModal = document.createElement('div');
             personalizationModal.id = 'personalizationModal';
@@ -1345,7 +1345,7 @@ describe('ModalUIManager', () => {
                 options: { causedByHistory: true }
             });
 
-            document.removeEventListener('settings-modal-close', handler);
+            unsub();
             personalizationModal.remove();
         });
     });

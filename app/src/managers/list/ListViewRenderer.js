@@ -52,7 +52,7 @@ export const ListViewRenderer = {
             <td class="appreciation-cell">${appreciationCell}</td>
             <td class="action-cell">
                 <div class="action-dropdown">
-                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
+                    <button type="button" class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this.generateActionMenuHTML(result.id)}
@@ -430,7 +430,7 @@ export const ListViewRenderer = {
                 </th>
                 <th class="action-header">
                     <div class="header-content-wrapper global-actions-dropdown">
-                        <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
+                        <button type="button" class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" aria-haspopup="menu" aria-expanded="false" data-tooltip="Actions">
                             <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                         </button>
                         <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
@@ -454,33 +454,33 @@ export const ListViewRenderer = {
                                 <div class="dropdown-divider"></div>
                             </div>
                             <!-- SECTION SELECTION -->
-                            <button class="action-dropdown-item" id="selectAllBtn-global">
+                            <button type="button" class="action-dropdown-item" id="selectAllBtn-global">
                                 <iconify-icon icon="solar:checklist-linear"></iconify-icon> Tout sélectionner
                             </button>
                             
                             <!-- SECTION VUE -->
-                            <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
+                            <button type="button" class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
                                 <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser la classe
                             </button>
 
                             <!-- SECTION COPIER -->
                             <h5 class="dropdown-header">Copier</h5>
-                            <button class="action-dropdown-item" id="copyAllAppreciationsBtn">
+                            <button type="button" class="action-dropdown-item" id="copyAllAppreciationsBtn">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon> Toutes les appréciations
                             </button>
-                            <button class="action-dropdown-item" id="copyStudentNamesBtn">
+                            <button type="button" class="action-dropdown-item" id="copyStudentNamesBtn">
                                 <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Uniquement les noms
                             </button>
 
                             <!-- SECTION EXPORT -->
                             <h5 class="dropdown-header">Exporter</h5>
-                            <button class="action-dropdown-item" id="exportPdfBtn">
+                            <button type="button" class="action-dropdown-item" id="exportPdfBtn">
                                 <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
                             </button>
-                            <button class="action-dropdown-item" id="exportCsvBtn">
+                            <button type="button" class="action-dropdown-item" id="exportCsvBtn">
                                 <iconify-icon icon="solar:file-text-linear"></iconify-icon> Tableau (CSV)
                             </button>
-                            <button class="action-dropdown-item" id="exportJsonBtn">
+                            <button type="button" class="action-dropdown-item" id="exportJsonBtn">
                                 <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
                             </button>
                         </div>

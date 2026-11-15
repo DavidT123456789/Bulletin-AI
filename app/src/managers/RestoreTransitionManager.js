@@ -8,6 +8,7 @@
 import { ModalUI } from './ModalUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { DOM } from '../utils/DOM.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 let isTransitioning = false;
 
@@ -63,7 +64,7 @@ export const RestoreTransitionManager = {
             DOM.headerMenuBtn?.classList.remove('cloud-syncing');
             isTransitioning = false;
 
-            document.dispatchEvent(new CustomEvent('app-data-restored'));
+            bus.emit(EVENTS.APP_DATA_RESTORED);
         }
     },
 

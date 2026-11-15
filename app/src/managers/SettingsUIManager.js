@@ -19,6 +19,7 @@ import { DropdownManager } from './DropdownManager.js';
 import { PROVIDER_CONFIG, API_KEY_PROVIDER_IDS, hasValidApiKey, getProviderApiKey, isValidKeyFormat } from '../config/providers.js';
 import { ApiValidationManager } from './ApiValidationManager.js';
 import { AIService } from '../services/AIService.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Module de gestion de l'interface des paramètres.
@@ -140,9 +141,7 @@ export const SettingsUIManager = {
         this._savePersonalStyleChanges();
         StorageManager.saveAppState();
         UIState.settingsBeforeEdit = {};
-        document.dispatchEvent(new CustomEvent('app-settings-changed', {
-            detail: { settings: appState }
-        }));
+        bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
         AppreciationsManager.renderResults();
     },
 
@@ -182,10 +181,8 @@ export const SettingsUIManager = {
             // Pastilles de statut du plan de classe
             this.syncSeatingStatusDotsFromDOM({ dispatchEvent: false });
 
-            // Dispatch event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
-            document.dispatchEvent(new CustomEvent('app-settings-changed', {
-                detail: { settings: appState }
-            }));
+            // Emit event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
+            bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
 
             this.syncEvolutionThresholdsFromDOM();
 
@@ -262,9 +259,7 @@ export const SettingsUIManager = {
         appState.seatingStatusDots = nextDots;
 
         if (dispatchEvent) {
-            document.dispatchEvent(new CustomEvent('app-settings-changed', {
-                detail: { settings: appState }
-            }));
+            bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
         }
     },
 
@@ -365,9 +360,7 @@ export const SettingsUIManager = {
             if (typeof this.updateApiStatusDisplay === 'function') {
                 this.updateApiStatusDisplay();
             }
-            document.dispatchEvent(new CustomEvent('app-settings-changed', {
-                detail: { settings: appState }
-            }));
+            bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
 
             // Nettoyer le snapshot après restauration
             UIState.settingsBeforeEdit = {};
@@ -384,7 +377,7 @@ export const SettingsUIManager = {
             appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
             UI.updateSettingsPromptFields();
             UI.showNotification("Style réinitialisé.", "success");
-            document.dispatchEvent(new CustomEvent('personalizationReset'));
+            bus.emit(EVENTS.PERSONALIZATION_RESET);
         }, null, { title: 'Réinitialiser le style ?', compact: true });
     },
 

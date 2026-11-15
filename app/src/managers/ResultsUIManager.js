@@ -12,6 +12,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { StatsService } from '../services/StatsService.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -203,9 +204,7 @@ export const ResultsUIManager = {
         UI?.updatePeriodSystemUI?.();
         UI?.updateSettingsPromptFields?.();
         this.renderResults();
-        document.dispatchEvent(new CustomEvent('periodChanged', {
-            detail: { period: appState.currentPeriod }
-        }));
+        bus.emit(EVENTS.PERIOD_CHANGED, { period: appState.currentPeriod });
         UI?.showNotification?.(`Affichage basculé en mode ${label}.`, 'success');
     },
 
@@ -297,9 +296,7 @@ export const ResultsUIManager = {
                         appState.sortState.param = firstPopulatedPeriod;
                     }
                     UI?.updatePeriodSystemUI?.();
-                    document.dispatchEvent(new CustomEvent('periodChanged', {
-                        detail: { period: firstPopulatedPeriod }
-                    }));
+                    bus.emit(EVENTS.PERIOD_CHANGED, { period: firstPopulatedPeriod });
                 }
             }
 

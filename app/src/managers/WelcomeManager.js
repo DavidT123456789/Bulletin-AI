@@ -12,6 +12,7 @@ import { appState } from '../state/State.js';
 import { CONFIG } from '../config/Config.js';
 import { PROVIDER_DEFAULT_MODELS } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -20,6 +21,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { getDemoClassData } from '../data/SampleData.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 let validateApiKeyCallback = null;
 let welcomeModalAbortController = null;
@@ -37,7 +39,7 @@ export const WelcomeManager = {
      * Vérifie si c'est la première visite et affiche le welcome modal si nécessaire
      */
     handleFirstVisit() {
-        if (!localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)) {
+        if (!SafeStorage.get(CONFIG.LS_FIRST_VISIT_KEY)) {
             this.setupWelcomeModal();
             UI.openModal(DOM.welcomeModal);
         }
@@ -340,7 +342,7 @@ export const WelcomeManager = {
                 HistoryManager.handleManualClose('welcomeWizardStep');
             }
 
-            localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
+            SafeStorage.set(CONFIG.LS_FIRST_VISIT_KEY, 'true');
 
             const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
             if (appState.periodSystem !== selectedSystem) {
@@ -500,7 +502,7 @@ export const WelcomeManager = {
             }
         }, { signal });
 
-        document.addEventListener('welcome-modal-close', () => {
+        bus.on(EVENTS.MODAL_WELCOME_CLOSE, () => {
             if (!isWelcomeCompleted) {
                 completeWelcome({ showLoading: false, skipCloseModal: true });
             }

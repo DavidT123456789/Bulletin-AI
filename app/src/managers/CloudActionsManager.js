@@ -12,6 +12,7 @@ import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { DOM } from '../utils/DOM.js';
 import { runtimeState, userSettings } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 
 /** @type {boolean} Verrou global : une seule action Cloud à la fois */
 let busy = false;
@@ -322,8 +323,8 @@ export const CloudActionsManager = {
                 remoteClassCount: summary.classCount,
                 localStudentCount,
                 localClassCount,
-                localDate: parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null,
-                lastSyncTime: SyncService.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || null,
+                localDate: parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10) || null,
+                lastSyncTime: SyncService.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10) || null,
                 providerName: this._providerName(SyncService),
                 syncState: SyncService._lastSyncState || SyncService._computeSyncState(),
                 rosterDiff
@@ -455,7 +456,7 @@ export const CloudActionsManager = {
      * @private
      */
     _providerName(SyncService) {
-        return SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+        return SyncService.currentProviderName || SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER) || 'google';
     },
 
     /**

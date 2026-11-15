@@ -15,6 +15,7 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 export const FocusPanelHeader = {
     // Callbacks to main manager
@@ -662,7 +663,7 @@ export const FocusPanelHeader = {
         StudentDataManager.syncFilteredStudent(result.id, result);
         this.callbacks.onUpdateListRow(result);
         ClassUIManager.updateStudentCount();
-        window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
+        bus.emit(EVENTS.STUDENT_UPDATED, { studentId: result.id, student: result });
         return true;
     },
 

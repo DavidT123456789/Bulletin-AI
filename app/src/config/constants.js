@@ -1,12 +1,15 @@
 import packageJson from '../../package.json';
 import { AI_PROVIDERS, OLLAMA_CONFIG } from './aiRegistry.js';
+import { STORAGE_KEYS } from '../utils/SafeStorage.js';
 
-export const RAW_APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : packageJson.version;
-export const APP_VERSION = `${RAW_APP_VERSION} Beta`;
+export { STORAGE_KEYS };
+
+export const RAW_APP_VERSION = typeof __RAW_VERSION__ !== 'undefined' ? __RAW_VERSION__ : packageJson.version;
+export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : `${RAW_APP_VERSION} Beta`;
 
 export const SCHEMA_VERSIONS = Object.freeze({
-    LS_APP_STATE_KEY: 'appreciationGeneratorState_v6.2',
-    LS_FIRST_VISIT_KEY: 'appreciationGeneratorFirstVisit_v8',
+    LS_APP_STATE_KEY: STORAGE_KEYS.APP_STATE,
+    LS_FIRST_VISIT_KEY: STORAGE_KEYS.FIRST_VISIT,
 });
 
 export const CONSTS = {

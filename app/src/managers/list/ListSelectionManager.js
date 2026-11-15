@@ -19,6 +19,7 @@ import { ClassManager } from '../ClassManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const ListSelectionManager = {
     selectedIds: new Set(),
@@ -279,14 +280,14 @@ export const ListSelectionManager = {
         div.innerHTML = `
             <div class="selection-toolbar-content">
                 <div class="selection-info">
-                    <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection" aria-label="Annuler la sélection">
+                    <button type="button" class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection" aria-label="Annuler la sélection">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                     <span class="selection-count-badge">
                         <iconify-icon icon="solar:users-group-rounded-linear" aria-hidden="true"></iconify-icon>
                         <span id="selectionCount" aria-label="0 élève sélectionné">0</span>
                     </span>
-                    <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste" aria-label="Tout sélectionner">
+                    <button type="button" class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste" aria-label="Tout sélectionner">
                         <iconify-icon icon="solar:checklist-linear"></iconify-icon>
                         <span>Tout sélectionner</span>
                     </button>
@@ -295,13 +296,13 @@ export const ListSelectionManager = {
                 <div class="selection-actions">
                     <!-- Groupe Actions Principales (Icône + Texte) -->
                     <div class="selection-action-group" data-group="main" aria-label="Actions principales">
-                        <button class="btn-selection-action primary tooltip" data-bulk-action="regenerate" data-tooltip="Régénérer les appréciations sélectionnées">
+                        <button type="button" class="btn-selection-action primary tooltip" data-bulk-action="regenerate" data-tooltip="Régénérer les appréciations sélectionnées">
                             <iconify-icon icon="solar:refresh-linear"></iconify-icon> <span>Régénérer</span>
                         </button>
-                        <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations sélectionnées (Presse-papier)">
+                        <button type="button" class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations sélectionnées (Presse-papier)">
                             <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
                         </button>
-                        <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Copier ou déplacer les élèves vers une autre classe / groupe">
+                        <button type="button" class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Copier ou déplacer les élèves vers une autre classe / groupe">
                             <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Copier / Déplacer</span>
                         </button>
                     </div>
@@ -310,10 +311,10 @@ export const ListSelectionManager = {
 
                     <!-- Groupe Nettoyage & Suppression (Icône seule) -->
                     <div class="selection-action-group" data-group="danger" aria-label="Actions de nettoyage et suppression">
-                        <button class="btn-selection-action icon-only tooltip" data-bulk-action="reset" data-tooltip="Effacer le contenu (appréciations, journal…)" aria-label="Effacer le contenu">
+                        <button type="button" class="btn-selection-action icon-only tooltip" data-bulk-action="reset" data-tooltip="Effacer le contenu (appréciations, journal…)" aria-label="Effacer le contenu">
                             <iconify-icon icon="solar:eraser-linear"></iconify-icon>
                         </button>
-                        <button class="btn-selection-action icon-only danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves sélectionnés" aria-label="Supprimer les élèves sélectionnés">
+                        <button type="button" class="btn-selection-action icon-only danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves sélectionnés" aria-label="Supprimer les élèves sélectionnés">
                             <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                         </button>
                     </div>
@@ -469,7 +470,7 @@ export const ListSelectionManager = {
         UI?.updateStats?.();
         UI?.updateControlButtons?.();
         UI?.updateAIButtonsState?.();
-        window.dispatchEvent(new CustomEvent('student-updated'));
+        bus.emit(EVENTS.STUDENT_UPDATED);
 
         UI?.showNotification?.(meta.toastMessage, 'success');
         return true;
@@ -877,7 +878,7 @@ export const ListSelectionManager = {
         if (totalCleared > 0) {
             await StorageManager.saveAppState();
             UI?.updateStats?.();
-            window.dispatchEvent(new CustomEvent('student-updated'));
+            bus.emit(EVENTS.STUDENT_UPDATED);
             const parts = [];
             const singleMessages = [];
             if (counts.appreciation > 0) {
@@ -955,7 +956,7 @@ export const ListSelectionManager = {
 
                     await StorageManager.saveAppState();
                     UI?.updateStats?.();
-                    window.dispatchEvent(new CustomEvent('student-updated'));
+                    bus.emit(EVENTS.STUDENT_UPDATED);
                     UI?.showNotification('Effacement annulé.', 'success');
                 },
                 { type: 'warning', title: undoTitle }

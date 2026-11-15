@@ -19,6 +19,7 @@ import { SeatingAnimations } from './seating/SeatingAnimations.js';
 import { SeatingZoom } from './seating/SeatingZoom.js';
 import { SeatingAutoPlace } from './seating/SeatingAutoPlace.js';
 import { SeatingSearch } from './seating/SeatingSearch.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 import {
     SeatingState,
     DEFAULT_COLS,
@@ -145,11 +146,11 @@ export const SeatingChartManager = {
         toggle.id = 'viewToggle';
         const activeView = appState.activeView || 'list';
         toggle.innerHTML = `
-            <button class="ui-segment view-toggle-btn ${activeView === 'list' ? 'active' : ''}" data-view="list" aria-label="Vue liste">
+            <button type="button" class="ui-segment view-toggle-btn ${activeView === 'list' ? 'active' : ''}" data-view="list" aria-label="Vue liste">
                 <iconify-icon icon="solar:list-linear"></iconify-icon>
                 <span>Liste</span>
             </button>
-            <button class="ui-segment view-toggle-btn ${activeView === 'plan' ? 'active' : ''}" data-view="plan" aria-label="Vue plan de classe">
+            <button type="button" class="ui-segment view-toggle-btn ${activeView === 'plan' ? 'active' : ''}" data-view="plan" aria-label="Vue plan de classe">
                 <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>
                 <span>Plan</span>
             </button>
@@ -191,24 +192,24 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
                                 <div class="sc-placement-wrapper">
-                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer la classe" data-tooltip="Agencer la classe">
+                                    <button type="button" class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer la classe" data-tooltip="Agencer la classe">
                                         <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
                                         ${this._getPlacementPopoverHTML()}
                                     </div>
                                 </div>
-                                <button class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
+                                <button type="button" class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
                                     <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
                                 </button>
-                                <button class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
+                                <button type="button" class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
-                                <button class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                                <button type="button" class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
-                                    <button class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
+                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
@@ -260,7 +261,7 @@ export const SeatingChartManager = {
                                         <div class="sc-config-capacity" id="scConfigCapacity"></div>
                                     </div>
                                 </div>
-                                <button class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
+                                <button type="button" class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
                                     <iconify-icon icon="solar:restart-linear"></iconify-icon>
                                 </button>
                             </div>
@@ -302,13 +303,13 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions Capsule (Top-Right) -->
                 <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
-                    <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
+                    <button type="button" class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
-                    <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                    <button type="button" class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
-                    <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
+                    <button type="button" class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
                     </button>
                 </div>
@@ -371,9 +372,11 @@ export const SeatingChartManager = {
             this._applyLockState(false, { skipSmartFit: true });
         }
         this._render();
-        window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
-            detail: { classId: appState.currentClassId, locked: this._isLocked, planMode: this._planMode }
-        }));
+        bus.emit(EVENTS.SEATING_STATUS_CHANGED, {
+            classId: appState.currentClassId,
+            locked: this._isLocked,
+            planMode: this._planMode
+        });
     },
 
     // ========================================================================

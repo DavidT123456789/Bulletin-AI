@@ -3,6 +3,18 @@
  * @module utils/ImportUtils
  */
 
+export const EXCEL_UNSUPPORTED_IMPORT_MESSAGE =
+    'Les fichiers Excel (.xlsx/.xls) ne sont pas lus directement : copiez-collez votre tableau depuis Excel ou exportez-le en CSV.';
+
+/**
+ * Indique si un fichier est un classeur Excel binaire (.xlsx / .xls).
+ * @param {File|null|undefined} file
+ * @returns {boolean}
+ */
+export function isExcelSpreadsheetFile(file) {
+    return Boolean(file && /\.(xlsx|xls)$/i.test(file.name || ''));
+}
+
 /**
  * @typedef {Object} SeparatorInfo
  * @property {number} count - Nombre d'occurrences du séparateur par ligne

@@ -4,6 +4,7 @@ import { ModalUI } from './ModalUIManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { appState } from '../state/State.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
@@ -412,7 +413,7 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         };
         TrombinoscopeManager._zones = TrombinoscopeManager._parsedPdfData.pages[0].zones;
 
-        const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+        const busEmitSpy = vi.spyOn(bus, 'emit');
 
         await TrombinoscopeManager._handleImport();
 
@@ -424,8 +425,8 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
             { studentId: expect.any(String), photoData: expect.any(String) }
         ]);
         expect(StorageManager.saveAppState).toHaveBeenCalled();
-        expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'studentsUpdated' }));
-        expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'classChanged' }));
+        expect(busEmitSpy).toHaveBeenCalledWith(EVENTS.STUDENTS_UPDATED);
+        expect(busEmitSpy).toHaveBeenCalledWith(EVENTS.CLASS_CHANGED, { classId: 'class-new-5-1' });
         expect(ClassUIManager.updateHeaderDisplay).toHaveBeenCalled();
         expect(ClassUIManager.renderClassList).toHaveBeenCalled();
         expect(AppreciationsManager.renderResults).toHaveBeenCalled();

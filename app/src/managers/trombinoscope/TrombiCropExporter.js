@@ -15,6 +15,7 @@ import { ClassUIManager } from '../ClassUIManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { ListViewManager } from '../ListViewManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const TrombiCropExporter = {
     async updateLivePreviews(manager) {
@@ -520,7 +521,7 @@ export const TrombiCropExporter = {
             });
 
             if (manager._parsedPdfData && targetClass) {
-                window.dispatchEvent(new CustomEvent('classChanged', { detail: { classId: targetClass.id } }));
+                bus.emit(EVENTS.CLASS_CHANGED, { classId: targetClass.id });
             }
 
             ClassUIManager?.updateHeaderDisplay?.();
@@ -543,12 +544,12 @@ export const TrombiCropExporter = {
                     ? `${addedLabel}, ${count} photos importées • Données conservées`
                     : `${addedLabel} • Photos existantes et données conservées`;
                 UI.showNotification(notifText, 'success');
-                window.dispatchEvent(new CustomEvent('studentsUpdated'));
+                bus.emit(EVENTS.STUDENTS_UPDATED);
             } else if (count > 0) {
                 UI.showNotification(`${count} photos importées avec succès`, 'success');
-                window.dispatchEvent(new CustomEvent('studentsUpdated'));
+                bus.emit(EVENTS.STUDENTS_UPDATED);
             } else if (manager._parsedPdfData) {
-                window.dispatchEvent(new CustomEvent('studentsUpdated'));
+                bus.emit(EVENTS.STUDENTS_UPDATED);
             }
         } catch (error) {
             console.error('Photo extraction failed:', error);

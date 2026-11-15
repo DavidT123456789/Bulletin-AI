@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../../state/State.js';
+import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
 import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
@@ -171,7 +172,7 @@ export const SeatingRoomLayout = {
         if (this._isActivityMode()) return;
         const next = this._orientation === 'student' ? 'teacher' : 'student';
         this._applyOrientation(next, true);
-        localStorage.setItem('bulletin_seating_orientation', next);
+        SafeStorage.set(STORAGE_KEYS.SEATING_ORIENTATION, next);
     },
 
     _applyOrientation(orientation, animate = false, options = {}) {
@@ -635,7 +636,7 @@ export const SeatingRoomLayout = {
         if (rowSlider) { rowSlider.value = rows; document.getElementById('scRowsValue').textContent = rows; }
         if (colSlider) { colSlider.value = cols; document.getElementById('scColsValue').textContent = cols; }
 
-        this._orientation = localStorage.getItem('bulletin_seating_orientation') || appState.seatingGrid?.orientation || config?.orientation || 'teacher';
+        this._orientation = SafeStorage.get(STORAGE_KEYS.SEATING_ORIENTATION) || appState.seatingGrid?.orientation || config?.orientation || 'teacher';
         this._applyOrientation(this._orientation, false, options);
     },
 

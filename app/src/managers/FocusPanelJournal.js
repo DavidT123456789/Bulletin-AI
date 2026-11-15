@@ -13,6 +13,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Journal system for student observation notes
@@ -160,9 +161,7 @@ export const FocusPanelJournal = {
 
                     // CRITICAL: Threshold affects ALL students' dirty state
                     // Emit global event to refresh entire list view
-                    window.dispatchEvent(new CustomEvent('journalThresholdChanged', {
-                        detail: { newThreshold: newValue }
-                    }));
+                    bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, { newThreshold: newValue });
                 });
             });
         }

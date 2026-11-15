@@ -6,6 +6,7 @@
 import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
 import { AI_PROVIDERS, OLLAMA_CONFIG, PROVIDER_DEFAULT_MODELS, getModelMeta, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Extrait le délai d'attente (en secondes) d'un message d'erreur ou des en-têtes HTTP de rate-limit (429/quota).
@@ -432,8 +433,6 @@ export const AIService = {
                     outTokens = res.eval_count || 0;
                 }
 
-                console.log(`[AI Response] ✅ ${selectedModel} en ${generationTimeMs}ms (${inTokens + outTokens} tokens)`);
-
                 return {
                     text,
                     usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
@@ -661,12 +660,10 @@ export const AIService = {
      */
     async callAIWithFallback(prompt, options = {}) {
         // Émettre l'événement de début de génération (pour l'animation de la pillule)
-        window.dispatchEvent(new CustomEvent('ai-generation-start', {
-            detail: {
-                context: options.context || null,
-                studentName: options.studentName || ''
-            }
-        }));
+        bus.emit(EVENTS.AI_GENERATION_START, {
+            context: options.context || null,
+            studentName: options.studentName || ''
+        });
 
         // Si le fallback est désactivé, utiliser uniquement le modèle actuel
         const fallbackEnabled = appState.enableApiFallback !== false;
@@ -703,14 +700,11 @@ export const AIService = {
 
                     // Notifier si on a basculé vers un autre modèle
                     if (model !== appState.currentAIModel && attemptedModels.length > 1) {
-                        // Émettre un événement personnalisé pour notifier l'UI
-                        window.dispatchEvent(new CustomEvent('ai-fallback', {
-                            detail: {
-                                originalModel: appState.currentAIModel,
-                                usedModel: model,
-                                reason: lastError?.message || 'Erreur inconnue'
-                            }
-                        }));
+                        bus.emit(EVENTS.AI_FALLBACK, {
+                            originalModel: appState.currentAIModel,
+                            usedModel: model,
+                            reason: lastError?.message || 'Erreur inconnue'
+                        });
                     }
 
                     return { ...response, modelUsed: model };
@@ -783,12 +777,10 @@ export const AIService = {
             throw new Error(errorMessage);
         } finally {
             // Émettre l'événement de fin de génération (pour arrêter l'animation)
-            window.dispatchEvent(new CustomEvent('ai-generation-end', {
-                detail: {
-                    context: options.context || null, // Pass context for Single Source of Truth
-                    studentName: options.studentName || ''
-                }
-            }));
+            bus.emit(EVENTS.AI_GENERATION_END, {
+                context: options.context || null,
+                studentName: options.studentName || ''
+            });
         }
     },
 

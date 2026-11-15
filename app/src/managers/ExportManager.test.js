@@ -61,6 +61,15 @@ vi.mock('../utils/Utils.js', () => ({
         stripMarkdown: vi.fn(text => text),
         getRelevantEvolution: vi.fn(() => null),
         sortResults: vi.fn(arr => arr),
+        escapeHtml: vi.fn(text => {
+            if (!text) return text;
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }),
         formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));
@@ -342,6 +351,26 @@ describe('ExportManager', () => {
                 window.onafterprint();
             }
             // Title should be restored
+        });
+
+        it('should escape HTML in class name inside #print-header to prevent DOM XSS', () => {
+            document.body.innerHTML = '<div class="main-content"></div>';
+            appState.filteredResults = [{ id: '1' }];
+            appState.currentClassId = 'c-xss';
+            appState.classes = [{ id: 'c-xss', name: '<img src=x onerror=alert(1)>' }];
+
+            let injectedHeader = null;
+            mockPrint.mockImplementationOnce(() => {
+                injectedHeader = document.getElementById('print-header');
+            });
+
+            ExportManager.exportToPdf();
+
+            expect(injectedHeader).not.toBeNull();
+            expect(injectedHeader.querySelector('img')).toBeNull();
+            expect(injectedHeader.textContent).toContain('<img src=x onerror=alert(1)>');
+            window.onafterprint?.();
+            document.body.innerHTML = '';
         });
     });
 

@@ -38,7 +38,7 @@ export async function loadPdfJs() {
  * const text = await extractTextFromPdf(file);
  */
 export async function extractTextFromPdf(file) {
-    if (!file || file.type !== 'application/pdf') {
+    if (!isPdf(file)) {
         throw new Error('Le fichier doit être un PDF');
     }
 
@@ -106,8 +106,8 @@ export async function extractTextFromPdf(file) {
  * @returns {boolean} True si le fichier est un PDF
  */
 export function isPdf(file) {
-    return file && (
+    return Boolean(file && (
         file.type === 'application/pdf' ||
-        file.name.toLowerCase().endsWith('.pdf')
-    );
+        file.name?.toLowerCase().endsWith('.pdf')
+    ));
 }

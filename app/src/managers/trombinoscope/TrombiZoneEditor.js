@@ -673,7 +673,7 @@ export const TrombiZoneEditor = {
                         padding: 0 ${m.labelPadding}px;
                         border-radius: ${m.labelHeight / 2}px;
                     ">${m.label}</span>
-                    <button class="zone-delete" data-zone-id="${zone.id}" style="
+                    <button type="button" class="zone-delete" data-zone-id="${zone.id}" style="
                         width: ${m.deleteSize}px;
                         height: ${m.deleteSize}px;
                         font-size: ${m.deleteFontSize}px;

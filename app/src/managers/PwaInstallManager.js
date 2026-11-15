@@ -9,10 +9,11 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { UI } from './UIManager.js';
 import { HistoryManager } from './HistoryManager.js';
 
-const STORAGE_KEY = 'pwa_install_dismissed';
+const STORAGE_KEY = STORAGE_KEYS.PWA_INSTALL_DISMISSED;
 const SESSION_KEY = 'pwa_install_later';
 const BANNER_DELAY_MS = 3000;
 const DISMISS_DURATION_DAYS = 90;
@@ -113,26 +114,17 @@ export const PwaInstallManager = {
      * Get stored dismissal state
      */
     _getDismissedState() {
-        try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
-        } catch {
-            return null;
-        }
+        return SafeStorage.getJSON(STORAGE_KEY, null);
     },
 
     /**
      * Store dismissal preference
      */
     _setDismissed(permanent = false) {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                date: new Date().toISOString(),
-                permanent
-            }));
-        } catch {
-            // Storage might be full or disabled
-        }
+        SafeStorage.setJSON(STORAGE_KEY, {
+            date: new Date().toISOString(),
+            permanent
+        });
     },
 
     /**
@@ -408,8 +400,8 @@ export const PwaInstallManager = {
                         </div>
                     </div>
                     <div class="pwa-modal-footer">
-                        <button class="btn btn-primary" id="pwaModalCloseBtn">Compris !</button>
-                        <button class="btn-text" id="pwaModalNeverBtn">Ne plus afficher</button>
+                        <button type="button" class="btn btn-primary" id="pwaModalCloseBtn">Compris !</button>
+                        <button type="button" class="btn-text" id="pwaModalNeverBtn">Ne plus afficher</button>
                     </div>
                 </div>
             </div>
@@ -457,8 +449,8 @@ export const PwaInstallManager = {
                         </div>
                     </div>
                     <div class="pwa-modal-footer">
-                        <button class="btn btn-primary" id="pwaModalCloseBtn">Compris !</button>
-                        <button class="btn-text" id="pwaModalNeverBtn">Ne plus afficher</button>
+                        <button type="button" class="btn btn-primary" id="pwaModalCloseBtn">Compris !</button>
+                        <button type="button" class="btn-text" id="pwaModalNeverBtn">Ne plus afficher</button>
                     </div>
                 </div>
             </div>

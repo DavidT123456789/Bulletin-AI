@@ -9,9 +9,11 @@
 
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
 import { HistoryManager } from './HistoryManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { UI } from './UIManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /** Modales de dialogue générées dynamiquement : empilées au-dessus de la modale active et retirées du DOM à la fermeture */
 const DYNAMIC_MODAL_IDS = new Set([
@@ -377,7 +379,7 @@ export const ModalUI = {
 
         // Déclencher un événement lors de l'ouverture des modales de paramétrage pour créer un snapshot
         if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
-            document.dispatchEvent(new CustomEvent('settings-modal-open', { detail: { modalId: modal.id } }));
+            bus.emit(EVENTS.MODAL_SETTINGS_OPEN, { modalId: modal.id });
         }
 
         // Clear any ongoing close animation timeout or pending open rAF to prevent overlaps
@@ -521,9 +523,9 @@ export const ModalUI = {
         }
 
         if (modal.id === 'welcomeModal') {
-            document.dispatchEvent(new CustomEvent('welcome-modal-close', { detail: { modalId: modal.id, options } }));
+            bus.emit(EVENTS.MODAL_WELCOME_CLOSE, { modalId: modal.id, options });
         } else if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
-            document.dispatchEvent(new CustomEvent('settings-modal-close', { detail: { modalId: modal.id, options } }));
+            bus.emit(EVENTS.MODAL_SETTINGS_CLOSE, { modalId: modal.id, options });
         }
 
         // [UX Mobile] History Cleanup
@@ -682,12 +684,12 @@ export const ModalUI = {
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
 
             let buttonsHTML = `
-                <button class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button>
-                <button class="btn ${confirmBtnClass}" id="confirmOkBtn">${confirmText}</button>
+                <button type="button" class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button>
+                <button type="button" class="btn ${confirmBtnClass}" id="confirmOkBtn">${confirmText}</button>
             `;
 
             if (extraButton) {
-                buttonsHTML = `<button class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
+                buttonsHTML = `<button type="button" class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
             }
 
             // Optional message
@@ -882,8 +884,8 @@ export const ModalUI = {
                     </div>
                 </div>
                 <div class="modal-alert-actions">
-                    <button class="btn btn-secondary" id="choicesCancelBtn">${cancelText}</button>
-                    <button class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
+                    <button type="button" class="btn btn-secondary" id="choicesCancelBtn">${cancelText}</button>
+                    <button type="button" class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
                 </div>
             </div>`;
 
@@ -1126,8 +1128,7 @@ export const ModalUI = {
      */
     _getProviderMeta(providerName = 'google', providerLabel = null, providerIcon = null) {
         const meta = {
-            google: { label: 'Google Drive', icon: 'logos:google-drive' },
-            dropbox: { label: 'Dropbox', icon: 'logos:dropbox' }
+            google: { label: 'Google Drive', icon: 'logos:google-drive' }
         };
         const fallback = meta[providerName] ?? { label: 'Cloud', icon: 'lucide:cloud-upload' };
         return {
@@ -1196,7 +1197,7 @@ export const ModalUI = {
      * @private
      */
     _getLocalDiffDetails(options = {}) {
-        const lastSync = options.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10);
+        const lastSync = options.lastSyncTime || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_SYNC, '0') || '0', 10);
         const rosterDiff = options.rosterDiff || null;
         const items = [];
 
@@ -1331,7 +1332,7 @@ export const ModalUI = {
         resolvedProviderLabel = 'Google Drive',
         resolvedProviderIcon = 'logos:google-drive'
     }) {
-        const localTimestamp = localDate || parseInt(localStorage.getItem('bulletin_last_modified') || '0', 10) || null;
+        const localTimestamp = localDate || parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10) || null;
         let cloudDateParts = this._formatDateParts(remoteDate);
         let localDateParts = this._formatDateParts(localTimestamp);
 
@@ -1555,7 +1556,7 @@ export const ModalUI = {
      * @param {number} [options.remoteClassCount=0] - Nombre de classes distantes
      * @param {number} [options.localStudentCount=0] - Nombre d'élèves locaux actuels
      * @param {number} [options.localClassCount=0] - Nombre de classes locales actuelles
-     * @param {string} [options.providerName='google'] - Nom du provider (google | dropbox)
+     * @param {string} [options.providerName='google'] - Nom du provider (google)
      * @returns {Promise<boolean>} Résout true si confirmé, false sinon
      */
     showRestoreConfirmationModal(options = {}) {
@@ -1701,7 +1702,7 @@ export const ModalUI = {
             (rClassCount === null || rClassCount === lClassCount);
         const hasRosterChanges = Boolean(rosterDiff?.hasAnyChange || legacyRosterChanged);
         const effectiveIsInSync = Boolean(isInSync) && !hasDataShrinkageWarning && !hasRosterChanges;
-        const isFirstSync = !lastSyncTime && rStudentCount === null && !effectiveIsInSync && !localStorage.getItem('bulletin_last_sync');
+        const isFirstSync = !lastSyncTime && rStudentCount === null && !effectiveIsInSync && !SafeStorage.get(STORAGE_KEYS.LAST_SYNC);
         const hasLocalChanges = !effectiveIsInSync;
 
         const comparisonGridHtml = this._renderCloudComparisonGrid({
@@ -1875,8 +1876,8 @@ export const ModalUI = {
                     </div>
                 </div>
                 <div class="modal-alert-actions">
-                    <button class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
-                    <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
+                    <button type="button" class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
+                    <button type="button" class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
                 </div>
             </div>`;
 
@@ -1948,6 +1949,45 @@ export const ModalUI = {
     },
 
     /**
+     * Bascule l'onglet actif dans un conteneur `.ui-tabs-vertical` (Paramètres ou Aide).
+     * @param {HTMLElement|null} btn
+     * @param {string} tabId
+     */
+    switchVerticalTab(btn, tabId) {
+        if (!btn || !tabId) return;
+        const container = btn.closest('.ui-tabs-vertical');
+        if (!container) return;
+        const buttons = Array.from(container.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn'));
+        const currentButton = buttons.find(b => b.classList.contains('active'));
+        if (btn === currentButton) return;
+        const newIndex = buttons.indexOf(btn);
+        const currentIndex = currentButton ? buttons.indexOf(currentButton) : 0;
+
+        const direction = newIndex > currentIndex ? 'down' : 'up';
+        const contentArea = container.querySelector('.ui-tabs-content');
+        if (contentArea) {
+            contentArea.dataset.direction = direction;
+            contentArea.scrollTop = 0;
+        }
+
+        buttons.forEach(b => {
+            b.classList.remove('active');
+            if (b.hasAttribute('aria-selected')) b.setAttribute('aria-selected', 'false');
+        });
+        container.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        if (btn.hasAttribute('aria-selected')) btn.setAttribute('aria-selected', 'true');
+        btn.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+        const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
+        if (content) content.classList.add('active');
+        if (contentArea) {
+            FocusPanelManager.bindScrollAffordances(contentArea);
+        }
+    },
+
+    /**
      * Ouvre la modale d'aide sur un onglet et une section (accordéon) ciblés.
      * Point d'entrée unique mutualisé pour les boutons '?' et liens d'aide contextuelle.
      * @param {string} [tabId]
@@ -1956,12 +1996,10 @@ export const ModalUI = {
     openHelpTab(tabId, sectionId) {
         this.openModal(DOM.helpModal);
         if (tabId) {
-            const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[onclick*="${tabId}"]`);
-            if (tabBtn) tabBtn.click();
+            const tabBtn = DOM.helpModal?.querySelector(`.ui-tabs-btn[data-tab="${tabId}"]`);
+            if (tabBtn) this.switchVerticalTab(tabBtn, tabId);
         }
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('help-modal-opened'));
-        }
+        bus.emit(EVENTS.MODAL_HELP_OPENED);
         if (sectionId) {
             setTimeout(() => {
                 const section = document.getElementById(sectionId);

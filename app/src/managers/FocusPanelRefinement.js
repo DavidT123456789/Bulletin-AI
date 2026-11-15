@@ -117,7 +117,7 @@ export const FocusPanelRefinement = {
                         <span class="modal-title-icon"><iconify-icon icon="solar:code-square-linear"></iconify-icon></span>
                         <span class="modal-title-text">${escapedTitle}</span>
                     </h2>
-                    <button class="close-button" aria-label="Fermer">
+                    <button type="button" class="close-button" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -125,8 +125,8 @@ export const FocusPanelRefinement = {
                     <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>
-                    <button class="btn btn-primary" id="promptPreviewCopyBtn">
+                    <button type="button" class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>
+                    <button type="button" class="btn btn-primary" id="promptPreviewCopyBtn">
                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                         Copier
                     </button>

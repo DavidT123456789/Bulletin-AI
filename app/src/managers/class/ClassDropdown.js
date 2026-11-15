@@ -15,6 +15,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { SeatingChartManager } from '../SeatingChartManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { Utils } from '../../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
 
 export const ClassDropdown = {
     /**
@@ -263,7 +264,7 @@ export const ClassDropdown = {
         if (classes.length === 0) {
             DOM.classDropdownList.innerHTML = `
                 <div class="class-dropdown-empty">
-                    <iconify-icon icon="solar:mortarboard-linear"></iconify-icon>
+                    <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
                         <iconify-icon icon="ph:plus-bold" aria-hidden="true"></iconify-icon> Créer ma première classe
@@ -305,7 +306,7 @@ export const ClassDropdown = {
                     e.stopPropagation();
                     const willShow = !this._showVirtualClasses;
                     this._showVirtualClasses = willShow;
-                    localStorage.setItem('bulletin_show_virtual_classes', willShow ? 'true' : 'false');
+                    SafeStorage.set(STORAGE_KEYS.SHOW_VIRTUAL_CLASSES, willShow ? 'true' : 'false');
 
                     toggleBtn.classList.toggle('active', willShow);
                     toggleBtn.setAttribute('aria-pressed', willShow ? 'true' : 'false');

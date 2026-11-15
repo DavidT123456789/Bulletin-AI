@@ -11,6 +11,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { getConfiguredProviders } from '../../config/providers.js';
 import { appState } from '../../state/State.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 const HELP_REFINE_DEMO_DATA = {
     initial: {
@@ -103,7 +104,7 @@ export const OtherModalsListeners = {
 
         setTimeout(updateHelpProviderStatus, 200);
         DOM.helpBtn?.addEventListener('click', updateHelpProviderStatus);
-        window.addEventListener('help-modal-opened', updateHelpProviderStatus);
+        bus.on(EVENTS.MODAL_HELP_OPENED, updateHelpProviderStatus);
 
         // Simulateur interactif utilisant les vrais boutons .btn-ai-outline[data-refine-type]
         const refineDemoContainer = document.getElementById('helpRefineDemo');
@@ -186,7 +187,7 @@ export const OtherModalsListeners = {
             DOM.helpBtn?.addEventListener('click', resetDemoQuietly);
             DOM.closeHelpModalBtn?.addEventListener('click', resetDemoQuietly);
             DOM.closeHelpModalFooterBtn?.addEventListener('click', resetDemoQuietly);
-            window.addEventListener('help-modal-opened', resetDemoQuietly);
+            bus.on(EVENTS.MODAL_HELP_OPENED, resetDemoQuietly);
         }
     },
 

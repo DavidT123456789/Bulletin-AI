@@ -12,9 +12,27 @@ export const EVENTS = Object.freeze({
     CLASS_DELETED: 'class:deleted',
     CLASS_SWITCHED: 'class:switched',
     CLASSES_UPDATED: 'classes:updated',
+    CLASS_CHANGED: 'class:changed',
     SYNC_STATUS_CHANGED: 'sync:status-changed',
     SYNC_CONNECTED: 'sync:connected',
     SYNC_DISCONNECTED: 'sync:disconnected',
+    PERIOD_CHANGED: 'period:changed',
+    STUDENT_UPDATED: 'student:updated',
+    STUDENTS_UPDATED: 'students:updated',
+    STUDENT_DIRTY_STATE_CHANGED: 'student:dirty-state-changed',
+    APP_SETTINGS_CHANGED: 'settings:changed',
+    PERSONALIZATION_RESET: 'settings:personalization-reset',
+    SEATING_STATUS_CHANGED: 'seating:status-changed',
+    JOURNAL_THRESHOLD_CHANGED: 'journal:threshold-changed',
+    AI_GENERATION_START: 'ai:generation-start',
+    AI_FALLBACK: 'ai:fallback',
+    AI_GENERATION_END: 'ai:generation-end',
+    MODAL_SETTINGS_OPEN: 'modal:settings-open',
+    MODAL_SETTINGS_CLOSE: 'modal:settings-close',
+    MODAL_WELCOME_CLOSE: 'modal:welcome-close',
+    MODAL_HELP_OPENED: 'modal:help-opened',
+    APP_UPDATE_AVAILABLE: 'app:update-available',
+    APP_DATA_RESTORED: 'app:data-restored',
 });
 
 export class EventBus {
@@ -26,10 +44,11 @@ export class EventBus {
      * Subscribe to an event.
      * @param {string} event - The event name.
      * @param {Function} callback - The function to call when the event is emitted.
+     * @param {{ signal?: AbortSignal }} [options] - Optional AbortSignal for automatic cleanup.
      * @returns {Function} - A function to unsubscribe.
      */
-    on(event, callback) {
-        if (typeof callback !== 'function') {
+    on(event, callback, { signal } = {}) {
+        if (typeof callback !== 'function' || signal?.aborted) {
             return () => {};
         }
         if (!this.listeners[event]) {
@@ -39,24 +58,29 @@ export class EventBus {
             this.listeners[event].push(callback);
         }
 
-        return () => this.off(event, callback);
+        const unsubscribe = () => this.off(event, callback);
+        if (signal) {
+            signal.addEventListener('abort', unsubscribe, { once: true });
+        }
+        return unsubscribe;
     }
 
     /**
      * Subscribe to an event once.
      * @param {string} event - The event name.
      * @param {Function} callback - The function to call once when the event is emitted.
+     * @param {{ signal?: AbortSignal }} [options] - Optional AbortSignal for automatic cleanup.
      * @returns {Function} - A function to unsubscribe before it fires.
      */
-    once(event, callback) {
-        if (typeof callback !== 'function') {
+    once(event, callback, { signal } = {}) {
+        if (typeof callback !== 'function' || signal?.aborted) {
             return () => {};
         }
         const wrapper = (data) => {
             this.off(event, wrapper);
             callback(data);
         };
-        return this.on(event, wrapper);
+        return this.on(event, wrapper, { signal });
     }
 
     /**

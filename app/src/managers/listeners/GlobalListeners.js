@@ -18,6 +18,9 @@ import { DropdownManager } from '../DropdownManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { HistoryManager } from '../HistoryManager.js';
+import { ImportWizardManager } from '../ImportWizardManager.js';
+import { TrombinoscopeManager } from '../TrombinoscopeManager.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const GlobalListeners = {
     /**
@@ -39,14 +42,14 @@ export const GlobalListeners = {
      * @private
      */
     _setupStudentsUpdatedListener() {
-        window.addEventListener('studentsUpdated', () => {
+        bus.on(EVENTS.STUDENTS_UPDATED, () => {
             ClassUIManager.updateHeaderDisplay();
             ClassUIManager.renderClassList();
             ClassUIManager.updateStudentCount();
             AppreciationsManager.renderResults();
         });
 
-        window.addEventListener('classChanged', () => {
+        bus.on(EVENTS.CLASS_CHANGED, () => {
             ClassUIManager.updateHeaderDisplay();
             ClassUIManager.renderClassList();
             ClassUIManager.pulseHeaderChip?.();
@@ -54,8 +57,8 @@ export const GlobalListeners = {
         });
 
         // Écoute les changements de dirty state pour mettre à jour la ligne spécifique
-        window.addEventListener('studentDirtyStateChanged', async (e) => {
-            const { studentId, result } = e.detail || {};
+        bus.on(EVENTS.STUDENT_DIRTY_STATE_CHANGED, async (detail) => {
+            const { studentId } = detail || {};
             if (!studentId) return;
 
             try {
@@ -74,7 +77,7 @@ export const GlobalListeners = {
             }
         });
 
-        window.addEventListener('journalThresholdChanged', async () => {
+        bus.on(EVENTS.JOURNAL_THRESHOLD_CHANGED, async () => {
             try {
 
                 if (!ListViewManager?.updateStudentRow) return;
@@ -256,8 +259,8 @@ export const GlobalListeners = {
         if (this._aiFallbackListenerAttached) return;
         this._aiFallbackListenerAttached = true;
 
-        window.addEventListener('ai-fallback', (e) => {
-            const { originalModel, usedModel, reason } = e.detail;
+        bus.on(EVENTS.AI_FALLBACK, (detail) => {
+            const { originalModel, usedModel, reason } = detail || {};
 
             appState.lastUsedFallbackModel = usedModel;
             appState.lastFallbackReason = reason;
@@ -373,7 +376,7 @@ export const GlobalListeners = {
         // UNIFIED APPROACH: Uses a counter to track ALL active generations.
         // This ensures the badge is hidden when ALL generations complete,
         // regardless of their source (single, mass, lab preview, refinement).
-        window.addEventListener('ai-generation-start', () => {
+        bus.on(EVENTS.AI_GENERATION_START, () => {
             this._activeGenerationsCount++;
 
             if (DOM.headerGenDashboard) {
@@ -395,7 +398,7 @@ export const GlobalListeners = {
 
         // Unified end handler: hide progress only when ALL generations are complete
         // AND no mass import/regeneration is in progress (those manage their own progress)
-        window.addEventListener('ai-generation-end', async (e) => {
+        bus.on(EVENTS.AI_GENERATION_END, async () => {
             this._activeGenerationsCount = Math.max(0, this._activeGenerationsCount - 1);
 
             // Only hide when all concurrent generations are done
@@ -422,21 +425,37 @@ export const GlobalListeners = {
                 EventHandlersManager.handleStatFilterClick(null);
             }
 
-            const link = e.target.closest('.link-to-settings, [data-action="open-help"]');
+            const tabBtn = e.target.closest('.ui-tabs-btn[data-tab]');
+            if (tabBtn) {
+                UI.switchVerticalTab(tabBtn, tabBtn.dataset.tab);
+            }
+
+            const link = e.target.closest('.link-to-settings, [data-action="open-help"], [data-action="open-settings-tab"], [data-action="open-import-wizard"], [data-action="open-trombi-wizard"], [data-action="open-seating-chart"]');
             if (link) {
                 e.preventDefault();
-                if (link.dataset.action === "open-help") {
+                const action = link.dataset.action;
+                if (action === 'open-help') {
                     UI.openHelpTab(link.dataset.targetTab, link.dataset.targetSection);
+                } else if (action === 'open-import-wizard') {
+                    ImportWizardManager.open();
+                } else if (action === 'open-trombi-wizard') {
+                    TrombinoscopeManager.open();
+                } else if (action === 'open-seating-chart') {
+                    UI.closeAllModals();
+                    document.querySelector('#viewToggle [data-view="plan"]')?.click();
                 } else {
                     // Explicitly close actions dropdown and custom dropdowns
                     DOM.actionsDropdown?.classList.remove('show');
                     DropdownManager.closeAll();
 
                     UI.openModal(DOM.settingsModal);
-                    // Use centralized highlight utility
-                    UI.highlightSettingsElement(link.dataset.targetElement, {
-                        tab: link.dataset.targetTab
-                    });
+                    if (link.dataset.targetElement) {
+                        UI.highlightSettingsElement(link.dataset.targetElement, {
+                            tab: link.dataset.targetTab
+                        });
+                    } else if (link.dataset.targetTab) {
+                        UI.showSettingsTab(link.dataset.targetTab);
+                    }
                 }
             }
 

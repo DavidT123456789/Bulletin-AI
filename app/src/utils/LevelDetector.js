@@ -6,13 +6,13 @@
  */
 
 export const LEVELS = {
-    generique: { label: "Générique", icon: "solar:minimalistic-bounds-linear" },
+    generique: { label: "Générique", icon: "solar:layers-minimalistic-linear" },
     maternelle: { label: "Maternelle", icon: "solar:emoji-funny-circle-linear" },
     elementaire: { label: "Élémentaire", icon: "solar:backpack-linear" },
-    college: { label: "Collège", icon: "solar:school-linear" },
+    college: { label: "Collège", icon: "solar:buildings-2-linear" },
     lycee: { label: "Lycée", icon: "solar:notebook-linear" },
     terminale: { label: "Terminale", icon: "solar:cup-star-linear" },
-    superieur: { label: "Supérieur", icon: "solar:mortarboard-linear" }
+    superieur: { label: "Supérieur", icon: "solar:square-academic-cap-linear" }
 };
 
 /**

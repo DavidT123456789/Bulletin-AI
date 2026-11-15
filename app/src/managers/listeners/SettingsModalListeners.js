@@ -6,6 +6,7 @@
 import { appState } from '../../state/State.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
+import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
 import { BackupImportManager } from '../BackupImportManager.js';
 import { UI } from '../UIManager.js';
 import { StorageManager } from '../StorageManager.js';
@@ -18,11 +19,12 @@ import { FormUI } from '../FormUIManager.js';
 
 import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
 import { MODEL_SHORT_NAMES } from '../../config/models.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 let App = null;
 
 /** Clé de persistance de l'onglet actif du volet d'aperçu (Aperçu / Prompt). */
-const PREVIEW_TAB_STORAGE_KEY = 'labPreviewTab';
+const PREVIEW_TAB_STORAGE_KEY = STORAGE_KEYS.LAB_PREVIEW_TAB;
 
 export const SettingsModalListeners = {
     init(appInstance) {
@@ -67,8 +69,8 @@ export const SettingsModalListeners = {
      */
     setup(addClickListener) {
         // Chaque ouverture démarre une session d'aperçu vierge, annulable via snapshot
-        document.addEventListener('settings-modal-open', (e) => {
-            if (e.detail?.modalId === 'personalizationModal') {
+        bus.on(EVENTS.MODAL_SETTINGS_OPEN, (detail) => {
+            if (detail?.modalId === 'personalizationModal') {
                 SettingsUIManager.createSnapshot();
                 this._resetPreviewSession();
                 this._updateNavArrowsState();
@@ -80,8 +82,8 @@ export const SettingsModalListeners = {
         });
 
         // Auto-sauvegarde lorsque appSettingsModal est fermée via Retour mobile (popstate) ou Échap
-        document.addEventListener('settings-modal-close', (e) => {
-            if (e.detail?.modalId === 'appSettingsModal' && !SettingsUIManager._isSavingSettings) {
+        bus.on(EVENTS.MODAL_SETTINGS_CLOSE, (detail) => {
+            if (detail?.modalId === 'appSettingsModal' && !SettingsUIManager._isSavingSettings) {
                 SettingsUIManager.saveSettings(false, { skipCloseModal: true });
             }
         });
@@ -168,7 +170,7 @@ export const SettingsModalListeners = {
         addClickListener(DOM.resetLabStyleBtn, () => SettingsUIManager.resetPersonalStyle());
 
         // Listen for reset events to update prompt preview
-        document.addEventListener('personalizationReset', () => {
+        bus.on(EVENTS.PERSONALIZATION_RESET, () => {
             this._markPreviewCacheStale();
             this._updateStudentContextAndPrompt();
             this._autoResizeStyleInstructions();
@@ -203,14 +205,14 @@ export const SettingsModalListeners = {
         };
 
         if (tabRadios.length) {
-            const savedTab = localStorage.getItem(PREVIEW_TAB_STORAGE_KEY);
+            const savedTab = SafeStorage.get(PREVIEW_TAB_STORAGE_KEY);
             const initialTab = tabRadios.some(radio => radio.value === savedTab) ? savedTab : tabRadios[0].value;
             tabRadios.forEach(radio => {
                 radio.checked = radio.value === initialTab;
                 radio.addEventListener('change', () => {
                     if (!radio.checked) return;
                     showPanel(radio.value);
-                    localStorage.setItem(PREVIEW_TAB_STORAGE_KEY, radio.value);
+                    SafeStorage.set(PREVIEW_TAB_STORAGE_KEY, radio.value);
                 });
             });
             showPanel(initialTab);
@@ -404,7 +406,7 @@ export const SettingsModalListeners = {
 
         // Listen to main period changes to sync lab
         // [FIX] Use custom event dispatched by UI.setPeriod for reliable sync
-        document.addEventListener('periodChanged', () => {
+        bus.on(EVENTS.PERIOD_CHANGED, () => {
             if (this._isPersonalizationOpen()) {
                 this._updateStudentContextAndPrompt();
             }
@@ -434,11 +436,23 @@ export const SettingsModalListeners = {
         if (avatarEl && student) {
             const photoUrl = student.photo || `./images/Demo/${student.nom.toLowerCase()}.jpg`;
             const initials = `${student.prenom?.[0] || ''}${student.nom?.[0] || ''}`.toUpperCase();
-            avatarEl.innerHTML = `
-                <img src="${photoUrl}" alt="${student.prenom} ${student.nom}" class="header-student-avatar-img"
-                    onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
-                <span class="avatar-initials-fallback" style="display:none;">${initials}</span>
-            `;
+
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.alt = `${student.prenom || ''} ${student.nom || ''}`.trim();
+            img.className = 'header-student-avatar-img';
+
+            const fallback = document.createElement('span');
+            fallback.className = 'avatar-initials-fallback';
+            fallback.style.display = 'none';
+            fallback.textContent = initials;
+
+            img.addEventListener('error', () => {
+                img.style.display = 'none';
+                fallback.style.display = 'inline-flex';
+            }, { once: true });
+
+            avatarEl.replaceChildren(img, fallback);
         }
 
         // Sync arrow states (+ accessible labels naming the target student)
@@ -1119,12 +1133,15 @@ export const SettingsModalListeners = {
             this.updateCloudSyncUI();
         };
 
-        document.addEventListener('settings-modal-open', refreshDataTab);
-        document.addEventListener('settings-data-tab-open', refreshDataTab);
-        document.addEventListener('app-data-restored', refreshDataTab);
-        document.addEventListener('sync-status-changed', () => this.updateCloudSyncUI());
+        bus.on(EVENTS.MODAL_SETTINGS_OPEN, refreshDataTab);
+        bus.on(EVENTS.APP_DATA_RESTORED, refreshDataTab);
+        bus.on(EVENTS.SYNC_CONNECTED, () => this.updateCloudSyncUI());
 
-        const dataTabBtn = document.querySelector('button[onclick*="settings-data"]');
+        document.querySelector('.api-keys-container')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+        });
+
+        const dataTabBtn = document.querySelector('.ui-tabs-btn[data-tab="settings-data"]');
         if (dataTabBtn) {
             dataTabBtn.addEventListener('click', refreshDataTab);
         }

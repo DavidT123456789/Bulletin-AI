@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { UI } from './UIManager.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock state module
 vi.mock('../state/State.js', () => ({
@@ -585,19 +586,17 @@ describe('UIManager', () => {
             expect(appState.currentPeriod).toBe('T2');
         });
 
-        it('should dispatch periodChanged event with new period', async () => {
+        it('should emit PERIOD_CHANGED event with new period', async () => {
             const { appState } = await import('../state/State.js');
             appState.currentPeriod = 'T1';
 
             const listener = vi.fn();
-            document.addEventListener('periodChanged', listener, { once: true });
+            bus.once(EVENTS.PERIOD_CHANGED, listener);
 
             UI.setPeriod('T3');
 
             expect(listener).toHaveBeenCalledTimes(1);
-            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-                detail: { period: 'T3' }
-            }));
+            expect(listener).toHaveBeenCalledWith({ period: 'T3' });
         });
 
         it('should fallback to first valid period when given a period from another system', async () => {

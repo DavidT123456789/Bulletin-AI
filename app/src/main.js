@@ -1,15 +1,18 @@
+import './generated/icons-app.js';
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 import { initDOM, DOM } from './utils/DOM.js';
 import { initErrorBoundary } from './utils/ErrorBoundary.js';
 import { App } from './managers/AppManager.js';
 import { UI } from './managers/UIManager.js';
-import { FocusPanelManager } from './managers/FocusPanelManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
-import { ImportWizardManager } from './managers/ImportWizardManager.js';
-import { TrombinoscopeManager } from './managers/TrombinoscopeManager.js';
 import { appState } from './state/State.js';
+import { bus, EVENTS } from './core/EventBus.js';
 import './css/main.css';
+
+window.tippy = tippy;
 
 window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault();
@@ -56,72 +59,18 @@ const init = () => {
             }
         }, 800); // Wait for longest animation (0.6s + 0.3s delay = ~0.9s)
 
-        // Expose global functions for inline HTML onclick handlers
-        window.switchHelpTab = (btn, tabId) => {
-            const container = btn.closest('.ui-tabs-vertical');
-            if (!container) return;
-            const buttons = Array.from(container.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn'));
-            const currentButton = buttons.find(b => b.classList.contains('active'));
-            if (btn === currentButton) return;
-            const newIndex = buttons.indexOf(btn);
-            const currentIndex = currentButton ? buttons.indexOf(currentButton) : 0;
-
-            // Determine direction: going down in list = content exits up
-            const direction = newIndex > currentIndex ? 'down' : 'up';
-            const contentArea = container.querySelector('.ui-tabs-content');
-            if (contentArea) {
-                contentArea.dataset.direction = direction;
-                contentArea.scrollTop = 0;
-            }
-
-            // Remove active class from all buttons and contents in this container
-            buttons.forEach(b => {
-                b.classList.remove('active');
-                if (b.hasAttribute('aria-selected')) b.setAttribute('aria-selected', 'false');
+        // Landing return transition
+        const returnLink = document.getElementById('linkLanding');
+        if (returnLink) {
+            returnLink.addEventListener('click', (e) => {
+                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                document.body.classList.add('is-navigating-to-landing');
+                setTimeout(() => {
+                    window.location.href = returnLink.href;
+                }, 220);
             });
-            container.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
-
-            // Add active class to clicked button and corresponding content
-            btn.classList.add('active');
-            if (btn.hasAttribute('aria-selected')) btn.setAttribute('aria-selected', 'true');
-            btn.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-
-            // Search inside the container first for scoped IDs, fallback to global
-            const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
-            if (content) content.classList.add('active');
-            if (contentArea) {
-                FocusPanelManager.bindScrollAffordances(contentArea);
-            }
-        };
-
-        window.openSettingsTab = (tabName, elementId) => {
-            UI.openModal(DOM.settingsModal);
-            if (elementId) {
-                UI.highlightSettingsElement(elementId, { tab: tabName });
-            } else if (tabName) {
-                UI.showSettingsTab(tabName);
-            }
-        };
-
-        window.openImportWizardFromHelp = () => {
-            window.ImportWizardManager = ImportWizardManager;
-            ImportWizardManager.open();
-        };
-
-        window.openTrombiWizardFromHelp = () => {
-            window.TrombinoscopeManager = TrombinoscopeManager;
-            TrombinoscopeManager.open();
-        };
-
-        window.openSeatingChartFromHelp = () => {
-            UI.closeAllModals();
-            const planBtn = document.querySelector('#viewToggle [data-view="plan"]');
-            if (planBtn) planBtn.click();
-        };
-
-        window.openHelpTab = (tabId, sectionId) => {
-            UI.openHelpTab(tabId, sectionId);
-        };
+        }
 
         // PWA Update Handler
         setupPWAUpdateHandler();
@@ -230,7 +179,7 @@ function setupPWAUpdateHandler() {
             showUpdateBanner();
             if (window.appState) {
                 window.appState.isUpdateAvailable = true;
-                document.dispatchEvent(new CustomEvent('app-update-available'));
+                bus.emit(EVENTS.APP_UPDATE_AVAILABLE);
             }
         };
 

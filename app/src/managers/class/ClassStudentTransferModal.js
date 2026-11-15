@@ -15,6 +15,7 @@ import { ListViewManager } from '../ListViewManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { Utils } from '../../utils/Utils.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const ClassStudentTransferModal = {
     /**
@@ -97,7 +98,7 @@ export const ClassStudentTransferModal = {
                         <span class="modal-title-icon" id="moveModalTitleIcon"><iconify-icon icon="solar:copy-bold-duotone"></iconify-icon></span>
                         <span class="modal-title-text" id="moveModalTitleText">${isBulk ? 'Affecter ou déplacer les élèves' : 'Affecter ou déplacer l\'élève'}</span>
                     </h2>
-                    <button class="close-button close-move-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
+                    <button type="button" class="close-button close-move-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body">
                     <div class="move-mode-segmented" role="tablist" aria-label="Mode d'action">
@@ -120,7 +121,7 @@ export const ClassStudentTransferModal = {
                             const count = classStudentCounts.get(cls.id) || 0;
                             return `
                                 <button type="button" class="btn btn-secondary move-target-btn" data-class-id="${cls.id}">
-                                    <iconify-icon icon="${isGroup ? 'solar:users-group-rounded-bold' : 'solar:mortarboard-bold'}"></iconify-icon>
+                                    <iconify-icon icon="${isGroup ? 'solar:users-group-rounded-bold' : 'solar:square-academic-cap-bold'}"></iconify-icon>
                                     <span class="move-target-name">${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}</span>
                                     <span class="move-target-year">${count} élève${count > 1 ? 's' : ''}</span>
                                 </button>
@@ -243,7 +244,7 @@ export const ClassStudentTransferModal = {
             if (notificationText) {
                 this._ui?.showNotification(notificationText, notificationType);
             }
-            window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            bus.emit(EVENTS.STUDENTS_UPDATED);
             if (onSuccess) onSuccess();
         };
 
@@ -434,7 +435,7 @@ export const ClassStudentTransferModal = {
                         <span class="modal-title-icon"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
                         <span class="modal-title-text">Piocher dans mes classes</span>
                     </h2>
-                    <button class="close-button close-pick-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
+                    <button type="button" class="close-button close-pick-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body pick-students-modal-body">
                     <div class="pick-students-toolbar">
@@ -719,7 +720,7 @@ export const ClassStudentTransferModal = {
                     'success'
                 );
             }
-            window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            bus.emit(EVENTS.STUDENTS_UPDATED);
         });
 
         // Construire la liste hors DOM avant montage pour éviter tout reflow intermédiaire à l'ouverture

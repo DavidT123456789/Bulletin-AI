@@ -176,10 +176,10 @@ export const SeatingRenderer = {
                 </div>
                 <span class="sc-cell-name${nameInfo.modifierClass}${groupBadgeHTML ? ' has-group-tag' : ''}">${groupBadgeHTML ? `<span class="sc-cell-name-text${nameInfo.modifierClass}">${nameInfo.html}</span>${groupBadgeHTML}` : nameInfo.html}</span>
                 ${stationBadgeHTML}
-                <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer du plan" data-tooltip="Retirer du plan">
+                <button type="button" class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer du plan" data-tooltip="Retirer du plan">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
-                <button class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
+                <button type="button" class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
                 ${this._getEvolutionDotHTML(student)}
@@ -255,10 +255,10 @@ export const SeatingRenderer = {
                     ${namesHtml}
                 </div>
                 ${stationBadgeHTML}
-                <button class="sc-cell-remove" data-result-id="${students[0].id}" aria-label="Libérer le poste" data-tooltip="Libérer le poste">
+                <button type="button" class="sc-cell-remove" data-result-id="${students[0].id}" aria-label="Libérer le poste" data-tooltip="Libérer le poste">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
-                <button class="sc-cell-pin" data-result-id="${students[0].id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
+                <button type="button" class="sc-cell-pin" data-result-id="${students[0].id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
             `;

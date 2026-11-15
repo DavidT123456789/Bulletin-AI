@@ -78,7 +78,7 @@ export const BackupImportManager = {
                     <span class="modal-title-icon"><iconify-icon icon="lucide:download"></iconify-icon></span>
                     <span class="modal-title-text">Importer la sauvegarde</span>
                 </h2>
-                <button class="close-button" aria-label="Fermer" id="backupImportCloseBtn">
+                <button type="button" class="close-button" aria-label="Fermer" id="backupImportCloseBtn">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -100,8 +100,8 @@ export const BackupImportManager = {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="backupImportCancelBtn">Annuler</button>
-                <button class="btn btn-primary" id="backupImportConfirmBtn">Importer</button>
+                <button type="button" class="btn btn-secondary" id="backupImportCancelBtn">Annuler</button>
+                <button type="button" class="btn btn-primary" id="backupImportConfirmBtn">Importer</button>
             </div>
         </div>`;
 

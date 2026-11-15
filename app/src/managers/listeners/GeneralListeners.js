@@ -19,6 +19,8 @@ import { ModelSelectionManager } from '../ModelSelectionManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 
 import { APP_LINKS } from '../../config/Config.js';
+import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 
 
 let App = null;
@@ -163,7 +165,7 @@ export const GeneralListeners = {
 
 
             // Update Menu Item Logic
-            document.addEventListener('app-update-available', () => {
+            bus.on(EVENTS.APP_UPDATE_AVAILABLE, () => {
                 const updateBtn = document.getElementById('updateMenuItem');
                 if (updateBtn) updateBtn.style.display = 'flex';
                 // Also show a dot on the menu button
@@ -250,10 +252,10 @@ export const GeneralListeners = {
             }
         };
 
-        document.addEventListener('settings-modal-close', (e) => {
-            if (e.detail?.modalId === 'personalizationModal') {
+        bus.on(EVENTS.MODAL_SETTINGS_CLOSE, (detail) => {
+            if (detail?.modalId === 'personalizationModal') {
                 personalizationOutcomeHandled = true;
-                applyPersonalizationCloseOutcome(isSavingPersonalization || Boolean(e.detail?.options?.isSave));
+                applyPersonalizationCloseOutcome(isSavingPersonalization || Boolean(detail?.options?.isSave));
             }
         });
 
@@ -433,7 +435,7 @@ export const GeneralListeners = {
      * @private
      */
     async _updateCloudReminder(syncService) {
-        if (!localStorage.getItem('bulletin_sync_provider') || !navigator.onLine) {
+        if (!SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER) || !navigator.onLine) {
             DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
             return;
         }
@@ -461,7 +463,7 @@ export const GeneralListeners = {
      * @private
      */
     async _onMenuOpen() {
-        if (!localStorage.getItem('bulletin_sync_provider') || CloudActionsManager.isBusy()) return;
+        if (!SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER) || CloudActionsManager.isBusy()) return;
         try {
             const SyncService = window.SyncService || (await import('../../services/SyncService.js')).SyncService;
             await SyncService.refreshStatus({ showChecking: true });
@@ -475,7 +477,7 @@ export const GeneralListeners = {
      * Called once after SyncService.init() to set the menu button dot.
      */
     initCloudReminder() {
-        if (!localStorage.getItem('bulletin_sync_provider')) return;
+        if (!SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER)) return;
         this._updateCloudReminder();
     }
 };
