@@ -21,6 +21,40 @@ import { ExportManager } from './ExportManager.js';
 import { getPreviousPeriod } from '../config/academicConstants.js';
 
 /**
+ * Configuration déclarative des 3 cartes de liste de la synthèse de classe (SSOT rendu/édition)
+ * @type {Array<{key: 'strengths'|'vigilances'|'recommendations', title: string, icon: string, color: string, emptyIcon: string, addTooltip: string, emptyText: string}>}
+ */
+const SYNTHESIS_LIST_SECTIONS = [
+    {
+        key: 'strengths',
+        title: 'Points forts',
+        icon: 'solar:cup-linear',
+        color: 'success',
+        emptyIcon: 'solar:stars-line-linear',
+        addTooltip: 'Ajouter un point fort',
+        emptyText: 'Aucun point fort renseigné — cliquez pour ajouter'
+    },
+    {
+        key: 'vigilances',
+        title: 'Points de vigilance',
+        icon: 'solar:danger-triangle-linear',
+        color: 'warning',
+        emptyIcon: 'solar:magnifer-zoom-in-linear',
+        addTooltip: 'Ajouter un point de vigilance',
+        emptyText: 'Aucun point de vigilance particulier — cliquez pour ajouter'
+    },
+    {
+        key: 'recommendations',
+        title: 'Recommandations',
+        icon: 'solar:lightbulb-linear',
+        color: 'info',
+        emptyIcon: 'solar:signpost-linear',
+        addTooltip: 'Ajouter une recommandation',
+        emptyText: 'Aucune recommandation renseignée — cliquez pour ajouter'
+    }
+];
+
+/**
  * Class Dashboard Manager
  * Handles all analytics, statistics calculation, and AI synthesis for class analysis
  */
@@ -131,12 +165,18 @@ export const ClassDashboardManager = {
             });
         }
 
-        // Delegated listeners for quick intro copy and inline card editing
+        // Delegated listeners for quick intro copy, adding bullets, and inline card editing
         this.modal.addEventListener('click', (e) => {
             const copyIntroBtn = e.target.closest('[data-action="copy-intro-synthesis"]');
             if (copyIntroBtn) {
                 e.stopPropagation();
                 this.copyIntroSynthesis(copyIntroBtn);
+                return;
+            }
+            const addTrigger = e.target.closest('[data-synthesis-add]');
+            if (addTrigger) {
+                e.preventDefault();
+                this.addSynthesisItem(addTrigger.dataset.synthesisAdd, addTrigger.closest('.synthesis-section'));
             }
         });
 
@@ -154,7 +194,7 @@ export const ClassDashboardManager = {
             if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
-                editable.blur();
+                this.cancelEditableItem(editable);
             } else if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 editable.blur();
@@ -785,10 +825,7 @@ export const ClassDashboardManager = {
             content.innerHTML = `
                 <div class="ai-placeholder">
                     <div class="ai-placeholder-glow"></div>
-                    <div class="ai-placeholder-icon">
-                        <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
-                    </div>
-                    <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
+                    <h4 class="ai-placeholder-title">Analyse qualitative de la classe</h4>
                     <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
                     <button type="button" class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
                         <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
@@ -934,7 +971,56 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Hydrate synthesis DOM with quick-copy button, inline contenteditable attributes, and tooltips
+     * Build the HTML for a section header's "+" button.
+     * @param {{key: string, addTooltip: string}} cfg
+     * @returns {string}
+     * @private
+     */
+    _buildSectionAddButtonHTML(cfg) {
+        return `<button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-synthesis-add="${cfg.key}" data-tooltip="${Utils.escapeHtml(cfg.addTooltip)}" aria-label="${Utils.escapeHtml(cfg.addTooltip)}"><iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon></button>`;
+    },
+
+    /**
+     * Build the HTML for an empty list section placeholder.
+     * @param {{key: string, emptyIcon: string, emptyText: string}} cfg
+     * @returns {string}
+     * @private
+     */
+    _buildSectionPlaceholderHTML(cfg) {
+        return `<button type="button" class="analysis-placeholder" data-synthesis-add="${cfg.key}"><iconify-icon icon="${cfg.emptyIcon}" aria-hidden="true"></iconify-icon><span>${Utils.escapeHtml(cfg.emptyText)}</span></button>`;
+    },
+
+    /**
+     * Build the HTML for one of the 3 synthesis list cards (Points forts / Points de vigilance / Recommandations).
+     * @param {Object} cfg - Entry from SYNTHESIS_LIST_SECTIONS
+     * @param {string[]} items
+     * @returns {string}
+     * @private
+     */
+    _buildListSectionHTML(cfg, items) {
+        const cleanItems = Array.isArray(items)
+            ? items.map(item => String(item ?? '').trim()).filter(Boolean)
+            : [];
+        const bodyHtml = cleanItems.length > 0
+            ? `<ul class="synthesis-list">${cleanItems.map(item => `<li contenteditable="true" spellcheck="true">${Utils.escapeHtml(item)}</li>`).join('')}</ul>`
+            : this._buildSectionPlaceholderHTML(cfg);
+
+        return `
+            <div class="synthesis-section synthesis-section--${cfg.color}" data-synthesis-section="${cfg.key}">
+                <div class="synthesis-section-header">
+                    <iconify-icon icon="${cfg.icon}"></iconify-icon>
+                    <span>${Utils.escapeHtml(cfg.title)}</span>
+                    ${this._buildSectionAddButtonHTML(cfg)}
+                </div>
+                <div class="synthesis-section-content">
+                    ${bodyHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Hydrate synthesis DOM with quick-copy button, "+" add buttons, inline contenteditable attributes, and tooltips
      * (Ensures backward compatibility for analyses restored from persistent storage)
      * @param {HTMLElement|null} container
      * @private
@@ -954,12 +1040,87 @@ export const ClassDashboardManager = {
             introHeader.appendChild(copyBtn);
         }
 
+        SYNTHESIS_LIST_SECTIONS.forEach(cfg => {
+            const sec = container.querySelector(`.synthesis-section--${cfg.color}`);
+            if (!sec) return;
+            if (!sec.dataset.synthesisSection) {
+                sec.dataset.synthesisSection = cfg.key;
+            }
+            const header = sec.querySelector('.synthesis-section-header');
+            const headerIcon = header?.querySelector(':scope > iconify-icon');
+            if (headerIcon && headerIcon.getAttribute('icon') !== cfg.icon) {
+                headerIcon.setAttribute('icon', cfg.icon);
+            }
+            if (header && !header.querySelector('.analysis-add-item-btn')) {
+                header.insertAdjacentHTML('beforeend', this._buildSectionAddButtonHTML(cfg));
+            }
+        });
+
         container.querySelectorAll('.synthesis-intro-text, .synthesis-list li').forEach(el => {
             el.setAttribute('contenteditable', 'true');
             el.setAttribute('spellcheck', 'true');
         });
 
         TooltipsUI.initTooltips(container);
+    },
+
+    /**
+     * Add a new inline-editable bullet to a class synthesis card and focus it.
+     * @param {'strengths'|'vigilances'|'recommendations'} sectionKey
+     * @param {HTMLElement|null} [sectionEl=null]
+     */
+    addSynthesisItem(sectionKey, sectionEl = null) {
+        if (!this._ensureModal()) return;
+        const cfg = SYNTHESIS_LIST_SECTIONS.find(s => s.key === sectionKey);
+        if (!cfg) return;
+
+        const targetSection = sectionEl ||
+            this.modal?.querySelector(`#aiSynthesisContent .synthesis-section[data-synthesis-section="${sectionKey}"]`) ||
+            this.modal?.querySelector(`#aiSynthesisContent .synthesis-section--${cfg.color}`);
+        const contentEl = targetSection?.querySelector('.synthesis-section-content');
+        if (!contentEl) return;
+
+        let list = contentEl.querySelector('.synthesis-list');
+        if (!list) {
+            contentEl.innerHTML = '<ul class="synthesis-list"></ul>';
+            list = contentEl.querySelector('.synthesis-list');
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('contenteditable', 'true');
+        li.setAttribute('spellcheck', 'true');
+        li._initialTextBeforeEdit = '';
+        list.appendChild(li);
+        li.focus();
+    },
+
+    /**
+     * Cancel an ongoing inline edit and restore initial text (removing empty new bullets).
+     * @param {HTMLElement} editable
+     */
+    cancelEditableItem(editable) {
+        if (!editable) return;
+        editable._cancelEdit = true;
+        editable.textContent = editable._initialTextBeforeEdit ?? '';
+        editable.blur();
+    },
+
+    /**
+     * Restore a section's empty placeholder when its last bullet is removed.
+     * @param {HTMLElement|null} sectionEl
+     * @private
+     */
+    _restoreSectionPlaceholder(sectionEl) {
+        if (!sectionEl) return;
+        const contentEl = sectionEl.querySelector('.synthesis-section-content');
+        if (!contentEl) return;
+        const key = sectionEl.dataset.synthesisSection;
+        const cfg = SYNTHESIS_LIST_SECTIONS.find(s =>
+            (key && s.key === key) || sectionEl.classList.contains(`synthesis-section--${s.color}`)
+        );
+        if (cfg) {
+            contentEl.innerHTML = this._buildSectionPlaceholderHTML(cfg);
+        }
     },
 
     /**
@@ -970,13 +1131,31 @@ export const ClassDashboardManager = {
     _handleEditableBlur(editable) {
         if (!editable || !editable.isConnected) return;
 
+        const wasCancelled = Boolean(editable._cancelEdit);
+        delete editable._cancelEdit;
+
         const cleanedText = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
         const initialText = editable._initialTextBeforeEdit ?? '';
+        const sectionEl = editable.closest('.synthesis-section');
+
+        if (wasCancelled) {
+            if (editable.tagName === 'LI' && !cleanedText) {
+                const parentList = editable.closest('.synthesis-list');
+                editable.remove();
+                if (parentList && parentList.querySelectorAll('li').length === 0) {
+                    this._restoreSectionPlaceholder(sectionEl);
+                }
+            }
+            return;
+        }
 
         if (!cleanedText) {
-            const parentList = editable.closest('.synthesis-list');
-            if (editable.tagName === 'LI' && parentList && parentList.querySelectorAll('li').length > 1) {
+            if (editable.tagName === 'LI') {
+                const parentList = editable.closest('.synthesis-list');
                 editable.remove();
+                if (parentList && parentList.querySelectorAll('li').length === 0) {
+                    this._restoreSectionPlaceholder(sectionEl);
+                }
                 this._syncManualSynthesisEdit();
                 return;
             }
@@ -993,6 +1172,42 @@ export const ClassDashboardManager = {
     },
 
     /**
+     * Extract the structured 4-key synthesis payload from a rendered `.ai-synthesis-text` container.
+     * @param {HTMLElement|null} synthesisContainer
+     * @returns {{synthesis: string, strengths: string[], vigilances: string[], recommendations: string[]}|null}
+     * @private
+     */
+    _readSynthesisPayloadFromDOM(synthesisContainer) {
+        if (!synthesisContainer) return null;
+        if (synthesisContainer.querySelector('.synthesis-section--primary')) return null;
+
+        const introEl = synthesisContainer.querySelector('.synthesis-intro-text');
+        const lists = {};
+        let hasListItems = false;
+
+        SYNTHESIS_LIST_SECTIONS.forEach(cfg => {
+            const items = Array.from(
+                synthesisContainer.querySelectorAll(`.synthesis-section--${cfg.color} .synthesis-list li`)
+            )
+                .map(li => (li.innerText || li.textContent || '').trim())
+                .filter(Boolean);
+            lists[cfg.key] = items;
+            if (items.length > 0) hasListItems = true;
+        });
+
+        if (!introEl && !synthesisContainer.querySelector('[data-synthesis-section]') && !hasListItems) {
+            return null;
+        }
+
+        return {
+            synthesis: (introEl?.innerText || introEl?.textContent || '').trim(),
+            strengths: lists.strengths || [],
+            vigilances: lists.vigilances || [],
+            recommendations: lists.recommendations || []
+        };
+    },
+
+    /**
      * Synchronize manual DOM edits in #aiSynthesisContent with in-memory cache,
      * rawText JSON (for subsequent AI refinements), persistent storage, and revert button.
      * @private
@@ -1003,28 +1218,12 @@ export const ClassDashboardManager = {
         const synthesisContainer = contentDiv?.querySelector('.ai-synthesis-text');
         if (!synthesisContainer) return;
 
-        const introEl = synthesisContainer.querySelector('.synthesis-intro-text');
-        const successItems = Array.from(synthesisContainer.querySelectorAll('.synthesis-section--success .synthesis-list li'))
-            .map(li => (li.innerText || li.textContent || '').trim())
-            .filter(Boolean);
-        const warningItems = Array.from(synthesisContainer.querySelectorAll('.synthesis-section--warning .synthesis-list li'))
-            .map(li => (li.innerText || li.textContent || '').trim())
-            .filter(Boolean);
-        const infoItems = Array.from(synthesisContainer.querySelectorAll('.synthesis-section--info .synthesis-list li'))
-            .map(li => (li.innerText || li.textContent || '').trim())
-            .filter(Boolean);
-        const hasLegacyPrimary = Boolean(synthesisContainer.querySelector('.synthesis-section--primary'));
+        const payload = this._readSynthesisPayloadFromDOM(synthesisContainer);
 
         let serializedRawText = '';
         let canonicalHTML = '';
 
-        if (!hasLegacyPrimary && (introEl || successItems.length || warningItems.length || infoItems.length)) {
-            const payload = {
-                synthesis: (introEl?.innerText || introEl?.textContent || '').trim(),
-                strengths: successItems,
-                vigilances: warningItems,
-                recommendations: infoItems
-            };
+        if (payload) {
             serializedRawText = JSON.stringify(payload);
             canonicalHTML = `<div class="ai-synthesis-text">${this._formatSynthesisText(serializedRawText)}</div>`;
         } else {
@@ -1107,7 +1306,7 @@ export const ClassDashboardManager = {
 
         // Show loading skeleton matching the 4-card Bento layout
         content.innerHTML = `
-            <div class="appreciation-skeleton class-synthesis-skeleton ai-synthesis-text">
+            <div class="appreciation-skeleton ai-synthesis-text">
                 <div class="synthesis-section synthesis-intro-card" style="opacity: 0.6; min-height: 120px;">
                     <div class="skeleton-line" style="width: 30%; height: 16px; margin-bottom: var(--space-3);"></div>
                     <div class="skeleton-line" style="width: 95%; margin-bottom: var(--space-2);"></div>
@@ -1246,7 +1445,7 @@ export const ClassDashboardManager = {
      */
     buildAIPrompt(stats) {
         const period = appState.currentPeriod;
-        const periodLabel = { T1: 'premier trimestre', T2: 'deuxième trimestre', T3: 'troisième trimestre', S1: 'premier semestre', S2: 'deuxième semestre' }[period] || period;
+        const periodLabel = { T1: 'premier trimestre', T2: 'deuxième trimestre', T3: 'troisième trimestre', S1: 'premier semestre', S2: 'second semestre' }[period] || period;
 
         // Propagate teacher's active style profile via PromptService SSOT (respects enableTone & enableStyleInstructions)
         const effectiveStyle = PromptService._getEffectiveStyle
@@ -1286,18 +1485,18 @@ export const ClassDashboardManager = {
         const allPeriods = Utils.getPeriods();
         const isYearEnd = allPeriods.length > 1 && allPeriods.indexOf(period) === allPeriods.length - 1;
         const yearEndClause = isYearEnd && Array.isArray(stats.periodAverages) && stats.periodAverages.length >= 2
-            ? ` Comme il s'agit du bilan de fin d'année (${periodLabel}), intègre une mise en perspective de la trajectoire annuelle de la classe.`
+            ? ` Comme il s'agit du bilan de fin d'année (au ${periodLabel}), intègre une mise en perspective de la trajectoire annuelle de la classe.`
             : '';
 
         const systemPrompt = `${roleText}
 Tu dois extraire de l'analyse globale et qualitative de la classe : une synthèse globale, les points forts, les points de vigilance, et des recommandations collectives concrètes.
 
 RÈGLES D'ÉCRITURE :
-- Synthèse Globale : Rédige 2-4 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe dans cette matière.${yearEndClause} Vise environ 40 à 90 mots.
-- Points forts : Identifie 2 points forts collectifs (max 15 mots par point).
-- Points de vigilance : Identifie 1 à 2 points de vigilance collectifs (max 15 mots par point). Ne cite pas de prénoms d'élèves spécifiques pour les aspects négatifs de comportement.
-- Recommandations : Formule 2 actions ou pistes collectives concrètes (max 20 mots par action).
-- Écris dans un style naturel et précis, sans formules scolaires toutes faites : décris des dynamiques de groupe concrètes et des leviers d'action réels.
+- Synthèse globale : Rédige 2 à 4 phrases (40 à 90 mots) résumant la dynamique générale, le climat de travail et le potentiel du groupe dans cette matière.${yearEndClause} Sans redite d'une phrase à l'autre ni sigle de période (« T1 », « T2 », « T3 », « S1 », « S2 »).
+- Points forts : Identifie 1 à 2 points forts collectifs factuels (max 15 mots par point), sans broder si les données qualitatives sont absentes.
+- Points de vigilance : Identifie 0 à 2 points de vigilance collectifs factuels (max 15 mots par point ; renvoie [] s'il n'y a aucune fragilité collective objective). Ne cite pas de prénoms d'élèves spécifiques pour les aspects négatifs de comportement.
+- Recommandations : Formule 1 à 2 leviers pédagogiques concrets et applicables en classe (rituels, méthodologie, organisation, remédiation — max 20 mots par action). Ne te contente jamais de paraphraser un point de vigilance sous forme de vœu vague (« Encourager… », « Renforcer… ») sans préciser le moyen concret.
+- Écris dans un style naturel, sobre et précis, sans formules scolaires toutes faites.
 - Utilise un ton professionnel et constructif.${styleInstructionText}
 
 FORMAT DE RÉPONSE OBLIGATOIRE :
@@ -1391,23 +1590,45 @@ ${stats.appreciationsList.map((a, idx) => {
     },
 
     /**
-     * Handles refinement actions on the class analysis (summarize, positive, actionable)
-     * Preserves the structured 4-card Bento JSON format.
+     * Handles refinement actions solely on the "Synthèse globale" intro paragraph (summarize, positive),
+     * preserving the teacher's bullet cards (strengths, vigilances, recommendations) intact.
      * @param {HTMLButtonElement} button - The clicked button with data-refine-type
      */
     async handleClassAnalysisActions(button) {
         if (!UI.checkAPIKeyPresence() || !this._ensureModal()) return;
         const type = button.dataset.refineType;
-        const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
+        const prompts = {
+            'summarize': "Condense cette synthèse globale pour le bulletin de classe en 1 à 2 phrases directes et percutantes (max 35 mots).",
+            'positive': "Reformule cette synthèse globale avec un ton très encourageant, valorisant et constructif, en mettant en lumière le potentiel et la dynamique du groupe."
+        };
+        if (!prompts[type]) return;
 
+        const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
         const currentTextElement = contentDiv?.querySelector('.ai-synthesis-text');
         if (!this.cachedSynthesisHTML && !currentTextElement) return;
 
-        const currentContentText = this.cachedSynthesisRawText ||
-            currentTextElement?.innerText ||
-            currentTextElement?.textContent ||
-            '';
-        if (!currentContentText) return;
+        let payload = this._readSynthesisPayloadFromDOM(currentTextElement);
+        if (!payload && this.cachedSynthesisRawText) {
+            try {
+                const parsed = JSON.parse(this.cachedSynthesisRawText);
+                if (parsed && typeof parsed === 'object') {
+                    payload = {
+                        synthesis: String(parsed.synthesis || '').trim(),
+                        strengths: parsed.strengths || parsed.strength || [],
+                        vigilances: parsed.vigilances || parsed.vigilance || [],
+                        recommendations: parsed.recommendations || parsed.recommendation || []
+                    };
+                }
+            } catch (_) {
+                // Non-JSON legacy synthesis handled below
+            }
+        }
+
+        const currentIntroText = payload?.synthesis || '';
+        if (!currentIntroText) {
+            UI.showNotification("Aucune synthèse globale à affiner.", "warning");
+            return;
+        }
 
         const targetClassId = this.cachedSynthesisClassId ?? appState.currentClassId;
         const targetPeriod = this.cachedSynthesisPeriod || appState.currentPeriod;
@@ -1416,25 +1637,28 @@ ${stats.appreciationsList.map((a, idx) => {
         UI.showInlineSpinner(button);
         button.disabled = true;
 
-        const prompts = {
-            'summarize': "Condense fortement cette analyse : rédige une synthèse globale très directe de 1 à 2 phrases (max 35 mots) et raccourcis chaque point fort, point de vigilance et recommandation à l'essentiel (max 10 mots par puce).",
-            'positive': "Reformule l'ensemble de cette analyse avec un ton très encourageant, valorisant et constructif : mets en lumière le potentiel du groupe et transforme les points de vigilance en leviers de progression bienveillants.",
-            'actionable': "Oriente cette analyse vers l'action concrète pour la prochaine période : rends la synthèse très opérationnelle et formule 2 à 3 recommandations pédagogiques et méthodologiques directement applicables en classe."
-        };
-
         try {
-            const systemPrompt = `Tu es un conseiller pédagogique expert. Ajuste la synthèse de classe fournie selon la consigne de l'enseignant tout en conservant impérativement la structure JSON stricte à 4 clés :
-{
-  "synthesis": "Texte de la synthèse générale...",
-  "strengths": ["Point fort 1...", "Point fort 2..."],
-  "vigilances": ["Point de vigilance 1...", "Point de vigilance 2..."],
-  "recommendations": ["Recommandation 1...", "Recommandation 2..."]
-}
-Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Réponds directement par l'objet JSON brut.`;
-            const userPrompt = `${prompts[type]}\n\nAnalyse à ajuster :\n${currentContentText}`;
+            const systemPrompt = `Tu es un conseiller pédagogique expert. Ajuste uniquement le texte de synthèse générale de classe fourni selon la consigne de l'enseignant, sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »). Réponds uniquement avec le paragraphe révisé en texte brut, sans introduction, commentaire, JSON ni guillemets.`;
+            const userPrompt = `${prompts[type]}\n\nSynthèse à ajuster :\n${currentIntroText}`;
             const resp = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
 
-            const formattedText = this._formatSynthesisText(resp.text);
+            let refinedIntro = (resp.text || '').trim().replace(/^```(?:\w+)?\n?/, '').replace(/\n?```$/, '').trim();
+            if (refinedIntro.startsWith('{')) {
+                try {
+                    const parsedResp = JSON.parse(refinedIntro);
+                    if (typeof parsedResp?.synthesis === 'string' && parsedResp.synthesis.trim()) {
+                        refinedIntro = parsedResp.synthesis.trim();
+                    }
+                } catch (_) {
+                    // Keep raw trimmed text if not valid JSON
+                }
+            }
+            refinedIntro = refinedIntro.replace(/\.{3,}/g, '...').replace(/^["«\s]+|["»\s]+$/g, '').trim();
+            if (!refinedIntro) return;
+
+            const updatedPayload = { ...payload, synthesis: refinedIntro };
+            const updatedRawText = JSON.stringify(updatedPayload);
+            const formattedText = this._formatSynthesisText(updatedRawText);
             const refinedHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
             const stillOnSameContext = appState.currentClassId === targetClassId && appState.currentPeriod === targetPeriod;
@@ -1442,16 +1666,20 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
             this._saveSynthesisToStorage(refinedHTML, targetDataHash, {
                 classId: targetClassId,
                 period: targetPeriod,
-                rawText: resp.text
+                rawText: updatedRawText
             });
 
             if (stillOnSameContext) {
-                if (contentDiv) {
+                const introEl = contentDiv?.querySelector('.synthesis-intro-text');
+                if (introEl) {
+                    await UI.animateHtmlReveal(introEl, Utils.escapeHtml(refinedIntro));
+                    introEl._initialTextBeforeEdit = refinedIntro;
+                } else if (contentDiv) {
                     await UI.animateHtmlReveal(contentDiv, refinedHTML);
                     this._enhanceSynthesisDOM(contentDiv);
                 }
                 this.cachedSynthesisHTML = refinedHTML;
-                this.cachedSynthesisRawText = resp.text;
+                this.cachedSynthesisRawText = updatedRawText;
                 this._updateRevertButtonState();
             }
         } catch (e) {
@@ -1644,42 +1872,24 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
 
         try {
             const data = JSON.parse(cleaned);
-            const synthesis = data.synthesis || '';
-            const strengths = data.strengths || data.strength || [];
-            const vigilances = data.vigilances || data.vigilance || [];
-            const recommendations = data.recommendations || data.recommendation || [];
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                const synthesis = typeof data.synthesis === 'string' ? data.synthesis : '';
+                const hasExpectedKey = Boolean(synthesis) || ['strengths', 'strength', 'vigilances', 'vigilance', 'recommendations', 'recommendation']
+                    .some(k => Array.isArray(data[k]) && data[k].length > 0);
 
-            let html = '';
-
-            if (synthesis) {
-                html += this._buildIntroCardHTML('Synthèse Globale', synthesis);
-            }
-
-            const sectionsConfig = [
-                { title: 'Points forts', icon: 'ph:check-bold', color: 'success', items: strengths },
-                { title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning', items: vigilances },
-                { title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info', items: recommendations }
-            ];
-
-            sectionsConfig.forEach(sec => {
-                if (Array.isArray(sec.items) && sec.items.length > 0) {
-                    html += `
-                        <div class="synthesis-section synthesis-section--${sec.color}">
-                            <div class="synthesis-section-header">
-                                <iconify-icon icon="${sec.icon}"></iconify-icon>
-                                <span>${sec.title}</span>
-                            </div>
-                            <div class="synthesis-section-content">
-                                <ul class="synthesis-list">
-                                    ${sec.items.map(item => `<li contenteditable="true" spellcheck="true">${Utils.escapeHtml(item)}</li>`).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    `;
+                if (hasExpectedKey) {
+                    const listsByKey = {
+                        strengths: data.strengths || data.strength || [],
+                        vigilances: data.vigilances || data.vigilance || [],
+                        recommendations: data.recommendations || data.recommendation || []
+                    };
+                    let html = synthesis ? this._buildIntroCardHTML('Synthèse globale', synthesis) : '';
+                    SYNTHESIS_LIST_SECTIONS.forEach(cfg => {
+                        html += this._buildListSectionHTML(cfg, listsByKey[cfg.key]);
+                    });
+                    if (html) return html;
                 }
-            });
-
-            if (html) return html;
+            }
         } catch (e) {
             // Silent fallback to legacy Markdown parser below
         }
@@ -1688,7 +1898,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
         const sections = [
             { emoji: '📝', title: 'Synthèse', icon: 'solar:document-text-linear', color: 'primary-dark', isFullWidth: true },
             { emoji: '📊', title: 'Bilan', icon: 'solar:chart-square-linear', color: 'primary' },
-            { emoji: '✅', title: 'Points forts', icon: 'ph:check', color: 'success' },
+            { emoji: '✅', title: 'Points forts', icon: 'solar:cup-linear', color: 'success' },
             { emoji: '⚠️', title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning' },
             { emoji: '💡', title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info' }
         ];
@@ -1760,7 +1970,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
 
         // 3. Plain-text / bullet fallback wrapped in intro card so layout never collapses
         const fallbackLines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        return this._buildIntroCardHTML('Synthèse de la Classe', fallbackLines.join('\n'), true);
+        return this._buildIntroCardHTML('Synthèse de la classe', fallbackLines.join('\n'), true);
     },
 
     /**

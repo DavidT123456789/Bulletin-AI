@@ -262,6 +262,22 @@ describe('Utils', () => {
         });
     });
 
+    describe('formatStudentName (provenance classe + groupe)', () => {
+        it('devrait afficher une pilule unifiée classe + groupe (3ᵉ1 · G1) quand les deux provenances diffèrent', () => {
+            const html = Utils.formatStudentName('EL ORABI', 'Elyas', true, '', {
+                originClass: '3°1',
+                originGroup: '3ᵉG1'
+            });
+            expect(html).toContain('<span class="student-origin-class-tag" title="Classe 3ᵉ1 • Groupe 3ᵉG1">3ᵉ1 · G1</span>');
+
+            const customGroupHtml = Utils.formatStudentName('EL ORABI', 'Elyas', true, '', {
+                originClass: '3°1',
+                originGroup: 'Atelier Maths'
+            });
+            expect(customGroupHtml).toContain('<span class="student-origin-class-tag" title="Classe 3ᵉ1 • Groupe Atelier Maths">3ᵉ1 · Atelier Maths</span>');
+        });
+    });
+
     describe('formatStudentFirstLastName', () => {
         it('devrait formater le prénom suivi du NOM en majuscule', () => {
             expect(Utils.formatStudentFirstLastName('VERVY', 'Paul')).toBe('Paul VERVY');
@@ -351,6 +367,57 @@ describe('Utils', () => {
 
             expect(Utils.getCurrentClassName('grp-1')).toBe('3 TECHNOLOGIE G1');
             expect(Utils.getCurrentClassName('virtual_31')).toBe('3ᵉ1');
+
+            userSettings.academic.classes = [];
+            appState.generatedResults = [];
+        });
+    });
+
+    describe('getOriginGroup & provenance dans un groupe personnalisé (PAPD)', () => {
+        it('devrait résoudre dynamiquement le groupe d\'enseignement dans un groupe personnalisé (PAPD) et le supporter dans la recherche', () => {
+            userSettings.academic.classes = [
+                { id: 'grp-1', name: '3ᵉG1', isGroup: true },
+                { id: 'grp-papd', name: 'PAPD', isGroup: true }
+            ];
+            const sourceG1 = {
+                id: 's-g1',
+                nom: 'EL ORABI',
+                prenom: 'Elyas',
+                classId: 'grp-1',
+                originClass: '3°1',
+                studentData: { classe: '3°1' }
+            };
+            const papdLegacy = {
+                id: 's-papd',
+                nom: 'EL ORABI',
+                prenom: 'Elyas',
+                classId: 'grp-papd',
+                originClass: '3°1',
+                isCopiedProfile: true,
+                studentData: { classe: '3°1' }
+            };
+            appState.generatedResults = [sourceG1, papdLegacy];
+
+            expect(Utils.getStudentOriginInfo(papdLegacy, 'PAPD')).toEqual({
+                originClass: '3°1',
+                originGroup: '3ᵉG1'
+            });
+            expect(Utils.getStudentOriginInfo(sourceG1, '3ᵉG1')).toEqual({
+                originClass: '3°1',
+                originGroup: ''
+            });
+            expect(Utils.getStudentOriginInfo(sourceG1, '3ᵉ1')).toEqual({
+                originClass: '3ᵉG1',
+                originGroup: ''
+            });
+
+            expect(Utils.matchesStudent(papdLegacy, 'G1', { currentClassName: 'PAPD' })).toBe(true);
+            expect(Utils.matchesStudent(papdLegacy, '3eG1', { currentClassName: 'PAPD' })).toBe(true);
+            expect(Utils.matchesStudent(papdLegacy, '3e1', { currentClassName: 'PAPD' })).toBe(true);
+            expect(Utils.matchesStudent(papdLegacy, 'G2', { currentClassName: 'PAPD' })).toBe(false);
+
+            appState.generatedResults = [{ ...papdLegacy, sourceGroupName: '3ᵉG1' }];
+            expect(Utils.getOriginGroup(appState.generatedResults[0], 'PAPD')).toBe('3ᵉG1');
 
             userSettings.academic.classes = [];
             appState.generatedResults = [];

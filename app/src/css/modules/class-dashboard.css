@@ -607,7 +607,6 @@
     border-radius: var(--radius-md);
     background: var(--item-idle-bg);
     border: 1px solid var(--border-subtle);
-    border-left: 3px solid var(--ai-icon-color);
     padding: var(--space-4);
     display: flex;
     flex-direction: column;
@@ -621,8 +620,7 @@
 .synthesis-intro-card {
     grid-column: 1 / -1;
     background: linear-gradient(135deg, var(--ai-icon-tint-bg) 0%, rgba(var(--color-violet-rgb), 0.04) 100%);
-    border-color: rgba(var(--color-blue-rgb), 0.18);
-    border-left: 3px solid var(--ai-icon-color);
+    border-color: rgba(var(--color-blue-rgb), 0.22);
     padding: var(--space-4) var(--space-5);
 }
 
@@ -686,257 +684,27 @@
     display: inline;
 }
 
-/* Inline Editing Affordances (Zero Layout Shift) */
-.synthesis-intro-text[contenteditable="true"],
-.synthesis-list li[contenteditable="true"],
-.analysis-card-body li[contenteditable="true"] {
-    cursor: text;
-    border-radius: var(--radius-xs);
-    transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
-}
-
-@media (hover: hover) {
-    .synthesis-intro-text[contenteditable="true"]:not(:focus):hover,
-    .synthesis-list li[contenteditable="true"]:not(:focus):hover,
-    .analysis-card-body li[contenteditable="true"]:not(:focus):hover {
-        background: var(--item-hover-bg);
-    }
-}
-
-.synthesis-intro-text[contenteditable="true"]:focus,
-.synthesis-list li[contenteditable="true"]:focus,
-.analysis-card-body li[contenteditable="true"]:focus {
-    outline: none;
-    background: var(--surface-color);
-    color: var(--text-primary);
-    box-shadow: 0 0 0 1.5px var(--primary-color);
-}
-
 /* Full width for the 4th card (Recommandations) when 4 cards are present so there is no orphan half-row */
 .synthesis-section--info,
 .synthesis-section:last-child:nth-child(even) {
     grid-column: 1 / -1;
 }
 
-/* HEADER STYLING within card */
+/* HEADER STYLING within card (layout & typographie mutualisés dans components.css) */
 .synthesis-section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: var(--font-sm);
-    font-weight: 600;
     z-index: 2;
 }
 
-.synthesis-section-header iconify-icon {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-/* CONTENT STYLING */
+/* CONTENT STYLING (surfaces, puces et placeholder mutualisés dans components.css) */
 .synthesis-section-content {
     flex: 1;
     z-index: 2;
-}
-
-.synthesis-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.synthesis-list li {
-    font-size: var(--font-sm);
-    color: var(--text-secondary);
-    position: relative;
-    padding: 2px 6px 2px 18px;
-    margin: -2px -6px -2px -4px;
-    border-radius: var(--radius-xs);
-    line-height: 1.5;
-    transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
-}
-
-.synthesis-list li::before {
-    content: '';
-    position: absolute;
-    left: 4px;
-    top: calc(0.58em + 2px);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    pointer-events: none;
-}
-
-/* THEME VARIANTS (Mineral Semantic Accents) */
-
-/* 1. BILAN (Blue) */
-.synthesis-section--primary {
-    border-left-color: var(--color-blue);
-    background: rgba(var(--color-blue-rgb), 0.05);
-    border-color: rgba(var(--color-blue-rgb), 0.15);
-}
-.synthesis-section--primary .synthesis-section-header {
-    color: var(--color-blue);
-}
-.synthesis-section--primary .synthesis-section-header iconify-icon {
-    background: rgba(var(--color-blue-rgb), 0.14);
-    color: var(--color-blue);
-}
-
-/* 2. POINTS FORTS (Emerald / Success) */
-.synthesis-section--success {
-    border-left-color: var(--grade-range-16-20);
-    background: rgba(var(--grade-range-16-20-rgb), 0.05);
-    border-color: rgba(var(--grade-range-16-20-rgb), 0.16);
-}
-.synthesis-section--success .synthesis-section-header {
-    color: var(--grade-range-16-20);
-}
-.synthesis-section--success .synthesis-section-header iconify-icon {
-    background: rgba(var(--grade-range-16-20-rgb), 0.14);
-    color: var(--grade-range-16-20);
-}
-.synthesis-section--success .synthesis-list li::before {
-    background: var(--grade-range-16-20);
-}
-
-/* 3. VIGILANCE (Amber / Warning) */
-.synthesis-section--warning {
-    border-left-color: var(--grade-range-4-8);
-    background: rgba(var(--grade-range-4-8-rgb), 0.05);
-    border-color: rgba(var(--grade-range-4-8-rgb), 0.16);
-}
-.synthesis-section--warning .synthesis-section-header {
-    color: var(--grade-range-4-8);
-}
-.synthesis-section--warning .synthesis-section-header iconify-icon {
-    background: rgba(var(--grade-range-4-8-rgb), 0.14);
-    color: var(--grade-range-4-8);
-}
-.synthesis-section--warning .synthesis-list li::before {
-    background: var(--grade-range-4-8);
-}
-
-/* 4. RECOMMANDATIONS (Violet / Info) */
-.synthesis-section--info {
-    border-left-color: var(--color-violet);
-    background: rgba(var(--color-violet-rgb), 0.05);
-    border-color: rgba(var(--color-violet-rgb), 0.16);
-}
-.synthesis-section--info .synthesis-section-header {
-    color: var(--color-violet);
-}
-.synthesis-section--info .synthesis-section-header iconify-icon {
-    background: rgba(var(--color-violet-rgb), 0.14);
-    color: var(--color-violet);
-}
-.synthesis-section--info .synthesis-list li::before {
-    background: var(--color-violet);
 }
 
 @media (max-width: 640px) {
     .ai-synthesis-text {
         grid-template-columns: 1fr;
     }
-}
-
-/* ==========================================================================
-   AI BENTO LOADING SKELETON BADGE
-   ========================================================================== */
-.class-synthesis-skeleton .generating-badge.active {
-    height: 38px;
-    padding: 8px 18px;
-    background:
-        linear-gradient(90deg,
-            rgba(var(--color-blue-rgb), 0.06) 0%,
-            rgba(var(--success-rgb), 0.04) 33%,
-            rgba(var(--warning-rgb), 0.04) 66%,
-            rgba(var(--color-violet-rgb), 0.06) 100%),
-        rgba(var(--surface-color-rgb), 0.90);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: none;
-    color: var(--text-primary);
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-    animation: none;
-    isolation: isolate;
-}
-
-.class-synthesis-skeleton .generating-badge.active > * {
-    position: relative;
-    z-index: 3;
-}
-
-.class-synthesis-skeleton .generating-badge.active iconify-icon {
-    color: var(--ai-icon-color);
-    font-size: 13px;
-}
-
-.class-synthesis-skeleton .generating-badge.active::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1.2px;
-    background: conic-gradient(from var(--gradient-angle, 0deg),
-            var(--color-blue) 0%,
-            var(--success-color) 25%,
-            var(--warning-color) 50%,
-            var(--color-violet) 75%,
-            var(--color-blue) 100%);
-    -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
-    -webkit-mask-clip: content-box, border-box;
-    -webkit-mask-composite: xor;
-    mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
-    mask-clip: content-box, border-box;
-    mask-composite: exclude;
-    animation: rotate-gradient 3s linear infinite;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.class-synthesis-skeleton .generating-badge.active::after {
-    content: '';
-    position: absolute;
-    inset: -5px;
-    border-radius: inherit;
-    background: conic-gradient(from var(--gradient-angle, 0deg),
-            var(--color-blue) 0%,
-            var(--success-color) 25%,
-            var(--warning-color) 50%,
-            var(--color-violet) 75%,
-            var(--color-blue) 100%);
-    filter: blur(8px);
-    pointer-events: none;
-    z-index: 1;
-    animation: rotate-gradient 3s linear infinite;
-    opacity: 0.12;
-}
-
-[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active {
-    background:
-        linear-gradient(90deg,
-            rgba(var(--color-blue-rgb), 0.12) 0%,
-            rgba(var(--success-rgb), 0.08) 33%,
-            rgba(var(--warning-rgb), 0.08) 66%,
-            rgba(var(--color-violet-rgb), 0.10) 100%),
-        rgba(var(--surface-color-rgb), 0.85);
-    box-shadow: var(--shadow-lg);
-}
-
-[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active::after {
-    opacity: 0.35;
 }
 
 /* ==========================================================================
@@ -973,8 +741,7 @@
     pointer-events: none;
 }
 
-/* Surface Satin Subtil et couleur d'icône mutualisées avec .btn-ai dans components.css */
-.ai-placeholder-icon {
+.ai-placeholder-icon.is-error {
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -983,9 +750,6 @@
     justify-content: center;
     font-size: 1.6rem;
     z-index: 1;
-}
-
-.ai-placeholder-icon.is-error {
     background: var(--error-light);
     border: 1px solid rgba(var(--error-rgb), 0.25);
     color: var(--error-color);
@@ -994,7 +758,7 @@
 
 .ai-placeholder-title {
     font-size: var(--font-lg);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-primary);
     margin: 0;
     z-index: 1;
@@ -1075,12 +839,6 @@
     --chip-rgb: var(--color-amber-rgb);
 }
 
-.btn-refinement[data-refine-type="actionable"] {
-    --chip-color: var(--color-blue);
-    --chip-hover-color: var(--color-blue-deep);
-    --chip-rgb: var(--color-blue-rgb);
-}
-
 .btn-refinement[data-refine-type="positive"] {
     --chip-color: var(--color-emerald);
     --chip-hover-color: var(--color-emerald-deep);
@@ -1090,11 +848,6 @@
 [data-theme="dark"] .btn-refinement[data-refine-type="summarize"] {
     --chip-color: var(--color-amber-bright);
     --chip-hover-color: var(--color-amber-bright);
-}
-
-[data-theme="dark"] .btn-refinement[data-refine-type="actionable"] {
-    --chip-color: var(--color-blue-bright);
-    --chip-hover-color: var(--color-blue-bright);
 }
 
 [data-theme="dark"] .btn-refinement[data-refine-type="positive"] {

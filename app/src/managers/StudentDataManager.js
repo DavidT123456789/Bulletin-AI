@@ -92,6 +92,7 @@ export const StudentDataManager = {
         let studentPhoto = null;
         let statuses = [];
         let originClass = '';
+        let sourceGroupName = '';
 
         for (const match of matches) {
             if (!studentPhoto && match.studentPhoto?.data) {
@@ -113,6 +114,19 @@ export const StudentDataManager = {
                     }
                 }
             }
+            if (!sourceGroupName) {
+                const sourceClass = match.classId ? classMap.get(match.classId) : null;
+                const isPrimaryTeachingGroup = Boolean(
+                    !match.isCopiedProfile &&
+                    sourceClass?.name &&
+                    (sourceClass.isGroup || sourceClass.type === 'group' || Utils.isGroupClassName(sourceClass.name))
+                );
+                if (isPrimaryTeachingGroup) {
+                    sourceGroupName = sourceClass.name.trim();
+                } else if (match.sourceGroupName?.trim()) {
+                    sourceGroupName = match.sourceGroupName.trim();
+                }
+            }
         }
 
         // Fallback : si aucune classe non-groupe n'a été trouvée, utiliser le nom de la classe source
@@ -123,10 +137,13 @@ export const StudentDataManager = {
             }
         }
 
+        sourceGroupName = Utils.resolveDistinctGroup(sourceGroupName, originClass);
+
         return {
             studentPhoto,
             statuses,
             originClass,
+            sourceGroupName,
             sourceStudent: matches[0]
         };
     },
@@ -156,10 +173,11 @@ export const StudentDataManager = {
             }
         }
 
+        const classes = userSettings?.academic?.classes || [];
+        const targetClass = effectiveClassId ? classes.find(c => c.id === effectiveClassId) : null;
+        const normTarget = targetClass?.name ? Utils.normalizeClassName(targetClass.name) : '';
+
         if (profile.originClass) {
-            const classes = userSettings?.academic?.classes || [];
-            const targetClass = effectiveClassId ? classes.find(c => c.id === effectiveClassId) : null;
-            const normTarget = targetClass?.name ? Utils.normalizeClassName(targetClass.name) : '';
             const normOrigin = Utils.normalizeClassName(profile.originClass);
 
             if (!normTarget || normOrigin !== normTarget) {
@@ -170,6 +188,15 @@ export const StudentDataManager = {
                         result.studentData.classe = profile.originClass;
                     }
                 }
+                result.isCopiedProfile = true;
+            }
+        }
+
+        if (profile.sourceGroupName && !result.sourceGroupName) {
+            const resolvedOrigin = (result.studentData?.classe || result.classe || result.originClass || '').trim();
+            const validGroup = Utils.resolveDistinctGroup(profile.sourceGroupName, resolvedOrigin, targetClass?.name || '');
+            if (validGroup) {
+                result.sourceGroupName = validGroup;
                 result.isCopiedProfile = true;
             }
         }
@@ -238,7 +265,7 @@ export const StudentDataManager = {
                 return;
             }
 
-            // Déterminer la classe d'origine à afficher en badge dans le nouveau groupe
+            // Déterminer la classe d'origine et le groupe d'enseignement source à afficher dans le nouveau groupe
             const explicitOrigin = (sourceStudent.studentData?.classe || sourceStudent.classe || sourceStudent.originClass || '').trim();
             const sourceClass = sourceStudent.classId ? classMap.get(sourceStudent.classId) : null;
             let originClass = explicitOrigin || (sourceClass?.name || '').trim();
@@ -246,6 +273,9 @@ export const StudentDataManager = {
             if (originClass && normTargetName && Utils.normalizeClassName(originClass) === normTargetName) {
                 originClass = '';
             }
+
+            const rawSourceGroup = (!sourceStudent.isCopiedProfile ? sourceClass?.name : (sourceStudent.sourceGroupName || sourceClass?.name)) || '';
+            const sourceGroupName = Utils.resolveDistinctGroup(rawSourceGroup, originClass, targetClass?.name || '');
 
             const statuses = Array.isArray(sourceStudent.studentData?.statuses)
                 ? sourceStudent.studentData.statuses.filter(s => typeof s === 'string' && !/^(Nouveau|Départ)\b/i.test(s.trim()))
@@ -268,6 +298,9 @@ export const StudentDataManager = {
                 if (newStudent.studentData) {
                     newStudent.studentData.classe = originClass;
                 }
+            }
+            if (sourceGroupName) {
+                newStudent.sourceGroupName = sourceGroupName;
             }
 
             const photoToCopy = sourceStudent.studentPhoto?.data ? sourceStudent.studentPhoto : photoByKey.get(normalizedKey);

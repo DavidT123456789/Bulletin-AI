@@ -244,8 +244,7 @@
 /* État 1 : Générer (Satin Subtil — identité IA fixe via tokens --ai-* de variables.css) */
 .btn-ai,
 .btn-smart-action-inline.mode-generate,
-.help-ui-pill.is-ai,
-.ai-placeholder-icon:not(.is-error) {
+.help-ui-pill.is-ai {
     position: relative;
     overflow: hidden;
     isolation: isolate;
@@ -255,7 +254,7 @@
 }
 
 /* Icône Étoiles IA : lueur optique pure sans décalage géométrique */
-:is(.btn-ai:not(.is-loading), .btn-smart-action-inline.mode-generate, .help-ui-pill.is-ai, .ai-placeholder-icon:not(.is-error)) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {
+:is(.btn-ai:not(.is-loading), .btn-smart-action-inline.mode-generate, .help-ui-pill.is-ai) :is(i, iconify-icon:not(.loading-spinner-svg):not(.cancel-svg), .smart-action-icon) {
     color: var(--ai-icon-color);
     opacity: 1;
     position: relative;
@@ -1339,4 +1338,177 @@ textarea {
 [data-theme="dark"] .trombi-drop-zone .drop-zone-hint u:hover {
     color: #ffffff;
     border-bottom-color: #ffffff;
+}
+
+/* ====================================================================
+   AI ANALYSIS & SYNTHESIS CARDS (Mutualized: Class Dashboard & Focus)
+   ==================================================================== */
+.synthesis-section--primary {
+    --section-accent: var(--color-blue);
+    --section-accent-rgb: var(--color-blue-rgb);
+}
+
+.synthesis-section--success,
+.analysis-card.analysis-forces {
+    --section-accent: var(--color-emerald);
+    --section-accent-rgb: var(--color-emerald-rgb);
+}
+
+.synthesis-section--warning,
+.analysis-card.analysis-weaknesses {
+    --section-accent: var(--color-amber);
+    --section-accent-rgb: var(--color-amber-rgb);
+}
+
+.synthesis-section--info,
+.analysis-card.analysis-suggestions {
+    --section-accent: var(--color-violet);
+    --section-accent-rgb: var(--color-violet-rgb);
+}
+
+.synthesis-section:is(.synthesis-section--primary, .synthesis-section--success, .synthesis-section--warning, .synthesis-section--info),
+.analysis-card:is(.analysis-forces, .analysis-weaknesses, .analysis-suggestions) {
+    background: rgba(var(--section-accent-rgb), 0.05);
+    border-color: rgba(var(--section-accent-rgb), 0.16);
+}
+
+.synthesis-section-header > iconify-icon,
+.analysis-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    background: rgba(var(--section-accent-rgb), 0.14);
+    color: var(--section-accent);
+}
+
+/* Mutualized with .journal-header-btn.icon-only; subtle offset after card title */
+.analysis-add-item-btn {
+    margin-left: -2px;
+    flex-shrink: 0;
+}
+
+.synthesis-section-header,
+.analysis-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.synthesis-section-header,
+.analysis-card-header h4 {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.synthesis-list,
+.analysis-card-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.synthesis-list li,
+.analysis-card-body li {
+    font-size: var(--font-sm);
+    color: color-mix(in srgb, var(--text-primary) 86%, var(--text-secondary));
+    position: relative;
+    padding: 2px 6px 2px 18px;
+    margin: -2px -6px -2px -4px;
+    border-radius: var(--radius-xs);
+    line-height: 1.55;
+    transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.synthesis-list li::before,
+.analysis-card-body li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: calc(0.58em + 2px);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--section-accent, currentColor);
+    pointer-events: none;
+}
+
+/* Interactive Empty Placeholder State (Mutualized across Class Dashboard & Focus Analysis) */
+.analysis-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-tertiary);
+    font-style: normal;
+    font-size: 13px;
+    padding: 6px 0;
+}
+
+.analysis-placeholder :is(i, iconify-icon) {
+    opacity: 0.65;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+button.analysis-placeholder {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: color var(--transition-fast);
+}
+
+@media (hover: hover) {
+    button.analysis-placeholder:hover {
+        color: var(--text-primary);
+    }
+}
+
+button.analysis-placeholder:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Inline Editing Affordances (Zero Layout Shift) */
+.synthesis-intro-text[contenteditable="true"],
+.synthesis-list li[contenteditable="true"],
+.analysis-card-body li[contenteditable="true"] {
+    cursor: text;
+    border-radius: 6px;
+    transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.synthesis-list li[contenteditable="true"],
+.analysis-card-body li[contenteditable="true"] {
+    min-height: 1.55em;
+}
+
+@media (hover: hover) {
+    .synthesis-intro-text[contenteditable="true"]:not(:focus):hover,
+    .synthesis-list li[contenteditable="true"]:not(:focus):hover,
+    .analysis-card-body li[contenteditable="true"]:not(:focus):hover {
+        background: var(--item-hover-bg);
+    }
+}
+
+.synthesis-intro-text[contenteditable="true"]:focus,
+.synthesis-list li[contenteditable="true"]:focus,
+.analysis-card-body li[contenteditable="true"]:focus {
+    outline: none;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow:
+        0 0 0 1px rgba(var(--section-accent-rgb, var(--color-blue-rgb)), 0.5),
+        0 0 0 3px rgba(var(--section-accent-rgb, var(--color-blue-rgb)), 0.12);
 }

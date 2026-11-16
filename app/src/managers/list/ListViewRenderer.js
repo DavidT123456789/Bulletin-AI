@@ -36,7 +36,7 @@ export const ListViewRenderer = {
         const isSelected = context.isSelected ?? ListSelectionManager.selectedIds.has(result.id);
         const searchQuery = context.searchQuery ?? (appState.searchQuery || '');
         const currentClassName = context.currentClassName || Utils.getCurrentClassName();
-        const originClass = Utils.getOriginClass(result, currentClassName);
+        const originInfo = Utils.getStudentOriginInfo(result, currentClassName);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
         const appreciationCell = this.getAppreciationCell(result);
 
@@ -44,7 +44,7 @@ export const ListViewRenderer = {
             <td class="student-name-cell">
                 <div class="student-identity-wrapper">
                     ${avatarHTML}
-                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
+                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originInfo)}</span>
                 </div>
             </td>
             <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
@@ -226,10 +226,10 @@ export const ListViewRenderer = {
             const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
             const searchQuery = appState.searchQuery || '';
             const currentClassName = Utils.getCurrentClassName();
-            const originClass = Utils.getOriginClass(result, currentClassName);
+            const originInfo = Utils.getStudentOriginInfo(result, currentClassName);
             identityWrapper.innerHTML = `
                 ${avatarHTML}
-                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
+                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originInfo)}</span>
             `;
         }
 

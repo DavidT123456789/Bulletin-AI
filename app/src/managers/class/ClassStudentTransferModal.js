@@ -335,10 +335,12 @@ export const ClassStudentTransferModal = {
             const normOrigin = explicitOrigin ? Utils.normalizeClassName(explicitOrigin) : '';
             const rawVirtualId = normOrigin ? `virtual_${normOrigin}` : null;
             const virtualId = rawVirtualId && virtualClassIds.has(rawVirtualId) ? rawVirtualId : null;
+            const badgeRaw = explicitOrigin || sourceClass.name || '';
+            const rawCandidateGroup = (!r.isCopiedProfile ? sourceClass.name : (r.sourceGroupName || '')).trim();
+            const candidateGroup = Utils.resolveDistinctGroup(rawCandidateGroup, badgeRaw);
 
             const existing = candidatesMap.get(key);
             if (!existing) {
-                const badgeRaw = explicitOrigin || sourceClass.name || '';
                 const statuses = Array.isArray(r.studentData?.statuses)
                     ? r.studentData.statuses.filter(s => typeof s === 'string' && !/^(Nouveau|Départ)\b/i.test(s.trim()))
                     : [];
@@ -350,6 +352,7 @@ export const ClassStudentTransferModal = {
                     prenom: r.prenom || '',
                     studentPhoto: r.studentPhoto || r.studentData?.photo || null,
                     originBadge: badgeRaw ? Utils.formatClassDisplayName(badgeRaw) : '',
+                    originGroup: candidateGroup,
                     statuses,
                     isCopiedProfile: Boolean(r.isCopiedProfile),
                     classIds: new Set([sourceClass.id]),
@@ -363,6 +366,9 @@ export const ClassStudentTransferModal = {
                 if (existing.isCopiedProfile && !r.isCopiedProfile) {
                     existing.id = r.id;
                     existing.isCopiedProfile = false;
+                    if (candidateGroup) existing.originGroup = candidateGroup;
+                } else if (!existing.originGroup && candidateGroup) {
+                    existing.originGroup = candidateGroup;
                 }
                 if (!existing.studentPhoto?.data && (r.studentPhoto?.data || r.studentData?.photo?.data)) {
                     existing.studentPhoto = r.studentPhoto || r.studentData?.photo;
@@ -388,8 +394,13 @@ export const ClassStudentTransferModal = {
         const classCounts = new Map();
         const virtualCounts = new Map();
         for (const cand of candidates) {
-            const plainClass = (cand.originBadge || '').replace(/[ᵉʳ]/g, ' ');
-            cand.searchHaystack = `${cand.nom} ${cand.prenom} ${cand.originBadge} ${plainClass}`
+            const keyboardClass = Utils.toKeyboardClass(cand.originBadge);
+            const spacedClass = (cand.originBadge || '').replace(/[ᵉʳ°]/g, ' ');
+            const displayGroup = cand.originGroup ? Utils.formatClassDisplayName(cand.originGroup) : '';
+            const keyboardGroup = Utils.toKeyboardClass(displayGroup || cand.originGroup);
+            const shortGroup = cand.originGroup ? Utils.formatShortGroupDisplay(cand.originGroup) : '';
+            const normGroup = cand.originGroup ? Utils.normalizeClassName(cand.originGroup) : '';
+            cand.searchHaystack = `${cand.nom} ${cand.prenom} ${cand.originBadge} ${keyboardClass} ${spacedClass} ${cand.originGroup} ${displayGroup} ${keyboardGroup} ${shortGroup} ${normGroup}`
                 .toLowerCase()
                 .normalize('NFKD')
                 .replace(/[\u0300-\u036f]/g, '');
@@ -576,7 +587,10 @@ export const ClassStudentTransferModal = {
                 const isSelected = selectedIds.has(cand.id);
                 const isPresent = cand.alreadyInTarget;
                 const avatarHtml = StudentPhotoManager.getAvatarHTML(cand, 'sm', false, false);
-                const nameHtml = Utils.formatStudentName(cand.nom, cand.prenom, true, trimmedQuery, cand.originBadge);
+                const nameHtml = Utils.formatStudentName(cand.nom, cand.prenom, true, trimmedQuery, {
+                    originClass: cand.originBadge,
+                    originGroup: cand.originGroup
+                });
                 const statusesHtml = cand.statuses.length > 0
                     ? `<div class="pick-student-statuses">${cand.statuses.map(st => {
                         const info = Utils.getStatusBadgeInfo(st);

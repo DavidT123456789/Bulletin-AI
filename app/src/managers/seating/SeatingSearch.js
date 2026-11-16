@@ -239,12 +239,7 @@ export const SeatingSearch = {
                 const buttonsHtml = items.map(({ group, student }) => {
                     const fullName = `${(student.prenom || '').trim()} ${(student.nom || '').trim()}`.trim();
                     const highlightedName = Utils.highlightMatch(fullName, cleaned);
-                    const originClass = Utils.getOriginClass(student, group.className);
-                    const displayOrigin = originClass ? Utils.formatClassDisplayName(originClass) : '';
-                    const escapedOrigin = displayOrigin ? Utils.escapeHtml(displayOrigin) : '';
-                    const originBadge = escapedOrigin
-                        ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${escapedOrigin}">${escapedOrigin}</span>`
-                        : '';
+                    const originBadge = Utils.buildOriginBadgeHTML(Utils.getStudentOriginInfo(student, group.className));
                     const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm', false, false);
                     return `
                         <button class="sc-cross-action" type="button" data-class-id="${group.classId}" data-student-id="${student.id || ''}">

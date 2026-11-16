@@ -583,7 +583,7 @@ export const SeatingSidebar = {
                 return `
                 <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="${canDragChip}" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                    <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
+                    <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                     ${chipBadgeHtml}
                     <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                         <iconify-icon icon="solar:user-id-linear"></iconify-icon>
@@ -602,7 +602,7 @@ export const SeatingSidebar = {
                     ${filteredDeparted.map(s => `
                         <div class="sc-student-chip sc-chip-departed" draggable="${this._isNativeDraggableAllowed()}" data-result-id="${s.id}">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
+                            <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
                             <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                                 <iconify-icon icon="solar:user-id-linear"></iconify-icon>

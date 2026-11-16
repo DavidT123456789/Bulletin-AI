@@ -1108,6 +1108,8 @@ export const SeatingState = {
                 classId: r.classId,
                 classe: r.classe,
                 originClass: r.originClass,
+                sourceGroupName: r.sourceGroupName,
+                isCopiedProfile: r.isCopiedProfile,
                 studentPhoto: r.studentPhoto,
                 seatingPosition: r.seatingPosition,
                 seatingActivityPosition: r.seatingActivityPosition,

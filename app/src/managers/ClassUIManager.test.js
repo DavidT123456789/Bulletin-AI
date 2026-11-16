@@ -852,7 +852,8 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         expect(row.querySelector('.student-avatar__initials')?.textContent).toBe('SB');
         expect(row.querySelector('.student-nom')?.textContent).toBe('BOUKHARI');
         expect(row.querySelector('.student-prenom')?.textContent).toContain('Sami');
-        expect(row.querySelector('.student-origin-class-tag')?.textContent).toBe('3ᵉ1');
+        expect(row.querySelector('.student-origin-class-tag')?.textContent).toBe('3ᵉ1 · G1');
+        expect(row.querySelector('.student-origin-class-tag')?.getAttribute('title')).toBe('Classe 3ᵉ1 • Groupe 3ᵉG1');
         expect(row.querySelector('.pick-student-statuses .tag-badge')?.textContent).toBe('PAP');
 
         // Alice est déjà présente dans Groupe PAD : verrouillée
@@ -877,13 +878,19 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         selectAllBtn.click();
         expect(row.classList.contains('selected')).toBe(true);
 
+        // Filtrage par groupe source dans la barre de recherche de la modale
+        searchInput.value = 'G1';
+        searchInput.dispatchEvent(new Event('input'));
+        expect(modal.querySelectorAll('.pick-student-row')).toHaveLength(2);
+        searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
         const confirmBtn = modal.querySelector('#confirmPickStudentsBtn');
         expect(confirmBtn.disabled).toBe(false);
         await confirmBtn.click();
 
         const padStudents = ClassManager.getStudentsForClass(groupPad.id);
         expect(padStudents).toHaveLength(2);
-        expect(padStudents.some(s => s.nom === 'BOUKHARI' && s.originClass === '3 1')).toBe(true);
+        expect(padStudents.some(s => s.nom === 'BOUKHARI' && s.originClass === '3 1' && s.sourceGroupName === '3 G1')).toBe(true);
     });
 
     it('devrait gérer la confirmation inline de suppression (Échap restaure l\'état draggable, anti-double-clic sur Supprimer)', async () => {

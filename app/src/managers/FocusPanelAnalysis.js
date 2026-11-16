@@ -25,23 +25,23 @@ const ANALYSIS_CARDS = [
     {
         key: 'strengths',
         contentId: 'analysisForcesContent',
-        emptyIcon: 'solar:lightbulb-linear',
-        idleText: 'Cliquez sur « Générer » pour découvrir les points forts — ou cliquer pour ajouter',
-        emptyText: 'Aucun point fort renseigné — cliquer pour ajouter'
+        emptyIcon: 'solar:stars-line-linear',
+        idleText: 'Cliquez sur « Générer » pour découvrir les points forts — ou cliquez pour ajouter',
+        emptyText: 'Aucun point fort renseigné — cliquez pour ajouter'
     },
     {
         key: 'weaknesses',
         contentId: 'analysisWeaknessesContent',
         emptyIcon: 'solar:magnifer-zoom-in-linear',
-        idleText: 'Cliquez sur « Générer » pour identifier les points de vigilance — ou cliquer pour ajouter',
-        emptyText: 'Aucun point de vigilance particulier — cliquer pour ajouter'
+        idleText: 'Cliquez sur « Générer » pour identifier les points de vigilance — ou cliquez pour ajouter',
+        emptyText: 'Aucun point de vigilance particulier — cliquez pour ajouter'
     },
     {
         key: 'nextSteps',
         contentId: 'analysisSuggestionsContent',
         emptyIcon: 'solar:signpost-linear',
-        idleText: 'Cliquez sur « Générer » pour obtenir des pistes de progrès — ou cliquer pour ajouter',
-        emptyText: 'Aucune piste renseignée — cliquer pour ajouter'
+        idleText: 'Cliquez sur « Générer » pour obtenir des pistes de progrès — ou cliquez pour ajouter',
+        emptyText: 'Aucune piste renseignée — cliquez pour ajouter'
     }
 ];
 

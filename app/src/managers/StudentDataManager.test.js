@@ -576,7 +576,41 @@ describe('StudentDataManager', () => {
             expect(pendingReal.studentPhoto).toEqual({ data: 'real-photo' });
             expect(pendingReal.studentData.statuses).toEqual(['PPRE']);
             expect(pendingReal.originClass).toBe('3*1');
+            expect(pendingReal.sourceGroupName).toBeUndefined();
             expect(pendingReal.isCopiedProfile).toBe(true);
+        });
+    });
+
+    describe('sourceGroupName sur copie/enrichissement (3ᵉG1 -> PAPD)', () => {
+        it('devrait conserver sourceGroupName distinct de originClass lors d\'une copie ou création depuis un groupe d\'enseignement', async () => {
+            const stateMod = await import('../state/State.js');
+            stateMod.userSettings.academic.classes = [
+                { id: 'grp-3g1', name: '3ᵉG1', isGroup: true, isDemo: false },
+                { id: 'grp-papd', name: 'PAPD', isGroup: true, isDemo: false }
+            ];
+            stateMod.userSettings.academic.currentClassId = 'grp-papd';
+            appState.generatedResults = [
+                {
+                    id: 'stu-g1',
+                    nom: 'EL ORABI',
+                    prenom: 'Elyas',
+                    classId: 'grp-3g1',
+                    originClass: '3°1',
+                    studentData: { nom: 'EL ORABI', prenom: 'Elyas', classe: '3°1', statuses: [] }
+                }
+            ];
+
+            const res = StudentDataManager.copyStudentsToClass(['stu-g1'], 'grp-papd');
+            expect(res.copiedCount).toBe(1);
+            expect(res.copiedStudents[0].originClass).toBe('3°1');
+            expect(res.copiedStudents[0].sourceGroupName).toBe('3ᵉG1');
+
+            const manualPending = StudentDataManager.createPendingResult(
+                { nom: 'EL ORABI', prenom: 'Elyas', statuses: [], periods: {} },
+                'grp-papd'
+            );
+            expect(manualPending.originClass).toBe('3°1');
+            expect(manualPending.sourceGroupName).toBe('3ᵉG1');
         });
     });
 

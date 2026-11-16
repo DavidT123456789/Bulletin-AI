@@ -259,7 +259,7 @@ export const SeatingMobileSheet = {
                     <div class="sc-sheet-picker-item sc-sheet-member-row" data-member-id="${escapedId}">
                         <button class="sc-sheet-picker-user sc-sheet-member-profile-btn" data-profile-id="${escapedId}" type="button">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                             ${memberStatusBadge}
                         </button>
                         <div class="sc-sheet-member-actions">
@@ -283,7 +283,7 @@ export const SeatingMobileSheet = {
                     <button class="sc-sheet-picker-item" data-join-student-id="${Utils.escapeHtml(String(s.id))}" type="button">
                         <div class="sc-sheet-picker-user">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
+                            <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                         </div>
                         <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Associer</span>
                     </button>
@@ -575,7 +575,7 @@ export const SeatingMobileSheet = {
                             <button class="sc-sheet-picker-item" data-student-id="${Utils.escapeHtml(String(s.id))}" type="button">
                                 <div class="sc-sheet-picker-user">
                                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                                    <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getOriginClass(s, currentClassName))}</span>
+                                    <span class="sc-sheet-picker-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                                 </div>
                                 <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Placer</span>
                             </button>

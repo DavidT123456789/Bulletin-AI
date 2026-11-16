@@ -703,12 +703,16 @@ export const FocusPanelHeader = {
 
         const activeClassId = userSettings?.academic?.currentClassId || appState?.currentClassId;
         const currentClassName = Utils.getCurrentClassName(activeClassId);
-        const originClass = Utils.getOriginClass(result, currentClassName);
+        const { originClass, originGroup } = Utils.getStudentOriginInfo(result, currentClassName);
         const displayClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
+        const displayGroup = originGroup ? Utils.formatClassDisplayName(originGroup) : '';
         const isGroupOrigin = displayClass ? (Utils.isGroupClassName(originClass) || Utils.isGroupClassName(displayClass)) : false;
         const badgePrefix = isGroupOrigin ? 'Groupe' : 'Classe';
-        const originBadge = displayClass ? `
-            <span class="focus-origin-class-badge">${badgePrefix} ${Utils.escapeHtml(displayClass)}</span>
+        const originParts = [];
+        if (displayClass) originParts.push(`${badgePrefix} ${Utils.escapeHtml(displayClass)}`);
+        if (displayGroup) originParts.push(`Groupe ${Utils.escapeHtml(displayGroup)}`);
+        const originBadge = originParts.length > 0 ? `
+            <span class="focus-origin-class-badge">${originParts.join(' · ')}</span>
         ` : '';
 
         nameEl.innerHTML = `

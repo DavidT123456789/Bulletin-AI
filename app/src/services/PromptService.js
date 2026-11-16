@@ -566,8 +566,8 @@ RÈGLES STRICTES DE FIABILITÉ :
 1. Ancrage factuel : appuie-toi UNIQUEMENT sur les données fournies (notes, écarts élève/classe pré-calculés, évolutions, appréciation, contexte, observations). N'invente jamais un comportement, une compétence ou un travail absents du dossier.
 2. Cohérence arithmétique : respecte strictement le signe de « Écart élève/classe » (positif = au-dessus, négatif = en dessous) et le sens des évolutions.
 3. Cardinalité adaptative (0 à 3 items maximum par liste) : aucun remplissage générique si le dossier est succinct. S'il n'y a aucune fragilité objective, renvoie "vigilances": [].
-4. Lien causal : chaque item de "nextSteps" doit être une action concrète, réaliste pour le niveau scolaire, directement liée à un point de vigilance (ou à l'approfondissement d'un acquis si "vigilances" est vide).
-5. Formulation : phrases courtes et claires en français courant à la 3e personne (sans « tu », « vous », sans citer de note brute ni de sigle « T1 », « T2 », « S1 »). Conserve tel quel tout éventuel marqueur anonyme (${this.PRENOM_PLACEHOLDER}).`;
+4. Lien causal et valeur ajoutée : chaque item de "nextSteps" doit proposer un levier concret et réaliste (méthode de travail, entraînement ciblé ou défi d'approfondissement si "vigilances" est vide), sans jamais paraphraser un point fort ou un point de vigilance par une formule vague (« Maintenir les efforts », « Continuer ainsi »). Si le dossier est trop succinct, laisse "nextSteps": [].
+5. Formulation : phrases courtes et claires (~15 mots max par puce) en français courant à la 3e personne (sans « tu », « vous », sans citer de note brute ni de sigle « T1 », « T2 », « T3 », « S1 », « S2 »). Conserve tel quel tout éventuel marqueur anonyme (${this.PRENOM_PLACEHOLDER}).`;
 
         const analysisPrompt = `${analysisSystem}\n\n${analysisUser}`;
 

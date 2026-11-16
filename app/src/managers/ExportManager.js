@@ -400,7 +400,7 @@ export const ExportManager = {
 
             if (introTextEl) {
                 const body = introTextEl.textContent.trim();
-                if (body) sections.push({ title: title || 'Synthèse Globale', isIntro: true, text: body });
+                if (body) sections.push({ title: title || 'Synthèse globale', isIntro: true, text: body });
             } else if (listItems.length > 0) {
                 const items = Array.from(listItems).map(li => li.textContent.trim()).filter(Boolean);
                 if (items.length > 0) sections.push({ title, isIntro: false, items, tone });

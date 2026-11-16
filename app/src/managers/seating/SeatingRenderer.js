@@ -581,19 +581,37 @@ export const SeatingRenderer = {
         const currentClass = this._getCurrentClass();
         const isVirtual = this._isVirtualClass(currentClass);
         const currentClassName = currentClass?.name || Utils.getCurrentClassName();
-        const rawOrigin = Utils.getOriginClass(studentResult, currentClassName);
-        if (!rawOrigin) return null;
-        const displayLabel = Utils.formatClassDisplayName(rawOrigin);
-        if (!displayLabel) return null;
-        const isGroup = isVirtual || Utils.isGroupClassName(rawOrigin) || Utils.isGroupClassName(displayLabel);
-        const shortLabel = isGroup ? Utils.formatShortGroupLabel(rawOrigin) : displayLabel;
+        const { originClass: rawOrigin, originGroup: rawGroup } = Utils.getStudentOriginInfo(studentResult, currentClassName);
+        if (!rawOrigin && !rawGroup) return null;
+
+        const displayLabel = rawOrigin ? Utils.formatClassDisplayName(rawOrigin) : '';
+        const displayGroup = rawGroup ? Utils.formatClassDisplayName(rawGroup) : '';
+        if (!displayLabel && !displayGroup) return null;
+
+        if (displayLabel && displayGroup) {
+            return {
+                raw: rawOrigin,
+                rawGroup,
+                displayLabel,
+                displayGroup,
+                shortLabel: displayLabel,
+                isGroup: false,
+                isVirtual,
+                tooltipLabel: `Classe ${displayLabel} • Groupe ${displayGroup}`
+            };
+        }
+
+        const singleRaw = rawOrigin || rawGroup;
+        const singleDisplay = displayLabel || displayGroup;
+        const isGroup = !rawOrigin || isVirtual || Utils.isGroupClassName(singleRaw) || Utils.isGroupClassName(singleDisplay);
+        const shortLabel = isGroup ? Utils.formatShortGroupLabel(singleRaw) : singleDisplay;
         return {
-            raw: rawOrigin,
-            displayLabel,
+            raw: singleRaw,
+            displayLabel: singleDisplay,
             shortLabel,
             isGroup,
             isVirtual,
-            tooltipLabel: isGroup ? `Groupe ${displayLabel}` : `Classe ${displayLabel}`
+            tooltipLabel: isGroup ? `Groupe ${singleDisplay}` : `Classe ${singleDisplay}`
         };
     },
 

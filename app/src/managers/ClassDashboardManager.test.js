@@ -245,19 +245,31 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(document.getElementById('highlightRiskList').textContent).toContain('FRAGILE Hugo');
     });
 
-    it('devrait conserver la grille Bento JSON lors d\'un affinement IA (handleClassAnalysisActions)', async () => {
+    it('devrait affiner uniquement la Synthèse globale et préserver intactes les cartes de puces (handleClassAnalysisActions)', async () => {
+        const initialJson = JSON.stringify({
+            synthesis: 'Classe sérieuse mais résultats encore un peu hétérogènes au second semestre.',
+            strengths: ['Participation active', 'Puce ajoutée par le professeur'],
+            vigilances: ['Attention aux bavardages'],
+            recommendations: ['Instaurer des rituels de début de séance']
+        });
+        const initialHtml = `<div class="ai-synthesis-text">${ClassDashboardManager._formatSynthesisText(initialJson)}</div>`;
+
         document.body.innerHTML = `
             <div id="classDashboardModal">
-                <div id="aiSynthesisContent"><div class="ai-synthesis-text"><div class="synthesis-section">Ancien contenu</div></div></div>
+                <div id="aiSynthesisContent">${initialHtml}</div>
                 <button id="generateSynthesisBtn"></button>
                 <div id="aiRefinementToolbar">
-                    <button id="btnSummarize" class="btn-refinement" data-refine-type="summarize">Synthétiser</button>
+                    <button id="btnSummarize" class="btn-refinement" data-refine-type="summarize">Plus concis</button>
                 </div>
-                <button id="revertSynthesisBtn"></button>
+                <button id="revertSynthesisBtn" style="display: none;"></button>
                 <button id="copyDashboardSynthesisBtn"></button>
             </div>
         `;
         ClassDashboardManager._ensureModal();
+        ClassDashboardManager.cachedSynthesisHTML = initialHtml;
+        ClassDashboardManager.originalSynthesisHTML = initialHtml;
+        ClassDashboardManager.cachedSynthesisRawText = initialJson;
+        ClassDashboardManager.originalSynthesisRawText = initialJson;
         appState.currentClassId = 'class-1';
         appState.currentPeriod = 'T2';
         appState.classes = [{ id: 'class-1', name: '3ème A', analyses: {} }];
@@ -268,23 +280,28 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => { el.innerHTML = html; });
         vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
         vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
-        vi.spyOn(AIService, 'callAIWithFallback').mockResolvedValue({
-            text: JSON.stringify({
-                synthesis: 'Bilan très concis de la classe.',
-                strengths: ['Participation active'],
-                vigilances: ['Attention aux bavardages'],
-                recommendations: ['Maintenir le rythme']
-            })
+        const aiSpy = vi.spyOn(AIService, 'callAIWithFallback').mockResolvedValue({
+            text: 'Bilan très concis de la classe.'
         });
 
         const btn = document.getElementById('btnSummarize');
         await ClassDashboardManager.handleClassAnalysisActions(btn);
 
+        // L'IA ne reçoit que le paragraphe de synthèse globale, jamais les puces éditées
+        expect(aiSpy).toHaveBeenCalledTimes(1);
+        expect(aiSpy.mock.calls[0][0]).toContain('Classe sérieuse mais résultats encore un peu hétérogènes');
+        expect(aiSpy.mock.calls[0][0]).not.toContain('Puce ajoutée par le professeur');
+
         const content = document.getElementById('aiSynthesisContent');
-        expect(content.querySelector('.synthesis-intro-card')).not.toBeNull();
-        expect(content.querySelector('.synthesis-section--success')).not.toBeNull();
-        expect(content.textContent).toContain('Bilan très concis de la classe.');
-        expect(content.textContent).toContain('Participation active');
+        expect(content.querySelector('.synthesis-intro-text').textContent).toBe('Bilan très concis de la classe.');
+        expect(content.textContent).toContain('Puce ajoutée par le professeur');
+        expect(content.textContent).toContain('Attention aux bavardages');
+        expect(content.textContent).toContain('Instaurer des rituels de début de séance');
+        expect(JSON.parse(ClassDashboardManager.cachedSynthesisRawText).strengths).toEqual([
+            'Participation active',
+            'Puce ajoutée par le professeur'
+        ]);
+        expect(document.getElementById('revertSynthesisBtn').style.display).toBe('inline-flex');
     });
 
     it('devrait copier un texte structuré avec titres et puces dans copySynthesis', async () => {
@@ -439,11 +456,53 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(1);
         expect(JSON.parse(appState.classes[0].analyses.T2.rawText).strengths).toEqual(['Travail sérieux']);
 
-        // 5. Reverting restores the original synthesis and hides the revert button
+        // 5. Clearing the LAST bullet removes it, switches to interactive placeholder, and persists []
+        const lastStrength = document.querySelector('.synthesis-section--success .synthesis-list li');
+        lastStrength.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        lastStrength.textContent = '';
+        lastStrength.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(0);
+        expect(document.querySelector('.synthesis-section--success .analysis-placeholder')).not.toBeNull();
+        expect(JSON.parse(appState.classes[0].analyses.T2.rawText).strengths).toEqual([]);
+
+        // 6. Clicking "+" adds a bullet; Escape cancels without polluting storage; committing persists
+        const addStrengthBtn = document.querySelector('.synthesis-section--success [data-synthesis-add="strengths"]');
+        expect(addStrengthBtn).not.toBeNull();
+        addStrengthBtn.click();
+        const draftLi = document.querySelector('.synthesis-section--success .synthesis-list li');
+        expect(draftLi).not.toBeNull();
+        draftLi.textContent = 'Brouillon annulé';
+        draftLi.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(0);
+        expect(document.querySelector('.synthesis-section--success .analysis-placeholder')).not.toBeNull();
+        expect(JSON.parse(appState.classes[0].analyses.T2.rawText).strengths).toEqual([]);
+
+        addStrengthBtn.click();
+        const newLi = document.querySelector('.synthesis-section--success .synthesis-list li');
+        newLi.textContent = 'Solidarité entre élèves';
+        newLi.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+        expect(JSON.parse(appState.classes[0].analyses.T2.rawText).strengths).toEqual(['Solidarité entre élèves']);
+
+        // 7. Reverting restores the original synthesis and hides the revert button
         await ClassDashboardManager.revertSynthesis();
         expect(document.querySelector('.synthesis-intro-text').textContent).toBe('Bilan initial de la classe.');
         expect(document.querySelectorAll('.synthesis-section--success .synthesis-list li')).toHaveLength(2);
         expect(revertBtn.style.display).toBe('none');
+    });
+
+    it('devrait afficher un placeholder interactif lorsqu\'une section de liste (ex. vigilances) est vide', () => {
+        const html = ClassDashboardManager._formatSynthesisText(JSON.stringify({
+            synthesis: 'Groupe investi et homogène.',
+            strengths: ['Participation dynamique'],
+            vigilances: [],
+            recommendations: ['Mettre en place des défis hebdomadaires']
+        }));
+        const container = document.createElement('div');
+        container.innerHTML = html;
+
+        expect(container.querySelector('.synthesis-intro-header span')?.textContent).toBe('Synthèse globale');
+        expect(container.querySelector('.synthesis-section--warning .analysis-placeholder')).not.toBeNull();
+        expect(container.querySelectorAll('.synthesis-section--warning .synthesis-list li')).toHaveLength(0);
     });
 
     it('devrait pseudonymiser les prénoms et nettoyer les noms dans buildAIPrompt quand anonymizeData est actif', () => {

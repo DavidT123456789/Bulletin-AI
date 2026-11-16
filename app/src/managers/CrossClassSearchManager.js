@@ -93,7 +93,10 @@ export const CrossClassSearchManager = {
                 id: result.id,
                 nom: result.nom,
                 prenom: result.prenom,
+                classId: result.classId,
                 originClass: originClass,
+                sourceGroupName: result.sourceGroupName,
+                isCopiedProfile: result.isCopiedProfile,
                 grade: grade,
                 studentPhoto: result.studentPhoto
             });

@@ -985,7 +985,7 @@
                         <div class="analysis-card-header">
                             <span class="analysis-icon forces"><iconify-icon
                                     icon="solar:cup-linear"></iconify-icon></span>
-                            <h4>Forces</h4>
+                            <h4>Points forts</h4>
                             <button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-analysis-add="strengths"
                                 data-tooltip="Ajouter un point fort" aria-label="Ajouter un point fort">
                                 <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
@@ -993,8 +993,8 @@
                         </div>
                         <div class="analysis-card-body" id="analysisForcesContent">
                             <div class="analysis-placeholder">
-                                <iconify-icon icon="solar:lightbulb-linear"></iconify-icon>
-                                <span>Cliquez sur "Générer" pour analyser les points forts.</span>
+                                <iconify-icon icon="solar:stars-line-linear"></iconify-icon>
+                                <span>Cliquez sur « Générer » pour découvrir les points forts — ou cliquez pour ajouter</span>
                             </div>
                         </div>
                     </div>
@@ -1003,7 +1003,7 @@
                     <div class="analysis-card analysis-weaknesses" id="analysisWeaknesses">
                         <div class="analysis-card-header">
                             <span class="analysis-icon weaknesses"><iconify-icon
-                                    icon="solar:danger-circle-linear"></iconify-icon></span>
+                                    icon="solar:danger-triangle-linear"></iconify-icon></span>
                             <h4>Points de vigilance</h4>
                             <button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-analysis-add="weaknesses"
                                 data-tooltip="Ajouter un point de vigilance" aria-label="Ajouter un point de vigilance">
@@ -1013,7 +1013,7 @@
                         <div class="analysis-card-body" id="analysisWeaknessesContent">
                             <div class="analysis-placeholder">
                                 <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
-                                <span>Analyse des difficultés potentielles...</span>
+                                <span>Cliquez sur « Générer » pour identifier les points de vigilance — ou cliquez pour ajouter</span>
                             </div>
                         </div>
                     </div>
@@ -1032,7 +1032,7 @@
                         <div class="analysis-card-body" id="analysisSuggestionsContent">
                             <div class="analysis-placeholder">
                                 <iconify-icon icon="solar:signpost-linear"></iconify-icon>
-                                <span>Suggestions pour la progression...</span>
+                                <span>Cliquez sur « Générer » pour obtenir des pistes de progrès — ou cliquez pour ajouter</span>
                             </div>
                         </div>
                     </div>
@@ -3983,7 +3983,7 @@
             <div class="modal-header">
                 <div class="dashboard-header-left">
                     <h2 class="modal-title" id="classDashboardModalTitle">
-                        <iconify-icon class="iconify-inline" icon="solar:chart-square-linear"></iconify-icon> Analyse de la Classe
+                        <iconify-icon class="iconify-inline" icon="solar:chart-square-linear"></iconify-icon> Analyse de la classe
                     </h2>
                     <div class="dashboard-context-line" id="dashboardContextLine">
                         <span id="dashboardClassBadge" class="context-item context-item--primary" style="display: none;">--</span>
@@ -4009,7 +4009,7 @@
                     <div class="dashboard-panel panel-left">
                         <div class="panel-header">
                             <h3 class="panel-title">
-                                <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse Qualitative (IA)
+                                <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse qualitative
                             </h3>
                             <div class="panel-header-actions">
                                 <button type="button" class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
@@ -4023,10 +4023,7 @@
                         <div class="panel-content" id="aiSynthesisContent">
                             <div class="ai-placeholder">
                                 <div class="ai-placeholder-glow"></div>
-                                <div class="ai-placeholder-icon">
-                                    <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
-                                </div>
-                                <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
+                                <h4 class="ai-placeholder-title">Analyse qualitative de la classe</h4>
                                 <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
                                 <button type="button" class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
@@ -4034,13 +4031,10 @@
                             </div>
                         </div>
                         <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;">
-                            <span class="refinement-label"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Affiner</span>
+                            <span class="refinement-label"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Affiner la synthèse</span>
                             <div class="refinement-pills-group">
                                 <button type="button" class="btn-refinement" data-refine-type="summarize">
                                     <iconify-icon icon="solar:minimize-square-minimalistic-linear"></iconify-icon> Plus concis
-                                </button>
-                                <button type="button" class="btn-refinement" data-refine-type="actionable">
-                                    <iconify-icon icon="solar:clipboard-check-linear"></iconify-icon> Plan d'action
                                 </button>
                                 <button type="button" class="btn-refinement" data-refine-type="positive">
                                     <iconify-icon icon="solar:heart-angle-linear"></iconify-icon> Tonalité positive
@@ -4056,7 +4050,7 @@
                     <div class="dashboard-panel panel-right">
                         <div class="panel-header">
                             <h3 class="panel-title">
-                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la Cohorte
+                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la cohorte
                             </h3>
                             <span class="cohort-header-metric tooltip" id="cohortHeaderMetric">--</span>
                         </div>

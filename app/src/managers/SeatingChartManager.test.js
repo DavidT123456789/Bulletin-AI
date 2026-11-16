@@ -4790,6 +4790,42 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(g1Cell.querySelector('.sc-stacked-group-tag')).toBeNull();
             expect(g1Cell.querySelector('.sc-cell-group-badge')).toBeNull();
             expect(g1Cell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1');
+
+            // 6. Dans un groupe personnalisé (PAPD) intégrant Sami depuis 3ᵉG1 : carte sobre, tooltip classe + groupe, sidebar avec pastille 3ᵉ1 · G1
+            const papd = ClassManager.createClass('PAPD');
+            papd.isGroup = true;
+            const samiInPapd = {
+                id: 's-sami-papd',
+                nom: 'BOUKHARI',
+                prenom: 'Sami',
+                classId: papd.id,
+                originClass: '3 1',
+                sourceGroupName: '3ᵉG1',
+                isCopiedProfile: true,
+                seatingPosition: { row: 0, col: 0 },
+                studentData: { classe: '3 1', periods: {} }
+            };
+            const charlyInPapd = {
+                id: 's-charly-papd',
+                nom: 'MARTIN',
+                prenom: 'Charly',
+                classId: papd.id,
+                originClass: '3 1',
+                isCopiedProfile: true,
+                studentData: { classe: '3 1', periods: {} }
+            };
+            appState.generatedResults.push(samiInPapd, charlyInPapd);
+            appState.currentClassId = papd.id;
+            userSettings.academic.currentClassId = papd.id;
+            SeatingChartManager.onClassChange(true);
+
+            const papdCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
+            expect(papdCell.querySelector('.sc-stacked-group-tag')).toBeNull();
+            expect(papdCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1 • Groupe 3ᵉG1');
+
+            const unplacedTag = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-charly-papd"] .student-origin-class-tag');
+            expect(unplacedTag?.textContent).toBe('3ᵉ1 · G1');
+            expect(unplacedTag?.getAttribute('title')).toBe('Classe 3ᵉ1 • Groupe 3ᵉG1');
         });
     });
 

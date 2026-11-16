@@ -391,22 +391,34 @@ export const Utils = {
         if (!student) return false;
 
         const { includeAppreciation = false, currentClassName = '' } = options;
-        const originClass = this.getOriginClass(student, currentClassName);
+        const { originClass, originGroup } = this.getStudentOriginInfo(student, currentClassName);
         const displayOriginClass = originClass ? this.formatClassDisplayName(originClass) : '';
         const isGroupOrigin = originClass ? (this.isGroupClassName(originClass) || this.isGroupClassName(displayOriginClass)) : false;
         const shortGroupOrigin = isGroupOrigin ? this.formatShortGroupLabel(originClass) : '';
+        const displayOriginGroup = originGroup ? this.formatClassDisplayName(originGroup) : '';
+        const shortOriginGroup = originGroup ? this.formatShortGroupDisplay(originGroup) : '';
 
         const searchFields = [
             student.nom,
             student.prenom,
             originClass,
             displayOriginClass,
+            this.toKeyboardClass(originClass),
+            this.toKeyboardClass(displayOriginClass),
             shortGroupOrigin,
             originClass ? `classe ${originClass}` : '',
             displayOriginClass ? `classe ${displayOriginClass}` : '',
             isGroupOrigin && displayOriginClass ? `groupe ${displayOriginClass}` : '',
             shortGroupOrigin ? `groupe ${shortGroupOrigin}` : '',
-            originClass ? this.normalizeClassName(originClass) : ''
+            originClass ? this.normalizeClassName(originClass) : '',
+            originGroup,
+            displayOriginGroup,
+            this.toKeyboardClass(originGroup),
+            this.toKeyboardClass(displayOriginGroup),
+            shortOriginGroup !== displayOriginGroup ? shortOriginGroup : '',
+            displayOriginGroup ? `groupe ${displayOriginGroup}` : '',
+            shortOriginGroup ? `groupe ${shortOriginGroup}` : '',
+            originGroup ? this.normalizeClassName(originGroup) : ''
         ];
 
         if (includeAppreciation) {
@@ -464,25 +476,56 @@ export const Utils = {
     },
 
     /**
+     * Génère la pilule HTML de provenance (classe d'origine et/ou groupe d'enseignement)
+     * @param {string|{originClass?: string, originGroup?: string}} [originInfo=''] - Classe ou objet provenance
+     * @returns {string} HTML de la pilule `.student-origin-class-tag` (avec espace initial) ou chaîne vide
+     */
+    buildOriginBadgeHTML(originInfo = '') {
+        const rawClass = typeof originInfo === 'string' ? originInfo : (originInfo?.originClass || '');
+        const rawGroup = typeof originInfo === 'string' ? '' : this.resolveDistinctGroup(originInfo?.originGroup || '', rawClass);
+
+        const displayClass = rawClass ? this.formatClassDisplayName(rawClass) : '';
+        const displayGroup = rawGroup ? this.formatClassDisplayName(rawGroup) : '';
+
+        if (displayClass && displayGroup) {
+            const shortGroup = this.formatShortGroupDisplay(rawGroup);
+            const badgeText = `${displayClass} · ${shortGroup}`;
+            const badgeTitle = `Classe ${displayClass} • Groupe ${displayGroup}`;
+            return ` <span class="student-origin-class-tag" title="${this.escapeHtml(badgeTitle)}">${this.escapeHtml(badgeText)}</span>`;
+        }
+
+        if (displayClass) {
+            const isGroupOrigin = this.isGroupClassName(rawClass) || this.isGroupClassName(displayClass);
+            const badgeTitle = isGroupOrigin
+                ? `Groupe : ${this.escapeHtml(displayClass)}`
+                : `Classe d'origine : ${this.escapeHtml(displayClass)}`;
+            return ` <span class="student-origin-class-tag" title="${badgeTitle}">${this.escapeHtml(displayClass)}</span>`;
+        }
+
+        if (displayGroup) {
+            return ` <span class="student-origin-class-tag" title="Groupe : ${this.escapeHtml(displayGroup)}">${this.escapeHtml(displayGroup)}</span>`;
+        }
+
+        return '';
+    },
+
+    /**
      * Formate le nom complet d'un élève de manière uniforme
      * Format favorisé : NOM Prénom (Nom en MAJUSCULES, Prénom normalisé)
      * @param {string} nom - Nom de famille
      * @param {string} prenom - Prénom
      * @param {boolean} [html=false] - Si true, retourne du HTML avec le prénom entouré d'un span
      * @param {string} [highlightQuery=''] - Optionnel: requête de recherche pour surligner les correspondances
-     * @param {string} [originClass=''] - Optionnel: classe d'origine pour les groupes
+     * @param {string|{originClass?: string, originGroup?: string}} [originInfo=''] - Optionnel: classe/groupe d'origine
      * @returns {string} Le nom formaté
      */
-    formatStudentName(nom, prenom, html = false, highlightQuery = '', originClass = '') {
+    formatStudentName(nom, prenom, html = false, highlightQuery = '', originInfo = '') {
         const nomUpper = (nom || '').trim().toUpperCase();
         const prenomClean = (prenom || '').trim();
         if (html) {
             const nomDisplay = highlightQuery ? this.highlightMatch(nomUpper, highlightQuery) : this.escapeHtml(nomUpper);
             const prenomDisplay = highlightQuery ? this.highlightMatch(prenomClean, highlightQuery) : this.escapeHtml(prenomClean);
-            const displayOrigin = originClass ? this.formatClassDisplayName(originClass) : '';
-            const isGroupOrigin = displayOrigin ? (this.isGroupClassName(originClass) || this.isGroupClassName(displayOrigin)) : false;
-            const badgeTitle = isGroupOrigin ? `Groupe : ${this.escapeHtml(displayOrigin)}` : `Classe d'origine : ${this.escapeHtml(displayOrigin)}`;
-            const originBadge = displayOrigin ? ` <span class="student-origin-class-tag" title="${badgeTitle}">${this.escapeHtml(displayOrigin)}</span>` : '';
+            const originBadge = this.buildOriginBadgeHTML(originInfo);
             return `<span class="student-nom">${nomDisplay}</span> <span class="student-prenom">${prenomDisplay}${originBadge}</span>`;
         }
         return `${nomUpper} ${prenomClean}`.trim();
@@ -625,20 +668,40 @@ export const Utils = {
     },
 
     /**
+     * Extrait un code court de groupe numéroté/lettré (ex: "3 TECHNOLOGIE G1" -> "G1") ou vide sinon.
+     * @param {string} name - Nom brut ou formaté du groupe
+     * @returns {string} Code court ou chaîne vide
+     * @private
+     */
+    _extractShortGroupCode(name) {
+        if (!name || typeof name !== 'string') return '';
+        const trimmed = name.trim();
+        if (!trimmed) return '';
+        const groupMatch = trimmed.match(/(?:^|[\s0-9°eèéêᵉʳᵈⁿ._-])(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        return groupMatch ? `G${groupMatch[1].toUpperCase()}` : '';
+    },
+
+    /**
      * Formate une étiquette courte de groupe pour les cellules du plan de classe (ex: "3 TECHNOLOGIE G1" -> "G1", "3ᵉG2" -> "G2")
      * @param {string} name - Nom brut ou formaté du groupe
      * @returns {string} Étiquette courte du groupe (ex: "G1")
      */
     formatShortGroupLabel(name) {
-        if (!name || typeof name !== 'string') return '';
-        const trimmed = name.trim();
-        if (!trimmed) return '';
-        const groupMatch = trimmed.match(/(?:^|[\s0-9°eèéêᵉʳᵈⁿ._-])(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
-        if (groupMatch) {
-            return `G${groupMatch[1].toUpperCase()}`;
-        }
-        const formatted = this.formatClassDisplayName(trimmed);
+        const code = this._extractShortGroupCode(name);
+        if (code) return code;
+        const formatted = this.formatClassDisplayName(name);
+        if (!formatted) return '';
         return formatted.length <= 6 ? formatted : formatted.slice(0, 6);
+    },
+
+    /**
+     * Formate un nom de groupe pour affichage compact sans tronquer les noms libres
+     * (ex: "3ᵉG1" -> "G1", "Atelier Maths" -> "Atelier Maths").
+     * @param {string} name - Nom brut ou formaté du groupe
+     * @returns {string} Libellé court ou formaté du groupe
+     */
+    formatShortGroupDisplay(name) {
+        return this._extractShortGroupCode(name) || this.formatClassDisplayName(name);
     },
 
     /**
@@ -689,6 +752,123 @@ export const Utils = {
             }
         }
         return '';
+    },
+
+    /**
+     * Normalise les exposants ordinaux d'un nom de classe pour la saisie clavier (ex: "3ᵉG1" -> "3eG1", "2ⁿᵈ1" -> "2nd1").
+     * @param {string} str - Nom formaté ou brut
+     * @returns {string} Variante saisissable au clavier
+     */
+    toKeyboardClass(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str
+            .replace(/ⁿᵈ/g, 'nd')
+            .replace(/ʳᵉ/g, 're')
+            .replace(/[ᵉ°]/g, 'e');
+    },
+
+    /**
+     * Valide un nom de groupe source en s'assurant qu'il est distinct de la classe d'origine et de la vue courante.
+     * @param {string} rawGroup - Nom brut du groupe candidat
+     * @param {string} [originClass=''] - Classe administrative d'origine déjà résolue
+     * @param {string} [currentClassName=''] - Nom de la classe active
+     * @returns {string} Nom trimmé du groupe s'il est valide et distinct, sinon chaîne vide
+     */
+    resolveDistinctGroup(rawGroup, originClass = '', currentClassName = '') {
+        const trimmed = (rawGroup || '').trim();
+        if (!trimmed) return '';
+        if (originClass && (this.isGroupClassName(originClass) || this.isGroupClassName(this.formatClassDisplayName(originClass)))) {
+            return '';
+        }
+        const normGroup = this.normalizeClassName(trimmed);
+        if (!normGroup) return '';
+        const normCurrent = currentClassName ? this.normalizeClassName(currentClassName) : '';
+        const normOrigin = originClass ? this.normalizeClassName(originClass) : '';
+        if (normCurrent && normGroup === normCurrent) return '';
+        if (normOrigin && normGroup === normOrigin) return '';
+        return trimmed;
+    },
+
+    /**
+     * Résout le groupe d'enseignement d'origine d'un élève lorsqu'il est distinct
+     * de la vue courante et de sa classe administrative (ex: élève de 3ᵉ1 issu de 3ᵉG1 dans PAPD).
+     * @param {Object} result - Objet élève
+     * @param {string} [currentClassName=''] - Nom de la classe active
+     * @param {string} [resolvedOriginClass] - Classe d'origine déjà résolue via getOriginClass
+     * @returns {string} Nom du groupe d'origine ou chaîne vide
+     */
+    getOriginGroup(result, currentClassName = '', resolvedOriginClass = undefined) {
+        if (!result) return '';
+
+        // Fast-path O(1) sans état : les fiches principales dans les groupes d'enseignement/classes standard sortent immédiatement
+        const hasExplicitCopyFlag = Boolean(result.isCopiedProfile || result.sourceGroupName);
+        if (!hasExplicitCopyFlag && currentClassName && this.isGroupClassName(currentClassName)) {
+            return '';
+        }
+
+        const classes = (userSettings?.academic?.classes?.length ? userSettings.academic.classes : appState?.classes) || [];
+        let isLegacyCustomGroup = false;
+        if (!hasExplicitCopyFlag) {
+            const currentClassObj = result.classId ? classes.find(c => c.id === result.classId) : null;
+            isLegacyCustomGroup = Boolean(
+                currentClassObj &&
+                (currentClassObj.isGroup || currentClassObj.type === 'group') &&
+                !this.isGroupClassName(currentClassObj.name || currentClassName)
+            );
+            if (!isLegacyCustomGroup) return '';
+        }
+
+        const originClass = resolvedOriginClass !== undefined
+            ? resolvedOriginClass
+            : this.getOriginClass(result, currentClassName);
+
+        if (originClass && (this.isGroupClassName(originClass) || this.isGroupClassName(this.formatClassDisplayName(originClass)))) {
+            return '';
+        }
+
+        const identityKey = this.getStudentIdentityKey(result.nom, result.prenom);
+        const allResults = appState?.generatedResults || [];
+        if (identityKey && allResults.length > 0) {
+            let fallbackPrimaryName = '';
+            for (const r of allResults) {
+                if (!r || r.id === result.id || !r.classId || r.classId === result.classId || r.isCopiedProfile) continue;
+                if (this.getStudentIdentityKey(r.nom, r.prenom) !== identityKey) continue;
+
+                const srcCls = classes.find(c => c.id === r.classId);
+                if (!srcCls || srcCls.isDemo || String(r.classId).startsWith('demo')) continue;
+                const validName = this.resolveDistinctGroup(srcCls.name, originClass, currentClassName);
+                if (!validName) continue;
+
+                const isTeachingGroup = Boolean(
+                    srcCls.isGroup ||
+                    srcCls.type === 'group' ||
+                    this.isGroupClassName(srcCls.name)
+                );
+                if (isTeachingGroup) return validName;
+                if (!fallbackPrimaryName && result.isCopiedProfile) {
+                    fallbackPrimaryName = validName;
+                }
+            }
+            if (fallbackPrimaryName) return fallbackPrimaryName;
+        }
+
+        return this.resolveDistinctGroup(result.sourceGroupName, originClass, currentClassName);
+    },
+
+    /**
+     * Retourne la provenance complète d'un élève (classe administrative + groupe d'enseignement)
+     * @param {Object} result - Objet élève
+     * @param {string} [currentClassName=''] - Nom de la classe active
+     * @returns {{ originClass: string, originGroup: string }}
+     */
+    getStudentOriginInfo(result, currentClassName = '') {
+        const originClass = this.getOriginClass(result, currentClassName);
+        const originGroup = this.resolveDistinctGroup(
+            this.getOriginGroup(result, currentClassName, originClass),
+            originClass,
+            currentClassName
+        );
+        return { originClass, originGroup };
     },
 
     /**
