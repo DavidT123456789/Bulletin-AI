@@ -16,6 +16,7 @@ import { FocusPanelHeader } from '../FocusPanelHeader.js';
 import { FocusPanelNavigation } from '../FocusPanelNavigation.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
 import { SettingsModalListeners } from '../listeners/SettingsModalListeners.js';
+import { ExportManager } from '../ExportManager.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
 
@@ -151,11 +152,13 @@ export const FocusPanelEvents = {
             setTimeout(() => nextBtn.blur(), 50);
         });
         if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => {
+            FocusPanelAnalysis.flushPendingEdit?.();
             FocusPanelNavigation.navigatePrev();
             analysisPrevBtn.blur();
             setTimeout(() => analysisPrevBtn.blur(), 50);
         });
         if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => {
+            FocusPanelAnalysis.flushPendingEdit?.();
             FocusPanelNavigation.navigateNext();
             analysisNextBtn.blur();
             setTimeout(() => analysisNextBtn.blur(), 50);
@@ -207,13 +210,90 @@ export const FocusPanelEvents = {
 
         const analyzeBtn = document.getElementById('focusAnalyzeBtn');
         if (analyzeBtn) analyzeBtn.addEventListener('click', () => FocusPanelAnalysis.show());
+        const printStudentBtn = document.getElementById('focusPrintStudentBtn');
+        const analysisPrintBtn = document.getElementById('focusAnalysisPrintBtn');
+        const handleStudentPrint = (btn) => {
+            if (!panel.currentStudentId || panel.isCreationMode) return;
+            FocusPanelAnalysis.flushPendingEdit?.();
+            if (document.activeElement?.isContentEditable) document.activeElement.blur();
+            panel._saveContext?.();
+            ExportManager.exportStudentReportPdf(panel.currentStudentId);
+            btn?.blur();
+        };
+        if (printStudentBtn) printStudentBtn.addEventListener('click', () => handleStudentPrint(printStudentBtn));
+        if (analysisPrintBtn) analysisPrintBtn.addEventListener('click', () => handleStudentPrint(analysisPrintBtn));
         const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
         if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => FocusPanelAnalysis.hide());
         const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
-        if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => {
-            FocusPanelAnalysis.generate();
-            generateAnalysisBtn.blur();
-        });
+        if (generateAnalysisBtn) {
+            generateAnalysisBtn.addEventListener('click', () => {
+                FocusPanelAnalysis.generate();
+                generateAnalysisBtn.blur();
+            });
+            generateAnalysisBtn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (FocusPanelAnalysis._activeGenerations?.has(panel.currentStudentId)) return;
+                FocusPanelAnalysis.showPromptPreview();
+                generateAnalysisBtn.blur();
+            });
+        }
+
+        const analysisPage = document.getElementById('focusAnalysisPage');
+        if (analysisPage) {
+            analysisPage.addEventListener('click', (e) => {
+                const addTrigger = e.target.closest('[data-analysis-add]');
+                if (addTrigger) {
+                    e.preventDefault();
+                    FocusPanelAnalysis.addEditableItem(addTrigger.dataset.analysisAdd);
+                }
+            });
+
+            analysisPage.addEventListener('focusin', (e) => {
+                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
+                if (editable) {
+                    editable._initialTextBeforeEdit = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
+                }
+            });
+
+            analysisPage.addEventListener('keydown', (e) => {
+                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
+                if (!editable) return;
+
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FocusPanelAnalysis.cancelEditableItem(editable);
+                } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    editable.blur();
+                }
+            });
+
+            analysisPage.addEventListener('paste', (e) => {
+                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
+                if (!editable) return;
+
+                e.preventDefault();
+                const rawPaste = (e.clipboardData || window.clipboardData)?.getData('text/plain') || '';
+                const cleanPaste = rawPaste.replace(/\s+/g, ' ');
+                if (document.queryCommandSupported?.('insertText')) {
+                    document.execCommand('insertText', false, cleanPaste);
+                } else {
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                        selection.deleteFromDocument();
+                        selection.getRangeAt(0).insertNode(document.createTextNode(cleanPaste));
+                        selection.collapseToEnd();
+                    }
+                }
+            });
+
+            analysisPage.addEventListener('focusout', (e) => {
+                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
+                if (!editable) return;
+                FocusPanelAnalysis.commitEditableBlur(editable);
+            });
+        }
 
         const handleDataChange = (e) => {
             if (!isPanelOpen(panel) || !panel.currentStudentId) return;

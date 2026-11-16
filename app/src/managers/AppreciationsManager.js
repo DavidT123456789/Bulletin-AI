@@ -249,54 +249,152 @@ export const AppreciationsManager = {
         return AppreciationService.parseStrengthsWeaknesses(text);
     },
 
-    async generateStrengthsWeaknesses(id, silent = false, signal = null) {
-        const result = appState.generatedResults.find(r => r.id === id);
-        if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
-        try {
-            const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
-            result.studentData.prompts.sw = prompts.sw;
-            const resp = await AIService.callAIWithFallback(prompts.sw, { context: 'single-student', studentName: result.prenom, signal });
-            result.strengthsWeaknesses = resp.text;
-            result._lastModified = Date.now();
-            // Ensure tokenUsage exists before setting properties
-            if (!result.tokenUsage) result.tokenUsage = {};
-            result.tokenUsage.sw = resp.usage;
-            StorageManager.saveAppState();
-        } catch (e) {
-            console.error("Erreur F/F:", e);
-            if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
-            throw e;
+    /**
+     * Extrait les listes structurées (forces, points de vigilance, pistes de progrès)
+     * d'une réponse IA JSON avec repli Markdown/texte, puis désanonymise chaque puce.
+     * @param {string} rawText - Texte brut retourné par l'IA
+     * @param {string} [prenom=''] - Prénom réel de l'élève pour la désanonymisation locale
+     * @returns {{strengths: string[], weaknesses: string[], nextSteps: string[]}}
+     * @private
+     */
+    _parseStudentAnalysisResponse(rawText, prenom = '') {
+        if (!rawText || typeof rawText !== 'string' || !rawText.trim()) {
+            throw new Error('Réponse IA vide pour l\'analyse.');
         }
+
+        const deanonymizeList = (arr) => Utils.normalizeAnalysisItems(arr)
+            .slice(0, 3)
+            .map(item => (prenom ? PromptService.deanonymizeText(item, prenom) : item));
+
+        // 1. Parsing JSON principal (gère les blocs ```json et le texte parasite éventuel)
+        let cleaned = rawText.trim();
+        if (cleaned.startsWith('```')) {
+            cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        } else {
+            const firstBrace = cleaned.indexOf('{');
+            const lastBrace = cleaned.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace > firstBrace) {
+                cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+            }
+        }
+
+        try {
+            const data = JSON.parse(cleaned);
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                const hasExpectedKey = ['strengths', 'forces', 'vigilances', 'weaknesses', 'faiblesses', 'nextSteps', 'recommendations']
+                    .some(k => k in data);
+                if (hasExpectedKey) {
+                    return {
+                        strengths: deanonymizeList(data.strengths || data.forces || []),
+                        weaknesses: deanonymizeList(data.vigilances || data.weaknesses || data.faiblesses || []),
+                        nextSteps: deanonymizeList(data.nextSteps || data.recommendations || [])
+                    };
+                }
+            }
+        } catch (_) {
+            // Repli Markdown structuré ci-dessous
+        }
+
+        // 2. Repli Markdown / texte si un modèle local n'a pas produit de JSON
+        const lines = rawText.replace(/\.{3,}/g, '...').split('\n');
+        let activeBucket = null;
+        const buckets = { strengths: [], weaknesses: [], nextSteps: [] };
+        const headingRules = [
+            { key: 'strengths', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*forts?|Forces?|Atouts?|Ce qui va bien)[:\s]*(?:\*\*)?$/i },
+            { key: 'weaknesses', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*de\s*vigilance|Faiblesses?|Fragilit[ée]s?|Axes?\s*d['’]am[ée]lioration|Points?\s*[àa]\s*am[ée]liorer|Points?\s*faibles?)[:\s]*(?:\*\*)?$/i },
+            { key: 'nextSteps', regex: /^(?:#+\s*)?(?:\*\*)?(?:Pistes?\s*(?:de\s*progr[èe]s|d['’]am[ée]lioration)|Recommandations?|Conseils?)[:\s]*(?:\*\*)?$/i }
+        ];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            const matchedHeading = headingRules.find(rule => rule.regex.test(trimmed));
+            if (matchedHeading) {
+                activeBucket = matchedHeading.key;
+                continue;
+            }
+            if (activeBucket) {
+                if (/^(?:J['’]esp[èe]re|N['’]h[ée]sitez|En conclusion)/i.test(trimmed)) continue;
+                buckets[activeBucket].push(trimmed);
+            }
+        }
+
+        const fallbackResult = {
+            strengths: deanonymizeList(buckets.strengths),
+            weaknesses: deanonymizeList(buckets.weaknesses),
+            nextSteps: deanonymizeList(buckets.nextSteps)
+        };
+
+        if (fallbackResult.strengths.length === 0 && fallbackResult.weaknesses.length === 0 && fallbackResult.nextSteps.length === 0) {
+            throw new Error('Format de réponse IA non reconnu pour l\'analyse.');
+        }
+
+        return fallbackResult;
     },
 
-    async generateNextSteps(id, silent = false, signal = null) {
+    /**
+     * Génère en un seul appel IA structuré l'analyse individuelle (Forces, Vigilances, Pistes)
+     * pour une période donnée, avec cloisonnement strict et désanonymisation locale.
+     * @param {string} id - ID du résultat élève
+     * @param {string|null} [targetPeriod=null] - Période ciblée (capture synchrone recommandée)
+     * @param {boolean} [silent=false] - Masque les notifications toast
+     * @param {AbortSignal|null} [signal=null] - Signal d'annulation
+     * @returns {Promise<Object>} Entrée d'analyse enregistrée pour la période
+     */
+    async generateStudentAnalysis(id, targetPeriod = null, silent = false, signal = null) {
         const result = appState.generatedResults.find(r => r.id === id);
-        if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
-        try {
-            const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
-            result.studentData.prompts.ns = prompts.ns;
-            const resp = await AIService.callAIWithFallback(prompts.ns, { context: 'single-student', studentName: result.prenom, signal });
+        if (!result || (UI && !UI.checkAPIKeyPresence(silent))) throw new Error("Conditions non remplies.");
 
-            const steps = [];
-            const lines = resp.text.split('\n').filter(l => l.trim() !== '');
-            lines.forEach(line => {
-                const trimmedLine = line.trim();
-                if (/^\d+\.?\s*-?/.test(trimmedLine)) {
-                    steps.push(trimmedLine.replace(/^\d+\.?\s*-?/, '').trim());
-                } else if (steps.length > 0 && !/^(J'espère|N'hésitez|En conclusion)/i.test(trimmedLine)) {
-                    steps[steps.length - 1] += ' ' + trimmedLine;
-                }
+        const effectivePeriod = targetPeriod || appState.currentPeriod || result.studentData?.currentPeriod;
+        try {
+            const prompts = this.getAllPrompts({
+                ...result.studentData,
+                id: result.id,
+                classId: result.classId ?? result.studentData?.classId ?? appState.currentClassId,
+                currentPeriod: effectivePeriod
             });
 
-            result.nextSteps = steps.slice(0, 3).filter(Boolean);
-            result._lastModified = Date.now();
-            // Ensure tokenUsage exists before setting properties
-            if (!result.tokenUsage) result.tokenUsage = {};
-            result.tokenUsage.ns = resp.usage;
+            if (!result.studentData.prompts) result.studentData.prompts = {};
+            result.studentData.prompts.analysis = prompts.analysis;
+
+            const resp = await AIService.callAIWithFallback(prompts.analysisUser, {
+                systemPrompt: prompts.analysisSystem,
+                context: 'single-student',
+                studentName: result.prenom,
+                signal
+            });
+
+            const parsed = this._parseStudentAnalysisResponse(resp.text, result.prenom);
+            const now = Date.now();
+            if (!result.analysisPerPeriod || typeof result.analysisPerPeriod !== 'object') {
+                result.analysisPerPeriod = {};
+            }
+
+            const periodEntry = {
+                strengths: parsed.strengths,
+                weaknesses: parsed.weaknesses,
+                nextSteps: parsed.nextSteps,
+                source: 'ai',
+                timestamp: new Date(now).toISOString(),
+                _lastModified: now,
+                snapshot: Utils.buildStudentAnalysisSnapshot(result, effectivePeriod),
+                sourceAppreciation: (result.studentData?.periods?.[effectivePeriod]?.appreciation || '').trim(),
+                model: resp.model || appState.currentAIModel || null
+            };
+
+            result.analysisPerPeriod[effectivePeriod] = periodEntry;
+            result._lastModified = now;
+            if (!result.tokenUsage || typeof result.tokenUsage !== 'object') result.tokenUsage = {};
+            result.tokenUsage.analysis = resp.usage || null;
+
+            Utils.syncStudentAnalysisRootCache(result, effectivePeriod);
             StorageManager.saveAppState();
+            return periodEntry;
         } catch (e) {
-            console.error("Erreur pistes:", e);
-            if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
+            if (e?.name === 'AbortError') throw e;
+            console.error("Erreur analyse élève:", e);
+            if (!silent && UI) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
             throw e;
         }
     },

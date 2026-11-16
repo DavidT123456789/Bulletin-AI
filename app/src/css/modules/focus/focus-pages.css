@@ -275,11 +275,17 @@
     font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
-    flex: 1;
+}
+
+/* Mutualized with .journal-header-btn.icon-only; tight offset after card title */
+.analysis-add-item-btn {
+    margin-left: -4px;
+    flex-shrink: 0;
 }
 
 /* Analysis Status Badges */
 .analysis-status-badge {
+    margin-left: auto;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -372,7 +378,37 @@
     margin-bottom: 0;
 }
 
+.analysis-card-body li[contenteditable="true"] {
+    padding: 2px 6px;
+    margin: -2px -6px 6px;
+}
+
+.analysis-card-body li[contenteditable="true"]:last-child {
+    margin-bottom: -2px;
+}
+
 /* Placeholder State */
+button.analysis-placeholder {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: color var(--transition-fast);
+}
+
+@media (hover: hover) {
+    button.analysis-placeholder:hover {
+        color: var(--text-primary);
+    }
+}
+
+button.analysis-placeholder:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
 .analysis-placeholder {
     display: flex;
     align-items: center;

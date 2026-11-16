@@ -8,7 +8,7 @@ import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 
-describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actualiser', () => {
+describe('FocusPanelAnalysis - État du bouton, isolation par période et édition inline', () => {
     let currentStudentId = null;
     let mockAppreciationsManager;
 
@@ -21,9 +21,9 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
                     <div id="focusAnalysisAvatarContainer"></div>
                     <h3 id="focusAnalysisTitle"></h3>
                     <button id="focusGenerateAnalysisBtn" class="btn btn-small btn-ai"></button>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisForcesContent"></div></div>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisWeaknessesContent"></div></div>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisSuggestionsContent"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisForcesContent" class="analysis-card-body"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisWeaknessesContent" class="analysis-card-body"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisSuggestionsContent" class="analysis-card-body"></div></div>
                 </div>
             </div>
         `;
@@ -41,6 +41,7 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
                     },
                     prompts: {}
                 },
+                analysisPerPeriod: {},
                 strengthsWeaknesses: null,
                 nextSteps: null
             },
@@ -55,33 +56,50 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
                     },
                     prompts: {}
                 },
+                analysisPerPeriod: {
+                    T1: {
+                        strengths: ['Participation active'],
+                        weaknesses: ['Rigueur à consolider'],
+                        nextSteps: ['Poursuivre les efforts'],
+                        source: 'ai',
+                        _lastModified: 1000,
+                        snapshot: {
+                            appreciation: 'Excellent trimestre.',
+                            statuses: [],
+                            context: '',
+                            grade: 16,
+                            journalCount: 0,
+                            period: 'T1'
+                        }
+                    }
+                },
                 strengthsWeaknesses: { strengths: ['Participation active'], weaknesses: ['Rigueur à consolider'] },
                 nextSteps: ['Poursuivre les efforts'],
-                analysisSnapshot: {
-                    appreciation: 'Excellent trimestre.',
-                    statuses: [],
-                    context: '',
-                    grade: 16,
-                    journalCount: 0,
-                    period: 'T1'
-                }
+                analysisGenerationPeriod: 'T1'
             }
         ];
 
         mockAppreciationsManager = {
-            generateStrengthsWeaknesses: vi.fn(async (id) => {
+            getAllPrompts: vi.fn(() => ({ analysis: 'Mock prompt' })),
+            generateStudentAnalysis: vi.fn(async (id, targetPeriod = 'T1') => {
                 const res = appState.generatedResults.find(r => r.id === id);
                 if (res) {
-                    res.strengthsWeaknesses = {
+                    if (!res.analysisPerPeriod) res.analysisPerPeriod = {};
+                    res.analysisPerPeriod[targetPeriod] = {
                         strengths: ['Progression notable'],
-                        weaknesses: ['Besoin de consolider']
+                        weaknesses: ['Besoin de consolider'],
+                        nextSteps: ['Continuer ainsi'],
+                        source: 'ai',
+                        _lastModified: Date.now(),
+                        snapshot: {
+                            appreciation: res.studentData.periods[targetPeriod]?.appreciation || '',
+                            statuses: [],
+                            context: '',
+                            grade: res.studentData.periods[targetPeriod]?.grade ?? null,
+                            journalCount: 0,
+                            period: targetPeriod
+                        }
                     };
-                }
-            }),
-            generateNextSteps: vi.fn(async (id) => {
-                const res = appState.generatedResults.find(r => r.id === id);
-                if (res) {
-                    res.nextSteps = ['Continuer ainsi'];
                 }
             })
         };
@@ -100,6 +118,7 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
         vi.spyOn(UI, 'animateHtmlReveal').mockImplementation((el, html) => {
             if (el) el.innerHTML = html;
         });
+        vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
         vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
     });
 
@@ -117,86 +136,21 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
 
         await FocusPanelAnalysis.generate();
 
+        expect(mockAppreciationsManager.generateStudentAnalysis).toHaveBeenCalledWith(
+            'student-1',
+            'T1',
+            true,
+            expect.any(Object)
+        );
         expect(btn.textContent.trim()).toBe('Régénérer');
         expect(btn.classList.contains('btn-neutral')).toBe(true);
         expect(btn.disabled).toBe(false);
+        expect(document.querySelectorAll('#analysisForcesContent li[contenteditable="true"]').length).toBe(1);
     });
 
-    it('affiche "Actualiser" (btn-warning) lorsque les données de l\'élève ont changé depuis l\'analyse', () => {
+    it('affiche "Actualiser" (btn-warning) et permet de relancer via le badge modifié lorsque les données de la même période ont changé', () => {
         currentStudentId = 'student-2';
         appState.generatedResults[1].studentData.periods.T1.grade = 14; // Modifié par rapport au snapshot (16)
-
-        const btn = document.getElementById('focusGenerateAnalysisBtn');
-        FocusPanelAnalysis.show();
-
-        expect(btn.textContent.trim()).toBe('Actualiser');
-        expect(btn.classList.contains('btn-warning')).toBe(true);
-    });
-
-    it('n\'écrase pas le bouton ni les cartes d\'un élève déjà analysé quand on change d\'élève pendant une génération', async () => {
-        let resolveGeneration;
-        mockAppreciationsManager.generateStrengthsWeaknesses = vi.fn(() => new Promise(resolve => {
-            resolveGeneration = resolve;
-        }));
-
-        const btn = document.getElementById('focusGenerateAnalysisBtn');
-        FocusPanelAnalysis.show();
-
-        const genPromise = FocusPanelAnalysis.generate();
-        expect(btn.classList.contains('is-loading')).toBe(true);
-
-        // Changement vers student-2 qui a déjà une analyse à jour
-        currentStudentId = 'student-2';
-        FocusPanelAnalysis.show();
-
-        expect(btn.classList.contains('is-loading')).toBe(false);
-        expect(btn.textContent.trim()).toBe('Régénérer');
-        expect(btn.classList.contains('btn-neutral')).toBe(true);
-
-        // Fin de la génération en arrière-plan de student-1
-        resolveGeneration();
-        await genPromise;
-
-        // Le bouton de student-2 doit rester en "Régénérer"
-        expect(btn.textContent.trim()).toBe('Régénérer');
-        expect(btn.classList.contains('btn-neutral')).toBe(true);
-        expect(document.getElementById('analysisForcesContent').textContent).toContain('Participation active');
-    });
-
-    it('préserve l\'analyse existante et affiche un toast si la régénération échoue côté réseau/API', async () => {
-        currentStudentId = 'student-2';
-        const notifSpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
-        mockAppreciationsManager.generateStrengthsWeaknesses = vi.fn(async () => {
-            throw new Error('Quota API dépassé');
-        });
-        mockAppreciationsManager.generateNextSteps = vi.fn(async () => {
-            throw new Error('Quota API dépassé');
-        });
-
-        const btn = document.getElementById('focusGenerateAnalysisBtn');
-        FocusPanelAnalysis.show();
-        expect(btn.textContent.trim()).toBe('Régénérer');
-
-        await FocusPanelAnalysis.generate();
-
-        // L'analyse précédente de Léon est préservée et réaffichée
-        expect(appState.generatedResults[1].strengthsWeaknesses).toEqual({
-            strengths: ['Participation active'],
-            weaknesses: ['Rigueur à consolider']
-        });
-        expect(document.getElementById('analysisForcesContent').textContent).toContain('Participation active');
-        expect(btn.textContent.trim()).toBe('Régénérer');
-        expect(notifSpy).toHaveBeenCalledWith(expect.stringContaining('Erreur'), 'error');
-    });
-
-    it('passe en état "Actualiser" quand on change de période (T1 -> T2) et permet de relancer via le badge modifié', () => {
-        currentStudentId = 'student-2';
-        appState.currentPeriod = 'T2';
-        appState.generatedResults[1].studentData.periods.T2 = {
-            appreciation: 'Excellent trimestre.',
-            grade: 16,
-            context: ''
-        };
 
         const btn = document.getElementById('focusGenerateAnalysisBtn');
         const genSpy = vi.spyOn(FocusPanelAnalysis, 'generate').mockImplementation(async () => {});
@@ -214,10 +168,73 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
         expect(genSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('isole strictement les analyses par période : T1 analysé ne fuit pas vers T2', () => {
+        currentStudentId = 'student-2';
+        appState.currentPeriod = 'T2';
+        appState.generatedResults[1].studentData.periods.T2 = {
+            appreciation: '',
+            grade: 14,
+            context: ''
+        };
+
+        const btn = document.getElementById('focusGenerateAnalysisBtn');
+        FocusPanelAnalysis.show();
+
+        expect(btn.textContent.trim()).toBe('Générer');
+        expect(btn.classList.contains('btn-ai')).toBe(true);
+        expect(document.getElementById('analysisForcesContent').textContent).not.toContain('Participation active');
+        expect(document.getElementById('analysisForcesContent').querySelector('.analysis-placeholder')).not.toBeNull();
+    });
+
+    it('n\'écrase pas le bouton ni les cartes d\'un élève déjà analysé quand on change d\'élève pendant une génération', async () => {
+        let resolveGeneration;
+        mockAppreciationsManager.generateStudentAnalysis = vi.fn(() => new Promise(resolve => {
+            resolveGeneration = resolve;
+        }));
+
+        const btn = document.getElementById('focusGenerateAnalysisBtn');
+        FocusPanelAnalysis.show();
+
+        const genPromise = FocusPanelAnalysis.generate();
+        expect(btn.classList.contains('is-loading')).toBe(true);
+
+        currentStudentId = 'student-2';
+        FocusPanelAnalysis.show();
+
+        expect(btn.classList.contains('is-loading')).toBe(false);
+        expect(btn.textContent.trim()).toBe('Régénérer');
+        expect(btn.classList.contains('btn-neutral')).toBe(true);
+
+        resolveGeneration();
+        await genPromise;
+
+        expect(btn.textContent.trim()).toBe('Régénérer');
+        expect(btn.classList.contains('btn-neutral')).toBe(true);
+        expect(document.getElementById('analysisForcesContent').textContent).toContain('Participation active');
+    });
+
+    it('préserve l\'analyse existante et affiche un toast si la régénération échoue côté réseau/API', async () => {
+        currentStudentId = 'student-2';
+        mockAppreciationsManager.generateStudentAnalysis = vi.fn(async () => {
+            throw new Error('Quota API dépassé');
+        });
+
+        const btn = document.getElementById('focusGenerateAnalysisBtn');
+        FocusPanelAnalysis.show();
+        expect(btn.textContent.trim()).toBe('Régénérer');
+
+        await FocusPanelAnalysis.generate();
+
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.strengths).toEqual(['Participation active']);
+        expect(document.getElementById('analysisForcesContent').textContent).toContain('Participation active');
+        expect(btn.textContent.trim()).toBe('Régénérer');
+        expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('Erreur'), 'error');
+    });
+
     it('affiche le bouton "Annuler" avec icône stop pendant la génération et annule au clic suivant', async () => {
         currentStudentId = 'student-2';
         let capturedSignal = null;
-        mockAppreciationsManager.generateStrengthsWeaknesses = vi.fn((_id, _silent, signal) => new Promise((_resolve, reject) => {
+        mockAppreciationsManager.generateStudentAnalysis = vi.fn((_id, _period, _silent, signal) => new Promise((_resolve, reject) => {
             capturedSignal = signal;
             signal?.addEventListener('abort', () => {
                 const err = new Error('Aborted');
@@ -237,7 +254,6 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
         expect(btn.textContent.trim()).toBe('Annuler');
         expect(btn.querySelector('.stop-square-svg')).not.toBeNull();
 
-        // Deuxième clic sur le bouton -> annule la génération en cours
         await FocusPanelAnalysis.generate();
         await genPromise;
 
@@ -245,5 +261,98 @@ describe('FocusPanelAnalysis - État du bouton Générer / Régénérer / Actual
         expect(btn.classList.contains('is-loading')).toBe(false);
         expect(btn.textContent.trim()).toBe('Régénérer');
         expect(document.getElementById('analysisForcesContent').textContent).toContain('Participation active');
+    });
+
+    it('permet d\'éditer, d\'ajouter, d\'annuler via Échap et de supprimer jusqu\'à la dernière puce avec persistance immédiate', () => {
+        currentStudentId = 'student-2';
+        FocusPanelAnalysis.show();
+
+        // 1. Edition d'une puce existante
+        const forceLi = document.querySelector('#analysisForcesContent li');
+        forceLi._initialTextBeforeEdit = 'Participation active';
+        forceLi.textContent = '  Participation   régulière et pertinente  ';
+        FocusPanelAnalysis.commitEditableBlur(forceLi);
+
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.strengths).toEqual([
+            'Participation régulière et pertinente'
+        ]);
+        expect(StorageManager.saveAppState).toHaveBeenCalled();
+
+        // 2. Suppression de l'unique point de vigilance -> bascule en état vide sans restauration forcée
+        const weaknessLi = document.querySelector('#analysisWeaknessesContent li');
+        weaknessLi._initialTextBeforeEdit = 'Rigueur à consolider';
+        weaknessLi.textContent = '   ';
+        FocusPanelAnalysis.commitEditableBlur(weaknessLi);
+
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.weaknesses).toEqual([]);
+        expect(document.querySelectorAll('#analysisWeaknessesContent li').length).toBe(0);
+        expect(document.querySelector('#analysisWeaknessesContent .analysis-placeholder')).not.toBeNull();
+
+        // 3. Ajout puis annulation via Échap d'une puce vierge -> ne pollue pas les données
+        FocusPanelAnalysis.addEditableItem('weaknesses');
+        const newLi = document.querySelector('#analysisWeaknessesContent li');
+        expect(newLi).not.toBeNull();
+        newLi.textContent = 'Texte abandonné';
+        FocusPanelAnalysis.cancelEditableItem(newLi);
+        FocusPanelAnalysis.commitEditableBlur(newLi);
+
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.weaknesses).toEqual([]);
+        expect(document.querySelector('#analysisWeaknessesContent .analysis-placeholder')).not.toBeNull();
+    });
+
+    it('ne double-échappe pas les apostrophes ni les guillemets lors du rendu des cartes', () => {
+        currentStudentId = 'student-2';
+        appState.generatedResults[1].analysisPerPeriod.T1.strengths = ["Investissement et pertinence à l'oral"];
+        FocusPanelAnalysis.show();
+
+        const li = document.querySelector('#analysisForcesContent li');
+        expect(li.innerHTML).not.toContain('&amp;#39;');
+        expect(li.textContent).toBe("Investissement et pertinence à l'oral");
+    });
+
+    it('n\'affiche pas de badge vert permanent au repos, flash brièvement après génération puis propose Rétablir si des retouches manuelles existaient', async () => {
+        currentStudentId = 'student-2';
+        FocusPanelAnalysis.show();
+
+        // Au repos sur une analyse existante à jour : aucun badge vert permanent
+        expect(document.querySelector('.analysis-status-badge')).toBeNull();
+
+        // Edition manuelle -> pose hasManualEdits
+        const forceLi = document.querySelector('#analysisForcesContent li');
+        forceLi._initialTextBeforeEdit = 'Participation active';
+        forceLi.textContent = 'Point personnalisé enseignant';
+        FocusPanelAnalysis.commitEditableBlur(forceLi);
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.hasManualEdits).toBe(true);
+
+        // Régénération IA -> flash temporaire ✓ pendant 1.5s + toast Rétablir
+        await FocusPanelAnalysis.generate();
+        expect(document.querySelectorAll('.analysis-status-badge.done').length).toBe(3);
+
+        vi.advanceTimersByTime(1500);
+        expect(document.querySelector('.analysis-status-badge.done')).toBeNull();
+
+        const restoreCall = UI.showNotification.mock.calls.find(c => c[3]?.action?.label === 'Rétablir');
+        expect(restoreCall).toBeDefined();
+
+        // Clic sur Rétablir -> restaure la puce manuelle
+        restoreCall[3].action.onClick();
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.strengths).toEqual(['Point personnalisé enseignant']);
+        expect(document.getElementById('analysisForcesContent').textContent).toContain('Point personnalisé enseignant');
+    });
+
+    it('affiche la période active dans le titre et flush une puce en cours d\'édition à la fermeture (hide)', () => {
+        currentStudentId = 'student-2';
+        FocusPanelAnalysis.show();
+        expect(document.getElementById('focusAnalysisTitle').textContent).toBe('Analyse de Léon · T1');
+
+        const forceLi = document.querySelector('#analysisForcesContent li');
+        forceLi._initialTextBeforeEdit = 'Participation active';
+        forceLi.focus();
+        forceLi.textContent = 'Édition saisie juste avant fermeture';
+
+        FocusPanelAnalysis.hide();
+        expect(appState.generatedResults[1].analysisPerPeriod.T1.strengths).toEqual([
+            'Édition saisie juste avant fermeture'
+        ]);
     });
 });

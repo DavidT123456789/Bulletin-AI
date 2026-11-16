@@ -33,13 +33,14 @@ export const AppreciationService = {
                 currentPeriod: appState.currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
                 currentAIModel: appState.currentAIModel,
-                prompts: prompts || { appreciation: null, sw: null, ns: null }
+                prompts: prompts || { appreciation: null, analysis: null }
             },
             errorMessage,
             timestamp: new Date().toISOString(),
             strengthsWeaknesses: null,
             nextSteps: null,
-            tokenUsage: tokenUsage || { appreciation: null, sw: null, ns: null },
+            analysisPerPeriod: {},
+            tokenUsage: tokenUsage || { appreciation: null, analysis: null },
             copied: false
         };
     },

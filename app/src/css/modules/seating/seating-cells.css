@@ -1498,27 +1498,30 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-print-header { display: none; }
 
 @media print {
-    @page { 
-        size: landscape;
-    }
+    /* @page { size: landscape; } is injected dynamically by SeatingPrintExporter */
 
-    /* ── 0. Force Desktop cell dimensions ── */
-    :root {
+    /* ── 0. Force Desktop cell dimensions (scoped to seating print mode) ── */
+    body[data-print-mode="seating"] {
         --sc-cell-w: 80px;
         --sc-cell-h: 88px;
     }
 
     /* ── 1. Chirurgical hiding: only show the path to seating chart ── */
-    body > *:not(.app-layout),
-    .app-layout > *:not(.main-content-wrapper),
-    .main-content-wrapper > *:not(.main-content),
-    .main-content > *:not(.output-section),
-    .output-section > *:not(#seatingChartView) {
+    body[data-print-mode="seating"] > *:not(.app-layout),
+    body[data-print-mode="seating"] .app-layout > *:not(.main-content-wrapper),
+    body[data-print-mode="seating"] .main-content-wrapper > *:not(.main-content),
+    body[data-print-mode="seating"] .main-content > *:not(.output-section),
+    body[data-print-mode="seating"] .output-section > *:not(#seatingChartView) {
         display: none !important;
     }
 
     /* ── 2. Reset path containers to static flow ── */
-    html, body, .app-layout, .main-content-wrapper, .main-content, .output-section {
+    html:has(body[data-print-mode="seating"]),
+    body[data-print-mode="seating"],
+    body[data-print-mode="seating"] .app-layout,
+    body[data-print-mode="seating"] .main-content-wrapper,
+    body[data-print-mode="seating"] .main-content,
+    body[data-print-mode="seating"] .output-section {
         display: block !important;
         height: auto !important;
         min-height: 0 !important;
@@ -1531,10 +1534,10 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         box-shadow: none !important;
     }
 
-    body * { visibility: visible !important; }
+    body[data-print-mode="seating"] * { visibility: visible !important; }
 
     /* ── 3. Injected print header ── */
-    .sc-print-header {
+    body[data-print-mode="seating"] .sc-print-header {
         display: flex !important;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -1544,7 +1547,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         font-family: 'Inter', sans-serif;
     }
 
-    .sc-print-warning {
+    body[data-print-mode="seating"] .sc-print-warning {
         width: 100%;
         text-align: center;
         font-size: 9pt;
@@ -1552,28 +1555,28 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         margin-top: 6px;
     }
 
-    .sc-print-date {
+    body[data-print-mode="seating"] .sc-print-date {
         font-size: 9pt;
         color: #888;
         flex-shrink: 0;
         min-width: 80px;
     }
 
-    .sc-print-class {
+    body[data-print-mode="seating"] .sc-print-class {
         font-size: 14pt;
         font-weight: 700;
         color: #111;
         text-align: center;
     }
 
-    .sc-print-count {
+    body[data-print-mode="seating"] .sc-print-count {
         font-weight: 400;
         font-size: 11pt;
         color: #555;
         margin-left: 10px;
     }
 
-    .sc-print-brand {
+    body[data-print-mode="seating"] .sc-print-brand {
         font-size: 9pt;
         color: #aaa;
         flex-shrink: 0;
@@ -1583,23 +1586,23 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 4. Hide interactive elements ── */
-    .sc-sidebar,
-    .sc-cell-remove,
-    .sc-stacked-member-remove,
-    .sc-top-left-bar,
-    .sc-status-pill,
-    .sc-floating-actions,
-    .fab-add-student,
-    .avatar-selection-overlay,
-    .sc-floating-status,
-    .sc-onboarding-hint,
-    .header,
-    .sc-cell-pin:not(.pinned .sc-cell-pin) {
+    body[data-print-mode="seating"] .sc-sidebar,
+    body[data-print-mode="seating"] .sc-cell-remove,
+    body[data-print-mode="seating"] .sc-stacked-member-remove,
+    body[data-print-mode="seating"] .sc-top-left-bar,
+    body[data-print-mode="seating"] .sc-status-pill,
+    body[data-print-mode="seating"] .sc-floating-actions,
+    body[data-print-mode="seating"] .fab-add-student,
+    body[data-print-mode="seating"] .avatar-selection-overlay,
+    body[data-print-mode="seating"] .sc-floating-status,
+    body[data-print-mode="seating"] .sc-onboarding-hint,
+    body[data-print-mode="seating"] .header,
+    body[data-print-mode="seating"] .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;
     }
 
     /* ── 5. Chart layout ── */
-    #seatingChartView {
+    body[data-print-mode="seating"] #seatingChartView {
         display: flex !important;
         flex-direction: column;
         width: 100%;
@@ -1611,14 +1614,14 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         padding: 8mm 10mm !important;
     }
 
-    .sc-body {
+    body[data-print-mode="seating"] .sc-body {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     
-    .sc-grid-area { 
+    body[data-print-mode="seating"] .sc-grid-area { 
         padding: 0 !important;
         margin-left: 0 !important;
         justify-content: center; 
@@ -1628,7 +1631,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         background-image: none !important;
     }
 
-    .sc-classroom-board {
+    body[data-print-mode="seating"] .sc-classroom-board {
         translate: 0 0 !important;
         scale: 1 !important;
         transform: none !important;
@@ -1644,67 +1647,67 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 6. Grid & cells ── */
-    .sc-grid-container {
+    body[data-print-mode="seating"] .sc-grid-container {
         gap: 6px !important;
         margin: 0 auto;
     }
 
-    .sc-cell {
+    body[data-print-mode="seating"] .sc-cell {
         border: 1.5px solid #ccc;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         break-inside: avoid;
     }
 
-    .sc-cell:not(.sc-cell-stacked) .student-avatar {
+    body[data-print-mode="seating"] .sc-cell:not(.sc-cell-stacked) .student-avatar {
         width: 42px !important;
         height: 42px !important;
         font-size: 0.8rem !important;
     }
 
-    .sc-cell-name {
+    body[data-print-mode="seating"] .sc-cell-name {
         margin-top: 4px !important;
         font-size: 0.65rem !important;
     }
 
-    .sc-cell.empty {
+    body[data-print-mode="seating"] .sc-cell.empty {
         border: 1.5px dashed #999 !important;
         background: rgba(0, 0, 0, 0.02) !important;
         opacity: 0.8 !important;
         box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important;
     }
 
-    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
-    #seatingChartView[data-plan-mode="activity"] .sc-cell.empty.sc-cell-special-blocked,
-    .sc-cell.empty.sc-cell-special-aisle {
+    body[data-print-mode="seating"] #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
+    body[data-print-mode="seating"] #seatingChartView[data-plan-mode="activity"] .sc-cell.empty.sc-cell-special-blocked,
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-aisle {
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
         opacity: 0 !important;
     }
 
-    .sc-cell.empty.sc-cell-special-blocked {
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-blocked {
         border: 1.5px dashed #ccc !important;
         background: rgba(0, 0, 0, 0.02) !important;
     }
 
-    .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
-    .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
         color: #777 !important;
     }
     
-    .sc-cell.occupied { 
+    body[data-print-mode="seating"] .sc-cell.occupied { 
         border: 1.5px solid #555 !important; 
         opacity: 1 !important; 
     }
 
-    .sc-cell.occupied.sc-cell-departed {
+    body[data-print-mode="seating"] .sc-cell.occupied.sc-cell-departed {
         border: 1.5px dashed #888 !important;
         background: #fafafa !important;
         opacity: 0.78 !important;
     }
 
-    .sc-cell-status-badge {
+    body[data-print-mode="seating"] .sc-cell-status-badge {
         border-color: #ffffff !important;
         box-shadow: none !important;
         -webkit-print-color-adjust: exact;
@@ -1712,18 +1715,18 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 7. Pinned indicator (discrete print marker) & Group badges ── */
-    .sc-cell.occupied .sc-station-badge,
-    .sc-stacked-group-tag {
+    body[data-print-mode="seating"] .sc-cell.occupied .sc-station-badge,
+    body[data-print-mode="seating"] .sc-stacked-group-tag {
         color: #444 !important;
         background: #f0f0f0 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
-    #seatingChartView[data-virtual="true"] .sc-cell-pin {
+    body[data-print-mode="seating"] #seatingChartView[data-virtual="true"] .sc-cell-pin {
         display: none !important;
     }
-    .sc-cell.pinned .sc-cell-pin {
+    body[data-print-mode="seating"] .sc-cell.pinned .sc-cell-pin {
         display: flex !important;
         position: absolute;
         top: 2px;
@@ -1743,16 +1746,16 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 8. Teacher desk ── */
-    .sc-desk-row {
+    body[data-print-mode="seating"] .sc-desk-row {
         margin-top: 20px !important;
     }
 
-    #seatingChartView[data-orientation="student"] .sc-desk-row {
+    body[data-print-mode="seating"] #seatingChartView[data-orientation="student"] .sc-desk-row {
         margin-top: 0 !important;
         margin-bottom: 20px !important;
     }
 
-    .sc-desk {
+    body[data-print-mode="seating"] .sc-desk {
         border: 1.5px solid #555 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -1764,7 +1767,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     /* ── 9. Kill all motion ── */
-    * { animation: none !important; transition: none !important; }
+    body[data-print-mode="seating"] * { animation: none !important; transition: none !important; }
 }
 
 @media (max-width: 768px) {

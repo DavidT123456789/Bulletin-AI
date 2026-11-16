@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { AIService } from '../services/AIService.js';
+import { appState } from '../state/State.js';
+import { StorageManager } from './StorageManager.js';
 
 // Mock dependencies
 vi.mock('./StorageManager.js', () => ({
@@ -25,6 +29,7 @@ vi.mock('./UIManager.js', () => ({
 vi.mock('../services/AIService.js', () => ({
     AIService: {
         callAI: vi.fn(),
+        callAIWithFallback: vi.fn(),
     }
 }));
 
@@ -347,7 +352,7 @@ describe('AppreciationsManager', () => {
     });
 
     describe('getAllPrompts()', () => {
-        it('should return object with appreciation, sw, ns prompts', () => {
+        it('should return object with appreciation and unified analysis prompts', () => {
             const studentData = {
                 nom: 'Dupont',
                 prenom: 'Marie',
@@ -359,8 +364,9 @@ describe('AppreciationsManager', () => {
             const result = AppreciationsManager.getAllPrompts(studentData);
 
             expect(result).toHaveProperty('appreciation');
-            expect(result).toHaveProperty('sw');
-            expect(result).toHaveProperty('ns');
+            expect(result).toHaveProperty('analysis');
+            expect(result).toHaveProperty('analysisSystem');
+            expect(result).toHaveProperty('analysisUser');
         });
 
         it('should include student name in appreciation prompt', () => {
@@ -427,6 +433,89 @@ describe('AppreciationsManager', () => {
 
         it('should be null initially', () => {
             expect(AppreciationsManager.massImportAbortController).toBeNull();
+        });
+    });
+
+    describe('_parseStudentAnalysisResponse() & generateStudentAnalysis()', () => {
+        beforeEach(() => {
+            AppreciationsManager.init({}, {
+                ...UI,
+                checkAPIKeyPresence: vi.fn(() => true),
+                showNotification: vi.fn()
+            });
+            appState.currentPeriod = 'T2';
+            appState.anonymizeData = true;
+            appState.generatedResults = [
+                {
+                    id: 'stu-ana-1',
+                    nom: 'Moreau',
+                    prenom: 'Chloé',
+                    classId: 'c1',
+                    studentData: {
+                        nom: 'Moreau',
+                        prenom: 'Chloé',
+                        statuses: [],
+                        currentPeriod: 'T2',
+                        periods: {
+                            T1: { grade: 11, appreciation: 'Début encourageant.' },
+                            T2: { grade: 14, appreciation: 'Chloé progresse avec régularité.' }
+                        },
+                        prompts: {}
+                    }
+                }
+            ];
+        });
+
+        it('should parse fenced JSON analysis with empty vigilances and deanonymize student first name', () => {
+            const raw = '```json\n{\n  "strengths": ["[PRÉNOM] participe activement", "Travail soigné"],\n  "vigilances": [],\n  "nextSteps": ["Poursuivre l\'approfondissement"]\n}\n```';
+            const parsed = AppreciationsManager._parseStudentAnalysisResponse(raw, 'Chloé');
+
+            expect(parsed).toEqual({
+                strengths: ['Chloé participe activement', 'Travail soigné'],
+                weaknesses: [],
+                nextSteps: ['Poursuivre l\'approfondissement']
+            });
+        });
+
+        it('should fall back cleanly on Markdown sections when model ignores JSON schema', () => {
+            const raw = `### Points forts\n- Participation dynamique\n- Copies rigoureuses\n\n### Points de vigilance\n- Précipitations en DS\n\n### Pistes de progrès\n1. Relire systématiquement les énoncés`;
+            const parsed = AppreciationsManager._parseStudentAnalysisResponse(raw, 'Chloé');
+
+            expect(parsed.strengths).toEqual(['Participation dynamique', 'Copies rigoureuses']);
+            expect(parsed.weaknesses).toEqual(['Précipitations en DS']);
+            expect(parsed.nextSteps).toEqual(['Relire systématiquement les énoncés']);
+        });
+
+        it('should send unified systemPrompt, store period-scoped analysis, deanonymize and update tokenUsage.analysis', async () => {
+            AIService.callAIWithFallback.mockResolvedValueOnce({
+                text: JSON.stringify({
+                    strengths: ['[PRÉNOM] s\'investit pleinement'],
+                    vigilances: ['Hésitations en expression orale'],
+                    nextSteps: ['Préparer des fiches d\'argumentation orale']
+                }),
+                usage: { total_tokens: 185 },
+                model: 'gemini-4-flash'
+            });
+
+            const entry = await AppreciationsManager.generateStudentAnalysis('stu-ana-1', 'T2', true);
+
+            expect(AIService.callAIWithFallback).toHaveBeenCalledTimes(1);
+            const [sentUserPrompt, callOptions] = AIService.callAIWithFallback.mock.calls[0];
+            expect(sentUserPrompt).toContain('[PRÉNOM]');
+            expect(sentUserPrompt).not.toMatch(/\bChloé\b/i);
+            expect(callOptions.systemPrompt).toContain('"strengths"');
+            expect(callOptions.context).toBe('single-student');
+
+            expect(entry.strengths).toEqual(['Chloé s\'investit pleinement']);
+            expect(entry.weaknesses).toEqual(['Hésitations en expression orale']);
+            expect(entry.nextSteps).toEqual(['Préparer des fiches d\'argumentation orale']);
+
+            const student = appState.generatedResults[0];
+            expect(student.analysisPerPeriod.T2).toBe(entry);
+            expect(student.analysisPerPeriod.T1).toBeUndefined();
+            expect(student.tokenUsage.analysis).toEqual({ total_tokens: 185 });
+            expect(student.analysisGenerationPeriod).toBe('T2');
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
     });
 });

@@ -72,8 +72,9 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(mockStudentData);
 
             expect(prompts).toHaveProperty('appreciation');
-            expect(prompts).toHaveProperty('sw');
-            expect(prompts).toHaveProperty('ns');
+            expect(prompts).toHaveProperty('analysis');
+            expect(prompts).toHaveProperty('analysisSystem');
+            expect(prompts).toHaveProperty('analysisUser');
 
             expect(prompts.appreciation).toContain("Rédige l'appréciation de l'élève [PRÉNOM]");
             // tone 3 = free mode, no explicit 'Adopte un ton'
@@ -226,7 +227,7 @@ describe('PromptService', () => {
                 currentPeriod: 'T2'
             });
 
-            expect(prompts.sw).toContain('Appréciation de référence : "Bonne dynamique de travail."');
+            expect(prompts.analysis).toContain('Appréciation de référence : "Bonne dynamique de travail."');
         });
 
         it('should calculate and include class statistics in periods info when enough data exists', () => {
@@ -525,7 +526,7 @@ describe('PromptService', () => {
             };
 
             const prompts = PromptService.getAllPrompts(studentData);
-            for (const promptText of [prompts.appreciation, prompts.sw, prompts.ns]) {
+            for (const promptText of [prompts.appreciation, prompts.analysis]) {
                 expect(promptText).not.toMatch(/\bLucas\b/i);
                 expect(promptText).not.toMatch(/\bMartin\b/i);
                 expect(promptText).not.toMatch(/\bPAI\b/);
@@ -567,6 +568,50 @@ describe('PromptService', () => {
             expect(statusInstructions).toBeTruthy();
             expect(statusInstructions).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|Geva-Sco|GevaSco)\b/i);
             expect(PromptService.deanonymizeText('[Prénom] [NOM] progresse.', 'Lucas')).toBe('Lucas progresse.');
+        });
+
+        it('should enrich unified analysis prompt with class, level, discipline, signed grade gap and JSON schema', () => {
+            appState.currentClassId = 'c-4e';
+            appState.classes = [{ id: 'c-4e', name: '4e B', level: 'college' }];
+            appState.generatedResults = [
+                { classId: 'c-4e', studentData: { periods: { T1: { grade: 10 } } } },
+                { classId: 'c-4e', studentData: { periods: { T1: { grade: 12 } } } },
+                { classId: 'c-4e', studentData: { periods: { T1: { grade: 14 } } } }
+            ];
+
+            const prompts = PromptService.getAllPrompts({
+                classId: 'c-4e',
+                nom: 'Dupont',
+                prenom: 'Camille',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: 10.5, appreciation: 'Travail sérieux malgré des difficultés à l\'écrit.' } }
+            }, { discipline: 'Histoire-Géographie', voice: 'je', tone: 3, length: 40 });
+
+            expect(prompts.analysisSystem).toContain('"strengths"');
+            expect(prompts.analysisSystem).toContain('"vigilances"');
+            expect(prompts.analysisSystem).toContain('"nextSteps"');
+            expect(prompts.analysisSystem).toContain('0 à 3 items');
+            expect(prompts.analysisUser).toContain('Classe : 4e B');
+            expect(prompts.analysisUser).toContain('Niveau : Collège');
+            expect(prompts.analysisUser).toContain('Matière : Histoire-Géographie');
+            expect(prompts.analysisUser).toContain('Écart élève/classe : -1,5 pt, en dessous de la moyenne de classe');
+        });
+
+        it('should add sparse dossier anti-filler instruction when no appreciation or observation exists', () => {
+            appState.currentClassId = null;
+            appState.classes = [];
+            appState.generatedResults = [];
+
+            const prompts = PromptService.getAllPrompts({
+                nom: 'Morel',
+                prenom: 'Nolan',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: 15, appreciation: '', context: '' } }
+            });
+
+            expect(prompts.analysisUser).toContain('dossier succinct sans appréciation ni observation textuelle');
         });
     });
 });

@@ -445,19 +445,33 @@ export const PromptService = {
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
+            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
             const scrubbedApp = d.appreciation
                 ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
                 : '';
-            const prefix = `${p} : Moy ${g}${evalCount}${classStatsStr}, Appréciation : `;
+            const prefixForGeneration = `${p} : Moy ${g}${evalCount}${classStatsStr}, Appréciation : `;
+            const prefixForAnalysis = `${p} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : `;
             const storedAppText = `"${scrubbedApp || 'N/A'}"`;
             return {
-                forGeneration: `${prefix}${p === currentPeriod ? '[à générer]' : storedAppText}`,
-                forAnalysis: `${prefix}${storedAppText}`,
+                forGeneration: `${prefixForGeneration}${p === currentPeriod ? '[à générer]' : storedAppText}`,
+                forAnalysis: `${prefixForAnalysis}${storedAppText}`,
                 scrubbedApp
             };
         });
         const periodsInfo = periodRows.map(r => r.forGeneration).join('\n');
-        const periodsInfoForAnalysis = periodRows.map(r => r.forAnalysis).join('\n');
+        let periodsInfoForAnalysis = periodRows.map(r => r.forAnalysis).join('\n');
+        if (!periodsInfoForAnalysis && periods?.[currentPeriod]) {
+            const d = periods[currentPeriod] || {};
+            const gradeVal = this._parseGrade(d.grade);
+            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
+            const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
+            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, currentPeriod);
+            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, currentPeriod, gradeVal);
+            const scrubbedApp = d.appreciation
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+                : '';
+            periodsInfoForAnalysis = `${currentPeriod} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : "${scrubbedApp || 'N/A'}"`;
+        }
         const rawCurrentApp = periods?.[currentPeriod]?.appreciation?.trim();
         const currentPeriodAppreciation = periodRows.length > 0
             ? periodRows[periodRows.length - 1].scrubbedApp
@@ -490,7 +504,7 @@ export const PromptService = {
 
         // --- CONTEXTE SCOLAIRE & DONNÉES DE L'ÉLÈVE ---
         const classLines = [];
-        const currentClass = appState.classes?.find(c => c.id === appState.currentClassId);
+        const currentClass = appState.classes?.find(c => c.id === classId);
         if (currentClass) {
             let classLevel = currentClass.level || detectLevelFromName(currentClass.name);
             if (classLevel === '3eme') classLevel = 'college';
@@ -508,71 +522,62 @@ export const PromptService = {
         const appreciationSystem = systemParts.join('\n\n');
         const appreciationPrompt = `${appreciationSystem}\n\n${appreciationUser}`;
 
-        // Analysis prompts - use the current period's appreciation as reference
-        // Enriched with student context for more accurate insights
-
-        // Build condensed student context for analysis
-        const analysisContextParts = [];
-
-        // Add neutralized status instructions if present
+        // Prompt unifié d'analyse individuelle (Forces / Points de vigilance / Pistes de progrès)
+        const analysisHeaderParts = [...classLines];
+        if (iaConfig.discipline) {
+            analysisHeaderParts.push(`Matière : ${iaConfig.discipline}`);
+        }
+        analysisHeaderParts.push(studentLine);
+        analysisHeaderParts.push(`Période analysée : ${periodDisplay}`);
         if (statusInstructions) {
-            analysisContextParts.push(`Consignes d'accompagnement : ${statusInstructions}`);
+            analysisHeaderParts.push(`Consignes d'accompagnement : ${statusInstructions}`);
         }
-
-        // Add scrubbed period context if present
         if (periodContext) {
-            analysisContextParts.push(`Contexte : "${periodContext}"`);
+            analysisHeaderParts.push(`Contexte : "${periodContext}"`);
         }
-
-        // Add scrubbed journal synthesis for richer insights
         if (journalSynthesis) {
-            analysisContextParts.push(`Observations : ${journalSynthesis}`);
+            analysisHeaderParts.push(`Observations : ${journalSynthesis}`);
         }
 
-        const analysisContext = analysisContextParts.length > 0
-            ? '\n' + analysisContextParts.join('\n')
+        const isSparseDossier = !currentPeriodAppreciation && !periodContext && !journalSynthesis;
+        const sparseDossierHint = isSparseDossier
+            ? `\nNote sur les données : dossier succinct sans appréciation ni observation textuelle ; limite-toi strictement aux constats chiffrés disponibles sans broder, ou laisse une liste vide.`
             : '';
 
-        const analysisUser = `Données de l'élève :
-${periodsInfoForAnalysis}
-${evolutionText}${analysisContext}
+        const analysisUser = `--- CONTEXTE DU BILAN ---
+${analysisHeaderParts.join('\n')}
 
-Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
+--- RÉSULTATS ET ÉVOLUTION ---
+${periodsInfoForAnalysis || 'Aucune donnée chiffrée disponible.'}${evolutionText ? `\n${evolutionText}` : ''}
 
-        const swSystem = `Tu es un enseignant analysant les performances d'un élève pour en extraire des forces et des faiblesses.
-Rédige une analyse pour la période '${currentPeriod}'. Liste exactement 2-3 points forts puis 2-3 points faibles.
-Format obligatoire à respecter STRICTEMENT :
-### Points Forts
-• [Point fort 1]
-• [Point fort 2]
+Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"${sparseDossierHint}`;
 
-### Points Faibles
-• [Point faible 1]
-• [Point faible 2]
+        const analysisSystemTarget = isNeutralVoice ? "d'un élève" : `de l'élève ${studentIdentifier}`;
+        const analysisSystem = `Tu es un enseignant${disciplineContext} réalisant le bilan analytique individuel ${analysisSystemTarget} pour le ${periodDisplay}, en vue d'un échange avec l'élève, ses parents et le professeur principal.
 
-Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directement avec les titres et les points.`;
+Réponds UNIQUEMENT par un objet JSON valide (sans bloc markdown ni texte autour) respectant strictement ce schéma :
+{
+  "strengths": ["Point fort 1"],
+  "vigilances": ["Point de vigilance 1"],
+  "nextSteps": ["Piste de progrès 1"]
+}
 
-        const swUser = analysisUser;
-        const swPrompt = `${swSystem}\n\n${swUser}`;
+RÈGLES STRICTES DE FIABILITÉ :
+1. Ancrage factuel : appuie-toi UNIQUEMENT sur les données fournies (notes, écarts élève/classe pré-calculés, évolutions, appréciation, contexte, observations). N'invente jamais un comportement, une compétence ou un travail absents du dossier.
+2. Cohérence arithmétique : respecte strictement le signe de « Écart élève/classe » (positif = au-dessus, négatif = en dessous) et le sens des évolutions.
+3. Cardinalité adaptative (0 à 3 items maximum par liste) : aucun remplissage générique si le dossier est succinct. S'il n'y a aucune fragilité objective, renvoie "vigilances": [].
+4. Lien causal : chaque item de "nextSteps" doit être une action concrète, réaliste pour le niveau scolaire, directement liée à un point de vigilance (ou à l'approfondissement d'un acquis si "vigilances" est vide).
+5. Formulation : phrases courtes et claires en français courant à la 3e personne (sans « tu », « vous », sans citer de note brute ni de sigle « T1 », « T2 », « S1 »). Conserve tel quel tout éventuel marqueur anonyme (${this.PRENOM_PLACEHOLDER}).`;
 
-        const nsSystem = `Tu es un enseignant formulant des pistes d'amélioration concrètes pour un élève.
-Suggère exactement 3 pistes d'amélioration concrètes pour la période '${currentPeriod}'.
-Format obligatoire : liste numérotée (1., 2., 3.). Rédige de manière brève, concise et directe.
-Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directement avec la liste.`;
-
-        const nsUser = analysisUser;
-        const nsPrompt = `${nsSystem}\n\n${nsUser}`;
+        const analysisPrompt = `${analysisSystem}\n\n${analysisUser}`;
 
         return {
             appreciation: appreciationPrompt,
-            sw: swPrompt,
-            ns: nsPrompt,
+            analysis: analysisPrompt,
             appreciationSystem,
             appreciationUser,
-            swSystem,
-            swUser,
-            nsSystem,
-            nsUser
+            analysisSystem,
+            analysisUser
         };
     },
 
@@ -629,24 +634,23 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
     },
 
     /**
-     * Calcule la moyenne, le min et le max de la classe pour une période donnée.
+     * Calcule et met en cache le résumé statistique des notes d'une classe pour une période donnée.
      * @param {string} classId - ID de la classe
      * @param {string} period - Période (ex: T1, T2)
-     * @returns {string} Chaîne formatée (ex: " [Classe: Moy 12,5, Min 8,0, Max 18,5]") ou vide
+     * @returns {Object|null} Résumé StatsService ou null si < 3 notes
      * @private
      */
-    _getClassStatsString(classId, period) {
+    _getClassGradeSummary(classId, period) {
         try {
-            if (!appState.generatedResults || !Array.isArray(appState.generatedResults)) return '';
-            
+            if (!appState.generatedResults || !Array.isArray(appState.generatedResults)) return null;
+
             // Si pas de classId défini, on prend les élèves n'ayant pas de classId (mode legacy)
-            const classStudents = appState.generatedResults.filter(r => 
+            const classStudents = appState.generatedResults.filter(r =>
                 (!classId && !r.classId) || (classId && r.classId === classId)
             );
 
-            if (classStudents.length < 3) return ''; // Seuil de représentativité
+            if (classStudents.length < 3) return null; // Seuil de représentativité
 
-            // Générer une clé de cache basée sur la signature des notes de la classe
             const cacheKey = `${classId || 'default'}_${period}_` + classStudents
                 .map(r => r.studentData?.periods?.[period]?.grade ?? '')
                 .join(',');
@@ -659,18 +663,51 @@ Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directe
                 classStudents.map(r => r.studentData?.periods?.[period]?.grade)
             );
 
-            if (!summary || summary.count < 3) {
-                PromptService._classStatsCache.set(cacheKey, '');
-                return ''; // Au moins 3 notes pour calculer des stats
-            }
-
-            const result = ` [Classe : Moy ${summary.average.toFixed(1).replace('.', ',')}, Min ${summary.min.toFixed(1).replace('.', ',')}, Max ${summary.max.toFixed(1).replace('.', ',')}]`;
-            PromptService._classStatsCache.set(cacheKey, result);
-            return result;
+            const validSummary = (summary && summary.count >= 3) ? summary : null;
+            PromptService._classStatsCache.set(cacheKey, validSummary);
+            return validSummary;
         } catch (e) {
             console.warn('[PromptService] Erreur lors du calcul des statistiques de classe:', e);
-            return '';
+            return null;
         }
+    },
+
+    /**
+     * Calcule la moyenne, le min et le max de la classe pour une période donnée.
+     * @param {string} classId - ID de la classe
+     * @param {string} period - Période (ex: T1, T2)
+     * @returns {string} Chaîne formatée (ex: " [Classe : Moy 12,5, Min 8,0, Max 18,5]") ou vide
+     * @private
+     */
+    _getClassStatsString(classId, period) {
+        const summary = this._getClassGradeSummary(classId, period);
+        if (!summary) return '';
+        return ` [Classe : Moy ${summary.average.toFixed(1).replace('.', ',')}, Min ${summary.min.toFixed(1).replace('.', ',')}, Max ${summary.max.toFixed(1).replace('.', ',')}]`;
+    },
+
+    /**
+     * Calcule l'écart arithmétique signé entre la moyenne de l'élève et celle de la classe.
+     * Évite toute inversion de comparaison numérique par l'IA dans l'analyse individuelle.
+     * @param {string} classId - ID de la classe
+     * @param {string} period - Période évaluée
+     * @param {number} studentGradeVal - Note numérique de l'élève
+     * @returns {string} Chaîne explicite d'écart ou vide
+     * @private
+     */
+    _getClassComparisonString(classId, period, studentGradeVal) {
+        if (isNaN(studentGradeVal)) return '';
+        const summary = this._getClassGradeSummary(classId, period);
+        if (!summary) return '';
+
+        const delta = Math.round((studentGradeVal - summary.average) * 10) / 10;
+        const sign = delta > 0 ? '+' : '';
+        const unit = Math.abs(delta) < 2 ? 'pt' : 'pts';
+        const deltaFormatted = delta === 0 ? '0,0 pt' : `${sign}${delta.toFixed(1).replace('.', ',')} ${unit}`;
+        const position = delta > 0.3
+            ? 'au-dessus de la moyenne de classe'
+            : (delta < -0.3 ? 'en dessous de la moyenne de classe' : 'dans la moyenne de classe');
+
+        return ` (Écart élève/classe : ${deltaFormatted}, ${position})`;
     },
 
     /**

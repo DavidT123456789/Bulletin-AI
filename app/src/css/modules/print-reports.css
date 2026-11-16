@@ -1,0 +1,445 @@
+/* ========================================================================
+   PRINT REPORTS - Synthèse Conseil de Classe & Fiche Bilan Élève (A4)
+   Masqué à l'écran, activé uniquement via body[data-print-mode="report"]
+   ======================================================================== */
+
+.print-report-root {
+    display: none;
+}
+
+@media print {
+    body[data-print-mode="report"] {
+        background: #ffffff !important;
+        color: #111827 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    body[data-print-mode="report"] > *:not(#print-report-root) {
+        display: none !important;
+    }
+
+    body[data-print-mode="report"] #print-report-root {
+        display: block !important;
+        width: 100%;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #111827;
+        font-size: 9.5pt;
+        line-height: 1.45;
+    }
+
+    .pr-document {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pr-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #111827;
+    }
+
+    .pr-eyebrow {
+        margin: 0 0 2px;
+        font-size: 7.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #4b5563;
+    }
+
+    .pr-title {
+        margin: 0;
+        font-size: 15pt;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #111827;
+        line-height: 1.2;
+    }
+
+    .pr-subtitle {
+        margin: 3px 0 0;
+        font-size: 9pt;
+        color: #4b5563;
+    }
+
+    .pr-meta-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+        text-align: right;
+    }
+
+    .pr-date {
+        font-size: 8.5pt;
+        color: #4b5563;
+    }
+
+    .pr-brand {
+        font-size: 8pt;
+        font-weight: 600;
+        color: #9ca3af;
+    }
+
+    /* --- Student Identity Header --- */
+    .pr-student-identity {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pr-avatar-img,
+    .pr-avatar-initials {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        border: 1.5px solid #d1d5db;
+    }
+
+    .pr-avatar-img {
+        object-fit: cover;
+    }
+
+    .pr-avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        color: #1f2937;
+        font-weight: 700;
+        font-size: 13pt;
+    }
+
+    .pr-status-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+    }
+
+    .pr-status-pill {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: #f9fafb;
+        font-size: 7.5pt;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* --- KPI Strip (Class Dashboard) --- */
+    .pr-kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        break-inside: avoid;
+    }
+
+    .pr-kpi {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 10px;
+        background: #f9fafb;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .pr-kpi-label {
+        font-size: 7.5pt;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6b7280;
+    }
+
+    .pr-kpi-val {
+        font-size: 13pt;
+        font-weight: 700;
+        color: #111827;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pr-kpi-val small {
+        font-size: 8.5pt;
+        font-weight: 500;
+        color: #6b7280;
+    }
+
+    .pr-kpi-sub {
+        font-size: 7.5pt;
+        color: #4b5563;
+    }
+
+    .pr-kpi-sub.is-pos,
+    .pr-delta.is-pos {
+        color: #15803d;
+    }
+
+    .pr-kpi-sub.is-neg,
+    .pr-delta.is-neg {
+        color: #b91c1c;
+    }
+
+    /* --- Sections & Grids --- */
+    .pr-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .pr-keep-together {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .pr-section-title {
+        margin: 0;
+        font-size: 9.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 3px;
+    }
+
+    .pr-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        break-inside: avoid;
+    }
+
+    .pr-grid-3 {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .pr-card,
+    .pr-subcard {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 9px 11px;
+        background: #ffffff;
+    }
+
+    .pr-subcard h3 {
+        margin: 0 0 5px;
+        font-size: 8.5pt;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .pr-subcard ul {
+        margin: 0;
+        padding-left: 14px;
+        font-size: 8.5pt;
+    }
+
+    .pr-subcard li {
+        margin-bottom: 3px;
+    }
+
+    .pr-tone-success {
+        border-top: 2.5px solid #16a34a;
+    }
+
+    .pr-tone-warning {
+        border-top: 2.5px solid #d97706;
+    }
+
+    .pr-tone-info {
+        border-top: 2.5px solid #2563eb;
+    }
+
+    .pr-intro-box {
+        border: 1px solid #dbeafe;
+        border-left: 3px solid #2563eb;
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 8px 11px;
+    }
+
+    .pr-intro-box strong {
+        display: block;
+        font-size: 8.5pt;
+        margin-bottom: 3px;
+        color: #1e3a8a;
+    }
+
+    .pr-intro-box p {
+        margin: 0;
+        font-size: 9pt;
+    }
+
+    /* --- Dynamics Fallback --- */
+    .pr-dynamics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .pr-dyn-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 6px;
+        text-align: center;
+        background: #f9fafb;
+    }
+
+    .pr-dyn-item strong {
+        display: block;
+        font-size: 13pt;
+    }
+
+    .pr-dyn-item span {
+        font-size: 7.5pt;
+        color: #4b5563;
+    }
+
+    .pr-dyn-item.is-pos strong {
+        color: #15803d;
+    }
+
+    .pr-dyn-item.is-neg strong {
+        color: #b91c1c;
+    }
+
+    /* --- Student Highlight Lists --- */
+    .pr-student-list {
+        list-style: none;
+        margin: 4px 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .pr-student-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 8.5pt;
+        padding: 2px 0;
+        border-bottom: 1px dotted #e5e7eb;
+    }
+
+    .pr-student-list li:last-child {
+        border-bottom: none;
+    }
+
+    .pr-student-name {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .pr-student-metrics {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pr-delta {
+        font-size: 7.5pt;
+        font-weight: 600;
+    }
+
+    /* --- Student Report Specifics --- */
+    .pr-student-perf-split {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .pr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.5pt;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pr-table th,
+    .pr-table td {
+        padding: 5px 7px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+    .pr-table th {
+        font-size: 7.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6b7280;
+        background: #f9fafb;
+    }
+
+    .pr-table tr.is-current-period td {
+        background: #f8fafc;
+    }
+
+    .pr-chart-box {
+        padding: 6px 8px;
+    }
+
+    .print-chart-svg {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .pr-appreciation-box {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #f9fafb;
+        font-size: 9.5pt;
+        line-height: 1.5;
+    }
+
+    .pr-writing-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-top: 10px;
+    }
+
+    .pr-writing-line {
+        border-bottom: 1px dashed #cbd5e1;
+        height: 10px;
+    }
+
+    .pr-muted-note {
+        margin: 4px 0 0;
+        font-size: 8.5pt;
+        font-style: italic;
+        color: #6b7280;
+    }
+
+    .pr-footer {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        font-size: 7.5pt;
+        color: #9ca3af;
+    }
+}

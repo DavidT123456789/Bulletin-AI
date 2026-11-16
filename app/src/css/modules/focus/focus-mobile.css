@@ -245,10 +245,14 @@
         line-height: 1.2;
     }
 
-    /* Group Analyze and Nav Buttons together */
+    /* Group Analyze, Print and Nav Buttons together */
     .focus-header>.focus-analyze-btn {
         order: 3;
         margin-left: auto;
+    }
+
+    .focus-header>.focus-print-btn {
+        order: 3;
     }
 
     /* Nav Buttons + Close/Save: right-aligned row */
@@ -285,6 +289,7 @@
     }
 
     .focus-analyze-btn,
+    .focus-print-btn,
     .focus-save-btn,
     .focus-close-btn {
         width: 34px;
@@ -563,6 +568,11 @@
         font-size: 14px;
     }
 
+    .analysis-add-item-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
@@ -573,6 +583,11 @@
         padding: 3px 0;
         margin: 6px 10px 0 10px;
         gap: 6px;
+    }
+
+    /* Preserve student name width on ultra-narrow screens (#focusAnalysisPrintBtn remains in Analysis view) */
+    .focus-header > .focus-print-btn {
+        display: none;
     }
 
     .focus-header.editing {

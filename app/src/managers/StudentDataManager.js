@@ -21,14 +21,15 @@ export const StudentDataManager = {
                 currentPeriod: appState.currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
                 currentAIModel: modelUsed || appState.currentAIModel,
-                prompts: prompts || { appreciation: null, sw: null, ns: null }
+                prompts: prompts || { appreciation: null, analysis: null }
             },
             errorMessage,
             errorPeriod: errorMessage ? appState.currentPeriod : null,
             timestamp: new Date().toISOString(),
             strengthsWeaknesses: null,
             nextSteps: null,
-            tokenUsage: tokenUsage || { appreciation: null, sw: null, ns: null },
+            analysisPerPeriod: {},
+            tokenUsage: tokenUsage || { appreciation: null, analysis: null },
             copied: false,
             // Student photo data (base64)
             studentPhoto: null,
@@ -331,6 +332,13 @@ export const StudentDataManager = {
             journal: existingResult.journal,
             history: existingResult.history,
             historyPerPeriod: existingResult.historyPerPeriod,
+            analysisPerPeriod: existingResult.analysisPerPeriod,
+            strengthsWeaknesses: existingResult.strengthsWeaknesses,
+            nextSteps: existingResult.nextSteps,
+            analysisGenerationPeriod: existingResult.analysisGenerationPeriod,
+            analysisSnapshot: existingResult.analysisSnapshot,
+            analysisSourceAppreciation: existingResult.analysisSourceAppreciation,
+            tokenUsageAnalysis: existingResult.tokenUsage?.analysis ?? null,
             _lastModified: existingResult._lastModified,
             _manualEdits: existingResult._manualEdits
         };
@@ -375,6 +383,16 @@ export const StudentDataManager = {
         existingResult.journal = preserved.journal;
         existingResult.history = preserved.history;
         if (preserved.historyPerPeriod) existingResult.historyPerPeriod = preserved.historyPerPeriod;
+        if (preserved.analysisPerPeriod) existingResult.analysisPerPeriod = preserved.analysisPerPeriod;
+        if (preserved.strengthsWeaknesses !== undefined) existingResult.strengthsWeaknesses = preserved.strengthsWeaknesses;
+        if (preserved.nextSteps !== undefined) existingResult.nextSteps = preserved.nextSteps;
+        if (preserved.analysisGenerationPeriod !== undefined) existingResult.analysisGenerationPeriod = preserved.analysisGenerationPeriod;
+        if (preserved.analysisSnapshot !== undefined) existingResult.analysisSnapshot = preserved.analysisSnapshot;
+        if (preserved.analysisSourceAppreciation !== undefined) existingResult.analysisSourceAppreciation = preserved.analysisSourceAppreciation;
+        if (preserved.tokenUsageAnalysis) {
+            existingResult.tokenUsage = { ...(existingResult.tokenUsage || {}), analysis: preserved.tokenUsageAnalysis };
+        }
+        Utils.syncStudentAnalysisRootCache(existingResult, existingResult.generationPeriod || appState.currentPeriod);
         if (preserved._lastModified) existingResult._lastModified = preserved._lastModified;
         if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
 
@@ -424,13 +442,14 @@ export const StudentDataManager = {
                 statuses: Array.isArray(newStudentData.statuses) ? newStudentData.statuses : [],
                 currentPeriod: currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
-                prompts: { appreciation: null, sw: null, ns: null }
+                prompts: { appreciation: null, analysis: null }
             },
             errorMessage: null,
             timestamp: new Date().toISOString(),
             strengthsWeaknesses: null,
             nextSteps: null,
-            tokenUsage: { appreciation: null, sw: null, ns: null },
+            analysisPerPeriod: {},
+            tokenUsage: { appreciation: null, analysis: null },
             copied: false,
             // Student photo data (base64)
             studentPhoto: null,

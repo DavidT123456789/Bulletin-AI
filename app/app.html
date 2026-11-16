@@ -696,6 +696,17 @@
                 </svg>
             </button>
 
+            <!-- Print Student Report button (PDF parents / PP) -->
+            <button type="button" id="focusPrintStudentBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"
+                aria-label="Exporter la fiche bilan élève en PDF">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+            </button>
+
             <!-- NAVIGATION: Compact nav group (← 1/8 →) -->
             <div class="focus-nav-buttons">
                 <button type="button" id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
@@ -927,10 +938,19 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT ZONE: Generate + Nav + Close -->
+                    <!-- RIGHT ZONE: Generate + Print + Nav + Close -->
                     <div class="focus-analysis-header-right">
                         <button type="button" id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn">
                             <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
+                        </button>
+                        <button type="button" id="focusAnalysisPrintBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"
+                            aria-label="Exporter la fiche bilan élève en PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
                         </button>
 
                         <!-- Navigation Add -->
@@ -966,6 +986,10 @@
                             <span class="analysis-icon forces"><iconify-icon
                                     icon="solar:cup-linear"></iconify-icon></span>
                             <h4>Forces</h4>
+                            <button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-analysis-add="strengths"
+                                data-tooltip="Ajouter un point fort" aria-label="Ajouter un point fort">
+                                <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
+                            </button>
                         </div>
                         <div class="analysis-card-body" id="analysisForcesContent">
                             <div class="analysis-placeholder">
@@ -981,6 +1005,10 @@
                             <span class="analysis-icon weaknesses"><iconify-icon
                                     icon="solar:danger-circle-linear"></iconify-icon></span>
                             <h4>Points de vigilance</h4>
+                            <button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-analysis-add="weaknesses"
+                                data-tooltip="Ajouter un point de vigilance" aria-label="Ajouter un point de vigilance">
+                                <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
+                            </button>
                         </div>
                         <div class="analysis-card-body" id="analysisWeaknessesContent">
                             <div class="analysis-placeholder">
@@ -996,6 +1024,10 @@
                             <span class="analysis-icon suggestions"><iconify-icon
                                     icon="solar:rocket-linear"></iconify-icon></span>
                             <h4>Pistes de progrès</h4>
+                            <button type="button" class="journal-header-btn icon-only analysis-add-item-btn tooltip" data-analysis-add="nextSteps"
+                                data-tooltip="Ajouter une piste de progrès" aria-label="Ajouter une piste de progrès">
+                                <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
+                            </button>
                         </div>
                         <div class="analysis-card-body" id="analysisSuggestionsContent">
                             <div class="analysis-placeholder">
@@ -3960,9 +3992,15 @@
                         <span id="dashboardStudentCount" class="context-item">--</span>
                     </div>
                 </div>
-                <button type="button" class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
-                    <iconify-icon icon="ph:x"></iconify-icon>
-                </button>
+                <div class="dashboard-header-actions">
+                    <button type="button" class="btn btn-neutral btn-small tooltip" id="exportClassDashboardPdfBtn"
+                        data-tooltip="Imprimer ou exporter en PDF (Synthèse conseil de classe)">
+                        <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
+                    </button>
+                    <button type="button" class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
+                        <iconify-icon icon="ph:x"></iconify-icon>
+                    </button>
+                </div>
             </div>
 
             <div class="modal-body">

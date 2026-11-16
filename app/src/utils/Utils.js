@@ -901,13 +901,15 @@ export const Utils = {
                     existing._manualEdits = result._manualEdits;
                 }
 
-                // Fusionner les forces / faiblesses et pistes de progrès
-                if (result.strengthsWeaknesses) {
+                // Fusionner les forces / faiblesses et pistes de progrès par période
+                this.mergeAnalysisPerPeriod(existing, result);
+                if (result.strengthsWeaknesses && !result.analysisPerPeriod) {
                     existing.strengthsWeaknesses = result.strengthsWeaknesses;
                 }
-                if (result.nextSteps) {
+                if (result.nextSteps && !result.analysisPerPeriod) {
                     existing.nextSteps = result.nextSteps;
                 }
+                this.syncStudentAnalysisRootCache(existing);
 
                 // Conserver classId si présent
                 if (result.classId) {
@@ -1353,6 +1355,239 @@ export const Utils = {
         }
 
         return [...results];
+    },
+
+    /**
+     * Extrait les points structurés ('forces' ou 'weaknesses') depuis les données d'analyse IA élève.
+     * @param {Object|string|null} data - Données strengthsWeaknesses (objet ou Markdown brut)
+     * @param {'forces'|'weaknesses'} type - Section à extraire
+     * @returns {string[]} Liste des points extraits
+     */
+    extractAnalysisItems(data, type) {
+        if (!data) return [];
+
+        if (typeof data === 'object') {
+            const list = type === 'forces'
+                ? (data.strengths || data.forces || [])
+                : (data.weaknesses || data.faiblesses || []);
+            return Array.isArray(list) ? list.filter(Boolean) : [];
+        }
+
+        if (typeof data !== 'string') return [];
+
+        const splitRegex = /(?:^|\n)(?:[-*•]\s+)?(?:#+\s*)?(?:\*\*)?(?:Faiblesses|Axes d'amélioration|Points à améliorer|Fragilités|Axes de progrès|Points faibles|Axes d'effort)[:\s]*(?:\*\*)?[:\s]*(?:\n|$)/i;
+        const parts = data.split(splitRegex);
+        let relevantText = '';
+
+        if (parts.length > 1) {
+            relevantText = type === 'forces' ? parts[0] : parts.slice(1).join('\n');
+        } else if (type === 'forces') {
+            relevantText = data;
+        }
+
+        const headersToRemove = type === 'forces'
+            ? ['Points Forts', 'Forces', 'Points forts', 'Atouts', 'Ce qui va bien']
+            : ['Faiblesses', 'Axes d\'amélioration', 'Points à améliorer', 'Fragilités'];
+
+        let cleanText = relevantText || '';
+        headersToRemove.forEach(header => {
+            const regex = new RegExp(`(?:^|\\n)(?:[-*•]\\s+)?(?:#+\\s*)?(?:\\*\\*)?${header}[:\\s]*(?:\\*\\*)?[:\\s]*`, 'gim');
+            cleanText = cleanText.replace(regex, '');
+        });
+
+        let items = cleanText
+            .split(/\n/)
+            .map(line => line.trim())
+            .filter(line => line.length > 5 && (line.match(/^[-*•]/) || line.match(/^\d+\./) || line.length > 20))
+            .map(line => line.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, ''));
+
+        if (items.length === 0 && cleanText.trim().length > 10) {
+            items = [cleanText.trim()];
+        }
+
+        return items;
+    },
+
+    /**
+     * Construit l'empreinte normalisée des données pédagogiques d'une période pour détecter
+     * si une analyse individuelle doit être actualisée (SSOT).
+     * @param {Object|null} result - Objet résultat élève
+     * @param {string|null} [period=null] - Période ciblée
+     * @returns {Object}
+     */
+    buildStudentAnalysisSnapshot(result, period = null) {
+        const targetPeriod = period || appState.currentPeriod || result?.studentData?.currentPeriod;
+        const studentData = result?.studentData || {};
+        const periodData = studentData.periods?.[targetPeriod] || {};
+        const activeStatuses = this.getActiveStatuses(studentData.statuses || [], targetPeriod);
+        const periodJournalCount = Array.isArray(result?.journal)
+            ? result.journal.filter(e => e && (!e.period || e.period === targetPeriod)).length
+            : 0;
+        return {
+            appreciation: (periodData.appreciation || '').trim(),
+            statuses: [...activeStatuses].sort(),
+            context: (periodData.context || '').trim(),
+            grade: periodData.grade ?? null,
+            journalCount: periodJournalCount,
+            period: targetPeriod
+        };
+    },
+
+    /**
+     * Normalise une liste d'items d'analyse (trim, suppression des puces résiduelles et entrées vides).
+     * @param {Array<*>} list
+     * @returns {string[]}
+     */
+    normalizeAnalysisItems(list) {
+        if (!Array.isArray(list)) return [];
+        return list
+            .map(item => String(item ?? '').replace(/\s+/g, ' ').trim().replace(/^(?:[-*•]|\d+[.)])\s+/, ''))
+            .filter(Boolean);
+    },
+
+    /**
+     * Résout l'analyse pédagogique d'un élève pour une période donnée (SSOT).
+     * Lit en priorité `result.analysisPerPeriod[period]`, puis retombe sur les anciens champs plats
+     * uniquement s'ils correspondent à la même période (évite toute fuite inter-périodes).
+     * @param {Object|null} result - Objet résultat élève
+     * @param {string|null} [period=null] - Période ciblée (défaut : appState.currentPeriod)
+     * @returns {{strengths: string[], weaknesses: string[], nextSteps: string[], source: string, timestamp: string|null, _lastModified: number, snapshot: Object|null, sourceAppreciation: string, model: string|null, isLegacy: boolean}|null}
+     */
+    getStudentAnalysisForPeriod(result, period = null) {
+        if (!result || typeof result !== 'object') return null;
+        const targetPeriod = period || appState.currentPeriod || result.studentData?.currentPeriod;
+        if (!targetPeriod) return null;
+
+        const periodEntry = result.analysisPerPeriod?.[targetPeriod];
+        if (periodEntry && typeof periodEntry === 'object') {
+            const strengths = this.normalizeAnalysisItems(periodEntry.strengths || periodEntry.forces || []);
+            const weaknesses = this.normalizeAnalysisItems(periodEntry.weaknesses || periodEntry.vigilances || periodEntry.faiblesses || []);
+            const nextSteps = this.normalizeAnalysisItems(periodEntry.nextSteps || periodEntry.recommendations || []);
+            const hasItems = strengths.length > 0 || weaknesses.length > 0 || nextSteps.length > 0;
+            if (hasItems || periodEntry.source === 'ai' || periodEntry.source === 'manual') {
+                return {
+                    strengths,
+                    weaknesses,
+                    nextSteps,
+                    source: periodEntry.source || 'ai',
+                    hasManualEdits: Boolean(periodEntry.hasManualEdits),
+                    timestamp: periodEntry.timestamp || null,
+                    _lastModified: periodEntry._lastModified || 0,
+                    snapshot: periodEntry.snapshot || null,
+                    sourceAppreciation: periodEntry.sourceAppreciation || '',
+                    model: periodEntry.model || null,
+                    isLegacy: false
+                };
+            }
+        }
+
+        // Repli rétrocompatible vers les anciens champs plats
+        if (!result.strengthsWeaknesses && !(Array.isArray(result.nextSteps) && result.nextSteps.length > 0)) {
+            return null;
+        }
+
+        const hasPeriodEntries = Boolean(result.analysisPerPeriod && Object.keys(result.analysisPerPeriod).length > 0);
+        const explicitLegacyPeriod = result.analysisGenerationPeriod || result.analysisSnapshot?.period || null;
+        if (explicitLegacyPeriod) {
+            if (explicitLegacyPeriod !== targetPeriod) return null;
+        } else if (hasPeriodEntries) {
+            return null;
+        } else {
+            const fallbackPeriod = result.generationPeriod || result.studentData?.currentPeriod || null;
+            if (fallbackPeriod && fallbackPeriod !== targetPeriod) return null;
+        }
+
+        const strengths = this.normalizeAnalysisItems(this.extractAnalysisItems(result.strengthsWeaknesses, 'forces'));
+        const weaknesses = this.normalizeAnalysisItems(this.extractAnalysisItems(result.strengthsWeaknesses, 'weaknesses'));
+        const nextSteps = this.normalizeAnalysisItems(Array.isArray(result.nextSteps) ? result.nextSteps : []);
+        if (strengths.length === 0 && weaknesses.length === 0 && nextSteps.length === 0) {
+            return null;
+        }
+
+        return {
+            strengths,
+            weaknesses,
+            nextSteps,
+            source: 'legacy',
+            timestamp: result.timestamp || null,
+            _lastModified: result._lastModified || 0,
+            snapshot: result.analysisSnapshot || null,
+            sourceAppreciation: result.analysisSourceAppreciation || '',
+            model: result.studentData?.currentAIModel || null,
+            isLegacy: true
+        };
+    },
+
+    /**
+     * Indique si une analyse résolue contient au moins un point exploitable.
+     * @param {Object|null} analysis
+     * @returns {boolean}
+     */
+    hasStudentAnalysisContent(analysis) {
+        if (!analysis) return false;
+        return Boolean(
+            (analysis.strengths && analysis.strengths.length > 0) ||
+            (analysis.weaknesses && analysis.weaknesses.length > 0) ||
+            (analysis.nextSteps && analysis.nextSteps.length > 0)
+        );
+    },
+
+    /**
+     * Met à jour le miroir racine (`strengthsWeaknesses`, `nextSteps`, `analysisGenerationPeriod`)
+     * à partir de `analysisPerPeriod[period]` pour préserver la compatibilité avec les exports/anciens clients.
+     * @param {Object} result - Résultat élève
+     * @param {string|null} [period=null] - Période à projeter (défaut : période de l'élève ou active)
+     */
+    syncStudentAnalysisRootCache(result, period = null) {
+        if (!result || !result.analysisPerPeriod || typeof result.analysisPerPeriod !== 'object') return;
+        const targetPeriod = period || result.studentData?.currentPeriod || appState.currentPeriod;
+        if (!targetPeriod || !result.analysisPerPeriod[targetPeriod]) return;
+
+        const entry = this.getStudentAnalysisForPeriod(result, targetPeriod);
+        if (!entry) return;
+
+        const hasItems = this.hasStudentAnalysisContent(entry);
+        result.strengthsWeaknesses = (entry.strengths.length > 0 || entry.weaknesses.length > 0)
+            ? { strengths: [...entry.strengths], weaknesses: [...entry.weaknesses] }
+            : null;
+        result.nextSteps = entry.nextSteps.length > 0 ? [...entry.nextSteps] : null;
+        result.analysisGenerationPeriod = hasItems ? targetPeriod : null;
+        result.analysisSnapshot = entry.snapshot ? this.deepClone(entry.snapshot) : null;
+        result.analysisSourceAppreciation = entry.sourceAppreciation || '';
+    },
+
+    /**
+     * Fusionne `analysisPerPeriod` période par période selon `_lastModified` (LWW par période).
+     * @param {Object} targetResult - Élève local cible (muté)
+     * @param {Object} sourceResult - Élève distant/doublon source
+     * @returns {boolean} true si au moins une période a été adoptée ou mise à jour
+     */
+    mergeAnalysisPerPeriod(targetResult, sourceResult) {
+        if (!targetResult || !sourceResult?.analysisPerPeriod || typeof sourceResult.analysisPerPeriod !== 'object') {
+            return false;
+        }
+        if (!targetResult.analysisPerPeriod) targetResult.analysisPerPeriod = {};
+        let updated = false;
+
+        for (const [period, remoteEntry] of Object.entries(sourceResult.analysisPerPeriod)) {
+            if (!remoteEntry || typeof remoteEntry !== 'object') continue;
+            const localEntry = targetResult.analysisPerPeriod[period];
+            const remoteTime = remoteEntry._lastModified || 0;
+            const localTime = localEntry?._lastModified || 0;
+            const remoteHasItems = Boolean(
+                remoteEntry.strengths?.length || remoteEntry.weaknesses?.length || remoteEntry.nextSteps?.length ||
+                remoteEntry.source === 'manual' || remoteEntry.source === 'ai'
+            );
+
+            if (!localEntry && remoteHasItems) {
+                targetResult.analysisPerPeriod[period] = this.deepClone(remoteEntry);
+                updated = true;
+            } else if (localEntry && remoteTime > localTime && !this.isEqual(localEntry, remoteEntry)) {
+                targetResult.analysisPerPeriod[period] = this.deepClone(remoteEntry);
+                updated = true;
+            }
+        }
+        return updated;
     },
 
     /**

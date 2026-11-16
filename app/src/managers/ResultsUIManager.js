@@ -129,6 +129,24 @@ export const ResultsUIManager = {
             if (r.analysisGenerationPeriod) {
                 r.analysisGenerationPeriod = mapPeriodCode(r.analysisGenerationPeriod);
             }
+            if (r.analysisSnapshot && typeof r.analysisSnapshot === 'object' && r.analysisSnapshot.period) {
+                r.analysisSnapshot.period = mapPeriodCode(r.analysisSnapshot.period);
+            }
+            if (r.analysisPerPeriod && typeof r.analysisPerPeriod === 'object') {
+                const mappedAnalyses = {};
+                for (const [k, v] of Object.entries(r.analysisPerPeriod)) {
+                    const mappedKey = mapPeriodCode(k);
+                    const cloned = Utils.deepClone(v);
+                    if (cloned?.snapshot?.period) {
+                        cloned.snapshot.period = mappedKey;
+                    }
+                    if (!mappedAnalyses[mappedKey] || (cloned?._lastModified || 0) > (mappedAnalyses[mappedKey]?._lastModified || 0)) {
+                        mappedAnalyses[mappedKey] = cloned;
+                    }
+                }
+                r.analysisPerPeriod = mappedAnalyses;
+                Utils.syncStudentAnalysisRootCache(r, r.studentData?.currentPeriod || targetPeriod);
+            }
             if (r.generationSnapshot && typeof r.generationSnapshot === 'object') {
                 if (r.generationSnapshot.currentPeriod) {
                     r.generationSnapshot.currentPeriod = mapPeriodCode(r.generationSnapshot.currentPeriod);

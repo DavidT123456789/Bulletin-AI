@@ -376,13 +376,44 @@ describe('StorageManager', () => {
 
             const once = JSON.parse(JSON.stringify(StorageManager.migrateData(results)));
             expect(once.map(r => r.tokenUsage)).toEqual([
-                { appreciation: null, sw: null, ns: null },
-                { appreciation: usage, sw: null, ns: null },
-                { appreciation: null, sw: null, ns: null },
-                { appreciation: usage, sw: { total_tokens: 7 }, ns: null }
+                { appreciation: null, analysis: null, sw: null, ns: null },
+                { appreciation: usage, analysis: null, sw: null, ns: null },
+                { appreciation: null, analysis: null, sw: null, ns: null },
+                { appreciation: usage, analysis: null, sw: { total_tokens: 7 }, ns: null }
             ]);
             // A second load (app reload) must not change anything, otherwise the session drifts to "Non sauvegardé"
             expect(StorageManager.migrateData(once)).toEqual(once);
+        });
+
+        it('should migrate flat strengthsWeaknesses/nextSteps into analysisPerPeriod when analysisGenerationPeriod is set', () => {
+            const results = [
+                {
+                    id: 'stu-legacy',
+                    strengthsWeaknesses: { strengths: ['Participation'], weaknesses: ['Soin'] },
+                    nextSteps: ['Relire les consignes'],
+                    analysisGenerationPeriod: 'T1',
+                    analysisSnapshot: { period: 'T1', grade: 13 },
+                    _lastModified: 5000,
+                    studentData: { periods: { T1: { grade: 13 } }, currentPeriod: 'T2' }
+                },
+                {
+                    id: 'stu-unmarked',
+                    strengthsWeaknesses: 'Ancien texte sans période',
+                    studentData: { periods: { T1: { grade: 11 } }, currentPeriod: 'T2' }
+                }
+            ];
+
+            const migrated = StorageManager.migrateData(results);
+            expect(migrated[0].analysisPerPeriod.T1).toMatchObject({
+                strengths: ['Participation'],
+                weaknesses: ['Soin'],
+                nextSteps: ['Relire les consignes'],
+                source: 'legacy',
+                _lastModified: 5000
+            });
+            expect(migrated[0].analysisPerPeriod.T2).toBeUndefined();
+            // Do not blindly guess period for unmarked legacy entries
+            expect(migrated[1].analysisPerPeriod).toBeUndefined();
         });
     });
 
@@ -1026,6 +1057,67 @@ describe('StorageManager', () => {
                 ]
             });
             expect(sameContent.stats.updatedStudents).toBe(0);
+        });
+
+        it('should merge analysisPerPeriod granularly by period timestamp without overwriting other periods', async () => {
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            runtimeState.data.generatedResults = [
+                {
+                    id: 's1',
+                    nom: 'Dupont',
+                    prenom: 'Alice',
+                    classId: 'c1',
+                    _lastModified: 2000,
+                    analysisPerPeriod: {
+                        T1: {
+                            strengths: ['Point fort T1 local'],
+                            weaknesses: [],
+                            nextSteps: ['Piste T1 locale'],
+                            source: 'manual',
+                            _lastModified: 6000
+                        }
+                    },
+                    studentData: { currentPeriod: 'T1', periods: {} }
+                }
+            ];
+
+            await StorageManager.mergeRemoteData({
+                classes: [{ id: 'c1', name: '3A' }],
+                generatedResults: [
+                    {
+                        id: 's1',
+                        nom: 'Dupont',
+                        prenom: 'Alice',
+                        classId: 'c1',
+                        _lastModified: 7000,
+                        analysisPerPeriod: {
+                            T1: {
+                                strengths: ['T1 distant ancien'],
+                                weaknesses: ['À ignorer'],
+                                nextSteps: ['À ignorer'],
+                                source: 'ai',
+                                _lastModified: 3000
+                            },
+                            T2: {
+                                strengths: ['Progrès net T2'],
+                                weaknesses: ['Méthodologie'],
+                                nextSteps: ['Structurer les brouillons'],
+                                source: 'ai',
+                                _lastModified: 7000
+                            }
+                        },
+                        studentData: { currentPeriod: 'T2', periods: {} }
+                    }
+                ]
+            });
+
+            const merged = runtimeState.data.generatedResults[0];
+            expect(merged.analysisPerPeriod.T1.strengths).toEqual(['Point fort T1 local']);
+            expect(merged.analysisPerPeriod.T2.strengths).toEqual(['Progrès net T2']);
+            expect(merged.analysisPerPeriod.T2.nextSteps).toEqual(['Structurer les brouillons']);
+            // Root cache reflects localStudent.studentData.currentPeriod (T1) rather than leaking T2
+            expect(merged.analysisGenerationPeriod).toBe('T1');
+            expect(merged.strengthsWeaknesses.strengths).toEqual(['Point fort T1 local']);
         });
 
         it('should evict virgin first-visit Classe exemple when merging real classes, while preserving intentional Classe exemple', async () => {

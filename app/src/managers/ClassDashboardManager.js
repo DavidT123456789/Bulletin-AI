@@ -17,6 +17,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { ClassManager } from './ClassManager.js';
 import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { JournalManager } from './JournalManager.js';
+import { ExportManager } from './ExportManager.js';
 import { getPreviousPeriod } from '../config/academicConstants.js';
 
 /**
@@ -1760,6 +1761,16 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises Markdown. Répo
         // 3. Plain-text / bullet fallback wrapped in intro card so layout never collapses
         const fallbackLines = text.split('\n').map(l => l.trim()).filter(Boolean);
         return this._buildIntroCardHTML('Synthèse de la Classe', fallbackLines.join('\n'), true);
+    },
+
+    /**
+     * Export the class dashboard (cohort stats, SVG charts and AI synthesis) to PDF via print
+     */
+    exportPdf() {
+        const stats = this.cachedStats || this.calculateStatistics(this.getStudentsData());
+        const subjectEl = this.modal?.querySelector('#dashboardSubjectBadge');
+        const subject = subjectEl && subjectEl.style.display !== 'none' ? subjectEl.textContent.trim() : '';
+        ExportManager.exportClassDashboardPdf({ stats, subject });
     },
 
     /**

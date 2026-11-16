@@ -240,6 +240,12 @@ export const OtherModalsListeners = {
             withLazyManager(loadClassDashboard, (dashboard) => dashboard.copySynthesis())
         );
 
+        // Export Class Dashboard PDF button
+        const exportPdfBtn = document.getElementById('exportClassDashboardPdfBtn');
+        addClickListener(exportPdfBtn, () =>
+            withLazyManager(loadClassDashboard, (dashboard) => dashboard.exportPdf())
+        );
+
         // Click handlers for interactive elements
         modal.addEventListener('click', (e) => {
             // Click on student highlight to focus on them

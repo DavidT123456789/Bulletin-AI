@@ -279,7 +279,7 @@ describe('AppreciationService', () => {
     });
 
     describe('getAllPrompts()', () => {
-        it('should return object with appreciation, sw, ns prompts', () => {
+        it('should return object with appreciation and unified analysis prompts', () => {
             const studentData = {
                 nom: 'Dupont',
                 prenom: 'Marie',
@@ -291,8 +291,9 @@ describe('AppreciationService', () => {
             const result = AppreciationService.getAllPrompts(studentData);
 
             expect(result).toHaveProperty('appreciation');
-            expect(result).toHaveProperty('sw');
-            expect(result).toHaveProperty('ns');
+            expect(result).toHaveProperty('analysis');
+            expect(result).toHaveProperty('analysisSystem');
+            expect(result).toHaveProperty('analysisUser');
         });
 
         it('should include student identifier in appreciation prompt', () => {

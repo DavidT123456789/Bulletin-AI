@@ -265,11 +265,13 @@
 }
 
 .focus-header.editing .focus-nav-buttons,
-.focus-header.editing .focus-analyze-btn {
+.focus-header.editing .focus-analyze-btn,
+.focus-header.editing .focus-print-btn {
     display: none !important;
 }
 
 .focus-header:not(.editing) .focus-analyze-btn,
+.focus-header:not(.editing) .focus-print-btn,
 .focus-header:not(.editing) .focus-nav-buttons {
     animation: focusHeaderControlSpringIn 0.34s var(--ease-spring);
 }
@@ -578,8 +580,9 @@
     transition: transform 0.08s ease-out;
 }
 
-/* --- STANDALONE ACTION BUTTONS: Analyze, Save & Close --- */
+/* --- STANDALONE ACTION BUTTONS: Analyze, Print, Save & Close --- */
 .focus-analyze-btn,
+.focus-print-btn,
 .focus-save-btn,
 .focus-close-btn {
     width: 36px;

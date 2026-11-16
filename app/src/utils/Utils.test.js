@@ -862,5 +862,68 @@ describe('Utils', () => {
                 .toEqual(['ARAGON', 'HUGO', 'ZOLA']);
         });
     });
+
+    describe('extractAnalysisItems', () => {
+        it('extrait forces et faiblesses depuis un objet structuré', () => {
+            const data = {
+                strengths: ['Participation active', '', null],
+                weaknesses: ['Soigner la rédaction']
+            };
+            expect(Utils.extractAnalysisItems(data, 'forces')).toEqual(['Participation active']);
+            expect(Utils.extractAnalysisItems(data, 'weaknesses')).toEqual(['Soigner la rédaction']);
+        });
+
+        it('extrait forces et faiblesses depuis un texte Markdown brut', () => {
+            const md = [
+                '**Points Forts :**',
+                '- Bonne maîtrise des notions de cours',
+                '- Investissement régulier en classe',
+                '',
+                "**Axes d'amélioration :**",
+                '- Approfondir la justification des réponses'
+            ].join('\n');
+            expect(Utils.extractAnalysisItems(md, 'forces')).toEqual([
+                'Bonne maîtrise des notions de cours',
+                'Investissement régulier en classe'
+            ]);
+            expect(Utils.extractAnalysisItems(md, 'weaknesses')).toEqual([
+                'Approfondir la justification des réponses'
+            ]);
+        });
+
+        it('gère les entrées vides ou nulles sans lever d erreur', () => {
+            expect(Utils.extractAnalysisItems(null, 'forces')).toEqual([]);
+            expect(Utils.extractAnalysisItems('', 'weaknesses')).toEqual([]);
+            expect(Utils.extractAnalysisItems(42, 'forces')).toEqual([]);
+        });
+    });
+
+    describe('buildStudentAnalysisSnapshot', () => {
+        it('cloisonne le compteur du journal et les statuts datés sur la période ciblée', () => {
+            const student = {
+                journal: [
+                    { id: 'j1', period: 'T1', note: 'Participation T1' },
+                    { id: 'j2', period: 'T2', note: 'Remarque T2' },
+                    { id: 'j3', note: 'Note sans période' }
+                ],
+                studentData: {
+                    statuses: ['DYS', 'Nouveau T2', 'Départ T3'],
+                    periods: {
+                        T1: { grade: 13.5, appreciation: 'Bon T1', context: 'Sérieux' },
+                        T2: { grade: 14.0, appreciation: 'Bon T2', context: '' }
+                    }
+                }
+            };
+
+            const snapT1 = Utils.buildStudentAnalysisSnapshot(student, 'T1');
+            expect(snapT1.period).toBe('T1');
+            expect(snapT1.journalCount).toBe(2);
+            expect(snapT1.statuses).toEqual(['DYS']);
+
+            const snapT2 = Utils.buildStudentAnalysisSnapshot(student, 'T2');
+            expect(snapT2.journalCount).toBe(2);
+            expect(snapT2.statuses).toEqual(['DYS', 'Nouveau T2']);
+        });
+    });
 });
 

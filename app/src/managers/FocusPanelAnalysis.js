@@ -1,7 +1,7 @@
 /**
  * @fileoverview Focus Panel Analysis Manager
- * Handles AI Analysis page (strengths/weaknesses/next steps)
- * Extracted from FocusPanelManager for better maintainability
+ * Handles AI Analysis page (strengths/weaknesses/next steps) with per-period scoping and inline editing.
+ * Extracted from FocusPanelManager for better maintainability.
  * @module managers/FocusPanelAnalysis
  */
 
@@ -11,9 +11,39 @@ import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { PromptService } from '../services/PromptService.js';
+import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
+
+/**
+ * Configuration déclarative des 3 cartes d'analyse individuelle (SSOT DOM/rendu)
+ * @type {Array<{key: 'strengths'|'weaknesses'|'nextSteps', contentId: string, emptyIcon: string, idleText: string, emptyText: string}>}
+ */
+const ANALYSIS_CARDS = [
+    {
+        key: 'strengths',
+        contentId: 'analysisForcesContent',
+        emptyIcon: 'solar:lightbulb-linear',
+        idleText: 'Cliquez sur « Générer » pour découvrir les points forts — ou cliquer pour ajouter',
+        emptyText: 'Aucun point fort renseigné — cliquer pour ajouter'
+    },
+    {
+        key: 'weaknesses',
+        contentId: 'analysisWeaknessesContent',
+        emptyIcon: 'solar:magnifer-zoom-in-linear',
+        idleText: 'Cliquez sur « Générer » pour identifier les points de vigilance — ou cliquer pour ajouter',
+        emptyText: 'Aucun point de vigilance particulier — cliquer pour ajouter'
+    },
+    {
+        key: 'nextSteps',
+        contentId: 'analysisSuggestionsContent',
+        emptyIcon: 'solar:signpost-linear',
+        idleText: 'Cliquez sur « Générer » pour obtenir des pistes de progrès — ou cliquer pour ajouter',
+        emptyText: 'Aucune piste renseignée — cliquer pour ajouter'
+    }
+];
 
 /**
  * Analysis system for AI-powered student insights
@@ -30,6 +60,9 @@ export const FocusPanelAnalysis = {
 
     /** @type {ReturnType<typeof setTimeout>|null} */
     _autoGenerateTimer: null,
+
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    _doneBadgeTimer: null,
 
     /** @type {Map<string, AbortController>} Active analysis generation controllers by student ID */
     _activeGenerations: new Map(),
@@ -50,11 +83,13 @@ export const FocusPanelAnalysis = {
             const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
             if (generateBtn) UI.hideInlineSpinner(generateBtn);
             const result = appState.generatedResults.find(r => r.id === studentId);
+            const currentPeriod = appState.currentPeriod;
+            const periodAnalysis = Utils.getStudentAnalysisForPeriod(result, currentPeriod);
             this._resetSection();
-            if (result && (result.strengthsWeaknesses || result.nextSteps?.length)) {
-                this._populateExisting(result);
+            if (periodAnalysis) {
+                this._populateExisting(result, periodAnalysis);
             }
-            this._updateAnalysisGenerateButton(result);
+            this._updateAnalysisGenerateButton(result, periodAnalysis);
         }
     },
 
@@ -79,58 +114,44 @@ export const FocusPanelAnalysis = {
     },
 
     /**
-     * Build a normalized snapshot of student data used for analysis dirty-state detection (Single Source of Truth)
+     * Build a normalized snapshot of student data used for analysis dirty-state detection
      * @param {Object} result - Student result object
      * @param {string} [period=appState.currentPeriod]
      * @returns {Object}
      * @private
      */
     _buildAnalysisSnapshot(result, period = appState.currentPeriod) {
-        const studentData = result?.studentData || {};
-        const periodData = studentData.periods?.[period] || {};
-        return {
-            appreciation: (periodData.appreciation || '').trim(),
-            statuses: [...(studentData.statuses || [])].sort(),
-            context: (periodData.context || '').trim(),
-            grade: periodData.grade,
-            journalCount: result?.journal?.length || 0,
-            period
-        };
+        return Utils.buildStudentAnalysisSnapshot(result, period);
     },
 
     /**
-     * Check if any data used for analysis has changed since generation
+     * Check if any data used for analysis has changed since generation for the active period
      * @param {Object} result - Student result object
+     * @param {Object|null} [periodAnalysis=null] - Pre-resolved analysis for the period
+     * @param {string} [period=appState.currentPeriod]
      * @returns {boolean} True if any analysis-relevant data has changed
      * @private
      */
-    _checkAnalysisDirtyState(result) {
+    _checkAnalysisDirtyState(result, periodAnalysis = null, period = appState.currentPeriod) {
         if (!result) return false;
 
-        // No analysis generated yet
-        if (!result.strengthsWeaknesses && !result.nextSteps) return false;
+        const analysis = periodAnalysis ?? Utils.getStudentAnalysisForPeriod(result, period);
+        if (!Utils.hasStudentAnalysisContent(analysis)) return false;
 
-        const currentPeriod = appState.currentPeriod;
-
-        // No snapshot stored (legacy data)
-        if (!result.analysisSnapshot) {
-            if (result.analysisGenerationPeriod && result.analysisGenerationPeriod !== currentPeriod) {
-                return true;
-            }
-            // Fallback to old appreciation-only check for legacy data
-            if (result.analysisSourceAppreciation) {
-                const currentAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation || '';
-                return currentAppreciation.trim() !== result.analysisSourceAppreciation.trim();
+        const snapshot = analysis.snapshot;
+        if (!snapshot) {
+            if (analysis.sourceAppreciation) {
+                const currentAppreciation = result.studentData?.periods?.[period]?.appreciation || '';
+                return currentAppreciation.trim() !== analysis.sourceAppreciation.trim();
             }
             return false;
         }
 
-        const snapshot = result.analysisSnapshot;
-        if (snapshot.period && snapshot.period !== currentPeriod) {
+        if (snapshot.period && snapshot.period !== period) {
             return true;
         }
 
-        const current = this._buildAnalysisSnapshot(result, currentPeriod);
+        const current = this._buildAnalysisSnapshot(result, period);
         if (current.appreciation !== (snapshot.appreciation || '').trim()) return true;
         if (current.statuses.join(',') !== [...(snapshot.statuses || [])].sort().join(',')) return true;
         if (current.context !== (snapshot.context || '').trim()) return true;
@@ -141,11 +162,61 @@ export const FocusPanelAnalysis = {
     },
 
     /**
+     * Construit le HTML d'un état vide interactif ou d'une liste éditable inline.
+     * @param {Object} cardCfg - Entrée de ANALYSIS_CARDS
+     * @param {string[]} items - Liste des points
+     * @param {boolean} [hasAnalysisRecord=false] - True si la période possède déjà une analyse
+     * @returns {string}
+     * @private
+     */
+    _buildCardHtml(cardCfg, items, hasAnalysisRecord = false) {
+        if (!Array.isArray(items) || items.length === 0) {
+            const label = hasAnalysisRecord ? cardCfg.emptyText : cardCfg.idleText;
+            return `<button type="button" class="analysis-placeholder" data-analysis-add="${cardCfg.key}">
+                <iconify-icon icon="${cardCfg.emptyIcon}" aria-hidden="true"></iconify-icon>
+                <span>${Utils.escapeHtml(label)}</span>
+            </button>`;
+        }
+        return `<ul>${items.map(item => `<li contenteditable="true" spellcheck="true">${Utils.cleanMarkdown(item)}</li>`).join('')}</ul>`;
+    },
+
+    /**
+     * Rend une carte d'analyse individuelle avec gestion uniforme des badges et de l'état vide.
+     * @param {Object} cardCfg
+     * @param {string[]} items
+     * @param {Object} [options={}]
+     * @private
+     */
+    async _renderCard(cardCfg, items, { hasAnalysisRecord = false, badgeState = null, animate = false, signal = null } = {}) {
+        const contentEl = document.getElementById(cardCfg.contentId);
+        if (!contentEl) return;
+
+        const card = contentEl.closest('.analysis-card');
+        const normalized = Utils.normalizeAnalysisItems(items);
+        const html = this._buildCardHtml(cardCfg, normalized, hasAnalysisRecord);
+
+        if (animate && normalized.length > 0 && UI.animateHtmlReveal) {
+            await UI.animateHtmlReveal(contentEl, html, { speed: 'fast', signal });
+            if (signal?.aborted) return;
+        } else {
+            contentEl.innerHTML = html;
+        }
+
+        card?.classList.remove('has-error');
+        card?.classList.toggle('has-content', normalized.length > 0);
+
+        if (badgeState) {
+            this._setCardBadge(card, badgeState);
+        } else {
+            card?.querySelector('.analysis-status-badge')?.remove();
+        }
+    },
+
+    /**
      * Show the analysis page (slide from right)
      */
     show() {
         const container = document.getElementById('focusPagesContainer');
-
         if (!container) return;
 
         if (this._autoGenerateTimer) {
@@ -153,24 +224,21 @@ export const FocusPanelAnalysis = {
             this._autoGenerateTimer = null;
         }
 
-        // ALWAYS reset analysis first to clear previous student's data
+        // Toujours réinitialiser avant d'afficher l'élève / la période courante
         this._resetSection();
 
-        // Slide to analysis page
         container.classList.add('show-analysis');
         HistoryManager.pushState('focusAnalysis', (opts) => this.hide(opts));
 
-        // Manage focus/accessibility state (prevent tab bleeding)
         const mainPage = document.getElementById('focusMainPage');
         const analysisPage = document.getElementById('focusAnalysisPage');
         if (mainPage) mainPage.setAttribute('inert', '');
         if (analysisPage) analysisPage.removeAttribute('inert');
 
-        // If analysis data already exists for CURRENT student, populate it
         const studentId = this._getCurrentStudentId();
+        const currentPeriod = appState.currentPeriod;
         const result = appState.generatedResults.find(r => r.id === studentId);
 
-        // Populate new Analysis header
         const avatarContainer = document.getElementById('focusAnalysisAvatarContainer');
         const titleEl = document.getElementById('focusAnalysisTitle');
         if (result) {
@@ -178,12 +246,14 @@ export const FocusPanelAnalysis = {
                 avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
             }
             if (titleEl) {
-                titleEl.textContent = `Analyse de ${result.prenom}`;
+                const periodShort = Utils.getPeriodLabel(currentPeriod, false);
+                titleEl.textContent = periodShort ? `Analyse de ${result.prenom} · ${periodShort}` : `Analyse de ${result.prenom}`;
             }
         }
 
         const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
-        if (studentId && this._activeGenerations.has(studentId)) {
+        const activeCtrl = studentId ? this._activeGenerations.get(studentId) : null;
+        if (activeCtrl && (!activeCtrl._targetPeriod || activeCtrl._targetPeriod === currentPeriod)) {
             this._showSkeleton();
             if (generateBtn) UI.showInlineSpinner(generateBtn);
             return;
@@ -193,19 +263,16 @@ export const FocusPanelAnalysis = {
             UI.hideInlineSpinner(generateBtn);
         }
 
-        // Update generate button state
-        this._updateAnalysisGenerateButton(result);
+        const periodAnalysis = Utils.getStudentAnalysisForPeriod(result, currentPeriod);
+        this._updateAnalysisGenerateButton(result, periodAnalysis);
 
-        if (result && (result.strengthsWeaknesses || result.nextSteps)) {
-            this._populateExisting(result);
+        if (periodAnalysis) {
+            this._populateExisting(result, periodAnalysis);
         } else if (result) {
-            // Auto-trigger generation if appreciation exists and analysis not yet generated
-            const currentPeriod = appState.currentPeriod;
-            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+            const periodAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation;
             const hasApiKey = UI.checkAPIKeyPresence(true);
 
             if (periodAppreciation && periodAppreciation.trim() && hasApiKey) {
-                // Small delay to let the page slide animation start first
                 this._autoGenerateTimer = setTimeout(() => {
                     this._autoGenerateTimer = null;
                     if (this.isVisible() && this._getCurrentStudentId() === studentId) {
@@ -217,10 +284,25 @@ export const FocusPanelAnalysis = {
     },
 
     /**
+     * Valide et persiste immédiatement une puce en cours d'édition avant navigation,
+     * fermeture ou export PDF afin qu'aucune retouche ne soit perdue.
+     */
+    flushPendingEdit() {
+        const activeEl = document.activeElement;
+        const editable = activeEl?.closest?.('#focusAnalysisPage .analysis-card-body li[contenteditable="true"]');
+        if (!editable) return;
+        this.commitEditableBlur(editable);
+        if (document.activeElement === editable) {
+            editable.blur();
+        }
+    },
+
+    /**
      * Hide the analysis page (slide back to main)
      * @param {Object} [options={}]
      */
     hide(options = {}) {
+        this.flushPendingEdit();
         if (this._autoGenerateTimer) {
             clearTimeout(this._autoGenerateTimer);
             this._autoGenerateTimer = null;
@@ -235,7 +317,6 @@ export const FocusPanelAnalysis = {
             HistoryManager.handleManualClose('focusAnalysis');
         }
 
-        // Manage focus/accessibility state (restore focus to main page)
         const mainPage = document.getElementById('focusMainPage');
         const analysisPage = document.getElementById('focusAnalysisPage');
         if (mainPage) mainPage.removeAttribute('inert');
@@ -252,16 +333,19 @@ export const FocusPanelAnalysis = {
     },
 
     /**
-     * Update analysis generate button state (Générer vs Régénérer)
+     * Update analysis generate button state (Générer vs Régénérer vs Actualiser)
      * @param {Object} result - Student result object
+     * @param {Object|null} [periodAnalysis=null]
      * @private
      */
-    _updateAnalysisGenerateButton(result) {
+    _updateAnalysisGenerateButton(result, periodAnalysis = null) {
         const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (!generateBtn) return;
 
-        const hasAnalysis = Boolean(result && (result.strengthsWeaknesses || result.nextSteps));
-        const isDirty = hasAnalysis && this._checkAnalysisDirtyState(result);
+        const currentPeriod = appState.currentPeriod;
+        const analysis = periodAnalysis ?? Utils.getStudentAnalysisForPeriod(result, currentPeriod);
+        const hasAnalysis = Utils.hasStudentAnalysisContent(analysis);
+        const isDirty = hasAnalysis && this._checkAnalysisDirtyState(result, analysis, currentPeriod);
         const state = !hasAnalysis ? 'idle' : (isDirty ? 'dirty' : 'done');
         UI.setGenerateButtonState(generateBtn, state);
     },
@@ -271,33 +355,20 @@ export const FocusPanelAnalysis = {
      * @private
      */
     _resetSection() {
-        const forcesContent = document.getElementById('analysisForcesContent');
-        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
-        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
-
-        const placeholderForces = `<div class="analysis-placeholder">
-            <iconify-icon icon="solar:lightbulb-bolt-linear"></iconify-icon>
-            <span>Cliquez sur "Générer l'analyse" pour découvrir les points forts</span>
-        </div>`;
-        const placeholderWeaknesses = `<div class="analysis-placeholder">
-            <iconify-icon icon="solar:lightbulb-bolt-linear"></iconify-icon>
-            <span>Cliquez sur "Générer l'analyse" pour identifier les faiblesses</span>
-        </div>`;
-        const placeholderSuggestions = `<div class="analysis-placeholder">
-            <iconify-icon icon="solar:lightbulb-bolt-linear"></iconify-icon>
-            <span>Cliquez sur "Générer l'analyse" pour des conseils personnalisés</span>
-        </div>`;
-
-        if (forcesContent) forcesContent.innerHTML = placeholderForces;
-        if (weaknessesContent) weaknessesContent.innerHTML = placeholderWeaknesses;
-        if (suggestionsContent) suggestionsContent.innerHTML = placeholderSuggestions;
-
-        // Remove has-content class and badges
-        document.querySelectorAll('.analysis-card').forEach(card => {
-            card.classList.remove('has-content', 'has-error');
-            // Remove existing badges
-            const existingBadge = card.querySelector('.analysis-status-badge');
-            if (existingBadge) existingBadge.remove();
+        if (this._doneBadgeTimer) {
+            clearTimeout(this._doneBadgeTimer);
+            this._doneBadgeTimer = null;
+        }
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            const contentEl = document.getElementById(cardCfg.contentId);
+            if (contentEl) {
+                contentEl.innerHTML = this._buildCardHtml(cardCfg, [], false);
+            }
+            const card = contentEl?.closest('.analysis-card');
+            if (card) {
+                card.classList.remove('has-content', 'has-error');
+                card.querySelector('.analysis-status-badge')?.remove();
+            }
         });
     },
 
@@ -312,17 +383,10 @@ export const FocusPanelAnalysis = {
             <div class="analysis-skeleton-line"></div>
         </div>`;
 
-        const forcesContent = document.getElementById('analysisForcesContent');
-        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
-        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
-
-        if (forcesContent) forcesContent.innerHTML = skeleton;
-        if (weaknessesContent) weaknessesContent.innerHTML = skeleton;
-        if (suggestionsContent) suggestionsContent.innerHTML = skeleton;
-
-        // Add loading badges to all cards
-        document.querySelectorAll('.analysis-card').forEach(card => {
-            this._setCardBadge(card, 'loading');
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            const contentEl = document.getElementById(cardCfg.contentId);
+            if (contentEl) contentEl.innerHTML = skeleton;
+            this._setCardBadge(contentEl?.closest('.analysis-card'), 'loading');
         });
     },
 
@@ -338,7 +402,6 @@ export const FocusPanelAnalysis = {
         const header = card.querySelector('.analysis-card-header');
         if (!header) return;
 
-        // Remove existing badge
         let badge = header.querySelector('.analysis-status-badge');
         if (!badge) {
             badge = document.createElement('span');
@@ -346,7 +409,6 @@ export const FocusPanelAnalysis = {
             header.appendChild(badge);
         }
 
-        // Update badge content and class
         badge.className = 'analysis-status-badge';
         badge.removeAttribute('title');
         badge.removeAttribute('data-tooltip');
@@ -375,7 +437,28 @@ export const FocusPanelAnalysis = {
     },
 
     /**
-     * Generate AI analysis for current student
+     * Affiche la modale de prévisualisation du prompt unifié d'analyse (clic droit sur Générer).
+     */
+    async showPromptPreview() {
+        const studentId = this._getCurrentStudentId();
+        const result = appState.generatedResults.find(r => r.id === studentId);
+        if (!result || !AppreciationsManager?.getAllPrompts) return;
+
+        const currentPeriod = appState.currentPeriod;
+        const prompts = PromptService.getAllPrompts({
+            ...result.studentData,
+            id: result.id,
+            classId: result.classId ?? result.studentData?.classId ?? appState.currentClassId,
+            currentPeriod
+        });
+        await FocusPanelRefinement.displayPromptModal(
+            prompts.analysis,
+            `Prompt d'analyse — ${result.prenom} (${Utils.getPeriodLabel(currentPeriod, true)})`
+        );
+    },
+
+    /**
+     * Generate AI analysis for current student & active period in a single unified JSON call
      */
     async generate() {
         const studentId = this._getCurrentStudentId();
@@ -389,14 +472,17 @@ export const FocusPanelAnalysis = {
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
 
-        // Check API key
         if (!UI.checkAPIKeyPresence()) return;
 
-        // Check that an appreciation exists for the current period
-        const currentPeriod = appState.currentPeriod;
-        const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
-        if (!periodAppreciation || !periodAppreciation.trim()) {
-            UI.showNotification(`Veuillez d'abord générer une appréciation pour ${Utils.getPeriodLabel(currentPeriod, false)}`, 'warning');
+        const targetPeriod = appState.currentPeriod;
+        const periodData = result.studentData?.periods?.[targetPeriod] || {};
+        const hasGrade = periodData.grade !== null && periodData.grade !== undefined && String(periodData.grade).trim() !== '';
+        const hasAppreciation = Boolean(periodData.appreciation && periodData.appreciation.trim());
+        const hasContext = Boolean(periodData.context && periodData.context.trim());
+        const hasPeriodJournal = Array.isArray(result.journal) && result.journal.some(e => e && (!e.period || e.period === targetPeriod));
+
+        if (!hasAppreciation && !hasGrade && !hasContext && !hasPeriodJournal) {
+            UI.showNotification(`Aucune donnée disponible pour analyser ${Utils.getPeriodLabel(targetPeriod, false)}`, 'warning');
             return;
         }
 
@@ -406,42 +492,47 @@ export const FocusPanelAnalysis = {
         }
 
         const abortController = new AbortController();
+        abortController._targetPeriod = targetPeriod;
         const { signal } = abortController;
         this._activeGenerations.set(studentId, abortController);
 
-        // Show skeleton loading state
+        const existingEntry = result.analysisPerPeriod?.[targetPeriod] || Utils.getStudentAnalysisForPeriod(result, targetPeriod);
+        const previousManualBackup = (
+            existingEntry &&
+            (existingEntry.hasManualEdits || existingEntry.source === 'manual') &&
+            Utils.hasStudentAnalysisContent(existingEntry)
+        ) ? Utils.deepClone(existingEntry) : null;
+
         this._showSkeleton();
 
-        // Update generate button to loading
         const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (generateBtn) {
             UI.showInlineSpinner(generateBtn);
         }
 
         try {
-            // Fetch analyses using existing AppreciationsManager methods
-            // Existing strengthsWeaknesses / nextSteps are preserved until new ones succeed
-            await this._fetchAnalyses(result, signal);
-
+            await this._fetchAnalyses(result, targetPeriod, signal);
             if (signal.aborted) return;
 
-            // Store comprehensive snapshot for dirty state detection (Single Source of Truth)
-            result.analysisSnapshot = this._buildAnalysisSnapshot(result, currentPeriod);
-            result.analysisSourceAppreciation = result.analysisSnapshot.appreciation;
-            result.analysisGenerationPeriod = currentPeriod;
-
-            // Save to persist new analysis data
-            StorageManager.saveAppState();
+            if (previousManualBackup) {
+                UI.showNotification('Analyse régénérée.', 'info', 6000, {
+                    bypassCoalescing: true,
+                    action: {
+                        label: 'Rétablir',
+                        onClick: () => this._restoreAnalysisEntry(studentId, targetPeriod, previousManualBackup)
+                    }
+                });
+            }
         } catch (error) {
             if (signal.aborted || error.name === 'AbortError') return;
             console.error('Erreur analyse:', error);
             const msg = Utils.translateErrorMessage ? Utils.translateErrorMessage(error.message) : error.message;
             UI.showNotification(`Erreur : ${msg}`, 'error');
 
-            // Restore previous analysis if available, or show error state if still viewing this student
             if (this._getCurrentStudentId() === studentId) {
-                if (result.strengthsWeaknesses || result.nextSteps?.length) {
-                    this._populateExisting(result);
+                const existing = Utils.getStudentAnalysisForPeriod(result, appState.currentPeriod);
+                if (existing) {
+                    this._populateExisting(result, existing);
                 } else {
                     this._showError(msg);
                 }
@@ -458,200 +549,218 @@ export const FocusPanelAnalysis = {
     },
 
     /**
-     * Fetch and display analyses for the student
+     * Fetch unified AI analysis for the captured period and animate display if context matches
      * @param {Object} result - Student result object
-     * @param {AbortSignal} [signal] - Optional abort signal
+     * @param {string} targetPeriod - Captured period at generation launch
+     * @param {AbortSignal|null} [signal=null]
      * @private
      */
-    async _fetchAnalyses(result, signal = null) {
+    async _fetchAnalyses(result, targetPeriod, signal = null) {
         const id = result.id;
-        const isCurrentStudent = () => this._getCurrentStudentId() === id;
+        await AppreciationsManager.generateStudentAnalysis(id, targetPeriod, true, signal);
+        if (signal?.aborted) return;
 
-        const forcesContent = document.getElementById('analysisForcesContent');
-        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
-        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+        if (this._getCurrentStudentId() !== id || appState.currentPeriod !== targetPeriod) return;
 
-        const forcesCard = forcesContent?.closest('.analysis-card');
-        const weaknessesCard = weaknessesContent?.closest('.analysis-card');
-        const suggestionsCard = suggestionsContent?.closest('.analysis-card');
+        const savedAnalysis = Utils.getStudentAnalysisForPeriod(result, targetPeriod);
+        const revealPromises = ANALYSIS_CARDS.map(cardCfg =>
+            this._renderCard(cardCfg, savedAnalysis?.[cardCfg.key] || [], {
+                hasAnalysisRecord: true,
+                badgeState: 'done',
+                animate: true,
+                signal
+            })
+        );
+        await Promise.all(revealPromises);
+        if (signal?.aborted) return;
 
-        let swError = null;
-        let nsError = null;
-
-        // Generate strengths/weaknesses (used for both Forces and Faiblesses cards)
-        const generateStrengthsWeaknesses = async () => {
-            try {
-                await AppreciationsManager.generateStrengthsWeaknesses(id, true, signal);
-                if (signal?.aborted || !isCurrentStudent()) return;
-                const updated = appState.generatedResults.find(r => r.id === id);
-
-                if (updated?.strengthsWeaknesses) {
-                    const revealPromises = [];
-                    if (forcesContent) {
-                        revealPromises.push(UI.animateHtmlReveal(forcesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'forces'), { speed: 'fast', signal }));
-                    }
-                    if (weaknessesContent) {
-                        revealPromises.push(UI.animateHtmlReveal(weaknessesContent, this._parseStrengthsWeaknesses(updated.strengthsWeaknesses, 'weaknesses'), { speed: 'fast', signal }));
-                    }
-                    await Promise.all(revealPromises);
-                    if (signal?.aborted || !isCurrentStudent()) return;
-                    if (forcesContent) {
-                        forcesCard?.classList.remove('has-error');
-                        forcesCard?.classList.add('has-content');
-                        this._setCardBadge(forcesCard, 'done');
-                    }
-                    if (weaknessesContent) {
-                        weaknessesCard?.classList.remove('has-error');
-                        weaknessesCard?.classList.add('has-content');
-                        this._setCardBadge(weaknessesCard, 'done');
-                    }
-                } else {
-                    if (forcesContent) {
-                        forcesContent.innerHTML = '<em>Aucune donnée générée.</em>';
-                        this._setCardBadge(forcesCard, 'done');
-                    }
-                    if (weaknessesContent) {
-                        weaknessesContent.innerHTML = '<em>Aucune donnée générée.</em>';
-                        this._setCardBadge(weaknessesCard, 'done');
-                    }
-                }
-            } catch (e) {
-                swError = e;
-                if (signal?.aborted || e.name === 'AbortError') return;
-                console.error('Échec de l\'analyse strengthsWeaknesses:', e);
-                if (!isCurrentStudent()) return;
-                const errorHtml = `<span style="color:var(--error-color);">Erreur : ${Utils.escapeHtml(e.message.substring(0, 80))}...</span>`;
-                if (forcesContent) {
-                    forcesContent.innerHTML = errorHtml;
-                    forcesCard?.classList.add('has-error');
-                    this._setCardBadge(forcesCard, 'error');
-                }
-                if (weaknessesContent) {
-                    weaknessesContent.innerHTML = errorHtml;
-                    weaknessesCard?.classList.add('has-error');
-                    this._setCardBadge(weaknessesCard, 'error');
-                }
+        if (this._doneBadgeTimer) {
+            clearTimeout(this._doneBadgeTimer);
+        }
+        this._doneBadgeTimer = setTimeout(() => {
+            this._doneBadgeTimer = null;
+            if (this._getCurrentStudentId() === id && appState.currentPeriod === targetPeriod) {
+                document.querySelectorAll('#focusAnalysisPage .analysis-status-badge.done').forEach(b => b.remove());
             }
+        }, 1500);
+    },
+
+    /**
+     * Restaure une analyse manuelle sauvegardée juste avant une régénération IA.
+     * @param {string} studentId
+     * @param {string} targetPeriod
+     * @param {Object} backupEntry
+     * @private
+     */
+    _restoreAnalysisEntry(studentId, targetPeriod, backupEntry) {
+        const targetResult = appState.generatedResults.find(r => r.id === studentId);
+        if (!targetResult || !backupEntry) return;
+
+        const now = Date.now();
+        if (!targetResult.analysisPerPeriod || typeof targetResult.analysisPerPeriod !== 'object') {
+            targetResult.analysisPerPeriod = {};
+        }
+        targetResult.analysisPerPeriod[targetPeriod] = {
+            ...Utils.deepClone(backupEntry),
+            _lastModified: now
         };
+        targetResult._lastModified = now;
+        Utils.syncStudentAnalysisRootCache(targetResult, targetPeriod);
+        StorageManager.saveAppState();
 
-        // Generate next steps (Pistes d'amélioration)
-        const generateNextSteps = async () => {
-            try {
-                await AppreciationsManager.generateNextSteps(id, true, signal);
-                if (signal?.aborted || !isCurrentStudent()) return;
-                const updated = appState.generatedResults.find(r => r.id === id);
-
-                if (updated?.nextSteps?.length) {
-                    if (suggestionsContent) {
-                        await UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`, { speed: 'fast', signal });
-                    }
-                    if (signal?.aborted || !isCurrentStudent()) return;
-                    suggestionsCard?.classList.remove('has-error');
-                    suggestionsCard?.classList.add('has-content');
-                    this._setCardBadge(suggestionsCard, 'done');
-                } else if (suggestionsContent) {
-                    suggestionsContent.innerHTML = '<em>Aucune piste générée.</em>';
-                    this._setCardBadge(suggestionsCard, 'done');
-                }
-            } catch (e) {
-                nsError = e;
-                if (signal?.aborted || e.name === 'AbortError') return;
-                console.error('Échec de l\'analyse nextSteps:', e);
-                if (!isCurrentStudent()) return;
-                if (suggestionsContent) {
-                    suggestionsContent.innerHTML = `<span style="color:var(--error-color);">Erreur : ${Utils.escapeHtml(e.message.substring(0, 80))}...</span>`;
-                }
-                suggestionsCard?.classList.add('has-error');
-                this._setCardBadge(suggestionsCard, 'error');
-            }
-        };
-
-        // Run both analyses in parallel (Forces+Faiblesses together, Pistes separately)
-        await Promise.all([
-            generateStrengthsWeaknesses(),
-            generateNextSteps()
-        ]);
-
-        if (swError && nsError) {
-            throw swError;
+        if (this._getCurrentStudentId() === studentId && appState.currentPeriod === targetPeriod) {
+            this._resetSection();
+            this._populateExisting(targetResult);
+            this._updateAnalysisGenerateButton(targetResult);
         }
     },
 
     /**
-     * Parse strengths/weaknesses data for display in cards
-     * @param {Object|string} data - Parsed strengths/weaknesses object or raw string
-     * @param {string} type - 'forces' or 'weaknesses'
-     * @returns {string} HTML content
+     * Ajoute une nouvelle puce éditable dans une carte et lui donne le focus.
+     * @param {'strengths'|'weaknesses'|'nextSteps'} sectionKey
+     */
+    addEditableItem(sectionKey) {
+        const studentId = this._getCurrentStudentId();
+        if (!studentId || this._activeGenerations.has(studentId)) return;
+
+        const cardCfg = ANALYSIS_CARDS.find(c => c.key === sectionKey);
+        if (!cardCfg) return;
+        const contentEl = document.getElementById(cardCfg.contentId);
+        if (!contentEl) return;
+
+        let list = contentEl.querySelector('ul');
+        if (!list) {
+            contentEl.innerHTML = '<ul></ul>';
+            list = contentEl.querySelector('ul');
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('contenteditable', 'true');
+        li.setAttribute('spellcheck', 'true');
+        li._initialTextBeforeEdit = '';
+        list.appendChild(li);
+
+        const card = contentEl.closest('.analysis-card');
+        card?.classList.remove('has-error');
+        card?.classList.add('has-content');
+
+        li.focus();
+    },
+
+    /**
+     * Annule l'édition en cours sur une puce et restaure son contenu initial.
+     * @param {HTMLElement} editable
+     */
+    cancelEditableItem(editable) {
+        if (!editable) return;
+        editable._cancelEdit = true;
+        editable.textContent = editable._initialTextBeforeEdit ?? '';
+        editable.blur();
+    },
+
+    /**
+     * Valide la sortie de focus d'une puce éditable : normalise, supprime si vide et persiste.
+     * @param {HTMLElement} editable
+     */
+    commitEditableBlur(editable) {
+        if (!editable || !editable.isConnected) return;
+
+        const wasCancelled = Boolean(editable._cancelEdit);
+        delete editable._cancelEdit;
+
+        const cleanedText = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
+        const initialText = editable._initialTextBeforeEdit ?? '';
+
+        if (wasCancelled) {
+            if (!cleanedText) {
+                const contentEl = editable.closest('.analysis-card-body');
+                editable.remove();
+                const remaining = contentEl?.querySelectorAll('li').length || 0;
+                if (remaining === 0 && contentEl) {
+                    const cardCfg = ANALYSIS_CARDS.find(c => c.contentId === contentEl.id);
+                    const result = appState.generatedResults.find(r => r.id === this._getCurrentStudentId());
+                    const hasRecord = Boolean(Utils.getStudentAnalysisForPeriod(result, appState.currentPeriod));
+                    if (cardCfg) {
+                        contentEl.innerHTML = this._buildCardHtml(cardCfg, [], hasRecord);
+                        contentEl.closest('.analysis-card')?.classList.remove('has-content');
+                    }
+                }
+            }
+            return;
+        }
+
+        if (!cleanedText) {
+            editable.remove();
+            this._syncManualAnalysisEdit();
+            return;
+        }
+
+        editable.textContent = cleanedText;
+        if (cleanedText === initialText) return;
+
+        editable._initialTextBeforeEdit = cleanedText;
+        this._syncManualAnalysisEdit();
+    },
+
+    /**
+     * Synchronise les retouches manuelles du DOM vers `analysisPerPeriod[currentPeriod]`,
+     * le miroir racine rétrocompatible et la sauvegarde locale/cloud.
      * @private
      */
-    _parseStrengthsWeaknesses(data, type) {
-        if (!data) return '<em>Aucune donnée.</em>';
+    _syncManualAnalysisEdit() {
+        const studentId = this._getCurrentStudentId();
+        const result = appState.generatedResults.find(r => r.id === studentId);
+        if (!result) return;
 
-        let items = [];
+        const currentPeriod = appState.currentPeriod;
+        const collected = {};
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            const contentEl = document.getElementById(cardCfg.contentId);
+            const rawItems = contentEl
+                ? Array.from(contentEl.querySelectorAll('li')).map(li => li.innerText || li.textContent || '')
+                : [];
+            collected[cardCfg.key] = Utils.normalizeAnalysisItems(rawItems);
+        });
 
-        if (typeof data === 'string') {
-            // Raw string handling with section separation
-            const raw = data;
+        const prevEntry = result.analysisPerPeriod?.[currentPeriod] || Utils.getStudentAnalysisForPeriod(result, currentPeriod);
+        const now = Date.now();
+        if (!result.analysisPerPeriod || typeof result.analysisPerPeriod !== 'object') {
+            result.analysisPerPeriod = {};
+        }
 
-            // Try to split into two sections using common headers from prompts, handling Markdown
-            const splitRegex = /(?:^|\n)(?:[-*•]\s*)?(?:#+\s*)?(?:\*\*)?(?:Faiblesses|Axes d'amélioration|Points à améliorer|Fragilités|Axes de progrès|Points faibles|Axes d'effort)(?:\*\*)?[:\s]*(?:\n|$)/i;
-            const parts = raw.split(splitRegex);
+        result.analysisPerPeriod[currentPeriod] = {
+            strengths: collected.strengths,
+            weaknesses: collected.weaknesses,
+            nextSteps: collected.nextSteps,
+            source: prevEntry?.source && prevEntry.source !== 'legacy' ? prevEntry.source : 'manual',
+            hasManualEdits: true,
+            timestamp: prevEntry?.timestamp || new Date(now).toISOString(),
+            _lastModified: now,
+            snapshot: prevEntry?.snapshot ?? this._buildAnalysisSnapshot(result, currentPeriod),
+            sourceAppreciation: prevEntry?.sourceAppreciation ?? (result.studentData?.periods?.[currentPeriod]?.appreciation || '').trim(),
+            model: prevEntry?.model ?? null
+        };
+        result._lastModified = now;
 
-            let relevantText = '';
+        Utils.syncStudentAnalysisRootCache(result, currentPeriod);
 
-            if (parts.length > 1) {
-                // Found a split between strengths (part 0) and weaknesses (part 1)
-                if (type === 'forces') {
-                    relevantText = parts[0];
-                } else {
-                    relevantText = parts.slice(1).join('\n');
-                }
+        const updatedPeriodAnalysis = Utils.getStudentAnalysisForPeriod(result, currentPeriod);
+        const hasAnyContent = Utils.hasStudentAnalysisContent(updatedPeriodAnalysis);
+        const isDirty = hasAnyContent && this._checkAnalysisDirtyState(result, updatedPeriodAnalysis, currentPeriod);
+        const badgeState = isDirty ? 'modified' : null;
+
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            if (collected[cardCfg.key].length === 0) {
+                this._renderCard(cardCfg, [], { hasAnalysisRecord: true, badgeState });
             } else {
-                // No clear split found
-                if (type === 'forces') {
-                    relevantText = raw; // Default to strengths
-                } else {
-                    relevantText = ''; // No explicit weaknesses found
-                }
+                const card = document.getElementById(cardCfg.contentId)?.closest('.analysis-card');
+                card?.classList.add('has-content');
+                if (badgeState) this._setCardBadge(card, badgeState);
             }
+        });
 
-            // Cleanup headers from the relevant chunk specific to the type
-            const headersToRemove = type === 'forces'
-                ? ['Points Forts', 'Forces', 'Points forts', 'Atouts', 'Ce qui va bien']
-                : ['Faiblesses', 'Axes d\'amélioration', 'Points à améliorer', 'Fragilités'];
-
-            let cleanText = relevantText || '';
-            headersToRemove.forEach(header => {
-                // Remove header and potential markdown wrappers
-                const regex = new RegExp(`(?:^|\\n)(?:[-*•]\\s*)?(?:#+\\s*)?(?:\\*\\*)?${header}(?:\\*\\*)?[:\\s]*`, 'gim');
-                cleanText = cleanText.replace(regex, '');
-            });
-
-            // Parse bullets
-            const lines = cleanText.split(/\n/);
-            items = lines
-                .map(line => line.trim())
-                .filter(line => {
-                    return line.length > 5 && (line.match(/^[-*•]/) || line.match(/^\d+\./) || line.length > 20);
-                })
-                .map(line => {
-                    return line.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '');
-                });
-
-            // If just a block of text, keep it as one item
-            if (items.length === 0 && cleanText.trim().length > 10) {
-                items = [cleanText.trim()];
-            }
-
-        } else if (typeof data === 'object') {
-            items = type === 'forces' ? (data.strengths || data.forces || []) : (data.weaknesses || data.faiblesses || []);
-        }
-
-        if (!items || items.length === 0) {
-            return `<em>Aucun${type === 'forces' ? 'e force identifiée' : ' axe identifié'}.</em>`;
-        }
-
-        return `<ul>${items.map(item => `<li>${Utils.cleanMarkdown(item)}</li>`).join('')}</ul>`;
+        this._updateAnalysisGenerateButton(result, updatedPeriodAnalysis);
+        StorageManager.saveAppState();
     },
 
     /**
@@ -664,58 +773,35 @@ export const FocusPanelAnalysis = {
             <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${Utils.escapeHtml(message.substring(0, 60))}...
         </span>`;
 
-        const forcesContent = document.getElementById('analysisForcesContent');
-        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
-        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
-
-        if (forcesContent) forcesContent.innerHTML = errorHtml;
-        if (weaknessesContent) weaknessesContent.innerHTML = errorHtml;
-        if (suggestionsContent) suggestionsContent.innerHTML = errorHtml;
-
-        document.querySelectorAll('.analysis-card').forEach(card => {
-            card.classList.add('has-error');
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            const contentEl = document.getElementById(cardCfg.contentId);
+            if (contentEl) contentEl.innerHTML = errorHtml;
+            const card = contentEl?.closest('.analysis-card');
+            card?.classList.add('has-error');
+            this._setCardBadge(card, 'error');
         });
     },
 
     /**
-     * Pre-populate analysis section with existing data
+     * Pre-populate analysis section with existing period data
      * @param {Object} result - Student result object
+     * @param {Object|null} [periodAnalysis=null] - Pre-resolved analysis for active period
      * @private
      */
-    _populateExisting(result) {
-        const forcesContent = document.getElementById('analysisForcesContent');
-        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
-        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+    _populateExisting(result, periodAnalysis = null) {
+        const currentPeriod = appState.currentPeriod;
+        const analysis = periodAnalysis ?? Utils.getStudentAnalysisForPeriod(result, currentPeriod);
+        if (!analysis) return;
 
-        const forcesCard = forcesContent?.closest('.analysis-card');
-        const weaknessesCard = weaknessesContent?.closest('.analysis-card');
-        const suggestionsCard = suggestionsContent?.closest('.analysis-card');
+        const hasAnyContent = Utils.hasStudentAnalysisContent(analysis);
+        const isDirty = hasAnyContent && this._checkAnalysisDirtyState(result, analysis, currentPeriod);
+        const badgeState = isDirty ? 'modified' : null;
 
-        // Check if appreciation has changed since analysis was generated
-        const isDirty = this._checkAnalysisDirtyState(result);
-        const badgeState = isDirty ? 'modified' : 'done';
-
-        // Populate strengths/weaknesses if available
-        if (result.strengthsWeaknesses) {
-            if (forcesContent) {
-                forcesContent.innerHTML = this._parseStrengthsWeaknesses(result.strengthsWeaknesses, 'forces');
-                forcesCard?.classList.add('has-content');
-                this._setCardBadge(forcesCard, badgeState);
-            }
-            if (weaknessesContent) {
-                weaknessesContent.innerHTML = this._parseStrengthsWeaknesses(result.strengthsWeaknesses, 'weaknesses');
-                weaknessesCard?.classList.add('has-content');
-                this._setCardBadge(weaknessesCard, badgeState);
-            }
-        }
-
-        // Populate next steps if available
-        if (result.nextSteps && result.nextSteps.length > 0) {
-            if (suggestionsContent) {
-                suggestionsContent.innerHTML = `<ul>${result.nextSteps.map(s => `<li>${Utils.cleanMarkdown(s)}</li>`).join('')}</ul>`;
-                suggestionsCard?.classList.add('has-content');
-                this._setCardBadge(suggestionsCard, badgeState);
-            }
-        }
+        ANALYSIS_CARDS.forEach(cardCfg => {
+            this._renderCard(cardCfg, analysis[cardCfg.key] || [], {
+                hasAnalysisRecord: true,
+                badgeState
+            });
+        });
     }
 };

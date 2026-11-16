@@ -73,12 +73,12 @@ const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'activeView', 'isA
  * @returns {{ appreciation: *, sw: *, ns: * }}
  */
 const normalizeTokenUsage = (tokenUsage) => {
-    const isWrapper = (v) => Boolean(v) && typeof v === 'object' && ('appreciation' in v || 'sw' in v || 'ns' in v);
-    if (!tokenUsage || typeof tokenUsage !== 'object') return { appreciation: null, sw: null, ns: null };
-    if (!isWrapper(tokenUsage)) return { appreciation: tokenUsage, sw: null, ns: null };
+    const isWrapper = (v) => Boolean(v) && typeof v === 'object' && ('appreciation' in v || 'analysis' in v || 'sw' in v || 'ns' in v);
+    if (!tokenUsage || typeof tokenUsage !== 'object') return { appreciation: null, analysis: null, sw: null, ns: null };
+    if (!isWrapper(tokenUsage)) return { appreciation: tokenUsage, analysis: null, sw: null, ns: null };
     let appreciation = tokenUsage.appreciation ?? null;
     while (isWrapper(appreciation)) appreciation = appreciation.appreciation ?? null;
-    return { ...tokenUsage, appreciation, sw: tokenUsage.sw ?? null, ns: tokenUsage.ns ?? null };
+    return { ...tokenUsage, appreciation, analysis: tokenUsage.analysis ?? null, sw: tokenUsage.sw ?? null, ns: tokenUsage.ns ?? null };
 };
 
 export const StorageManager = {
@@ -694,8 +694,29 @@ export const StorageManager = {
                 }
             }
             delete sd.negativeInstructions;
-            if (sd.prompts === undefined) { sd.prompts = { appreciation: sd.promptUsed || null, sw: null, ns: null }; delete sd.promptUsed; }
+            if (sd.prompts === undefined) { sd.prompts = { appreciation: sd.promptUsed || null, analysis: null }; delete sd.promptUsed; }
             if (result.copied === undefined) result.copied = false;
+
+            // MIGRATION : champs plats (strengthsWeaknesses / nextSteps) -> analysisPerPeriod[period]
+            const hasFlatAnalysis = Boolean(result.strengthsWeaknesses || (Array.isArray(result.nextSteps) && result.nextSteps.length > 0));
+            const explicitAnalysisPeriod = result.analysisGenerationPeriod || result.analysisSnapshot?.period || null;
+            if (hasFlatAnalysis && explicitAnalysisPeriod && !result.analysisPerPeriod?.[explicitAnalysisPeriod]) {
+                if (!result.analysisPerPeriod || typeof result.analysisPerPeriod !== 'object') {
+                    result.analysisPerPeriod = {};
+                }
+                result.analysisPerPeriod[explicitAnalysisPeriod] = {
+                    strengths: Utils.normalizeAnalysisItems(Utils.extractAnalysisItems(result.strengthsWeaknesses, 'forces')),
+                    weaknesses: Utils.normalizeAnalysisItems(Utils.extractAnalysisItems(result.strengthsWeaknesses, 'weaknesses')),
+                    nextSteps: Utils.normalizeAnalysisItems(Array.isArray(result.nextSteps) ? result.nextSteps : []),
+                    source: 'legacy',
+                    timestamp: result.timestamp || null,
+                    _lastModified: result._lastModified || Date.now(),
+                    snapshot: result.analysisSnapshot ? Utils.deepClone(result.analysisSnapshot) : null,
+                    sourceAppreciation: result.analysisSourceAppreciation || '',
+                    model: result.studentData?.currentAIModel || null
+                };
+                migrationNeeded = true;
+            }
 
             if (sd.statut !== undefined) {
                 migrationNeeded = true;
@@ -883,6 +904,16 @@ export const StorageManager = {
             delete clean.historyState;
             if (clean.studentPhoto?.data) {
                 clean.studentPhoto = this._getPhotoFingerprint(clean.studentPhoto);
+            }
+            if (clean.analysisPerPeriod && typeof clean.analysisPerPeriod === 'object') {
+                const cleanAnalyses = {};
+                for (const [p, entry] of Object.entries(clean.analysisPerPeriod)) {
+                    if (entry && typeof entry === 'object') {
+                        const { _lastModified, ...entryRest } = entry;
+                        cleanAnalyses[p] = entryRest;
+                    }
+                }
+                clean.analysisPerPeriod = cleanAnalyses;
             }
             if (clean.studentData?.periods) {
                 const cleanPeriods = {};
@@ -1586,7 +1617,13 @@ export const StorageManager = {
                     target[field] = source[field];
                     hasStudentUpdates = true;
                 };
-                ['nom', 'prenom', 'classe', 'classId', 'strengthsWeaknesses', 'nextSteps'].forEach(field => adoptField(localStudent, remoteStudent, field));
+                ['nom', 'prenom', 'classe', 'classId'].forEach(field => adoptField(localStudent, remoteStudent, field));
+                if (Utils.mergeAnalysisPerPeriod(localStudent, remoteStudent)) {
+                    Utils.syncStudentAnalysisRootCache(localStudent);
+                    hasStudentUpdates = true;
+                } else if (!remoteStudent.analysisPerPeriod) {
+                    ['strengthsWeaknesses', 'nextSteps', 'analysisGenerationPeriod'].forEach(field => adoptField(localStudent, remoteStudent, field));
+                }
                 if (remoteStudent.wasGenerated && !localStudent.wasGenerated) {
                     localStudent.wasGenerated = true;
                     hasStudentUpdates = true;

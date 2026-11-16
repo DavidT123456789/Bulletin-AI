@@ -41,6 +41,7 @@
 @import './modules/history-nav.css';
 /* New History Navigation */
 @import './modules/help.css';
+@import './modules/print-reports.css';
 @import './modules/responsive.css';
 @import './modules/theme-control.css';
 @import './modules/selection-toolbar.css';

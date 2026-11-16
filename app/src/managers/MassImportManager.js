@@ -193,6 +193,10 @@ export const MassImportManager = {
                         if (studentData._preservedData.historyPerPeriod) {
                             newResultObject.historyPerPeriod = studentData._preservedData.historyPerPeriod;
                         }
+                        if (studentData._preservedData.analysisPerPeriod) {
+                            newResultObject.analysisPerPeriod = studentData._preservedData.analysisPerPeriod;
+                            Utils.syncStudentAnalysisRootCache(newResultObject, batchPeriod);
+                        }
                         if (studentData._preservedData._lastModified) {
                             newResultObject._lastModified = studentData._preservedData._lastModified;
                         }
@@ -390,6 +394,7 @@ export const MassImportManager = {
                 journal: r.journal,
                 history: r.history,
                 historyPerPeriod: r.historyPerPeriod,
+                analysisPerPeriod: r.analysisPerPeriod,
                 _lastModified: r._lastModified
             }
         }));
@@ -455,6 +460,10 @@ export const MassImportManager = {
                 }
                 if (studentData._preservedData.historyPerPeriod) {
                     tempResult.historyPerPeriod = studentData._preservedData.historyPerPeriod;
+                }
+                if (studentData._preservedData.analysisPerPeriod) {
+                    tempResult.analysisPerPeriod = studentData._preservedData.analysisPerPeriod;
+                    Utils.syncStudentAnalysisRootCache(tempResult, appState.currentPeriod);
                 }
             }
 

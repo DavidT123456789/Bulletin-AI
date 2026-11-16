@@ -57,8 +57,9 @@ export const SeatingPrintExporter = {
         `;
 
         const pageStyle = document.createElement('style');
-        pageStyle.textContent = '@page { margin: 0 !important; }';
+        pageStyle.textContent = '@page { size: landscape; margin: 0 !important; }';
         document.head.appendChild(pageStyle);
+        document.body.dataset.printMode = 'seating';
 
         const view = document.getElementById('seatingChartView');
         view?.insertBefore(header, view.firstChild);
@@ -75,6 +76,7 @@ export const SeatingPrintExporter = {
                 this._renderGrid();
             }
             document.title = originalTitle;
+            delete document.body.dataset.printMode;
             header.remove();
             pageStyle.remove();
             window.onafterprint = null;

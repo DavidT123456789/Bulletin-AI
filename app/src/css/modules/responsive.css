@@ -239,8 +239,8 @@
    Single source of truth for all print rules.
    ==================================================================== */
 @media print {
-    /* --- Reset --- */
-    body {
+    /* --- Reset (list & fallback print mode; seating/report have dedicated print modes) --- */
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) {
         background: white !important;
         color: black !important;
         font-size: 11pt;
@@ -248,45 +248,45 @@
         print-color-adjust: exact;
     }
 
-    * {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) * {
         box-shadow: none !important;
         text-shadow: none !important;
     }
 
     /* --- Hide UI chrome (NOT .app-layout — it's the root wrapper) --- */
-    .header,
-    .stats-container,
-    .appreciation-actions,
-    .fab-add-student,
-    .focus-panel-backdrop,
-    .focus-panel,
-    .modal-backdrop,
-    .modal,
-    .selection-toolbar,
-    #period-mismatch-container,
-    .pwa-install-prompt,
-    #notification-container {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .header,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .stats-container,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-actions,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .fab-add-student,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .focus-panel-backdrop,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .focus-panel,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .modal-backdrop,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .modal,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .selection-toolbar,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #period-mismatch-container,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .pwa-install-prompt,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #notification-container {
         display: none !important;
     }
 
     /* --- Root layout: flow mode --- */
-    .app-layout {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .app-layout {
         display: block !important;
         height: auto !important;
         overflow: visible !important;
     }
 
-    .main-content-wrapper {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .main-content-wrapper {
         height: auto !important;
         overflow: visible !important;
     }
 
-    .main-content-wrapper::after,
-    .app-layout::after {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .main-content-wrapper::after,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .app-layout::after {
         display: none !important;
     }
 
-    .main-content {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .main-content {
         padding: 0 !important;
         max-width: none !important;
         overflow: visible !important;
@@ -294,24 +294,29 @@
     }
 
     /* --- Card/Table: clean print output --- */
-    body, html, .app-layout, .main-content-wrapper, .main-content, #root {
+    html:has(body:not([data-print-mode="seating"]):not([data-print-mode="report"])),
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]),
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .app-layout,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .main-content-wrapper,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .main-content,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #root {
         background-color: #ffffff !important;
         background: #ffffff !important;
         box-shadow: none !important;
     }
 
-    .output-section {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .output-section {
         padding-bottom: 0 !important;
     }
 
-    .student-list-view {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-view {
         overflow: visible !important;
         border: none !important;
         border-radius: 0 !important;
         background: transparent !important;
     }
 
-    .student-list-table {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-table {
         width: 100% !important;
         border-collapse: separate !important; /* Changed to separate to allow spacing between cards */
         border-spacing: 0 16px !important; /* Space between cards */
@@ -320,11 +325,11 @@
     }
 
     /* Le thead se transforme en carte vide sur mobile/print, on le masque purement et simplement pour l'impression type "bulletin" */
-    .student-list-table thead {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-table thead {
         display: none !important;
     }
 
-    .student-list-table tbody tr {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-table tbody tr {
         background: #ffffff !important;
         border: 1px solid #d4d4d4 !important; /* Crisp gray border for print */
         box-shadow: none !important; /* Remove shadows for cleaner print */
@@ -337,7 +342,7 @@
         padding: 16px !important;
     }
 
-    .student-list-table th {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-table th {
         background: #ffffff !important;
         color: black !important;
         font-weight: 600;
@@ -347,46 +352,45 @@
         position: static !important;
     }
 
-    .student-list-table td {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-list-table td {
         padding: 0 !important; /* Reset padding to let flex layout handle spacing */
         border-bottom: none !important; /* Remove td borders inside the card */
         vertical-align: top;
         background: transparent !important;
     }
 
-    .student-list-table tbody tr {
-        break-inside: avoid;
-        page-break-inside: avoid;
-    }
-
     /* --- Hide interactive-only columns --- */
-    .action-cell,
-    .action-header,
-    .btn-action-menu,
-    .btn-action-menu-header,
-    .global-actions-dropdown-menu,
-    .action-dropdown,
-    .appreciation-header-actions,
-    .header-action-trigger,
-    .sort-icon-placeholder,
-    .appreciation-toggle-icon,
-    .appreciation-toggle-btn,
-    .dirty-indicator {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .action-cell,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .action-header,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .btn-action-menu,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .btn-action-menu-header,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .global-actions-dropdown-menu,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .action-dropdown,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-header-actions,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .header-action-trigger,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .sort-icon-placeholder,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-toggle-icon,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-toggle-btn,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .dirty-indicator {
         display: none !important;
     }
 
     /* --- Name Column (Row 1 Left) --- */
-    .student-name-cell {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-name-cell {
         flex: 1 1 auto !important;
         width: auto !important;
         display: block !important;
         border-bottom: none !important;
         padding-bottom: 0 !important;
         margin-bottom: 0 !important; /* Remove bottom margin since badges are on same line */
+        min-width: 120px;
+        white-space: nowrap;
     }
 
     /* --- Badges / Status row (Row 1 Right) --- */
-    .status-cell, .grade-cell, .evolution-cell {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-cell,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .grade-cell,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .evolution-cell {
         margin-bottom: 0 !important;
         padding: 0 !important; /* Reset nested padding */
         margin-left: 16px !important; /* Standard spacing for all badges */
@@ -396,19 +400,19 @@
     }
 
     /* Hide empty status cells so they don't mess up layout */
-    .status-cell:empty {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-cell:empty {
         display: none !important;
     }
 
     /* Crystal-clear separation between Status (Qualitative) and Grades (Quantitative) */
-    .status-cell:not(:empty) {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-cell:not(:empty) {
         margin-right: 24px !important;
         padding-right: 24px !important;
         border-right: 1px solid #d4d4d4 !important;
     }
 
     /* --- Appreciation Block (Row 2 Full Width) --- */
-    .appreciation-cell {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-cell {
         width: 100% !important;
         display: block !important;
         border-top: none !important; /* Removed separator line to favor the clean bubble background */
@@ -416,7 +420,7 @@
     }
 
     /* --- Force full text display for appreciations --- */
-    .appreciation-preview {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-preview {
         -webkit-line-clamp: unset !important;
         line-clamp: unset !important;
         max-height: none !important;
@@ -432,7 +436,7 @@
         display: block !important;
     }
 
-    .appreciation-preview-wrapper {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-preview-wrapper {
         width: 100% !important;
         display: block !important;
         max-height: none !important;
@@ -440,12 +444,12 @@
     }
 
     /* --- Grade cells: ensure colors print --- */
-    .grade-value {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .grade-value {
         font-weight: 600;
     }
 
     /* --- Status badges: compact print --- */
-    .status-badge-tag {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-badge-tag {
         font-size: 8pt;
         padding: 1px 4px;
         border: 1px solid #d4d4d4;
@@ -454,12 +458,12 @@
     }
 
     /* --- Evolution icons: ensure visibility --- */
-    .grade-evolution {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .grade-evolution {
         font-size: 10pt;
     }
 
     /* --- Avatar: proportionate to card layout --- */
-    .student-avatar {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-avatar {
         width: 44px !important;
         height: 44px !important;
         min-width: 44px !important;
@@ -467,15 +471,9 @@
     }
 
     /* --- Skeleton: hide (shouldn't print pending states) --- */
-    .appreciation-skeleton,
-    .status-badge.pending,
-    .status-badge.generating {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-skeleton,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-badge.pending,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-badge.generating {
         display: none !important;
-    }
-
-    /* --- Name column: ensure readable width --- */
-    .student-name-cell {
-        min-width: 120px;
-        white-space: nowrap;
     }
 }
