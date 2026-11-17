@@ -565,17 +565,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1;
     cursor: pointer;
     overflow: hidden;
     forced-color-adjust: none;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
     transition:
-        transform 0.25s var(--ease-spring),
-        background-color var(--transition-fast),
-        border-color var(--transition-fast),
-        color var(--transition-fast),
-        box-shadow var(--transition-fast),
+        transform 0.22s var(--ease-spring),
+        background-color 0.2s var(--ease-spring),
+        border-color 0.2s var(--ease-spring),
+        color 0.2s var(--ease-spring),
+        box-shadow 0.2s var(--ease-spring),
         opacity var(--transition-fast);
     z-index: 100;
 }
@@ -586,14 +589,14 @@
 
 body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-student {
     opacity: 0;
-    transform: scale(0.85);
+    transform: translate3d(0, 0, 0) scale(0.85);
     pointer-events: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .fab-add-student:hover {
-        transform: translateY(-2px) scale(1.03);
-        background-color: var(--primary-btn-hover);
+        transform: translate3d(0, -2px, 0) scale(1.03);
+        background-color: var(--primary-hover);
         box-shadow: var(--shadow-lg);
         color: var(--text-on-primary);
         outline: none;
@@ -605,7 +608,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 }
 
 .fab-add-student:focus-visible {
-    transform: translateY(-2px) scale(1.03);
+    transform: translate3d(0, -2px, 0) scale(1.03);
     box-shadow: var(--shadow-lg), 0 0 0 3px rgba(var(--primary-color-rgb), 0.35);
     outline: none;
 }
@@ -615,7 +618,7 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 }
 
 .fab-add-student:active {
-    transform: translateY(0) scale(0.95);
+    transform: translate3d(0, 0, 0) scale(0.95);
     box-shadow: var(--shadow-sm);
 }
 
@@ -671,34 +674,34 @@ body:has(.global-actions-dropdown.open, .action-dropdown-menu.open) .fab-add-stu
 }
 
 .fab-add-student .fab-icon-add {
-    transform: translateX(0.5px) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
     opacity: 1;
 }
 
 .fab-add-student .fab-icon-top {
-    transform: translateY(18px) scale(0.75);
+    transform: translate3d(0, 18px, 0) scale(0.75);
     opacity: 0;
 }
 
 .fab-add-student.is-scroll-top .fab-icon-add {
-    transform: translate(0.5px, -18px) scale(0.75);
+    transform: translate3d(0, -18px, 0) scale(0.75);
     opacity: 0;
 }
 
 .fab-add-student.is-scroll-top .fab-icon-top {
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
     opacity: 1;
 }
 
 body:has(.selection-toolbar.active, .sc-mobile-sheet-backdrop.active) .fab-add-student {
-    transform: translateY(calc(100% + 32px)) scale(0.85);
+    transform: translate3d(0, calc(100% + 32px), 0) scale(0.85);
     opacity: 0;
     pointer-events: none;
 }
 
 @media (max-width: 768px) {
     .main-content-wrapper[data-view="plan"]:has(#seatingChartView[data-locked="false"]) .fab-add-student {
-        transform: translateY(calc(100% + 32px)) scale(0.85);
+        transform: translate3d(0, calc(100% + 32px), 0) scale(0.85);
         opacity: 0;
         pointer-events: none;
     }

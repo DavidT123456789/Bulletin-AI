@@ -2290,6 +2290,46 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(droppedCell.classList.contains('sc-cell-swap-dropped')).toBe(false);
         });
 
+        it('devrait faire glisser en FLIP synchrone (sc-cell-swapped) une carte déplacée au clic vers une case vide', () => {
+            SeatingChartManager._toggleCellSelection(0, 0);
+            SeatingChartManager._placeSelectedAt(1, 0, 0, 0);
+
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[1][0]).toBe('s1');
+
+            const movedCell = document.querySelector('.sc-cell[data-row="1"][data-col="0"]');
+            expect(movedCell.classList.contains('sc-cell-swapped')).toBe(true);
+            expect(movedCell.classList.contains('sc-cell-placed')).toBe(false);
+            expect(movedCell.style.getPropertyValue('--swap-dx')).toBe('0px');
+            expect(movedCell.style.getPropertyValue('--swap-dy')).toBe('-104px');
+
+            movedCell.dispatchEvent(new Event('animationend'));
+            expect(movedCell.classList.contains('sc-cell-swapped')).toBe(false);
+            expect(movedCell.style.getPropertyValue('--swap-dx')).toBe('');
+            expect(movedCell.style.getPropertyValue('--swap-dy')).toBe('');
+        });
+
+        it('devrait appliquer sc-cell-placed (avec rebond élastique) lors d’un drop sur case vide', () => {
+            SeatingChartManager._dragSource = { type: 'cell', resultId: 's1', row: 0, col: 0 };
+            SeatingChartManager._handleDrop(1, 0);
+
+            const placedCell = document.querySelector('.sc-cell[data-row="1"][data-col="0"]');
+            expect(placedCell.classList.contains('sc-cell-placed')).toBe(true);
+            expect(placedCell.classList.contains('sc-cell-swapped')).toBe(false);
+
+            placedCell.dispatchEvent(new Event('animationend'));
+            expect(placedCell.classList.contains('sc-cell-placed')).toBe(false);
+        });
+
+        it('devrait vérifier _isCellPinned sur cellule vide, non épinglée et épinglée', () => {
+            expect(SeatingChartManager._isCellPinned(1, 0)).toBe(false);
+            expect(SeatingChartManager._isCellPinned(0, 0)).toBe(false);
+
+            const s1 = SeatingChartManager._students[0];
+            s1.seatingPosition = { row: 0, col: 0, pinned: true };
+            expect(SeatingChartManager._isCellPinned(0, 0)).toBe(true);
+        });
+
         it('devrait remplacer un élève par un élève non placé', () => {
             SeatingChartManager._replaceOccupantWithUnplaced(0, 0, 's4');
             expect(SeatingChartManager._gridState[0][0]).toBe('s4');
@@ -2712,6 +2752,77 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._gridState[0][0]).toBe('s2');
             expect(SeatingChartManager._gridState[0][1]).toBe('s1');
             expect(SeatingChartManager._selectedChipIds).toEqual([]);
+        });
+
+        it('ne devrait pas permuter ni remplacer un élève épinglé lors d’un clic-permutation', () => {
+            const s2 = SeatingChartManager._students[1];
+            s2.seatingPosition = { row: 0, col: 1, pinned: true };
+            SeatingChartManager._renderGrid();
+
+            const cell1 = document.querySelector('.sc-cell[data-row="0"][data-col="0"]');
+            const pinnedCell = document.querySelector('.sc-cell[data-row="0"][data-col="1"]');
+            expect(pinnedCell.classList.contains('pinned')).toBe(true);
+
+            cell1.click();
+            expect(document.getElementById('seatingChartView')?.dataset.selectionAction).toBe('swap');
+
+            pinnedCell.click();
+
+            expect(SeatingChartManager._gridState[0][0]).toBe('s1');
+            expect(SeatingChartManager._gridState[0][1]).toBe('s2');
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+            expect(document.getElementById('seatingChartView')?.dataset.selectionAction).toBeUndefined();
+        });
+
+        it('devrait exposer data-selection-action (swap, reselect, join) et les cibles de capacité en mode Activité', () => {
+            const view = document.getElementById('seatingChartView');
+            const s1 = SeatingChartManager._students[0];
+            const s2 = SeatingChartManager._students[1];
+            const s3 = { id: 's3', nom: 'C', prenom: 'Claire', classId: 'c1' };
+            const s4 = { id: 's4', nom: 'D', prenom: 'David', classId: 'c1' };
+            const s5 = { id: 's5', nom: 'E', prenom: 'Emma', classId: 'c1' };
+            const s6 = { id: 's6', nom: 'F', prenom: 'Félix', classId: 'c1' };
+            SeatingChartManager._students.push(s3, s4, s5, s6);
+            SeatingChartManager._studentMap.set(s3.id, s3);
+            SeatingChartManager._studentMap.set(s4.id, s4);
+            SeatingChartManager._studentMap.set(s5.id, s5);
+            SeatingChartManager._studentMap.set(s6.id, s6);
+
+            // Sélection simple sur la grille -> swap
+            SeatingChartManager._toggleCellSelection(0, 0);
+            expect(view.dataset.selectionAction).toBe('swap');
+
+            // Multi-sélection sur la grille -> reselect (ne permute pas)
+            SeatingChartManager._toggleCellSelection(0, 1);
+            expect(view.dataset.selectionAction).toBe('reselect');
+
+            SeatingChartManager._clearSelection();
+            expect(view.dataset.selectionAction).toBeUndefined();
+
+            // Mode Activité + sélection depuis la réserve -> join + marquage capacité
+            const prevMode = SeatingChartManager._planMode;
+            try {
+                SeatingChartManager._planMode = 'activity';
+                SeatingChartManager._gridState[0][0] = [s1.id, s2.id, s3.id, s4.id]; // Complet (4)
+                SeatingChartManager._gridState[0][1] = [s5.id]; // Disponible (1)
+                SeatingChartManager._renderGrid();
+
+                SeatingChartManager._toggleChipSelection(s6.id);
+                expect(view.dataset.selectionAction).toBe('join');
+
+                const fullCell = document.querySelector('.sc-cell[data-row="0"][data-col="0"]');
+                const joinCell = document.querySelector('.sc-cell[data-row="0"][data-col="1"]');
+                expect(fullCell.classList.contains('sc-click-target-full')).toBe(true);
+                expect(fullCell.classList.contains('sc-click-target-join')).toBe(false);
+                expect(joinCell.classList.contains('sc-click-target-join')).toBe(true);
+                expect(joinCell.classList.contains('sc-click-target-full')).toBe(false);
+
+                SeatingChartManager._clearSelection();
+                expect(fullCell.classList.contains('sc-click-target-full')).toBe(false);
+                expect(joinCell.classList.contains('sc-click-target-join')).toBe(false);
+            } finally {
+                SeatingChartManager._planMode = prevMode;
+            }
         });
     });
 
@@ -3937,7 +4048,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
         it('devrait figer les transitions enfants via sc-lock-sliding pendant le glissement FLIP de _toggleLock pour garantir le 120Hz', () => {
             SeatingChartManager.switchPlanMode('course', { animate: false });
-            SeatingChartManager._isLocked = true;
+            SeatingChartManager._applyLockState(true);
             const board = document.getElementById('scClassroomBoard');
             const sidebar = document.getElementById('scSidebar');
 
@@ -3954,6 +4065,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._isLocked).toBe(false);
             expect(sidebar.inert).toBe(false);
             expect(board.classList.contains('sc-lock-sliding')).toBe(true);
+            expect(board.dataset.locked).toBe('false');
             expect(board.style.transition).toContain('transform var(--sc-drawer-transition)');
 
             const endEvent = new Event('transitionend');
@@ -3961,6 +4073,23 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             board.dispatchEvent(endEvent);
 
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
+        });
+
+        it('ne doit pas recréer le DOM de #scSidebarTitle ni multiplier les appels _getPlacedIds dans _updateFooter', () => {
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._autoPlace('alpha-asc');
+
+            const titleEl = document.getElementById('scSidebarTitle');
+            const initialCheckEl = titleEl.querySelector('.sc-all-placed-title');
+            expect(initialCheckEl).not.toBeNull();
+
+            const placedSpy = vi.spyOn(SeatingChartManager, '_getPlacedIds');
+            SeatingChartManager._updateFooter();
+
+            expect(placedSpy).toHaveBeenCalledTimes(1);
+            expect(titleEl.querySelector('.sc-all-placed-title')).toBe(initialCheckEl);
+            placedSpy.mockRestore();
         });
 
         it('devrait capturer rBefore avant _zoomAnimCleanup lors d’une inversion à mi-course (_toggleLock / _toggleZoom)', () => {
@@ -4790,6 +4919,107 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             outputSection.dispatchEvent(teTop);
             expect(switchClassSpy).not.toHaveBeenCalled();
             switchClassSpy.mockRestore();
+        });
+
+        it('devrait déclencher un micro-rebond directionnel au clavier en bout de course (Liste ↔ Plan ↔ Activité et Ctrl + Haut/Bas) sans perturber le scroll ni les animations en cours', async () => {
+            vi.useFakeTimers();
+            try {
+                const outputSection = document.querySelector('.main-content .output-section');
+                const outputList = document.createElement('div');
+                outputList.id = 'outputList';
+                outputSection.appendChild(outputList);
+
+                const headerClassName = document.createElement('span');
+                headerClassName.id = 'headerClassName';
+                document.body.appendChild(headerClassName);
+
+                // 1. En vue Liste : ArrowLeft déclenche un rebond vers la droite (+10px) puis nettoie
+                SeatingChartManager.switchToView('list', { immediate: true });
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(outputList.style.getPropertyValue('--nav-bounce-x')).toBe('10px');
+                expect(outputList.style.getPropertyValue('--nav-bounce-y')).toBe('0px');
+
+                // Garde anti-répétition (e.repeat = true ignoré)
+                await vi.advanceTimersByTimeAsync(260);
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(false);
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', repeat: true, bubbles: true }));
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // Garde scroll horizontal : si un conteneur focalisé a du scrollLeft > 0, ArrowLeft nu ne rebondit pas
+                const hScroll = document.createElement('div');
+                hScroll.tabIndex = 0;
+                Object.defineProperty(hScroll, 'scrollWidth', { value: 600, configurable: true });
+                Object.defineProperty(hScroll, 'clientWidth', { value: 300, configurable: true });
+                hScroll.scrollLeft = 40;
+                outputList.appendChild(hScroll);
+                hScroll.focus();
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(false);
+                hScroll.blur();
+
+                // Ctrl + ArrowUp en butée haute sur la 1re classe -> rebond vertical (+8px vue, +5px nom classe)
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', ctrlKey: true, bubbles: true }));
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(outputList.style.getPropertyValue('--nav-bounce-y')).toBe('8px');
+                expect(headerClassName.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(headerClassName.style.getPropertyValue('--nav-bounce-y')).toBe('5px');
+                await vi.advanceTimersByTimeAsync(260);
+                expect(outputList.classList.contains('nav-boundary-bounce')).toBe(false);
+                expect(headerClassName.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // 2. En vue Plan ajustée : ArrowRight au bout droit (Cours verrouillé sans Activité) -> rebond vers la gauche (-10px)
+                SeatingChartManager.switchToView('plan', { immediate: true });
+                SeatingChartManager.switchPlanMode('course', { animate: false });
+                SeatingChartManager._isFitted = true;
+                SeatingChartManager._isLocked = true;
+                appState.generatedResults.forEach(s => { delete s.seatingActivityPosition; });
+
+                const board = document.getElementById('scClassroomBoard');
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(board.style.getPropertyValue('--nav-bounce-x')).toBe('-10px');
+                await vi.advanceTimersByTimeAsync(260);
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // 3. Garde zoom (_isFitted = false) : ArrowRight nu laissé au scroll du plan zoomé, mais Ctrl + ArrowRight rebondit
+                SeatingChartManager._isFitted = false;
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(board.style.getPropertyValue('--nav-bounce-x')).toBe('-10px');
+                await vi.advanceTimersByTimeAsync(260);
+
+                // 4. Garde animation en cours : ne pas interrompre un carrousel de mode actif
+                board.classList.add('sc-mode-carousel-in-right');
+                SeatingChartManager._isFitted = true;
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(false);
+                board.classList.remove('sc-mode-carousel-in-right');
+
+                // 5. Butée basse Ctrl + ArrowDown en vue Plan -> rebond -8px
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(board.style.getPropertyValue('--nav-bounce-y')).toBe('-8px');
+                await vi.advanceTimersByTimeAsync(260);
+
+                // 6. Respect de prefers-reduced-motion
+                const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockImplementation((q) => ({
+                    matches: q === '(prefers-reduced-motion: reduce)',
+                    media: q,
+                    addEventListener: () => {},
+                    removeEventListener: () => {}
+                }));
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+                expect(board.classList.contains('nav-boundary-bounce')).toBe(false);
+                matchMediaSpy.mockRestore();
+
+                headerClassName.remove();
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('devrait verrouiller strictement l\'édition sur une classe reconstituée (isVirtual) et afficher les badges de groupe (G1, G2) ainsi que la capsule "Vue combinée"', () => {

@@ -119,7 +119,7 @@
     100% { opacity: 0; transform: scale(0.6) translateX(-50px); }
 }
 
-/* Cell swap — FLIP trajectory from origin desk + juicy landing bounce */
+/* Cell move / swap — FLIP trajectory from origin desk + juicy landing bounce */
 @keyframes scCellSwap {
     0% {
         opacity: 0.92;
@@ -130,7 +130,7 @@
     52% {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1.12);
-        box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md);
+        box-shadow: var(--shadow-md);
         animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     }
     76% {
@@ -219,7 +219,7 @@
     animation-delay: calc(var(--cell-i, 0) * 25ms);
 }
 
-/* Cell placed (from sidebar drop or empty-cell move) */
+/* Cell placed (from sidebar drop or empty-cell drop) */
 .sc-cell.sc-cell-placed {
     animation: scCellPlace 0.4s var(--ease-bounce) both;
     z-index: 35;
@@ -232,7 +232,7 @@
     pointer-events: none;
 }
 
-/* Cell swap (FLIP glide + elastic landing bounce) */
+/* Cell swap / move (FLIP glide + elastic landing bounce) */
 .sc-cell.sc-cell-swapped {
     animation: scCellSwap 0.44s var(--ease-spring) both;
     z-index: 41;

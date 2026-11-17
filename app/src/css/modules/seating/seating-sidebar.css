@@ -15,8 +15,6 @@
     will-change: translate;
     contain: layout style;
     transition: translate var(--sc-drawer-transition),
-                border-color var(--transition-fast),
-                box-shadow var(--sc-drawer-transition),
                 background-color var(--transition-fast);
     padding-top: 56px;
     overflow: visible;
@@ -453,16 +451,36 @@
     margin-bottom: 4px;
 }
 
-/* Prevent scrollbar flicker while card rotates, slides in mode carousel, or unfolds/folds */
+/* Prevent scrollbar flicker while card rotates, slides in mode carousel, unfolds/folds, or bounces at a boundary */
 #seatingChartView.sc-fold-transitioning .sc-grid-area,
-#seatingChartView:has(.sc-classroom-board.sc-orienting, .sc-classroom-board.sc-mode-carousel-in-right, .sc-classroom-board.sc-mode-carousel-in-left) .sc-grid-area {
+#seatingChartView:has(.sc-classroom-board.sc-orienting, .sc-classroom-board.sc-mode-carousel-in-right, .sc-classroom-board.sc-mode-carousel-in-left) .sc-grid-area,
+#seatingChartView .sc-grid-area[data-fitted="true"]:has(.sc-classroom-board.nav-boundary-bounce) {
     overflow: hidden;
 }
 
 /* Freeze descendant transitions during lock-toggle slide so GPU moves a static texture at 120Hz */
-.sc-classroom-board.sc-lock-sliding *,
-.sc-classroom-board.sc-lock-sliding *::before,
-.sc-classroom-board.sc-lock-sliding *::after {
+.sc-classroom-board.sc-lock-sliding :is(
+    .sc-grid-container,
+    .sc-cell,
+    .sc-cell-name,
+    .sc-cell-initial,
+    .sc-cell-remove,
+    .sc-cell-pin,
+    .sc-cell-scope-badge,
+    .sc-station-badge,
+    .sc-special-icon,
+    .sc-special-btn,
+    .sc-cell-special-tools,
+    .sc-stacked-avatar,
+    .sc-stacked-member,
+    .sc-stacked-group-tag,
+    .sc-stacked-member-remove,
+    .student-avatar,
+    .student-avatar__img,
+    .sc-desk-row,
+    .sc-desk
+),
+.sc-classroom-board.sc-lock-sliding .sc-stacked-member::before {
     transition: none !important;
 }
 

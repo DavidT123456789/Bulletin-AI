@@ -967,3 +967,63 @@
 .ui-floating-capsule .ui-floating-capsule-btn.zoom-icon-pop iconify-icon {
     animation: hudZoomIconPop 0.36s cubic-bezier(0.28, 1.35, 0.5, 1);
 }
+
+/* ==========================================================================
+   UI CORNER BADGE BUTTON (Circular Overlay Action — Neutral High-Contrast 2026)
+   Mutualisé entre Stats (.filter-close-btn) et Plan de classe (.sc-cell-remove, .sc-cell-pin)
+   ========================================================================== */
+
+.filter-close-btn,
+.sc-cell-remove,
+.sc-cell-pin {
+    position: absolute;
+    top: -6px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--surface-color), var(--shadow-sm);
+    background: var(--text-secondary);
+    color: var(--surface-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: opacity 0.18s var(--ease-spring),
+                transform 0.18s var(--ease-spring),
+                background-color 0.18s var(--ease-spring),
+                color 0.18s var(--ease-spring);
+}
+
+:is(.filter-close-btn, .sc-cell-remove, .sc-cell-pin) iconify-icon {
+    display: block;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.filter-close-btn::after,
+.sc-cell-remove::after,
+.sc-cell-pin::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+}
+
+@media (hover: hover) {
+    .filter-close-btn:hover,
+    .sc-cell-remove:hover,
+    .sc-cell-pin:hover {
+        background: var(--text-primary);
+    }
+}
+
+.filter-close-btn:active,
+.sc-cell-remove:active,
+.sc-cell-pin:active {
+    transform: scale(0.92);
+}

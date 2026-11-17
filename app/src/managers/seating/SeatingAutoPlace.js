@@ -24,28 +24,20 @@ export const SeatingAutoPlace = {
             this._initGrid(rows, cols);
         }
 
-        const posKey = this._getActivePositionKey();
         const unplaced = this._getUnplacedStudents();
         const placedIds = this._getPlacedIds();
         const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
 
-        const isCellPinned = (r, c) => {
-            const ids = this._getCellStudentIds(r, c);
-            return ids.some(id => Boolean(resultsMap.get(id)?.[posKey]?.pinned));
-        };
-
         const animatePlacedCells = (placedCells) => {
-            requestAnimationFrame(() => {
-                placedCells.forEach(({ row, col, index }) => {
-                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-                    if (!cell) return;
-                    cell.style.setProperty('--place-i', index);
-                    cell.classList.add('sc-auto-placed');
-                    cell.addEventListener('animationend', () => {
-                        cell.classList.remove('sc-auto-placed');
-                        cell.style.removeProperty('--place-i');
-                    }, { once: true });
-                });
+            placedCells.forEach(({ row, col, index }) => {
+                const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+                if (!cell) return;
+                cell.style.setProperty('--place-i', index);
+                cell.classList.add('sc-auto-placed');
+                cell.addEventListener('animationend', () => {
+                    cell.classList.remove('sc-auto-placed');
+                    cell.style.removeProperty('--place-i');
+                }, { once: true });
             });
         };
 
@@ -69,7 +61,7 @@ export const SeatingAutoPlace = {
             } else if (placedIds.size > 0) {
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
-                        if (isCellPinned(r, c)) continue;
+                        if (this._isCellPinned(r, c, resultsMap)) continue;
                         const ids = this._getCellStudentIds(r, c);
                         ids.forEach(id => {
                             const student = this._students.find(s => s.id === id) || resultsMap.get(id);
@@ -95,7 +87,7 @@ export const SeatingAutoPlace = {
             if (unplaced.length === 0) {
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
-                        if (!isCellPinned(r, c)) {
+                        if (!this._isCellPinned(r, c, resultsMap)) {
                             this._gridState[r][c] = null;
                         }
                     }
@@ -243,7 +235,7 @@ export const SeatingAutoPlace = {
         const movableStudents = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (isCellPinned(r, c)) continue;
+                if (this._isCellPinned(r, c, resultsMap)) continue;
                 const ids = this._getCellStudentIds(r, c);
                 ids.forEach(id => {
                     const student = this._students.find(s => s.id === id) || resultsMap.get(id);
@@ -274,7 +266,7 @@ export const SeatingAutoPlace = {
         const candidateSpots = [];
         for (let r = rows - 1; r >= 0; r--) {
             for (let c = 0; c < cols; c++) {
-                if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
+                if (this._isSpecialSpot(r, c) || this._isCellPinned(r, c, resultsMap)) continue;
                 candidateSpots.push({ r, c });
             }
         }
@@ -288,7 +280,7 @@ export const SeatingAutoPlace = {
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (!isCellPinned(r, c)) {
+                if (!this._isCellPinned(r, c, resultsMap)) {
                     this._gridState[r][c] = null;
                 }
             }

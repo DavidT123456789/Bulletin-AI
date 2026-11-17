@@ -1,5 +1,6 @@
 /* ────────── GRID CELL ────────── */
 .sc-cell {
+    --sc-target-bg: rgba(var(--surface-color-rgb), 0.9);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -15,6 +16,18 @@
     cursor: default;
 }
 
+.sc-cell.occupied {
+    --sc-target-bg: var(--surface-color);
+}
+
+[data-theme="dark"] .sc-cell {
+    --sc-target-bg: var(--highlight-standard-bg);
+}
+
+[data-theme="dark"] .sc-cell.occupied {
+    --sc-target-bg: var(--bg-tertiary);
+}
+
 /* In consultation/locked mode, empty desks are subtle ghost silhouettes without dashed borders */
 .sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
@@ -28,8 +41,8 @@
 .sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
 #seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 1;
-    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.35);
-    background: rgba(var(--surface-color-rgb), 0.25);
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.28);
+    background: rgba(var(--surface-color-rgb), 0.22);
 }
 
 @media (hover: hover) {
@@ -39,29 +52,41 @@
     }
 }
 
-/* Empty cells become clickable when sidebar selection is active */
-#seatingChartView[data-has-selection="true"] .sc-cell.empty {
+/* Empty cells become clickable when selection is active (without visual noise at rest) */
+#seatingChartView[data-has-selection="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
     cursor: pointer;
-    opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
-    border-color: rgba(0, 0, 0, 0.25);
-    background: rgba(0, 0, 0, 0.02);
 }
 
-[data-theme="dark"] #seatingChartView[data-has-selection="true"] .sc-cell.empty {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.03);
+#seatingChartView[data-has-selection="true"]:is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.occupied:not(.sc-chip-selected):not(.pinned) {
+    cursor: pointer;
 }
 
-/* Receiving/Target cell state (Drag over or Selection hover) — Standard Highlight */
-.sc-cell.drag-over,
-#seatingChartView[data-has-selection="true"]:not([data-dragging="true"]) .sc-cell.empty:hover {
+#seatingChartView[data-has-selection="true"]:is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.occupied.pinned {
+    cursor: not-allowed;
+}
+
+/* Receiving/Target cell state (Drag over & unified click-selection hover) */
+.sc-cell.drag-over {
     border-color: var(--highlight-standard-border) !important;
     border-style: dashed !important;
-    background: var(--highlight-standard-bg) !important;
-    transform: scale(1.06) !important;
-    box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md) !important;
+    background: var(--sc-target-bg) !important;
+    transform: scale(1.03) !important;
+    box-shadow: var(--shadow-md) !important;
     z-index: 50;
     opacity: 1 !important;
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-has-selection="true"]:not([data-dragging="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover,
+    #seatingChartView[data-has-selection="true"]:is([data-selection-action="swap"], [data-selection-action="join"]):not([data-dragging="true"]) .sc-cell.occupied:not(.sc-chip-selected):not(.pinned):hover {
+        border-color: var(--highlight-standard-border) !important;
+        border-style: dashed !important;
+        background: var(--sc-target-bg) !important;
+        transform: scale(1.03) !important;
+        box-shadow: var(--shadow-md) !important;
+        z-index: 50;
+        opacity: 1 !important;
+    }
 }
 
 .sc-cell.occupied {
@@ -371,69 +396,42 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     transition: color var(--transition-fast);
 }
 
-/* ────────── CELL ACTIONS (Remove / Pin) ────────── */
-.sc-cell-remove {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--text-secondary);
-    color: var(--surface-color);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.55rem;
-    cursor: pointer;
+/* ────────── CELL ACTIONS (Remove / Pin — base geometry, ring, tint & bounce in ui-components.css) ────────── */
+.sc-cell-remove,
+.sc-cell-pin {
     opacity: 0;
     transform: scale(0.5);
-    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce),
-                background var(--transition-fast), color var(--transition-fast);
     z-index: 5;
 }
 
-@media (hover: hover) {
-    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover .sc-cell-remove {
-        opacity: 1;
-        transform: scale(1);
-    }
+.sc-cell-remove {
+    right: -6px;
 }
 
 .sc-cell-pin {
-    position: absolute;
-    top: -6px;
     left: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--text-secondary);
-    color: var(--surface-color);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.55rem;
-    cursor: pointer;
-    opacity: 0;
-    transform: scale(0.5);
-    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce),
-                background var(--transition-fast), color var(--transition-fast);
-    z-index: 5;
+}
+
+:is(.sc-cell-remove, .sc-cell-pin):focus-visible {
+    opacity: 1;
+}
+
+:is(.sc-cell-remove, .sc-cell-pin):focus-visible:not(:active) {
+    transform: scale(1);
 }
 
 @media (hover: hover) {
-    #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover .sc-cell-pin {
+    :where(#seatingChartView:not([data-dragging="true"]):not([data-selection-action="swap"]):not([data-selection-action="join"]) .sc-cell.occupied:hover) > :is(.sc-cell-remove, .sc-cell-pin),
+    :where(#seatingChartView:not([data-dragging="true"]):is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.occupied.sc-chip-selected:hover) > :is(.sc-cell-remove, .sc-cell-pin) {
         opacity: 1;
         transform: scale(1);
+        transition-duration: 0.18s, 0.22s, 0.18s, 0.18s;
+        transition-timing-function: var(--ease-spring), var(--ease-bounce), var(--ease-spring), var(--ease-spring);
     }
+}
 
-    .sc-cell-remove:hover,
-    .sc-cell-pin:hover {
-        background: var(--text-primary);
-        transform: scale(1.15) !important;
-    }
+#seatingChartView:is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.occupied:not(.sc-chip-selected) > :is(.sc-cell-remove, .sc-cell-pin) {
+    pointer-events: none;
 }
 
 /* Touch & Mobile devices: hide permanent remove and unpinned buttons to prevent accidental clicks and declutter UI */
@@ -458,10 +456,18 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 /* Pinned — icon always visible */
 .sc-cell.pinned .sc-cell-pin {
     opacity: 1;
-    transform: scale(1);
     background: var(--primary-color);
     color: var(--text-on-primary);
-    border-color: var(--primary-color);
+}
+
+.sc-cell.pinned .sc-cell-pin:not(:active) {
+    transform: scale(1);
+}
+
+@media (hover: hover) {
+    .sc-cell.pinned .sc-cell-pin:hover {
+        background: var(--primary-hover);
+    }
 }
 
 /* Evolution dot */
@@ -639,11 +645,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* ────────── LOCKED STATE ────────── */
 
-/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate, pre-painted offscreen) */
+/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate, offset clears shadow without repainting) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
-    translate: -100% 0;
-    box-shadow: none;
-    border-right-color: transparent;
+    translate: calc(-100% - 12px) 0;
     pointer-events: none;
 }
 
@@ -737,7 +741,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-aisle:hover {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-aisle:hover {
         opacity: 1;
         border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.45);
         background: rgba(var(--surface-color-rgb), 0.25);
@@ -820,7 +824,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 /* Edit mode: restore full opacity on hover so overlay tool buttons have 100% luminance */
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-blocked:hover {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-blocked:hover {
         opacity: 1;
     }
 }
@@ -1854,9 +1858,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     /* Locked sidebar slides smoothly off-screen vertically on mobile (120Hz GPU translate) */
     #seatingChartView[data-locked="true"] .sc-sidebar {
-        translate: 0 100%;
-        box-shadow: none;
-        border-top-color: transparent;
+        translate: 0 calc(100% + 12px);
         pointer-events: none;
     }
 
@@ -2141,7 +2143,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         height: 15px;
         top: -4px;
         left: -4px;
-        font-size: 0.48rem;
+        font-size: 9px;
     }
 
     .sc-evolution-dot {
@@ -2236,7 +2238,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         border-style: solid !important;
         border-width: 2px !important;
         box-shadow: 0 0 0 4px var(--highlight-standard-glow), 0 8px 20px rgba(0, 0, 0, 0.2) !important;
-        background: var(--highlight-standard-bg) !important;
+        background: var(--sc-target-bg) !important;
     }
 
     /* ── Teacher desk: less margin when sidebar is below ── */
@@ -2339,12 +2341,12 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 [data-theme="dark"] .sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
 [data-theme="dark"] #seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
-    border: 1.5px dashed rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px dashed rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.032);
 }
 
 @media (hover: hover) {
-    [data-theme="dark"] #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+    [data-theme="dark"] #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
         border-color: rgba(255, 255, 255, 0.45);
         background: rgba(255, 255, 255, 0.1);
     }

@@ -1184,59 +1184,29 @@
 
 /* ====================================================================
    FILTER CLOSE BUTTON - Neutral High-Contrast 2026 Badge
+   (Base geometry, ring, bounce & interactions mutualized in ui-components.css)
    ==================================================================== */
 .filter-close-btn {
-    position: absolute;
-    top: -6px;
     right: -6px;
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    border-radius: 50%;
-    background: var(--text-primary);
-    color: var(--surface-color);
-    border: 2px solid var(--surface-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 0.55rem;
-    transition: transform 0.2s var(--ease-spring), opacity 0.2s ease;
     z-index: 10;
-    box-shadow: var(--shadow-sm);
-    opacity: 0;
-    transform: scale(0.8);
-    animation: filter-close-btn-appear 0.25s var(--ease-spring) forwards;
+    opacity: 1;
+    transform: scale(1);
+    transition-duration: 0.18s, 0.22s, 0.18s, 0.18s;
+    transition-timing-function: var(--ease-spring), var(--ease-bounce), var(--ease-spring), var(--ease-spring);
 }
 
-@keyframes filter-close-btn-appear {
-    from {
+@starting-style {
+    .filter-close-btn {
         opacity: 0;
         transform: scale(0.5);
     }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
-.filter-close-btn:hover {
-    transform: scale(1.12);
-}
-
-.filter-close-btn:active {
-    transform: scale(0.95);
-}
-
-/* Position adjustments for different filter element types */
+/* Position & size adjustments for different filter element types */
 .detail-item .filter-close-btn,
 .legend-item .filter-close-btn {
     top: -5px;
     right: -5px;
-    width: 18px;
-    height: 18px;
-    font-size: 0.55rem;
 }
 
 .hist-bar-group .filter-close-btn {
@@ -1244,7 +1214,7 @@
     right: -4px;
     width: 16px;
     height: 16px;
-    font-size: 0.5rem;
+    font-size: 8px;
 }
 
 /* ====================================================================

@@ -1336,6 +1336,23 @@ button > .icon-spin-wrapper {
     will-change: transform, opacity;
 }
 
+@keyframes nav-boundary-bounce {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    32% {
+        transform: translate3d(var(--nav-bounce-x, 0px), var(--nav-bounce-y, 0px), 0);
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.nav-boundary-bounce {
+    animation: nav-boundary-bounce 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
 @keyframes list-card-stagger-reveal {
     from {
         transform: translate3d(-8px, 0, 0);
@@ -1379,6 +1396,7 @@ button > .icon-spin-wrapper {
     #headerClassName.header-class-in-up,
     .view-slide-out-left,
     .view-slide-in-left,
+    .nav-boundary-bounce,
     .stat-card.stat-card-stagger,
     .empty-state-hub-card.stat-card-stagger,
     .student-list-table tbody tr.student-row.row-stagger-enter,

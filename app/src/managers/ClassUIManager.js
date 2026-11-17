@@ -447,12 +447,14 @@ export const ClassUIManager = {
         const allAnimClasses = [
             'class-switch-out-down', 'class-switch-out-up',
             'class-switch-in-down', 'class-switch-in-up',
-            'view-slide-out-left', 'view-slide-in-left'
+            'view-slide-out-left', 'view-slide-in-left',
+            'nav-boundary-bounce'
         ];
 
         // Fermer le menu et la bulle mémo immédiatement au clic pour une réactivité instantanée
         this.closeDropdown();
         this.closeNotePopover();
+        SeatingChartManager?._clearNavigationBoundaryBounce?.();
 
         const outgoingContainers = Array.from(document.querySelectorAll(selector)).filter(el => {
             el.classList.remove(...allAnimClasses);

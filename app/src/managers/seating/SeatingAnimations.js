@@ -9,7 +9,122 @@ export const SeatingAnimations = {
         return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
     },
 
+    _getVisibleListContainers() {
+        return Array.from(
+            document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
+        ).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
+    },
+
+    _clearNavigationBoundaryBounce() {
+        if (this._navBounceTimer) {
+            clearTimeout(this._navBounceTimer);
+            this._navBounceTimer = null;
+        }
+        if (this._navBouncePrimaryEl && this._navBounceEndHandler) {
+            this._navBouncePrimaryEl.removeEventListener('animationend', this._navBounceEndHandler);
+        }
+        this._navBouncePrimaryEl = null;
+        this._navBounceEndHandler = null;
+        document.querySelectorAll('.nav-boundary-bounce').forEach(el => {
+            el.classList.remove('nav-boundary-bounce');
+            el.style.removeProperty('--nav-bounce-x');
+            el.style.removeProperty('--nav-bounce-y');
+        });
+    },
+
+    _hasActiveClassSwitchAnimation(el) {
+        return Boolean(el && (
+            el.classList.contains('class-switch-out-down') ||
+            el.classList.contains('class-switch-in-down') ||
+            el.classList.contains('class-switch-out-up') ||
+            el.classList.contains('class-switch-in-up')
+        ));
+    },
+
+    /**
+     * Play a subtle directional boundary bounce when keyboard navigation reaches a dead end.
+     * @param {'left'|'right'|'up'|'down'} direction - Attempted navigation direction
+     */
+    _animateNavigationBoundaryBounce(direction) {
+        const vectors = {
+            left: { x: 10, y: 0 },
+            right: { x: -10, y: 0 },
+            up: { x: 0, y: 8 },
+            down: { x: 0, y: -8 }
+        };
+        const vector = vectors[direction];
+        if (!vector || this._prefersReducedMotion()) return;
+
+        const isVertical = direction === 'up' || direction === 'down';
+        const headerClassName = isVertical ? document.getElementById('headerClassName') : null;
+        const targets = [];
+
+        if (this._isActive) {
+            const viewEl = document.getElementById('seatingChartView');
+            const board = document.getElementById('scClassroomBoard');
+            if (!board ||
+                this._zoomAnimCleanup ||
+                board.style.transform ||
+                this._hasActiveClassSwitchAnimation(viewEl) ||
+                viewEl?.classList.contains('sc-entering') ||
+                viewEl?.classList.contains('sc-exiting') ||
+                board.classList.contains('sc-mode-carousel-in-right') ||
+                board.classList.contains('sc-mode-carousel-in-left') ||
+                board.classList.contains('sc-orienting')) {
+                return;
+            }
+            targets.push({ el: board, x: vector.x, y: vector.y });
+        } else {
+            const containers = this._getVisibleListContainers();
+            const hasActiveTransition = containers.some(el =>
+                el.classList.contains('view-slide-out-left') ||
+                el.classList.contains('view-slide-in-left') ||
+                this._hasActiveClassSwitchAnimation(el)
+            );
+            if (containers.length === 0 || hasActiveTransition) return;
+            containers.forEach(el => targets.push({ el, x: vector.x, y: vector.y }));
+        }
+
+        if (headerClassName &&
+            !headerClassName.classList.contains('header-class-out-down') &&
+            !headerClassName.classList.contains('header-class-in-down') &&
+            !headerClassName.classList.contains('header-class-out-up') &&
+            !headerClassName.classList.contains('header-class-in-up')) {
+            targets.push({ el: headerClassName, x: 0, y: Math.round(vector.y * 0.6) });
+        }
+
+        const wasAlreadyBouncing = targets.some(({ el }) => el.classList.contains('nav-boundary-bounce'));
+        this._clearNavigationBoundaryBounce();
+        if (wasAlreadyBouncing) {
+            void targets[0]?.el.offsetWidth;
+        }
+
+        targets.forEach(({ el, x, y }) => {
+            el.style.setProperty('--nav-bounce-x', `${x}px`);
+            el.style.setProperty('--nav-bounce-y', `${y}px`);
+            el.classList.add('nav-boundary-bounce');
+        });
+
+        const primaryEl = targets[0]?.el || null;
+        if (!primaryEl) return;
+
+        const onAnimEnd = (e) => {
+            if (e && e.target !== primaryEl) return;
+            this._clearNavigationBoundaryBounce();
+        };
+        this._navBouncePrimaryEl = primaryEl;
+        this._navBounceEndHandler = onAnimEnd;
+        primaryEl.addEventListener('animationend', onAnimEnd);
+        this._navBounceTimer = setTimeout(() => {
+            this._clearNavigationBoundaryBounce();
+        }, 260);
+    },
+
     _clearListViewTransitionClasses({ preserveSwipeOffset = false } = {}) {
+        this._clearNavigationBoundaryBounce();
         if (this._listEnterCleanupTimer) {
             clearTimeout(this._listEnterCleanupTimer);
             this._listEnterCleanupTimer = null;
@@ -46,12 +161,7 @@ export const SeatingAnimations = {
 
     /** List view exit — horizontal micro-slide to left before Plan enters from right */
     _animateListViewExit(onComplete) {
-        const containers = Array.from(
-            document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
-        ).filter(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && style.visibility !== 'hidden';
-        });
+        const containers = this._getVisibleListContainers();
 
         if (containers.length === 0 || this._prefersReducedMotion()) {
             onComplete();
@@ -105,12 +215,7 @@ export const SeatingAnimations = {
     _animateListViewEnter() {
         if (this._prefersReducedMotion()) return;
 
-        const containers = Array.from(
-            document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
-        ).filter(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && style.visibility !== 'hidden';
-        });
+        const containers = this._getVisibleListContainers();
         if (containers.length === 0) return;
 
         let needsReflow = false;
@@ -274,6 +379,7 @@ export const SeatingAnimations = {
 
     /** Clean up any active Cours <-> Activité carousel ghost & animation classes */
     _cleanupModeCarousel() {
+        this._clearNavigationBoundaryBounce();
         if (this._modeCarouselTimer) {
             clearTimeout(this._modeCarouselTimer);
             this._modeCarouselTimer = null;
@@ -579,12 +685,39 @@ export const SeatingAnimations = {
         }, duration);
     },
 
-    /** Animate a single cell as "placed" (from sidebar) */
+    /** Animate a single cell as "placed" (from sidebar or drop) */
     _animateCellPlaced(row, col) {
         const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
         if (!cell) return;
         cell.classList.add('sc-cell-placed');
         cell.addEventListener('animationend', () => cell.classList.remove('sc-cell-placed'), { once: true });
+    },
+
+    /** Apply a FLIP glide animation from delta `(dx, dy)` and clean up on completion */
+    _applyCellFlip(cell, dx, dy, extraClass = '') {
+        if (!cell) return;
+        cell.style.setProperty('--swap-dx', `${dx}px`);
+        cell.style.setProperty('--swap-dy', `${dy}px`);
+        const classes = extraClass ? ['sc-cell-swapped', extraClass] : ['sc-cell-swapped'];
+        cell.classList.add(...classes);
+        cell.addEventListener('animationend', () => {
+            cell.classList.remove(...classes);
+            cell.style.removeProperty('--swap-dx');
+            cell.style.removeProperty('--swap-dy');
+        }, { once: true });
+    },
+
+    /** Animate a single cell gliding via FLIP from `(fromRow, fromCol)` to `(toRow, toCol)` */
+    _animateCellMove(fromRow, fromCol, toRow, toCol) {
+        if (fromRow == null || fromCol == null || (Number(fromRow) === Number(toRow) && Number(fromCol) === Number(toCol))) {
+            this._animateCellPlaced(toRow, toCol);
+            return;
+        }
+        const toCell = document.querySelector(`.sc-cell[data-row="${toRow}"][data-col="${toCol}"]`);
+        if (!toCell) return;
+        const fromCell = document.querySelector(`.sc-cell[data-row="${fromRow}"][data-col="${fromCol}"]`);
+        const { dx, dy } = this._computeCellSwapDelta(toCell, fromCell, toRow, toCol, fromRow, fromCol);
+        this._applyCellFlip(toCell, dx, dy);
     },
 
     /** Compute unscaled local pixel vector from cell1 to cell2 (cell2 - cell1) */
@@ -634,17 +767,7 @@ export const SeatingAnimations = {
         if (!cell1 && !cell2) return;
 
         const { dx, dy } = this._computeCellSwapDelta(cell1, cell2, row1, col1, row2, col2);
-
-        if (cell1) {
-            cell1.style.setProperty('--swap-dx', `${dx}px`);
-            cell1.style.setProperty('--swap-dy', `${dy}px`);
-            cell1.classList.add('sc-cell-swapped');
-            cell1.addEventListener('animationend', () => {
-                cell1.classList.remove('sc-cell-swapped');
-                cell1.style.removeProperty('--swap-dx');
-                cell1.style.removeProperty('--swap-dy');
-            }, { once: true });
-        }
+        this._applyCellFlip(cell1, dx, dy);
 
         if (cell2) {
             if (fromDrag) {
@@ -653,14 +776,7 @@ export const SeatingAnimations = {
                     cell2.classList.remove('sc-cell-swapped', 'sc-cell-swap-dropped');
                 }, { once: true });
             } else {
-                cell2.style.setProperty('--swap-dx', `${-dx}px`);
-                cell2.style.setProperty('--swap-dy', `${-dy}px`);
-                cell2.classList.add('sc-cell-swapped', 'sc-cell-swap-secondary');
-                cell2.addEventListener('animationend', () => {
-                    cell2.classList.remove('sc-cell-swapped', 'sc-cell-swap-secondary');
-                    cell2.style.removeProperty('--swap-dx');
-                    cell2.style.removeProperty('--swap-dy');
-                }, { once: true });
+                this._applyCellFlip(cell2, -dx, -dy, 'sc-cell-swap-secondary');
             }
         }
     },

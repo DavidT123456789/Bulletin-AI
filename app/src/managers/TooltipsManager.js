@@ -63,6 +63,13 @@ const getCommonTippyConfig = () => {
             ) {
                 return false;
             }
+            // En attente de permutation / association au clic, masquer les tooltips sur les cartes cibles pour dégager le survol
+            if (
+                instance.reference?.closest?.('#seatingChartView:is([data-selection-action="swap"], [data-selection-action="join"])') &&
+                instance.reference?.closest?.('.sc-cell.occupied:not(.sc-chip-selected):not(.pinned)')
+            ) {
+                return false;
+            }
             // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
             // Prevent parent tooltip from showing if a child [data-tooltip] is currently hovered

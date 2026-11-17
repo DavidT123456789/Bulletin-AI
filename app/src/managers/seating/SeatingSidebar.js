@@ -25,15 +25,12 @@ export const SeatingSidebar = {
         } else {
             this._selectedChipIds.push(id);
         }
-        this._applyChipSelectionUI();
         this._updateSelectionAttribute();
     },
 
     _toggleCellSelection(row, col) {
         const cellIds = this._getCellStudentIds(row, col);
-        if (cellIds.length === 0) return;
-        const posKey = this._getActivePositionKey();
-        if (cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return;
+        if (cellIds.length === 0 || this._isCellPinned(row, col)) return;
 
         const isSelected = cellIds.some(id => this._selectedChipIds.includes(id));
         if (isSelected) {
@@ -45,7 +42,6 @@ export const SeatingSidebar = {
                 }
             });
         }
-        this._applyChipSelectionUI();
         this._updateSelectionAttribute();
     },
 
@@ -77,14 +73,11 @@ export const SeatingSidebar = {
         const maxR = Math.max(r1, r2);
         const minC = Math.min(c1, c2);
         const maxC = Math.max(c1, c2);
-        const posKey = this._getActivePositionKey();
 
         for (let r = minR; r <= maxR; r++) {
             for (let c = minC; c <= maxC; c++) {
                 const cellIds = this._getCellStudentIds(r, c);
-                if (cellIds.length === 0) continue;
-                const isPinned = cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned);
-                if (isPinned) continue;
+                if (cellIds.length === 0 || this._isCellPinned(r, c)) continue;
                 cellIds.forEach(id => {
                     if (id && !this._selectedChipIds.includes(id)) {
                         this._selectedChipIds.push(id);
@@ -92,7 +85,6 @@ export const SeatingSidebar = {
                 });
             }
         }
-        this._applyChipSelectionUI();
         this._updateSelectionAttribute();
     },
 
@@ -107,7 +99,6 @@ export const SeatingSidebar = {
                 this._selectedChipIds.push(id);
             }
         }
-        this._applyChipSelectionUI();
         this._updateSelectionAttribute();
     },
 
@@ -124,12 +115,26 @@ export const SeatingSidebar = {
         this._selectedChipIds = [];
         this._lastSelectedGridPos = null;
         this._lastSelectedSidebarIndex = null;
-        this._applyChipSelectionUI();
         this._updateSelectionAttribute(options);
     },
 
-    _applyChipSelectionUI() {
+    _resolveSelectionAction() {
+        if (this._selectedChipIds.length === 0) return '';
+        const selectedGridCells = this._getSelectedGridCells();
+        if (this._isActivityMode() && selectedGridCells.length === 0) {
+            return 'join';
+        }
+        if (selectedGridCells.length === 1 || this._selectedChipIds.length === 1) {
+            return 'swap';
+        }
+        return 'reselect';
+    },
+
+    _applyChipSelectionUI(selectionAction = this._resolveSelectionAction()) {
         const selectedSet = new Set(this._selectedChipIds);
+        const isJoinMode = selectionAction === 'join';
+        const incomingCount = this._selectedChipIds.length;
+
         document.querySelectorAll('.sc-student-chip, .sc-cell.occupied').forEach(el => {
             if (el.classList.contains('sc-cell')) {
                 const r = parseInt(el.dataset.row, 10);
@@ -137,7 +142,17 @@ export const SeatingSidebar = {
                 const cellIds = (!isNaN(r) && !isNaN(c))
                     ? this._getCellStudentIds(r, c)
                     : [el.dataset.resultId].filter(Boolean);
-                el.classList.toggle('sc-chip-selected', cellIds.some(id => selectedSet.has(id)));
+                const isSelected = cellIds.some(id => selectedSet.has(id));
+                el.classList.toggle('sc-chip-selected', isSelected);
+
+                if (!isJoinMode || isSelected || el.classList.contains('pinned')) {
+                    el.classList.remove('sc-click-target-join', 'sc-click-target-full');
+                } else {
+                    const targetCount = cellIds.length;
+                    const canJoin = targetCount > 0 && targetCount < MAX_ACTIVITY_GROUP_SIZE && (targetCount + incomingCount <= MAX_ACTIVITY_GROUP_SIZE);
+                    el.classList.toggle('sc-click-target-join', canJoin);
+                    el.classList.toggle('sc-click-target-full', targetCount > 0 && !canJoin);
+                }
             } else {
                 const id = el.dataset.resultId;
                 if (id) el.classList.toggle('sc-chip-selected', selectedSet.has(id));
@@ -147,8 +162,21 @@ export const SeatingSidebar = {
 
     _updateSelectionAttribute(options = {}) {
         const hasSelection = this._selectedChipIds.length > 0;
+        const selectionAction = hasSelection ? this._resolveSelectionAction() : '';
+
         const view = document.getElementById('seatingChartView');
-        if (view) view.dataset.hasSelection = hasSelection;
+        if (view) {
+            view.dataset.hasSelection = hasSelection;
+            if (selectionAction) {
+                view.dataset.selectionAction = selectionAction;
+            } else {
+                delete view.dataset.selectionAction;
+            }
+        }
+        this._applyChipSelectionUI(selectionAction);
+        if (selectionAction === 'swap' || selectionAction === 'join') {
+            TooltipsUI?.hideAll?.();
+        }
         this._updateQuickGroupButton();
 
         if (hasSelection) {
@@ -242,13 +270,7 @@ export const SeatingSidebar = {
         const cols = this._getCols();
         if (targetRow < 0 || targetRow >= rows || targetCol < 0 || targetCol >= cols) return null;
         if (this._isSpecialSpot(targetRow, targetCol)) return null;
-
-        const posKey = this._getActivePositionKey();
-        const isCellPinned = (r, c) => {
-            const cellIds = this._getCellStudentIds(r, c);
-            return cellIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned);
-        };
-        if (isCellPinned(targetRow, targetCol)) return null;
+        if (this._isCellPinned(targetRow, targetCol)) return null;
 
         const hasValidAnchor = anchorRow !== null && anchorCol !== null &&
             !isNaN(Number(anchorRow)) && !isNaN(Number(anchorCol)) &&
@@ -282,7 +304,7 @@ export const SeatingSidebar = {
                 return nr >= 0 && nr < rows &&
                     nc >= 0 && nc < cols &&
                     !this._isSpecialSpot(nr, nc) &&
-                    !isCellPinned(nr, nc);
+                    !this._isCellPinned(nr, nc);
             });
         };
 
@@ -323,7 +345,7 @@ export const SeatingSidebar = {
             const idx = (startIdx + step) % totalCells;
             const r = Math.floor(idx / cols);
             const c = idx % cols;
-            if (this._isSpecialSpot(r, c) || isCellPinned(r, c)) continue;
+            if (this._isSpecialSpot(r, c) || this._isCellPinned(r, c)) continue;
             const isOccupiedByUnselected = this._getCellStudentIds(r, c).length > 0 && !selectedKeySet.has(`${r},${c}`);
             if (!isOccupiedByUnselected) {
                 candidateSlots.push({ row: r, col: c });
@@ -348,7 +370,7 @@ export const SeatingSidebar = {
         };
     },
 
-    _executeGridBlockMovePlan(plan) {
+    _executeGridBlockMovePlan(plan, { fromDrag = false } = {}) {
         if (!plan || !Array.isArray(plan.targets) || plan.targets.length === 0) return false;
         this._snapshotGrid();
 
@@ -373,7 +395,7 @@ export const SeatingSidebar = {
                     const displaced = cloneCellVal(oldGrid[t.row]?.[t.col]);
                     this._gridState[vr][vc] = displaced;
                     if (displaced) {
-                        swappedCells.push({ row: vr, col: vc });
+                        swappedCells.push({ srcRow: t.row, srcCol: t.col, row: vr, col: vc });
                     }
                 }
             }
@@ -390,10 +412,6 @@ export const SeatingSidebar = {
             }
         }
 
-        const placedCells = [
-            ...plan.targets.map((t, index) => ({ row: t.row, col: t.col, index })),
-            ...swappedCells
-        ];
         this._selectedChipIds = [];
         this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
@@ -402,10 +420,15 @@ export const SeatingSidebar = {
         this._haptic(15);
         this._updateSelectionAttribute();
 
-        requestAnimationFrame(() => {
-            placedCells.forEach(({ row, col }) => {
+        plan.targets.forEach(({ srcRow, srcCol, row, col }) => {
+            if (fromDrag) {
                 this._animateCellPlaced(row, col);
-            });
+            } else {
+                this._animateCellMove(srcRow, srcCol, row, col);
+            }
+        });
+        swappedCells.forEach(({ srcRow, srcCol, row, col }) => {
+            this._animateCellMove(srcRow, srcCol, row, col);
         });
         return true;
     },
@@ -422,7 +445,7 @@ export const SeatingSidebar = {
                 if (!hasUnplacedSelected) {
                     const plan = this._resolveGridBlockMovePlan(startRow, startCol, anchorRow, anchorCol);
                     if (plan) {
-                        this._executeGridBlockMovePlan(plan);
+                        this._executeGridBlockMovePlan(plan, { fromDrag: Boolean(options.fromDrag) });
                         return;
                     }
                 }
@@ -482,10 +505,8 @@ export const SeatingSidebar = {
         this._haptic(15);
         this._updateSelectionAttribute();
 
-        requestAnimationFrame(() => {
-            placedCells.forEach(({ row, col }) => {
-                this._animateCellPlaced(row, col);
-            });
+        placedCells.forEach(({ row, col }) => {
+            this._animateCellPlaced(row, col);
         });
     },
 
@@ -677,11 +698,12 @@ export const SeatingSidebar = {
         if (returningId) this._animateSidebarChipReturn(returningId);
     },
 
-    _updateFooter() {
+    _updateFooter(options = {}) {
         const activeStudents = this._students.filter(s => !this._isStudentDeparted(s));
         const total = activeStudents.length;
-        const placed = this._getPlacedIds().size;
-        const placedActive = activeStudents.filter(s => this._getPlacedIds().has(s.id)).length;
+        const placedIds = this._getPlacedIds();
+        const placed = placedIds.size;
+        const placedActive = activeStudents.filter(s => placedIds.has(s.id)).length;
         const info = document.getElementById('scFooterInfo');
         if (!info) return;
 
@@ -710,9 +732,13 @@ export const SeatingSidebar = {
         const sidebarTitle = document.getElementById('scSidebarTitle');
         if (sidebarTitle) {
             if (total === 0) {
-                sidebarTitle.innerHTML = '<span>Élèves non placés</span>';
+                if (sidebarTitle.textContent !== 'Élèves non placés') {
+                    sidebarTitle.innerHTML = '<span>Élèves non placés</span>';
+                }
             } else if (unplaced === 0) {
-                sidebarTitle.innerHTML = '<span class="sc-all-placed-title"><iconify-icon icon="solar:check-circle-bold"></iconify-icon><span>Tous les élèves sont placés</span></span>';
+                if (!sidebarTitle.querySelector('.sc-all-placed-title')) {
+                    sidebarTitle.innerHTML = '<span class="sc-all-placed-title"><iconify-icon icon="solar:check-circle-bold"></iconify-icon><span>Tous les élèves sont placés</span></span>';
+                }
             } else {
                 const existingVal = sidebarTitle.querySelector('.sc-dynamic-value');
                 if (existingVal) {
@@ -733,7 +759,9 @@ export const SeatingSidebar = {
         if (prev !== placed && prev !== 0) this._animateCounterBump();
         this._prevPlacedCount = placed;
 
-        this._syncEditHistoryState?.();
+        if (!options.skipHistorySync) {
+            this._syncEditHistoryState?.(placed);
+        }
         this._updateStatusPill();
     }
 };

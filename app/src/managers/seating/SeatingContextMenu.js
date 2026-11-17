@@ -324,12 +324,7 @@ export const SeatingContextMenu = {
                         </button>
                     `;
                 } else if (!isBulk && hasCoords) {
-                    const posKey = this._getActivePositionKey();
-                    const cellIds = this._getCellStudentIds(row, col);
-                    const isPinned = cellIds.some(id => {
-                        const st = this._studentMap?.get(id) || appState.generatedResults?.find(r => r.id === id);
-                        return Boolean(st?.[posKey]?.pinned);
-                    });
+                    const isPinned = this._isCellPinned(row, col);
                     const pinLabel = isPinned
                         ? (isGroupMember ? 'Détacher le poste' : 'Détacher')
                         : (isGroupMember ? 'Épingler le poste' : 'Épingler');

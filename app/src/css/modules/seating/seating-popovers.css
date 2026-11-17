@@ -345,10 +345,10 @@
     transition: background var(--transition-fast),
                 color var(--transition-fast),
                 transform 0.15s ease,
-                width var(--sc-drawer-transition),
-                margin-left var(--sc-drawer-transition),
-                opacity 0.25s ease,
-                visibility 0.25s;
+                width 0.22s var(--ease-spring),
+                margin-left 0.22s var(--ease-spring),
+                opacity 0.18s ease,
+                visibility 0.2s;
 }
 
 .sc-floating-actions .sc-action-btn:focus-visible {
@@ -835,9 +835,11 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
-    #seatingChartView:not([data-dragging="true"]) .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
-    #seatingChartView[data-plan-mode="activity"][data-locked="false"]:not([data-dragging="true"]) .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]):not([data-selection-action="swap"]):not([data-selection-action="join"]) .sc-cell.sc-cell-stacked:not(.pinned):hover .sc-station-badge,
+    #seatingChartView:not([data-dragging="true"]):not([data-selection-action="swap"]):not([data-selection-action="join"]) .sc-classroom-board[data-plan-mode="activity"][data-locked="false"] .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"][data-locked="false"]:not([data-dragging="true"]):not([data-selection-action="swap"]):not([data-selection-action="join"]) .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]):is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.sc-cell-stacked.sc-chip-selected:not(.pinned):hover .sc-station-badge,
+    #seatingChartView[data-plan-mode="activity"][data-locked="false"]:not([data-dragging="true"]):is([data-selection-action="swap"], [data-selection-action="join"]) .sc-classroom-board:not([data-plan-mode="course"]) .sc-cell.occupied.sc-chip-selected:not(.pinned):hover .sc-station-badge {
         opacity: 0;
     }
 
@@ -862,8 +864,9 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     max-width: 104px;
 }
 
-/* Drop indicator when dragging onto an occupied station to form a binôme / group */
-.sc-cell.drag-over.drag-over-join::after {
+/* Drop indicator when dragging or click-joining onto an occupied station to form a binôme / group */
+.sc-cell.drag-over.drag-over-join::after,
+#seatingChartView[data-selection-action="join"]:not([data-dragging="true"]) .sc-cell.occupied.sc-click-target-join:hover::after {
     content: '+ Associer';
     position: absolute;
     bottom: -9px;
@@ -883,13 +886,15 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     animation: scFadeIn 0.15s ease both;
 }
 
-/* Drop indicator when dragging onto a FULL group (4 max) */
-.sc-cell.drag-over.drag-over-full {
+/* Drop indicator when dragging or click-joining onto a FULL group (4 max) */
+.sc-cell.drag-over.drag-over-full,
+#seatingChartView[data-selection-action="join"]:not([data-dragging="true"]) .sc-cell.occupied.sc-click-target-full:hover {
     border-color: var(--warning-color, #d97706) !important;
     box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.22) !important;
 }
 
-.sc-cell.drag-over.drag-over-full::after {
+.sc-cell.drag-over.drag-over-full::after,
+#seatingChartView[data-selection-action="join"]:not([data-dragging="true"]) .sc-cell.occupied.sc-click-target-full:hover::after {
     content: 'Complet (4 max)';
     position: absolute;
     bottom: -9px;
@@ -1219,7 +1224,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 @media (hover: hover) and (min-width: 769px) {
-    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-stacked-member:hover .sc-stacked-member-remove {
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]):not([data-selection-action="swap"]):not([data-selection-action="join"]) .sc-stacked-member:hover .sc-stacked-member-remove,
+    #seatingChartView[data-locked="false"]:not([data-dragging="true"]):is([data-selection-action="swap"], [data-selection-action="join"]) .sc-cell.sc-chip-selected .sc-stacked-member:hover .sc-stacked-member-remove {
         opacity: 1;
         pointer-events: auto;
     }

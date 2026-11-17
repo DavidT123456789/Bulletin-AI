@@ -261,9 +261,6 @@ export const SeatingZoom = {
         board.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleX}, ${scaleY})`;
 
         void board.offsetWidth;
-        if (typeof window.getComputedStyle === 'function') {
-            void window.getComputedStyle(board).transform;
-        }
 
         const isPureTranslationSettle = sameScale && Math.abs(scaleX - 1) < 0.015;
         board.style.transition = (isLockToggle || isPureTranslationSettle)
@@ -359,6 +356,8 @@ export const SeatingZoom = {
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
+
+            this._clearNavigationBoundaryBounce?.();
 
             const hadPriorTransform = Boolean(board.style.transform);
             const rVisualBefore = hadPriorTransform ? (board.getBoundingClientRect?.() || null) : null;
@@ -1116,6 +1115,8 @@ export const SeatingZoom = {
 
             const board = document.getElementById('scClassroomBoard');
             if (!board) return;
+
+            this._clearNavigationBoundaryBounce?.();
 
             if (this._overscrollApexTimer) {
                 clearTimeout(this._overscrollApexTimer);

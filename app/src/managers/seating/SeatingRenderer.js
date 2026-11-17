@@ -124,6 +124,10 @@ export const SeatingRenderer = {
                 container.appendChild(this._createCell(r, c));
             }
         }
+
+        if (this._selectedChipIds?.length > 0) {
+            this._applyChipSelectionUI?.();
+        }
     },
 
     _createCell(row, col) {
@@ -320,12 +324,6 @@ export const SeatingRenderer = {
                 }
             }
 
-            const totalRows = this._getRows();
-            const depthRatio = totalRows > 1
-                ? (this._isStudentOrientation() ? (totalRows - 1 - row) / (totalRows - 1) : row / (totalRows - 1))
-                : 0.5;
-            cell.style.setProperty('--row-depth', depthRatio);
-
             const tools = document.createElement('div');
             tools.className = 'sc-cell-special-tools';
             if (!special) {
@@ -428,8 +426,12 @@ export const SeatingRenderer = {
         const selectedGridCells = this._getSelectedGridCells();
 
         if (this._selectedChipIds.length > 0 && !isThisCellSelected) {
+            if (currentlyPinned) {
+                this._clearSelection();
+                return;
+            }
             const isActivity = this._isActivityMode();
-            if (isActivity && !currentlyPinned && !this._lastSelectedGridPos) {
+            if (isActivity && selectedGridCells.length === 0) {
                 if (students.length + this._selectedChipIds.length <= MAX_ACTIVITY_GROUP_SIZE) {
                     this._joinStudentsToCell(row, col, this._selectedChipIds);
                     this._clearSelection();
@@ -451,12 +453,10 @@ export const SeatingRenderer = {
                     this._replaceOccupantWithUnplaced(row, col, selectedId);
                 }
                 this._clearSelection();
-            } else if (!currentlyPinned) {
+            } else {
                 this._selectedChipIds = [];
                 this._toggleCellSelection(row, col);
                 this._lastSelectedGridPos = { row, col };
-            } else {
-                this._clearSelection();
             }
         } else if (isThisCellSelected) {
             if (selectedGridCells.length <= 1 && this._selectedChipIds.every(id => studentIds.includes(id))) {
@@ -464,7 +464,6 @@ export const SeatingRenderer = {
             } else if (!currentlyPinned) {
                 this._selectedChipIds = [...studentIds];
                 this._lastSelectedGridPos = { row, col };
-                this._applyChipSelectionUI();
                 this._updateSelectionAttribute();
             }
         } else if (this._isMobileView() && this._selectedChipIds.length === 0) {

@@ -13,6 +13,24 @@ import { bus, EVENTS } from '../../core/EventBus.js';
 
 export const SeatingEvents = {
     /**
+     * Checks whether the focused element or a scrollable ancestor up to `.main-content`
+     * currently has horizontal scroll room to the left.
+     * @param {Element|null} target
+     * @returns {boolean}
+     */
+    _hasHorizontalScrollLeft(target) {
+        let el = target && target.nodeType === 1 ? target : null;
+        while (el && el !== document.body && el !== document.documentElement) {
+            if ((el.scrollWidth || 0) > (el.clientWidth || 0) + 2 && (el.scrollLeft || 0) > 0) {
+                return true;
+            }
+            if (el.classList?.contains('main-content')) break;
+            el = el.parentElement;
+        }
+        return false;
+    },
+
+    /**
      * Configure les event listeners du Plan de Classe
      * @param {Object} [manager=this] - Instance SeatingChartManager
      */
@@ -492,12 +510,7 @@ export const SeatingEvents = {
             let activeListContainers = [];
             let listReleaseTimer = null;
 
-            const resolveListSwipeContainers = () => Array.from(
-                document.querySelectorAll('.stats-container, #outputList, #empty-state-card, #statsPagination')
-            ).filter(el => {
-                const style = window.getComputedStyle(el);
-                return style.display !== 'none' && style.visibility !== 'hidden';
-            });
+            const resolveListSwipeContainers = () => this._getVisibleListContainers();
 
             const dampListSwipe = (delta, isNavigable) => {
                 const abs = Math.abs(delta);
@@ -551,6 +564,7 @@ export const SeatingEvents = {
                     clearTimeout(listReleaseTimer);
                     listReleaseTimer = null;
                 }
+                this._clearNavigationBoundaryBounce?.();
                 listTouchStartX = x;
                 listTouchStartY = e.touches[0].clientY;
                 listTouchValid = true;
@@ -702,6 +716,11 @@ export const SeatingEvents = {
                 const isHorizontalArrow = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
                 const isVerticalArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
                 const isArrowKey = isHorizontalArrow || isVerticalArrow;
+                const blurNavControl = () => {
+                    if (activeEl?.closest?.('#viewToggle, #headerClassChip, #scPlanModeSwitch')) {
+                        activeEl.blur?.();
+                    }
+                };
 
                 // Open unified search on '/' (when not already typing) or Ctrl+F / Cmd+F in both List and Plan views
                 if ((e.key === '/' && !isTyping && hasNoModifier) || ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key?.toLowerCase() === 'f')) {
@@ -739,21 +758,34 @@ export const SeatingEvents = {
                         !isTyping &&
                         !ClassUIManager?._isDropdownOpen &&
                         !document.querySelector('.custom-dropdown.open, #actionsDropdown.show, .action-dropdown-menu.open, .global-actions-dropdown-menu.open, #headerGenWrapper.open, #headerMenuDropdown.open')) {
-                        if (isHorizontalArrow && (hasNoModifier || hasCtrlOnly) && activeEl?.closest?.('#viewToggle, #headerClassChip, #scPlanModeSwitch')) {
-                            activeEl.blur?.();
-                        }
-                        if (e.key === 'ArrowRight' && !e.repeat && (hasNoModifier || hasCtrlOnly) && this._getCurrentClassStudents().length > 0) {
-                            e.preventDefault();
-                            if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
-                                this._planMode = 'course';
+                        const hasStudents = this._getCurrentClassStudents().length > 0;
+                        if (e.key === 'ArrowRight' && !e.repeat && (hasNoModifier || hasCtrlOnly)) {
+                            if (hasStudents) {
+                                blurNavControl();
+                                e.preventDefault();
+                                if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
+                                    this._planMode = 'course';
+                                }
+                                this.switchToView('plan');
+                            } else if (hasCtrlOnly) {
+                                e.preventDefault();
+                                this._animateNavigationBoundaryBounce?.('right');
                             }
-                            this.switchToView('plan');
+                        } else if (e.key === 'ArrowLeft' && !e.repeat && (hasNoModifier || hasCtrlOnly)) {
+                            const hasHorizontalScroll = !hasCtrlOnly && this._hasHorizontalScrollLeft(activeEl);
+                            if (!hasHorizontalScroll && (hasCtrlOnly || hasStudents)) {
+                                e.preventDefault();
+                                this._animateNavigationBoundaryBounce?.('left');
+                            }
                         } else if (isVerticalArrow && !e.repeat && hasCtrlOnly) {
                             const delta = e.key === 'ArrowDown' ? 1 : -1;
                             if (this._canSwitchAdjacentClass(delta)) {
                                 e.preventDefault();
                                 this._focusListScrollContainer();
                                 this._switchAdjacentClass(delta);
+                            } else if (!ClassUIManager?._isSwitchingClass) {
+                                e.preventDefault();
+                                this._animateNavigationBoundaryBounce?.(delta === 1 ? 'down' : 'up');
                             }
                         } else if (isVerticalArrow && hasNoModifier && !document.querySelector('.appreciation-result')) {
                             const mainContent = document.querySelector('.main-content');
@@ -799,15 +831,17 @@ export const SeatingEvents = {
                     );
 
                     if (!hasBlockingOverlay) {
-                        if (activeEl?.closest?.('#viewToggle, #headerClassChip, #scPlanModeSwitch')) {
-                            activeEl.blur?.();
-                        }
                         if (e.key === 'ArrowRight') {
                             if (this._planMode === 'course' && this._canSwitchPlanMode('activity')) {
+                                blurNavControl();
                                 e.preventDefault();
                                 this.switchPlanMode('activity');
+                            } else {
+                                e.preventDefault();
+                                this._animateNavigationBoundaryBounce?.('right');
                             }
                         } else if (e.key === 'ArrowLeft') {
+                            blurNavControl();
                             if (this._planMode === 'activity' && (!this._isLocked || this._hasClassCoursePlan())) {
                                 e.preventDefault();
                                 this.switchPlanMode('course');
@@ -818,8 +852,12 @@ export const SeatingEvents = {
                         } else if (canNavigateVertical) {
                             const delta = e.key === 'ArrowDown' ? 1 : -1;
                             if (this._canSwitchAdjacentClass(delta)) {
+                                blurNavControl();
                                 e.preventDefault();
                                 this._switchAdjacentClass(delta);
+                            } else if (!ClassUIManager?._isSwitchingClass) {
+                                e.preventDefault();
+                                this._animateNavigationBoundaryBounce?.(delta === 1 ? 'down' : 'up');
                             }
                         }
                         return;

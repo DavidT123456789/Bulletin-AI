@@ -300,7 +300,7 @@ export const SeatingDragDrop = {
                     cell.setAttribute('data-tooltip', tooltipText);
                     TooltipsUI?.updateTooltip?.(cell, tooltipText);
                 }
-                const nameEl = cell.querySelector('.sc-cell-name');
+                const nameEl = cell.querySelector('.sc-cell-name[data-tooltip]');
                 if (nameEl) {
                     nameEl.removeAttribute('data-tooltip');
                     nameEl.removeAttribute('data-tooltip-anchor');
@@ -362,9 +362,7 @@ export const SeatingDragDrop = {
 
         const targetIds = this._getCellStudentIds(targetRow, targetCol);
         if (targetIds.length === 0 || targetIds.length >= MAX_ACTIVITY_GROUP_SIZE) return false;
-
-        const posKey = this._getActivePositionKey();
-        if (targetIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return false;
+        if (this._isCellPinned(targetRow, targetCol)) return false;
 
         if (dragSource.type === 'sidebar') {
             return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 <= MAX_ACTIVITY_GROUP_SIZE);
@@ -393,9 +391,7 @@ export const SeatingDragDrop = {
 
         const targetIds = this._getCellStudentIds(targetRow, targetCol);
         if (targetIds.length === 0) return false;
-
-        const posKey = this._getActivePositionKey();
-        if (targetIds.some(id => this._studentMap?.get(id)?.[posKey]?.pinned)) return false;
+        if (this._isCellPinned(targetRow, targetCol)) return false;
 
         if (dragSource.type === 'sidebar') {
             return !targetIds.includes(dragSource.resultId) && (targetIds.length + 1 > MAX_ACTIVITY_GROUP_SIZE);
@@ -442,7 +438,7 @@ export const SeatingDragDrop = {
 
         if (type === 'multi-cell') {
             this._selectedChipIds = ids;
-            this._placeSelectedAt(targetRow, targetCol, srcRow, srcCol);
+            this._placeSelectedAt(targetRow, targetCol, srcRow, srcCol, { fromDrag: true });
             this._dragSource = null;
             return;
         }
@@ -487,9 +483,7 @@ export const SeatingDragDrop = {
         this._render();
         this._updateSelectionAttribute();
 
-        if (type === 'sidebar' || type === 'group-member') {
-            this._animateCellPlaced(targetRow, targetCol);
-        } else if (isSwap) {
+        if (isSwap) {
             this._animateCellSwap(srcRow, srcCol, targetRow, targetCol, { fromDrag: true });
         } else {
             this._animateCellPlaced(targetRow, targetCol);
@@ -845,7 +839,6 @@ export const SeatingDragDrop = {
             } else if (!isAdditive && nextIds.length === 0) {
                 this._lastSelectedGridPos = null;
             }
-            this._applyChipSelectionUI();
             this._updateSelectionAttribute();
         };
 
@@ -893,7 +886,6 @@ export const SeatingDragDrop = {
         const onKeyDown = (ev) => {
             if (ev.key === 'Escape' && hasLassoed) {
                 this._selectedChipIds = baseSelectedIds;
-                this._applyChipSelectionUI();
                 this._updateSelectionAttribute();
                 finishLasso(true);
             }
@@ -1408,15 +1400,7 @@ export const SeatingDragDrop = {
         if (isSpecial) return false;
 
         // 2. Check if there is a pinned student in this cell
-        const posKey = this._getActivePositionKey();
-        const targetIds = this._getCellStudentIds(r, c);
-        if (targetIds.length > 0) {
-            const anyPinned = targetIds.some(id => {
-                const targetStudent = this._studentMap?.get(id) || this._students.find(s => s.id === id);
-                return Boolean(targetStudent?.[posKey]?.pinned);
-            });
-            if (anyPinned) return false;
-        }
+        if (this._isCellPinned(r, c)) return false;
 
         // 3. Check if dragging cell onto itself
         const dragSource = this._dragSource || this._touchSourceInfo;
