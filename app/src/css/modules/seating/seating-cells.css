@@ -2165,7 +2165,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     :is(:root, [data-theme="dark"]) .ui-segmented-control.sc-plan-mode-switch {
+        --sc-padding: 2px;
         --sc-inactive-w: 28px;
+        height: 32px;
     }
 
     .sc-plan-mode-switch .ui-segment {
@@ -2199,6 +2201,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         top: calc(56px + 10px) !important;
         right: 12px !important;
         left: auto !important;
+        height: 32px;
+        padding: 2px;
         max-width: calc(100vw - 24px);
     }
 

@@ -915,7 +915,7 @@ export const SeatingState = {
                 label,
                 shortLabel: 'Validé',
                 dateStr,
-                icon: 'solar:lock-bold',
+                icon: 'solar:lock-linear',
                 placed: totalPlaced,
                 total,
                 unplaced
@@ -991,7 +991,7 @@ export const SeatingState = {
         pill.setAttribute('tabindex', '0');
 
         const isLocked = info.status === 'locked';
-        const iconRest = isLocked ? 'solar:lock-bold' : 'solar:test-tube-linear';
+        const iconRest = isLocked ? 'solar:lock-linear' : 'solar:test-tube-linear';
         const labelRest = isLocked ? 'Validé' : 'En test';
         const actionLabel = 'Modifier';
 
