@@ -50,7 +50,7 @@
     /* Texte : Carbone Mat (Neutre Pur R=G=B) */
     --text-primary: var(--palette-zinc-900);
     /* Neutral 900 (#171717) */
-    --text-primary-soft: color-mix(in srgb, var(--text-primary) 82%, var(--surface-color));
+    --text-primary-soft: var(--text-secondary);
     --text-secondary: #525252;
     --text-secondary-rgb: 82, 82, 82;
     /* Neutral 600 */
