@@ -250,7 +250,7 @@ export const SeatingMobileSheet = {
                             ? 'sc-chip-badge-depart'
                             : (label === 'Nouveau'
                                 ? 'sc-chip-badge-new'
-                                : (label === 'ULIS'
+                                : (label === 'ULIS' || label === 'AESH'
                                     ? 'sc-chip-badge-ulis'
                                     : (label === 'Délégué' ? 'sc-chip-badge-delegate' : 'sc-chip-badge-device')));
                         return `<span class="sc-chip-badge ${badgeClass}">${Utils.escapeHtml(label)}</span>`;

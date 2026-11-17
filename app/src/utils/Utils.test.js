@@ -638,12 +638,12 @@ describe('Utils', () => {
             });
         });
 
-        it('devrait attribuer tag-badge--ulis pour ULIS et tag-badge--device pour les autres dispositifs (PPRE, PAP, PAI, AESH)', () => {
+        it('devrait attribuer tag-badge--ulis pour ULIS et AESH, et tag-badge--device pour PPRE, PAP, PAI', () => {
             expect(Utils.getStatusBadgeInfo('ULIS')).toEqual({ className: 'tag-badge tag-badge--ulis', label: 'ULIS' });
             expect(Utils.getStatusBadgeInfo('PPRE')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PPRE' });
             expect(Utils.getStatusBadgeInfo('PAP')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PAP' });
             expect(Utils.getStatusBadgeInfo('PAI')).toEqual({ className: 'tag-badge tag-badge--device', label: 'PAI' });
-            expect(Utils.getStatusBadgeInfo('AESH')).toEqual({ className: 'tag-badge tag-badge--device', label: 'AESH' });
+            expect(Utils.getStatusBadgeInfo('AESH')).toEqual({ className: 'tag-badge tag-badge--ulis', label: 'AESH' });
         });
 
         it('devrait attribuer tag-badge--delegate pour Délégué (avec ou sans accent)', () => {

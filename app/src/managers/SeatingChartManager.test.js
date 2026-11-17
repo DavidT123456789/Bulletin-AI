@@ -194,6 +194,62 @@ describe('SeatingChartManager - Scope des places spéciales (Salle vs Classe)', 
 
         expect(SeatingChartManager._isValidDropTarget(2, 2)).toBe(true);
     });
+
+    it('devrait déplacer une place AESH vers une case vide avec Undo/Redo fonctionnel', () => {
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._initGrid(5, 6);
+        SeatingChartManager._undoStack = [];
+        SeatingChartManager._redoStack = [];
+
+        SeatingChartManager._setCellSpecialType(0, 1, 'aesh');
+        expect(SeatingChartManager._getCellSpecial(0, 1)).toEqual({ type: 'aesh', scope: 'class' });
+
+        SeatingChartManager._dragSource = { type: 'special-aesh', row: 0, col: 1 };
+        expect(SeatingChartManager._isValidDropTarget(0, 1)).toBe(false);
+        expect(SeatingChartManager._isValidDropTarget(1, 2)).toBe(true);
+
+        SeatingChartManager._handleDrop(1, 2);
+
+        expect(SeatingChartManager._getCellSpecial(0, 1)).toBeNull();
+        expect(SeatingChartManager._getCellSpecial(1, 2)).toEqual({ type: 'aesh', scope: 'class' });
+
+        // Undo : revient en (0, 1)
+        SeatingChartManager._undo();
+        expect(SeatingChartManager._getCellSpecial(0, 1)).toEqual({ type: 'aesh', scope: 'class' });
+        expect(SeatingChartManager._getCellSpecial(1, 2)).toBeNull();
+
+        // Redo : repart en (1, 2)
+        SeatingChartManager._redo();
+        expect(SeatingChartManager._getCellSpecial(0, 1)).toBeNull();
+        expect(SeatingChartManager._getCellSpecial(1, 2)).toEqual({ type: 'aesh', scope: 'class' });
+    });
+
+    it('devrait échanger une place AESH avec un élève non épinglé et bloquer le drop sur élève épinglé ou case spéciale', () => {
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._initGrid(5, 6);
+        const sUnpinned = { id: 's-unpinned', nom: 'Martin', prenom: 'Léo', classId: classA.id };
+        const sPinned = { id: 's-pinned', nom: 'Dupont', prenom: 'Camille', classId: classA.id, seatingPosition: { row: 2, col: 2, pinned: true } };
+        appState.generatedResults = [sUnpinned, sPinned];
+        SeatingChartManager._students = [sUnpinned, sPinned];
+        SeatingChartManager._studentMap = new Map([[sUnpinned.id, sUnpinned], [sPinned.id, sPinned]]);
+        SeatingChartManager._gridState[1][1] = sUnpinned.id;
+        SeatingChartManager._gridState[2][2] = sPinned.id;
+
+        SeatingChartManager._setCellSpecialType(0, 0, 'aisle');
+        SeatingChartManager._setCellSpecialType(0, 1, 'aesh');
+
+        SeatingChartManager._dragSource = { type: 'special-aesh', row: 0, col: 1 };
+        expect(SeatingChartManager._isValidDropTarget(0, 0)).toBe(false); // allée
+        expect(SeatingChartManager._isValidDropTarget(2, 2)).toBe(false); // élève épinglé
+        expect(SeatingChartManager._isValidDropTarget(1, 1)).toBe(true);  // élève non épinglé
+
+        SeatingChartManager._handleDrop(1, 1);
+
+        expect(SeatingChartManager._getCellSpecial(1, 1)).toEqual({ type: 'aesh', scope: 'class' });
+        expect(SeatingChartManager._getCellSpecial(0, 1)).toBeNull();
+        expect(SeatingChartManager._gridState[0][1]).toBe(sUnpinned.id);
+        expect(SeatingChartManager._gridState[1][1]).toBeNull();
+    });
 });
 
 describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sidebar', () => {
@@ -4031,7 +4087,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(1, 0)).toEqual(['u2']);
         });
 
-        it('devrait afficher data-tooltip sur la cellule entière (.sc-cell.occupied) en mode Édition (ancré sur .student-avatar) comme en mode Consultation', () => {
+        it('devrait ancrer data-tooltip sur la cellule entière (.sc-cell.occupied) en Édition comme en Consultation (dégage les boutons)', () => {
             SeatingChartManager.switchPlanMode('course', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('alpha-asc');
@@ -4040,21 +4096,21 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell).not.toBeNull();
             const nameEl = cell.querySelector('.sc-cell-name');
 
-            // Mode Édition : tooltip directement sur la cellule (car .sc-cell-name a pointer-events: none) ancré au-dessus de .student-avatar
+            // Mode Édition : ancrage direct sur .sc-cell (sans data-tooltip-anchor) pour dégager les boutons d'angle
             expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
-            expect(cell.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            expect(cell.getAttribute('data-tooltip-anchor')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBeNull();
 
-            // Passage en mode Consultation : tooltip conservé sur la cellule entière
+            // Passage en mode Consultation : même ancrage simple sur .sc-cell
             SeatingChartManager._applyLockState(true);
             expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
             expect(cell.getAttribute('data-tooltip-anchor')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBeNull();
 
-            // Retour en mode Édition : tooltip maintenu sur la cellule avec ancrage sur .student-avatar
+            // Retour en mode Édition : conservé sans ancre personnalisée
             SeatingChartManager._applyLockState(false);
             expect(cell.getAttribute('data-tooltip')).toBe('Alice ALPHA');
-            expect(cell.getAttribute('data-tooltip-anchor')).toBe('.student-avatar');
+            expect(cell.getAttribute('data-tooltip-anchor')).toBeNull();
             expect(nameEl.getAttribute('data-tooltip')).toBeNull();
         });
     });
@@ -4384,6 +4440,18 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 className: 'sc-badge-ulis',
                 cellClass: 'sc-cell-ulis',
                 label: 'ULIS • PAP'
+            });
+            const aeshStudent = {
+                id: 's-aesh',
+                nom: 'ROUX',
+                prenom: 'Chloé',
+                studentData: { statuses: ['AESH'] }
+            };
+            expect(SeatingChartManager._getStudentStatusBadgeInfo(aeshStudent)).toEqual({
+                type: 'ulis',
+                className: 'sc-badge-ulis',
+                cellClass: 'sc-cell-ulis',
+                label: 'AESH'
             });
             expect(SeatingChartManager._getStudentStatusBadgeInfo(delegateStudent)).toEqual({
                 type: 'delegate',

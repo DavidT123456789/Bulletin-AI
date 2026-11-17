@@ -422,6 +422,9 @@ export const SeatingAutoPlace = {
             if (sourceEl.classList.contains('sc-cell-stacked')) {
                 clone.classList.add('sc-cell', 'sc-cell-stacked');
             }
+            if (sourceEl.classList.contains('sc-cell-special-aesh')) {
+                clone.classList.add('sc-cell', 'empty', 'sc-cell-special-aesh');
+            }
             if (sourceEl.classList.contains('has-status-badge')) {
                 clone.classList.add('has-status-badge');
             }
@@ -433,7 +436,7 @@ export const SeatingAutoPlace = {
             clone.removeAttribute('data-tooltip');
             clone.removeAttribute('data-tooltip-anchor');
             clone.removeAttribute('draggable');
-            clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn').forEach(el => el.remove());
+            clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn, .sc-cell-special-tools').forEach(el => el.remove());
             clone.querySelectorAll('[id], [data-result-id], [data-tooltip], [data-tooltip-anchor], [draggable]').forEach(el => {
                 el.removeAttribute('id');
                 el.removeAttribute('data-result-id');

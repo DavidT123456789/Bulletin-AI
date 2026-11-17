@@ -89,6 +89,7 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
         expect(resolveStudentStatus('Statut Libre')).toBeNull();
 
         expect(getStatusDescription('ULIS')).toBe(STATUS_DESCRIPTIONS.ULIS);
+        expect(getStatusDescription('AESH')).toBe('Élève accompagné(e) par un(e) AESH');
         expect(getStatusDescription('Nouveau T2')).toBe(STATUS_DESCRIPTIONS.Nouveau);
         expect(getStatusDescription('Statut Libre')).toBe('Statut Libre');
         expect(getStatusDescription(null)).toBe('');

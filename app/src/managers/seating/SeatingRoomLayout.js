@@ -952,5 +952,64 @@ export const SeatingRoomLayout = {
         this._saveGridConfig();
         StorageManager.saveAppState();
         this._render();
+    },
+
+    _moveSpecialAesh(srcRow, srcCol, targetRow, targetCol) {
+        if (this._isLocked) return;
+        if (srcRow === targetRow && srcCol === targetCol) return;
+        if (this._isSpecialSpot(targetRow, targetCol)) return;
+
+        const srcKey = `${srcRow},${srcCol}`;
+        const targetKey = `${targetRow},${targetCol}`;
+        const currentClass = this._getCurrentClass();
+        const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const lockKey = this._getActiveClassLockKey();
+
+        const isClassScope = currentClass?.[classSpecialKey]?.[srcKey] === 'aesh';
+        const isGlobalScope = !isClassScope && appState[gridKey]?.specialLayout?.[srcKey] === 'aesh';
+        if (!isClassScope && !isGlobalScope) return;
+
+        const targetVal = this._gridState[targetRow]?.[targetCol] || null;
+
+        this._snapshotGrid();
+
+        if (isClassScope && currentClass?.[classSpecialKey]) {
+            delete currentClass[classSpecialKey][srcKey];
+        }
+        if (isGlobalScope && appState[gridKey]?.specialLayout) {
+            delete appState[gridKey].specialLayout[srcKey];
+        }
+
+        if (currentClass) {
+            if (!currentClass[classSpecialKey]) currentClass[classSpecialKey] = {};
+            currentClass[classSpecialKey][targetKey] = 'aesh';
+        } else {
+            if (!appState[gridKey]) appState[gridKey] = {};
+            if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+            appState[gridKey].specialLayout[targetKey] = 'aesh';
+        }
+
+        if (targetVal) {
+            this._gridState[srcRow][srcCol] = Array.isArray(targetVal) ? [...targetVal] : targetVal;
+            this._gridState[targetRow][targetCol] = null;
+        }
+
+        this._hasChangesSinceUnlock = true;
+        if (currentClass) {
+            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
+            currentClass[lockKey] = false;
+        }
+        this._dismissOnboardingHint();
+        this._savePositionsToState();
+        this._saveGridConfig();
+        StorageManager.saveAppState();
+        this._render();
+
+        if (targetVal) {
+            this._animateCellSwap(srcRow, srcCol, targetRow, targetCol, { fromDrag: true });
+        } else {
+            this._animateCellPlaced(targetRow, targetCol);
+        }
     }
 };

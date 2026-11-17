@@ -28,12 +28,12 @@ export const SeatingEvents = {
                 this._isMousePointerActive = true;
                 this._lastTouchTime = 0;
                 if (e.button === 0 && !this._isLocked && !e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, button, input, textarea')) {
-                    const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
+                    const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-cell.sc-cell-special-aesh, .sc-student-chip');
                     if (dragTarget && !dragTarget.classList.contains('pinned')) {
                         this._startMousePointerDrag(e, dragTarget);
                     } else if (
                         e.target.closest?.('#scGridArea') &&
-                        !e.target.closest?.('.sc-cell.occupied, .sc-desk, #scTopLeftBar, #scFloatingActions, .sc-onboarding-hint, #scStatusPill')
+                        !e.target.closest?.('.sc-cell.occupied, .sc-cell.sc-cell-special-aesh, .sc-desk, #scTopLeftBar, #scFloatingActions, .sc-onboarding-hint, #scStatusPill')
                     ) {
                         this._startMouseLassoSelection(e);
                     }
@@ -43,7 +43,7 @@ export const SeatingEvents = {
                 this._isMousePointerActive = false;
                 this._lastTouchTime = Date.now();
                 try { window.getSelection?.()?.removeAllRanges?.(); } catch (_) {}
-                const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-student-chip');
+                const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-cell.sc-cell-special-aesh, .sc-student-chip');
                 if (dragTarget && !this._isLocked) {
                     this._touchPressedElement = dragTarget;
                     this._setElementDraggable(dragTarget, false);

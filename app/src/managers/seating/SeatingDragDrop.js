@@ -181,6 +181,39 @@ export const SeatingDragDrop = {
         this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
     },
 
+    _attachSpecialAeshDragListeners(cell, row, col) {
+        if (!cell || cell._hasAeshDragListeners) return;
+        cell._hasAeshDragListeners = true;
+
+        cell.addEventListener('dragstart', (e) => {
+            if (this._isLocked || this._isTouchInteractionActive() || e.target.closest?.('.sc-cell-special-tools, button')) {
+                e.preventDefault();
+                return;
+            }
+            const currentRow = parseInt(cell.dataset.row, 10);
+            const currentCol = parseInt(cell.dataset.col, 10);
+            const r = isNaN(currentRow) ? row : currentRow;
+            const c = isNaN(currentCol) ? col : currentCol;
+
+            this._clearSelection();
+            this._dragSource = { type: 'special-aesh', row: r, col: c };
+            e.dataTransfer?.setData?.('text/plain', 'special-aesh');
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+            TooltipsUI?.hideAll?.();
+            this._setCleanDragImage(e, cell, 1);
+            cell.classList.add('dragging');
+        });
+
+        cell.addEventListener('dragend', () => {
+            cell.classList.remove('dragging');
+            this._dragSource = null;
+            this._clearGridDragHover?.();
+            this._removeDragClones?.();
+        });
+
+        this._addTouchDrag(cell, { type: 'special-aesh', row, col });
+    },
+
     _attachMemberAvatarDragListeners(cell, students, row, col) {
         if (!cell || !Array.isArray(students) || students.length <= 1) return;
         cell.querySelectorAll('.sc-stacked-avatar, .sc-stacked-member').forEach(memberEl => {
@@ -267,11 +300,6 @@ export const SeatingDragDrop = {
                     cell.setAttribute('data-tooltip', tooltipText);
                     TooltipsUI?.updateTooltip?.(cell, tooltipText);
                 }
-                if (this._isLocked) {
-                    cell.removeAttribute('data-tooltip-anchor');
-                } else {
-                    cell.setAttribute('data-tooltip-anchor', '.student-avatar');
-                }
                 const nameEl = cell.querySelector('.sc-cell-name');
                 if (nameEl) {
                     nameEl.removeAttribute('data-tooltip');
@@ -309,6 +337,17 @@ export const SeatingDragDrop = {
                         memberEl.setAttribute('data-tooltip-anchor', `.sc-stacked-avatar[data-result-id='${memberId}']`);
                     }
                 });
+            }
+        });
+
+        document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-special-aesh').forEach(cell => {
+            this._setElementDraggable(cell, this._isNativeDraggableAllowed());
+            if (!this._isLocked) {
+                const row = parseInt(cell.dataset.row, 10);
+                const col = parseInt(cell.dataset.col, 10);
+                if (!isNaN(row) && !isNaN(col)) {
+                    this._attachSpecialAeshDragListeners(cell, row, col);
+                }
             }
         });
     },
@@ -405,6 +444,13 @@ export const SeatingDragDrop = {
             this._selectedChipIds = ids;
             this._placeSelectedAt(targetRow, targetCol, srcRow, srcCol);
             this._dragSource = null;
+            return;
+        }
+
+        if (type === 'special-aesh') {
+            this._dragSource = null;
+            if (targetRow === srcRow && targetCol === srcCol) return;
+            this._moveSpecialAesh(srcRow, srcCol, targetRow, targetCol);
             return;
         }
 
@@ -521,7 +567,9 @@ export const SeatingDragDrop = {
             ? { ...fallbackSourceInfo }
             : (element.classList.contains('sc-student-chip')
                 ? { type: 'sidebar', resultId: element.dataset.resultId }
-                : { type: 'cell', resultId: element.dataset.resultId });
+                : (element.classList.contains('sc-cell-special-aesh')
+                    ? { type: 'special-aesh' }
+                    : { type: 'cell', resultId: element.dataset.resultId }));
 
         let cellIds = [];
         if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
@@ -949,7 +997,7 @@ export const SeatingDragDrop = {
             this._isTouchActive = true;
             this._isMousePointerActive = false;
             this._lastTouchTime = Date.now();
-            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove')) {
+            if (e.touches.length !== 1 || this._isPinching || this._isLocked || element.classList.contains('pinned') || e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-cell-special-tools, .sc-special-btn')) {
                 clearHoldTimer();
                 pendingSourceInfo = null;
                 return;
@@ -1039,7 +1087,7 @@ export const SeatingDragDrop = {
                             engageTouchDrag(touch);
                         }
                     }
-                } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member') {
+                } else if (candidateType === 'cell' || candidateType === 'multi-cell' || candidateType === 'group-member' || candidateType === 'special-aesh') {
                     if (this._isFitted) {
                         // On fitted board (no pan/scroll): engage visual ghost immediately on first touchmove frame
                         if (Math.hypot(dx, dy) >= 1) {
@@ -1373,7 +1421,7 @@ export const SeatingDragDrop = {
         // 3. Check if dragging cell onto itself
         const dragSource = this._dragSource || this._touchSourceInfo;
         if (dragSource) {
-            if ((dragSource.type === 'cell' || dragSource.type === 'group-member') && Number(dragSource.row) === r && Number(dragSource.col) === c) {
+            if ((dragSource.type === 'cell' || dragSource.type === 'group-member' || dragSource.type === 'special-aesh') && Number(dragSource.row) === r && Number(dragSource.col) === c) {
                 return false;
             }
         }

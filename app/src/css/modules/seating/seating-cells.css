@@ -183,6 +183,7 @@
 
 /* Prevent native image drag, text selection & touch callout + unify grab zone */
 .sc-cell .student-avatar,
+.sc-cell .sc-aesh-medallion,
 .sc-cell .sc-cell-name,
 .sc-cell .sc-cell-status-badge,
 .sc-cell .sc-station-badge,
@@ -300,7 +301,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 .sc-cell:not(.sc-cell-stacked) .student-avatar,
 .sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
-.sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
+.sc-touch-ghost:not(.sc-cell-stacked) .student-avatar,
+.sc-cell-special-aesh .sc-aesh-medallion {
     width: 56px;
     height: 56px;
     font-size: 1rem;
@@ -387,7 +389,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     cursor: pointer;
     opacity: 0;
     transform: scale(0.5);
-    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce);
+    transition: opacity var(--transition-fast), transform 0.2s var(--ease-bounce),
+                background var(--transition-fast), color var(--transition-fast);
     z-index: 5;
 }
 
@@ -395,10 +398,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView:not([data-dragging="true"]) .sc-cell.occupied:hover .sc-cell-remove {
         opacity: 1;
         transform: scale(1);
-    }
-
-    .sc-cell-remove:hover {
-        transform: scale(1.15) !important;
     }
 }
 
@@ -430,7 +429,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         transform: scale(1);
     }
 
+    .sc-cell-remove:hover,
     .sc-cell-pin:hover {
+        background: var(--text-primary);
         transform: scale(1.15) !important;
     }
 }
@@ -743,11 +744,72 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 }
 
-/* Special cells with designated role (AESH, Condamnée) — constant native intensity */
-.sc-cell.empty.sc-cell-special-aesh,
+/* Special cells with designated role (AESH, Condamnée) */
+.sc-cell.empty.sc-cell-special-aesh {
+    opacity: 1;
+    border: 1.5px solid rgba(var(--purple-rgb), 0.18);
+    background: color-mix(in srgb, var(--purple-color) 5%, var(--surface-color));
+    transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s, transform 0.15s var(--ease-spring);
+}
+
+[data-theme="dark"] .sc-cell.empty.sc-cell-special-aesh {
+    border-color: rgba(var(--purple-rgb), 0.18);
+    background: color-mix(in srgb, var(--purple-color) 6%, var(--surface-color));
+}
+
+#seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh {
+    cursor: grab;
+    touch-action: none;
+}
+
+#seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh:active {
+    cursor: grabbing;
+}
+
+.sc-aesh-medallion {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--purple-rgb), 0.12);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .sc-aesh-medallion {
+    background: rgba(var(--purple-rgb), 0.15);
+    box-shadow: none;
+}
+
+.sc-cell-special-aesh .sc-special-icon {
+    color: #7e22ce;
+    font-size: 1.45rem;
+    margin-bottom: 0;
+    opacity: 1;
+}
+
+[data-theme="dark"] .sc-cell-special-aesh .sc-special-icon {
+    color: var(--purple-color);
+}
+
+.sc-cell-special-aesh .sc-cell-name {
+    color: #7e22ce;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .sc-cell-special-aesh .sc-cell-name {
+    color: color-mix(in srgb, var(--purple-color) 85%, var(--text-secondary));
+}
+
 .sc-cell.empty.sc-cell-special-blocked {
-    opacity: 0.72;
+    opacity: 0.78;
+    border: 1.5px dashed var(--border-color-strong);
+    background: var(--bg-secondary);
     transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
+}
+
+[data-theme="dark"] .sc-cell.empty.sc-cell-special-blocked {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-aesh,
@@ -755,43 +817,20 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     pointer-events: none;
 }
 
-/* Edit mode: cell restores full opacity on hover so overlay tool buttons have 100% luminance */
+/* Edit mode: restore full opacity on hover so overlay tool buttons have 100% luminance */
 @media (hover: hover) {
-    #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-aesh:hover,
     #seatingChartView[data-locked="false"]:not([data-dragging="true"]) .sc-cell.empty.sc-cell-special-blocked:hover {
         opacity: 1;
     }
 }
 
-.sc-cell.empty.sc-cell-special-aesh {
-    border-style: solid;
-    border-color: rgba(var(--purple-rgb), 0.35);
-    background: color-mix(in srgb, var(--purple-color) 8%, var(--surface-color));
-}
-
-.sc-cell.empty.sc-cell-special-aesh .sc-special-icon {
-    color: var(--purple-color);
-    opacity: 0.95;
-}
-
-.sc-cell.empty.sc-cell-special-aesh .sc-cell-name {
-    color: var(--purple-color);
-    font-weight: 600;
-}
-
-.sc-cell.empty.sc-cell-special-blocked {
-    border-style: solid;
-    border-color: rgba(var(--error-rgb), 0.35);
-    background: color-mix(in srgb, var(--error-color) 8%, var(--surface-color));
-}
-
-.sc-cell.empty.sc-cell-special-blocked .sc-special-icon {
-    color: var(--error-color);
-    opacity: 0.95;
+.sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+.sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    color: var(--text-tertiary);
+    opacity: 0.9;
 }
 
 .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
-    color: var(--error-color);
     font-weight: 600;
 }
 
@@ -835,15 +874,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 .sc-cell-scope-badge.scope-class {
-    background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-color);
-    border: 1px dashed rgba(var(--error-rgb), 0.4);
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
+    border: 1px dashed var(--border-color-strong);
 }
 
 .sc-cell-scope-badge.scope-global {
-    background: rgba(var(--error-rgb), 0.16);
-    color: var(--error-color);
-    border: 1px solid rgba(var(--error-rgb), 0.35);
+    background: var(--tonal-hover-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color-strong);
 }
 
 .sc-cell-special-tools {
@@ -889,27 +928,22 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 @media (hover: hover) {
     .sc-special-btn:hover {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
-        color: var(--text-on-primary);
-        transform: scale(1.15);
+        background: var(--bg-tertiary);
+        border-color: var(--border-color-hover);
+        color: var(--text-primary);
+        transform: scale(1.12);
     }
 
     .sc-special-btn[data-type="aesh"]:hover {
-        background: var(--purple-color);
-        border-color: var(--purple-color);
-        color: white;
+        background: rgba(var(--purple-rgb), 0.14);
+        border-color: rgba(var(--purple-rgb), 0.42);
+        color: #7e22ce;
     }
 
-    .sc-special-btn[data-type="blocked"]:hover {
-        background: var(--error-color);
-        border-color: var(--error-color);
-    }
-
-    .sc-special-btn[data-type="normal"]:hover {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
-        color: var(--text-on-primary);
+    [data-theme="dark"] .sc-special-btn[data-type="aesh"]:hover {
+        background: color-mix(in srgb, var(--purple-color) 24%, var(--bg-tertiary));
+        border-color: rgba(var(--purple-rgb), 0.5);
+        color: var(--color-violet-bright, #c4b5fd);
     }
 }
 
@@ -1659,7 +1693,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         break-inside: avoid;
     }
 
-    body[data-print-mode="seating"] .sc-cell:not(.sc-cell-stacked) .student-avatar {
+    body[data-print-mode="seating"] .sc-cell:not(.sc-cell-stacked) .student-avatar,
+    body[data-print-mode="seating"] .sc-cell-special-aesh .sc-aesh-medallion {
         width: 42px !important;
         height: 42px !important;
         font-size: 0.8rem !important;
@@ -1675,6 +1710,27 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         background: rgba(0, 0, 0, 0.02) !important;
         opacity: 0.8 !important;
         box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important;
+    }
+
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-aesh {
+        border: 1.5px solid #9333ea !important;
+        background: #faf5ff !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+    }
+
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-aesh .sc-aesh-medallion {
+        background: #9333ea !important;
+        border: none !important;
+    }
+
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-aesh .sc-special-icon {
+        color: #ffffff !important;
+        font-size: 1.15rem !important;
+    }
+
+    body[data-print-mode="seating"] .sc-cell.empty.sc-cell-special-aesh .sc-cell-name {
+        color: #7e22ce !important;
     }
 
     body[data-print-mode="seating"] #seatingChartView[data-plan-mode="activity"] .sc-cell.empty:not([class*="sc-cell-special-"]),
@@ -2032,10 +2088,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     .sc-cell:not(.sc-cell-stacked) .student-avatar,
     .sc-drag-clone:not(.sc-cell-stacked) .student-avatar,
-    .sc-touch-ghost:not(.sc-cell-stacked) .student-avatar {
+    .sc-touch-ghost:not(.sc-cell-stacked) .student-avatar,
+    .sc-cell-special-aesh .sc-aesh-medallion {
         width: 40px;
         height: 40px;
         font-size: 0.75rem;
+    }
+
+    .sc-cell-special-aesh .sc-special-icon {
+        font-size: 1.15rem;
     }
 
     .sc-cell-name,

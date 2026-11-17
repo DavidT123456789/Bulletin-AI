@@ -159,9 +159,6 @@ export const SeatingRenderer = {
             const tooltipText = this._getStudentTooltipText(student, undefined, classInfo);
 
             cell.setAttribute('data-tooltip', tooltipText);
-            if (!this._isLocked) {
-                cell.setAttribute('data-tooltip-anchor', '.student-avatar');
-            }
 
             const statusBadgeHTML = badgeInfo
                 ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
@@ -298,10 +295,15 @@ export const SeatingRenderer = {
                 cell.classList.add(`sc-cell-special-${special.type}`);
                 cell.classList.add(`sc-cell-scope-${special.scope}`);
                 if (special.type === 'aesh') {
+                    cell.setAttribute('aria-label', 'Place réservée AESH');
+                    cell.draggable = this._isNativeDraggableAllowed();
                     cell.innerHTML = `
-                        <iconify-icon icon="solar:user-speak-rounded-linear" class="sc-special-icon"></iconify-icon>
+                        <div class="sc-aesh-medallion" aria-hidden="true">
+                            <iconify-icon icon="solar:user-speak-rounded-linear" class="sc-special-icon"></iconify-icon>
+                        </div>
                         <span class="sc-cell-name">AESH</span>
                     `;
+                    this._attachSpecialAeshDragListeners?.(cell, row, col);
                 } else if (special.type === 'blocked') {
                     const isClassScope = special.scope === 'class';
                     const currentClass = this._getCurrentClass();
@@ -643,7 +645,7 @@ export const SeatingRenderer = {
         if (dotsConfig.devices) {
             const devices = this._getStudentDeviceStatuses(studentResult);
             if (devices.length > 0) {
-                if (devices.includes('ULIS')) {
+                if (devices.includes('ULIS') || devices.includes('AESH')) {
                     return { type: 'ulis', className: 'sc-badge-ulis', cellClass: 'sc-cell-ulis', label: devices.join(' • ') };
                 }
                 return { type: 'device', className: 'sc-badge-device', cellClass: 'sc-cell-device', label: devices.join(' • ') };
