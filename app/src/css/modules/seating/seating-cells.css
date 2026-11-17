@@ -747,14 +747,15 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 /* Special cells with designated role (AESH, Condamnée) */
 .sc-cell.empty.sc-cell-special-aesh {
     opacity: 1;
-    border: 1.5px solid rgba(var(--purple-rgb), 0.18);
-    background: color-mix(in srgb, var(--purple-color) 5%, var(--surface-color));
+    border: 1.5px solid transparent;
+    background: color-mix(in srgb, var(--purple-color) 7%, var(--surface-color));
+    box-shadow: var(--shadow-sm);
     transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s, transform 0.15s var(--ease-spring);
 }
 
 [data-theme="dark"] .sc-cell.empty.sc-cell-special-aesh {
-    border-color: rgba(var(--purple-rgb), 0.18);
-    background: color-mix(in srgb, var(--purple-color) 6%, var(--surface-color));
+    border-color: transparent;
+    background: color-mix(in srgb, var(--purple-color) 8%, var(--surface-color));
 }
 
 #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh {
