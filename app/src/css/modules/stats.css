@@ -620,7 +620,7 @@
     font-family: var(--font-sans);
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--text-primary-soft);
     line-height: 1.15;
     letter-spacing: -0.02em;
     margin-bottom: 0;
@@ -772,13 +772,9 @@
     transition: transform 0.35s var(--ease-spring);
 }
 
-/* Couleurs sémantiques minérales directes (actives en S2/T2+ dès qu'au moins 1 élève est dans la catégorie) */
+/* Couleurs sémantiques minérales directes (actives en S2/T2+ dès qu'au moins 1 élève est dans la catégorie ; Stables hérite de --text-primary-soft) */
 .evolution-card:not(.is-empty) .legend-item[data-filter-id="progressCount"]:not([data-count="0"]) .legend-count {
     color: var(--grade-range-16-20);
-}
-
-.evolution-card:not(.is-empty) .legend-item[data-filter-id="stableCount"]:not([data-count="0"]) .legend-count {
-    color: var(--text-secondary);
 }
 
 .evolution-card:not(.is-empty) .legend-item[data-filter-id="regressionCount"]:not([data-count="0"]) .legend-count {
@@ -926,7 +922,7 @@
     font-size: 0.68rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--text-secondary);
+    color: var(--text-primary-soft);
     line-height: 1;
     margin-bottom: 5px;
     flex-shrink: 0;

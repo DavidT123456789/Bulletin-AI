@@ -1055,7 +1055,7 @@
     text-overflow: ellipsis;
     font-size: 13px;
     line-height: 1.55;
-    color: var(--text-secondary);
+    color: var(--text-primary-soft);
     padding: 0 8px;
     background: transparent;
     border: none;

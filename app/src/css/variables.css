@@ -50,6 +50,7 @@
     /* Texte : Carbone Mat (Neutre Pur R=G=B) */
     --text-primary: var(--palette-zinc-900);
     /* Neutral 900 (#171717) */
+    --text-primary-soft: color-mix(in srgb, var(--text-primary) 82%, var(--surface-color));
     --text-secondary: #525252;
     --text-secondary-rgb: 82, 82, 82;
     /* Neutral 600 */
@@ -498,6 +499,7 @@
 
     --text-primary: #f6f6f7;
     /* Obsidian 100 (+1 bleu) */
+    --text-primary-soft: color-mix(in srgb, var(--text-primary) 82%, var(--surface-color));
     --text-secondary: #a2a2a4;
     /* Obsidian 400 (+2 bleu) */
     --text-secondary-rgb: 162, 162, 164;
