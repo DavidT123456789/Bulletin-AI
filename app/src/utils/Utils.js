@@ -863,11 +863,7 @@ export const Utils = {
      */
     getStudentOriginInfo(result, currentClassName = '') {
         const originClass = this.getOriginClass(result, currentClassName);
-        const originGroup = this.resolveDistinctGroup(
-            this.getOriginGroup(result, currentClassName, originClass),
-            originClass,
-            currentClassName
-        );
+        const originGroup = this.getOriginGroup(result, currentClassName, originClass);
         return { originClass, originGroup };
     },
 

@@ -782,11 +782,10 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 [data-theme="dark"] .sc-aesh-medallion {
     background: rgba(var(--purple-rgb), 0.15);
-    box-shadow: none;
 }
 
 .sc-cell-special-aesh .sc-special-icon {
-    color: #7e22ce;
+    color: var(--color-violet-deep);
     font-size: 1.45rem;
     margin-bottom: 0;
     opacity: 1;
@@ -797,7 +796,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 .sc-cell-special-aesh .sc-cell-name {
-    color: #7e22ce;
+    color: var(--color-violet-deep);
     font-weight: 600;
 }
 
@@ -942,7 +941,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-special-btn[data-type="aesh"]:hover {
         background: rgba(var(--purple-rgb), 0.14);
         border-color: rgba(var(--purple-rgb), 0.42);
-        color: #7e22ce;
+        color: var(--color-violet-deep);
     }
 
     [data-theme="dark"] .sc-special-btn[data-type="aesh"]:hover {

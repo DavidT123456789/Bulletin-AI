@@ -279,13 +279,16 @@
         order: 4;
     }
 
-    .focus-header.editing>.focus-save-btn {
-        order: 2;
-        margin-left: auto;
-    }
-
+    .focus-header.editing>.focus-save-btn,
     .focus-header.editing>.focus-close-btn {
         order: 2;
+        width: 38px;
+        height: 32px;
+        margin-top: 0;
+    }
+
+    .focus-header.editing>.focus-save-btn {
+        margin-left: auto;
     }
 
     .focus-analyze-btn,
@@ -672,5 +675,17 @@
         width: 100%;
         height: 100%;
         pointer-events: auto;
+    }
+
+    /* Expand merged pill touch targets outward so they never overlap across the center divider */
+    .focus-header.editing .focus-save-btn::after {
+        left: auto;
+        right: 0;
+        transform: translateY(-50%);
+    }
+
+    .focus-header.editing .focus-close-btn::after {
+        left: 0;
+        transform: translateY(-50%);
     }
 }

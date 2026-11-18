@@ -551,7 +551,7 @@
 .status-pill-check:has(input[value="AESH"]:checked) {
     background: rgba(147, 51, 234, 0.14);
     border-color: rgba(147, 51, 234, 0.3);
-    color: #6d28d9;
+    color: var(--color-violet-deep);
     box-shadow: none;
 }
 

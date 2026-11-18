@@ -481,7 +481,7 @@
 .tag-badge.tag-badge--ulis,
 .sc-chip-badge-ulis {
     background: rgba(147, 51, 234, 0.11);
-    color: #6d28d9;
+    color: var(--color-violet-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--ulis,

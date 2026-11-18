@@ -540,6 +540,7 @@
 .focus-nav-btn {
     width: 32px;
     height: 32px;
+    padding: 0;
     border-radius: 50%;
     border: none;
     background: transparent;
@@ -594,30 +595,57 @@
     margin-left: auto;
 }
 
-/* --- SAVE & CANCEL (Edit Mode) --- */
+/* --- SAVE & CANCEL (Edit Mode — Unified Tonal Pill [ ✓ | × ] aligned to inputs) --- */
 .focus-save-btn {
     display: none;
-    color: var(--success-color, #22c55e);
 }
 
 .focus-header.editing .focus-save-btn,
 .focus-header.editing .focus-close-btn {
+    width: 40px;
+    height: 32px;
+    margin-top: 2px;
     background: var(--tonal-bg);
 }
 
 .focus-header.editing .focus-save-btn {
     display: flex;
-    animation: focusHeaderControlSpringIn 0.34s var(--ease-spring);
+    margin-right: -10px;
+    padding-left: 2px;
+    border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+    border-right: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition:
+        opacity 0.22s var(--ease-spring),
+        background-color var(--transition-fast),
+        color var(--transition-fast);
+
+    @starting-style {
+        opacity: 0;
+    }
 }
 
-.focus-header.editing .focus-save-btn:hover {
-    color: var(--success-bright, var(--success-color));
-    background: var(--success-light);
+.focus-header.editing .focus-close-btn {
+    padding-right: 2px;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    color: var(--text-secondary);
 }
 
-.focus-header.editing .focus-close-btn:hover {
-    color: var(--error-bright, var(--error-color));
-    background: var(--error-light);
+@media (hover: hover) and (pointer: fine) {
+    .focus-header.editing :is(.focus-save-btn, .focus-close-btn):hover:not(:disabled) {
+        background: var(--tonal-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.focus-header.editing :is(.focus-save-btn, .focus-close-btn):active:not(:disabled) {
+    transform: none;
+    background: var(--tonal-active-bg);
+}
+
+.focus-header.editing :is(.focus-save-btn, .focus-close-btn):focus-visible {
+    position: relative;
+    z-index: 1;
 }
 
 .focus-nav-btn:disabled {

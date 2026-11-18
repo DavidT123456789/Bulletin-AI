@@ -1485,7 +1485,7 @@ button.analysis-placeholder:focus-visible {
 .synthesis-list li[contenteditable="true"],
 .analysis-card-body li[contenteditable="true"] {
     cursor: text;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
     transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
 }
 

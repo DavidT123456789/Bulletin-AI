@@ -594,8 +594,9 @@ export const SeatingSidebar = {
                </div>`
             : filtered.map((s, index) => {
                 const badgeInfo = this._getStudentStatusBadgeInfo(s);
+                const badgeParts = badgeInfo ? badgeInfo.label.split(' • ') : [];
                 const chipBadgeLabel = badgeInfo
-                    ? (badgeInfo.type === 'ulis' ? 'ULIS' : badgeInfo.label.split(' • ')[0])
+                    ? (badgeParts.includes('ULIS') ? 'ULIS' : (badgeParts.includes('AESH') ? 'AESH' : badgeParts[0]))
                     : '';
                 const chipBadgeHtml = badgeInfo
                     ? `<span class="sc-chip-badge sc-chip-badge-${badgeInfo.type}">${Utils.escapeHtml(chipBadgeLabel)}</span>`

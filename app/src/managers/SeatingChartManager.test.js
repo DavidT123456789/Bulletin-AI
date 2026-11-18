@@ -4602,6 +4602,32 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
         });
 
+        it('devrait afficher la pastille AESH (et non ULIS) dans la barre latérale pour un élève AESH non placé', () => {
+            const prevDots = appState.seatingStatusDots;
+            const prevStudents = SeatingChartManager._students;
+            const prevGrid = SeatingChartManager._gridState;
+            try {
+                appState.seatingStatusDots = { movements: true, devices: true, delegates: false };
+                SeatingChartManager._initGrid(2, 2);
+                SeatingChartManager._students = [
+                    { id: 'sb-aesh', nom: 'ROUX', prenom: 'Chloé', studentData: { statuses: ['AESH'] } },
+                    { id: 'sb-pap-aesh', nom: 'LUCAS', prenom: 'Nolan', studentData: { statuses: ['PAP', 'AESH'] } },
+                    { id: 'sb-ulis', nom: 'BERNARD', prenom: 'Léo', studentData: { statuses: ['ULIS', 'PAP'] } }
+                ];
+
+                SeatingChartManager._renderSidebar();
+
+                const listEl = document.getElementById('scStudentList');
+                expect(listEl.querySelector('.sc-student-chip[data-result-id="sb-aesh"] .sc-chip-badge-ulis')?.textContent).toBe('AESH');
+                expect(listEl.querySelector('.sc-student-chip[data-result-id="sb-pap-aesh"] .sc-chip-badge-ulis')?.textContent).toBe('AESH');
+                expect(listEl.querySelector('.sc-student-chip[data-result-id="sb-ulis"] .sc-chip-badge-ulis')?.textContent).toBe('ULIS');
+            } finally {
+                appState.seatingStatusDots = prevDots;
+                SeatingChartManager._students = prevStudents;
+                SeatingChartManager._gridState = prevGrid;
+            }
+        });
+
         it('devrait basculer entre Cours et Activité par glissement horizontal (swipe) en mode Consultation ajusté uniquement si un plan Activité existe', () => {
             SeatingChartManager.switchToView('plan');
             SeatingChartManager.switchPlanMode('course', { animate: false });

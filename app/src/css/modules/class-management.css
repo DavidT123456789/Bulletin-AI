@@ -1506,10 +1506,12 @@
     color: var(--text-secondary);
 }
 
-.inline-delete-btn.cancel:hover,
-.inline-action-btn.cancel:hover {
-    background: var(--tonal-hover-bg);
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    .inline-delete-btn.cancel:hover,
+    .inline-action-btn.cancel:hover {
+        background: var(--tonal-hover-bg);
+        color: var(--text-primary);
+    }
 }
 
 .inline-delete-btn.confirm {
@@ -1518,9 +1520,11 @@
     box-shadow: 0 2px 6px rgba(var(--error-rgb), 0.2);
 }
 
-.inline-delete-btn.confirm:hover {
-    background-color: color-mix(in srgb, var(--error-color), white 9%);
-    box-shadow: 0 4px 10px rgba(var(--error-rgb), 0.3);
+@media (hover: hover) and (pointer: fine) {
+    .inline-delete-btn.confirm:hover {
+        background-color: color-mix(in srgb, var(--error-color), white 9%);
+        box-shadow: 0 4px 10px rgba(var(--error-rgb), 0.3);
+    }
 }
 
 .inline-delete-btn.confirm:active {

@@ -850,13 +850,28 @@ export const SeatingRoomLayout = {
         return !!this._getCellSpecial(row, col);
     },
 
+    _commitSpecialLayoutChange(currentClass = this._getCurrentClass(), { savePositions = false } = {}) {
+        const lockKey = this._getActiveClassLockKey();
+        this._hasChangesSinceUnlock = true;
+        if (currentClass) {
+            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
+            currentClass[lockKey] = false;
+        }
+        if (savePositions) {
+            this._dismissOnboardingHint();
+            this._savePositionsToState();
+        }
+        this._saveGridConfig();
+        StorageManager.saveAppState();
+        this._render();
+    },
+
     _setCellSpecialType(row, col, type) {
         this._snapshotGrid();
         const key = `${row},${col}`;
         const currentClass = this._getCurrentClass();
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
-        const lockKey = this._getActiveClassLockKey();
 
         if (!type) {
             // Rétablir : libérer des deux niveaux (global et classe)
@@ -902,14 +917,7 @@ export const SeatingRoomLayout = {
             }
         }
 
-        this._hasChangesSinceUnlock = true;
-        if (currentClass) {
-            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
-            currentClass[lockKey] = false;
-        }
-        this._saveGridConfig();
-        StorageManager.saveAppState();
-        this._render();
+        this._commitSpecialLayoutChange(currentClass);
     },
 
     _toggleBlockedScope(row, col) {
@@ -919,7 +927,6 @@ export const SeatingRoomLayout = {
         const className = currentClass?.name || 'la classe';
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
-        const lockKey = this._getActiveClassLockKey();
 
         const isGlobal = !!appState[gridKey]?.specialLayout?.[key];
         const isClass = !!currentClass?.[classSpecialKey]?.[key];
@@ -944,14 +951,7 @@ export const SeatingRoomLayout = {
             }
         }
 
-        this._hasChangesSinceUnlock = true;
-        if (currentClass) {
-            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
-            currentClass[lockKey] = false;
-        }
-        this._saveGridConfig();
-        StorageManager.saveAppState();
-        this._render();
+        this._commitSpecialLayoutChange(currentClass);
     },
 
     _moveSpecialAesh(srcRow, srcCol, targetRow, targetCol) {
@@ -964,7 +964,6 @@ export const SeatingRoomLayout = {
         const currentClass = this._getCurrentClass();
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
-        const lockKey = this._getActiveClassLockKey();
 
         const isClassScope = currentClass?.[classSpecialKey]?.[srcKey] === 'aesh';
         const isGlobalScope = !isClassScope && appState[gridKey]?.specialLayout?.[srcKey] === 'aesh';
@@ -995,16 +994,7 @@ export const SeatingRoomLayout = {
             this._gridState[targetRow][targetCol] = null;
         }
 
-        this._hasChangesSinceUnlock = true;
-        if (currentClass) {
-            currentClass[this._getActiveClassUpdatedKey()] = Date.now();
-            currentClass[lockKey] = false;
-        }
-        this._dismissOnboardingHint();
-        this._savePositionsToState();
-        this._saveGridConfig();
-        StorageManager.saveAppState();
-        this._render();
+        this._commitSpecialLayoutChange(currentClass, { savePositions: true });
 
         if (targetVal) {
             this._animateCellSwap(srcRow, srcCol, targetRow, targetCol, { fromDrag: true });

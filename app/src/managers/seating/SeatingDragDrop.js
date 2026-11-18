@@ -978,7 +978,7 @@ export const SeatingDragDrop = {
             } else {
                 element.classList.add('dragging');
             }
-            if (pendingSourceInfo.resultId && !this._selectedChipIds.includes(pendingSourceInfo.resultId)) {
+            if (pendingSourceInfo.type === 'special-aesh' || (pendingSourceInfo.resultId && !this._selectedChipIds.includes(pendingSourceInfo.resultId))) {
                 this._clearSelection();
             }
             this._highlightCellUnderTouch(touchPoint.clientX, touchPoint.clientY);
