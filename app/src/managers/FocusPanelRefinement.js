@@ -71,7 +71,15 @@ export const FocusPanelRefinement = {
      */
     _setSecondaryControlsDisabled(disabled) {
         for (const id of ['focusCopyBtn', 'focusAppreciationSpeakBtn', 'focusAppreciationMicBtn']) {
-            document.getElementById(id)?.classList.toggle('disabled', disabled);
+            const el = document.getElementById(id);
+            if (!el) continue;
+            el.classList.toggle('disabled', disabled);
+            if (id === 'focusCopyBtn') {
+                el.disabled = false;
+                el.setAttribute('aria-disabled', String(disabled));
+            } else if (!disabled) {
+                el.disabled = false;
+            }
         }
     },
 
@@ -121,8 +129,8 @@ export const FocusPanelRefinement = {
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
+                <div class="modal-body" tabindex="0">
+                    <div class="prompt-preview-content">${escapedText}</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>

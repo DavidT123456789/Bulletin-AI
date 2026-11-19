@@ -265,6 +265,100 @@ describe('FocusPanelManager and Save State integrity', () => {
             vi.useRealTimers();
         });
 
+        it('adapts #focusCopyBtn actions and restores Prompt label when appreciation is empty', () => {
+            vi.useFakeTimers();
+            try {
+                appState.generatedResults[0].appreciation = '';
+                appState.generatedResults[0].studentData.periods.T1.appreciation = '';
+
+                const copyPromptSpy = vi.spyOn(FocusPanelManager, '_copyPromptToClipboard').mockImplementation(() => {
+                    FocusPanelManager._flashCopyFeedback('copied-prompt', 'Prompt copié !');
+                });
+                const previewSpy = vi.spyOn(FocusPanelManager, '_showPromptPreview').mockImplementation(() => {});
+                const copyAppSpy = vi.spyOn(FocusPanelManager, 'copy').mockImplementation(() => {});
+
+                FocusPanelManager.open('student-1');
+
+                const copyBtn = document.getElementById('focusCopyBtn');
+                const labelEl = copyBtn.querySelector('.btn-copy-label');
+
+                // Empty state: Prompt mode active
+                expect(copyBtn.dataset.copyMode).toBe('prompt');
+                expect(copyBtn.disabled).toBe(false);
+                expect(labelEl.textContent).toBe('Prompt');
+
+                // Left click copies prompt and restores 'Prompt' after timeout
+                copyBtn.click();
+                expect(copyPromptSpy).toHaveBeenCalledTimes(1);
+                expect(copyAppSpy).not.toHaveBeenCalled();
+                expect(labelEl.textContent).toBe('Prompt copié !');
+
+                vi.advanceTimersByTime(1600);
+                expect(labelEl.textContent).toBe('Prompt');
+                expect(copyBtn.classList.contains('copied-prompt')).toBe(false);
+
+                // Right click in empty state opens prompt preview
+                copyBtn.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+                expect(previewSpy).toHaveBeenCalledTimes(1);
+
+                // Typing/pasting an appreciation switches both buttons cleanly (Prompt→Copier, Générer→Régénérer)
+                const appreciationEl = document.getElementById('focusAppreciationText');
+                const generateBtn = document.getElementById('focusGenerateBtn');
+                expect(generateBtn.textContent).toContain('Générer');
+
+                appreciationEl.textContent = 'Appréciation collée depuis ChatGPT.';
+                appreciationEl.dispatchEvent(new Event('input', { bubbles: true }));
+
+                expect(copyBtn.dataset.copyMode).toBe('appreciation');
+                expect(labelEl.textContent).toBe('Copier');
+                expect(generateBtn.textContent).toContain('Régénérer');
+
+                // Left click copies appreciation, right click copies prompt
+                copyBtn.click();
+                expect(copyAppSpy).toHaveBeenCalledTimes(1);
+
+                copyBtn.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+                expect(copyPromptSpy).toHaveBeenCalledTimes(2);
+
+                // Clearing the appreciation immediately syncs both buttons back (Copier→Prompt, Régénérer→Générer)
+                appreciationEl.textContent = '';
+                appreciationEl.dispatchEvent(new Event('input', { bubbles: true }));
+
+                expect(copyBtn.dataset.copyMode).toBe('prompt');
+                expect(generateBtn.textContent).toContain('Générer');
+            } finally {
+                vi.restoreAllMocks();
+                vi.useRealTimers();
+            }
+        });
+
+        it('deanonymizes [PRÉNOM] on paste from external AI and preserves student classId in prepareStudentData', () => {
+            appState.generatedResults[0].classId = 'class-3b';
+            appState.generatedResults[0].appreciation = '';
+            appState.generatedResults[0].studentData.periods.T1.appreciation = '';
+
+            FocusPanelManager.open('student-1');
+
+            const prepared = FocusPanelManager._prepareStudentData('student-1', 'T1', appState.generatedResults[0]);
+            expect(prepared.classId).toBe('class-3b');
+
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const range = document.createRange();
+            range.selectNodeContents(appreciationEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            const pasteEvent = new Event('paste', { bubbles: true, cancelable: true });
+            Object.defineProperty(pasteEvent, 'clipboardData', {
+                value: { getData: () => '[PRÉNOM] [NOM] progresse très bien ce trimestre.' }
+            });
+            appreciationEl.dispatchEvent(pasteEvent);
+
+            expect(appreciationEl.textContent).toBe('Jean progresse très bien ce trimestre.');
+            expect(document.getElementById('focusGenerateBtn').textContent).toContain('Régénérer');
+        });
+
         it('ignores generate button clicks within 350ms of generation start to prevent accidental cancellation', () => {
             const cancelSpy = vi.spyOn(FocusPanelManager, '_cancelGenerationForStudent').mockImplementation(() => {});
             FocusPanelManager.currentStudentId = 'student-1';

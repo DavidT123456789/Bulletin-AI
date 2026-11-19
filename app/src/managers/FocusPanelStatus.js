@@ -14,6 +14,19 @@ import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
+const COPY_BUTTON_MODES = {
+    prompt: {
+        label: 'Prompt',
+        tooltip: 'Copier le prompt · Clic droit : aperçu',
+        ariaLabel: 'Copier le prompt'
+    },
+    appreciation: {
+        label: 'Copier',
+        tooltip: 'Clic droit : copier le prompt',
+        ariaLabel: "Copier l'appréciation"
+    }
+};
+
 /**
  * Module de gestion des badges et indicateurs du Focus Panel
  * @namespace FocusPanelStatus
@@ -543,12 +556,7 @@ export const FocusPanelStatus = {
                 });
             }
 
-            const copyBtn = document.getElementById('focusCopyBtn');
-            if (copyBtn) {
-                copyBtn.disabled = shouldDisable;
-                copyBtn.classList.toggle('disabled', shouldDisable);
-                copyBtn.style.display = isEmpty ? 'none' : 'inline-flex';
-            }
+            this.syncCopyButton({ isEmpty, isGenerating });
 
             const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
             if (speakBtn) {
@@ -596,6 +604,47 @@ export const FocusPanelStatus = {
             if (charCount !== null) {
                 UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car. • Cliquer pour ajuster la longueur`);
             }
+        }
+    },
+
+    /**
+     * Retourne le libellé par défaut du bouton #focusCopyBtn selon son mode courant.
+     * @param {HTMLElement|null} copyBtn
+     * @returns {string}
+     */
+    getCopyButtonDefaultLabel(copyBtn) {
+        const mode = copyBtn?.dataset?.copyMode === 'prompt' ? 'prompt' : 'appreciation';
+        return COPY_BUTTON_MODES[mode].label;
+    },
+
+    /**
+     * Synchronise le bouton adaptatif #focusCopyBtn (Prompt à vide, Copier quand rempli).
+     * @param {Object} options
+     * @param {boolean} options.isEmpty - True si l'appréciation est vide
+     * @param {boolean} [options.isGenerating=false] - True pendant une génération IA
+     */
+    syncCopyButton({ isEmpty, isGenerating = false }) {
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (!copyBtn) return;
+
+        const mode = isEmpty ? 'prompt' : 'appreciation';
+        const config = COPY_BUTTON_MODES[mode];
+
+        copyBtn.dataset.copyMode = mode;
+        copyBtn.disabled = false;
+        copyBtn.classList.toggle('disabled', isGenerating);
+        copyBtn.setAttribute('aria-disabled', String(isGenerating));
+        copyBtn.setAttribute('aria-label', config.ariaLabel);
+
+        if (typeof UI?.updateTooltip === 'function') {
+            UI.updateTooltip(copyBtn, config.tooltip);
+        } else {
+            copyBtn.setAttribute('data-tooltip', config.tooltip);
+        }
+
+        if (!copyBtn.classList.contains('copied') && !copyBtn.classList.contains('copied-prompt')) {
+            const labelEl = copyBtn.querySelector('.btn-copy-label');
+            if (labelEl) labelEl.textContent = config.label;
         }
     },
 

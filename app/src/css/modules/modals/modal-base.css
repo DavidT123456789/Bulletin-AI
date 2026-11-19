@@ -821,6 +821,7 @@
     padding: 20px 24px;
     overflow-y: auto;
     max-height: 72vh;
+    outline: none;
 }
 
 .prompt-preview-content {
@@ -834,7 +835,6 @@
     overflow-wrap: break-word;
     user-select: text;
     cursor: text;
-    outline: none;
     text-rendering: optimizeLegibility;
 }
 

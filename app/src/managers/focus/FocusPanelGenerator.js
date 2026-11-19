@@ -17,7 +17,6 @@ import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 
 const COPY_FEEDBACK_MS = 1500;
 const COPY_BUTTON_ICON = 'solar:copy-linear';
-const COPY_BUTTON_LABEL = 'Copier';
 
 export const FocusPanelGenerator = {
     /**
@@ -78,22 +77,37 @@ export const FocusPanelGenerator = {
     },
 
     /**
+     * Résout le prompt d'appréciation de l'élève courant (retourne null si contexte invalide)
+     * @param {Object} panel - Instance FocusPanelManager
+     * @param {Object} [options]
+     * @param {boolean} [options.notifyIfMissingStudent=false]
+     * @returns {string|null}
+     * @private
+     */
+    _resolveCurrentPrompt(panel, { notifyIfMissingStudent = false } = {}) {
+        if (!this._commitEditingHeaderIfNeeded(panel)) return null;
+        if (!panel.currentStudentId) {
+            if (notifyIfMissingStudent) UI.showNotification('Aucun élève sélectionné', 'warning');
+            return null;
+        }
+
+        const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
+        if (!result) return null;
+
+        const studentData = panel._prepareStudentData(panel.currentStudentId, appState.currentPeriod, result);
+        studentData.generatedAppreciation = '';
+
+        const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
+        return prompts.appreciation || '';
+    },
+
+    /**
      * Affiche une prévisualisation du prompt qui serait envoyé à l'IA
      * @param {Object} panel - Instance FocusPanelManager
      */
     async showPromptPreview(panel) {
-        if (!this._commitEditingHeaderIfNeeded(panel)) return;
-        if (!panel.currentStudentId) return;
-
-        const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
-        if (!result) return;
-
-        const currentPeriod = appState.currentPeriod;
-        const studentData = panel._prepareStudentData(panel.currentStudentId, currentPeriod, result);
-        studentData.generatedAppreciation = '';
-
-        const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
-        const promptText = prompts.appreciation || '';
+        const promptText = this._resolveCurrentPrompt(panel);
+        if (promptText === null) return;
 
         await panel._displayPromptModal(promptText);
     },
@@ -103,21 +117,8 @@ export const FocusPanelGenerator = {
      * @param {Object} panel - Instance FocusPanelManager
      */
     async copyPromptToClipboard(panel) {
-        if (!this._commitEditingHeaderIfNeeded(panel)) return;
-        if (!panel.currentStudentId) {
-            UI.showNotification('Aucun élève sélectionné', 'warning');
-            return;
-        }
-
-        const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
-        if (!result) return;
-
-        const currentPeriod = appState.currentPeriod;
-        const studentData = panel._prepareStudentData(panel.currentStudentId, currentPeriod, result);
-        studentData.generatedAppreciation = '';
-
-        const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
-        const promptText = prompts.appreciation || '';
+        const promptText = this._resolveCurrentPrompt(panel, { notifyIfMissingStudent: true });
+        if (promptText === null) return;
 
         if (!promptText) {
             UI.showNotification('Impossible de générer le prompt', 'warning');
@@ -144,6 +145,7 @@ export const FocusPanelGenerator = {
     prepareStudentData(studentId, period, result) {
         return {
             id: studentId,
+            classId: result.classId ?? result.studentData?.classId ?? appState.currentClassId,
             nom: result.nom,
             prenom: result.prenom,
             statuses: result.studentData.statuses || [],
@@ -466,7 +468,11 @@ export const FocusPanelGenerator = {
         }
 
         const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) copyBtn.classList.add('disabled');
+        if (copyBtn) {
+            copyBtn.disabled = false;
+            copyBtn.classList.add('disabled');
+            copyBtn.setAttribute('aria-disabled', 'true');
+        }
 
         const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
         if (speakBtn) speakBtn.classList.add('disabled');
@@ -566,6 +572,6 @@ export const FocusPanelGenerator = {
         copyBtn.classList.remove('copied', 'copied-prompt');
         copyBtn.querySelector('iconify-icon')?.setAttribute('icon', COPY_BUTTON_ICON);
         const labelEl = copyBtn.querySelector('.btn-copy-label');
-        if (labelEl) labelEl.textContent = COPY_BUTTON_LABEL;
+        if (labelEl) labelEl.textContent = FocusPanelStatus.getCopyButtonDefaultLabel(copyBtn);
     }
 };

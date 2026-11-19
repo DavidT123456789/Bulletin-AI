@@ -1478,6 +1478,42 @@ describe('ModalUIManager', () => {
             unsub();
             personalizationModal.remove();
         });
+
+        it('should focus the initial element with preventScroll so scrollable modal bodies stay at the top', () => {
+            vi.useFakeTimers();
+            try {
+                const modal = document.createElement('div');
+                modal.id = 'promptPreviewModal';
+                modal.className = 'modal modal-prompt-preview';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close-button">X</button>
+                        </div>
+                        <div class="modal-body" tabindex="0">
+                            <div class="prompt-preview-content">Ligne 1\nLigne 2</div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                const body = modal.querySelector('.modal-body');
+                Object.defineProperty(body, 'offsetParent', { configurable: true, value: modal });
+                body.scrollTop = 120;
+                const focusSpy = vi.spyOn(body, 'focus');
+
+                ModalUI.openModal(modal);
+                expect(body.scrollTop).toBe(0);
+
+                vi.advanceTimersByTime(160);
+                expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
+
+                ModalUI.closeModal(modal);
+                modal.remove();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
     });
 });
 

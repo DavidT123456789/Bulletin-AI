@@ -674,8 +674,7 @@ export const FocusPanelManager = {
             const hasExistingApp = Boolean(result.studentData?.periods?.[currentPeriod]?.appreciation?.trim());
             const refinementOptions = document.getElementById('focusRefinementOptions');
             if (refinementOptions) refinementOptions.style.display = hasExistingApp ? 'flex' : 'none';
-            const copyBtn = document.getElementById('focusCopyBtn');
-            if (copyBtn) copyBtn.style.display = hasExistingApp ? 'inline-flex' : 'none';
+            FocusPanelStatus.syncCopyButton({ isEmpty: !hasExistingApp, isGenerating: true });
             this._showAppreciationSkeleton();
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
             const generateBtn = document.getElementById('focusGenerateBtn');

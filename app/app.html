@@ -890,7 +890,7 @@
                         </div>
                         <div id="focusAppreciationText" class="focus-appreciation-text empty" contenteditable="true"
                             role="textbox" aria-multiline="true" aria-label="Appréciation de l'élève"
-                            data-placeholder="Aucune appréciation générée. Cliquez sur 'Générer' ci-dessous."></div>
+                            data-placeholder="Saisissez, collez ou générez une appréciation ci-dessous."></div>
 
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
@@ -908,13 +908,14 @@
                             </button>
                         </div>
 
-                        <!-- Inline actions: Copy (icon) + Generate (wide pill) -->
+                        <!-- Inline actions: Adaptive Copy/Prompt + Generate -->
                         <div class="focus-appreciation-actions">
-                            <button type="button" id="focusCopyBtn" class="btn btn-neutral tooltip" disabled style="display: none;"
-                                data-tooltip="Clic droit : copier le prompt"
-                                aria-label="Copier l'appréciation">
+                            <button type="button" id="focusCopyBtn" class="btn btn-neutral tooltip"
+                                data-copy-mode="prompt"
+                                data-tooltip="Copier le prompt · Clic droit : aperçu"
+                                aria-label="Copier le prompt">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon>
-                                <span class="btn-copy-label">Copier</span>
+                                <span class="btn-copy-label">Prompt</span>
                             </button>
                             <button type="button" id="focusGenerateBtn" class="btn btn-ai tooltip"
                                 data-tooltip="Clic droit : prévisualiser le prompt">
@@ -941,7 +942,8 @@
 
                     <!-- RIGHT ZONE: Generate + Print + Nav + Close -->
                     <div class="focus-analysis-header-right">
-                        <button type="button" id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn">
+                        <button type="button" id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn tooltip"
+                            data-tooltip="Clic droit : prévisualiser le prompt">
                             <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                         </button>
                         <button type="button" id="focusAnalysisPrintBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"

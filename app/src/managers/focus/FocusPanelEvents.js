@@ -197,13 +197,21 @@ export const FocusPanelEvents = {
         if (copyBtn) {
             copyBtn.addEventListener('click', (e) => {
                 if (copyBtn.classList.contains('disabled')) return;
-                panel.copy();
+                if (copyBtn.dataset.copyMode === 'prompt') {
+                    panel._copyPromptToClipboard();
+                } else {
+                    panel.copy();
+                }
                 blurOnPointerClick(copyBtn, e);
             });
             copyBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (copyBtn.classList.contains('disabled')) return;
-                panel._copyPromptToClipboard();
+                if (copyBtn.dataset.copyMode === 'prompt') {
+                    panel._showPromptPreview();
+                } else {
+                    panel._copyPromptToClipboard();
+                }
                 copyBtn.blur();
             });
         }
@@ -426,6 +434,7 @@ export const FocusPanelEvents = {
                         }
                     }
 
+                    panel._updateGenerateButton(result);
                     clearTimeout(panel._appreciationUITimeout);
                     panel._appreciationUITimeout = setTimeout(() => {
                         result.promptHash = PromptService.getPromptHash({
@@ -471,6 +480,7 @@ export const FocusPanelEvents = {
 
                         if (result.wasGenerated === false) {
                             FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                            panel._updateGenerateButton(result);
                             FocusPanelStatus.updateSourceIndicator(result);
                             panel._updateListRow(result);
                         } else {
@@ -492,7 +502,12 @@ export const FocusPanelEvents = {
             appreciationText.addEventListener('paste', (e) => {
                 e.preventDefault();
                 const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-                const cleanText = text.replace(/^[\r\n]+|[\r\n]+$/g, '');
+                const trimmedText = text.replace(/^[\r\n]+|[\r\n]+$/g, '');
+                const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
+                const studentPrenom = result?.studentData?.prenom || result?.prenom || '';
+                const cleanText = studentPrenom
+                    ? PromptService.deanonymizeText(trimmedText, studentPrenom)
+                    : trimmedText;
 
                 const selection = window.getSelection();
                 if (!selection.rangeCount) return;

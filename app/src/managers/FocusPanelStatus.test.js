@@ -396,5 +396,43 @@ describe('FocusPanelStatus', () => {
             expect(appreciationEl.querySelector('.appreciation-skeleton')).not.toBeNull();
             expect(appreciationEl.classList.contains('empty')).toBe(false);
         });
+
+        it('bascule #focusCopyBtn entre le mode Prompt (vide, actif) et Copier (rempli) sans écraser un feedback actif', () => {
+            document.body.innerHTML += `
+                <button id="focusCopyBtn"><iconify-icon icon="solar:copy-linear"></iconify-icon><span class="btn-copy-label">Copier</span></button>
+            `;
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const copyBtn = document.getElementById('focusCopyBtn');
+            const labelEl = copyBtn.querySelector('.btn-copy-label');
+
+            // État vide : mode prompt actif (non désactivé)
+            appreciationEl.textContent = '';
+            FocusPanelStatus.updateWordCount();
+
+            expect(copyBtn.dataset.copyMode).toBe('prompt');
+            expect(copyBtn.disabled).toBe(false);
+            expect(copyBtn.classList.contains('disabled')).toBe(false);
+            expect(copyBtn.getAttribute('aria-label')).toBe('Copier le prompt');
+            expect(labelEl.textContent).toBe('Prompt');
+
+            // Transition vers rempli pendant un flash .copied-prompt : met à jour le mode sans écraser le libellé temporaire
+            copyBtn.classList.add('copied-prompt');
+            labelEl.textContent = 'Prompt copié !';
+            appreciationEl.textContent = 'Très bon trimestre.';
+            FocusPanelStatus.updateWordCount();
+
+            expect(copyBtn.dataset.copyMode).toBe('appreciation');
+            expect(labelEl.textContent).toBe('Prompt copié !');
+            expect(FocusPanelStatus.getCopyButtonDefaultLabel(copyBtn)).toBe('Copier');
+
+            // Sans flash actif : affiche le libellé Copier et désactive visuellement/ARIA pendant une génération (sans native disabled pour préserver les tooltips)
+            copyBtn.classList.remove('copied-prompt');
+            FocusPanelStatus.syncCopyButton({ isEmpty: false, isGenerating: true });
+
+            expect(copyBtn.disabled).toBe(false);
+            expect(copyBtn.classList.contains('disabled')).toBe(true);
+            expect(copyBtn.getAttribute('aria-disabled')).toBe('true');
+            expect(labelEl.textContent).toBe('Copier');
+        });
     });
 });

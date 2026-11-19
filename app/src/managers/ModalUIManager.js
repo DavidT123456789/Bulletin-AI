@@ -486,7 +486,7 @@ export const ModalUI = {
             // Fallback: si seul le bouton close existe (ou aucun), prendre le premier
             if (!focusable && focusableElements.length > 0) focusable = focusableElements[0];
 
-            if (focusable) focusable.focus();
+            if (focusable) focusable.focus({ preventScroll: true });
         }, 150);
 
         // Delay tooltip re-enabling until AFTER focus is set (150ms)
