@@ -215,8 +215,8 @@ export const ListSelectionManager = {
             }
 
             if (isNewToolbar) {
-                // Initialize tooltips for the new toolbar
-                TooltipsUI.initTooltips();
+                // Initialize tooltips for the new toolbar only
+                TooltipsUI.initTooltips(toolbar);
 
                 // Trigger animation
                 requestAnimationFrame(() => {
@@ -685,7 +685,7 @@ export const ListSelectionManager = {
         // Count existing data for dynamic sublabels
         const students = ids.map(id => results.find(r => r.id === id)).filter(Boolean);
         const withAppreciation = students.filter(s => {
-            const app = s.studentData?.periods?.[currentPeriod]?.appreciation || s.appreciation;
+            const app = Utils.getPeriodAppreciation(s, currentPeriod);
             return app && app.replace(/<[^>]*>/g, '').trim().length > 0;
         }).length;
         const withJournal = students.filter(s => s.journal?.length > 0).length;
@@ -799,21 +799,24 @@ export const ListSelectionManager = {
             if (!student) return;
 
             if (clearAppreciation) {
-                const app = student.studentData?.periods?.[currentPeriod]?.appreciation || student.appreciation;
+                const app = Utils.getPeriodAppreciation(student, currentPeriod);
                 if (app && app.replace(/<[^>]*>/g, '').trim().length > 0) {
-                    student.appreciation = '';
+                    const affectsRootCache = !student.generationPeriod || student.generationPeriod === currentPeriod;
+                    if (affectsRootCache) {
+                        student.appreciation = '';
+                        student.copied = false;
+                        student.promptHash = null;
+                        student.generationSnapshot = null;
+                        student.generationPeriod = null;
+                        student.wasGenerated = false;
+                        student.historyState = null;
+                        student.appreciationSource = null;
+                    }
                     if (student.studentData?.periods?.[currentPeriod]) {
                         student.studentData.periods[currentPeriod].appreciation = '';
                         student.studentData.periods[currentPeriod]._lastModified = now;
                     }
                     student._lastModified = now;
-                    student.copied = false;
-                    student.promptHash = null;
-                    student.generationSnapshot = null;
-                    student.generationPeriod = null;
-                    student.wasGenerated = false;
-                    student.historyState = null;
-                    student.appreciationSource = null;
                     if (student.historyPerPeriod?.[currentPeriod]) {
                         student.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
                     }

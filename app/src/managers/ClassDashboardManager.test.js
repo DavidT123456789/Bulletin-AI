@@ -671,4 +671,139 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(systemPrompt).toContain('bilan de fin d\'année');
         expect(userPrompt).toContain('• Trajectoire annuelle des moyennes : T1 : 10.0/20 → T2 : 12.0/20 → T3 : 14.0/20');
     });
+
+    it('reconstruit la synthèse depuis rawText et neutralise toute charge XSS injectée dans analyses[period].content ou originalContent', () => {
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <div id="aiSynthesisContent"></div>
+                <button id="generateSynthesisBtn" style="display: none;"></button>
+                <button id="copyDashboardSynthesisBtn" style="display: none;"></button>
+                <button id="revertSynthesisBtn" style="display: none;"></button>
+                <div id="aiRefinementToolbar" style="display: none;"></div>
+            </div>
+        `;
+        ClassDashboardManager.modal = document.getElementById('classDashboardModal');
+        appState.currentClassId = 'class-xss';
+        appState.currentPeriod = 'T2';
+
+        // 1. Avec rawText présent : content malveillant est entièrement ignoré et reconstruit depuis rawText
+        const rawPayload = JSON.stringify({
+            synthesis: 'Bilan sain <script>alert(1)</script>',
+            strengths: ['Sérieux <img src=x onerror=alert(2)>'],
+            vigilances: [],
+            recommendations: []
+        });
+        appState.classes = [{
+            id: 'class-xss',
+            name: '3ème XSS',
+            analyses: {
+                T2: {
+                    content: '<img src=x onerror=alert(99)><script>window.__xss=1</script>',
+                    originalContent: '<svg onload=alert(100)></svg>',
+                    rawText: rawPayload,
+                    originalRawText: rawPayload
+                }
+            }
+        }];
+
+        ClassDashboardManager.restoreOrResetAISection();
+        const content = document.getElementById('aiSynthesisContent');
+        expect(content.querySelector('script')).toBeNull();
+        expect(content.querySelector('img')).toBeNull();
+        expect(content.querySelector('svg')).toBeNull();
+        expect(content.querySelector('.synthesis-intro-text').textContent).toContain('Bilan sain <script>alert(1)</script>');
+        expect(content.querySelector('.synthesis-list li').textContent).toContain('Sérieux <img src=x onerror=alert(2)>');
+
+        // 2. Sauvegarde legacy sans rawText : les balises/attributs dangereux sont purgés, le texte sûr est préservé
+        ClassDashboardManager.cachedSynthesisHTML = null;
+        appState.classes[0].analyses.T2 = {
+            content: '<p onclick="alert(1)">Synthèse legacy sûre</p><img src=x onerror=alert(2)><script>alert(3)</script><iframe src="javascript:alert(4)"></iframe>',
+            originalContent: '<p onmouseover="alert(5)">Origine legacy</p><svg onload="alert(6)"></svg>'
+        };
+
+        ClassDashboardManager.restoreOrResetAISection();
+        expect(content.querySelector('script')).toBeNull();
+        expect(content.querySelector('img')).toBeNull();
+        expect(content.querySelector('iframe')).toBeNull();
+        expect(content.querySelector('p').getAttribute('onclick')).toBeNull();
+        expect(content.querySelector('p').textContent).toBe('Synthèse legacy sûre');
+        expect(ClassDashboardManager.originalSynthesisHTML).not.toContain('onmouseover');
+        expect(ClassDashboardManager.originalSynthesisHTML).not.toContain('<svg');
+        expect(ClassDashboardManager.originalSynthesisHTML).toContain('Origine legacy');
+    });
+
+    it('ne fait pas fuiter l\'appréciation T1 dans T2 quand T2 n\'a qu\'une note', () => {
+        appState.currentClassId = 'class-1';
+        appState.currentPeriod = 'T2';
+        appState.generatedResults = [
+            {
+                id: 's-t1-leak',
+                classId: 'class-1',
+                nom: 'Durand',
+                prenom: 'Lina',
+                appreciation: 'Appréciation du T1',
+                generationPeriod: 'T1',
+                studentData: {
+                    periods: {
+                        T1: { grade: 12, appreciation: 'Appréciation du T1' },
+                        T2: { grade: 15 }
+                    }
+                }
+            }
+        ];
+
+        const students = ClassDashboardManager.getStudentsData();
+        expect(students).toHaveLength(1);
+        expect(students[0].appreciation).toBe('');
+    });
+
+    it('persiste et restaure la synthèse IA d\'une classe virtuelle (virtual_*) et enregistre response.modelUsed en fallback', async () => {
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <div id="aiSynthesisContent"></div>
+                <button id="generateSynthesisBtn"></button>
+                <div id="aiRefinementToolbar"></div>
+                <button id="revertSynthesisBtn"></button>
+                <button id="copyDashboardSynthesisBtn"></button>
+                <span id="dashboardClassBadge"></span>
+            </div>
+        `;
+        appState.currentClassId = 'virtual_3e1';
+        appState.currentPeriod = 'T2';
+        appState.currentAIModel = 'primary-model';
+        appState.virtualClassAnalyses = {};
+        appState.classes = [
+            { id: 'grp-1', name: '3e1 Gr1', isGroup: true },
+            { id: 'grp-2', name: '3e1 Gr2', isGroup: true }
+        ];
+        appState.generatedResults = [
+            { id: 's1', classId: 'grp-1', nom: 'A', prenom: 'One', studentData: { classe: '3e1', periods: { T2: { grade: 14 } } } },
+            { id: 's2', classId: 'grp-2', nom: 'B', prenom: 'Two', studentData: { classe: '3e1', periods: { T2: { grade: 12 } } } }
+        ];
+
+        vi.spyOn(UI, 'checkAPIKeyPresence').mockReturnValue(true);
+        vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => { el.innerHTML = html; });
+        vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+        vi.spyOn(AIService, 'callAIWithFallback').mockResolvedValueOnce({
+            text: JSON.stringify({ synthesis: 'Bilan 3e1 complet', strengths: ['Dynamisme'], vigilances: [], recommendations: [] }),
+            modelUsed: 'fallback-model'
+        });
+
+        ClassDashboardManager._ensureModal();
+        const students = ClassDashboardManager.getStudentsData();
+        expect(students).toHaveLength(2);
+        ClassDashboardManager.cachedStats = ClassDashboardManager.calculateStatistics(students, ClassDashboardManager._getFullClassRoster());
+
+        await ClassDashboardManager.generateAISynthesis();
+
+        expect(appState.virtualClassAnalyses.virtual_3e1?.T2).toBeDefined();
+        expect(appState.virtualClassAnalyses.virtual_3e1.T2.model).toBe('fallback-model');
+        expect(ClassDashboardManager.cachedSynthesisModel).toBe('fallback-model');
+        expect(StorageManager.saveAppState).toHaveBeenCalled();
+
+        // Vide le cache mémoire et vérifie la restauration depuis appState.virtualClassAnalyses
+        ClassDashboardManager.cachedSynthesisHTML = null;
+        ClassDashboardManager.restoreOrResetAISection();
+        expect(document.getElementById('aiSynthesisContent').textContent).toContain('Bilan 3e1 complet');
+    });
 });

@@ -11,6 +11,7 @@ import { JournalManager } from './JournalManager.js';
 import { ClassManager } from './ClassManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
+import { Utils } from '../utils/Utils.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { bus, EVENTS } from '../core/EventBus.js';
@@ -534,25 +535,19 @@ export const FocusPanelJournal = {
                 const html = aggregated.map(item => {
                     const isBelow = item.count < threshold;
                     const belowClass = isBelow ? 'below-threshold' : '';
+                    const escapedLabel = Utils.escapeHtml(item.label);
                     return `
-                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}" data-tooltip="${item.label} : ${item.count}">
+                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}" data-tooltip="${escapedLabel} : ${item.count}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
 
+                TooltipsUI.cleanupTooltipsIn(countBadge);
                 countBadge.innerHTML = html;
                 countBadge.classList.remove('is-hidden');
-
-                // Initialize tooltips for the new elements manually since they are created dynamically
-                setTimeout(() => {
-                    countBadge.querySelectorAll('[data-tooltip]').forEach(tag => {
-                        const tooltipText = tag.getAttribute('data-tooltip');
-                        if (tooltipText) {
-                            TooltipsUI.updateTooltip(tag, tooltipText);
-                        }
-                    });
-                }, 50);
+                TooltipsUI.initTooltips(countBadge);
             } else {
+                TooltipsUI.cleanupTooltipsIn(countBadge);
                 countBadge.innerHTML = '';
                 countBadge.classList.add('is-hidden');
                 this.closeThresholdPopover();

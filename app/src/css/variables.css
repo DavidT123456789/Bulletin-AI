@@ -146,6 +146,7 @@
 
     /* --- Couleurs Sémantiques (Vives mais dosées) --- */
     --success-color: #10b981;
+    --success-text: var(--color-emerald-deep);
     --success-dark: #16a34a;
     --success-bright: #22c55e;
     --success-rgb: 16, 185, 129;
@@ -153,6 +154,7 @@
     --success-light: rgba(16, 185, 129, 0.15);
 
     --warning-color: #f59e0b;
+    --warning-text: var(--color-amber-deep);
     --warning-dark: #ca8a04;
     --warning-bright: #facc15;
     --warning-rgb: 245, 158, 11;
@@ -550,8 +552,10 @@
     --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
 
     /* --- Semantic Colors (Dark Mode) --- */
+    --success-text: var(--color-emerald);
     --success-dark: #4ade80;
     --success-bright: #34d399;
+    --warning-text: var(--color-amber);
     --warning-dark: #facc15;
     --warning-bright: #fbbf24;
     --error-bright: #ff6b6b;

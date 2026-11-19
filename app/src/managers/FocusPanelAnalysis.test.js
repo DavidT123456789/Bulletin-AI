@@ -355,4 +355,22 @@ describe('FocusPanelAnalysis - État du bouton, isolation par période et éditi
             'Édition saisie juste avant fermeture'
         ]);
     });
+
+    it('préserve le nœud <button class="analysis-placeholder"> d\'une autre carte vide lors du focusout pour éviter un double-clic', () => {
+        currentStudentId = 'student-2';
+        appState.generatedResults[1].analysisPerPeriod.T1.weaknesses = [];
+        FocusPanelAnalysis.show();
+
+        const placeholderBefore = document.querySelector('#analysisWeaknessesContent button.analysis-placeholder[data-analysis-add="weaknesses"]');
+        expect(placeholderBefore).not.toBeNull();
+
+        const forceLi = document.querySelector('#analysisForcesContent li');
+        forceLi._initialTextBeforeEdit = 'Participation active';
+        forceLi.textContent = 'Participation encore plus active';
+        FocusPanelAnalysis.commitEditableBlur(forceLi);
+
+        const placeholderAfter = document.querySelector('#analysisWeaknessesContent button.analysis-placeholder[data-analysis-add="weaknesses"]');
+        expect(placeholderAfter).toBe(placeholderBefore);
+        expect(placeholderAfter.isConnected).toBe(true);
+    });
 });

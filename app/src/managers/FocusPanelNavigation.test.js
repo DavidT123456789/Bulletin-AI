@@ -325,5 +325,93 @@ describe('FocusPanelNavigation', () => {
 
             vi.useRealTimers();
         });
+
+        it('ignores touches starting in the left edge-swipe zone (< 30px) and inside focused contenteditable elements', () => {
+            const { container, content } = setupSwipeDom();
+            content.innerHTML = '<div id="focusAppreciationText" contenteditable="true">Texte</div>';
+            const editable = document.getElementById('focusAppreciationText');
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 1;
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: vi.fn(),
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn()
+            });
+
+            // 1. Edge swipe starting at clientX = 12 (< 30px) must be ignored by student swipe
+            dispatchTouch(container, 'touchstart', 12, 200);
+            dispatchTouch(container, 'touchmove', 160, 200);
+            dispatchTouch(container, 'touchend', 160, 200);
+            expect(currentIndex).toBe(1);
+
+            // 2. Touch on focused contenteditable must not trigger student swipe
+            editable.focus();
+            const touchStart = new Event('touchstart', { bubbles: true });
+            touchStart.touches = [{ clientX: 250, clientY: 200 }];
+            editable.dispatchEvent(touchStart);
+            dispatchTouch(container, 'touchmove', 100, 200);
+            dispatchTouch(container, 'touchend', 100, 200);
+            expect(currentIndex).toBe(1);
+        });
+
+        it('respects prefers-reduced-motion without cloning DOM and cancels pending rAF via cancelActiveTransition()', () => {
+            const { content } = setupSwipeDom();
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 0;
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: vi.fn(),
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn()
+            });
+
+            const origMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+            try {
+                FocusPanelNavigation.navigateNext();
+                expect(currentIndex).toBe(1);
+                expect(FocusPanelNavigation._activeClone).toBeNull();
+                expect(content.style.opacity).toBe('');
+            } finally {
+                window.matchMedia = origMatchMedia;
+            }
+
+            // Without reduced motion, cancelActiveTransition cleans up rAF + clone + inline opacity
+            window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+            const cancelRafSpy = vi.spyOn(window, 'cancelAnimationFrame');
+            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42);
+            try {
+                FocusPanelNavigation.navigatePrev();
+                expect(FocusPanelNavigation._activeClone).not.toBeNull();
+                expect(FocusPanelNavigation._activeClone.getAttribute('aria-hidden')).toBe('true');
+                FocusPanelNavigation.cancelActiveTransition();
+                expect(cancelRafSpy).toHaveBeenCalledWith(42);
+                expect(FocusPanelNavigation._activeClone).toBeNull();
+                expect(content.style.opacity).toBe('');
+            } finally {
+                rafSpy.mockRestore();
+                cancelRafSpy.mockRestore();
+                window.matchMedia = origMatchMedia;
+            }
+        });
     });
 });

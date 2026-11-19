@@ -461,7 +461,7 @@
 
 .ui-badge-success {
     background: rgba(var(--success-rgb), 0.1);
-    color: var(--success-color);
+    color: var(--success-text);
     border-color: rgba(16, 185, 129, 0.2);
 }
 
@@ -473,7 +473,7 @@
 
 .ui-badge-warning {
     background: rgba(245, 158, 11, 0.1);
-    color: var(--warning-color);
+    color: var(--warning-text);
     border-color: rgba(245, 158, 11, 0.2);
 }
 
@@ -909,6 +909,7 @@
 }
 
 .ui-floating-capsule .ui-floating-capsule-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -934,6 +935,14 @@
     font-size: 1rem;
 }
 
+@media (max-width: 768px) {
+    .ui-floating-capsule .ui-floating-capsule-btn::after {
+        content: '';
+        position: absolute;
+        inset: -8px 0;
+    }
+}
+
 @media (hover: hover) and (pointer: fine) {
     .ui-floating-capsule .ui-floating-capsule-btn:not(:disabled):not(.disabled):hover {
         background: var(--tonal-hover-bg);
@@ -941,7 +950,7 @@
     }
 }
 
-.ui-floating-capsule .ui-floating-capsule-btn:active {
+.ui-floating-capsule .ui-floating-capsule-btn:not(:disabled):not(.disabled):active {
     transform: scale(0.9);
 }
 
@@ -949,6 +958,9 @@
 .ui-floating-capsule .ui-floating-capsule-btn.disabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+
+.ui-floating-capsule .ui-floating-capsule-btn:disabled {
     pointer-events: none;
 }
 

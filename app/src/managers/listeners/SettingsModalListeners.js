@@ -739,7 +739,7 @@ export const SettingsModalListeners = {
             const instructions = data.periods?.[currentPeriod]?.context || '';
             const statusBadges = data.statuses?.map(s => {
                 const info = Utils.getStatusBadgeInfo(s);
-                return `<span class="${info.className}">${info.label}</span>`;
+                return `<span class="${info.className}">${Utils.escapeHtml(info.label)}</span>`;
             }).join(' ') || '';
 
             const newContent = `
@@ -859,6 +859,7 @@ export const SettingsModalListeners = {
                 modelUsed: result.modelUsed || appState.currentAIModel,
                 tokenUsage: {
                     appreciation: result.usage,
+                    analysis: null,
                     generationTimeMs: result.generationTimeMs
                 }
             };

@@ -130,11 +130,11 @@
 
 .header-gen-dashboard.fallback-active .dash-model-label {
     background: rgba(var(--warning-rgb), 0.15);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .header-gen-dashboard.fallback-active .dash-model-label i {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 

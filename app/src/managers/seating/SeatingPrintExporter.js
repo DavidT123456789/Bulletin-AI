@@ -5,7 +5,9 @@
 
 import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
+import { DOMHelper } from '../../utils/DOMHelper.js';
 import { UI } from '../UIManager.js';
+import { TooltipsUI } from '../TooltipsManager.js';
 
 export const SeatingPrintExporter = {
     // ========================================================================
@@ -20,10 +22,9 @@ export const SeatingPrintExporter = {
         const studentCount = activeStudents.length;
         const dateStr = new Date().toLocaleDateString('fr-FR');
 
-        const originalTitle = document.title;
         const safeName = className.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-');
         const filePrefix = this._isActivityMode() ? 'Plan-activite' : 'Plan-de-classe';
-        document.title = `${filePrefix}_${safeName}_${new Date().toISOString().slice(0, 10)}`;
+        const title = `${filePrefix}_${safeName}_${new Date().toISOString().slice(0, 10)}`;
 
         const placed = activeStudents.filter(s => this._getPlacedIds().has(s.id)).length;
         const unplaced = Math.max(0, studentCount - placed);
@@ -56,34 +57,32 @@ export const SeatingPrintExporter = {
             ${unplacedHtml}
         `;
 
-        const pageStyle = document.createElement('style');
-        pageStyle.textContent = '@page { size: landscape; margin: 0 !important; }';
-        document.head.appendChild(pageStyle);
-        document.body.dataset.printMode = 'seating';
-
         const view = document.getElementById('seatingChartView');
-        view?.insertBefore(header, view.firstChild);
-
         const shouldCropForPrint = isActivity && !this._isLocked;
-        if (shouldCropForPrint) {
-            this._isPrinting = true;
-            this._renderGrid();
-        }
 
-        const cleanup = () => {
-            if (shouldCropForPrint) {
-                this._isPrinting = false;
-                this._renderGrid();
+        DOMHelper.runPrintSession({
+            mode: 'seating',
+            title,
+            pageCss: '@page { size: landscape; margin: 0 !important; }',
+            setup: () => {
+                view?.insertBefore(header, view.firstChild);
+                if (shouldCropForPrint) {
+                    this._isPrinting = true;
+                    this._renderGrid();
+                }
+            },
+            cleanup: () => {
+                if (shouldCropForPrint) {
+                    this._isPrinting = false;
+                    this._renderGrid();
+                    TooltipsUI?.initTooltips?.(document.getElementById('scGridContainer'));
+                    if (this._activeSearchTerm) {
+                        this._applySearchHighlight?.(this._activeSearchTerm);
+                    }
+                }
+                header.remove();
             }
-            document.title = originalTitle;
-            delete document.body.dataset.printMode;
-            header.remove();
-            pageStyle.remove();
-            window.onafterprint = null;
-        };
-
-        window.onafterprint = cleanup;
-        window.print();
+        });
         if (placed >= 8) {
             UI?.recordSupportMilestone?.('seating-action', 1, { classId: classData?.id, isPrint: true });
         }

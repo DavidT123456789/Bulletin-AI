@@ -12,11 +12,13 @@
 
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { DOMHelper } from '../utils/DOMHelper.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
+import { ClassManager } from './ClassManager.js';
 import { StatsService } from '../services/StatsService.js';
 import { SvgCharts } from '../utils/SvgCharts.js';
-import { resolveStudentStatus } from '../config/academicConstants.js';
+import { isGdprSensitiveStatus } from '../config/academicConstants.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -45,7 +47,7 @@ export const ExportManager = {
 
         const result = appState.generatedResults[resultIndex];
         const currentPeriod = appState.currentPeriod;
-        const appreciationToCopy = result.studentData?.periods?.[currentPeriod]?.appreciation || result.appreciation;
+        const appreciationToCopy = Utils.getPeriodAppreciation(result, currentPeriod);
 
         if (!appreciationToCopy?.trim()) {
             UI.showNotification('Appréciation vide.', 'error');
@@ -99,7 +101,7 @@ export const ExportManager = {
         const currentPeriod = appState.currentPeriod;
         const items = appState.filteredResults
             .map(r => {
-                const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+                const appreciation = Utils.getPeriodAppreciation(r, currentPeriod);
                 return appreciation?.trim() ? `${Utils.formatStudentName(r.nom, r.prenom)}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}` : null;
             })
             .filter(Boolean);
@@ -252,7 +254,7 @@ export const ExportManager = {
 
         const csvContent = "\uFEFF" + headers.join(';') + '\n' + rows.join('\n');
 
-        const classLabel = appState.classes?.find(c => c.id === appState.currentClassId)?.name || '';
+        const classLabel = Utils.getCurrentClassName(appState.currentClassId) || '';
         const safeName = classLabel ? `_${classLabel.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-')}` : '';
         const filename = `bulletin-ai${safeName}_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
 
@@ -273,31 +275,8 @@ export const ExportManager = {
      * @param {Function} [config.cleanup]
      * @private
      */
-    _runPrintSession({ mode, title, pageCss = '', setup, cleanup }) {
-        const originalTitle = document.title;
-        document.title = title;
-        document.body.dataset.printMode = mode;
-
-        let dynamicPageStyle = null;
-        if (pageCss) {
-            dynamicPageStyle = document.createElement('style');
-            dynamicPageStyle.id = 'print-dynamic-page-style';
-            dynamicPageStyle.textContent = pageCss;
-            document.head.appendChild(dynamicPageStyle);
-        }
-
-        setup?.();
-
-        const handleAfterPrint = () => {
-            document.title = originalTitle;
-            delete document.body.dataset.printMode;
-            dynamicPageStyle?.remove();
-            cleanup?.();
-            window.onafterprint = null;
-        };
-
-        window.onafterprint = handleAfterPrint;
-        window.print();
+    _runPrintSession(config) {
+        return DOMHelper.runPrintSession(config);
     },
 
     /**
@@ -336,10 +315,23 @@ export const ExportManager = {
      * @returns {string}
      * @private
      */
+    _normalizeDisplayNumber(val) {
+        if (typeof val !== 'number' || !Number.isFinite(val)) return NaN;
+        const rounded = Math.round(val * 10) / 10;
+        return rounded === 0 ? 0 : rounded;
+    },
+
     _formatNumberFr(val, signed = false) {
-        if (typeof val !== 'number' || Number.isNaN(val)) return '--';
-        const formatted = val.toFixed(1).replace('.', ',');
-        return signed && val > 0 ? `+${formatted}` : formatted;
+        const clean = this._normalizeDisplayNumber(val);
+        if (Number.isNaN(clean)) return '--';
+        const formatted = clean.toFixed(1).replace('.', ',');
+        return signed && clean > 0 ? `+${formatted}` : formatted;
+    },
+
+    _getDeltaToneClass(val) {
+        const clean = this._normalizeDisplayNumber(val);
+        if (Number.isNaN(clean) || clean === 0) return '';
+        return clean > 0 ? 'is-pos' : 'is-neg';
     },
 
     /**
@@ -370,8 +362,7 @@ export const ExportManager = {
      * @private
      */
     _getReportContextMeta(classId = appState.currentClassId) {
-        const currentClass = appState.classes?.find(c => c.id === classId);
-        const classLabel = currentClass?.name || '';
+        const classLabel = Utils.getCurrentClassName(classId) || '';
         const subjectLabel = this._sanitizeSubjectLabel(appState.currentSubject);
         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true) || appState.currentPeriod;
         const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -384,7 +375,13 @@ export const ExportManager = {
      * @private
      */
     _extractDomSynthesisSections() {
-        const content = document.querySelector('#classDashboardModal #aiSynthesisContent .ai-synthesis-text');
+        const container = document.querySelector('#classDashboardModal #aiSynthesisContent');
+        if (!container) return [];
+        const taggedClassId = container.dataset.classId;
+        const taggedPeriod = container.dataset.period;
+        if (taggedClassId !== undefined && taggedClassId !== String(appState.currentClassId || '')) return [];
+        if (taggedPeriod !== undefined && taggedPeriod !== String(appState.currentPeriod || '')) return [];
+        const content = container.querySelector('.ai-synthesis-text');
         if (!content) return [];
 
         const sections = [];
@@ -421,9 +418,10 @@ export const ExportManager = {
         const relevantPeriods = currentIdx >= 0 ? allPeriods.slice(0, currentIdx + 1) : [period];
         const prevPeriod = currentIdx > 0 ? allPeriods[currentIdx - 1] : null;
 
-        const roster = (appState.currentClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0)
-            ? appState.generatedResults.filter(r => r.classId === appState.currentClassId && !Utils.isStudentDepartedBeforePeriod?.(r, period))
+        const fullRoster = (appState.currentClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0)
+            ? ClassManager.getStudentsForClass(appState.currentClassId)
             : (appState.filteredResults || []);
+        const roster = fullRoster.filter(r => !Utils.isStudentDepartedBeforePeriod?.(r, period));
 
         const students = roster
             .map(r => {
@@ -440,49 +438,13 @@ export const ExportManager = {
             })
             .filter(Boolean);
 
-        if (students.length === 0) return null;
-        const summary = StatsService.summarizeGrades(students.map(s => s.grade));
-        if (!summary) return null;
+        const cohort = StatsService.computeCohortStats(students, { topLimit: 10 });
+        if (!cohort) return null;
 
-        const withEvo = students.filter(s => s.evolution !== null);
-        const avgEvolution = StatsService.computeAverageEvolution(withEvo.map(s => s.evolution));
-        let progressCount = 0;
-        let stableCount = 0;
-        let regressionCount = 0;
-        withEvo.forEach(s => {
-            const cat = StatsService.classifyEvolutionCategory(s.evolution);
-            if (cat === 'progress') progressCount++;
-            else if (cat === 'regression') regressionCount++;
-            else stableCount++;
-        });
-
-        const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
-        const sortedEvo = [...withEvo].sort((a, b) => b.evolution - a.evolution);
-        const topProgressions = sortedEvo.filter(s => StatsService.classifyEvolutionCategory(s.evolution) === 'progress').slice(0, 10);
-        const atRisk = students
-            .filter(s => s.grade < 10 || (s.evolution !== null && (s.evolution <= -1.5 || (s.grade < 12 && s.evolution <= negThreshold))))
-            .sort((a, b) => (a.grade + Math.min(0, (a.evolution || 0) * 1.2)) - (b.grade + Math.min(0, (b.evolution || 0) * 1.2)));
-
-        const periodAverages = relevantPeriods.map(p => {
-            const pGrades = roster
-                .filter(r => !Utils.isStudentDepartedBeforePeriod?.(r, p))
-                .map(r => StatsService.parseGrade(r.studentData?.periods?.[p]?.grade))
-                .filter(g => !Number.isNaN(g));
-            return pGrades.length > 0
-                ? { period: p, average: parseFloat((pGrades.reduce((a, b) => a + b, 0) / pGrades.length).toFixed(2)), count: pGrades.length }
-                : null;
-        }).filter(Boolean);
+        const periodAverages = StatsService.computePeriodAverages(fullRoster, relevantPeriods);
 
         return {
-            ...summary,
-            distribution: summary.distributionMap,
-            avgEvolution,
-            progressCount,
-            stableCount,
-            regressionCount,
-            hasEvolutionData: withEvo.length > 0,
-            topProgressions,
-            atRisk,
+            ...cohort,
             periodAverages
         };
     },
@@ -560,7 +522,7 @@ export const ExportManager = {
             : this._extractDomSynthesisSections();
 
         const avgEvoHtml = typeof stats.avgEvolution === 'number' && !Number.isNaN(stats.avgEvolution)
-            ? `<span class="pr-kpi-sub ${stats.avgEvolution >= 0 ? 'is-pos' : 'is-neg'}">${this._formatNumberFr(stats.avgEvolution, true)} pt vs préc.</span>`
+            ? `<span class="pr-kpi-sub ${this._getDeltaToneClass(stats.avgEvolution)}">${this._formatNumberFr(stats.avgEvolution, true)} pt vs préc.</span>`
             : '';
 
         const hetLabel = stats.heterogeneity?.label ? `${stats.heterogeneity.label} (σ ${this._formatNumberFr(stats.stdDev)})` : `σ ${this._formatNumberFr(stats.stdDev)}`;
@@ -597,24 +559,26 @@ export const ExportManager = {
 
         let synthesisHtml = '';
         if (synthesisSections.length > 0) {
-            const introSec = synthesisSections.find(s => s.isIntro);
-            const gridSecs = synthesisSections.filter(s => !s.isIntro);
-            synthesisHtml = `
-                <section class="pr-section">
-                    <h2 class="pr-section-title">Synthèse du bilan de classe</h2>
-                    ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(introSec.title)}</strong><p>${Utils.escapeHtml(introSec.text)}</p></div>` : ''}
-                    ${gridSecs.length > 0 ? `
-                        <div class="pr-grid-3">
-                            ${gridSecs.map(sec => `
-                                <div class="pr-subcard pr-tone-${Utils.escapeHtml(sec.tone || 'info')}">
-                                    <h3>${Utils.escapeHtml(sec.title)}</h3>
-                                    <ul>${sec.items.map(item => `<li>${Utils.escapeHtml(item)}</li>`).join('')}</ul>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                </section>
-            `;
+            const introSec = synthesisSections.find(s => s?.isIntro && typeof s.text === 'string' && s.text.trim());
+            const gridSecs = synthesisSections.filter(s => s && !s.isIntro && Array.isArray(s.items) && s.items.length > 0);
+            if (introSec || gridSecs.length > 0) {
+                synthesisHtml = `
+                    <section class="pr-section">
+                        <h2 class="pr-section-title">Synthèse du bilan de classe</h2>
+                        ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(String(introSec.title || 'Synthèse globale'))}</strong><p>${Utils.escapeHtml(String(introSec.text || ''))}</p></div>` : ''}
+                        ${gridSecs.length > 0 ? `
+                            <div class="pr-grid-3">
+                                ${gridSecs.map(sec => `
+                                    <div class="pr-subcard pr-tone-${Utils.escapeHtml(String(sec.tone || 'info'))}">
+                                        <h3>${Utils.escapeHtml(String(sec.title || ''))}</h3>
+                                        <ul>${sec.items.map(item => `<li>${Utils.escapeHtml(String(item ?? ''))}</li>`).join('')}</ul>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </section>
+                `;
+            }
         }
 
         const renderStudentMetricList = (items, emptyMsg, isProgression) => {
@@ -626,7 +590,7 @@ export const ExportManager = {
                     ${items.slice(0, 10).map(s => {
                         const gradeStr = `${this._formatNumberFr(s.grade)}/20`;
                         const evoBadge = (typeof s.evolution === 'number' && !Number.isNaN(s.evolution))
-                            ? `<span class="pr-delta ${s.evolution >= 0 ? 'is-pos' : 'is-neg'}">${this._formatNumberFr(s.evolution, true)} pt</span>`
+                            ? `<span class="pr-delta ${this._getDeltaToneClass(s.evolution)}">${this._formatNumberFr(s.evolution, true)} pt</span>`
                             : '';
                         return `
                             <li>
@@ -732,9 +696,9 @@ export const ExportManager = {
         const periodLabel = Utils.getPeriodLabel(currentPeriod, true) || currentPeriod;
         const subjectLabel = this._sanitizeSubjectLabel(result.studentData?.subject) || defaultSubject;
 
-        // Statuts filtrés RGPD (exclut PAP/PAI/AESH/ULIS/GEVA-Sco par défaut sur fiche famille)
+        // Statuts filtrés RGPD (exclut PPRE/PAP/PAI/AESH/ULIS/GEVA-Sco et tout statut libre/composite sensible par défaut sur fiche famille)
         const visibleStatuses = (Utils.getActiveStatuses?.(result, currentPeriod) || result.studentData?.statuses || [])
-            .filter(status => includeSensitive || resolveStudentStatus(status)?.isGdprSensitive !== true);
+            .filter(status => includeSensitive || !isGdprSensitiveStatus(status));
 
         const allPeriods = Utils.getPeriods();
         const currentIdx = allPeriods.indexOf(currentPeriod);
@@ -743,8 +707,11 @@ export const ExportManager = {
         // Calcul des moyennes de classe par période pour contextualiser la trajectoire de l'élève
         const targetClassId = result.classId || appState.currentClassId;
         const classRoster = targetClassId
-            ? appState.generatedResults.filter(r => r.classId === targetClassId)
+            ? ClassManager.getStudentsForClass(targetClassId)
             : appState.generatedResults;
+        const periodAvgMap = new Map(
+            StatsService.computePeriodAverages(classRoster, relevantPeriods).map(entry => [entry.period, entry.average])
+        );
 
         const periodRows = relevantPeriods.map((p, idx) => {
             const studentGrade = StatsService.parseGrade(result.studentData?.periods?.[p]?.grade);
@@ -757,13 +724,7 @@ export const ExportManager = {
                 ? StatsService.computeEvolutionDiff(validStudentGrade, prevGrade)
                 : null;
 
-            const classGrades = classRoster
-                .filter(r => !Utils.isStudentDepartedBeforePeriod?.(r, p))
-                .map(r => StatsService.parseGrade(r.studentData?.periods?.[p]?.grade))
-                .filter(g => !Number.isNaN(g));
-            const classAvg = classGrades.length > 0
-                ? parseFloat((classGrades.reduce((a, b) => a + b, 0) / classGrades.length).toFixed(2))
-                : null;
+            const classAvg = periodAvgMap.has(p) ? periodAvgMap.get(p) : null;
 
             const diffClass = (validStudentGrade !== null && classAvg !== null)
                 ? parseFloat((validStudentGrade - classAvg).toFixed(1))
@@ -882,7 +843,7 @@ export const ExportManager = {
                                     <tr class="${row.period === currentPeriod ? 'is-current-period' : ''}">
                                         <td><strong>${Utils.escapeHtml(row.period)}</strong></td>
                                         <td>${row.studentGrade !== null ? `<strong>${this._formatNumberFr(row.studentGrade)}/20</strong>` : '--'}</td>
-                                        <td>${row.delta !== null ? `<span class="pr-delta ${row.delta >= 0 ? 'is-pos' : 'is-neg'}">${this._formatNumberFr(row.delta, true)} pt</span>` : '--'}</td>
+                                        <td>${row.delta !== null ? `<span class="pr-delta ${this._getDeltaToneClass(row.delta)}">${this._formatNumberFr(row.delta, true)} pt</span>` : '--'}</td>
                                         <td>${row.classAvg !== null ? `${this._formatNumberFr(row.classAvg)}/20` : '--'}</td>
                                         <td>${row.diffClass !== null ? `${this._formatNumberFr(row.diffClass, true)} pt` : '--'}</td>
                                     </tr>
@@ -934,7 +895,7 @@ export const ExportManager = {
         const idSet = new Set(ids);
         const resultsToCopy = Utils.sortResults(appState.generatedResults.filter(r => idSet.has(r.id)));
         const activeResults = resultsToCopy.filter(r => {
-            const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+            const appreciation = Utils.getPeriodAppreciation(r, currentPeriod);
             return appreciation?.trim();
         });
 
@@ -944,7 +905,7 @@ export const ExportManager = {
         }
 
         const text = activeResults.map(r => {
-            const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+            const appreciation = Utils.getPeriodAppreciation(r, currentPeriod);
             return `${Utils.formatStudentName(r.nom, r.prenom)}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}`;
         }).join('\n\n');
 

@@ -172,7 +172,7 @@
 .modal-alert-header-icon.warning {
     background: rgba(var(--warning-rgb), 0.1);
     border: 1px solid rgba(var(--warning-rgb), 0.2);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 [data-theme="dark"] .modal-alert-header-icon.warning {
@@ -377,7 +377,7 @@
 
 .restore-safety-notice iconify-icon {
     font-size: 1.2rem;
-    color: var(--success-color);
+    color: var(--success-text);
     flex-shrink: 0;
     margin-top: 1px;
 }
@@ -405,7 +405,7 @@
 }
 
 .restore-safety-notice.warning iconify-icon {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .restore-impact-box {
@@ -449,7 +449,7 @@
 
 .restore-impact-header iconify-icon {
     font-size: 1.1rem;
-    color: var(--warning-color);
+    color: var(--warning-text);
     flex-shrink: 0;
 }
 
@@ -497,7 +497,7 @@
 
 .restore-impact-footer iconify-icon {
     font-size: 0.92rem;
-    color: var(--success-color);
+    color: var(--success-text);
     flex-shrink: 0;
 }
 

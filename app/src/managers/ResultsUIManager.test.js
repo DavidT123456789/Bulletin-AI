@@ -710,6 +710,47 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
             expect(appState.filteredResults).toHaveLength(1);
             expect(appState.filteredResults[0].isPlaceholderForPeriod).toBe(false);
         });
+
+        it('ne doit pas lever de ReferenceError lors de la conversion avec analysisPerPeriod sans studentData.currentPeriod', () => {
+            const cls = ClassManager.createClass('3ème B');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.periodSystem = 'semestres';
+            appState.currentPeriod = 'S1';
+
+            const student = {
+                id: 'stu-analysis-no-period',
+                nom: 'DURAND',
+                prenom: 'Camille',
+                classId: cls.id,
+                analysisPerPeriod: {
+                    T1: {
+                        strengths: ['Bonne méthode'],
+                        weaknesses: ['Oral discret'],
+                        nextSteps: ['Participer davantage'],
+                        snapshot: { period: 'T1' },
+                        _lastModified: 1000
+                    }
+                },
+                studentData: {
+                    nom: 'DURAND',
+                    prenom: 'Camille',
+                    periods: {
+                        T1: { grade: 14, appreciation: 'Bon trimestre.' }
+                    }
+                }
+            };
+            appState.generatedResults = [student];
+
+            expect(() => ResultsUIManager.convertMismatchPeriods()).not.toThrow();
+            expect(student.analysisPerPeriod.S1).toBeDefined();
+            expect(student.analysisPerPeriod.S1.snapshot.period).toBe('S1');
+            expect(student.strengthsWeaknesses).toEqual({
+                strengths: ['Bonne méthode'],
+                weaknesses: ['Oral discret']
+            });
+            expect(student.analysisGenerationPeriod).toBe('S1');
+        });
         vi.restoreAllMocks();
     });
 });

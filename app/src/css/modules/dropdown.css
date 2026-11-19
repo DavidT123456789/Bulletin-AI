@@ -371,7 +371,7 @@
     gap: 8px;
     padding: 14px;
     font-size: 0.82rem;
-    color: var(--warning-color);
+    color: var(--warning-text);
     text-align: center;
     justify-content: center;
 }

@@ -213,13 +213,13 @@
 }
 
 .sc-sheet-action-icon.sc-icon-warning {
-    background: #fef3c7;
-    color: #d97706;
+    background: var(--warning-light);
+    color: var(--warning-text);
 }
 
 .sc-sheet-action-icon.sc-icon-danger {
-    background: #fee2e2;
-    color: var(--error-color, #dc2626);
+    background: var(--error-light);
+    color: var(--error-dark);
 }
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-primary {
@@ -233,13 +233,13 @@
 }
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-warning {
-    background: rgba(251, 191, 36, 0.22);
-    color: #fcd34d;
+    background: rgba(var(--color-amber-rgb), 0.22);
+    color: var(--color-amber-bright);
 }
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-danger {
-    background: rgba(248, 113, 113, 0.22);
-    color: #f87171;
+    background: rgba(var(--error-rgb), 0.22);
+    color: var(--error-bright);
 }
 
 .sc-sheet-action-text {
@@ -456,13 +456,9 @@
     padding: 12px;
     border-radius: var(--radius-md);
     background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
-    color: #059669;
+    color: var(--success-text);
     font-size: 0.82rem;
     font-weight: 500;
-}
-
-[data-theme="dark"] .sc-sheet-empty-unplaced {
-    color: #34d399;
 }
 
 /* ────────── SPOTLIGHT HIGHLIGHTING (VUE PLAN) ────────── */

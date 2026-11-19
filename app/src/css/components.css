@@ -146,7 +146,7 @@
 .btn-smart-action-inline.mode-update {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
     border: 1px solid transparent;
-    color: var(--warning-color);
+    color: var(--warning-text);
     box-shadow: none;
 }
 
@@ -498,7 +498,7 @@
 
     .btn-icon.warning:hover:not(:disabled) {
         background-color: var(--warning-light);
-        color: var(--warning-color);
+        color: var(--warning-text);
         border-color: var(--warning-color);
     }
 
@@ -1344,26 +1344,45 @@ textarea {
    AI ANALYSIS & SYNTHESIS CARDS (Mutualized: Class Dashboard & Focus)
    ==================================================================== */
 .synthesis-section--primary {
-    --section-accent: var(--color-blue);
+    --section-accent: var(--color-blue-deep);
     --section-accent-rgb: var(--color-blue-rgb);
 }
 
 .synthesis-section--success,
 .analysis-card.analysis-forces {
-    --section-accent: var(--color-emerald);
+    --section-accent: var(--color-emerald-deep);
     --section-accent-rgb: var(--color-emerald-rgb);
 }
 
 .synthesis-section--warning,
 .analysis-card.analysis-weaknesses {
-    --section-accent: var(--color-amber);
+    --section-accent: var(--color-amber-deep);
     --section-accent-rgb: var(--color-amber-rgb);
 }
 
 .synthesis-section--info,
 .analysis-card.analysis-suggestions {
-    --section-accent: var(--color-violet);
+    --section-accent: var(--color-violet-deep);
     --section-accent-rgb: var(--color-violet-rgb);
+}
+
+[data-theme="dark"] .synthesis-section--primary {
+    --section-accent: var(--color-blue);
+}
+
+[data-theme="dark"] .synthesis-section--success,
+[data-theme="dark"] .analysis-card.analysis-forces {
+    --section-accent: var(--color-emerald);
+}
+
+[data-theme="dark"] .synthesis-section--warning,
+[data-theme="dark"] .analysis-card.analysis-weaknesses {
+    --section-accent: var(--color-amber);
+}
+
+[data-theme="dark"] .synthesis-section--info,
+[data-theme="dark"] .analysis-card.analysis-suggestions {
+    --section-accent: var(--color-violet);
 }
 
 .synthesis-section:is(.synthesis-section--primary, .synthesis-section--success, .synthesis-section--warning, .synthesis-section--info),
@@ -1388,8 +1407,17 @@ textarea {
 
 /* Mutualized with .journal-header-btn.icon-only; subtle offset after card title */
 .analysis-add-item-btn {
+    position: relative;
     margin-left: -2px;
     flex-shrink: 0;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .analysis-add-item-btn::after {
+        content: '';
+        position: absolute;
+        inset: -9px;
+    }
 }
 
 .synthesis-section-header,

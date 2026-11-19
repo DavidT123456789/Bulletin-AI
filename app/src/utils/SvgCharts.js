@@ -28,11 +28,15 @@ const formatGradeFr = (val) => Number(val).toFixed(1).replace('.', ',');
  * @returns {number[]}
  */
 function normalizeDistribution(distribution) {
+    const toSafeCount = (val) => {
+        const n = Number(val);
+        return Number.isFinite(n) ? Math.max(0, n) : 0;
+    };
     if (Array.isArray(distribution)) {
-        return GRADE_BRACKETS.map((_, i) => Math.max(0, Number(distribution[i]) || 0));
+        return GRADE_BRACKETS.map((_, i) => toSafeCount(distribution[i]));
     }
     if (distribution && typeof distribution === 'object') {
-        return GRADE_BRACKETS.map(b => Math.max(0, Number(distribution[b.id]) || 0));
+        return GRADE_BRACKETS.map(b => toSafeCount(distribution[b.id]));
     }
     return GRADE_BRACKETS.map(() => 0);
 }
@@ -132,8 +136,8 @@ export const SvgCharts = {
         periods.forEach((_, idx) => {
             const s = studentGrades[idx];
             const c = classAverages[idx];
-            if (typeof s === 'number' && !Number.isNaN(s)) validValues.push(s);
-            if (typeof c === 'number' && !Number.isNaN(c)) validValues.push(c);
+            if (typeof s === 'number' && Number.isFinite(s)) validValues.push(s);
+            if (typeof c === 'number' && Number.isFinite(c)) validValues.push(c);
         });
 
         if (periods.length === 0 || validValues.length === 0) {
@@ -159,10 +163,10 @@ export const SvgCharts = {
 
         const padLeft = 32;
         const padRight = 22;
-        const showLegend = hasStudentSeries && studentGrades.some(v => typeof v === 'number' && !Number.isNaN(v))
-            && classAverages.some(v => typeof v === 'number' && !Number.isNaN(v));
-        const padTop = showLegend ? 26 : 18;
-        const padBottom = 24;
+        const showLegend = hasStudentSeries && studentGrades.some(v => typeof v === 'number' && Number.isFinite(v))
+            && classAverages.some(v => typeof v === 'number' && Number.isFinite(v));
+        const padTop = showLegend ? 34 : 22;
+        const padBottom = 26;
         const plotW = width - padLeft - padRight;
         const plotH = height - padTop - padBottom;
 
@@ -194,14 +198,19 @@ export const SvgCharts = {
         const buildSeriesPoints = (values) => periods
             .map((p, idx) => {
                 const v = values[idx];
-                if (typeof v !== 'number' || Number.isNaN(v)) return null;
-                return { period: p, value: v, x: getX(idx), y: getY(v) };
+                if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+                return { idx, period: p, value: v, x: getX(idx), y: getY(v) };
             })
             .filter(Boolean);
 
         const classPts = buildSeriesPoints(classAverages);
         const studentPts = buildSeriesPoints(studentGrades);
         const isClassPrimary = !hasStudentSeries || studentPts.length === 0;
+        const studentByIdx = new Map(studentPts.map(p => [p.idx, p]));
+        const classByIdx = new Map(classPts.map(p => [p.idx, p]));
+        const minLabelY = showLegend ? 24 : 12;
+        const maxLabelY = height - 16;
+        const clampLabelY = (y) => Math.min(maxLabelY, Math.max(minLabelY, y));
 
         let classMarkup = '';
         if (classPts.length > 0) {
@@ -209,8 +218,11 @@ export const SvgCharts = {
                 ? `<polyline fill="none" stroke="${isClassPrimary ? '#1d4ed8' : '#64748b'}" stroke-width="${isClassPrimary ? '2.2' : '1.7'}" ${isClassPrimary ? '' : 'stroke-dasharray="4 3"'} points="${classPts.map(p => `${p.x},${p.y}`).join(' ')}" />`
                 : '';
             const dots = classPts.map(p => {
-                const labelY = isClassPrimary ? p.y - 8 : p.y + 13;
-                const labelEl = `<text x="${p.x}" y="${Math.min(padTop + plotH + 2, Math.max(padTop - 2, labelY))}" text-anchor="middle" font-size="9.5" font-weight="${isClassPrimary ? '700' : '600'}" fill="${isClassPrimary ? '#1e3a8a' : '#64748b'}">${formatGradeFr(p.value)}</text>`;
+                const studentPeer = studentByIdx.get(p.idx);
+                // Place the higher value's label above and the lower value's label below to prevent overlaps
+                const placeAbove = isClassPrimary || (studentPeer ? p.value > studentPeer.value : false);
+                const rawLabelY = placeAbove ? p.y - 8 : p.y + 13;
+                const labelEl = `<text x="${p.x}" y="${clampLabelY(rawLabelY)}" text-anchor="middle" font-size="9.5" font-weight="${isClassPrimary ? '700' : '600'}" fill="${isClassPrimary ? '#1e3a8a' : '#64748b'}">${formatGradeFr(p.value)}</text>`;
                 const circle = isClassPrimary
                     ? `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#1d4ed8" stroke="#ffffff" stroke-width="1.5" />`
                     : `<circle cx="${p.x}" cy="${p.y}" r="3.2" fill="#ffffff" stroke="#64748b" stroke-width="1.6" />`;
@@ -224,27 +236,34 @@ export const SvgCharts = {
             const polyline = studentPts.length >= 2
                 ? `<polyline fill="none" stroke="#1d4ed8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" points="${studentPts.map(p => `${p.x},${p.y}`).join(' ')}" />`
                 : '';
-            const dots = studentPts.map(p => `
-                <circle cx="${p.x}" cy="${p.y}" r="4.2" fill="#1d4ed8" stroke="#ffffff" stroke-width="1.6" />
-                <text x="${p.x}" y="${p.y - 8}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#111827">${formatGradeFr(p.value)}</text>
-            `).join('');
+            const dots = studentPts.map(p => {
+                const classPeer = classByIdx.get(p.idx);
+                const placeAbove = !classPeer || p.value >= classPeer.value;
+                const rawLabelY = placeAbove ? p.y - 8 : p.y + 14;
+                return `
+                    <circle cx="${p.x}" cy="${p.y}" r="4.2" fill="#1d4ed8" stroke="#ffffff" stroke-width="1.6" />
+                    <text x="${p.x}" y="${clampLabelY(rawLabelY)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#111827">${formatGradeFr(p.value)}</text>
+                `;
+            }).join('');
             studentMarkup = `${polyline}${dots}`;
         }
 
         const xLabels = periods.map((p, idx) => `
-            <text x="${getX(idx)}" y="${height - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">${escapeAttr(p)}</text>
+            <text x="${getX(idx)}" y="${height - 5}" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">${escapeAttr(p)}</text>
         `).join('');
 
-        const studentLabel = escapeAttr(options.studentLabel || 'Élève');
+        const rawStudentLabel = String(options.studentLabel || 'Élève');
+        const studentLabel = escapeAttr(rawStudentLabel);
         const classLabel = escapeAttr(options.classLabel || 'Moyenne classe');
+        const classLegendX = Math.max(80, Math.round(28 + rawStudentLabel.length * 5.8));
         const legendMarkup = showLegend ? `
-            <g transform="translate(${padLeft}, 11)">
+            <g transform="translate(${padLeft}, 9)">
                 <line x1="0" y1="0" x2="14" y2="0" stroke="#1d4ed8" stroke-width="2.4" />
                 <circle cx="7" cy="0" r="2.8" fill="#1d4ed8" />
                 <text x="19" y="3" font-size="9.5" font-weight="600" fill="#111827">${studentLabel}</text>
-                <line x1="80" y1="0" x2="94" y2="0" stroke="#64748b" stroke-width="1.7" stroke-dasharray="3 2" />
-                <circle cx="87" cy="0" r="2.5" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
-                <text x="99" y="3" font-size="9.5" font-weight="500" fill="#64748b">${classLabel}</text>
+                <line x1="${classLegendX}" y1="0" x2="${classLegendX + 14}" y2="0" stroke="#64748b" stroke-width="1.7" stroke-dasharray="3 2" />
+                <circle cx="${classLegendX + 7}" cy="0" r="2.5" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+                <text x="${classLegendX + 19}" y="3" font-size="9.5" font-weight="500" fill="#64748b">${classLabel}</text>
             </g>
         ` : '';
 

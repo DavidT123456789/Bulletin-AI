@@ -725,6 +725,8 @@ export const SeatingDragDrop = {
 
         const onKeyDown = (ev) => {
             if (ev.key === 'Escape' && hasDragged) {
+                ev.preventDefault();
+                ev.stopPropagation();
                 finishDrag(ev, true);
             }
         };
@@ -885,6 +887,8 @@ export const SeatingDragDrop = {
 
         const onKeyDown = (ev) => {
             if (ev.key === 'Escape' && hasLassoed) {
+                ev.preventDefault();
+                ev.stopPropagation();
                 this._selectedChipIds = baseSelectedIds;
                 this._updateSelectionAttribute();
                 finishLasso(true);
@@ -907,6 +911,10 @@ export const SeatingDragDrop = {
             const viewEl = document.getElementById('seatingChartView');
             viewEl?.removeAttribute('data-dragging');
             viewEl?.removeAttribute('data-lasso');
+
+            if (hasLassoed) {
+                this._suppressTouchTooltips(150);
+            }
 
             if (hasLassoed && !cancelled) {
                 const suppressClickOnce = (clickEv) => {
@@ -1114,6 +1122,10 @@ export const SeatingDragDrop = {
         element.addEventListener('touchend', (e) => {
             clearHoldTimer();
             if (this._isPinching || !hasMoved || !hasDragged || !this._touchSourceInfo) {
+                if (!this._isPinching && hasMoved) {
+                    this._lastTouchDragEndTime = Date.now();
+                    if (e.cancelable) e.preventDefault();
+                }
                 this._cleanupTouch();
                 return;
             }

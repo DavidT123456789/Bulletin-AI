@@ -253,12 +253,12 @@
 
 .analysis-status-badge.loading {
     background: rgba(245, 158, 11, 0.15);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .analysis-status-badge.done {
     background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .analysis-status-badge.error {
@@ -268,7 +268,7 @@
 
 .analysis-status-badge.modified {
     background: rgba(245, 158, 11, 0.15);
-    color: var(--warning-color);
+    color: var(--warning-text);
     animation: analysis-modified-pulse 2s ease-in-out infinite;
     cursor: pointer;
 }
@@ -375,18 +375,6 @@
     }
 }
 
-/* Mobile Responsive */
-@media (max-width: 600px) {
-    .focus-analysis-header {
-        padding: 14px 16px;
-    }
-
-    .focus-analysis-content-area {
-        padding: 16px;
-        gap: 12px;
-    }
-}
-
 /* ============================
    EXPANDABLE HEADER (In-Place Editing)
    ============================ */
@@ -439,7 +427,7 @@
     display: none;
     flex-direction: column;
     gap: 10px;
-    padding: 2px 0 0 0;
+    padding: 0;
     width: 100%;
 }
 

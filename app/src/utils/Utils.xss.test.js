@@ -62,4 +62,30 @@ describe('Utils & Managers — Protection XSS (T-05 / Bug B-04)', () => {
         expect(img.getAttribute('onerror')).toBeNull();
         expect(container.querySelector('script')).toBeNull();
     });
+
+    it('échappe prenom et initiale dans Utils.formatStudentInitialLabel(..., true) sur toutes les branches (standard, sans initiale, showInitial:false, prénom long)', () => {
+        const xssPrenom = '<img src=x onerror=alert(1)>';
+        const xssNom = '<script>';
+
+        const standard = Utils.formatStudentInitialLabel(xssNom, 'Léo<svg>', true);
+        expect(standard).toBe('Léo&lt;svg&gt; <span class="sc-cell-initial">&lt;.</span>');
+
+        const noInitial = Utils.formatStudentInitialLabel('', xssPrenom, true);
+        expect(noInitial).not.toContain('<img');
+        expect(noInitial).toContain('&lt;img');
+
+        const hiddenInitial = Utils.formatStudentInitialLabel('Dupont', 'A<b>c', true, { showInitial: false });
+        expect(hiddenInitial).toBe('A&lt;b&gt;c');
+
+        const longPrenom = Utils.formatStudentInitialLabel('Dupont', xssPrenom, true);
+        expect(longPrenom).not.toContain('<img');
+        expect(longPrenom).toContain('&lt;img');
+
+        const forcedInitial = Utils.formatStudentInitialLabel(xssNom, xssPrenom, true, { forceInitial: true });
+        expect(forcedInitial).toContain('<span class="sc-cell-initial">&lt;.</span>');
+        expect(forcedInitial).not.toContain('<img');
+
+        // Mode texte brut préservé sans sur-échappement
+        expect(Utils.formatStudentInitialLabel('Dupont', 'Léo & Mia', false)).toBe('Léo & Mia D.');
+    });
 });

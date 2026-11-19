@@ -1103,7 +1103,7 @@
 
 .status-badge.done {
     background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .status-badge.pending {

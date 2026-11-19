@@ -299,6 +299,7 @@ export const FocusPanelRefinement = {
                     appreciation: {
                         total_tokens: response.usage?.total_tokens || 0
                     },
+                    analysis: result.tokenUsage?.analysis ?? null,
                     generationTimeMs: response.generationTimeMs || 0
                 };
                 result.timestamp = new Date().toISOString();

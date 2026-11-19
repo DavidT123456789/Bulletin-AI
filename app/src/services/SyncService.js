@@ -898,25 +898,28 @@ export const SyncService = {
         if (!this._provider) throw new Error('Aucun provider connecté');
 
         this._setStatus('syncing');
-        const localData = await this._getLocalData();
-        localData._meta = {
-            ...localData._meta,
-            lastSyncAt: new Date().toISOString(),
-            lastSyncTimestamp: Date.now(),
-            deviceId: StorageManager.getDeviceId(),
-            forceUpload: true
-        };
-        await this._provider.write(localData);
-        this.lastSyncTime = Date.now();
-        SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
-        this._saveSyncRosterSnapshot(localData.generatedResults, localData.classes);
+        try {
+            const localData = await this._getLocalData();
+            localData._meta = {
+                ...localData._meta,
+                lastSyncAt: new Date().toISOString(),
+                lastSyncTimestamp: Date.now(),
+                deviceId: StorageManager.getDeviceId(),
+                forceUpload: true
+            };
+            await this._provider.write(localData);
+            this.lastSyncTime = Date.now();
+            SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
+            this._saveSyncRosterSnapshot(localData.generatedResults, localData.classes);
 
-        // Update remote time since we just wrote the file
-        this.remoteSyncTime = this.lastSyncTime;
+            // Update remote time since we just wrote the file
+            this.remoteSyncTime = this.lastSyncTime;
 
-        // Save data hash at sync time and align modified timestamp
-        this.alignLocalSyncBaseline();
-        this._setStatus('idle');
+            // Save data hash at sync time and align modified timestamp
+            this.alignLocalSyncBaseline();
+        } finally {
+            this._setStatus('idle');
+        }
     },
 
     /**
@@ -927,35 +930,38 @@ export const SyncService = {
         if (!this._provider) throw new Error('Aucun provider connecté');
 
         this._setStatus('syncing');
-        const remoteData = prefetchedData || await this._provider.read();
+        try {
+            const remoteData = prefetchedData || await this._provider.read();
 
-        let importedCount = 0;
-        if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
-            const importRes = await StorageManager.importBackup(remoteData, {
-                mergeData: false,
-                includeApiKeys: true,
-                silent: true,
-                skipSnapshot: true
-            });
-            importedCount = importRes?.stats?.imported ?? Utils.countUniqueStudents(remoteData?.generatedResults, remoteData?.classes);
+            let importedCount = 0;
+            if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
+                const importRes = await StorageManager.importBackup(remoteData, {
+                    mergeData: false,
+                    includeApiKeys: true,
+                    silent: true,
+                    skipSnapshot: true
+                });
+                importedCount = importRes?.stats?.imported ?? Utils.countUniqueStudents(remoteData?.generatedResults, remoteData?.classes);
+            }
+
+            this.lastSyncTime = Date.now();
+            SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
+            if (Array.isArray(remoteData?.generatedResults)) {
+                this._saveSyncRosterSnapshot(remoteData.generatedResults, remoteData.classes);
+            } else {
+                SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, importedCount.toString());
+            }
+
+            // Update remote time to match since local is now strictly aligned with remote
+            this.remoteSyncTime = this.lastSyncTime;
+
+            // Save data hash at sync time and align ALL internal hashes to prevent
+            // subsequent saveAppState calls from re-setting bulletin_last_modified
+            this.alignLocalSyncBaseline();
+            return { success: true, count: importedCount };
+        } finally {
+            this._setStatus('idle');
         }
-
-        this.lastSyncTime = Date.now();
-        SafeStorage.set(STORAGE_KEYS.LAST_SYNC, this.lastSyncTime.toString());
-        if (Array.isArray(remoteData?.generatedResults)) {
-            this._saveSyncRosterSnapshot(remoteData.generatedResults, remoteData.classes);
-        } else {
-            SafeStorage.set(STORAGE_KEYS.LAST_SYNC_STUDENTS, importedCount.toString());
-        }
-
-        // Update remote time to match since local is now strictly aligned with remote
-        this.remoteSyncTime = this.lastSyncTime;
-
-        // Save data hash at sync time and align ALL internal hashes to prevent
-        // subsequent saveAppState calls from re-setting bulletin_last_modified
-        this.alignLocalSyncBaseline();
-        this._setStatus('idle');
-        return { success: true, count: importedCount };
     },
 
     // =========================================================================
@@ -1114,7 +1120,14 @@ export const SyncService = {
     async _getLocalData() {
         const results = runtimeState.data.generatedResults || [];
         results.forEach(r => {
-            if (!r._lastModified) r._lastModified = Date.now();
+            if (typeof r._lastModified !== 'number' || !Number.isFinite(r._lastModified)) {
+                if (typeof StorageManager._resolveLegacyLastModified === 'function') {
+                    r._lastModified = StorageManager._resolveLegacyLastModified(r);
+                } else {
+                    const parsedTs = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+                    r._lastModified = Number.isFinite(parsedTs) ? parsedTs : 0;
+                }
+            }
         });
 
         return {

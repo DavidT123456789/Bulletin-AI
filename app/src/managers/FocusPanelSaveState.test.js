@@ -12,9 +12,10 @@ vi.mock('../services/DBService.js', () => ({
 
 describe('FocusPanelManager and Save State integrity', () => {
     beforeEach(() => {
-        // Les rafraîchissements UI différés (300ms) d'un test précédent capturent son `result` et pourraient l'écrire dans les données du test courant
+        // Nettoyer tous les timers différés et files de fermeture d'un test précédent
         clearTimeout(FocusPanelManager._uiUpdateTimeout);
         clearTimeout(FocusPanelManager._appreciationUITimeout);
+        FocusPanelManager._settlePendingClose({ flush: false });
         localStorage.clear();
         runtimeState.data.generatedResults = [
             {
@@ -369,6 +370,32 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(nouveauCb.checked).toBe(false);
             expect(FocusPanelHeader._originalHeaderValues.statuses).toEqual([]);
         });
+
+        it('échappe le libellé et le data-tooltip dans FocusPanelHeader.renderStatusBadges (protection XSS)', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            const headerBadges = document.getElementById('focusStatusBadges');
+            const contextBadges = document.getElementById('focusContextStatusBadges');
+            if (!headerBadges) {
+                const el = document.createElement('div');
+                el.id = 'focusStatusBadges';
+                document.body.appendChild(el);
+            }
+            if (!contextBadges) {
+                const el = document.createElement('div');
+                el.id = 'focusContextStatusBadges';
+                document.body.appendChild(el);
+            }
+
+            FocusPanelHeader.renderStatusBadges(['" onmouseover="alert(1)"><img src=x onerror=alert(2)>']);
+
+            const container = document.getElementById('focusContextStatusBadges');
+            expect(container.querySelector('img')).toBeNull();
+            const badge = container.querySelector('.status-badge-clickable');
+            expect(badge).not.toBeNull();
+            expect(badge.getAttribute('onmouseover')).toBeNull();
+            expect(badge.textContent).toContain('<img src=x onerror=alert(2)>');
+            expect(badge.getAttribute('data-tooltip')).toContain('onmouseover');
+        });
     });
 
     describe('Manual Edit & Student Creation Lifecycle', () => {
@@ -615,6 +642,99 @@ describe('FocusPanelManager and Save State integrity', () => {
                 expect(runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation).toBe(originalAppreciation);
                 expect(document.getElementById('focusAppreciationText').textContent).toContain('Bon travail.');
                 expect(document.getElementById('focusGenerateBtn').textContent).toContain('Régénérer');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('close({ discardChanges: true }) ne sauvegarde aucune saisie DOM sale ni au blur ni via _saveContext', () => {
+            FocusPanelManager.init(null, null);
+            FocusPanelManager.open('student-1');
+
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockResolvedValue();
+            const gradeInput = document.getElementById('focusCurrentGradeInput');
+            const contextInput = document.getElementById('focusContextInput');
+
+            FocusPanelManager._isGradeEdited = true;
+            FocusPanelManager._isContextEdited = true;
+            FocusPanelManager._isAppreciationEdited = true;
+            gradeInput.value = '2,0';
+            contextInput.value = 'Texte non voulu';
+            contextInput.focus();
+
+            FocusPanelManager.close({ discardChanges: true });
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(runtimeState.data.generatedResults[0].studentData.periods.T1.grade).toBe(14.25);
+            expect(runtimeState.data.generatedResults[0].studentData.periods.T1.context).toBe('Très investi');
+            expect(FocusPanelManager.isOpen()).toBe(false);
+            saveSpy.mockRestore();
+        });
+
+        it('sauvegarde immédiatement une note modifiée au blur sur #focusCurrentGradeInput', () => {
+            FocusPanelManager.init(null, null);
+            FocusPanelManager.open('student-1');
+
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockResolvedValue();
+            const gradeInput = document.getElementById('focusCurrentGradeInput');
+
+            gradeInput.value = '17,5';
+            gradeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            gradeInput.dispatchEvent(new Event('blur'));
+
+            expect(runtimeState.data.generatedResults[0].studentData.periods.T1.grade).toBe(17.5);
+            expect(saveSpy).toHaveBeenCalled();
+            saveSpy.mockRestore();
+        });
+
+        it('restaure le tooltip du bouton Fermer en sortie d\'édition d\'en-tête même si _tippy avait été détruit', async () => {
+            const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
+            const { TooltipsUI } = await import('./TooltipsManager.js');
+            const updateTooltipSpy = vi.spyOn(TooltipsUI, 'updateTooltip').mockImplementation((el, text) => {
+                el.setAttribute('data-tooltip', text);
+            });
+
+            const closeBtn = document.createElement('button');
+            closeBtn.id = 'focusBackBtn';
+            document.body.appendChild(closeBtn);
+            const header = document.querySelector('.focus-header');
+            const readMode = document.querySelector('.focus-header-read');
+            const editMode = document.querySelector('.focus-header-edit');
+
+            FocusPanelHeader._exitEditModeUI(header, readMode, editMode, null);
+
+            expect(updateTooltipSpy).toHaveBeenCalledWith(closeBtn, 'Fermer');
+            expect(closeBtn.getAttribute('data-tooltip')).toBe('Fermer');
+            updateTooltipSpy.mockRestore();
+        });
+
+        it('réinitialise _isClosing, annule le timer 500ms et applique les mises à jour différées lors d’une réouverture rapide', () => {
+            vi.useFakeTimers();
+            try {
+                const mockListView = { updateStudentRow: vi.fn(() => true) };
+                FocusPanelManager.init(null, mockListView);
+                FocusPanelManager.open('student-1');
+
+                FocusPanelManager.close();
+                expect(FocusPanelManager._isClosing).toBe(true);
+                expect(FocusPanelManager._closeDeferredTimer).not.toBeNull();
+
+                // Mise à jour survenant pendant la fenêtre de fermeture de 500ms -> mise en file différée
+                FocusPanelManager._updateListRow(runtimeState.data.generatedResults[0]);
+                expect(FocusPanelManager._deferredRowUpdates.size).toBe(1);
+                expect(mockListView.updateStudentRow).not.toHaveBeenCalled();
+
+                // Réouverture rapide (< 500ms) : _isClosing repasse à false, timer annulé, ligne différée appliquée une seule fois
+                FocusPanelManager.open('student-2');
+                expect(FocusPanelManager._isClosing).toBe(false);
+                expect(FocusPanelManager._closeDeferredTimer).toBeNull();
+                expect(FocusPanelManager._deferredRowUpdates.size).toBe(0);
+                expect(mockListView.updateStudentRow).toHaveBeenCalledTimes(1);
+                expect(mockListView.updateStudentRow).toHaveBeenCalledWith('student-1');
+
+                // Avancer de 600ms ne doit déclencher aucune seconde exécution parasite
+                vi.advanceTimersByTime(600);
+                expect(mockListView.updateStudentRow).toHaveBeenCalledTimes(1);
             } finally {
                 vi.useRealTimers();
             }

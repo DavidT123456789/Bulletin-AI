@@ -198,6 +198,18 @@ export const FocusPanelAnalysis = {
         if (animate && normalized.length > 0 && UI.animateHtmlReveal) {
             await UI.animateHtmlReveal(contentEl, html, { speed: 'fast', signal });
             if (signal?.aborted) return;
+        } else if (normalized.length === 0) {
+            const existingPlaceholder = contentEl.querySelector(`button.analysis-placeholder[data-analysis-add="${cardCfg.key}"]`);
+            const hasOnlyPlaceholder = existingPlaceholder && !contentEl.querySelector('ul, .analysis-skeleton');
+            if (hasOnlyPlaceholder) {
+                const label = hasAnalysisRecord ? cardCfg.emptyText : cardCfg.idleText;
+                const span = existingPlaceholder.querySelector('span');
+                if (span && span.textContent !== label) {
+                    span.textContent = label;
+                }
+            } else {
+                contentEl.innerHTML = html;
+            }
         } else {
             contentEl.innerHTML = html;
         }
@@ -285,12 +297,23 @@ export const FocusPanelAnalysis = {
 
     /**
      * Valide et persiste immédiatement une puce en cours d'édition avant navigation,
-     * fermeture ou export PDF afin qu'aucune retouche ne soit perdue.
+     * fermeture, passage en arrière-plan ou export PDF afin qu'aucune retouche ne soit perdue.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.blur=true] - Si false, synchronise sans retirer le focus ni déplacer le curseur
      */
-    flushPendingEdit() {
+    flushPendingEdit({ blur = true } = {}) {
         const activeEl = document.activeElement;
         const editable = activeEl?.closest?.('#focusAnalysisPage .analysis-card-body li[contenteditable="true"]');
         if (!editable) return;
+        if (!blur) {
+            const cleanedText = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
+            const initialText = editable._initialTextBeforeEdit ?? '';
+            if (cleanedText && cleanedText !== initialText) {
+                editable._initialTextBeforeEdit = cleanedText;
+                this._syncManualAnalysisEdit();
+            }
+            return;
+        }
         this.commitEditableBlur(editable);
         if (document.activeElement === editable) {
             editable.blur();
@@ -302,7 +325,9 @@ export const FocusPanelAnalysis = {
      * @param {Object} [options={}]
      */
     hide(options = {}) {
-        this.flushPendingEdit();
+        if (!options?.discardPending) {
+            this.flushPendingEdit();
+        }
         if (this._autoGenerateTimer) {
             clearTimeout(this._autoGenerateTimer);
             this._autoGenerateTimer = null;

@@ -345,4 +345,96 @@ describe('TooltipsManager', () => {
             expect(hideSpy).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('HTML sanitization guards', () => {
+        it('should sanitize initial content resolved in initTooltips while preserving rich tooltip markup', () => {
+            let capturedContentFn;
+            window.tippy = vi.fn((selector, options) => {
+                capturedContentFn = options.content;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            const xssEl = document.createElement('span');
+            xssEl.setAttribute('data-tooltip', 'Statut <img src=x onerror="alert(1)"> libre');
+            expect(capturedContentFn(xssEl)).toBe('Statut  libre');
+
+            const richEl = document.createElement('button');
+            richEl.setAttribute('data-tooltip', '<strong>Moyenne</strong><br><span class="kbd-hint" onclick="alert(1)">Modifier</span>');
+            expect(capturedContentFn(richEl)).toBe('<strong>Moyenne</strong><br><span class="kbd-hint">Modifier</span>');
+        });
+
+        it('should wrap instance.setContent and instance.setProps in onCreate to protect direct _tippy calls', () => {
+            let capturedOptions;
+            window.tippy = vi.fn((selector, options) => {
+                capturedOptions = options;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            const rawSetContent = vi.fn();
+            const rawSetProps = vi.fn();
+            const mockInstance = {
+                setContent: rawSetContent,
+                setProps: rawSetProps
+            };
+
+            capturedOptions.onCreate(mockInstance);
+
+            mockInstance.setContent('DUPONT <img src=x onerror=alert(1)>Alice');
+            expect(rawSetContent).toHaveBeenCalledWith('DUPONT Alice');
+
+            mockInstance.setProps({ content: '<strong>OK</strong><script>alert(1)</script>', placement: 'top' });
+            expect(rawSetProps).toHaveBeenCalledWith({ content: '<strong>OK</strong>', placement: 'top' });
+
+            mockInstance.setProps({ placement: 'bottom' });
+            expect(rawSetProps).toHaveBeenLastCalledWith({ placement: 'bottom' });
+        });
+
+        it('should sanitize content in updateTooltip for both new and existing tippy instances', () => {
+            let createdOptions;
+            window.tippy = vi.fn((el, options) => {
+                createdOptions = options;
+                const inst = { reference: el, setContent: vi.fn(), destroy: vi.fn() };
+                el._tippy = inst;
+                return inst;
+            });
+
+            const el = document.createElement('div');
+            TooltipsUI.updateTooltip(el, 'Nom <img src=x onerror=alert(1)>');
+            expect(createdOptions.content).toBe('Nom ');
+
+            TooltipsUI.updateTooltip(el, '<strong>Note</strong><svg onload=alert(1)></svg>');
+            expect(el._tippy.setContent).toHaveBeenCalledWith('<strong>Note</strong>');
+        });
+
+        it('should sanitize mutated data-tooltip attributes during onShow and skip redundant updates', () => {
+            let capturedOptions;
+            window.tippy = vi.fn((selector, options) => {
+                capturedOptions = options;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            const el = document.createElement('span');
+            el.setAttribute('data-tooltip', 'Observation isolée (< 3×)');
+            const setContentSpy = vi.fn();
+            const mockInstance = {
+                state: { isFocused: false },
+                reference: el,
+                props: { content: 'Observation isolée (&lt; 3×)' },
+                setContent: setContentSpy
+            };
+
+            capturedOptions.onShow(mockInstance);
+            expect(setContentSpy).not.toHaveBeenCalled();
+
+            el.setAttribute('data-tooltip', 'Alerte <img src=x onerror=alert(1)>');
+            capturedOptions.onShow(mockInstance);
+            expect(setContentSpy).toHaveBeenCalledWith('Alerte ');
+        });
+    });
 });

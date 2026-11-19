@@ -304,11 +304,11 @@
 }
 
 .sc-config-capacity.is-ok iconify-icon {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .sc-config-capacity.is-warning {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 /* ---------- FLOATING ACTIONS CAPSULE (TOP-RIGHT) ---------- */
@@ -333,6 +333,7 @@
 #seatingChartView.sc-random-active .sc-floating-actions :is(.sc-zoom-btn, .sc-orientation-btn, .sc-print-btn) {
     width: 0 !important;
     margin-left: -2px !important;
+    overflow: hidden;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -341,7 +342,6 @@
 
 /* Collapsible drawer transitions for floating capsule buttons */
 .sc-floating-actions .sc-action-btn {
-    overflow: hidden;
     transition: background var(--transition-fast),
                 color var(--transition-fast),
                 transform 0.15s ease,
@@ -900,8 +900,8 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     bottom: -9px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--warning-color, #d97706);
-    color: #ffffff;
+    background: var(--color-amber-deep);
+    color: var(--surface-color);
     font-size: 0.56rem;
     font-weight: 700;
     line-height: 1;
@@ -912,6 +912,12 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     z-index: 60;
     pointer-events: none;
     animation: scFadeIn 0.15s ease both;
+}
+
+[data-theme="dark"] .sc-cell.drag-over.drag-over-full::after,
+[data-theme="dark"] #seatingChartView[data-selection-action="join"]:not([data-dragging="true"]) .sc-cell.occupied.sc-click-target-full:hover::after {
+    background: var(--color-amber);
+    color: var(--bg-color);
 }
 
 @keyframes scCellShake {

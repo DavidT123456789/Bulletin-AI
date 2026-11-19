@@ -710,7 +710,7 @@ body.is-cloud-syncing label {
 
 /* Cloud button hints — state variants */
 .cloud-btn-hint.hint-in-sync {
-    color: var(--success-color);
+    color: var(--success-text);
     font-weight: 500;
 }
 
@@ -729,7 +729,7 @@ body.is-cloud-syncing label {
 }
 
 .cloud-btn-hint.hint-warning {
-    color: var(--warning-color);
+    color: var(--warning-text);
     font-weight: 500;
 }
 
@@ -870,7 +870,7 @@ body.is-cloud-syncing label {
 }
 
 .cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 [data-theme="dark"] .cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {

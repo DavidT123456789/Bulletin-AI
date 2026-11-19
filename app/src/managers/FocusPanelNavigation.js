@@ -57,6 +57,7 @@ export const FocusPanelNavigation = {
         let totalItems = -1;
         let currentTranslateX = 0;
         let snapBackTimer = null;
+        let snapBackRafId = null;
 
         const clearSwipeStyles = (el) => {
             if (!el) return;
@@ -66,16 +67,32 @@ export const FocusPanelNavigation = {
             el.style.willChange = '';
         };
 
+        const cancelSnapBack = () => {
+            if (snapBackTimer) {
+                clearTimeout(snapBackTimer);
+                snapBackTimer = null;
+            }
+            if (snapBackRafId) {
+                cancelAnimationFrame(snapBackRafId);
+                snapBackRafId = null;
+            }
+        };
+
         const snapBack = (el) => {
             if (!el) return;
+            cancelSnapBack();
+            if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+                clearSwipeStyles(el);
+                return;
+            }
             el.style.transition = 'transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease';
             el.style.transform = 'translate3d(0, 0, 0) scale(1)';
             el.style.opacity = '1';
 
-            if (snapBackTimer) clearTimeout(snapBackTimer);
             snapBackTimer = setTimeout(() => {
                 snapBackTimer = null;
-                window.requestAnimationFrame(() => {
+                snapBackRafId = window.requestAnimationFrame(() => {
+                    snapBackRafId = null;
                     clearSwipeStyles(el);
                 });
             }, 380);
@@ -91,15 +108,20 @@ export const FocusPanelNavigation = {
         targetArea.addEventListener('touchstart', e => {
             if (e.touches.length > 1) return; // Ignore multi-touch
 
-            if (snapBackTimer) {
-                clearTimeout(snapBackTimer);
-                snapBackTimer = null;
-            }
+            cancelSnapBack();
             resetGestureVars();
             currentTranslateX = 0;
 
             const header = document.querySelector('.focus-header');
             if (header && header.classList.contains('editing')) {
+                return;
+            }
+
+            // Ignore edge-swipe close zone so panel dismissal and student swipe never collide
+            const panelEl = document.getElementById('focusPanel');
+            const panelLeft = panelEl?.getBoundingClientRect?.().left || 0;
+            const rawStartX = e.touches[0].clientX;
+            if (rawStartX >= panelLeft && (rawStartX - panelLeft) < 30) {
                 return;
             }
 
@@ -113,7 +135,13 @@ export const FocusPanelNavigation = {
                 return;
             }
 
-            touchStartX = e.touches[0].clientX;
+            // Ignore focused or actively selected contenteditable regions so text selection never triggers a swipe
+            const editable = e.target.closest('[contenteditable="true"]');
+            if (editable && (editable === document.activeElement || editable.contains(document.activeElement) || !window.getSelection?.()?.isCollapsed)) {
+                return;
+            }
+
+            touchStartX = rawStartX;
             touchStartY = e.touches[0].clientY;
             lastMoveX = touchStartX;
             lastMoveTime = Date.now();
@@ -263,6 +291,31 @@ export const FocusPanelNavigation = {
     },
 
     /**
+     * Annule immédiatement toute transition en cours (clone, rAF, timeout et styles inline).
+     */
+    cancelActiveTransition() {
+        if (this._animRafId) {
+            cancelAnimationFrame(this._animRafId);
+            this._animRafId = null;
+        }
+        if (this._animTimeout) {
+            clearTimeout(this._animTimeout);
+            this._animTimeout = null;
+        }
+        if (this._activeClone) {
+            this._activeClone.remove();
+            this._activeClone = null;
+        }
+        if (this._animContentEl) {
+            this._animContentEl.style.transition = '';
+            this._animContentEl.style.transform = '';
+            this._animContentEl.style.opacity = '';
+            this._animContentEl.style.willChange = '';
+            this._animContentEl = null;
+        }
+    },
+
+    /**
      * Navigation avec animation de transition
      * @param {'prev'|'next'} direction - Direction de navigation
      * @param {number|null} swipeStartX - Position X de départ si c'est un swipe
@@ -288,27 +341,37 @@ export const FocusPanelNavigation = {
         const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
         if (currentIndex < 0) return;
 
-        if (!content) {
-            // Fallback sans animation
+        // Clean up any ongoing animations before starting a new transition or instant switch
+        this.cancelActiveTransition();
+
+        const prefersReducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+
+        if (!content || prefersReducedMotion) {
+            // Fallback sans animation (ou prefers-reduced-motion)
             this.callbacks?.saveContext?.();
             const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
             const filteredResult = appState.filteredResults?.[targetIndex];
             if (filteredResult) {
                 const targetResult = appState.generatedResults?.find(r => r.id === filteredResult.id) || filteredResult;
                 this._switchToStudent(targetResult, targetIndex);
+                if (isAnalysisVisible && FocusPanelAnalysis.show) {
+                    FocusPanelAnalysis.show();
+                }
+                if (content) {
+                    content.style.transition = '';
+                    content.style.transform = '';
+                    content.style.opacity = '';
+                    content.style.willChange = '';
+                    content.scrollTop = 0;
+                }
+                const navHeader = document.querySelector('.focus-header');
+                if (navHeader) {
+                    navHeader.style.removeProperty('--scroll-p');
+                    navHeader.classList.remove('scrolled');
+                }
                 this.callbacks?.updateScrollAffordances?.();
             }
             return;
-        }
-
-        // Clean up any ongoing animations
-        if (this._animTimeout) {
-            clearTimeout(this._animTimeout);
-            this._animTimeout = null;
-        }
-        if (this._activeClone) {
-            this._activeClone.remove();
-            this._activeClone = null;
         }
 
         // 1. Prepare Target Data
@@ -320,7 +383,32 @@ export const FocusPanelNavigation = {
 
         // 2. Clone Current Content (Retains the swipe-induced inline styles)
         const clone = content.cloneNode(true);
+        // Isolate outgoing clone from assistive tech, focus trap and duplicate non-styled IDs
+        clone.setAttribute('aria-hidden', 'true');
+        clone.setAttribute('inert', '');
+        const CSS_STYLED_CLONE_IDS = new Set([
+            'focusAppreciationTitle',
+            'focusWordCount',
+            'focusCopyBtn',
+            'focusGenerateBtn',
+            'focusAppreciationText',
+            'focusAppreciationSpeakBtn',
+            'focusAppreciationMicBtn',
+            'focusJournalNoteBtn'
+        ]);
+        if (clone.id && !CSS_STYLED_CLONE_IDS.has(clone.id)) {
+            clone.removeAttribute('id');
+        }
+        clone.querySelectorAll('[id]').forEach(el => {
+            if (!CSS_STYLED_CLONE_IDS.has(el.id)) {
+                el.removeAttribute('id');
+            }
+        });
+        clone.querySelectorAll('label[for]').forEach(el => el.removeAttribute('for'));
+        clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+
         this._activeClone = clone;
+        this._animContentEl = content;
         const parent = content.offsetParent || document.body;
 
         clone.style.position = 'absolute';
@@ -372,7 +460,8 @@ export const FocusPanelNavigation = {
         this.callbacks?.updateScrollAffordances?.();
 
         // 4. Trigger Inline Animations (iOS Gallery Physics)
-        requestAnimationFrame(() => {
+        this._animRafId = requestAnimationFrame(() => {
+            this._animRafId = null;
             const viewportMultiplier = window.innerWidth > 600 ? 0.6 : 1.0;
             const exitX = direction === 'next' ? -window.innerWidth * viewportMultiplier : window.innerWidth * viewportMultiplier;
             const enterX = direction === 'next' ? window.innerWidth * viewportMultiplier : -window.innerWidth * viewportMultiplier;
@@ -408,6 +497,9 @@ export const FocusPanelNavigation = {
             content.style.transform = '';
             content.style.opacity = '';
             content.style.willChange = '';
+            if (this._animContentEl === content) {
+                this._animContentEl = null;
+            }
             this._animTimeout = null;
         }, 480);
     },

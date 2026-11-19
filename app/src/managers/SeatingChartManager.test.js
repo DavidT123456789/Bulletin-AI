@@ -9,6 +9,7 @@ import { CrossClassSearchManager } from './CrossClassSearchManager';
 import { TooltipsUI } from './TooltipsManager';
 import { UI } from './UIManager';
 import { ListSelectionManager } from './list/ListSelectionManager';
+import { StorageManager } from './StorageManager';
 import { bus, EVENTS } from '../core/EventBus.js';
 
 vi.mock('../services/DBService.js', () => ({
@@ -5826,6 +5827,38 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellStudentIds(0, 3)).toEqual([]);
             expect(SeatingChartManager._getCellStudentIds(0, 4)).toEqual([]);
         });
+
+        it('doit rétablir TooltipsUI.isIgnoringTooltips à false après la fin ou l annulation d un lasso souris', () => {
+            vi.useFakeTimers();
+            try {
+                TooltipsUI.isIgnoringTooltips = false;
+
+                // 1. Fin normale (pointerup)
+                SeatingChartManager._startMouseLassoSelection({
+                    button: 0, clientX: 295, clientY: 5, shiftKey: false, ctrlKey: false, metaKey: false
+                });
+                window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 95, bubbles: true }));
+                expect(TooltipsUI.isIgnoringTooltips).toBe(true);
+
+                window.dispatchEvent(new PointerEvent('pointerup', { clientX: 500, clientY: 95, bubbles: true }));
+                vi.advanceTimersByTime(200);
+                expect(TooltipsUI.isIgnoringTooltips).toBe(false);
+
+                // 2. Annulation (Escape)
+                SeatingChartManager._startMouseLassoSelection({
+                    button: 0, clientX: 295, clientY: 5, shiftKey: false, ctrlKey: false, metaKey: false
+                });
+                window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 95, bubbles: true }));
+                expect(TooltipsUI.isIgnoringTooltips).toBe(true);
+
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                vi.advanceTimersByTime(200);
+                expect(TooltipsUI.isIgnoringTooltips).toBe(false);
+            } finally {
+                vi.useRealTimers();
+                TooltipsUI.isIgnoringTooltips = false;
+            }
+        });
     });
 });
 
@@ -6177,6 +6210,113 @@ describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève
         expect(printedHeader.querySelector('.sc-print-class')?.textContent).toContain('<img src=x onerror=alert(1)>');
         window.onafterprint?.();
         printSpy.mockRestore();
+        document.body.innerHTML = '';
+    });
+
+    it('retire le listener animationend de _animateViewExit lorsqu\'une sortie est annulée (évite la bascule fantôme vers Liste)', () => {
+        const viewEl = document.createElement('div');
+        viewEl.id = 'seatingChartView';
+        document.body.appendChild(viewEl);
+        const onComplete = vi.fn();
+
+        const origMatchMedia = window.matchMedia;
+        window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+        try {
+            SeatingChartManager._animateViewExit(viewEl, onComplete);
+            // Annulation avant les 95ms (comme switchToView('plan'))
+            SeatingChartManager._clearViewTransitionTimers();
+            // Une animation ultérieure sur #seatingChartView ne doit PAS déclencher onComplete
+            viewEl.dispatchEvent(new Event('animationend'));
+            expect(onComplete).not.toHaveBeenCalled();
+        } finally {
+            window.matchMedia = origMatchMedia;
+            viewEl.remove();
+        }
+    });
+
+    it('protège _moveSpecialAesh (bornes, cellule épinglée, migration AESH global hérité) et persiste Undo/Redo sur case vide', () => {
+        const clsA = ClassManager.createClass('5e A');
+        const clsB = ClassManager.createClass('5e B');
+        appState.currentClassId = clsA.id;
+        userSettings.academic.currentClassId = clsA.id;
+        appState.seatingGrid = { rows: 4, cols: 4, locked: false, specialLayout: { '0,0': 'aesh' } };
+        appState.generatedResults = [
+            { id: 'stu-pin', classId: clsA.id, nom: 'Pin', prenom: 'Paul', seatingPosition: { row: 0, col: 1, pinned: true }, studentData: { periods: { T1: {} } } }
+        ];
+
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._planMode = 'course';
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+        SeatingChartManager._undoStack = [];
+        SeatingChartManager._redoStack = [];
+        SeatingChartManager._loadPositionsFromState();
+
+        // 1. Hors bornes et cellule épinglée refusés
+        SeatingChartManager._moveSpecialAesh(0, 0, -1, 5);
+        SeatingChartManager._moveSpecialAesh(0, 0, 0, 1);
+        expect(appState.seatingGrid.specialLayout['0,0']).toBe('aesh');
+
+        // 2. Déplacement vers une case vide (0,2) préserve l'AESH hérité sur clsB
+        const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+        try {
+            SeatingChartManager._moveSpecialAesh(0, 0, 0, 2);
+            expect(appState.seatingGrid.specialLayout['0,0']).toBeUndefined();
+            expect(clsA.seatingSpecialLayout['0,2']).toBe('aesh');
+            expect(clsB.seatingSpecialLayout['0,0']).toBe('aesh');
+
+            // 3. Undo et Redo d'un déplacement AESH vers case vide persistent via StorageManager.saveAppState
+            saveSpy.mockClear();
+            SeatingChartManager._undo();
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(clsA.seatingSpecialLayout?.['0,2']).toBeUndefined();
+
+            saveSpy.mockClear();
+            SeatingChartManager._redo();
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(clsA.seatingSpecialLayout['0,2']).toBe('aesh');
+        } finally {
+            saveSpy.mockRestore();
+        }
+    });
+
+    it('n\'écrase pas une place AESH par une allée globale lors d\'une réduction puis agrandissement des rangées', () => {
+        const clsA = ClassManager.createClass('4e A');
+        appState.currentClassId = clsA.id;
+        userSettings.academic.currentClassId = clsA.id;
+        clsA.seatingSpecialLayout = { '0,3': 'aesh' };
+        appState.seatingGrid = {
+            rows: 5,
+            cols: 6,
+            locked: false,
+            specialLayout: { '1,3': 'aisle', '2,3': 'aisle', '3,3': 'aisle', '4,3': 'aisle' }
+        };
+        document.body.innerHTML = `
+            <div id="seatingChartView">
+                <input id="scRowsSlider" value="4" /><span id="scRowsValue">4</span>
+                <input id="scColsSlider" value="6" /><span id="scColsValue">6</span>
+                <div id="scGridContainer"></div>
+            </div>
+        `;
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._planMode = 'course';
+        SeatingChartManager._students = [];
+        SeatingChartManager._studentMap = new Map();
+        SeatingChartManager._initGrid(5, 6);
+
+        // Réduire 5 -> 4 : AESH (0,3) passe à (-1,3), allée (1,3) passe à (0,3)
+        SeatingChartManager._onGridConfigChange();
+        expect(clsA.seatingSpecialLayout['-1,3']).toBe('aesh');
+        expect(appState.seatingGrid.specialLayout['0,3']).toBe('aisle');
+
+        // Agrandir 4 -> 5 : AESH revient en (0,3) et ne doit PAS être recouvert par une allée globale en (0,3)
+        document.getElementById('scRowsSlider').value = '5';
+        SeatingChartManager._onGridConfigChange();
+        expect(clsA.seatingSpecialLayout['0,3']).toBe('aesh');
+        expect(appState.seatingGrid.specialLayout['0,3']).toBeUndefined();
+        expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aesh', scope: 'class' });
         document.body.innerHTML = '';
     });
 });

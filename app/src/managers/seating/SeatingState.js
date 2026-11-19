@@ -651,11 +651,11 @@ export const SeatingState = {
         if (this._redoStack.length === 0 || this._isLocked) return;
         this._undoStack.push(this._captureSnapshot());
         const snapshot = this._redoStack.pop();
-        this._restoreSnapshot(snapshot);
         this._hasChangesSinceUnlock = true;
         const currentClass = this._getCurrentClass();
         const lockKey = this._getActiveClassLockKey();
         if (currentClass) currentClass[lockKey] = false;
+        this._restoreSnapshot(snapshot);
     },
 
     _restoreSnapshot(snapshot) {
@@ -667,7 +667,7 @@ export const SeatingState = {
 
         this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
         if (appState[gridKey]) {
-            appState[gridKey].specialLayout = snapshot.specialLayout;
+            appState[gridKey].specialLayout = Utils.deepClone(snapshot.specialLayout || {});
             if (snapshot.rows) appState[gridKey].rows = snapshot.rows;
             if (snapshot.cols) appState[gridKey].cols = snapshot.cols;
         }
@@ -705,10 +705,16 @@ export const SeatingState = {
             document.getElementById('scColsValue').textContent = snapshot.cols; 
         }
 
-        this._savePositionsToState();
+        const savedPositions = this._savePositionsToState();
         this._render();
         this._applySmartFit(true);
-        this._saveGridConfig();
+        const savedGrid = this._saveGridConfig();
+        if (!savedPositions && !savedGrid && !this._isVirtualClass()) {
+            if (currentClass) {
+                currentClass[this._getActiveClassUpdatedKey()] = Date.now();
+            }
+            StorageManager.saveAppState();
+        }
         this._staggerCellEntrance();
     },
 
@@ -721,8 +727,18 @@ export const SeatingState = {
         const placedCount = this._getPlacedIds().size;
         const totalCount = this._students.length;
 
-        if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
-        if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
+        if (undoBtn) {
+            const isEmpty = this._undoStack.length === 0;
+            undoBtn.removeAttribute('disabled');
+            undoBtn.classList.toggle('disabled', isEmpty);
+            undoBtn.setAttribute('aria-disabled', String(isEmpty));
+        }
+        if (redoBtn) {
+            const isEmpty = this._redoStack.length === 0;
+            redoBtn.removeAttribute('disabled');
+            redoBtn.classList.toggle('disabled', isEmpty);
+            redoBtn.setAttribute('aria-disabled', String(isEmpty));
+        }
         if (clearBtn) clearBtn.disabled = placedCount === 0;
         if (autoPlaceBtn) {
             autoPlaceBtn.disabled = totalCount === 0;
@@ -764,7 +780,7 @@ export const SeatingState = {
     },
 
     _savePositionsToState(preserveOutOfBounds = false) {
-        if (this._isVirtualClass()) return;
+        if (this._isVirtualClass()) return false;
         const placed = this._getPlacedMap();
         const posKey = this._getActivePositionKey();
         const updatedKey = this._getActiveClassUpdatedKey();
@@ -815,6 +831,7 @@ export const SeatingState = {
             }
             StorageManager.saveAppState();
         }
+        return anyChanged;
     },
     _getValidPlacedIdsForClass(cls, mode = 'course', classResults = null) {
         if (!cls) return new Set();
@@ -1035,6 +1052,8 @@ export const SeatingState = {
         cell.classList.toggle('pinned', Boolean(isPinned));
         if (selectionChanged) {
             this._updateSelectionAttribute();
+        } else if (this._selectedChipIds?.length > 0) {
+            this._applyChipSelectionUI?.();
         }
         this._setElementDraggable(cell, this._isNativeDraggableAllowed() && !isPinned);
         const pinBtn = cell.querySelector('.sc-cell-pin');

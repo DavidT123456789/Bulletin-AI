@@ -573,12 +573,13 @@ export const Utils = {
     formatStudentInitialLabel(nom, prenom, html = false, options = {}) {
         const prenomClean = (prenom || '').trim();
         const initialLetter = (nom || '').trim().charAt(0).toUpperCase();
-        if (!initialLetter) return prenomClean;
-        if (options?.showInitial === false && prenomClean) return prenomClean;
+        const prenomOut = html ? this.escapeHtml(prenomClean) : prenomClean;
+        if (!initialLetter) return prenomOut;
+        if (options?.showInitial === false && prenomClean) return prenomOut;
         const omitLongInitial = options?.omitLongInitial !== false && !options?.forceInitial && prenomClean.length >= 11;
-        if (omitLongInitial) return prenomClean;
+        if (omitLongInitial) return prenomOut;
         if (html) {
-            return `${prenomClean} <span class="sc-cell-initial">${initialLetter}.</span>`.trim();
+            return `${prenomOut} <span class="sc-cell-initial">${this.escapeHtml(initialLetter)}.</span>`.trim();
         }
         return `${prenomClean} ${initialLetter}.`.trim();
     },
@@ -1764,6 +1765,71 @@ export const Utils = {
             }
         }
         return updated;
+    },
+
+    /**
+     * Enveloppe une promesse avec un délai maximum avant rejet (`TimeoutError`).
+     * @param {Promise<*>} promise - Promesse à surveiller
+     * @param {number} timeoutMs - Délai maximum en millisecondes
+     * @param {string} [message='Délai réseau dépassé.'] - Message d'erreur en cas d'expiration
+     * @returns {Promise<*>}
+     */
+    withTimeout(promise, timeoutMs, message = 'Délai réseau dépassé.') {
+        if (!timeoutMs || timeoutMs <= 0) return Promise.resolve(promise);
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+                const err = new Error(message);
+                err.name = 'TimeoutError';
+                reject(err);
+            }, timeoutMs);
+        });
+        return Promise.race([Promise.resolve(promise), timeoutPromise]).finally(() => {
+            clearTimeout(timeoutId);
+        });
+    },
+
+    /**
+     * Exécute `fetch()` avec un `AbortController` à expiration automatique.
+     * Préserve un éventuel `options.signal` externe et nettoie toujours le timer.
+     * @param {string} url
+     * @param {RequestInit} [options={}]
+     * @param {number} [timeoutMs=15000]
+     * @returns {Promise<Response>}
+     */
+    async fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+        if (!timeoutMs || timeoutMs <= 0 || typeof AbortController !== 'function') {
+            return fetch(url, options);
+        }
+        const controller = new AbortController();
+        const externalSignal = options.signal;
+        let onExternalAbort = null;
+        if (externalSignal) {
+            if (externalSignal.aborted) {
+                controller.abort(externalSignal.reason);
+            } else {
+                onExternalAbort = () => controller.abort(externalSignal.reason);
+                externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+            }
+        }
+        const timeoutId = setTimeout(() => {
+            const err = new Error(`La requête a expiré (timeout ${Math.round(timeoutMs / 1000)}s).`);
+            err.name = 'TimeoutError';
+            controller.abort(err);
+        }, timeoutMs);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } catch (error) {
+            if (!externalSignal?.aborted && controller.signal.aborted && controller.signal.reason?.name === 'TimeoutError') {
+                throw controller.signal.reason;
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+            if (externalSignal && onExternalAbort) {
+                externalSignal.removeEventListener('abort', onExternalAbort);
+            }
+        }
     },
 
     /**

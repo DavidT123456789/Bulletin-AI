@@ -91,5 +91,37 @@ describe('SvgCharts', () => {
             expect(svg).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
             expect(svg).toContain('3°1 &quot;A&quot;');
         });
+
+        it('filtre Infinity/-Infinity et évite les superpositions labels/légende (élève sous la classe, 20/20, label long)', () => {
+            const infSvg = SvgCharts.renderTrajectorySvg({
+                periods: ['T1', 'T2'],
+                studentGrades: [Infinity, 15],
+                classAverages: [-Infinity, 12]
+            });
+            expect(infSvg).not.toContain('NaN');
+            expect(infSvg).not.toContain('Infinity');
+
+            const histInfSvg = SvgCharts.renderDistributionHistogramSvg([Infinity, 2, 3, 0, 0]);
+            expect(histInfSvg).not.toContain('NaN');
+            expect(histInfSvg).not.toContain('Infinity');
+
+            // Élève 1,5 pt sous la moyenne de classe : le label classe (13,5) doit être au-dessus (y plus petit) que le label élève (12,0)
+            const belowSvg = SvgCharts.renderTrajectorySvg(
+                { periods: ['T1', 'T2'], studentGrades: [12.0, 20.0], classAverages: [13.5, 14.0] },
+                { studentLabel: 'Jean-Baptiste Dupont' }
+            );
+            const yClassT1 = Number(belowSvg.match(/y="(\d+)"[^>]*>13,5</)?.[1]);
+            const yStudentT1 = Number(belowSvg.match(/y="(\d+)"[^>]*>12,0</)?.[1]);
+            expect(yClassT1).toBeLessThan(yStudentT1);
+            expect(yStudentT1 - yClassT1).toBeGreaterThanOrEqual(16);
+
+            // À 20/20 avec légende (y=9..12), le label élève reste sous la légende (>= 24)
+            const yStudent20 = Number(belowSvg.match(/y="(\d+)"[^>]*>20,0</)?.[1]);
+            expect(yStudent20).toBeGreaterThanOrEqual(24);
+
+            // Avec un studentLabel long, le 2e item de légende est décalé dynamiquement au-delà de x1="80"
+            const secondLegendX = Number(belowSvg.match(/<line x1="(\d+)" y1="0"[^>]*stroke-dasharray="3 2"/)?.[1]);
+            expect(secondLegendX).toBeGreaterThan(80);
+        });
     });
 });

@@ -357,8 +357,8 @@ export const SeatingRenderer = {
                 }
             });
 
-            cell.addEventListener('click', () => {
-                if (this._isLocked) return;
+            cell.addEventListener('click', (e) => {
+                if (e.defaultPrevented || this._wasRecentTouchDrag() || this._isLocked) return;
                 if (this._selectedChipIds.length > 0 && !special) {
                     this._placeSelectedAt(row, col);
                 } else if (this._selectedChipIds.length === 0) {

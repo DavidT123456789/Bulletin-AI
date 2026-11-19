@@ -6,6 +6,7 @@
 
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { DOMHelper } from '../utils/DOMHelper.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
@@ -180,50 +181,10 @@ export const ClassDashboardManager = {
             }
         });
 
-        this.modal.addEventListener('focusin', (e) => {
-            const editable = e.target.closest('#aiSynthesisContent [contenteditable="true"]');
-            if (editable) {
-                editable._initialTextBeforeEdit = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
-            }
-        });
-
-        this.modal.addEventListener('keydown', (e) => {
-            const editable = e.target.closest('#aiSynthesisContent [contenteditable="true"]');
-            if (!editable) return;
-
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                this.cancelEditableItem(editable);
-            } else if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                editable.blur();
-            }
-        });
-
-        this.modal.addEventListener('paste', (e) => {
-            const editable = e.target.closest('#aiSynthesisContent [contenteditable="true"]');
-            if (!editable) return;
-
-            e.preventDefault();
-            const rawPaste = (e.clipboardData || window.clipboardData)?.getData('text/plain') || '';
-            const cleanPaste = rawPaste.replace(/\s+/g, ' ');
-            if (document.queryCommandSupported?.('insertText')) {
-                document.execCommand('insertText', false, cleanPaste);
-            } else {
-                const selection = window.getSelection();
-                if (selection && selection.rangeCount > 0) {
-                    selection.deleteFromDocument();
-                    selection.getRangeAt(0).insertNode(document.createTextNode(cleanPaste));
-                    selection.collapseToEnd();
-                }
-            }
-        });
-
-        this.modal.addEventListener('focusout', (e) => {
-            const editable = e.target.closest('#aiSynthesisContent [contenteditable="true"]');
-            if (!editable) return;
-            this._handleEditableBlur(editable);
+        DOMHelper.bindInlineEditable(this.modal, {
+            selector: '#aiSynthesisContent [contenteditable="true"]',
+            onCancel: (editable) => this.cancelEditableItem(editable),
+            onCommit: (editable) => this._handleEditableBlur(editable)
         });
     },
 
@@ -240,12 +201,29 @@ export const ClassDashboardManager = {
             return;
         }
 
-        // Calculate statistics
-        this.cachedStats = this.calculateStatistics(students);
+        // Calculate statistics (pass full class roster so historical periodAverages stay invariant across periods)
+        this.cachedStats = this.calculateStatistics(students, this._getFullClassRoster());
 
         // Open modal and render
         UI.openModal(this.modal);
         this.renderDashboard(this.cachedStats, students);
+    },
+
+    /**
+     * Resolve full class roster (physical or virtual class, independent of active list filters and current-period departures).
+     * @param {string|null} [classId=null]
+     * @returns {Array}
+     * @private
+     */
+    _getFullClassRoster(classId = null) {
+        const targetClassId = classId || appState.currentClassId;
+        if (targetClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
+            const classRoster = ClassManager.getStudentsForClass(targetClassId);
+            if (classRoster.length > 0 || classId) {
+                return classRoster;
+            }
+        }
+        return appState.filteredResults || [];
     },
 
     /**
@@ -256,20 +234,9 @@ export const ClassDashboardManager = {
      */
     getStudentsData(classId = null) {
         const period = appState.currentPeriod;
-        let sourceData = appState.filteredResults || [];
-
-        if (classId) {
-            sourceData = ClassManager.getStudentsForClass(classId).filter(
-                r => !Utils.isStudentDepartedBeforePeriod?.(r, period)
-            );
-        } else if (appState.currentClassId && Array.isArray(appState.generatedResults) && appState.generatedResults.length > 0) {
-            const classRoster = appState.generatedResults.filter(
-                r => r.classId === appState.currentClassId && !Utils.isStudentDepartedBeforePeriod?.(r, period)
-            );
-            if (classRoster.length > 0) {
-                sourceData = classRoster;
-            }
-        }
+        const sourceData = this._getFullClassRoster(classId).filter(
+            r => !Utils.isStudentDepartedBeforePeriod?.(r, period)
+        );
 
         const allPeriods = Utils.getPeriods();
         const currentPeriodIdx = allPeriods.indexOf(period);
@@ -331,7 +298,7 @@ export const ClassDashboardManager = {
                     previousGrade: prevGrade,
                     evolution: evolution,
                     periodGrades: periodGrades,
-                    appreciation: periodData.appreciation ?? r.appreciation ?? '',
+                    appreciation: Utils.getPeriodAppreciation(r, period),
                     context: periodData.context || '',
                     journalSynthesis: journalSynthesis,
                     journalTags: journalTags
@@ -348,7 +315,7 @@ export const ClassDashboardManager = {
      */
     getStatsForClass(classId) {
         const students = this.getStudentsData(classId);
-        return this.calculateStatistics(students);
+        return this.calculateStatistics(students, this._getFullClassRoster(classId));
     },
 
     /**
@@ -375,11 +342,9 @@ export const ClassDashboardManager = {
      * @param {Array} students 
      * @returns {Object|null} Computed statistics
      */
-    calculateStatistics(students) {
-        if (!students || students.length === 0) return null;
-
-        const gradeSummary = StatsService.summarizeGrades(students.map(s => s.grade));
-        if (!gradeSummary) return null;
+    calculateStatistics(students, fullClassRoster = null) {
+        const cohort = StatsService.computeCohortStats(students, { topLimit: 15 });
+        if (!cohort) return null;
 
         const {
             count: n,
@@ -392,54 +357,19 @@ export const ClassDashboardManager = {
             heterogeneity,
             aboveTenCount,
             successRate,
-            distributionMap: distribution
-        } = gradeSummary;
+            distribution,
+            avgEvolution,
+            progressCount,
+            stableCount,
+            regressionCount,
+            hasEvolutionData,
+            topProgressions,
+            topRegressions,
+            atRisk
+        } = cohort;
 
         const minStudents = students.filter(s => s.grade === min).map(s => s.fullName);
         const maxStudents = students.filter(s => s.grade === max).map(s => s.fullName);
-
-        // Evolution analysis using configured thresholds via StatsService
-        const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
-
-        const withEvolution = students.filter(s => s.evolution !== null);
-        const avgEvolution = StatsService.computeAverageEvolution(withEvolution.map(s => s.evolution));
-        let progressCount = 0;
-        let stableCount = 0;
-        let regressionCount = 0;
-
-        if (withEvolution.length > 0) {
-            withEvolution.forEach(s => {
-                const category = StatsService.classifyEvolutionCategory(s.evolution);
-                if (category === 'progress') progressCount++;
-                else if (category === 'regression') regressionCount++;
-                else stableCount++;
-            });
-        }
-
-        // Top significant progressions and regressions
-        const sortedByEvolution = withEvolution.slice().sort((a, b) => b.evolution - a.evolution);
-        const topProgressions = sortedByEvolution
-            .filter(s => StatsService.classifyEvolutionCategory(s.evolution) === 'progress')
-            .slice(0, 15);
-        const topRegressions = sortedByEvolution
-            .filter(s => StatsService.classifyEvolutionCategory(s.evolution) === 'regression')
-            .slice(-15)
-            .reverse();
-
-        // Students genuinely requiring pedagogical attention:
-        // - Average below 10/20 (consistent with successRate < 100%)
-        // - Or sharp drop (<= -1.5 pt) regardless of grade
-        // - Or moderate drop (<= negThreshold) with fragile/medium grade (< 12/20)
-        const atRisk = students
-            .filter(s =>
-                s.grade < 10 ||
-                (s.evolution !== null && (s.evolution <= -1.5 || (s.grade < 12 && s.evolution <= negThreshold)))
-            )
-            .sort((a, b) => {
-                const scoreA = a.grade + Math.min(0, (a.evolution || 0) * 1.2);
-                const scoreB = b.grade + Math.min(0, (b.evolution || 0) * 1.2);
-                return scoreA - scoreB;
-            });
 
         // Multi-period class average trajectory (e.g., T1 -> T2 -> T3 or S1 -> S2)
         const allPeriods = Utils.getPeriods();
@@ -448,33 +378,38 @@ export const ClassDashboardManager = {
         const relevantPeriods = currentIdx >= 0 ? allPeriods.slice(0, currentIdx + 1) : [currentPeriod];
         const prevPeriod = this.getPreviousPeriod(currentPeriod);
 
-        const periodAverages = [];
-        relevantPeriods.forEach(p => {
-            let pGrades = [];
-            if (p === currentPeriod) {
-                pGrades = grades;
-            } else {
-                pGrades = students
-                    .map(s => {
-                        if (s.periodGrades && typeof s.periodGrades[p] === 'number' && !isNaN(s.periodGrades[p])) {
-                            return s.periodGrades[p];
-                        }
-                        if (p === prevPeriod && typeof s.previousGrade === 'number' && !isNaN(s.previousGrade)) {
-                            return s.previousGrade;
-                        }
-                        return null;
-                    })
-                    .filter(g => g !== null);
-            }
-            if (pGrades.length > 0) {
-                const pAvg = pGrades.reduce((a, b) => a + b, 0) / pGrades.length;
-                periodAverages.push({
-                    period: p,
-                    average: parseFloat(pAvg.toFixed(2)),
-                    count: pGrades.length
+        const periodAverages = (Array.isArray(fullClassRoster) && fullClassRoster.length > 0)
+            ? StatsService.computePeriodAverages(fullClassRoster, relevantPeriods)
+            : (() => {
+                const avgs = [];
+                relevantPeriods.forEach(p => {
+                    let pGrades = [];
+                    if (p === currentPeriod) {
+                        pGrades = grades;
+                    } else {
+                        pGrades = students
+                            .map(s => {
+                                if (s.periodGrades && typeof s.periodGrades[p] === 'number' && !isNaN(s.periodGrades[p])) {
+                                    return s.periodGrades[p];
+                                }
+                                if (p === prevPeriod && typeof s.previousGrade === 'number' && !isNaN(s.previousGrade)) {
+                                    return s.previousGrade;
+                                }
+                                return null;
+                            })
+                            .filter(g => g !== null);
+                    }
+                    if (pGrades.length > 0) {
+                        const pAvg = pGrades.reduce((a, b) => a + b, 0) / pGrades.length;
+                        avgs.push({
+                            period: p,
+                            average: parseFloat(pAvg.toFixed(2)),
+                            count: pGrades.length
+                        });
+                    }
                 });
-            }
-        });
+                return avgs;
+            })();
 
         // Aggregate significant Journal de Bord trends across the class for the active period
         const classTagStudentCounts = {};
@@ -536,7 +471,7 @@ export const ClassDashboardManager = {
             topProgressions: topProgressions,
             topRegressions: topRegressions,
             atRisk: atRisk,
-            hasEvolutionData: withEvolution.length > 0,
+            hasEvolutionData: hasEvolutionData,
             periodAverages: periodAverages,
             journalTrends: journalTrends,
 
@@ -591,11 +526,10 @@ export const ClassDashboardManager = {
             studentCount.textContent = `${stats.count} ${stats.count > 1 ? 'élèves analysés' : 'élève analysé'}`;
         }
 
-        // Retrieve and display class name
-        const classes = appState.classes || [];
-        const currentClass = classes.find(c => c.id === appState.currentClassId);
-        if (classBadge && currentClass) {
-            classBadge.textContent = currentClass.name;
+        // Retrieve and display class name (physical or reconstituted virtual class)
+        const currentClassName = Utils.getCurrentClassName(appState.currentClassId);
+        if (classBadge && currentClassName) {
+            classBadge.textContent = currentClassName;
             classBadge.style.display = 'inline-flex';
         } else if (classBadge) {
             classBadge.style.display = 'none';
@@ -646,9 +580,10 @@ export const ClassDashboardManager = {
                 avgTooltip += `<br>${stats.count} élève${stats.count > 1 ? 's' : ''} évalué${stats.count > 1 ? 's' : ''}`;
             }
             if (typeof stats.avgEvolution === 'number' && !isNaN(stats.avgEvolution)) {
-                const sign = stats.avgEvolution >= 0 ? '+' : '';
-                const evoFormatted = stats.avgEvolution.toFixed(1).replace('.', ',');
-                const unit = Math.abs(stats.avgEvolution) >= 2 ? 'pts' : 'pt';
+                const cleanEvo = Math.round(stats.avgEvolution * 10) / 10 || 0;
+                const sign = cleanEvo > 0 ? '+' : '';
+                const evoFormatted = cleanEvo.toFixed(1).replace('.', ',');
+                const unit = Math.abs(cleanEvo) >= 2 ? 'pts' : 'pt';
                 avgTooltip += `<br>Évolution récente : ${sign}${evoFormatted} ${unit}`;
             }
             TooltipsUI.updateTooltip(statAverageItem || statAverage, avgTooltip);
@@ -783,9 +718,10 @@ export const ClassDashboardManager = {
                         `;
                     } else {
                         if (s.evolution !== null) {
-                            const sign = s.evolution >= 0 ? '+' : '';
-                            const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
-                            const unit = Math.abs(s.evolution) >= 2 ? 'pts' : 'pt';
+                            const cleanEvo = Math.round(s.evolution * 10) / 10 || 0;
+                            const sign = cleanEvo > 0 ? '+' : '';
+                            const formattedEvolution = cleanEvo.toFixed(1).replace('.', ',');
+                            const unit = Math.abs(cleanEvo) >= 2 ? 'pts' : 'pt';
                             tooltipText += ` (${sign}${formattedEvolution} ${unit})`;
                         }
                         metricsHTML = `<span class="highlight-evolution negative">${formattedGrade}/20</span>`;
@@ -808,8 +744,9 @@ export const ClassDashboardManager = {
             }
         }
 
-        // Re-initialize tooltips to bind Tippy.js to the new data-tooltip elements
-        TooltipsUI.initTooltips();
+        // Re-initialize tooltips to bind Tippy.js to the new data-tooltip elements in dashboard highlights
+        if (progressList) TooltipsUI.initTooltips(progressList);
+        if (riskList) TooltipsUI.initTooltips(riskList);
     },
 
     /**
@@ -822,6 +759,8 @@ export const ClassDashboardManager = {
         const toolbar = this.modal?.querySelector('#aiRefinementToolbar');
 
         if (content) {
+            delete content.dataset.classId;
+            delete content.dataset.period;
             content.innerHTML = `
                 <div class="ai-placeholder">
                     <div class="ai-placeholder-glow"></div>
@@ -880,19 +819,30 @@ export const ClassDashboardManager = {
             return;
         }
 
-        // 2. Check persistent storage (Class data)
+        // 2. Check persistent storage (physical class or virtual class map)
         const classes = appState.classes || [];
         const currentClass = classes.find(c => c.id === currentClassId);
+        const savedAnalysis = currentClass?.analyses?.[currentPeriod]
+            || (ClassManager.isVirtualClass(currentClassId) ? appState.virtualClassAnalyses?.[currentClassId]?.[currentPeriod] : null);
 
-        if (currentClass && currentClass.analyses && currentClass.analyses[currentPeriod]) {
-            const savedAnalysis = currentClass.analyses[currentPeriod];
+        if (savedAnalysis) {
 
-            if (savedAnalysis.content) {
-                this._applySynthesisToUI(savedAnalysis.content);
+            if (savedAnalysis.content || savedAnalysis.rawText) {
+                const safeContent = this._resolveSafeSynthesisHTML(savedAnalysis.rawText, savedAnalysis.content);
+                if (!safeContent) {
+                    this.resetAISection();
+                    return;
+                }
+                const hasOriginal = Boolean(savedAnalysis.originalRawText || savedAnalysis.originalContent);
+                const safeOriginalContent = hasOriginal
+                    ? (this._resolveSafeSynthesisHTML(savedAnalysis.originalRawText, savedAnalysis.originalContent) || safeContent)
+                    : safeContent;
+
+                this._applySynthesisToUI(safeContent);
 
                 // Update in-memory cache
-                this.cachedSynthesisHTML = savedAnalysis.content;
-                this.originalSynthesisHTML = savedAnalysis.originalContent || savedAnalysis.content;
+                this.cachedSynthesisHTML = safeContent;
+                this.originalSynthesisHTML = safeOriginalContent;
                 this.cachedSynthesisRawText = savedAnalysis.rawText || '';
                 this.originalSynthesisRawText = savedAnalysis.originalRawText || savedAnalysis.rawText || '';
                 this.cachedSynthesisClassId = currentClassId;
@@ -1252,6 +1202,62 @@ export const ClassDashboardManager = {
     },
 
     /**
+     * Resolve synthesis HTML safely: prioritize rebuilding from rawText via _formatSynthesisText,
+     * otherwise sanitize legacy HTML with a strict tag/attribute allowlist.
+     * @param {string|null|undefined} rawText
+     * @param {string|null|undefined} legacyHtml
+     * @returns {string}
+     * @private
+     */
+    _resolveSafeSynthesisHTML(rawText, legacyHtml) {
+        if (typeof rawText === 'string' && rawText.trim()) {
+            return `<div class="ai-synthesis-text">${this._formatSynthesisText(rawText)}</div>`;
+        }
+        if (typeof legacyHtml === 'string' && legacyHtml.trim()) {
+            return this._sanitizeLegacySynthesisHTML(legacyHtml);
+        }
+        return '';
+    },
+
+    /**
+     * Sanitize legacy persisted synthesis HTML using an inert document and a strict allowlist.
+     * Prevents stored XSS from untrusted JSON backups lacking rawText.
+     * @param {string} html
+     * @returns {string}
+     * @private
+     */
+    _sanitizeLegacySynthesisHTML(html) {
+        if (typeof html !== 'string' || !html.trim()) return '';
+        if (typeof DOMParser !== 'function' || typeof document === 'undefined') {
+            return `<p>${Utils.escapeHtml(html)}</p>`;
+        }
+
+        const ALLOWED_TAGS = new Set([
+            'DIV', 'P', 'UL', 'OL', 'LI', 'SPAN', 'STRONG', 'EM', 'B', 'I', 'BR',
+            'H3', 'H4', 'BUTTON', 'ICONIFY-ICON'
+        ]);
+        const SAFE_TEXT_ATTRS = new Set([
+            'class', 'aria-label', 'aria-hidden', 'data-tooltip',
+            'data-action', 'data-synthesis-section', 'data-synthesis-add'
+        ]);
+
+        return DOMHelper.sanitizeHTML(html, {
+            allowedTags: ALLOWED_TAGS,
+            sanitizeAttr: (tag, name, value) => {
+                if (SAFE_TEXT_ATTRS.has(name)) return value;
+                if ((name === 'contenteditable' || name === 'spellcheck') && (value === 'true' || value === 'false')) {
+                    return value;
+                }
+                if (tag === 'BUTTON' && name === 'type') return 'button';
+                if (tag === 'ICONIFY-ICON' && name === 'icon' && /^[a-z0-9:_-]+$/i.test(value)) {
+                    return value;
+                }
+                return null;
+            }
+        });
+    },
+
+    /**
      * Apply synthesis HTML to the UI and update button state
      * @param {string} htmlContent - HTML to render
      * @param {boolean} [animate=false] - Whether to animate the reveal
@@ -1264,6 +1270,8 @@ export const ClassDashboardManager = {
         const toolbar = this.modal?.querySelector('#aiRefinementToolbar');
 
         if (content) {
+            content.dataset.classId = String(appState.currentClassId || '');
+            content.dataset.period = String(appState.currentPeriod || '');
             if (animate) {
                 await UI.animateHtmlReveal(content, htmlContent);
             } else {
@@ -1350,6 +1358,7 @@ export const ClassDashboardManager = {
             const { systemPrompt, userPrompt } = this.buildAIPrompt(stats);
 
             const response = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
+            const usedModel = response.modelUsed || targetModel;
 
             // Parse the response into structured sections
             const formattedText = this._formatSynthesisText(response.text);
@@ -1361,7 +1370,7 @@ export const ClassDashboardManager = {
             this._saveSynthesisToStorage(synthesisHTML, stats.dataHash, {
                 classId: targetClassId,
                 period: targetPeriod,
-                model: targetModel,
+                model: usedModel,
                 subject: targetSubject,
                 originalContent: synthesisHTML,
                 rawText: response.text,
@@ -1376,7 +1385,7 @@ export const ClassDashboardManager = {
                 this.cachedSynthesisClassId = targetClassId;
                 this.cachedSynthesisDataHash = stats.dataHash;
                 this.cachedSynthesisPeriod = targetPeriod;
-                this.cachedSynthesisModel = targetModel;
+                this.cachedSynthesisModel = usedModel;
                 this.cachedSynthesisSubject = targetSubject;
 
                 await this._applySynthesisToUI(synthesisHTML, true);
@@ -1416,14 +1425,26 @@ export const ClassDashboardManager = {
         const classes = appState.classes || [];
         const classObj = classes.find(c => c.id === currentClassId);
 
+        let targetAnalysesMap = null;
         if (classObj) {
             if (!classObj.analyses) {
                 classObj.analyses = {};
             }
+            targetAnalysesMap = classObj.analyses;
+        } else if (ClassManager.isVirtualClass(currentClassId)) {
+            if (!appState.virtualClassAnalyses || typeof appState.virtualClassAnalyses !== 'object') {
+                appState.virtualClassAnalyses = {};
+            }
+            if (!appState.virtualClassAnalyses[currentClassId]) {
+                appState.virtualClassAnalyses[currentClassId] = {};
+            }
+            targetAnalysesMap = appState.virtualClassAnalyses[currentClassId];
+        }
 
-            const existingAnalysis = classObj.analyses[currentPeriod] || {};
+        if (targetAnalysesMap) {
+            const existingAnalysis = targetAnalysesMap[currentPeriod] || {};
 
-            classObj.analyses[currentPeriod] = {
+            targetAnalysesMap[currentPeriod] = {
                 content: htmlContent,
                 originalContent: options.originalContent || existingAnalysis.originalContent || this.originalSynthesisHTML || htmlContent,
                 rawText: options.rawText !== undefined ? options.rawText : (this.cachedSynthesisRawText || existingAnalysis.rawText || ''),
@@ -1552,8 +1573,9 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises de code Markdow
         }
 
         if (hasEvolutionData) {
+            const cleanAvgEvo = Math.round(Number(avgEvolution) * 10) / 10 || 0;
             userPrompt += `
-• Évolution : ${avgEvolution >= 0 ? '+' : ''}${Number(avgEvolution).toFixed(1)} pts | ${progressCount} progressions, ${stableCount} stables, ${regressionCount} régressions`;
+• Évolution : ${cleanAvgEvo > 0 ? '+' : ''}${cleanAvgEvo.toFixed(1)} pts | ${progressCount} progressions, ${stableCount} stables, ${regressionCount} régressions`;
             if (Array.isArray(stats.topProgressions) && stats.topProgressions.length > 0) {
                 userPrompt += `\n• Top progressions : ${stats.topProgressions.slice(0, 3).map((s, idx) => {
                     const label = isAnonymous ? `Élève #${idx + 1}` : s.prenom;
@@ -1977,7 +1999,7 @@ ${stats.appreciationsList.map((a, idx) => {
      * Export the class dashboard (cohort stats, SVG charts and AI synthesis) to PDF via print
      */
     exportPdf() {
-        const stats = this.cachedStats || this.calculateStatistics(this.getStudentsData());
+        const stats = this.cachedStats || this.calculateStatistics(this.getStudentsData(), this._getFullClassRoster());
         const subjectEl = this.modal?.querySelector('#dashboardSubjectBadge');
         const subject = subjectEl && subjectEl.style.display !== 'none' ? subjectEl.textContent.trim() : '';
         ExportManager.exportClassDashboardPdf({ stats, subject });

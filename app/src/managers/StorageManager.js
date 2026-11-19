@@ -67,18 +67,20 @@ const DEVICE_ONLY_SETTINGS_KEYS = [
 const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'activeView', 'isAppreciationFullView'];
 
 /**
- * Normalise `tokenUsage` au format { appreciation, sw, ns } de manière idempotente :
- * enveloppe l'ancien format (usage brut) et répare l'imbrication produite par l'ancienne migration.
+ * Normalise `tokenUsage` au format canonique `{ appreciation, analysis }` de manière idempotente :
+ * enveloppe l'ancien format (usage brut), répare l'imbrication produite par l'ancienne migration
+ * et purge les anciennes clés obsolètes `sw` / `ns`.
  * @param {*} tokenUsage
- * @returns {{ appreciation: *, sw: *, ns: * }}
+ * @returns {{ appreciation: *, analysis: *, [key: string]: * }}
  */
 const normalizeTokenUsage = (tokenUsage) => {
     const isWrapper = (v) => Boolean(v) && typeof v === 'object' && ('appreciation' in v || 'analysis' in v || 'sw' in v || 'ns' in v);
-    if (!tokenUsage || typeof tokenUsage !== 'object') return { appreciation: null, analysis: null, sw: null, ns: null };
-    if (!isWrapper(tokenUsage)) return { appreciation: tokenUsage, analysis: null, sw: null, ns: null };
+    if (!tokenUsage || typeof tokenUsage !== 'object') return { appreciation: null, analysis: null };
+    if (!isWrapper(tokenUsage)) return { appreciation: tokenUsage, analysis: null };
     let appreciation = tokenUsage.appreciation ?? null;
     while (isWrapper(appreciation)) appreciation = appreciation.appreciation ?? null;
-    return { ...tokenUsage, appreciation, analysis: tokenUsage.analysis ?? null, sw: tokenUsage.sw ?? null, ns: tokenUsage.ns ?? null };
+    const { sw: _sw, ns: _ns, ...rest } = tokenUsage;
+    return { ...rest, appreciation, analysis: tokenUsage.analysis ?? null };
 };
 
 export const StorageManager = {
@@ -178,6 +180,7 @@ export const StorageManager = {
             if (App?.updateUIOnLoad) {
                 App.updateUIOnLoad();
             }
+            App?.syncOpenViewsOnTabSync?.();
             if (window.SeatingChartManager?._isActive) {
                 window.SeatingChartManager.restoreActiveView?.();
             }
@@ -295,6 +298,9 @@ export const StorageManager = {
         }
         if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
         if (settings.seatingActivityGrid !== undefined) userSettings.academic.seatingActivityGrid = settings.seatingActivityGrid;
+        if (settings.virtualClassAnalyses && typeof settings.virtualClassAnalyses === 'object') {
+            userSettings.academic.virtualClassAnalyses = settings.virtualClassAnalyses;
+        }
 
         // Journal threshold
         if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
@@ -704,13 +710,14 @@ export const StorageManager = {
                 if (!result.analysisPerPeriod || typeof result.analysisPerPeriod !== 'object') {
                     result.analysisPerPeriod = {};
                 }
+                const legacyLastModified = this._resolveLegacyLastModified(result);
                 result.analysisPerPeriod[explicitAnalysisPeriod] = {
                     strengths: Utils.normalizeAnalysisItems(Utils.extractAnalysisItems(result.strengthsWeaknesses, 'forces')),
                     weaknesses: Utils.normalizeAnalysisItems(Utils.extractAnalysisItems(result.strengthsWeaknesses, 'weaknesses')),
                     nextSteps: Utils.normalizeAnalysisItems(Array.isArray(result.nextSteps) ? result.nextSteps : []),
                     source: 'legacy',
                     timestamp: result.timestamp || null,
-                    _lastModified: result._lastModified || Date.now(),
+                    _lastModified: legacyLastModified,
                     snapshot: result.analysisSnapshot ? Utils.deepClone(result.analysisSnapshot) : null,
                     sourceAppreciation: result.analysisSourceAppreciation || '',
                     model: result.studentData?.currentAIModel || null
@@ -794,6 +801,7 @@ export const StorageManager = {
             classesSortDirection: userSettings.academic.classesSortDirection || 'asc',
             seatingGrid: userSettings.academic.seatingGrid || null,
             seatingActivityGrid: userSettings.academic.seatingActivityGrid || null,
+            virtualClassAnalyses: userSettings.academic.virtualClassAnalyses || {},
 
             currentAIModel: userSettings.api.currentAIModel,
             enableApiFallback: userSettings.api.enableApiFallback,
@@ -902,6 +910,7 @@ export const StorageManager = {
             delete clean.errorPeriod;
             delete clean.historyPerPeriod;
             delete clean.historyState;
+            delete clean.tokenUsage;
             if (clean.studentPhoto?.data) {
                 clean.studentPhoto = this._getPhotoFingerprint(clean.studentPhoto);
             }
@@ -1332,7 +1341,7 @@ export const StorageManager = {
             // Student data with per-item timestamps
             generatedResults: (runtimeState.data.generatedResults || []).map(result => ({
                 ...result,
-                _lastModified: result._lastModified || Date.now()
+                _lastModified: this._resolveLegacyLastModified(result)
             }))
         };
         const count = Utils.countUniqueStudents(dataToExport.generatedResults, dataToExport.classes);
@@ -1527,6 +1536,35 @@ export const StorageManager = {
      * @param {Array<Object>} [options.incomingClasses]
      * @returns {Promise<{ addedStudents: number, updatedStudents: number, skippedStudents: number, addedJournalEntries: number }>}
      */
+    _resolveLegacyLastModified(record) {
+        if (typeof record?._lastModified === 'number' && Number.isFinite(record._lastModified)) {
+            return record._lastModified;
+        }
+        const parsedTs = record?.timestamp ? new Date(record.timestamp).getTime() : 0;
+        return Number.isFinite(parsedTs) ? parsedTs : 0;
+    },
+
+    _mergeVirtualClassAnalyses(incomingMap) {
+        if (!incomingMap || typeof incomingMap !== 'object') return;
+        if (!userSettings.academic.virtualClassAnalyses || typeof userSettings.academic.virtualClassAnalyses !== 'object') {
+            userSettings.academic.virtualClassAnalyses = {};
+        }
+        const localMap = userSettings.academic.virtualClassAnalyses;
+        for (const [virtualId, periodsMap] of Object.entries(incomingMap)) {
+            if (!periodsMap || typeof periodsMap !== 'object') continue;
+            if (!localMap[virtualId] || typeof localMap[virtualId] !== 'object') {
+                localMap[virtualId] = {};
+            }
+            for (const [period, rAnalysis] of Object.entries(periodsMap)) {
+                if (!rAnalysis || typeof rAnalysis !== 'object') continue;
+                const lAnalysis = localMap[virtualId][period];
+                if (!lAnalysis || (rAnalysis.timestamp || 0) > (lAnalysis.timestamp || 0)) {
+                    localMap[virtualId][period] = { ...rAnalysis };
+                }
+            }
+        }
+    },
+
     async _mergeStudentRecords(
         incomingResults,
         {
@@ -1593,7 +1631,7 @@ export const StorageManager = {
             if (!localStudent) {
                 localResults.push({
                     ...remoteStudent,
-                    _lastModified: remoteStudent._lastModified || Date.now()
+                    _lastModified: remoteTime
                 });
                 const sKey = resolveIdentityKey(remoteStudent);
                 const pairKey = `${remoteStudent.classId || ''}\0${sKey}`;
@@ -1905,6 +1943,14 @@ export const StorageManager = {
                 }
             }
 
+            if (shouldImport('classes') && settings?.virtualClassAnalyses && typeof settings.virtualClassAnalyses === 'object') {
+                if (options.mergeData) {
+                    this._mergeVirtualClassAnalyses(settings.virtualClassAnalyses);
+                } else {
+                    userSettings.academic.virtualClassAnalyses = Utils.deepClone(settings.virtualClassAnalyses);
+                }
+            }
+
             // Import student data
             if (shouldImport('students')) {
                 const includeJournal = !cats || cats.journal !== false;
@@ -1942,7 +1988,7 @@ export const StorageManager = {
                 } else if (importedResults.length > 0) {
                     const newResults = importedResults.map(r => ({
                         ...r,
-                        _lastModified: r._lastModified || Date.now()
+                        _lastModified: this._resolveLegacyLastModified(r)
                     }));
                     let cleanResults = this.migrateData(newResults);
                     cleanResults = Utils.deduplicateResults(cleanResults);
@@ -2073,6 +2119,9 @@ export const StorageManager = {
         }
 
         // 2. Fusion granulaire des élèves (generatedResults) avec filtrage des tombstones
+        if (remoteData.settings?.virtualClassAnalyses) {
+            this._mergeVirtualClassAnalyses(remoteData.settings.virtualClassAnalyses);
+        }
         const mergeStudentRes = await this._mergeStudentRecords(remoteData.generatedResults || [], {
             deletedStudentsMap,
             deletedClassesMap,

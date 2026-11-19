@@ -351,9 +351,8 @@ export const DropdownManager = {
                 selected.scrollIntoView?.({ block: 'nearest' });
             }
 
-            // Initialiser les tooltips pour les options désactivées
-            // (nécessaire car les éléments sont ajoutés dynamiquement)
-            TooltipsUI.initTooltips();
+            // Initialiser les tooltips pour les options désactivées dans ce dropdown uniquement
+            TooltipsUI.initTooltips(wrapper);
 
             // Fix z-index stacking context for settings cards, group cards and groups
             const parentCard = wrapper.closest('.settings-card, .settings-group-card');
@@ -489,8 +488,8 @@ export const DropdownManager = {
             this.buildMenu(instance.selectEl, instance.menu);
             this.updateDisplay(instance.wrapper, instance.selectEl);
 
-            // Réinitialiser les tooltips pour les nouveaux éléments
-            TooltipsUI.initTooltips();
+            // Réinitialiser les tooltips pour les nouveaux éléments de ce dropdown uniquement
+            TooltipsUI.initTooltips(instance.wrapper);
 
             if (onRefresh) onRefresh();
         }

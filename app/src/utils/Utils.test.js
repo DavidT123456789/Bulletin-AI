@@ -991,6 +991,143 @@ describe('Utils', () => {
             expect(snapT2.journalCount).toBe(2);
             expect(snapT2.statuses).toEqual(['DYS', 'Nouveau T2']);
         });
+
+        it('getStudentAnalysisForPeriod résout la période ciblée, isole les périodes et gère le repli legacy sans fuite', () => {
+            expect(Utils.getStudentAnalysisForPeriod(null, 'T1')).toBeNull();
+            expect(Utils.getStudentAnalysisForPeriod({}, '')).toBeNull();
+
+            // 1. Cas nominal multi-périodes (isolation T1 vs T2)
+            const scoped = {
+                analysisPerPeriod: {
+                    T1: { strengths: ['Participation'], weaknesses: ['Soin'], nextSteps: ['Relire'], source: 'ai', _lastModified: 100 },
+                    T2: { strengths: ['Rigueur'], weaknesses: [], nextSteps: [], source: 'manual', hasManualEdits: true, _lastModified: 200 }
+                }
+            };
+            const t1 = Utils.getStudentAnalysisForPeriod(scoped, 'T1');
+            expect(t1).toMatchObject({ strengths: ['Participation'], weaknesses: ['Soin'], nextSteps: ['Relire'], source: 'ai', isLegacy: false });
+            const t2 = Utils.getStudentAnalysisForPeriod(scoped, 'T2');
+            expect(t2).toMatchObject({ strengths: ['Rigueur'], hasManualEdits: true, source: 'manual', isLegacy: false });
+            expect(Utils.getStudentAnalysisForPeriod(scoped, 'T3')).toBeNull();
+
+            // 2. Repli legacy autorisé uniquement sur la période d'origine (pas de fuite vers T2)
+            const legacy = {
+                strengthsWeaknesses: { strengths: ['Sérieux'], weaknesses: ['Rapidité'] },
+                nextSteps: ['S’entraîner au brouillon'],
+                analysisGenerationPeriod: 'T1'
+            };
+            expect(Utils.getStudentAnalysisForPeriod(legacy, 'T1')).toMatchObject({
+                strengths: ['Sérieux'],
+                weaknesses: ['Rapidité'],
+                nextSteps: ['S’entraîner au brouillon'],
+                source: 'legacy',
+                isLegacy: true
+            });
+            expect(Utils.getStudentAnalysisForPeriod(legacy, 'T2')).toBeNull();
+
+            // 3. Si analysisPerPeriod contient déjà des entrées, les anciens champs plats sans période explicite ne fuient pas
+            const mixed = {
+                analysisPerPeriod: { T1: { strengths: ['OK'], weaknesses: [], nextSteps: [], source: 'ai' } },
+                strengthsWeaknesses: { strengths: ['Ancien'], weaknesses: [] },
+                generationPeriod: 'T2'
+            };
+            expect(Utils.getStudentAnalysisForPeriod(mixed, 'T2')).toBeNull();
+        });
+
+        it('syncStudentAnalysisRootCache projette les champs racine depuis analysisPerPeriod et nettoie quand vide', () => {
+            const student = {
+                studentData: { currentPeriod: 'T2' },
+                analysisPerPeriod: {
+                    T2: {
+                        strengths: ['Autonomie'],
+                        weaknesses: ['Rédaction'],
+                        nextSteps: ['Développer les justifications'],
+                        source: 'ai',
+                        snapshot: { period: 'T2', grade: 13 },
+                        sourceAppreciation: 'Bon trimestre.'
+                    }
+                }
+            };
+
+            Utils.syncStudentAnalysisRootCache(student, 'T2');
+            expect(student.strengthsWeaknesses).toEqual({ strengths: ['Autonomie'], weaknesses: ['Rédaction'] });
+            expect(student.nextSteps).toEqual(['Développer les justifications']);
+            expect(student.analysisGenerationPeriod).toBe('T2');
+            expect(student.analysisSnapshot).toEqual({ period: 'T2', grade: 13 });
+            expect(student.analysisSourceAppreciation).toBe('Bon trimestre.');
+
+            // Période vidée manuellement -> miroir racine nettoyé
+            student.analysisPerPeriod.T2 = { strengths: [], weaknesses: [], nextSteps: [], source: 'manual' };
+            Utils.syncStudentAnalysisRootCache(student, 'T2');
+            expect(student.strengthsWeaknesses).toBeNull();
+            expect(student.nextSteps).toBeNull();
+            expect(student.analysisGenerationPeriod).toBeNull();
+        });
+
+        it('mergeAnalysisPerPeriod applique un LWW par période, ignore les entrées plus anciennes et reste idempotent', () => {
+            expect(Utils.mergeAnalysisPerPeriod(null, { analysisPerPeriod: {} })).toBe(false);
+            expect(Utils.mergeAnalysisPerPeriod({}, null)).toBe(false);
+
+            const target = {
+                analysisPerPeriod: {
+                    T1: { strengths: ['Local récent'], weaknesses: [], nextSteps: [], source: 'manual', _lastModified: 500 },
+                    T2: { strengths: ['Local ancien'], weaknesses: [], nextSteps: [], source: 'ai', _lastModified: 100 }
+                }
+            };
+            const source = {
+                analysisPerPeriod: {
+                    T1: { strengths: ['Distant ancien'], weaknesses: [], nextSteps: [], source: 'ai', _lastModified: 200 },
+                    T2: { strengths: ['Distant plus récent'], weaknesses: ['Orthographe'], nextSteps: [], source: 'manual', _lastModified: 300 },
+                    T3: { strengths: ['Nouvelle période'], weaknesses: [], nextSteps: ['Continuer'], source: 'ai', _lastModified: 400 }
+                }
+            };
+
+            const changed = Utils.mergeAnalysisPerPeriod(target, source);
+            expect(changed).toBe(true);
+            // T1 local conservé (500 > 200)
+            expect(target.analysisPerPeriod.T1.strengths).toEqual(['Local récent']);
+            // T2 mis à jour (300 > 100) et cloné sans alias de référence
+            expect(target.analysisPerPeriod.T2.strengths).toEqual(['Distant plus récent']);
+            expect(target.analysisPerPeriod.T2).not.toBe(source.analysisPerPeriod.T2);
+            // T3 adopté
+            expect(target.analysisPerPeriod.T3.strengths).toEqual(['Nouvelle période']);
+
+            // Deuxième fusion identique : idempotente (aucun changement)
+            expect(Utils.mergeAnalysisPerPeriod(target, source)).toBe(false);
+        });
+    });
+
+    describe('withTimeout & fetchWithTimeout', () => {
+        it('withTimeout résout normalement avant expiration et rejette en TimeoutError après délai', async () => {
+            vi.useFakeTimers();
+            try {
+                await expect(Utils.withTimeout(Promise.resolve('ok'), 100)).resolves.toBe('ok');
+
+                const never = new Promise(() => {});
+                const timed = Utils.withTimeout(never, 50, 'Expiration test');
+                const assertion = expect(timed).rejects.toMatchObject({ name: 'TimeoutError', message: 'Expiration test' });
+                await vi.advanceTimersByTimeAsync(60);
+                await assertion;
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('fetchWithTimeout transmet un signal qui expire en TimeoutError si fetch ne répond pas', async () => {
+            vi.useFakeTimers();
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = vi.fn((_url, { signal }) => new Promise((_resolve, reject) => {
+                signal.addEventListener('abort', () => reject(signal.reason || new DOMException('Aborted', 'AbortError')));
+            }));
+            try {
+                const req = Utils.fetchWithTimeout('https://example.test/api', {}, 100);
+                const assertion = expect(req).rejects.toMatchObject({ name: 'TimeoutError' });
+                await vi.advanceTimersByTimeAsync(120);
+                await assertion;
+            } finally {
+                globalThis.fetch = originalFetch;
+                vi.useRealTimers();
+            }
+        });
     });
 });
 

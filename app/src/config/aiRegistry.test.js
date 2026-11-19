@@ -107,7 +107,7 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(PROVIDER_DEFAULT_MODELS.albert).toBe('albert-openweight-medium');
         expect(PROVIDER_SHOWCASE_MODELS.google).toEqual(['gemini-4-hydrogen', 'gemini-3.6-flash', 'gemini-3.8-flash']);
         expect(getModelMeta('gemini-3.8-flash').thinkingLevel).toBe('LOW');
-        expect(getModelMeta('gemini-4-hydrogen').thinkingLevel).toBe('MEDIUM');
+        expect(getModelMeta('gemini-4-hydrogen').thinkingLevel).toBe('LOW');
         expect(getModelMeta('gemini-3.6-flash').thinkingLevel).toBeUndefined();
         expect(PROVIDER_SHOWCASE_MODELS.anthropic).toEqual(['anthropic-claude-sonnet-5-5', 'anthropic-claude-haiku-5-5', 'anthropic-claude-opus-5-5']);
         expect(PROVIDER_SHOWCASE_MODELS.openai).toEqual(['openai-gpt-6-luna', 'openai-gpt-6.1-terra', 'openai-gpt-6.1-sol']);

@@ -8,6 +8,7 @@ import { appState } from '../../state/State.js';
 import { UI } from '../UIManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { Utils } from '../../utils/Utils.js';
+import { DOMHelper } from '../../utils/DOMHelper.js';
 import { PromptService } from '../../services/PromptService.js';
 import { FocusPanelHistory } from '../FocusPanelHistory.js';
 import { FocusPanelJournal } from '../FocusPanelJournal.js';
@@ -141,27 +142,30 @@ export const FocusPanelEvents = {
             });
         }
 
-        if (prevBtn) prevBtn.addEventListener('click', () => {
+        const blurOnPointerClick = (btn, event, delayed = false) => {
+            if (btn && event?.detail > 0) {
+                btn.blur();
+                if (delayed) setTimeout(() => btn.blur(), 50);
+            }
+        };
+
+        if (prevBtn) prevBtn.addEventListener('click', (e) => {
             FocusPanelNavigation.navigatePrev();
-            prevBtn.blur();
-            setTimeout(() => prevBtn.blur(), 50);
+            blurOnPointerClick(prevBtn, e, true);
         });
-        if (nextBtn) nextBtn.addEventListener('click', () => {
+        if (nextBtn) nextBtn.addEventListener('click', (e) => {
             FocusPanelNavigation.navigateNext();
-            nextBtn.blur();
-            setTimeout(() => nextBtn.blur(), 50);
+            blurOnPointerClick(nextBtn, e, true);
         });
-        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => {
+        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', (e) => {
             FocusPanelAnalysis.flushPendingEdit?.();
             FocusPanelNavigation.navigatePrev();
-            analysisPrevBtn.blur();
-            setTimeout(() => analysisPrevBtn.blur(), 50);
+            blurOnPointerClick(analysisPrevBtn, e, true);
         });
-        if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => {
+        if (analysisNextBtn) analysisNextBtn.addEventListener('click', (e) => {
             FocusPanelAnalysis.flushPendingEdit?.();
             FocusPanelNavigation.navigateNext();
-            analysisNextBtn.blur();
-            setTimeout(() => analysisNextBtn.blur(), 50);
+            blurOnPointerClick(analysisNextBtn, e, true);
         });
 
         if (generateBtn) {
@@ -174,11 +178,11 @@ export const FocusPanelEvents = {
                     panel._isCancellingGeneration = true;
                     panel._cancelGenerationForStudent(panel.currentStudentId);
                     setTimeout(() => { panel._isCancellingGeneration = false; }, 300);
-                    generateBtn.blur();
+                    blurOnPointerClick(generateBtn, e);
                     return;
                 }
                 panel.generate();
-                generateBtn.blur();
+                blurOnPointerClick(generateBtn, e);
             });
             generateBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
@@ -191,12 +195,14 @@ export const FocusPanelEvents = {
         }
 
         if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
+            copyBtn.addEventListener('click', (e) => {
+                if (copyBtn.classList.contains('disabled')) return;
                 panel.copy();
-                copyBtn.blur();
+                blurOnPointerClick(copyBtn, e);
             });
             copyBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                if (copyBtn.classList.contains('disabled')) return;
                 panel._copyPromptToClipboard();
                 copyBtn.blur();
             });
@@ -212,23 +218,23 @@ export const FocusPanelEvents = {
         if (analyzeBtn) analyzeBtn.addEventListener('click', () => FocusPanelAnalysis.show());
         const printStudentBtn = document.getElementById('focusPrintStudentBtn');
         const analysisPrintBtn = document.getElementById('focusAnalysisPrintBtn');
-        const handleStudentPrint = (btn) => {
+        const handleStudentPrint = (btn, event) => {
             if (!panel.currentStudentId || panel.isCreationMode) return;
             FocusPanelAnalysis.flushPendingEdit?.();
             if (document.activeElement?.isContentEditable) document.activeElement.blur();
             panel._saveContext?.();
             ExportManager.exportStudentReportPdf(panel.currentStudentId);
-            btn?.blur();
+            blurOnPointerClick(btn, event);
         };
-        if (printStudentBtn) printStudentBtn.addEventListener('click', () => handleStudentPrint(printStudentBtn));
-        if (analysisPrintBtn) analysisPrintBtn.addEventListener('click', () => handleStudentPrint(analysisPrintBtn));
+        if (printStudentBtn) printStudentBtn.addEventListener('click', (e) => handleStudentPrint(printStudentBtn, e));
+        if (analysisPrintBtn) analysisPrintBtn.addEventListener('click', (e) => handleStudentPrint(analysisPrintBtn, e));
         const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
         if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => FocusPanelAnalysis.hide());
         const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (generateAnalysisBtn) {
-            generateAnalysisBtn.addEventListener('click', () => {
+            generateAnalysisBtn.addEventListener('click', (e) => {
                 FocusPanelAnalysis.generate();
-                generateAnalysisBtn.blur();
+                blurOnPointerClick(generateAnalysisBtn, e);
             });
             generateAnalysisBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
@@ -248,50 +254,10 @@ export const FocusPanelEvents = {
                 }
             });
 
-            analysisPage.addEventListener('focusin', (e) => {
-                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
-                if (editable) {
-                    editable._initialTextBeforeEdit = (editable.innerText || editable.textContent || '').replace(/\s+/g, ' ').trim();
-                }
-            });
-
-            analysisPage.addEventListener('keydown', (e) => {
-                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
-                if (!editable) return;
-
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    FocusPanelAnalysis.cancelEditableItem(editable);
-                } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    editable.blur();
-                }
-            });
-
-            analysisPage.addEventListener('paste', (e) => {
-                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
-                if (!editable) return;
-
-                e.preventDefault();
-                const rawPaste = (e.clipboardData || window.clipboardData)?.getData('text/plain') || '';
-                const cleanPaste = rawPaste.replace(/\s+/g, ' ');
-                if (document.queryCommandSupported?.('insertText')) {
-                    document.execCommand('insertText', false, cleanPaste);
-                } else {
-                    const selection = window.getSelection();
-                    if (selection && selection.rangeCount > 0) {
-                        selection.deleteFromDocument();
-                        selection.getRangeAt(0).insertNode(document.createTextNode(cleanPaste));
-                        selection.collapseToEnd();
-                    }
-                }
-            });
-
-            analysisPage.addEventListener('focusout', (e) => {
-                const editable = e.target.closest('.analysis-card-body li[contenteditable="true"]');
-                if (!editable) return;
-                FocusPanelAnalysis.commitEditableBlur(editable);
+            DOMHelper.bindInlineEditable(analysisPage, {
+                selector: '.analysis-card-body li[contenteditable="true"]',
+                onCancel: (editable) => FocusPanelAnalysis.cancelEditableItem(editable),
+                onCommit: (editable) => FocusPanelAnalysis.commitEditableBlur(editable)
             });
         }
 
@@ -412,13 +378,13 @@ export const FocusPanelEvents = {
                 const btn = e.target.closest('[data-refine-type]');
                 if (btn && !btn.classList.contains('disabled')) {
                     panel._refineAppreciation(btn.dataset.refineType);
-                    btn.blur();
+                    blurOnPointerClick(btn, e);
                 }
             });
 
             refinementOptions.addEventListener('contextmenu', (e) => {
                 const btn = e.target.closest('[data-refine-type]');
-                if (btn) {
+                if (btn && !btn.classList.contains('disabled')) {
                     e.preventDefault();
                     panel._showRefinementPreview(btn.dataset.refineType);
                     btn.blur();
@@ -595,6 +561,14 @@ export const FocusPanelEvents = {
             });
         }
 
+        const gradeInput = document.getElementById('focusCurrentGradeInput');
+        if (gradeInput) {
+            gradeInput.addEventListener('blur', () => {
+                panel._saveContext();
+                FocusPanelStatus.refreshAppreciationStatus();
+            });
+        }
+
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
             contextInput.addEventListener('input', () => {
@@ -625,27 +599,56 @@ export const FocusPanelEvents = {
 
         let touchStartX = null;
         let touchStartY = null;
+        let touchStartTime = 0;
         let currentX = 0;
         let currentY = 0;
         let isEdgeSwiping = false;
         let isPullingDown = false;
         let contentEl = null;
+        let resetTimer = null;
+
+        const clearPendingReset = () => {
+            if (resetTimer) {
+                clearTimeout(resetTimer);
+                resetTimer = null;
+            }
+        };
+
+        const resetGestureVars = () => {
+            touchStartX = null;
+            touchStartY = null;
+            touchStartTime = 0;
+            currentX = 0;
+            currentY = 0;
+            isEdgeSwiping = false;
+            isPullingDown = false;
+        };
+
+        const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
         panelEl.addEventListener('touchstart', (e) => {
             if (e.touches.length > 1) return;
             if (e.target.closest('button, [role="button"], input, textarea, select, .focus-nav-btn, .close-modal-btn')) return;
 
+            const editable = e.target.closest('[contenteditable="true"]');
+            if (editable && (editable === document.activeElement || editable.contains(document.activeElement) || !window.getSelection?.()?.isCollapsed)) {
+                return;
+            }
+
             const header = document.querySelector('.focus-header');
             if (header && header.classList.contains('editing')) return;
 
+            clearPendingReset();
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            touchStartTime = e.timeStamp || Date.now();
             currentX = 0;
             currentY = 0;
 
             const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
+            const panelLeft = panelEl.getBoundingClientRect?.().left || 0;
 
-            isEdgeSwiping = touchStartX < 30;
+            isEdgeSwiping = touchStartX >= panelLeft && (touchStartX - panelLeft) < 30;
             isPullingDown = false;
 
             contentEl = isAnalysisVisible
@@ -716,88 +719,113 @@ export const FocusPanelEvents = {
 
             const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
             const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
-            if (!target) return;
+            const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
+            if (!target) {
+                resetGestureVars();
+                return;
+            }
+
+            const reducedMotion = prefersReducedMotion();
 
             if (isEdgeSwiping) {
                 const threshold = window.innerWidth * 0.3;
-                const velocity = currentX / (e.timeStamp || 1);
+                const elapsedMs = Math.max(1, (e.timeStamp || Date.now()) - touchStartTime);
+                const velocity = currentX / elapsedMs;
 
-                if (currentX > threshold || velocity > 1.5) {
+                if (currentX > threshold || (currentX > 24 && velocity > 0.65)) {
                     panel._isClosing = true;
-                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(100%)';
-
-                    if (isAnalysisVisible) {
-                        setTimeout(() => {
+                    const finalizeClose = () => {
+                        if (isAnalysisVisible) {
                             FocusPanelAnalysis.hide();
                             panel._resetTransformations(target, null);
-                        }, 300);
-                    } else {
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) {
-                            backdrop.style.transition = 'opacity 0.3s ease';
-                            backdrop.style.opacity = '0';
-                        }
-                        setTimeout(() => {
+                        } else {
                             target.style.transition = 'none';
                             panel.close();
                             panel._resetTransformations(target, backdrop);
+                        }
+                    };
+
+                    if (reducedMotion) {
+                        finalizeClose();
+                    } else {
+                        target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                        target.style.transform = 'translateX(100%)';
+                        if (!isAnalysisVisible && backdrop) {
+                            backdrop.style.transition = 'opacity 0.3s ease';
+                            backdrop.style.opacity = '0';
+                        }
+                        clearPendingReset();
+                        resetTimer = setTimeout(() => {
+                            resetTimer = null;
+                            finalizeClose();
                         }, 300);
                     }
-                } else if (currentX > 10) {
+                } else if (currentX > 10 && !reducedMotion) {
                     target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = 'translateX(0)';
 
-                    if (!isAnalysisVisible) {
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) {
-                            backdrop.style.transition = 'opacity 0.45s ease';
-                            backdrop.style.opacity = '1';
-                            setTimeout(() => panel._resetTransformations(target, backdrop), 450);
-                        } else {
-                            setTimeout(() => panel._resetTransformations(target, null), 450);
-                        }
-                    } else {
-                        setTimeout(() => panel._resetTransformations(target, null), 450);
+                    if (backdrop) {
+                        backdrop.style.transition = 'opacity 0.45s ease';
+                        backdrop.style.opacity = '1';
                     }
+                    clearPendingReset();
+                    resetTimer = setTimeout(() => {
+                        resetTimer = null;
+                        panel._resetTransformations(target, backdrop);
+                    }, 450);
                 } else {
-                    const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
                     panel._resetTransformations(target, backdrop);
                 }
             } else if (isPullingDown) {
                 const threshold = 100;
                 if (currentY > threshold) {
                     panel._isClosing = true;
-                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateY(100vh)';
-
-                    if (isAnalysisVisible) {
-                        setTimeout(() => {
+                    const finalizePullClose = () => {
+                        if (isAnalysisVisible) {
                             FocusPanelAnalysis.hide();
                             panel._resetTransformations(target, null);
-                        }, 300);
-                    } else {
-                        setTimeout(() => {
+                        } else {
                             target.style.transition = 'none';
                             panel.close();
                             panel._resetTransformations(target, null);
+                        }
+                    };
+
+                    if (reducedMotion) {
+                        finalizePullClose();
+                    } else {
+                        target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                        target.style.transform = 'translateY(100vh)';
+                        clearPendingReset();
+                        resetTimer = setTimeout(() => {
+                            resetTimer = null;
+                            finalizePullClose();
                         }, 300);
                     }
-                } else if (currentY > 10) {
+                } else if (currentY > 10 && !reducedMotion) {
                     target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = 'translateX(0) translateY(0)';
-                    setTimeout(() => panel._resetTransformations(target, null), 450);
+                    clearPendingReset();
+                    resetTimer = setTimeout(() => {
+                        resetTimer = null;
+                        panel._resetTransformations(target, null);
+                    }, 450);
                 } else {
                     panel._resetTransformations(target, null);
                 }
             }
 
-            touchStartX = null;
-            touchStartY = null;
-            currentX = 0;
-            currentY = 0;
-            isEdgeSwiping = false;
-            isPullingDown = false;
+            resetGestureVars();
+        }, { passive: true });
+
+        panelEl.addEventListener('touchcancel', () => {
+            if (touchStartX === null && touchStartY === null && !isEdgeSwiping && !isPullingDown) return;
+            clearPendingReset();
+            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
+            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
+            const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
+            panel._resetTransformations(target, backdrop);
+            resetGestureVars();
         }, { passive: true });
     },
 

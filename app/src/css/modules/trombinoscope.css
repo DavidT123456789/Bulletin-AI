@@ -1348,7 +1348,7 @@ input.trombi-popover-search-input::placeholder {
 }
 
 .trombi-stat-badge.is-new {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 /* Step 3: Reassurance Banner */
@@ -1396,7 +1396,7 @@ input.trombi-popover-search-input::placeholder {
     height: 28px;
     border-radius: 50%;
     background: var(--success-light);
-    color: var(--success-color);
+    color: var(--success-text);
     font-size: 1.1rem;
     flex-shrink: 0;
 }

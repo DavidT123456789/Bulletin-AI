@@ -7,6 +7,11 @@ import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
 import { AI_PROVIDERS, OLLAMA_CONFIG, PROVIDER_DEFAULT_MODELS, getModelMeta, getProviderForModel, buildFallbackQueue, getApiModelName, getModelTimeout, hasValidApiKey } from '../config/aiRegistry.js';
 import { bus, EVENTS } from '../core/EventBus.js';
+import { Utils } from '../utils/Utils.js';
+
+const AI_META_TIMEOUT_MS = 12000;
+const AI_VALIDATION_TIMEOUT_MS = 15000;
+const OLLAMA_MODELS_TIMEOUT_MS = 5000;
 
 /**
  * Extrait le délai d'attente (en secondes) d'un message d'erreur ou des en-têtes HTTP de rate-limit (429/quota).
@@ -274,7 +279,11 @@ export const AIService = {
             let payload = providerConfig.payload("test", validationModel);
             if (payload && typeof payload === 'object') {
                 if (validationProvider === 'google') {
-                    payload.generationConfig = { ...(payload.generationConfig || {}), maxOutputTokens: 5 };
+                    const genConfig = { ...(payload.generationConfig || {}), maxOutputTokens: 5 };
+                    if (genConfig.thinkingConfig) {
+                        genConfig.thinkingConfig = { ...genConfig.thinkingConfig, thinkingLevel: 'LOW' };
+                    }
+                    payload.generationConfig = genConfig;
                 } else if ('max_tokens' in payload) {
                     payload.max_tokens = 5;
                 }
@@ -317,9 +326,10 @@ export const AIService = {
      * @returns {Promise<AIResponse>} La réponse de l'IA
      */
     async callAI(prompt, options = {}) {
-        const { isValidation = false, signal: externalSignal, modelOverride } = options;
+        const { isValidation = false, signal: externalSignal, modelOverride, retryOnTimeout = true } = options;
         const selectedModel = modelOverride || appState.currentAIModel;
-        const timeoutMs = this._getModelTimeout(selectedModel);
+        const baseTimeoutMs = this._getModelTimeout(selectedModel);
+        const timeoutMs = isValidation ? Math.min(baseTimeoutMs, AI_VALIDATION_TIMEOUT_MS) : baseTimeoutMs;
         const maxRetries = isValidation ? 0 : 1; // 1 retry unique pour éviter les ralentissements
 
         let attempt = 0;
@@ -439,18 +449,23 @@ export const AIService = {
                     generationTimeMs
                 };
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    if (externalSignal?.aborted) {
-                        throw new DOMException("Opération annulée par l'utilisateur.", "AbortError");
-                    }
+                if (externalSignal?.aborted) {
+                    throw new DOMException("Opération annulée par l'utilisateur.", "AbortError");
+                }
+                const isTimeout = error?.name === 'TimeoutError'
+                    || error?.name === 'AbortError'
+                    || (controller.signal.aborted && controller.signal.reason?.name === 'TimeoutError');
+                if (isTimeout) {
                     console.warn(`[AI Request] ⏱️ Timeout (${timeoutMs}ms) sur ${selectedModel} [Tentative ${attempt}/${maxRetries + 1}]`);
-                    if (attempt <= maxRetries && !externalSignal?.aborted) {
+                    if (retryOnTimeout && attempt <= maxRetries && !externalSignal?.aborted) {
                         console.info(`[AI Retry] ⏳ Réessai après timeout pour ${selectedModel}...`);
                         cleanup();
                         await sleep(1000, externalSignal);
                         continue;
                     }
-                    throw new Error(`La requête a expiré (timeout ${timeoutMs / 1000}s).`);
+                    const timeoutError = new Error(`La requête a expiré (timeout ${Math.round(timeoutMs / 1000)}s).`);
+                    timeoutError.name = 'TimeoutError';
+                    throw timeoutError;
                 }
                 throw error;
             } finally {
@@ -471,9 +486,14 @@ export const AIService = {
             if (!apiKey) throw new Error("Clé API manquante.");
             const url = `${CONFIG.GOOGLE_API_BASE}/models`;
             try {
-                const resp = await fetch(url, { headers: { 'x-goog-api-key': apiKey } });
-                const data = await resp.json();
-                if (!resp.ok) throw new Error(data.error?.message || JSON.stringify(data));
+                const resp = await Utils.fetchWithTimeout(url, { headers: { 'x-goog-api-key': apiKey } }, AI_META_TIMEOUT_MS);
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    const detail = data.error?.message || (Object.keys(data).length > 0 ? JSON.stringify(data) : `HTTP ${resp.status}`);
+                    const err = new Error(`Erreur HTTP ${resp.status}: ${detail}`);
+                    err.status = resp.status;
+                    throw err;
+                }
                 return data.models || [];
             } catch (e) {
                 console.error("Failed to list models", e);
@@ -484,15 +504,16 @@ export const AIService = {
             const apiKey = appState.albertApiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
             const url = `${this._getAlbertBaseUrl()}/models`;
-            const resp = await fetch(url, {
+            const resp = await Utils.fetchWithTimeout(url, {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
-            });
+            }, AI_META_TIMEOUT_MS);
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) {
-                if (resp.status === 403) {
-                    throw new Error("Compte Albert expiré (403) : renouvelez votre accès sur le portail DINUM.");
-                }
-                throw new Error(data.detail || data.error?.message || `Erreur HTTP ${resp.status}`);
+                const err = resp.status === 403
+                    ? new Error("Compte Albert expiré (403) : renouvelez votre accès sur le portail DINUM.")
+                    : new Error(data.detail || data.error?.message || `Erreur HTTP ${resp.status}`);
+                err.status = resp.status;
+                throw err;
             }
             return data.data || [];
         }
@@ -509,12 +530,12 @@ export const AIService = {
         if (!apiKey) return null;
 
         try {
-            const response = await fetch(`${this._getAlbertBaseUrl()}/me`, {
+            const response = await Utils.fetchWithTimeout(`${this._getAlbertBaseUrl()}/me`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                 }
-            });
+            }, AI_META_TIMEOUT_MS);
 
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
@@ -629,7 +650,7 @@ export const AIService = {
     async getOllamaModels() {
         try {
             const baseUrl = appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl;
-            const response = await fetch(`${baseUrl}/api/tags`);
+            const response = await Utils.fetchWithTimeout(`${baseUrl}/api/tags`, {}, OLLAMA_MODELS_TIMEOUT_MS);
             if (response.ok) {
                 const data = await response.json();
                 return data.models?.map(m => m.name) || [];
@@ -674,12 +695,19 @@ export const AIService = {
         let attemptedModels = [];
         // Évite d'enchaîner tous les modèles payants d'un même fournisseur si le compte renvoie HTTP 402 (crédit insuffisant)
         const exhaustedPaidProviders = new Set();
+        // Évite de retester d'autres modèles du même fournisseur si sa clé est refusée (HTTP 401), tout en laissant le fallback basculer sur un autre fournisseur
+        const invalidAuthProviders = new Set();
+        const availableFallbackCount = fallbackModels.filter(m => this._hasApiKeyForModel(m)).length;
+        const hasFallbackAlternative = availableFallbackCount > 1;
 
         try {
 
             for (const model of fallbackModels) {
                 const modelProvider = getProviderForModel(model);
                 const isFreeModel = model.endsWith('-free') || model.endsWith(':free');
+                if (invalidAuthProviders.has(modelProvider)) {
+                    continue;
+                }
                 if (exhaustedPaidProviders.has(modelProvider) && !isFreeModel) {
                     continue;
                 }
@@ -696,7 +724,11 @@ export const AIService = {
                 attemptedModels.push(model);
 
                 try {
-                    const response = await this.callAI(prompt, { ...options, modelOverride: model });
+                    const response = await this.callAI(prompt, {
+                        ...options,
+                        modelOverride: model,
+                        retryOnTimeout: !hasFallbackAlternative
+                    });
 
                     // Notifier si on a basculé vers un autre modèle
                     if (model !== appState.currentAIModel && attemptedModels.length > 1) {
@@ -709,24 +741,30 @@ export const AIService = {
 
                     return { ...response, modelUsed: model };
                 } catch (error) {
-                    console.warn(`[AI Fallback] Modèle ${model} a échoué:`, error.message);
+                    const errMsg = String(error?.message || '');
+                    const errLower = errMsg.toLowerCase();
+                    console.warn(`[AI Fallback] Modèle ${model} a échoué:`, errMsg);
                     lastError = error;
 
-                    // Erreurs non réessayables : annulation utilisateur, clé invalide/manquante
-                    const isNonRetryable = error.name === 'AbortError' ||
-                        error.message.includes('annulé') ||
-                        error.message.includes('abort') ||
-                        error.message.includes('401') ||
-                        error.message.toLowerCase().includes('clé api manquante') ||
+                    // Erreurs non réessayables : annulation utilisateur ou clé manquante
+                    const isNonRetryable = error?.name === 'AbortError' ||
+                        errMsg.includes('annulé') ||
+                        errMsg.includes('abort') ||
+                        errLower.includes('clé api manquante') ||
                         options.signal?.aborted;
 
                     if (isNonRetryable) {
                         throw error;
                     }
 
+                    // HTTP 401 : écarter ce fournisseur et basculer vers un autre fournisseur configuré
+                    if (error?.status === 401 || errMsg.includes('401')) {
+                        invalidAuthProviders.add(modelProvider);
+                        continue;
+                    }
+
                     // Si paiement requis / crédits épuisés (HTTP 402), inutile de tester les autres modèles payants du même provider
-                    const errLower = error.message.toLowerCase();
-                    if (error.message.includes('402') || errLower.includes('insufficient credits') || errLower.includes('payment required')) {
+                    if (errMsg.includes('402') || errLower.includes('insufficient credits') || errLower.includes('payment required')) {
                         exhaustedPaidProviders.add(modelProvider);
                     }
 
@@ -738,6 +776,9 @@ export const AIService = {
             }
 
             // Tous les modèles ont échoué
+            if (invalidAuthProviders.size > 0 && attemptedModels.length > 0 && (lastError?.status === 401 || String(lastError?.message || '').includes('401'))) {
+                throw lastError;
+            }
 
             // Extraire le temps d'attente suggéré par l'API (ex: "Please retry in 55.35s", "Please try again in 1.45s")
             const retrySeconds = parseRetryDelay(lastError?.message);
@@ -748,8 +789,10 @@ export const AIService = {
             const attemptedProviders = new Set(attemptedModels.map(m => getProviderForModel(m)));
 
             // Déterminer la cause principale
-            const isQuotaError = lastError?.message?.includes('429') || lastError?.message?.toLowerCase().includes('quota');
-            const is404Error = lastError?.message?.includes('404');
+            const lastMsg = String(lastError?.message || '');
+            const isQuotaError = lastMsg.includes('429') || lastMsg.toLowerCase().includes('quota');
+            const is404Error = lastMsg.includes('404');
+            const isTimeoutError = lastError?.name === 'TimeoutError' || /timeout|expir[ée]/i.test(lastMsg);
 
             let errorMessage = '';
 
@@ -762,6 +805,8 @@ export const AIService = {
                 if (missingKeysCount > 0 && attemptedProviders.size === 1 && !hasValidApiKey('openrouter', { state: appState })) {
                     errorMessage += ` Ajoutez une clé OpenRouter pour un fallback automatique.`;
                 }
+            } else if (isTimeoutError) {
+                errorMessage = `Délai dépassé (${attemptedCount} modèle${attemptedCount > 1 ? 's' : ''} testé${attemptedCount > 1 ? 's' : ''}). Le serveur IA met trop de temps à répondre, réessayez.`;
             } else if (is404Error) {
                 errorMessage = `Modèle indisponible. ${attemptedCount} modèle${attemptedCount > 1 ? 's' : ''} testé${attemptedCount > 1 ? 's' : ''}.`;
             } else {
@@ -770,7 +815,7 @@ export const AIService = {
             }
 
             // Ajouter l'info sur les modèles ignorés (seulement si pertinent)
-            if (missingKeysCount > 0 && !isQuotaError) {
+            if (missingKeysCount > 0 && !isQuotaError && !isTimeoutError) {
                 errorMessage += ` ${missingKeysCount} ignoré${missingKeysCount > 1 ? 's' : ''} (clés manquantes).`;
             }
 
@@ -792,12 +837,12 @@ export const AIService = {
         if (!appState.openrouterApiKey) return null;
 
         try {
-            const response = await fetch('https://openrouter.ai/api/v1/credits', {
+            const response = await Utils.fetchWithTimeout('https://openrouter.ai/api/v1/credits', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${appState.openrouterApiKey}`,
                 }
-            });
+            }, AI_META_TIMEOUT_MS);
 
             if (!response.ok) {
                 console.warn('[OpenRouter] Impossible de récupérer les crédits:', response.status);

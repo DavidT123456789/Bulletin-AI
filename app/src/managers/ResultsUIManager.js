@@ -145,7 +145,11 @@ export const ResultsUIManager = {
                     }
                 }
                 r.analysisPerPeriod = mappedAnalyses;
-                Utils.syncStudentAnalysisRootCache(r, r.studentData?.currentPeriod || targetPeriod);
+                const fallbackPeriod = r.studentData?.currentPeriod
+                    || mapPeriodCode(appState.currentPeriod)
+                    || Object.keys(mappedAnalyses)[0]
+                    || (toTrimestres ? 'T1' : 'S1');
+                Utils.syncStudentAnalysisRootCache(r, fallbackPeriod);
             }
             if (r.generationSnapshot && typeof r.generationSnapshot === 'object') {
                 if (r.generationSnapshot.currentPeriod) {

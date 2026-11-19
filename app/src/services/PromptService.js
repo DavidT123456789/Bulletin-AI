@@ -439,7 +439,7 @@ export const PromptService = {
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
         const classId = studentData.classId || appState.currentClassId || null;
         const periodRows = relevantPeriods.map(p => {
-            const d = periods[p] || {};
+            const d = periods?.[p] || {};
             const gradeRaw = d.grade;
             const gradeVal = this._parseGrade(gradeRaw);
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
@@ -461,7 +461,7 @@ export const PromptService = {
         const periodsInfo = periodRows.map(r => r.forGeneration).join('\n');
         let periodsInfoForAnalysis = periodRows.map(r => r.forAnalysis).join('\n');
         if (!periodsInfoForAnalysis && periods?.[currentPeriod]) {
-            const d = periods[currentPeriod] || {};
+            const d = periods?.[currentPeriod] || {};
             const gradeVal = this._parseGrade(d.grade);
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
@@ -505,12 +505,14 @@ export const PromptService = {
         // --- CONTEXTE SCOLAIRE & DONNÉES DE L'ÉLÈVE ---
         const classLines = [];
         const currentClass = appState.classes?.find(c => c.id === classId);
-        if (currentClass) {
-            let classLevel = currentClass.level || detectLevelFromName(currentClass.name);
+        const resolvedClassName = currentClass?.name
+            || (typeof classId === 'string' && classId.startsWith('virtual_') ? Utils.getCurrentClassName(classId) : '');
+        if (resolvedClassName) {
+            let classLevel = currentClass?.level || detectLevelFromName(resolvedClassName);
             if (classLevel === '3eme') classLevel = 'college';
             const levelMeta = LEVELS[classLevel] || LEVELS.generique;
 
-            classLines.push(`Classe : ${currentClass.name}`);
+            classLines.push(`Classe : ${resolvedClassName}`);
             if (classLevel && classLevel !== 'generique') {
                 classLines.push(`Niveau : ${levelMeta.label}`);
             }

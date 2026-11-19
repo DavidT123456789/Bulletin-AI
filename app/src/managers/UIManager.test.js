@@ -390,6 +390,35 @@ describe('UIManager', () => {
             expect(result).toBe(true);
         });
 
+        it('should preserve validation warning/info messages in ApiKeyError and only clear its own missing-key warning', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.currentAIModel = 'gemini-4-hydrogen';
+            appState.googleApiKey = 'AIzaSy-valid-key';
+
+            const errEl = document.createElement('div');
+            errEl.id = 'googleApiKeyError';
+            errEl.style.display = 'block';
+            errEl.textContent = 'Clé authentifiée — limite temporaire atteinte';
+            document.body.appendChild(errEl);
+
+            try {
+                // Ne doit PAS effacer un message de validation (quota, solde, avertissement étape 2)
+                expect(UI.checkAPIKeyPresence(true)).toBe(true);
+                expect(errEl.style.display).toBe('block');
+                expect(errEl.textContent).toBe('Clé authentifiée — limite temporaire atteinte');
+
+                // Doit effacer son propre message "clé manquante" une fois la clé renseignée
+                errEl.dataset.missingKeyError = 'true';
+                errEl.textContent = '⚠️ Clé Google requise.';
+                expect(UI.checkAPIKeyPresence(true)).toBe(true);
+                expect(errEl.style.display).toBe('none');
+                expect(errEl.textContent).toBe('');
+                expect(errEl.dataset.missingKeyError).toBeUndefined();
+            } finally {
+                errEl.remove();
+            }
+        });
+
         it('should return false when Google API key is missing', async () => {
             const { appState } = await import('../state/State.js');
             appState.currentAIModel = 'gemini-2.0-flash';

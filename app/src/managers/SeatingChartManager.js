@@ -72,6 +72,12 @@ export const SeatingChartManager = {
     _modeCarouselEndHandler: null,
     _listExitPrimaryEl: null,
     _listExitEndHandler: null,
+    _listEnterPrimaryEl: null,
+    _listEnterEndHandler: null,
+    _viewEnterEl: null,
+    _viewEnterEndHandler: null,
+    _viewExitEl: null,
+    _viewExitEndHandler: null,
     _foldTransitionTimer: null,
     _wasCompactLayout: null,
     _lastViewportW: 0,
@@ -208,10 +214,10 @@ export const SeatingChartManager = {
                                         ${this._getPlacementPopoverHTML()}
                                     </div>
                                 </div>
-                                <button type="button" class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
+                                <button type="button" class="sc-action-btn sc-undo-btn disabled" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
                                 </button>
-                                <button type="button" class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
+                                <button type="button" class="sc-action-btn sc-redo-btn disabled" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
                                 <button type="button" class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
@@ -376,12 +382,18 @@ export const SeatingChartManager = {
                 }
             }
         }
-        if (this._selectedChipIds.length > 0) {
+        const prevSelectedLen = this._selectedChipIds.length;
+        if (prevSelectedLen > 0) {
             this._selectedChipIds = this._selectedChipIds.filter(id => {
                 const st = this._studentMap.get(id);
                 return st && !this._isStudentDeparted(st);
             });
+            if (this._selectedChipIds.length === 0) {
+                this._lastSelectedGridPos = null;
+                this._lastSelectedSidebarIndex = null;
+            }
         }
+        const selectionChanged = this._selectedChipIds.length !== prevSelectedLen;
         if (!this._isVirtualClass() && this._isLocked && this._getPlacedIds().size === 0) {
             const currentClass = this._getCurrentClass();
             const lockKey = this._getActiveClassLockKey();
@@ -392,6 +404,9 @@ export const SeatingChartManager = {
             this._applyLockState(false, { skipSmartFit: true });
         }
         this._render();
+        if (selectionChanged) {
+            this._updateSelectionAttribute();
+        }
         bus.emit(EVENTS.SEATING_STATUS_CHANGED, {
             classId: appState.currentClassId,
             locked: this._isLocked,
@@ -416,14 +431,7 @@ export const SeatingChartManager = {
             if (!isList && this._isActive && wrapper.dataset.view === 'plan') return;
         }
 
-        if (this._viewExitTimeout) {
-            clearTimeout(this._viewExitTimeout);
-            this._viewExitTimeout = null;
-        }
-        if (this._viewEnterTimeout) {
-            clearTimeout(this._viewEnterTimeout);
-            this._viewEnterTimeout = null;
-        }
+        this._clearViewTransitionTimers();
         this._clearListViewTransitionClasses({ preserveSwipeOffset: !isList && !immediate });
 
         if (!isList) {

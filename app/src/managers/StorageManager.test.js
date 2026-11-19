@@ -365,24 +365,36 @@ describe('StorageManager', () => {
             expect(migrated[0].studentData.periods.T1.grade).toBe(15);
         });
 
-        it('should normalize tokenUsage idempotently and repair the nesting left by the former migration', () => {
+        it('should normalize tokenUsage idempotently to { appreciation, analysis } and repair legacy nesting', () => {
             const usage = { total_tokens: 42 };
             const results = [
                 { id: 'a', studentData: { periods: {} } },
                 { id: 'b', studentData: { periods: {} }, tokenUsage: usage },
                 { id: 'c', studentData: { periods: {} }, tokenUsage: { appreciation: { appreciation: null, sw: null, ns: null }, sw: null, ns: null } },
-                { id: 'd', studentData: { periods: {} }, tokenUsage: { appreciation: usage, sw: { total_tokens: 7 }, ns: null } }
+                { id: 'd', studentData: { periods: {} }, tokenUsage: { appreciation: usage, sw: { total_tokens: 7 }, ns: null, generationTimeMs: 320 } }
             ];
 
             const once = JSON.parse(JSON.stringify(StorageManager.migrateData(results)));
             expect(once.map(r => r.tokenUsage)).toEqual([
-                { appreciation: null, analysis: null, sw: null, ns: null },
-                { appreciation: usage, analysis: null, sw: null, ns: null },
-                { appreciation: null, analysis: null, sw: null, ns: null },
-                { appreciation: usage, analysis: null, sw: { total_tokens: 7 }, ns: null }
+                { appreciation: null, analysis: null },
+                { appreciation: usage, analysis: null },
+                { appreciation: null, analysis: null },
+                { appreciation: usage, analysis: null, generationTimeMs: 320 }
             ]);
             // A second load (app reload) must not change anything, otherwise the session drifts to "Non sauvegardé"
             expect(StorageManager.migrateData(once)).toEqual(once);
+        });
+
+        it('should exclude tokenUsage variations from computeCurrentDataHash()', () => {
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'Dupont', prenom: 'Jean', studentData: { periods: { T1: { grade: 14, appreciation: 'Bien' } } }, tokenUsage: { appreciation: null, sw: null, ns: null } }
+            ];
+            const hashLegacy = StorageManager.computeCurrentDataHash();
+
+            runtimeState.data.generatedResults[0].tokenUsage = { appreciation: { total_tokens: 99 }, analysis: { total_tokens: 45 }, generationTimeMs: 500 };
+            const hashCanonical = StorageManager.computeCurrentDataHash();
+
+            expect(hashCanonical).toBe(hashLegacy);
         });
 
         it('should migrate flat strengthsWeaknesses/nextSteps into analysisPerPeriod when analysisGenerationPeriod is set', () => {
@@ -414,6 +426,31 @@ describe('StorageManager', () => {
             expect(migrated[0].analysisPerPeriod.T2).toBeUndefined();
             // Do not blindly guess period for unmarked legacy entries
             expect(migrated[1].analysisPerPeriod).toBeUndefined();
+        });
+
+        it('should prefer result.timestamp or 0 (never Date.now()) when migrating legacy flat analysis without _lastModified', () => {
+            const oldIso = '2025-11-10T09:00:00.000Z';
+            const migrated = StorageManager.migrateData([
+                {
+                    id: 'stu-with-ts',
+                    strengthsWeaknesses: { strengths: ['Sérieux'], weaknesses: [] },
+                    analysisGenerationPeriod: 'T1',
+                    timestamp: oldIso,
+                    studentData: { periods: { T1: { grade: 14 } }, currentPeriod: 'T1' }
+                },
+                {
+                    id: 'stu-no-ts',
+                    strengthsWeaknesses: { strengths: ['Curieux'], weaknesses: [] },
+                    analysisGenerationPeriod: 'T1',
+                    studentData: { periods: { T1: { grade: 12 } }, currentPeriod: 'T1' }
+                }
+            ]);
+
+            expect(migrated[0].analysisPerPeriod.T1._lastModified).toBe(new Date(oldIso).getTime());
+            expect(migrated[1].analysisPerPeriod.T1._lastModified).toBe(0);
+            expect(StorageManager._resolveLegacyLastModified({ timestamp: oldIso })).toBe(new Date(oldIso).getTime());
+            expect(StorageManager._resolveLegacyLastModified({ _lastModified: 0 })).toBe(0);
+            expect(StorageManager._resolveLegacyLastModified({})).toBe(0);
         });
     });
 

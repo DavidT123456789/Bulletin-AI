@@ -1106,12 +1106,19 @@ export const UI = {
                 const engineTab = document.getElementById('settings-engine');
                 if (errEl && DOM.settingsModal?.style?.display === 'flex' && engineTab?.classList?.contains('active')) {
                     errEl.textContent = `⚠️ Clé ${name} requise.`;
+                    if (errEl.dataset) errEl.dataset.missingKeyError = 'true';
                     errEl.style.display = 'block';
                 }
             }
             return false;
         }
-        if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+        // Ne nettoyer que l'alerte "clé manquante" posée par checkAPIKeyPresence,
+        // afin de préserver les infos/avertissements affichés par ApiValidationManager (quota, solde, timeout étape 2).
+        if (errEl && errEl.dataset?.missingKeyError === 'true') {
+            delete errEl.dataset.missingKeyError;
+            errEl.textContent = '';
+            errEl.style.display = 'none';
+        }
         return true;
     },
     updateWordCount(id, text) {

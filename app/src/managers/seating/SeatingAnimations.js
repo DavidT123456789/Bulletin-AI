@@ -129,6 +129,11 @@ export const SeatingAnimations = {
             clearTimeout(this._listEnterCleanupTimer);
             this._listEnterCleanupTimer = null;
         }
+        if (this._listEnterPrimaryEl && this._listEnterEndHandler) {
+            this._listEnterPrimaryEl.removeEventListener('animationend', this._listEnterEndHandler);
+        }
+        this._listEnterPrimaryEl = null;
+        this._listEnterEndHandler = null;
         if (this._listStaggerCleanupTimer) {
             clearTimeout(this._listStaggerCleanupTimer);
             this._listStaggerCleanupTimer = null;
@@ -232,6 +237,16 @@ export const SeatingAnimations = {
 
         this._staggerListViewEntrance();
 
+        if (this._listEnterCleanupTimer) {
+            clearTimeout(this._listEnterCleanupTimer);
+            this._listEnterCleanupTimer = null;
+        }
+        if (this._listEnterPrimaryEl && this._listEnterEndHandler) {
+            this._listEnterPrimaryEl.removeEventListener('animationend', this._listEnterEndHandler);
+        }
+        this._listEnterPrimaryEl = null;
+        this._listEnterEndHandler = null;
+
         const primaryEl = containers[0];
         const cleanup = (e) => {
             if (e && e.target !== primaryEl) return;
@@ -239,9 +254,17 @@ export const SeatingAnimations = {
                 clearTimeout(this._listEnterCleanupTimer);
                 this._listEnterCleanupTimer = null;
             }
-            primaryEl?.removeEventListener('animationend', cleanup);
+            if (primaryEl && this._listEnterEndHandler === cleanup) {
+                primaryEl.removeEventListener('animationend', cleanup);
+                this._listEnterPrimaryEl = null;
+                this._listEnterEndHandler = null;
+            } else {
+                primaryEl?.removeEventListener('animationend', cleanup);
+            }
             containers.forEach(el => el.classList.remove('view-slide-in-left'));
         };
+        this._listEnterPrimaryEl = primaryEl;
+        this._listEnterEndHandler = cleanup;
         primaryEl?.addEventListener('animationend', cleanup);
         this._listEnterCleanupTimer = setTimeout(() => cleanup(), 260);
     },
@@ -308,12 +331,38 @@ export const SeatingAnimations = {
         }, duration);
     },
 
-    /** View entrance — horizontal micro-slide from right (Liste -> Plan) */
-    _animateViewEnter(viewEl) {
+    _clearViewEnterTransition() {
         if (this._viewEnterTimeout) {
             clearTimeout(this._viewEnterTimeout);
             this._viewEnterTimeout = null;
         }
+        if (this._viewEnterEl && this._viewEnterEndHandler) {
+            this._viewEnterEl.removeEventListener('animationend', this._viewEnterEndHandler);
+        }
+        this._viewEnterEl = null;
+        this._viewEnterEndHandler = null;
+    },
+
+    _clearViewExitTransition() {
+        if (this._viewExitTimeout) {
+            clearTimeout(this._viewExitTimeout);
+            this._viewExitTimeout = null;
+        }
+        if (this._viewExitEl && this._viewExitEndHandler) {
+            this._viewExitEl.removeEventListener('animationend', this._viewExitEndHandler);
+        }
+        this._viewExitEl = null;
+        this._viewExitEndHandler = null;
+    },
+
+    _clearViewTransitionTimers() {
+        this._clearViewExitTransition();
+        this._clearViewEnterTransition();
+    },
+
+    /** View entrance — horizontal micro-slide from right (Liste -> Plan) */
+    _animateViewEnter(viewEl) {
+        this._clearViewEnterTransition();
         if (this._prefersReducedMotion()) {
             viewEl.classList.remove('sc-exiting', 'sc-entering');
             return;
@@ -327,27 +376,18 @@ export const SeatingAnimations = {
 
         const cleanup = (e) => {
             if (e && e.target !== viewEl) return;
-            if (this._viewEnterTimeout) {
-                clearTimeout(this._viewEnterTimeout);
-                this._viewEnterTimeout = null;
-            }
-            viewEl.removeEventListener('animationend', cleanup);
+            this._clearViewEnterTransition();
             viewEl.classList.remove('sc-entering');
         };
+        this._viewEnterEl = viewEl;
+        this._viewEnterEndHandler = cleanup;
         viewEl.addEventListener('animationend', cleanup);
         this._viewEnterTimeout = setTimeout(() => cleanup(), 260);
     },
 
     /** View exit — horizontal micro-slide to right (Plan -> Liste) */
     _animateViewExit(viewEl, onComplete) {
-        if (this._viewExitTimeout) {
-            clearTimeout(this._viewExitTimeout);
-            this._viewExitTimeout = null;
-        }
-        if (this._viewEnterTimeout) {
-            clearTimeout(this._viewEnterTimeout);
-            this._viewEnterTimeout = null;
-        }
+        this._clearViewTransitionTimers();
         if (this._prefersReducedMotion()) {
             viewEl.classList.remove('sc-entering', 'sc-exiting');
             onComplete();
@@ -365,14 +405,12 @@ export const SeatingAnimations = {
             if (e && e.target !== viewEl) return;
             if (called) return;
             called = true;
-            if (this._viewExitTimeout) {
-                clearTimeout(this._viewExitTimeout);
-                this._viewExitTimeout = null;
-            }
-            viewEl.removeEventListener('animationend', done);
+            this._clearViewExitTransition();
             viewEl.classList.remove('sc-exiting');
             onComplete();
         };
+        this._viewExitEl = viewEl;
+        this._viewExitEndHandler = done;
         viewEl.addEventListener('animationend', done);
         this._viewExitTimeout = setTimeout(() => done(), 95);
     },

@@ -152,6 +152,81 @@ describe('ApiValidationManager', () => {
             expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
 
+        it('should use fast non-reasoning gemini-3.6-flash for Google step 2 validation even when currentAIModel is gemini-4-hydrogen', async () => {
+            appState.currentAIModel = 'gemini-4-hydrogen';
+            AIService.getAvailableModels.mockResolvedValue([
+                { name: 'models/gemini-4-hydrogen' },
+                { name: 'models/gemini-3.6-flash' },
+                { name: 'models/gemini-3.8-flash' }
+            ]);
+            AIService.callAI.mockResolvedValue({ text: 'ok' });
+
+            await ApiValidationManager.validateApiKeyUI(
+                'google', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(AIService.callAI).toHaveBeenCalledWith(
+                'Validation',
+                expect.objectContaining({
+                    isValidation: true,
+                    validationProvider: 'google',
+                    modelOverride: 'gemini-3.6-flash'
+                })
+            );
+        });
+
+        it('should keep and save Google key as valid when step 1 (/models) succeeds but step 2 times out or returns 503', async () => {
+            AIService.getAvailableModels.mockResolvedValue([
+                { name: 'models/gemini-3.6-flash' }
+            ]);
+            const timeoutErr = new Error('La requête a expiré (timeout 15s).');
+            timeoutErr.name = 'TimeoutError';
+            AIService.callAI.mockRejectedValue(timeoutErr);
+            const onSuccess = vi.fn();
+
+            await ApiValidationManager.validateApiKeyUI(
+                'google', mockInputEl, mockErrorEl, mockBtnEl, onSuccess
+            );
+
+            expect(appState.googleApiKey).toBe('test-api-key');
+            expect(appState.apiKeyStatus.google).toBe('valid');
+            expect(appState.validatedApiKeys.google).toBe(true);
+            expect(mockInputEl.classList.add).not.toHaveBeenCalledWith('input-error');
+            expect(mockErrorEl.innerHTML).toContain('Clé authentifiée et enregistrée');
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
+            expect(onSuccess).toHaveBeenCalled();
+        });
+
+        it('should NOT mark key as invalid when step 1 or 1-step provider fails with timeout/503/network error', async () => {
+            const timeoutErr = new DOMException('Timeout', 'TimeoutError');
+            AIService.getAvailableModels.mockRejectedValue(timeoutErr);
+
+            await ApiValidationManager.validateApiKeyUI(
+                'google', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(appState.apiKeyStatus.google).toBeNull();
+            expect(appState.validatedApiKeys.google).toBe(false);
+            expect(appState.googleApiKey).toBe('');
+            expect(mockInputEl.classList.add).not.toHaveBeenCalledWith('input-error');
+            expect(mockErrorEl.innerHTML).toContain('délai dépassé');
+
+            // 1-step provider (Groq) hitting 503 should also preserve status instead of marking invalid
+            appState.groqApiKey = 'existing-valid-groq';
+            appState.validatedApiKeys.groq = true;
+            appState.apiKeyStatus.groq = 'valid';
+            mockInputEl.value = 'existing-valid-groq';
+            AIService.callAI.mockRejectedValue(new Error('Clé invalide (503): Service Unavailable'));
+
+            await ApiValidationManager.validateApiKeyUI(
+                'groq', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(appState.groqApiKey).toBe('existing-valid-groq');
+            expect(appState.apiKeyStatus.groq).toBe('valid');
+            expect(appState.validatedApiKeys.groq).toBe(true);
+        });
+
         it('should handle quota errors for Google gracefully', async () => {
             AIService.getAvailableModels.mockResolvedValue([
                 { name: 'models/gemini-2.5-flash' }
@@ -196,7 +271,22 @@ describe('ApiValidationManager', () => {
             );
         });
 
-        it('should validate Anthropic key with active Claude 5.5 model (not retired 3.7)', async () => {
+        it('should strip duplicate Erreur HTTP prefix and escape HTML in invalid key diagnostics', async () => {
+            AIService.getAvailableModels.mockRejectedValue(
+                new Error('Erreur HTTP 400: API key not valid <script>alert(1)</script>')
+            );
+
+            await ApiValidationManager.validateApiKeyUI(
+                'google', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(appState.apiKeyStatus.google).toBe('invalid');
+            expect(appState.apiKeyErrorDetails.google).toBe('Code 400 · API key not valid <script>alert(1)</script>');
+            expect(mockErrorEl.innerHTML).not.toContain('<script>');
+            expect(mockErrorEl.innerHTML).toContain('&lt;script&gt;');
+        });
+
+        it('should validate Anthropic key with lightweight Claude Haiku 5.5 model', async () => {
             AIService.callAI.mockResolvedValue({ text: 'ok' });
 
             await ApiValidationManager.validateApiKeyUI(
@@ -208,7 +298,7 @@ describe('ApiValidationManager', () => {
                 expect.objectContaining({
                     isValidation: true,
                     validationProvider: 'anthropic',
-                    modelOverride: 'anthropic-claude-sonnet-5-5'
+                    modelOverride: 'anthropic-claude-haiku-5-5'
                 })
             );
         });
@@ -242,7 +332,7 @@ describe('ApiValidationManager', () => {
                 expect.objectContaining({
                     isValidation: true,
                     validationProvider: 'groq',
-                    modelOverride: 'groq-gpt-oss-120b'
+                    modelOverride: 'groq-gpt-oss-20b'
                 })
             );
             expect(appState.apiKeyStatus.groq).toBe('valid');

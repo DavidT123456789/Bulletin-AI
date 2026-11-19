@@ -267,90 +267,6 @@ describe('AppreciationsManager', () => {
         });
     });
 
-    describe('parseStrengthsWeaknesses()', () => {
-        it('should return empty string for null input', () => {
-            const result = AppreciationsManager.parseStrengthsWeaknesses(null);
-            expect(result).toBe('');
-        });
-
-        it('should return empty string for empty input', () => {
-            const result = AppreciationsManager.parseStrengthsWeaknesses('');
-            expect(result).toBe('');
-        });
-
-        it('should parse strengths with markdown list', () => {
-            const text = `### Points forts
-* Travail régulier
-* Bonne participation
-### Points faibles
-* Attention dispersée`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('strengths-title');
-            expect(result).toContain('Travail régulier');
-            expect(result).toContain('Bonne participation');
-        });
-
-        it('should parse weaknesses with dash list', () => {
-            const text = `### Points faibles
-- Manque de concentration
-- Travail irrégulier`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('weaknesses-title');
-            expect(result).toContain('Manque de concentration');
-        });
-
-        it('should parse numbered list format', () => {
-            const text = `Points positifs
-1. Premier point
-2. Deuxième point`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('Premier point');
-            expect(result).toContain('Deuxième point');
-        });
-
-        it('should handle atouts as strength keyword', () => {
-            const text = `Atouts
-* Élève motivé`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('strengths-title');
-            expect(result).toContain('Élève motivé');
-        });
-
-        it('should handle axes amélioration as weakness keyword', () => {
-            const text = `Axes d'amélioration
-* Doit progresser`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('weaknesses-title');
-            expect(result).toContain('Doit progresser');
-        });
-
-        it('should fall back to raw text if no sections detected', () => {
-            const text = 'Simple text without sections';
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('<p>');
-            expect(result).toContain('Simple text without sections');
-        });
-
-        it('should show fallback message for empty strength items', () => {
-            const text = `Points forts`;
-
-            const result = AppreciationsManager.parseStrengthsWeaknesses(text);
-
-            expect(result).toContain('Aucun point fort notable');
-        });
-    });
-
     describe('getAllPrompts()', () => {
         it('should return object with appreciation and unified analysis prompts', () => {
             const studentData = {
@@ -484,6 +400,12 @@ describe('AppreciationsManager', () => {
             expect(parsed.strengths).toEqual(['Participation dynamique', 'Copies rigoureuses']);
             expect(parsed.weaknesses).toEqual(['Précipitations en DS']);
             expect(parsed.nextSteps).toEqual(['Relire systématiquement les énoncés']);
+
+            const boldColonRaw = `**Points forts** :\n- Sérieuse\n\n**Points de vigilance**:\n- Manque de méthode\n\n**Pistes de progrès** :\n- Structurer ses brouillons`;
+            const parsedBoldColon = AppreciationsManager._parseStudentAnalysisResponse(boldColonRaw, 'Chloé');
+            expect(parsedBoldColon.strengths).toEqual(['Sérieuse']);
+            expect(parsedBoldColon.weaknesses).toEqual(['Manque de méthode']);
+            expect(parsedBoldColon.nextSteps).toEqual(['Structurer ses brouillons']);
         });
 
         it('should send unified systemPrompt, store period-scoped analysis, deanonymize and update tokenUsage.analysis', async () => {
@@ -494,7 +416,7 @@ describe('AppreciationsManager', () => {
                     nextSteps: ['Préparer des fiches d\'argumentation orale']
                 }),
                 usage: { total_tokens: 185 },
-                model: 'gemini-4-flash'
+                modelUsed: 'gemini-4-flash'
             });
 
             const entry = await AppreciationsManager.generateStudentAnalysis('stu-ana-1', 'T2', true);
@@ -509,6 +431,7 @@ describe('AppreciationsManager', () => {
             expect(entry.strengths).toEqual(['Chloé s\'investit pleinement']);
             expect(entry.weaknesses).toEqual(['Hésitations en expression orale']);
             expect(entry.nextSteps).toEqual(['Préparer des fiches d\'argumentation orale']);
+            expect(entry.model).toBe('gemini-4-flash');
 
             const student = appState.generatedResults[0];
             expect(student.analysisPerPeriod.T2).toBe(entry);

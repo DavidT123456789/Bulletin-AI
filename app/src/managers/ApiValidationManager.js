@@ -8,8 +8,9 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { PROVIDER_DEFAULT_MODELS } from '../config/models.js';
+import { FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, getModelMeta, getApiModelName } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
+import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
@@ -37,54 +38,122 @@ export const ApiValidationManager = {
     },
 
     /**
+     * Détermine si une erreur de validation est transitoire (timeout, surcharge 5xx, perte réseau)
+     * et ne prouve donc pas que la clé API est invalide.
+     * @param {Error|any} error
+     * @returns {boolean}
+     * @private
+     */
+    _isTransientValidationError(error) {
+        if (!error) return false;
+        if (error.name === 'TimeoutError') return true;
+        if (typeof error.status === 'number' && error.status >= 500) return true;
+        if (error instanceof TypeError) return true;
+        const msg = String(error.message || '').toLowerCase();
+        return /timeout|expir[ée]|failed to fetch|networkerror|load failed|unavailable|overloaded|capacity|\b50[0234]\b/.test(msg);
+    },
+
+    /**
+     * Sélectionne le modèle Google le plus rapide et léger (sans raisonnement) disponible
+     * pour le test de quota de l'étape 2, afin d'éviter la latence des modèles thinking.
+     * @param {Array<{name?: string}>} [availableModels=[]]
+     * @returns {string}
+     * @private
+     */
+    _pickGoogleValidationModel(availableModels = []) {
+        const candidates = FALLBACK_CONFIG.google || [PROVIDER_DEFAULT_MODELS.google];
+        const availableIds = new Set(
+            (Array.isArray(availableModels) ? availableModels : [])
+                .map(m => (typeof m?.name === 'string' ? m.name.replace(/^models\//, '') : ''))
+                .filter(Boolean)
+        );
+        const isAvailable = (id) => availableIds.size === 0 || availableIds.has(getApiModelName(id));
+
+        const fastModel = candidates.find(id => !getModelMeta(id)?.isReasoning && isAvailable(id));
+        if (fastModel) return fastModel;
+
+        return candidates.find(isAvailable) || PROVIDER_DEFAULT_MODELS.google;
+    },
+
+    /**
+     * Bascule automatiquement vers le modèle recommandé du fournisseur si le modèle actif
+     * ne dispose pas de clé API configurée.
+     * @param {string} provider
+     * @private
+     */
+    async _autoSelectModelIfNeeded(provider) {
+        if (AIService._hasApiKeyForModel(appState.currentAIModel)) return;
+        const recommendedModel = PROVIDER_DEFAULT_MODELS[provider];
+        if (!recommendedModel) return;
+
+        appState.currentAIModel = recommendedModel;
+        await StorageManager.saveAppState();
+        this._syncSettingsSnapshotAfterValidation(provider);
+
+        if (DOM.aiModelSelect) {
+            DOM.aiModelSelect.value = recommendedModel;
+            DropdownManager.refresh('aiModelSelect');
+        }
+        SettingsUIManager.updateHeaderAiModelDisplay();
+        UI.showNotification(`Modèle basculé vers ${recommendedModel}`, 'info');
+    },
+
+    /**
      * Valide une clé API avec UI feedback
      * @param {string} provider - Le provider ('openai', 'google', 'openrouter')
      * @param {HTMLInputElement} inputEl - L'élément input contenant la clé
      * @param {HTMLElement} errorEl - L'élément pour afficher les erreurs
      * @param {HTMLButtonElement} btnEl - Le bouton de validation
      * @param {Function} [onSuccess] - Callback en cas de succès
-     * @param {boolean} [isRetry=false] - Si c'est une tentative de retry après auto-correction
      */
-    async validateApiKeyUI(provider, inputEl, errorEl, btnEl, onSuccess, isRetry = false) {
+    async validateApiKeyUI(provider, inputEl, errorEl, btnEl, onSuccess) {
         const key = inputEl.value.trim();
         if (!key) {
+            if (errorEl.dataset) delete errorEl.dataset.missingKeyError;
             errorEl.textContent = "Veuillez entrer une clé.";
             errorEl.style.display = 'block';
             return;
         }
 
-        const originalBtnContent = btnEl.innerHTML;
+        const previousKey = appState[`${provider}ApiKey`] || '';
+        const previousValidated = Boolean(appState.validatedApiKeys?.[provider]);
+        const previousStatus = appState.apiKeyStatus?.[provider] ?? null;
+
         UI.showInlineSpinner(btnEl);
+        if (errorEl.dataset) delete errorEl.dataset.missingKeyError;
         errorEl.style.display = 'none';
 
         try {
             appState[`${provider}ApiKey`] = key;
 
-            // Pour Google: validation en deux étapes
+            // Pour Google & Albert: validation en deux étapes
             if (provider === 'google' || provider === 'albert') {
                 // Étape 1: Vérifier que la clé est valide (endpoint /models ne consomme pas de quota)
+                let availableModels = [];
                 try {
-                    await AIService.getAvailableModels(provider);
+                    availableModels = await AIService.getAvailableModels(provider);
                 } catch (modelsError) {
-                    // Si /models échoue, la clé est invalide
+                    if (this._isTransientValidationError(modelsError)) {
+                        throw modelsError;
+                    }
+                    // Si /models échoue avec une erreur d'authentification, la clé est invalide
                     throw new Error(`Clé invalide : ${modelsError.message}`);
                 }
 
-                // Étape 2: Tester le quota avec generateContent
+                // Étape 2: Tester le quota avec un modèle rapide sans raisonnement
                 try {
-                    const defaultModel = PROVIDER_DEFAULT_MODELS[provider] || PROVIDER_DEFAULT_MODELS.google;
-                    const isSameProvider = provider === 'google'
-                        ? appState.currentAIModel.startsWith('gemini')
-                        : appState.currentAIModel.startsWith('albert-');
-                    const modelOverride = isSameProvider ? appState.currentAIModel : defaultModel;
+                    const modelOverride = provider === 'google'
+                        ? this._pickGoogleValidationModel(availableModels)
+                        : (PROVIDER_DEFAULT_MODELS.albert || 'albert-openweight-medium');
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
                 } catch (quotaError) {
-                    const msg = quotaError.message.toLowerCase();
+                    const msg = (quotaError.message || '').toLowerCase();
                     if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
                         appState.apiKeyStatus[provider] = 'quota-warning';
                         appState.validatedApiKeys[provider] = true;
+                        if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
 
                         UI.hideInlineSpinner(btnEl);
                         btnEl.classList.remove('btn-needs-validation', 'btn-validated');
@@ -98,16 +167,42 @@ export const ApiValidationManager = {
                         await StorageManager.saveAppState();
                         this._syncSettingsSnapshotAfterValidation(provider);
                         SettingsUIManager.updateApiStatusDisplay();
+                        await this._autoSelectModelIfNeeded(provider);
+                        if (onSuccess) onSuccess();
+                        return;
+                    }
+                    if (this._isTransientValidationError(quotaError)) {
+                        // L'étape 1 (/models) a déjà prouvé que la clé est valide :
+                        // un timeout ou 503 sur generateContent ne doit pas invalider ni effacer la clé.
+                        appState.apiKeyStatus[provider] = 'valid';
+                        appState.validatedApiKeys[provider] = true;
+                        if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
+
+                        UI.hideInlineSpinner(btnEl);
+                        btnEl.classList.remove('btn-needs-validation', 'btn-validated');
+                        btnEl.innerHTML = 'Vérifier';
+                        inputEl.classList.remove('input-error', 'input-warning', 'input-success');
+
+                        errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée et enregistrée — le test rapide a expiré (serveur temporairement chargé).</span>`;
+                        errorEl.style.display = 'block';
+                        errorEl.style.color = 'var(--warning-color)';
+
+                        await StorageManager.saveAppState();
+                        this._syncSettingsSnapshotAfterValidation(provider);
+                        SettingsUIManager.updateApiStatusDisplay();
+                        UI.showNotification(`Clé ${provider} authentifiée et sauvegardée !`, 'success');
+                        await this._autoSelectModelIfNeeded(provider);
                         if (onSuccess) onSuccess();
                         return;
                     }
                     throw quotaError;
                 }
             } else {
-                // Pour OpenAI, OpenRouter, Anthropic, Mistral, Groq: validation centralisée via PROVIDER_DEFAULT_MODELS
-                // OpenRouter utilise un modèle payant léger pour éviter les rate-limits des endpoints :free lors du check de clé
+                // Pour OpenAI, OpenRouter, Anthropic, Mistral, Groq: validation via modèles légers et rapides
                 const testModels = {
                     ...PROVIDER_DEFAULT_MODELS,
+                    groq: 'groq-gpt-oss-20b',
+                    anthropic: 'anthropic-claude-haiku-5-5',
                     openrouter: 'deepseek/deepseek-chat'
                 };
                 const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || PROVIDER_DEFAULT_MODELS.google;
@@ -172,71 +267,28 @@ export const ApiValidationManager = {
 
             // ✅ Auto-sélection du modèle si le modèle actuel n'a pas de clé configurée
             // Évite la confusion UX où l'utilisateur valide Mistral mais le modèle reste sur Gemini
-            if (!AIService._hasApiKeyForModel(appState.currentAIModel)) {
-                const recommendedModel = PROVIDER_DEFAULT_MODELS[provider];
-                if (recommendedModel) {
-                    appState.currentAIModel = recommendedModel;
-                    await StorageManager.saveAppState();
-                    this._syncSettingsSnapshotAfterValidation(provider);
-
-                    // Mettre à jour le select du modèle si présent
-                    if (DOM.aiModelSelect) {
-                        DOM.aiModelSelect.value = recommendedModel;
-                        DropdownManager.refresh('aiModelSelect');
-                    }
-                    SettingsUIManager.updateHeaderAiModelDisplay();
-
-                    UI.showNotification(`Modèle basculé vers ${recommendedModel}`, 'info');
-                }
-            }
+            await this._autoSelectModelIfNeeded(provider);
 
             if (onSuccess) onSuccess();
 
 
         } catch (e) {
-            // Auto-Healing for Google 404
-            if (provider === 'google' && e.message.includes('404') && (e.message.includes('models/') || e.message.includes('not found'))) {
-                try {
-                    const models = await AIService.getAvailableModels('google');
-                    const modelIds = models.map(m => m.name.replace('models/', ''));
-
-                    // Check if we can fallback to a known working model
-                    const fallbackModel = PROVIDER_DEFAULT_MODELS.google;
-                    if (modelIds.includes(fallbackModel)) {
-                        appState.currentAIModel = fallbackModel;
-
-                        // Update UI
-                        if (DOM.aiModelSelect) DOM.aiModelSelect.value = fallbackModel;
-                        UI.showNotification(`Modèle corrigé automatiquement vers ${fallbackModel}.`, 'success');
-
-                        // Retry validation recursively (once)
-                        if (!isRetry) {
-                            await this.validateApiKeyUI(provider, inputEl, errorEl, btnEl, onSuccess, true);
-                            return; // Exit this execution as the retry handles it
-                        }
-                    } else {
-                        // If no fallback found, show the list
-                        const modelNames = modelIds.join('\n');
-                        alert(`Le modèle configuré est introuvable et l'auto-correction a échoué. Voici les modèles disponibles :\n\n${modelNames}\n\nVeuillez sélectionner un modèle compatible.`);
-                    }
-                } catch (listError) {
-                    console.error("Echec de l'auto-correction:", listError);
-                }
-            }
-
             UI.hideInlineSpinner(btnEl);
             btnEl.innerHTML = 'Vérifier';
             btnEl.classList.remove('btn-validated', 'btn-needs-validation');
             console.error("Validation failed:", e);
 
             // Distinguer les erreurs de quota des vraies erreurs de clé
-            const isQuotaError = e.message.includes('429') || e.message.toLowerCase().includes('quota');
-            const isRateLimitError = e.message.toLowerCase().includes('rate limit') || e.message.toLowerCase().includes('rate_limit');
-            const isModelNotFoundError = provider === 'google' && (e.message.includes('404') || e.message.toLowerCase().includes('not found'));
+            const rawMsg = String(e?.message || '');
+            const rawMsgLower = rawMsg.toLowerCase();
+            const isQuotaError = rawMsg.includes('429') || rawMsgLower.includes('quota');
+            const isRateLimitError = rawMsgLower.includes('rate limit') || rawMsgLower.includes('rate_limit');
+            const isModelNotFoundError = provider === 'google' && (rawMsg.includes('404') || rawMsgLower.includes('not found'));
 
             if (isQuotaError || isRateLimitError) {
                 appState.apiKeyStatus[provider] = 'quota-warning';
                 appState.validatedApiKeys[provider] = true;
+                if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
                 SettingsUIManager.updateApiStatusDisplay();
 
                 inputEl.classList.remove('input-error', 'input-warning', 'input-success');
@@ -247,10 +299,12 @@ export const ApiValidationManager = {
 
                 await StorageManager.saveAppState();
                 this._syncSettingsSnapshotAfterValidation(provider);
+                await this._autoSelectModelIfNeeded(provider);
                 if (onSuccess) onSuccess();
             } else if (isModelNotFoundError) {
                 appState.apiKeyStatus[provider] = 'valid';
                 appState.validatedApiKeys[provider] = true;
+                if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
                 SettingsUIManager.updateApiStatusDisplay();
 
                 btnEl.classList.remove('btn-needs-validation', 'btn-validated');
@@ -263,7 +317,22 @@ export const ApiValidationManager = {
 
                 await StorageManager.saveAppState();
                 this._syncSettingsSnapshotAfterValidation(provider);
+                await this._autoSelectModelIfNeeded(provider);
                 if (onSuccess) onSuccess();
+            } else if (this._isTransientValidationError(e)) {
+                // Erreur réseau / timeout / surcharge 5xx : ne pas accuser faussement la clé d'être invalide
+                appState[`${provider}ApiKey`] = previousKey;
+                if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = previousValidated;
+                if (appState.apiKeyStatus) appState.apiKeyStatus[provider] = previousStatus;
+                if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
+
+                inputEl.classList.remove('input-error', 'input-warning', 'input-success');
+
+                errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Serveur momentanément indisponible ou délai dépassé — réessayez dans un instant.</span>`;
+                errorEl.style.display = 'block';
+                errorEl.style.color = 'var(--warning-color)';
+
+                SettingsUIManager.updateApiStatusDisplay();
             } else {
                 // Vraie erreur de clé invalide - effacer la clé de appState
                 appState.validatedApiKeys[provider] = false;
@@ -272,12 +341,11 @@ export const ApiValidationManager = {
                 await StorageManager.saveAppState();
 
                 // Extraire le diagnostic technique sans répéter "Clé invalide" (déjà affiché sur le badge d'en-tête)
-                const errorMsg = e.message || '';
-                const codeMatch = errorMsg.match(/\((\d{3})\)|status:\s*(\d{3})|HTTP\s*(\d{3})/i);
+                const codeMatch = rawMsg.match(/\((\d{3})\)|status:\s*(\d{3})|HTTP\s*(\d{3})/i);
                 const errorCode = codeMatch ? (codeMatch[1] || codeMatch[2] || codeMatch[3]) : null;
 
                 let cleanDetail = '';
-                const jsonMatch = errorMsg.match(/:\s*(\{.*\})/);
+                const jsonMatch = rawMsg.match(/:\s*(\{.*\})/);
                 if (jsonMatch) {
                     try {
                         const jsonError = JSON.parse(jsonMatch[1]);
@@ -287,9 +355,9 @@ export const ApiValidationManager = {
                         cleanDetail = '';
                     }
                 } else {
-                    cleanDetail = errorMsg
+                    cleanDetail = rawMsg
                         .replace(/^Clé invalide\s*(?:\(\d+\))?\s*:\s*/i, '')
-                        .replace(/^Erreur API\s*\d+\s*:\s*/i, '')
+                        .replace(/^Erreur\s+(?:API|HTTP)\s*\d+\s*:\s*/i, '')
                         .replace(/^HTTP error!\s*status:\s*\d+\s*(?:-\s*)?/i, '')
                         .trim();
                 }
@@ -300,7 +368,7 @@ export const ApiValidationManager = {
                 appState.apiKeyErrorDetails = appState.apiKeyErrorDetails || {};
                 appState.apiKeyErrorDetails[provider] = diagnosticText;
 
-                errorEl.innerHTML = `<iconify-icon icon="solar:info-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>${diagnosticText}</span>`;
+                errorEl.innerHTML = `<iconify-icon icon="solar:info-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>${Utils.escapeHtml(diagnosticText)}</span>`;
                 errorEl.style.display = 'block';
                 errorEl.style.color = '';
                 inputEl.classList.add('input-error');

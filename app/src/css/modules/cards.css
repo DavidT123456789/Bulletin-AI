@@ -361,17 +361,17 @@
 
 .copy-btn.copied {
     background: rgba(var(--success-rgb), 0.12);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .copy-btn.copied:hover:not(:disabled) {
     background: rgba(var(--success-rgb), 0.2);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .copy-btn.copied:active:not(:disabled) {
     background: rgba(var(--success-rgb), 0.25);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .copy-btn.copied iconify-icon,

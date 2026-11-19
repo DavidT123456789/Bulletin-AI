@@ -743,7 +743,7 @@
 /* 🟢 Validé & Figé */
 .class-seating-badge.is-locked {
     background: rgba(var(--success-rgb), 0.14);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 [data-theme="dark"] .class-seating-badge.is-locked {
@@ -754,7 +754,7 @@
 /* 🟠 En test / En cours d'ajustement */
 .class-seating-badge.is-testing {
     background: rgba(var(--warning-rgb), 0.14);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 [data-theme="dark"] .class-seating-badge.is-testing {
@@ -1247,7 +1247,7 @@
 }
 
 .trend-indicator.positive {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .trend-indicator.negative {

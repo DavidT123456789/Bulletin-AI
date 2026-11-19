@@ -6,7 +6,6 @@ import { Utils } from '../utils/Utils.js';
 
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
-import { AppreciationService } from '../services/AppreciationService.js';
 import { ExportManager } from './ExportManager.js';
 import { StatsService } from '../services/StatsService.js';
 import { PromptService } from '../services/PromptService.js';
@@ -184,7 +183,7 @@ export const AppreciationsManager = {
     },
 
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
-        let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
+        let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, analysis: null };
         const targetClassId = studentData?.classId ?? appState.currentClassId;
         const targetPeriod = studentData?.currentPeriod || appState.currentPeriod;
 
@@ -245,10 +244,6 @@ export const AppreciationsManager = {
         ExportManager.copyAllResults();
     },
 
-    parseStrengthsWeaknesses(text) {
-        return AppreciationService.parseStrengthsWeaknesses(text);
-    },
-
     /**
      * Extrait les listes structurées (forces, points de vigilance, pistes de progrès)
      * d'une réponse IA JSON avec repli Markdown/texte, puis désanonymise chaque puce.
@@ -300,9 +295,9 @@ export const AppreciationsManager = {
         let activeBucket = null;
         const buckets = { strengths: [], weaknesses: [], nextSteps: [] };
         const headingRules = [
-            { key: 'strengths', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*forts?|Forces?|Atouts?|Ce qui va bien)[:\s]*(?:\*\*)?$/i },
-            { key: 'weaknesses', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*de\s*vigilance|Faiblesses?|Fragilit[ée]s?|Axes?\s*d['’]am[ée]lioration|Points?\s*[àa]\s*am[ée]liorer|Points?\s*faibles?)[:\s]*(?:\*\*)?$/i },
-            { key: 'nextSteps', regex: /^(?:#+\s*)?(?:\*\*)?(?:Pistes?\s*(?:de\s*progr[èe]s|d['’]am[ée]lioration)|Recommandations?|Conseils?)[:\s]*(?:\*\*)?$/i }
+            { key: 'strengths', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*forts?|Forces?|Atouts?|Ce qui va bien)[:\s]*(?:\*\*)?[:\s]*$/i },
+            { key: 'weaknesses', regex: /^(?:#+\s*)?(?:\*\*)?(?:Points?\s*de\s*vigilance|Faiblesses?|Fragilit[ée]s?|Axes?\s*d['’]am[ée]lioration|Points?\s*[àa]\s*am[ée]liorer|Points?\s*faibles?)[:\s]*(?:\*\*)?[:\s]*$/i },
+            { key: 'nextSteps', regex: /^(?:#+\s*)?(?:\*\*)?(?:Pistes?\s*(?:de\s*progr[èe]s|d['’]am[ée]lioration)|Recommandations?|Conseils?)[:\s]*(?:\*\*)?[:\s]*$/i }
         ];
 
         for (const line of lines) {
@@ -380,7 +375,7 @@ export const AppreciationsManager = {
                 _lastModified: now,
                 snapshot: Utils.buildStudentAnalysisSnapshot(result, effectivePeriod),
                 sourceAppreciation: (result.studentData?.periods?.[effectivePeriod]?.appreciation || '').trim(),
-                model: resp.model || appState.currentAIModel || null
+                model: resp.modelUsed || appState.currentAIModel || null
             };
 
             result.analysisPerPeriod[effectivePeriod] = periodEntry;

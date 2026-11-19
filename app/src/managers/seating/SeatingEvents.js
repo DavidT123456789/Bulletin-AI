@@ -732,7 +732,7 @@ export const SeatingEvents = {
                 }
 
                 if (isArrowKey && (hasNoModifier || hasCtrlOnly) && !isTyping && !e.repeat) {
-                    if (this._listViewAnimTimer && !this._isActive && appState.activeView === 'plan') {
+                    if (this._viewExitTimeout && !this._isActive && appState.activeView === 'plan') {
                         this.switchToView('plan', { immediate: true });
                     } else if (this._viewExitTimeout && this._isActive && appState.activeView === 'list') {
                         this.switchToView('list', { immediate: true });

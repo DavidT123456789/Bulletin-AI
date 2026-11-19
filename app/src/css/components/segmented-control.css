@@ -32,7 +32,7 @@
     gap: 6px;
     border: none;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -167,7 +167,7 @@
 
 /* --- Dark Mode : Rail creusé subtil et pilule active haute-lisibilité --- */
 [data-theme="dark"] .ui-segmented-control {
-    background: rgba(255, 255, 255, 0.055);
+    background: var(--tonal-bg);
     box-shadow: none;
     border: none;
 }
@@ -194,5 +194,13 @@
 
     .ui-segmented-control:is(.header-style, .sc-plan-mode-switch) .ui-segment:last-of-type::after {
         right: -4px;
+    }
+
+    .ui-segmented-control.sc-plan-mode-switch .ui-segment:first-of-type::after {
+        left: -12px;
+    }
+
+    .ui-segmented-control.sc-plan-mode-switch .ui-segment:last-of-type::after {
+        right: -16px;
     }
 }

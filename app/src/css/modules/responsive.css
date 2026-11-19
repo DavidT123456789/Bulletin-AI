@@ -448,15 +448,6 @@
         font-weight: 600;
     }
 
-    /* --- Status badges: compact print --- */
-    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .status-badge-tag {
-        font-size: 8pt;
-        padding: 1px 4px;
-        border: 1px solid #d4d4d4;
-        background: transparent !important;
-        color: black !important;
-    }
-
     /* --- Evolution icons: ensure visibility --- */
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .grade-evolution {
         font-size: 10pt;

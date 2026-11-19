@@ -8,9 +8,15 @@
 }
 
 @media print {
+    html:has(body[data-print-mode="report"]),
     body[data-print-mode="report"] {
         background: #ffffff !important;
+        background-color: #ffffff !important;
         color: #111827 !important;
+        color-scheme: light !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
         margin: 0 !important;
         padding: 0 !important;
         -webkit-print-color-adjust: exact;
@@ -28,6 +34,17 @@
         color: #111827;
         font-size: 9.5pt;
         line-height: 1.45;
+    }
+
+    .print-report-root :where(h1, h2, h3, h4, h5, h6) {
+        color: #111827;
+    }
+
+    .print-report-root h4 {
+        margin: 6px 0 3px;
+        font-size: 9.5pt;
+        font-weight: 700;
+        color: #111827;
     }
 
     .pr-document {

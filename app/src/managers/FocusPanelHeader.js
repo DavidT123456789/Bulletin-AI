@@ -14,6 +14,7 @@ import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
@@ -320,7 +321,7 @@ export const FocusPanelHeader = {
             }
 
             if (result || isCreationMode) {
-                setTimeout(() => UI.initTooltips?.(), 0);
+                setTimeout(() => UI.initTooltips?.(editMode), 0);
                 const focusTarget = prenomInput || nomInput;
                 if (focusTarget) {
                     const scheduleFocus = typeof requestAnimationFrame === 'function'
@@ -471,11 +472,10 @@ export const FocusPanelHeader = {
         saveBtn?.removeAttribute('data-tooltip');
         saveBtn?.setAttribute('aria-label', 'Valider');
         if (closeBtn) {
-            closeBtn.setAttribute('data-tooltip', 'Fermer');
             closeBtn.classList.add('tooltip');
             closeBtn.setAttribute('aria-label', 'Fermer le panneau');
+            TooltipsUI.updateTooltip(closeBtn, 'Fermer');
             closeBtn._tippy?.enable();
-            closeBtn._tippy?.setContent('Fermer');
         }
     },
 
@@ -742,9 +742,9 @@ export const FocusPanelHeader = {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
             const tooltip = getStatusDescription(s);
             const html = `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
-                          data-tooltip="${tooltip}" 
+                          data-tooltip="${Utils.escapeHtml(tooltip)}" 
                           role="button" 
-                          tabindex="0">${badgeInfo.label}</span>`;
+                          tabindex="0">${Utils.escapeHtml(badgeInfo.label)}</span>`;
 
             // "Nouveau" and "Départ" are general/administrative, they stay in main header
             // Everything else moves to the Contexte card where it belongs logically
@@ -901,9 +901,20 @@ export const FocusPanelHeader = {
      * @param {Object} [options={}]
      * @param {boolean} [options.cancelCreation=false]
      */
-    settleEditMode({ cancelCreation = false } = {}) {
+    settleEditMode({ cancelCreation = false, discardChanges = false } = {}) {
         const header = document.querySelector('.focus-header');
         if (!header || !header.classList.contains('editing')) return;
+
+        if (discardChanges) {
+            this.clearPendingAvatarData();
+            this._originalHeaderValues = null;
+            this.callbacks.setIsCreationMode(false);
+            const readMode = document.querySelector('.focus-header-read');
+            const editMode = document.querySelector('.focus-header-edit');
+            const avatarEl = document.getElementById('focusAvatarContainer')?.querySelector('.student-avatar');
+            this._exitEditModeUI(header, readMode, editMode, avatarEl, { silentHistory: true });
+            return;
+        }
 
         const isCreationMode = this.callbacks.getIsCreationMode();
         const hasIdentity = this.hasCreationIdentityInput();

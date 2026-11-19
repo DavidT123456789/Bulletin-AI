@@ -10,12 +10,36 @@
  */
 
 import { ModalUI } from './ModalUIManager.js';
+import { DOMHelper } from '../utils/DOMHelper.js';
 
 /**
  * Stockage des instances Tippy.js actives.
  * @type {Array}
  */
 let _tippyInstances = [];
+
+const TOOLTIP_SANITIZE_OPTIONS = {
+    allowedTags: new Set(['STRONG', 'EM', 'B', 'I', 'BR', 'SPAN', 'DIV', 'KBD']),
+    sanitizeAttr: (_tag, name, value) => (name === 'class' ? value : null)
+};
+
+/**
+ * Nettoie un contenu de tooltip contre les injections HTML/XSS tout en préservant
+ * le formatage riche autorisé (strong, br, span.kbd-hint, div.tooltip-note-multiline…).
+ * @param {*} content
+ * @returns {string|Node}
+ */
+const sanitizeTooltipContent = (content) => {
+    if (content == null) return '';
+    if (typeof content !== 'string') {
+        return typeof Node !== 'undefined' && content instanceof Node
+            ? content
+            : DOMHelper.sanitizeHTML(String(content), TOOLTIP_SANITIZE_OPTIONS);
+    }
+    return DOMHelper.sanitizeHTML(content, TOOLTIP_SANITIZE_OPTIONS);
+};
+
+const resolveTooltipContent = (reference) => sanitizeTooltipContent(reference.getAttribute('data-tooltip'));
 
 /**
  * Génère la configuration commune pour Tippy
@@ -38,6 +62,26 @@ const getCommonTippyConfig = () => {
         zIndex: 10001,
         popperOptions: {
             strategy: 'fixed'
+        },
+        onCreate(instance) {
+            if (instance && typeof instance.setContent === 'function' && !instance._setContentSanitized) {
+                const originalSetContent = instance.setContent.bind(instance);
+                instance.setContent = (nextContent) => originalSetContent(sanitizeTooltipContent(nextContent));
+                instance._setContentSanitized = true;
+            }
+            if (instance && typeof instance.setProps === 'function' && !instance._setPropsSanitized) {
+                const originalSetProps = instance.setProps.bind(instance);
+                instance.setProps = (partialProps) => {
+                    if (partialProps && Object.prototype.hasOwnProperty.call(partialProps, 'content')) {
+                        const nextContent = typeof partialProps.content === 'function'
+                            ? (ref) => sanitizeTooltipContent(partialProps.content(ref))
+                            : sanitizeTooltipContent(partialProps.content);
+                        return originalSetProps({ ...partialProps, content: nextContent });
+                    }
+                    return originalSetProps(partialProps);
+                };
+                instance._setPropsSanitized = true;
+            }
         },
         onTrigger(instance, event) {
             instance._isTouchTrigger = Boolean(event?.type?.startsWith('touch'));
@@ -88,8 +132,11 @@ const getCommonTippyConfig = () => {
                 return false;
             }
             const latestTooltip = instance.reference?.getAttribute?.('data-tooltip');
-            if (latestTooltip && latestTooltip !== instance.props?.content && typeof instance.setContent === 'function') {
-                instance.setContent(latestTooltip);
+            if (latestTooltip) {
+                const cleanTooltip = sanitizeTooltipContent(latestTooltip);
+                if (cleanTooltip !== instance.props?.content && typeof instance.setContent === 'function') {
+                    instance.setContent(cleanTooltip);
+                }
             }
             if (typeof instance.setProps === 'function' && typeof instance.reference?.getBoundingClientRect === 'function') {
                 const ref = instance.reference;
@@ -161,9 +208,7 @@ export const TooltipsUI = {
                 if (targets.length > 0) {
                     const created = window.tippy(targets, {
                         ...commonConfig,
-                        content(reference) {
-                            return reference.getAttribute('data-tooltip');
-                        }
+                        content: resolveTooltipContent
                     });
                     const createdArr = Array.isArray(created) ? created : (created ? [created] : []);
                     _tippyInstances.push(...createdArr);
@@ -181,9 +226,7 @@ export const TooltipsUI = {
 
             _tippyInstances = window.tippy('[data-tooltip]', {
                 ...commonConfig,
-                content(reference) {
-                    return reference.getAttribute('data-tooltip');
-                }
+                content: resolveTooltipContent
             });
         }
     },
@@ -241,16 +284,18 @@ export const TooltipsUI = {
 
         if (!window.tippy) return;
 
+        const safeContent = sanitizeTooltipContent(content);
+
         // Mettre à jour l'instance Tippy si elle existe
         if (element._tippy) {
-            element._tippy.setContent(content);
+            element._tippy.setContent(safeContent);
         } else {
             // Créer une nouvelle instance si elle n'existe pas
             const commonConfig = getCommonTippyConfig();
 
             const instance = window.tippy(element, {
                 ...commonConfig,
-                content: content
+                content: safeContent
             });
             _tippyInstances.push(instance);
         }

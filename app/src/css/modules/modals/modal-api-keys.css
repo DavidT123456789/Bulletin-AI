@@ -13,7 +13,7 @@
     background: rgba(var(--warning-rgb), 0.08);
     border: 1px solid rgba(var(--warning-rgb), 0.25);
     border-radius: 10px;
-    color: var(--warning-color);
+    color: var(--warning-text);
     font-size: 0.82rem;
 }
 
@@ -311,12 +311,12 @@
 .missing-key-warning.banner-warning {
     background: rgba(var(--warning-rgb), 0.08);
     border-color: rgba(var(--warning-rgb), 0.25);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .missing-key-warning.banner-warning i,
 .missing-key-warning.banner-warning iconify-icon {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .missing-key-warning.banner-warning .btn-link {

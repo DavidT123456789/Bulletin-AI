@@ -24,15 +24,26 @@ Object.defineProperty(window, 'print', {
 });
 
 // Mock des dépendances
-vi.mock('../state/State.js', () => ({
-    appState: {
+vi.mock('../state/State.js', () => {
+    const appState = {
         generatedResults: [],
         filteredResults: [],
+        classes: [],
+        currentClassId: null,
         currentSubject: 'Français',
         currentPeriod: 'T1',
         periodSystem: 'trimestres'
-    }
-}));
+    };
+    const userSettings = {
+        academic: {
+            get classes() { return appState.classes; },
+            set classes(v) { appState.classes = v; },
+            get currentClassId() { return appState.currentClassId; },
+            set currentClassId(v) { appState.currentClassId = v; }
+        }
+    };
+    return { appState, userSettings, runtimeState: { data: {} } };
+});
 
 vi.mock('../utils/DOM.js', () => ({
     DOM: {
@@ -143,6 +154,7 @@ describe('ExportManager', () => {
             nom: 'MARTIN',
             prenom: 'Lucas',
             appreciation: 'Test appreciation',
+            generationPeriod: 'T1',
             copied: false,
             studentData: {
                 currentPeriod: 'T1',
@@ -240,8 +252,8 @@ describe('ExportManager', () => {
 
         it('should copy all filtered results', async () => {
             appState.filteredResults = [
-                { nom: 'MARTIN', prenom: 'Lucas', appreciation: 'Appreciation 1' },
-                { nom: 'DURAND', prenom: 'Sophie', appreciation: 'Appreciation 2' }
+                { nom: 'MARTIN', prenom: 'Lucas', appreciation: 'Appreciation 1', generationPeriod: 'T1' },
+                { nom: 'DURAND', prenom: 'Sophie', appreciation: 'Appreciation 2', generationPeriod: 'T1' }
             ];
 
             await ExportManager.copyAllResults();
@@ -252,8 +264,8 @@ describe('ExportManager', () => {
 
         it('should show success notification with count', async () => {
             appState.filteredResults = [
-                { nom: 'MARTIN', prenom: 'Lucas', appreciation: 'Appreciation 1' },
-                { nom: 'DURAND', prenom: 'Sophie', appreciation: 'Appreciation 2' }
+                { nom: 'MARTIN', prenom: 'Lucas', appreciation: 'Appreciation 1', generationPeriod: 'T1' },
+                { nom: 'DURAND', prenom: 'Sophie', appreciation: 'Appreciation 2', generationPeriod: 'T1' }
             ];
 
             await ExportManager.copyAllResults();
@@ -261,6 +273,28 @@ describe('ExportManager', () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             expect(UI.showNotification).toHaveBeenCalledWith('2 appréciations copiées !', 'success');
+        });
+
+        it('should not leak T1 root appreciation when copying in T2 without T2 appreciation', () => {
+            appState.currentPeriod = 'T2';
+            const student = {
+                id: 't1-only',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                appreciation: 'Appréciation T1',
+                generationPeriod: 'T1',
+                studentData: { periods: { T1: { appreciation: 'Appréciation T1' }, T2: { grade: 14 } } }
+            };
+            appState.generatedResults = [student];
+            appState.filteredResults = [student];
+
+            ExportManager.copyAppreciation('t1-only', null);
+            expect(mockClipboard.writeText).not.toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalledWith('Appréciation vide.', 'error');
+
+            ExportManager.copyAllResults();
+            expect(mockClipboard.writeText).not.toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalledWith('Aucune appréciation à copier pour cette période.', 'warning');
         });
     });
 
@@ -552,7 +586,7 @@ describe('ExportManager', () => {
             nextSteps: ['Participer davantage à l oral'],
             studentData: {
                 subject: 'Français',
-                statuses: ['Délégué', 'PAP', 'PAI', 'AESH', 'ULIS'],
+                statuses: ['Délégué', 'PPRE', 'PAP', 'PAI', 'AESH', 'ULIS', 'DYS', 'TDAH', 'TSA', 'SEGPA', 'Suivi PAP', 'Aménagement PAI'],
                 journal: [
                     { date: '2026-01-10', text: 'NOTE INTERNE CONFIDENTIELLE SANTE' }
                 ],
@@ -610,11 +644,16 @@ describe('ExportManager', () => {
             expect(capturedHtml).toContain('Participer davantage à l oral');
             expect(capturedHtml).toContain('class="print-chart-svg"');
 
-            // Exclusions RGPD & données internes
+            // Exclusions RGPD & données internes (canoniques + PPRE + libres/composites)
+            expect(capturedHtml).not.toContain('PPRE');
             expect(capturedHtml).not.toContain('PAP');
             expect(capturedHtml).not.toContain('PAI');
             expect(capturedHtml).not.toContain('AESH');
             expect(capturedHtml).not.toContain('ULIS');
+            expect(capturedHtml).not.toContain('DYS');
+            expect(capturedHtml).not.toContain('TDAH');
+            expect(capturedHtml).not.toContain('TSA');
+            expect(capturedHtml).not.toContain('SEGPA');
             expect(capturedHtml).not.toContain('CONFIDENTIEL');
             expect(capturedHtml).not.toContain('NOTE INTERNE');
 
@@ -704,6 +743,64 @@ describe('ExportManager', () => {
             expect(capturedT3).not.toContain('Acquis solides au T1');
             expect(capturedT3).not.toContain('Net progrès à l oral au T2');
             window.onafterprint?.();
+        });
+
+        it('normalise -0,02 en 0,0 neutre, ignore le DOM périmé, tolère sec.items absent et nettoie _runPrintSession sur erreur', () => {
+            expect(ExportManager._formatNumberFr(-0.02, true)).toBe('0,0');
+            expect(ExportManager._getDeltaToneClass(-0.02)).toBe('');
+            expect(ExportManager._getDeltaToneClass(-0.1)).toBe('is-neg');
+            expect(ExportManager._getDeltaToneClass(0.1)).toBe('is-pos');
+
+            // DOM périmé d'une classe précédente ignoré
+            appState.currentClassId = 'class-B';
+            appState.currentPeriod = 'T2';
+            document.body.innerHTML = `
+                <div id="classDashboardModal">
+                    <div id="aiSynthesisContent" data-class-id="class-A" data-period="T2">
+                        <div class="ai-synthesis-text">
+                            <div class="synthesis-section"><div class="synthesis-intro-text">Synthèse Classe A</div></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            expect(ExportManager._extractDomSynthesisSections()).toEqual([]);
+
+            // sec.items manquant / champs undefined ne crashent pas et n'injectent pas "undefined"
+            let capturedHtml = '';
+            mockPrint.mockImplementationOnce(() => {
+                capturedHtml = document.getElementById('print-report-root')?.innerHTML || '';
+            });
+            ExportManager.exportClassDashboardPdf({
+                stats: {
+                    count: 1, average: 12, median: 12, min: 12, max: 12, stdDev: 0,
+                    successRate: 100, avgEvolution: -0.02, distribution: [0, 0, 0, 1, 0],
+                    hasEvolutionData: false, topProgressions: [], atRisk: []
+                },
+                synthesisSections: [
+                    { isIntro: true, text: 'Bilan sain' },
+                    { isIntro: false, title: 'Section incomplète' }
+                ]
+            });
+            expect(capturedHtml).not.toContain('undefined');
+            expect(capturedHtml).not.toContain('-0,0');
+            expect(capturedHtml).not.toContain('pr-kpi-sub is-neg');
+            window.onafterprint?.();
+
+            // _runPrintSession nettoie le style et préserve l'ancien onafterprint même en cas d'exception
+            const prevHandler = vi.fn();
+            window.onafterprint = prevHandler;
+            const cleanupSpy = vi.fn();
+            expect(() => ExportManager._runPrintSession({
+                mode: 'report',
+                title: 'Test',
+                pageCss: '@page { size: A4; }',
+                setup: () => { throw new Error('boom'); },
+                cleanup: cleanupSpy
+            })).toThrow('boom');
+            expect(document.getElementById('print-dynamic-page-style')).toBeNull();
+            expect(document.body.dataset.printMode).toBeUndefined();
+            expect(cleanupSpy).toHaveBeenCalledTimes(1);
+            expect(window.onafterprint).toBe(prevHandler);
         });
     });
 });

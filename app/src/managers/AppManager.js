@@ -131,6 +131,10 @@ export const App = {
      * Prevents screen flash and reloads all views gracefully.
      */
     async rehydrateAll() {
+        if (FocusPanelManager?.isOpen?.()) {
+            FocusPanelManager.close({ discardChanges: true });
+        }
+
         await StorageManager.loadAppState();
 
         const allClasses = ClassManager?.getAllClasses?.() || [];
@@ -145,9 +149,6 @@ export const App = {
         this.updateUIOnLoad();
         if (SeatingChartManager) {
             SeatingChartManager.restoreActiveView?.();
-        }
-        if (FocusPanelManager?.closePanel) {
-            FocusPanelManager.closePanel();
         }
         if (window.ClassDashboardManager?.restoreOrResetAISection) {
             try {
@@ -262,7 +263,28 @@ export const App = {
         }
     },
 
-    setupAutoSave() { setInterval(() => StorageManager.saveAppState(), CONFIG.AUTO_SAVE_INTERVAL_MS); },
+    syncOpenViewsOnTabSync() {
+        FocusPanelManager?.syncFromTabSync?.();
+    },
+
+    setupAutoSave() {
+        if (!this._autoSaveIntervalId) {
+            this._autoSaveIntervalId = setInterval(() => StorageManager.saveAppState(), CONFIG.AUTO_SAVE_INTERVAL_MS);
+        }
+        if (!this._lifecycleSaveBound && typeof document !== 'undefined' && typeof window !== 'undefined') {
+            this._lifecycleSaveBound = true;
+            const flushBeforeSuspend = () => {
+                FocusPanelManager?.flushPendingBackgroundEdits?.();
+                StorageManager.saveAppState();
+            };
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    flushBeforeSuspend();
+                }
+            });
+            window.addEventListener('pagehide', flushBeforeSuspend);
+        }
+    },
 
     setupPWA() {
         // Initialize PWA Install Manager (handles banner + menu button)

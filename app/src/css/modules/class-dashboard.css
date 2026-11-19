@@ -30,7 +30,16 @@
 }
 
 .dashboard-header-actions :is(.btn-small, .btn-sm) {
+    position: relative;
     min-height: 36px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header-actions :is(.btn-small, .btn-sm)::after {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+    }
 }
 
 .dashboard-header-left {
@@ -237,12 +246,12 @@
 .synthesis-intro-copy-btn.copied:hover {
     background: rgba(var(--success-rgb), 0.16) !important;
     border-color: transparent !important;
-    color: var(--success-color) !important;
+    color: var(--success-text) !important;
 }
 
 #copyDashboardSynthesisBtn.copied iconify-icon,
 .synthesis-intro-copy-btn.copied iconify-icon {
-    color: var(--success-color) !important;
+    color: var(--success-text) !important;
 }
 
 /* ==========================================================================

@@ -140,7 +140,7 @@
 
 .notification.success .notification-coalesce-badge {
     background: rgba(var(--success-rgb), 0.12);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .notification.error .notification-coalesce-badge {
@@ -150,7 +150,7 @@
 
 .notification.warning .notification-coalesce-badge {
     background: rgba(var(--warning-rgb), 0.12);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .notification.info .notification-coalesce-badge {
@@ -189,7 +189,7 @@
 /* Success - Solid with Emerald Accent */
 .notification.success > iconify-icon:first-child {
     background: rgba(var(--success-rgb), 0.12);
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 /* Error - Solid with Red Accent */
@@ -201,7 +201,7 @@
 /* Warning - Solid with Orange Accent */
 .notification.warning > iconify-icon:first-child {
     background: rgba(var(--warning-rgb), 0.12);
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 /* Info - Solid with Blue Accent */

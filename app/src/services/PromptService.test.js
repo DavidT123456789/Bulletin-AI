@@ -6,8 +6,8 @@ import { Utils } from '../utils/Utils.js';
 import { StatsService } from './StatsService.js';
 
 // Mock dependencies
-vi.mock('../state/State.js', () => ({
-    appState: {
+vi.mock('../state/State.js', () => {
+    const appState = {
         currentSubject: 'Générique',
         useSubjectPersonalization: false,
         anonymizeData: true,
@@ -17,8 +17,17 @@ vi.mock('../state/State.js', () => ({
                 iaConfig: { tone: 1, voice: 'nous', length: 30 }
             }
         }
-    }
-}));
+    };
+    const userSettings = {
+        academic: {
+            get classes() { return appState.classes || []; },
+            set classes(v) { appState.classes = v; },
+            get currentClassId() { return appState.currentClassId || null; },
+            set currentClassId(v) { appState.currentClassId = v; }
+        }
+    };
+    return { appState, userSettings };
+});
 
 vi.mock('../config/Config.js', () => ({
     DEFAULT_IA_CONFIG: { tone: 3, voice: 'je', length: 50 },
@@ -612,6 +621,43 @@ describe('PromptService', () => {
             });
 
             expect(prompts.analysisUser).toContain('dossier succinct sans appréciation ni observation textuelle');
+        });
+
+        it('should not throw when studentData.periods is undefined or null', () => {
+            expect(() => PromptService.getAllPrompts({
+                nom: 'Test',
+                prenom: 'Leo',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: undefined
+            })).not.toThrow();
+            expect(() => PromptService.getAllPrompts({
+                nom: 'Test',
+                prenom: 'Leo',
+                statuses: [],
+                currentPeriod: 'T2',
+                periods: null
+            })).not.toThrow();
+        });
+
+        it('should resolve class name and level in prompts for virtual_* reconstituted classes', () => {
+            appState.currentClassId = 'virtual_3e1';
+            appState.classes = [{ id: 'grp-1', name: '3e1 Gr1', isGroup: true }];
+            appState.generatedResults = [
+                { classId: 'grp-1', studentData: { classe: '3e1', periods: { T1: { grade: 13 } } } }
+            ];
+
+            const prompts = PromptService.getAllPrompts({
+                classId: 'virtual_3e1',
+                nom: 'Dupont',
+                prenom: 'Lina',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: 14 } }
+            });
+
+            expect(prompts.appreciationUser).toContain('Classe : 3ᵉ1');
+            expect(prompts.appreciationUser).toContain('Niveau : Collège');
         });
     });
 });

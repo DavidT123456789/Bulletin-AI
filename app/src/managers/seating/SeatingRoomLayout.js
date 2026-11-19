@@ -662,7 +662,7 @@ export const SeatingRoomLayout = {
             rows === this._getDefaultRows() &&
             cols === this._getDefaultCols();
 
-        if (isSame || isDefaultUnmodified) return;
+        if (isSame || isDefaultUnmodified) return false;
 
         const nextGrid = {
             rows,
@@ -680,7 +680,9 @@ export const SeatingRoomLayout = {
         }
         if (this._hasChangesSinceUnlock || (locked && classLocked)) {
             StorageManager.saveAppState();
+            return true;
         }
+        return false;
     },
 
     _onGridConfigChange() {
@@ -730,6 +732,22 @@ export const SeatingRoomLayout = {
 
         // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
         if (rowOffset !== 0) {
+            const occupiedClassSpecialKeys = new Set();
+            const classes = appState.classes || [];
+            classes.forEach(cls => {
+                if (cls?.[classSpecialKey]) {
+                    const newClassSpecial = {};
+                    for (const [key, type] of Object.entries(cls[classSpecialKey])) {
+                        const [r, c] = key.split(',').map(Number);
+                        const newR = r + rowOffset;
+                        const nextKey = `${newR},${c}`;
+                        newClassSpecial[nextKey] = type;
+                        occupiedClassSpecialKeys.add(nextKey);
+                    }
+                    cls[classSpecialKey] = newClassSpecial;
+                }
+            });
+
             if (appState[gridKey]?.specialLayout) {
                 const oldSpecial = appState[gridKey].specialLayout;
                 const newSpecialLayout = {};
@@ -742,8 +760,9 @@ export const SeatingRoomLayout = {
                     for (let c = 0; c < newCols; c++) {
                         if (oldSpecial[`0,${c}`] === 'aisle') {
                             for (let r = 0; r < rowOffset; r++) {
-                                if (!newSpecialLayout[`${r},${c}`]) {
-                                    newSpecialLayout[`${r},${c}`] = 'aisle';
+                                const cellKey = `${r},${c}`;
+                                if (!newSpecialLayout[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
+                                    newSpecialLayout[cellKey] = 'aisle';
                                 }
                             }
                         }
@@ -752,27 +771,21 @@ export const SeatingRoomLayout = {
                 appState[gridKey].specialLayout = newSpecialLayout;
             }
 
-            const classes = appState.classes || [];
-            classes.forEach(cls => {
-                if (cls?.[classSpecialKey]) {
-                    const newClassSpecial = {};
-                    for (const [key, type] of Object.entries(cls[classSpecialKey])) {
-                        const [r, c] = key.split(',').map(Number);
-                        const newR = r + rowOffset;
-                        newClassSpecial[`${newR},${c}`] = type;
-                    }
-                    cls[classSpecialKey] = newClassSpecial;
-                }
-            });
-
             this._shiftOtherClassesStudentRows(rowOffset);
         } else if (newRows > oldRows && oldRows > 0 && appState[gridKey]?.specialLayout) {
+            const occupiedClassSpecialKeys = new Set();
+            (appState.classes || []).forEach(cls => {
+                if (cls?.[classSpecialKey]) {
+                    Object.keys(cls[classSpecialKey]).forEach(k => occupiedClassSpecialKeys.add(k));
+                }
+            });
             const specialLayout = appState[gridKey].specialLayout;
             for (let c = 0; c < newCols; c++) {
                 if (specialLayout[`${oldRows - 1},${c}`] === 'aisle') {
                     for (let r = oldRows; r < newRows; r++) {
-                        if (!specialLayout[`${r},${c}`]) {
-                            specialLayout[`${r},${c}`] = 'aisle';
+                        const cellKey = `${r},${c}`;
+                        if (!specialLayout[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
+                            specialLayout[cellKey] = 'aisle';
                         }
                     }
                 }
@@ -957,7 +970,18 @@ export const SeatingRoomLayout = {
     _moveSpecialAesh(srcRow, srcCol, targetRow, targetCol) {
         if (this._isLocked) return;
         if (srcRow === targetRow && srcCol === targetCol) return;
+        const rows = this._gridState?.length || this._getRows();
+        const cols = this._gridState?.[0]?.length || this._getCols();
+        if (
+            !Number.isInteger(srcRow) || !Number.isInteger(srcCol) ||
+            !Number.isInteger(targetRow) || !Number.isInteger(targetCol) ||
+            srcRow < 0 || srcRow >= rows || srcCol < 0 || srcCol >= cols ||
+            targetRow < 0 || targetRow >= rows || targetCol < 0 || targetCol >= cols
+        ) {
+            return;
+        }
         if (this._isSpecialSpot(targetRow, targetCol)) return;
+        if (this._isCellPinned(targetRow, targetCol)) return;
 
         const srcKey = `${srcRow},${srcCol}`;
         const targetKey = `${targetRow},${targetCol}`;
@@ -977,6 +1001,16 @@ export const SeatingRoomLayout = {
             delete currentClass[classSpecialKey][srcKey];
         }
         if (isGlobalScope && appState[gridKey]?.specialLayout) {
+            // Preserve legacy global AESH on all other classes before migrating it to per-class scope
+            if (currentClass) {
+                (appState.classes || []).forEach(cls => {
+                    if (!cls || cls.id === currentClass.id || this._isVirtualClass(cls)) return;
+                    if (!cls[classSpecialKey]) cls[classSpecialKey] = {};
+                    if (!cls[classSpecialKey][srcKey]) {
+                        cls[classSpecialKey][srcKey] = 'aesh';
+                    }
+                });
+            }
             delete appState[gridKey].specialLayout[srcKey];
         }
 

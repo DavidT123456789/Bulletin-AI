@@ -11,6 +11,7 @@ import {
     GDPR_SENSITIVE_STATUS_PATTERN,
     DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION,
     resolveStudentStatus,
+    isGdprSensitiveStatus,
     getStatusDescription,
     getSelectableStatusLabels,
     getMovementStatusLabels,
@@ -61,6 +62,15 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
         }
         expect(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|AESH|Geva-Sco)\b/i);
         expect(GDPR_SENSITIVE_STATUS_PATTERN.test('Élève dyslexique avec TDAH')).toBe(true);
+    });
+
+    it('détecte les statuts sensibles RGPD canoniques, libres et composites via isGdprSensitiveStatus (y compris PPRE)', () => {
+        for (const sensitive of ['PAP', 'PPRE', 'PAI', 'AESH', 'ULIS', 'Geva-Sco', 'PPS', 'MDPH', 'DYS', 'Dyslexie', 'TDAH', 'TSA', 'SEGPA', 'Suivi PAP', 'Aménagement PAI', 'Handicap']) {
+            expect(isGdprSensitiveStatus(sensitive)).toBe(true);
+        }
+        for (const safe of ['Délégué', 'Éco-délégué', 'Nouveau T2', 'Départ T3', 'Option Latin', '', null, undefined]) {
+            expect(isGdprSensitiveStatus(safe)).toBe(false);
+        }
     });
 
     it('résout les variantes de casse, d’accents, d’alias et de périodes via resolveStudentStatus', () => {

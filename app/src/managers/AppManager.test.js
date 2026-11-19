@@ -11,6 +11,7 @@ import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 
 vi.mock('./StorageManager.js', () => ({
     StorageManager: {
@@ -99,6 +100,51 @@ describe('AppManager — rehydrateAll', () => {
 
         expect(ClassManager.switchClass).toHaveBeenCalledWith('c1');
         expect(SeatingChartManager.restoreActiveView).toHaveBeenCalled();
+    });
+
+    it('devrait fermer le FocusPanel avec discardChanges avant loadAppState pour ne pas écraser les données restaurées', async () => {
+        const callOrder = [];
+        const isOpenSpy = vi.spyOn(FocusPanelManager, 'isOpen').mockReturnValue(true);
+        const closeSpy = vi.spyOn(FocusPanelManager, 'close').mockImplementation(() => {
+            callOrder.push('close');
+        });
+        StorageManager.loadAppState.mockImplementationOnce(async () => {
+            callOrder.push('loadAppState');
+            return true;
+        });
+
+        await App.rehydrateAll();
+
+        expect(closeSpy).toHaveBeenCalledWith({ discardChanges: true });
+        expect(callOrder).toEqual(['close', 'loadAppState']);
+
+        isOpenSpy.mockRestore();
+        closeSpy.mockRestore();
+    });
+
+    it('devrait flusher les éditions en cours et sauvegarder sur visibilitychange (hidden) et pagehide', () => {
+        const flushSpy = vi.spyOn(FocusPanelManager, 'flushPendingBackgroundEdits').mockImplementation(() => {});
+        App._lifecycleSaveBound = false;
+        App.setupAutoSave();
+
+        Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        expect(StorageManager.saveAppState).not.toHaveBeenCalled();
+
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        expect(flushSpy).toHaveBeenCalledTimes(1);
+        expect(StorageManager.saveAppState).toHaveBeenCalledTimes(1);
+
+        window.dispatchEvent(new Event('pagehide'));
+        expect(flushSpy).toHaveBeenCalledTimes(2);
+        expect(StorageManager.saveAppState).toHaveBeenCalledTimes(2);
+
+        flushSpy.mockRestore();
+        if (App._autoSaveIntervalId) {
+            clearInterval(App._autoSaveIntervalId);
+            App._autoSaveIntervalId = null;
+        }
     });
 });
 

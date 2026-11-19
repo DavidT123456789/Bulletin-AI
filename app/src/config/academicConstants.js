@@ -56,7 +56,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         badgeClass: 'tag-badge tag-badge--device',
         isDevice: true,
         isSelectableInUI: true,
-        isGdprSensitive: false,
+        isGdprSensitive: true,
         aliases: Object.freeze(['ppre']),
         promptInstruction: "Encourager les efforts sur les compétences fondamentales ciblées et donner des conseils méthodologiques accessibles, sans mentionner de programme d'accompagnement.",
     }),
@@ -203,6 +203,19 @@ export function resolveStudentStatus(rawStatus) {
     }
 
     return null;
+}
+
+/**
+ * Indique si un statut (canonique, libre ou composite) relève d'un dispositif d'accompagnement
+ * ou d'une donnée sensible (Art. 9 RGPD) devant être masqué par défaut sur les documents famille.
+ * @param {string} rawStatus
+ * @returns {boolean}
+ */
+export function isGdprSensitiveStatus(rawStatus) {
+    const trimmed = String(rawStatus || '').trim();
+    if (!trimmed) return false;
+    if (resolveStudentStatus(trimmed)?.isGdprSensitive === true) return true;
+    return GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed);
 }
 
 /**

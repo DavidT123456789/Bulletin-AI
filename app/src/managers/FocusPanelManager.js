@@ -57,6 +57,12 @@ export const FocusPanelManager = {
     /** Flag indicating that the panel is currently closing (to defer DOM writes/layout/stats updates) */
     _isClosing: false,
 
+    /** Timer ID for the 500ms post-close deferred row flush */
+    _closeDeferredTimer: null,
+
+    /** Timer ID for the 50ms post-close focus blur */
+    _clearFocusTimer: null,
+
     /** Set of student IDs/results that have deferred row updates */
     _deferredRowUpdates: new Set(),
 
@@ -274,12 +280,45 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Annule les timers de fermeture en cours, réinitialise `_isClosing`
+     * et vidange (ou purge) les mises à jour de lignes différées.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.flush=false] - Si true, applique les mises à jour différées des élèves encore présents
+     * @private
+     */
+    _settlePendingClose({ flush = false } = {}) {
+        if (this._closeDeferredTimer) {
+            clearTimeout(this._closeDeferredTimer);
+            this._closeDeferredTimer = null;
+        }
+        if (this._clearFocusTimer) {
+            clearTimeout(this._clearFocusTimer);
+            this._clearFocusTimer = null;
+        }
+        this._isClosing = false;
+        if (this._deferredRowUpdates && this._deferredRowUpdates.size > 0) {
+            const pending = flush ? Array.from(this._deferredRowUpdates) : [];
+            this._deferredRowUpdates.clear();
+            if (flush) {
+                const liveIds = new Set((appState.generatedResults || []).map(r => r?.id));
+                pending.forEach(deferredResult => {
+                    if (deferredResult?.id && liveIds.has(deferredResult.id)) {
+                        this._updateListRow(deferredResult);
+                    }
+                });
+            }
+        }
+    },
+
+    /**
      * Ouvre le Focus Panel pour un élève
      * @param {string} studentId - ID de l'élève
      */
     open(studentId) {
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
+
+        this._settlePendingClose({ flush: true });
 
         const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
         if (openState && this.currentStudentId === studentId && !this.isCreationMode) {
@@ -352,6 +391,7 @@ export const FocusPanelManager = {
      * Ouvre le Focus Panel en mode création (nouvel élève)
      */
     openNew() {
+        this._settlePendingClose({ flush: true });
         let currentClass = ClassManager.getCurrentClass();
         if (!currentClass) {
             const classes = ClassManager.getAllClasses();
@@ -421,8 +461,21 @@ export const FocusPanelManager = {
      * Ferme le Focus Panel
      * @param {Object} [options={}]
      * @param {boolean} [options.causedByHistory=false]
+     * @param {boolean} [options.cancelCreation=false]
+     * @param {boolean} [options.discardChanges=false] - Ferme sans sauvegarder le DOM courant (ex. restauration Cloud / import JSON)
      */
     close(options = {}) {
+        const discardChanges = Boolean(options.discardChanges);
+        if (discardChanges) {
+            clearTimeout(this._uiUpdateTimeout);
+            clearTimeout(this._appreciationUITimeout);
+            this._isAppreciationEdited = false;
+            this._isGradeEdited = false;
+            this._isContextEdited = false;
+            this.currentStudentId = null;
+            this.currentIndex = -1;
+        }
+
         if (document.activeElement && document.activeElement !== document.body) {
             document.activeElement.blur();
         }
@@ -431,16 +484,20 @@ export const FocusPanelManager = {
         const backdrop = document.getElementById('focusPanelBackdrop');
         const wasOpen = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
 
+        FocusPanelNavigation.cancelActiveTransition?.();
         this._resetTransformations(panel, backdrop);
         const analysisPage = document.querySelector('.focus-analysis-page');
         if (analysisPage) this._resetTransformations(analysisPage, null);
 
         this._isClosing = true;
-        FocusPanelHeader.settleEditMode({ cancelCreation: Boolean(options.cancelCreation) });
+        FocusPanelHeader.settleEditMode({
+            cancelCreation: Boolean(options.cancelCreation || discardChanges),
+            discardChanges
+        });
 
         SpeechRecognitionManager.abort();
 
-        if (!this.isCreationMode && this.currentStudentId) {
+        if (!discardChanges && !this.isCreationMode && this.currentStudentId) {
             this._saveContext();
         }
 
@@ -451,7 +508,11 @@ export const FocusPanelManager = {
         if (HistoryManager.isOpen('focusJournalQuickAdd')) {
             HistoryManager.handleManualClose('focusJournalQuickAdd');
         }
-        FocusPanelAnalysis.hide();
+        FocusPanelAnalysis.hide({
+            causedByHistory: Boolean(options.causedByHistory),
+            silentHistory: discardChanges,
+            discardPending: discardChanges
+        });
 
         if (panel) {
             panel.classList.remove('open');
@@ -464,7 +525,7 @@ export const FocusPanelManager = {
             focusHeader.classList.remove('scrolled');
         }
 
-        if (this.currentStudentId) {
+        if (!discardChanges && this.currentStudentId) {
             const lastActiveRow = document.querySelector(`.student-row[data-student-id="${this.currentStudentId}"]`);
             if (lastActiveRow) {
                 if (this._closedFlashTimer) {
@@ -491,19 +552,26 @@ export const FocusPanelManager = {
             HistoryManager.handleManualClose('focusPanel');
         }
 
-        if (wasOpen) {
+        if (this._closeDeferredTimer) {
+            clearTimeout(this._closeDeferredTimer);
+            this._closeDeferredTimer = null;
+        }
+
+        if (wasOpen && !discardChanges) {
             bus.emit(EVENTS.STUDENT_UPDATED);
-            setTimeout(() => {
+            this._closeDeferredTimer = setTimeout(() => {
+                this._closeDeferredTimer = null;
                 this._isClosing = false;
                 if (this._deferredRowUpdates && this._deferredRowUpdates.size > 0) {
-                    this._deferredRowUpdates.forEach(deferredResult => {
+                    const pending = Array.from(this._deferredRowUpdates);
+                    this._deferredRowUpdates.clear();
+                    pending.forEach(deferredResult => {
                         this._updateListRow(deferredResult);
                     });
-                    this._deferredRowUpdates.clear();
                 }
             }, 500);
         } else {
-            this._isClosing = false;
+            this._settlePendingClose({ flush: false });
         }
     },
 
@@ -515,7 +583,8 @@ export const FocusPanelManager = {
             if (row) {
                 row.classList.remove('focus-closed-flash', 'highlight-new');
                 row.classList.add('focus-active');
-                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const prefersReducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+                row.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
             }
         }
     },
@@ -525,7 +594,12 @@ export const FocusPanelManager = {
         document.querySelectorAll('.student-row.focus-active').forEach(row => {
             row.classList.remove('focus-active');
         });
-        setTimeout(() => {
+        if (this._clearFocusTimer) {
+            clearTimeout(this._clearFocusTimer);
+            this._clearFocusTimer = null;
+        }
+        this._clearFocusTimer = setTimeout(() => {
+            this._clearFocusTimer = null;
             document.querySelectorAll('.student-row:focus').forEach(row => {
                 row.blur();
             });
@@ -647,6 +721,33 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Synchronise les retouches en cours sans retirer le focus (passage en arrière-plan / PWA).
+     */
+    flushPendingBackgroundEdits() {
+        FocusPanelAnalysis.flushPendingEdit?.({ blur: false });
+    },
+
+    /**
+     * Synchronise ou ferme le panneau Focus après une mise à jour provenant d'un autre onglet,
+     * sans jamais écraser une saisie active dans l'onglet courant.
+     */
+    syncFromTabSync() {
+        const openState = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
+        if (!openState || this.isCreationMode) return;
+        const isEditingHeader = Boolean(document.querySelector('.focus-header.editing'));
+        if (this._isAppreciationEdited || this._isGradeEdited || this._isContextEdited || isEditingHeader) {
+            return;
+        }
+        if (!this.currentStudentId) return;
+        const exists = (appState.generatedResults || []).some(r => r.id === this.currentStudentId);
+        if (exists) {
+            this.refreshPeriod();
+        } else {
+            this.close({ discardChanges: true });
+        }
+    },
+
+    /**
      * Sauvegarde le contexte, la note et l'appréciation édités avant de quitter
      * @private
      */
@@ -745,7 +846,7 @@ export const FocusPanelManager = {
         if (filteredIndex > -1) {
             appState.filteredResults[filteredIndex] = {
                 ...result,
-                appreciation: result.studentData?.periods?.[appState.currentPeriod]?.appreciation || result.appreciation,
+                appreciation: Utils.getPeriodAppreciation(result, appState.currentPeriod),
                 isPending: result.isPending
             };
         }

@@ -221,11 +221,12 @@
 
 /* Edit Mode adjustments — In-flow card layout (prevents any overlap with content below) */
 .focus-header.editing {
+    --focus-edit-gap: 10px;
     position: relative;
-    padding: 12px 14px 14px;
+    padding: 14px;
     margin: 8px 16px 4px 16px;
     align-items: flex-start;
-    gap: 10px;
+    gap: var(--focus-edit-gap);
     background: var(--surface-color);
     border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-md);
@@ -604,17 +605,15 @@
 .focus-header.editing .focus-close-btn {
     width: 40px;
     height: 32px;
-    margin-top: 2px;
     background: var(--tonal-bg);
 }
 
 .focus-header.editing .focus-save-btn {
     display: flex;
-    margin-right: -10px;
+    margin-right: calc(var(--focus-edit-gap) * -1);
     padding-left: 2px;
     border-radius: var(--radius-pill) 0 0 var(--radius-pill);
     border-right: 1px solid var(--border-color);
-    color: var(--text-primary);
     transition:
         opacity 0.22s var(--ease-spring),
         background-color var(--transition-fast),
@@ -628,7 +627,6 @@
 .focus-header.editing .focus-close-btn {
     padding-right: 2px;
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-    color: var(--text-secondary);
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -19,7 +19,8 @@ vi.mock('../state/State.js', () => ({
 // Mock Utils
 vi.mock('../utils/Utils.js', () => ({
     Utils: {
-        getPeriods: vi.fn()
+        getPeriods: vi.fn(),
+        isStudentDepartedBeforePeriod: vi.fn(() => false)
     }
 }));
 
@@ -279,6 +280,52 @@ describe('StatsService', () => {
                 average: (14 + 12 + 0) / 3,
                 avgEvolution: 1
             });
+        });
+
+        it('should compute invariant historical periodAverages per period (excluding departures prior to each period only)', () => {
+            Utils.isStudentDepartedBeforePeriod.mockImplementation((student, period) => (
+                period === 'T2' && Boolean(student?.studentData?.statuses?.includes('Départ (T1)'))
+            ));
+            const roster = [
+                { studentData: { periods: { T1: { grade: 10 }, T2: { grade: 14 } } } },
+                // Parti fin T1 : compte au T1 mais plus au T2
+                { studentData: { statuses: ['Départ (T1)'], periods: { T1: { grade: 16 }, T2: { grade: 12 } } } },
+                // Absent/non-noté au T2 : compte toujours dans la moyenne historique T1
+                { studentData: { periods: { T1: { grade: 10 }, T2: { grade: '' } } } }
+            ];
+
+            const avgs = StatsService.computePeriodAverages(roster, ['T1', 'T2']);
+            expect(avgs).toEqual([
+                { period: 'T1', average: 12, count: 3 },
+                { period: 'T2', average: 14, count: 1 }
+            ]);
+            expect(StatsService.computePeriodAverages([], ['T1'])).toEqual([]);
+        });
+
+        it('should compute shared cohort stats (dynamics, topLimit, atRisk thresholds and weighted sort)', () => {
+            expect(StatsService.computeCohortStats(null)).toBeNull();
+            expect(StatsService.computeCohortStats([])).toBeNull();
+
+            const students = [
+                { id: '1', fullName: 'A', grade: 16, evolution: 2.5 },   // progress
+                { id: '2', fullName: 'B', grade: 14, evolution: 1.0 },   // progress
+                { id: '3', fullName: 'C', grade: 13, evolution: -2.0 },  // regression + atRisk (<= -1.5)
+                { id: '4', fullName: 'D', grade: 11, evolution: -1.2 },  // regression + atRisk (< 12 & <= negThreshold=-1)
+                { id: '5', fullName: 'E', grade: 8, evolution: 0.2 },    // stable + atRisk (< 10)
+                { id: '6', fullName: 'F', grade: 12, evolution: null }   // no evolution
+            ];
+
+            const cohort = StatsService.computeCohortStats(students, { topLimit: 1 });
+            expect(cohort.count).toBe(6);
+            expect(cohort.progressCount).toBe(2);
+            expect(cohort.stableCount).toBe(1);
+            expect(cohort.regressionCount).toBe(2);
+            expect(cohort.hasEvolutionData).toBe(true);
+            expect(cohort.topProgressions.map(s => s.id)).toEqual(['1']);
+            expect(cohort.topRegressions.map(s => s.id)).toEqual(['3']);
+            // Tri atRisk : E (8 + 0 = 8) < D (11 - 1.44 = 9.56) < C (13 - 2.4 = 10.6)
+            expect(cohort.atRisk.map(s => s.id)).toEqual(['5', '4', '3']);
+            expect(cohort.distribution).toEqual(cohort.distributionMap);
         });
     });
 });

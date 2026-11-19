@@ -6,6 +6,11 @@
  */
 
 import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
+import { Utils } from '../../utils/Utils.js';
+
+const DRIVE_REQUEST_TIMEOUT_MS = 20000;
+const DRIVE_UPLOAD_TIMEOUT_MS = 30000;
+const DRIVE_PROFILE_TIMEOUT_MS = 10000;
 
 // Google API configuration
 const GOOGLE_CLIENT_ID = '685675322524-qgc51t16ebv68ljcoi5re8mhfmkh1094.apps.googleusercontent.com';
@@ -237,11 +242,11 @@ export const GoogleDriveProvider = {
             const token = this._token?.access_token;
             if (!token) return null;
 
-            const res = await fetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink)', {
+            const res = await Utils.fetchWithTimeout('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink)', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            });
+            }, DRIVE_PROFILE_TIMEOUT_MS);
 
             if (res.ok) {
                 const data = await res.json();
@@ -326,13 +331,17 @@ export const GoogleDriveProvider = {
 
         try {
             // Search for existing file - sort by modifiedTime desc to ALWAYS get the newest file
-            const response = await window.gapi.client.drive.files.list({
-                spaces: 'appDataFolder',
-                q: `name='${SYNC_FILENAME}' and trashed = false`,
-                fields: 'files(id, name, modifiedTime)',
-                orderBy: 'modifiedTime desc',
-                pageSize: 10
-            });
+            const response = await Utils.withTimeout(
+                window.gapi.client.drive.files.list({
+                    spaces: 'appDataFolder',
+                    q: `name='${SYNC_FILENAME}' and trashed = false`,
+                    fields: 'files(id, name, modifiedTime)',
+                    orderBy: 'modifiedTime desc',
+                    pageSize: 10
+                }),
+                DRIVE_REQUEST_TIMEOUT_MS,
+                'Délai dépassé lors de la recherche sur Google Drive.'
+            );
 
             const files = response.result.files || [];
             if (files.length > 0) {
@@ -351,13 +360,17 @@ export const GoogleDriveProvider = {
             }
 
             // Create new file
-            const createResponse = await window.gapi.client.drive.files.create({
-                resource: {
-                    name: SYNC_FILENAME,
-                    parents: ['appDataFolder']
-                },
-                fields: 'id'
-            });
+            const createResponse = await Utils.withTimeout(
+                window.gapi.client.drive.files.create({
+                    resource: {
+                        name: SYNC_FILENAME,
+                        parents: ['appDataFolder']
+                    },
+                    fields: 'id'
+                }),
+                DRIVE_REQUEST_TIMEOUT_MS,
+                'Délai dépassé lors de la création du fichier sur Google Drive.'
+            );
 
             this._fileId = createResponse.result.id;
             return this._fileId;
@@ -378,10 +391,14 @@ export const GoogleDriveProvider = {
             this._fileId = null;
             const fileId = await this._ensureFile();
 
-            const response = await window.gapi.client.drive.files.get({
-                fileId: fileId,
-                alt: 'media'
-            });
+            const response = await Utils.withTimeout(
+                window.gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
+                }),
+                DRIVE_REQUEST_TIMEOUT_MS,
+                'Délai dépassé lors de la lecture sur Google Drive.'
+            );
 
             if (response.result && typeof response.result === 'object') {
                 return response.result;
@@ -428,14 +445,14 @@ export const GoogleDriveProvider = {
                 `--${boundary}--`
             ].join('\r\n');
 
-            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
+            const response = await Utils.fetchWithTimeout(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${this._token?.access_token}`,
                     'Content-Type': `multipart/related; boundary=${boundary}`
                 },
                 body: body
-            });
+            }, DRIVE_UPLOAD_TIMEOUT_MS);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -460,10 +477,14 @@ export const GoogleDriveProvider = {
             this._fileId = null;
             const fileId = await this._ensureFile();
 
-            const response = await window.gapi.client.drive.files.get({
-                fileId: fileId,
-                fields: 'modifiedTime, size'
-            });
+            const response = await Utils.withTimeout(
+                window.gapi.client.drive.files.get({
+                    fileId: fileId,
+                    fields: 'modifiedTime, size'
+                }),
+                DRIVE_REQUEST_TIMEOUT_MS,
+                'Délai dépassé lors de la vérification sur Google Drive.'
+            );
 
             return {
                 lastModified: response.result.modifiedTime,

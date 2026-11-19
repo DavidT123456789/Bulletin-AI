@@ -205,6 +205,35 @@ export const StatsService = {
     },
 
     /**
+     * Calcule la trajectoire historique des moyennes de classe sur une liste de périodes.
+     * Chaque période p est évaluée sur l'effectif présent à cette période (hors départs antérieurs à p),
+     * garantissant une moyenne historique invariante entre le Tableau de bord, le PDF Conseil de classe
+     * et la Fiche Bilan Élève.
+     * @param {Array<Object>} roster - Effectif complet de la classe (non filtré par la période courante)
+     * @param {string[]} relevantPeriods - Périodes ordonnées (ex: ['T1', 'T2'])
+     * @returns {Array<{ period: string, average: number, count: number }>}
+     */
+    computePeriodAverages(roster, relevantPeriods) {
+        if (!Array.isArray(roster) || roster.length === 0 || !Array.isArray(relevantPeriods)) return [];
+        const periodAverages = [];
+        for (const p of relevantPeriods) {
+            const pGrades = roster
+                .filter(r => r && !Utils.isStudentDepartedBeforePeriod?.(r, p))
+                .map(r => this.parseGrade(r.studentData?.periods?.[p]?.grade))
+                .filter(g => Number.isFinite(g));
+            if (pGrades.length > 0) {
+                const avg = pGrades.reduce((a, b) => a + b, 0) / pGrades.length;
+                periodAverages.push({
+                    period: p,
+                    average: parseFloat(avg.toFixed(2)),
+                    count: pGrades.length
+                });
+            }
+        }
+        return periodAverages;
+    },
+
+    /**
      * Calcule les statistiques rapides d'une classe (effectif noté, moyenne, évolution moyenne)
      * pour une période donnée sans dépendre de ClassDashboardManager.
      * @param {Array<Object>} students - Élèves de la classe
@@ -251,6 +280,70 @@ export const StatsService = {
             count: summary.count,
             average: summary.average,
             avgEvolution: this.computeAverageEvolution(evolutions)
+        };
+    },
+
+    /**
+     * Calcule les indicateurs de cohorte partagés entre ClassDashboardManager et ExportManager :
+     * synthèse des notes, dynamique d'évolution, top progressions/régressions et élèves à surveiller.
+     * @param {Array<{ grade: number, evolution: number|null }>} students - Élèves déjà filtrés avec `grade` numérique
+     * @param {Object} [options={}]
+     * @param {number} [options.topLimit=15] - Nombre maximal d'élèves dans topProgressions / topRegressions
+     * @returns {Object|null}
+     */
+    computeCohortStats(students, { topLimit = 15 } = {}) {
+        if (!Array.isArray(students) || students.length === 0) return null;
+
+        const gradeSummary = this.summarizeGrades(students.map(s => s.grade));
+        if (!gradeSummary) return null;
+
+        const negThreshold = appState.evolutionThresholds?.negative ?? -0.5;
+        const withEvolution = students.filter(s => typeof s.evolution === 'number' && !Number.isNaN(s.evolution));
+        const avgEvolution = this.computeAverageEvolution(withEvolution.map(s => s.evolution));
+
+        let progressCount = 0;
+        let stableCount = 0;
+        let regressionCount = 0;
+
+        withEvolution.forEach(s => {
+            const category = this.classifyEvolutionCategory(s.evolution);
+            if (category === 'progress') progressCount++;
+            else if (category === 'regression') regressionCount++;
+            else stableCount++;
+        });
+
+        const sortedByEvolution = withEvolution.slice().sort((a, b) => b.evolution - a.evolution);
+        const topProgressions = sortedByEvolution
+            .filter(s => this.classifyEvolutionCategory(s.evolution) === 'progress')
+            .slice(0, topLimit);
+        const topRegressions = sortedByEvolution
+            .filter(s => this.classifyEvolutionCategory(s.evolution) === 'regression')
+            .slice(-topLimit)
+            .reverse();
+
+        const atRisk = students
+            .filter(s =>
+                s.grade < 10 ||
+                (typeof s.evolution === 'number' && !Number.isNaN(s.evolution) &&
+                    (s.evolution <= -1.5 || (s.grade < 12 && s.evolution <= negThreshold)))
+            )
+            .sort((a, b) => {
+                const scoreA = a.grade + Math.min(0, (a.evolution || 0) * 1.2);
+                const scoreB = b.grade + Math.min(0, (b.evolution || 0) * 1.2);
+                return scoreA - scoreB;
+            });
+
+        return {
+            ...gradeSummary,
+            distribution: gradeSummary.distributionMap,
+            avgEvolution,
+            progressCount,
+            stableCount,
+            regressionCount,
+            hasEvolutionData: withEvolution.length > 0,
+            topProgressions,
+            topRegressions,
+            atRisk
         };
     }
 };

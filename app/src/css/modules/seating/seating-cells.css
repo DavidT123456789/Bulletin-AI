@@ -438,11 +438,13 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 @media (hover: none), (max-width: 768px) {
     #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove {
         opacity: 0 !important;
+        visibility: hidden;
         pointer-events: none !important;
     }
 
     #seatingChartView[data-locked="false"] .sc-cell.occupied:not(.pinned) .sc-cell-pin {
         opacity: 0 !important;
+        visibility: hidden;
         pointer-events: none !important;
     }
 
@@ -717,6 +719,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-pin,
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell-scope-badge {
     opacity: 0 !important;
+    visibility: hidden;
     pointer-events: none !important;
 }
 
@@ -1445,11 +1448,11 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 .sc-hint-capacity-pill.is-ok iconify-icon {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .sc-hint-capacity-pill.is-warning {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 .sc-onboarding-capacity-alert {
@@ -1475,7 +1478,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 .sc-onboarding-capacity-alert iconify-icon {
-    color: var(--warning-color);
+    color: var(--warning-text);
     font-size: 0.95rem;
     flex-shrink: 0;
 }
@@ -2196,6 +2199,12 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         align-items: center !important;
     }
 
+    .sc-status-pill::after {
+        content: '';
+        position: absolute;
+        inset: -6px 0;
+    }
+
     .sc-floating-actions {
         top: calc(56px + 10px) !important;
         right: 12px !important;
@@ -2602,7 +2611,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 @media (hover: hover) {
     /* Harmonized hover matching the rest of the application */
-    .sc-action-btn:not(:disabled):hover {
+    .sc-action-btn:not(:disabled):not(.disabled):hover {
         background: var(--item-hover-bg);
         color: var(--text-primary);
     }
@@ -2614,7 +2623,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 }
 
-.sc-action-btn:active {
+.sc-action-btn:not(:disabled):not(.disabled):active {
     transform: scale(0.95);
 }
 
@@ -2622,10 +2631,14 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-size: 1.1rem;
 }
 
-.sc-action-btn:disabled {
+.sc-action-btn:disabled,
+.sc-action-btn.disabled {
     opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.sc-action-btn:disabled {
     pointer-events: none;
-    cursor: default;
 }
 
 /* Ensure auto place button is fully active and clickable when not disabled */

@@ -119,6 +119,7 @@ export const FocusPanelGrades = {
 
         const prevGradesEl = document.getElementById('focusPreviousGrades');
         if (prevGradesEl) {
+            TooltipsUI.cleanupTooltipsIn(prevGradesEl);
             prevGradesEl.innerHTML = '';
             const periods = Utils.getPeriods();
             const currentIdx = periods.indexOf(currentPeriod);
@@ -145,6 +146,7 @@ export const FocusPanelGrades = {
                     prevGradesEl.appendChild(evoEl);
                 }
             });
+            TooltipsUI.initTooltips(prevGradesEl);
         }
     },
 
@@ -160,6 +162,7 @@ export const FocusPanelGrades = {
         const prevGradesEl = document.getElementById('focusPreviousGrades');
 
         if (prevGradesEl) {
+            TooltipsUI.cleanupTooltipsIn(prevGradesEl);
             prevGradesEl.innerHTML = '';
             const periods = Utils.getPeriods();
             const currentIdx = periods.indexOf(currentPeriod);
@@ -216,6 +219,7 @@ export const FocusPanelGrades = {
                     prevGradesEl.appendChild(evoEl);
                 }
             });
+            TooltipsUI.initTooltips(prevGradesEl);
         }
 
         const gradeLabel = document.getElementById('focusCurrentGradeLabel');

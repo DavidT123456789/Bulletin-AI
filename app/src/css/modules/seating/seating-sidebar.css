@@ -65,7 +65,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--success-color, #10b981);
+    color: var(--success-text);
     font-weight: 600;
     animation: scFadeUp 0.3s var(--ease-spring) both;
 }
@@ -316,17 +316,6 @@
 }
 
 /* Semantic colors (.sc-chip-badge-{new,depart,ulis,device,delegate}) are mutualized with .tag-badge--* in cards.css */
-.sc-chip-badge-neutral {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border: 1px solid transparent;
-}
-
-[data-theme="dark"] .sc-chip-badge-neutral {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
-    border-color: transparent;
-}
 
 .sc-student-chip.sc-chip-departed .student-avatar,
 .sc-student-chip.sc-chip-departed .sc-student-chip-name {
@@ -603,7 +592,6 @@
 
 .sc-plan-mode-switch .ui-segment {
     flex: 0 0 auto;
-    color: var(--text-secondary);
     transition: color var(--transition-fast),
                 background-color var(--transition-fast),
                 padding 0.24s var(--ease-spring),
@@ -674,7 +662,6 @@
                 color var(--transition-fast, 0.2s),
                 transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
-    overflow: hidden;
 }
 
 .sc-status-pill:focus-visible {
@@ -701,6 +688,8 @@
     align-items: center;
     justify-items: center;
     width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 .sc-status-pill-side {
@@ -736,7 +725,6 @@
     white-space: nowrap;
     font-size: 0.76rem;
     font-weight: 500;
-    opacity: 0.85;
 }
 
 .sc-status-pill-sep {
@@ -748,7 +736,7 @@
 .sc-status-pill-unplaced {
     display: inline-flex;
     align-items: center;
-    color: var(--color-amber-deep);
+    color: color-mix(in srgb, var(--color-amber-deep) 82%, var(--text-primary));
     font-weight: 600;
 }
 
@@ -773,7 +761,7 @@
 
 .sc-status-pill.sc-status-testing {
     background: rgba(var(--warning-rgb, 245, 158, 11), 0.11);
-    color: var(--color-amber-deep);
+    color: color-mix(in srgb, var(--color-amber-deep) 82%, var(--text-primary));
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-testing {
@@ -800,7 +788,18 @@
     color: var(--text-primary);
 }
 
-/* Hover & Morphing interactions */
+/* Hover & Focus-Visible Morphing interactions */
+.sc-status-pill:not(.sc-status-virtual):focus-visible .sc-status-pill-rest {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+.sc-status-pill:not(.sc-status-virtual):focus-visible .sc-status-pill-hover {
+    opacity: 1;
+    max-width: 190px;
+    transform: translateY(0);
+}
+
 @media (hover: hover) {
     .sc-status-pill.sc-status-locked:hover {
         background: rgba(var(--success-rgb, 16, 185, 129), 0.18);

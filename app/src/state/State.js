@@ -48,6 +48,7 @@ export const userSettings = {
         // Seating chart grid configuration
         seatingGrid: null,         // { rows, cols, specialLayout }
         seatingActivityGrid: null, // { rows, cols, specialLayout }
+        virtualClassAnalyses: {}, // { [virtualClassId]: { [period]: analysis } }
     },
 
     /** Configuration API */
@@ -181,6 +182,7 @@ const propertyMap = {
     currentClassId: () => userSettings.academic,
     seatingGrid: () => userSettings.academic,
     seatingActivityGrid: () => userSettings.academic,
+    virtualClassAnalyses: () => userSettings.academic,
 
     // userSettings.api
     currentAIModel: () => userSettings.api,

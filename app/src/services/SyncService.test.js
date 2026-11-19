@@ -794,5 +794,18 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             });
             expect(res).toEqual({ success: true, count: 2 });
         });
+
+        it('forceUpload et forceDownload réinitialisent toujours SyncService.status à idle en cas d\'erreur', async () => {
+            SyncService._provider = {
+                write: vi.fn().mockRejectedValue(new Error('Timeout upload')),
+                read: vi.fn().mockRejectedValue(new Error('Timeout read'))
+            };
+
+            await expect(SyncService.forceUpload()).rejects.toThrow('Timeout upload');
+            expect(SyncService.status).toBe('idle');
+
+            await expect(SyncService.forceDownload()).rejects.toThrow('Timeout read');
+            expect(SyncService.status).toBe('idle');
+        });
     });
 });

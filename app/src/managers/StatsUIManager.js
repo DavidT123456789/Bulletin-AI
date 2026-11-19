@@ -309,7 +309,7 @@ export const StatsUI = {
 
             // Statistique 3: Mots et Caractères (Dépend des erreurs)
             if (!res.errorMessage) {
-                const appreciation = res.studentData?.periods?.[activePeriod]?.appreciation ?? res.appreciation ?? '';
+                const appreciation = Utils.getPeriodAppreciation(res, activePeriod);
                 errFree++;
                 words += Utils.countWords(appreciation);
                 chars += appreciation.replace(/<[^>]*>/g, '').length;

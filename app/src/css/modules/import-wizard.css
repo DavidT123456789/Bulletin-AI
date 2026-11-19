@@ -1809,7 +1809,7 @@
 }
 
 .guide-legend-count.count-new {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .guide-legend-count.count-updated {
@@ -1817,7 +1817,7 @@
 }
 
 .guide-legend-count.count-departed {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 /* Warning hint variant (with icon) */
@@ -1826,7 +1826,7 @@
     align-items: flex-start;
     gap: 6px;
     font-size: 0.73rem;
-    color: var(--warning-color);
+    color: var(--warning-text);
     font-style: normal;
     margin: 0;
     line-height: 1.45;
@@ -1864,7 +1864,7 @@
 }
 
 .guide-departed-action:has(input:checked) .guide-departed-label {
-    color: var(--warning-color);
+    color: var(--warning-text);
 }
 
 /* Warning color modifier for toggle-switch */
@@ -2122,7 +2122,7 @@
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: var(--radius-control);
-    color: var(--warning-color);
+    color: var(--warning-text);
     font-size: 0.82rem;
     font-weight: 500;
     flex-shrink: 0;

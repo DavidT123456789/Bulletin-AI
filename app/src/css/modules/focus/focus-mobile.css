@@ -84,7 +84,6 @@
     }
 
     .focus-header.editing {
-        padding: 12px 14px 14px;
         margin: 8px 12px 4px 12px;
         align-items: center;
     }
@@ -281,10 +280,22 @@
 
     .focus-header.editing>.focus-save-btn,
     .focus-header.editing>.focus-close-btn {
+        position: relative;
         order: 2;
         width: 38px;
         height: 32px;
-        margin-top: 0;
+    }
+
+    .focus-header.editing>.focus-save-btn::after {
+        content: '';
+        position: absolute;
+        inset: -6px 0 -6px -6px;
+    }
+
+    .focus-header.editing>.focus-close-btn::after {
+        content: '';
+        position: absolute;
+        inset: -6px -6px -6px 0;
     }
 
     .focus-header.editing>.focus-save-btn {
@@ -570,6 +581,10 @@
     .analysis-add-item-btn {
         min-width: 44px;
         min-height: 44px;
+    }
+
+    .analysis-add-item-btn::after {
+        content: none;
     }
 
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */

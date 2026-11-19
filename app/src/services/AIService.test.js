@@ -115,7 +115,7 @@ describe('AIService', () => {
 
             expect(config.apiUrl).toContain(`/models/${PROVIDER_DEFAULT_MODELS.google}:generateContent`);
             expect(config.payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'MEDIUM' },
+                thinkingConfig: { thinkingLevel: 'LOW' },
                 maxOutputTokens: 5
             });
         });
@@ -144,7 +144,7 @@ describe('AIService', () => {
 
             appState.currentAIModel = 'gemini-4-hydrogen';
             expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'MEDIUM' }
+                thinkingConfig: { thinkingLevel: 'LOW' }
             });
 
             appState.currentAIModel = 'gemini-3.6-flash';
@@ -291,6 +291,76 @@ describe('AIService', () => {
             const result = await AIService.callAI('Test prompt');
             expect(result.text).toBe('Appréciation finale.');
         });
+
+        it('should cap validation timeout at 15s and convert DOMException TimeoutError into formatted TimeoutError', async () => {
+            vi.useFakeTimers();
+            try {
+                const { appState } = await import('../state/State.js');
+                appState.googleApiKey = 'test-key';
+                appState.currentAIModel = 'gemini-4-hydrogen'; // 40s normal timeout
+
+                globalThis.fetch = vi.fn().mockImplementation((_url, { signal }) => {
+                    return new Promise((_resolve, reject) => {
+                        signal.addEventListener('abort', () => {
+                            reject(signal.reason || new DOMException('Timeout', 'TimeoutError'));
+                        });
+                    });
+                });
+
+                const callPromise = AIService.callAI('Validation', {
+                    isValidation: true,
+                    validationProvider: 'google',
+                    modelOverride: 'gemini-4-hydrogen'
+                });
+                const assertion = expect(callPromise).rejects.toMatchObject({
+                    name: 'TimeoutError',
+                    message: 'La requête a expiré (timeout 15s).'
+                });
+
+                await vi.advanceTimersByTimeAsync(15000);
+                await assertion;
+                expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should retry once on TimeoutError during normal generation and succeed on second attempt', async () => {
+            vi.useFakeTimers();
+            try {
+                const { appState } = await import('../state/State.js');
+                appState.googleApiKey = 'test-key';
+                appState.currentAIModel = 'gemini-3.6-flash';
+
+                let attempt = 0;
+                globalThis.fetch = vi.fn().mockImplementation((_url, { signal }) => {
+                    attempt++;
+                    if (attempt === 1) {
+                        return new Promise((_resolve, reject) => {
+                            signal.addEventListener('abort', () => {
+                                reject(signal.reason || new DOMException('Timeout', 'TimeoutError'));
+                            });
+                        });
+                    }
+                    return Promise.resolve({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            candidates: [{ content: { parts: [{ text: 'Succès après retry' }] } }],
+                            usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 10 }
+                        })
+                    });
+                });
+
+                const callPromise = AIService.callAI('Test prompt');
+                await vi.advanceTimersByTimeAsync(22000 + 1000);
+                const result = await callPromise;
+
+                expect(result.text).toBe('Succès après retry');
+                expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
     });
 
     describe('sleep()', () => {
@@ -384,6 +454,20 @@ describe('AIService', () => {
 
             await expect(AIService.getAvailableModels('google'))
                 .rejects.toThrow('Clé API manquante.');
+        });
+
+        it('should handle non-JSON 503 response on Google /models and attach HTTP status', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.googleApiKey = 'test-key';
+
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: false,
+                status: 503,
+                json: () => Promise.reject(new SyntaxError('Unexpected token <'))
+            });
+
+            await expect(AIService.getAvailableModels('google'))
+                .rejects.toMatchObject({ status: 503, message: expect.stringContaining('503') });
         });
 
         it('should return empty array for non-google providers', async () => {
@@ -666,6 +750,56 @@ describe('AIService', () => {
             }
             expect(secondError).toContain('Quota atteint (13 modèles testés)');
             expect(secondError).not.toContain('Ajoutez une clé OpenRouter');
+        });
+
+        it('should skip timeout retry when fallback alternatives exist and isolate HTTP 401 to the failing provider', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'albert-openweight-medium';
+            appState.albertApiKey = 'sk-albert-expired';
+            appState.googleApiKey = 'AIzaSy-valid-google-key';
+
+            const calls = [];
+            vi.spyOn(AIService, 'callAI').mockImplementation(async (_prompt, opts) => {
+                calls.push({ model: opts.modelOverride, retryOnTimeout: opts.retryOnTimeout });
+                if (opts.modelOverride === 'albert-openweight-medium') {
+                    throw new Error('Erreur API 401: Unauthorized');
+                }
+                if (opts.modelOverride === 'gemini-4-hydrogen') {
+                    const err = new Error('La requête a expiré (timeout 40s).');
+                    err.name = 'TimeoutError';
+                    throw err;
+                }
+                if (opts.modelOverride === 'gemini-3.6-flash') {
+                    return { text: 'Réponse rapide', usage: null };
+                }
+                throw new Error(`Unexpected model: ${opts.modelOverride}`);
+            });
+
+            const result = await AIService.callAIWithFallback('Test prompt');
+
+            expect(result.text).toBe('Réponse rapide');
+            expect(result.modelUsed).toBe('gemini-3.6-flash');
+            // Albert 401 court-circuite albert-openweight-large et bascule directement sur Google ; retryOnTimeout=false
+            expect(calls).toEqual([
+                { model: 'albert-openweight-medium', retryOnTimeout: false },
+                { model: 'gemini-4-hydrogen', retryOnTimeout: false },
+                { model: 'gemini-3.6-flash', retryOnTimeout: false }
+            ]);
+        });
+
+        it('should report a clear timeout error message when all fallback models time out', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'gemini-4-hydrogen';
+            appState.googleApiKey = 'AIzaSy-valid-google-key';
+
+            const timeoutErr = new Error('La requête a expiré (timeout 40s).');
+            timeoutErr.name = 'TimeoutError';
+            vi.spyOn(AIService, 'callAI').mockRejectedValue(timeoutErr);
+
+            await expect(AIService.callAIWithFallback('Test prompt'))
+                .rejects.toThrow('Délai dépassé (3 modèles testés). Le serveur IA met trop de temps à répondre, réessayez.');
         });
     });
 });

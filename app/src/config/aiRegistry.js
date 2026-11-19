@@ -124,7 +124,7 @@ export const AI_MODELS = {
         selectorGroup: 'Google Gemini — QUOTA GRATUIT',
         inSelector: true,
         isReasoning: true,
-        thinkingLevel: 'MEDIUM',
+        thinkingLevel: 'LOW',
         timeoutMs: 40000,
         costs: { input: 1.50, output: 7.50 },
     },

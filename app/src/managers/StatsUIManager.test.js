@@ -29,6 +29,11 @@ vi.mock('../utils/Utils.js', () => ({
         }),
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         getPeriodLabel: vi.fn(() => 'Trimestre 1'),
+        getPeriodAppreciation: vi.fn((res, period) => {
+            const periodApp = res?.studentData?.periods?.[period]?.appreciation;
+            if (periodApp) return periodApp;
+            return res?.generationPeriod === period ? (res.appreciation || '') : '';
+        }),
         getGradeClass: vi.fn(() => 'grade-range-12-16')
     }
 }));

@@ -348,7 +348,7 @@
 
 .modal-title-icon.color-success,
 .modal-title .color-success {
-    color: var(--success-color);
+    color: var(--success-text);
 }
 
 .modal-title-icon.color-secondary,
