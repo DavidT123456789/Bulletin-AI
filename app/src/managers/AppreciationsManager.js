@@ -216,7 +216,7 @@ export const AppreciationsManager = {
         const modelUsed = aiResp.modelUsed;
 
         if (isPreview) {
-            return { appreciation, prompt: userPrompt, usage: aiResp.usage, generationTimeMs: aiResp.generationTimeMs };
+            return { appreciation, prompt: userPrompt, usage: aiResp.usage, generationTimeMs: aiResp.generationTimeMs, modelUsed };
         }
 
         const evolutions = this.analyserEvolution(normalizedStudentData.periods);

@@ -192,7 +192,8 @@ describe('ApiValidationManager', () => {
             expect(appState.apiKeyStatus.google).toBe('valid');
             expect(appState.validatedApiKeys.google).toBe(true);
             expect(mockInputEl.classList.add).not.toHaveBeenCalledWith('input-error');
-            expect(mockErrorEl.innerHTML).toContain('Clé authentifiée et enregistrée');
+            expect(mockErrorEl.innerHTML).toContain('Clé enregistrée et prête');
+            expect(mockErrorEl.style.color).toBe('var(--text-secondary)');
             expect(StorageManager.saveAppState).toHaveBeenCalled();
             expect(onSuccess).toHaveBeenCalled();
         });

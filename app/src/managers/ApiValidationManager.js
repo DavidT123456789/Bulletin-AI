@@ -183,9 +183,9 @@ export const ApiValidationManager = {
                         btnEl.innerHTML = 'Vérifier';
                         inputEl.classList.remove('input-error', 'input-warning', 'input-success');
 
-                        errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée et enregistrée — le test rapide a expiré (serveur temporairement chargé).</span>`;
+                        errorEl.innerHTML = `<iconify-icon icon="solar:check-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé enregistrée et prête — serveur actuellement lent (test rapide ignoré).</span>`;
                         errorEl.style.display = 'block';
-                        errorEl.style.color = 'var(--warning-color)';
+                        errorEl.style.color = 'var(--text-secondary)';
 
                         await StorageManager.saveAppState();
                         this._syncSettingsSnapshotAfterValidation(provider);
