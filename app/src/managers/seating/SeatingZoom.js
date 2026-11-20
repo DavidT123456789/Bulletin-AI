@@ -304,7 +304,7 @@ export const SeatingZoom = {
     },
 
     _getMaxZoomScale(minScale = this._fitScale || 0.45) {
-        return Math.min(2.5, Math.max(1.8, Math.round(minScale * 2.8 * 100) / 100));
+        return Math.min(4.0, Math.max(3.5, Math.round(minScale * 3.8 * 100) / 100));
     },
 
     // ========================================================================
