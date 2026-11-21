@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Utils } from './Utils.js';
 import { appState, userSettings } from '../state/State.js';
+import {
+    EPICENE_FIRST_NAMES,
+    FEMININ_FIRST_NAMES,
+    MASCULIN_FIRST_NAMES,
+    FEMININ_ENDINGS,
+    MASCULIN_ENDINGS
+} from '../config/frenchFirstNames.js';
 
 // Mock appState & userSettings
 vi.mock('../state/State.js', () => ({
@@ -1157,6 +1164,93 @@ describe('Utils', () => {
             for (const candidate of rejected) {
                 expect(Utils.normalizeLocalOllamaUrl(candidate)).toBeNull();
             }
+        });
+    });
+
+    describe('detectGender & frenchFirstNames', () => {
+        it('garantit l\'intégrité des listes module-level (ASCII minuscules, sans accents ni chevauchement)', () => {
+            const asciiLower = /^[a-z]+$/;
+            for (const set of [EPICENE_FIRST_NAMES, FEMININ_FIRST_NAMES, MASCULIN_FIRST_NAMES]) {
+                expect(set.size).toBeGreaterThan(0);
+                for (const name of set) {
+                    expect(name).toMatch(asciiLower);
+                }
+            }
+            for (const name of EPICENE_FIRST_NAMES) {
+                expect(FEMININ_FIRST_NAMES.has(name)).toBe(false);
+                expect(MASCULIN_FIRST_NAMES.has(name)).toBe(false);
+            }
+            for (const name of FEMININ_FIRST_NAMES) {
+                expect(MASCULIN_FIRST_NAMES.has(name)).toBe(false);
+            }
+            expect(new Set(FEMININ_ENDINGS).size).toBe(FEMININ_ENDINGS.length);
+            expect(new Set(MASCULIN_ENDINGS).size).toBe(MASCULIN_ENDINGS.length);
+        });
+
+        it('détecte les prénoms féminins et masculins contemporains (accents, casse, diversité des classes)', () => {
+            const girls = [
+                'Chloé', 'Léa', 'Maëlys', 'Inès', 'Inaya', 'Margaux', 'Mila', 'Noémie',
+                'Aya', 'Assia', 'Fatoumata', 'Kenza', 'Zélie', 'Maud', 'Mahault', '  AMBRE  '
+            ];
+            for (const name of girls) {
+                expect(Utils.detectGender(name), name).toBe('féminin');
+            }
+
+            const boys = [
+                'Timéo', 'Raphaël', 'Théo', 'Noam', 'Milo', 'Malo', 'Yanis', 'Rayan',
+                'Rayane', 'Ilyes', 'Amine', 'Sofiane', 'Zakaria', 'Moussa', 'Louka',
+                'Timothée', 'Tiago', 'Titouan', 'Erwan', 'Gaël', '  LUCAS  '
+            ];
+            for (const name of boys) {
+                expect(Utils.detectGender(name), name).toBe('masculin');
+            }
+        });
+
+        it('retourne neutre pour les prénoms épicènes', () => {
+            const epicene = [
+                'Camille', 'Sacha', 'Sasha', 'Eden', 'Charlie', 'Lou', 'Louison',
+                'Noa', 'Nour', 'Alix', 'Swann', 'Yaël', 'Andréa', 'Mahé', 'Loïs', 'Dominique'
+            ];
+            for (const name of epicene) {
+                expect(Utils.detectGender(name), name).toBe('neutre');
+            }
+        });
+
+        it('gère les prénoms composés (tiret et espace)', () => {
+            expect(Utils.detectGender('Jean-Baptiste')).toBe('masculin');
+            expect(Utils.detectGender('Jean-Marie')).toBe('masculin');
+            expect(Utils.detectGender('Léo-Paul')).toBe('masculin');
+            expect(Utils.detectGender('Mohamed-Amine')).toBe('masculin');
+            expect(Utils.detectGender('Jean Baptiste')).toBe('masculin');
+            expect(Utils.detectGender('Marie-Lou')).toBe('féminin');
+            expect(Utils.detectGender('Fatima-Zahra')).toBe('féminin');
+            expect(Utils.detectGender('Lou-Anne')).toBe('féminin');
+            expect(Utils.detectGender('Lou-Ann')).toBe('féminin');
+            expect(Utils.detectGender('Camille-Lou')).toBe('neutre');
+        });
+
+        it('applique des terminaisons conservatrices sans mégenrer les cas piégeux (-a, -ane, -ine, -ie, -ee, -in)', () => {
+            // Terminaisons conservatrices fiables sur prénoms hors liste
+            expect(Utils.detectGender('Bernadette')).toBe('féminin');
+            expect(Utils.detectGender('Médard')).toBe('masculin');
+            expect(Utils.detectGender('Ulric')).toBe('masculin');
+
+            // Prénoms hors liste aux terminaisons ambiguës → neutre plutôt que mégenrage
+            expect(Utils.detectGender('Suleymana')).toBe('neutre');
+            expect(Utils.detectGender('Mouslimane')).toBe('neutre');
+            expect(Utils.detectGender('Zineddine')).toBe('neutre');
+            expect(Utils.detectGender('Zacharie')).toBe('masculin');
+            expect(Utils.detectGender('Caitlin')).toBe('neutre');
+            expect(Utils.detectGender('Nisrin')).toBe('neutre');
+        });
+
+        it('gère proprement les entrées nulles, vides, invalides ou inconnues', () => {
+            expect(Utils.detectGender(null)).toBe('neutre');
+            expect(Utils.detectGender(undefined)).toBe('neutre');
+            expect(Utils.detectGender('')).toBe('neutre');
+            expect(Utils.detectGender('   ')).toBe('neutre');
+            expect(Utils.detectGender(42)).toBe('neutre');
+            expect(Utils.detectGender('Xyz')).toBe('neutre');
         });
     });
 });

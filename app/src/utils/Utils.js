@@ -3,6 +3,32 @@ import { appState, userSettings } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { DOMHelper } from './DOMHelper.js';
 import { resolveStudentStatus, getPeriodsForSystem, getGradeCssClass } from '../config/academicConstants.js';
+import {
+    EPICENE_FIRST_NAMES,
+    FEMININ_FIRST_NAMES,
+    MASCULIN_FIRST_NAMES,
+    FEMININ_ENDINGS,
+    MASCULIN_ENDINGS
+} from '../config/frenchFirstNames.js';
+
+const lookupExactGender = (token) => {
+    if (!token) return null;
+    if (EPICENE_FIRST_NAMES.has(token)) return 'neutre';
+    if (FEMININ_FIRST_NAMES.has(token)) return 'féminin';
+    if (MASCULIN_FIRST_NAMES.has(token)) return 'masculin';
+    return null;
+};
+
+const lookupEndingGender = (token) => {
+    if (!token || token.length < 4) return 'neutre';
+    for (const ending of FEMININ_ENDINGS) {
+        if (token.length > ending.length && token.endsWith(ending)) return 'féminin';
+    }
+    for (const ending of MASCULIN_ENDINGS) {
+        if (token.length > ending.length && token.endsWith(ending)) return 'masculin';
+    }
+    return 'neutre';
+};
 
 /**
  * @typedef {Object} StudentPeriodData
@@ -1219,82 +1245,38 @@ export const Utils = {
     },
 
     /**
-     * Détecte le genre probable d'un prénom français
+     * Détecte le genre probable d'un prénom (simple ou composé) en privilégiant la sécurité :
+     * retourne `'neutre'` en cas de doute plutôt que de risquer un mégenrage.
      * @param {string} prenom - Le prénom à analyser
      * @returns {'masculin'|'féminin'|'neutre'} Le genre détecté
      */
     detectGender(prenom) {
         if (!prenom || typeof prenom !== 'string') return 'neutre';
 
-        const normalized = prenom.trim().toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Retire les accents
+        const normalized = this.stripAccents(prenom);
+        if (!normalized) return 'neutre';
 
-        // Prénoms féminins courants (liste non exhaustive mais couvre 95%+ des cas)
-        const femininNames = new Set([
-            'marie', 'jeanne', 'marguerite', 'anne', 'catherine', 'francoise', 'louise',
-            'madeleine', 'germaine', 'suzanne', 'henriette', 'yvonne', 'therese', 'marcelle',
-            'paulette', 'andree', 'simone', 'denise', 'renee', 'georgette', 'raymonde',
-            'alice', 'berthe', 'lucie', 'helene', 'eugenie', 'amelie', 'augustine',
-            'nathalie', 'isabelle', 'sylvie', 'christine', 'martine', 'francine', 'nicole',
-            'patricia', 'valerie', 'veronique', 'sandrine', 'stephanie', 'sophie', 'celine',
-            'caroline', 'virginie', 'audrey', 'aurelie', 'emilie', 'julie', 'marine',
-            'lea', 'manon', 'chloe', 'camille', 'clara', 'emma', 'ines', 'jade', 'lola',
-            'louise', 'luna', 'mia', 'rose', 'sarah', 'zoe', 'anna', 'eva', 'lena', 'nina',
-            'charlotte', 'juliette', 'alice', 'agathe', 'adele', 'victoire', 'clemence',
-            'mathilde', 'margot', 'pauline', 'elise', 'ambre', 'jeanne', 'gabrielle',
-            'eleonore', 'apolline', 'capucine', 'romane', 'elena', 'olivia', 'iris',
-            'lily', 'lou', 'lina', 'yasmine', 'salome', 'constance', 'valentine', 'heloise',
-            'florine', 'marine', 'oceane', 'maeva', 'anais', 'melanie', 'elodie', 'laetitia',
-            'delphine', 'severine', 'corinne', 'fabienne', 'laurence', 'beatrice', 'brigitte',
-            'chantal', 'colette', 'danielle', 'elisabeth', 'florence', 'genevieve', 'jacqueline',
-            'josette', 'monique', 'nadine', 'odette', 'pascale', 'pierrette', 'rosine',
-            'solange', 'viviane', 'yvette', 'ginette', 'huguette', 'josiane', 'liliane',
-            'lucienne', 'mauricette', 'micheline', 'odile', 'rolande', 'claudine', 'gisele',
-            'lydie', 'maryse', 'muriel', 'noelle', 'roselyne', 'annie', 'chloé', 'léa'
-        ]);
+        const direct = lookupExactGender(normalized);
+        if (direct !== null) return direct;
 
-        // Prénoms masculins courants
-        const masculinNames = new Set([
-            'jean', 'pierre', 'louis', 'joseph', 'andre', 'henri', 'rene', 'paul', 'marcel',
-            'jacques', 'francois', 'roger', 'raymond', 'emile', 'charles', 'albert', 'georges',
-            'robert', 'lucien', 'leon', 'maurice', 'gaston', 'eugene', 'auguste', 'fernand',
-            'antoine', 'bernard', 'claude', 'michel', 'alain', 'daniel', 'patrick', 'philippe',
-            'christian', 'eric', 'laurent', 'stephane', 'thierry', 'vincent', 'bruno', 'olivier',
-            'pascal', 'frederic', 'didier', 'christophe', 'nicolas', 'julien', 'david', 'thomas',
-            'alexandre', 'antoine', 'kevin', 'jeremy', 'sebastien', 'maxime', 'lucas', 'hugo',
-            'leo', 'nathan', 'louis', 'gabriel', 'raphael', 'arthur', 'jules', 'adam', 'paul',
-            'noel', 'victor', 'theo', 'ethan', 'noah', 'liam', 'aaron', 'clement', 'mathis',
-            'enzo', 'tom', 'matteo', 'matheo', 'timéo', 'gabin', 'martin', 'valentin', 'mael',
-            'romain', 'axel', 'evan', 'nolan', 'logan', 'simon', 'eliott', 'baptiste', 'alex',
-            'antonin', 'adrien', 'bastien', 'samuel', 'thibault', 'quentin', 'florian', 'guillaume',
-            'benjamin', 'remi', 'arnaud', 'yann', 'fabien', 'cedric', 'loic', 'sylvain',
-            'jerome', 'emmanuel', 'yves', 'serge', 'gerard', 'gilles', 'joel', 'dominique',
-            'marc', 'guy', 'denis', 'herve', 'joel', 'norbert', 'gilbert', 'edmond', 'edouard'
-        ]);
+        const parts = normalized.split(/[\s-]+/).filter(Boolean);
+        if (parts.length > 1) {
+            const firstExact = lookupExactGender(parts[0]);
+            if (firstExact === 'féminin' || firstExact === 'masculin') return firstExact;
 
-        // Prénoms épicènes (utilisés pour les deux genres)
-        const epiceneNames = new Set([
-            'camille', 'dominique', 'claude', 'alex', 'sacha', 'eden', 'charlie', 'lou', 'noa', 'andrea'
-        ]);
+            for (let i = 1; i < parts.length; i++) {
+                const partExact = lookupExactGender(parts[i]);
+                if (partExact === 'féminin' || partExact === 'masculin') return partExact;
+            }
 
-        // Vérification directe
-        if (epiceneNames.has(normalized)) return 'neutre';
-        if (femininNames.has(normalized)) return 'féminin';
-        if (masculinNames.has(normalized)) return 'masculin';
+            if (firstExact === 'neutre') return 'neutre';
 
-        // Heuristiques basées sur les terminaisons (français)
-        const femininEndings = ['ine', 'ette', 'elle', 'enne', 'anne', 'ane', 'ie', 'ee', 'a', 'ise'];
-        const masculinEndings = ['ien', 'ard', 'aud', 'ault', 'ert', 'ois', 'ais', 'ric', 'ric', 'in'];
-
-        for (const ending of femininEndings) {
-            if (normalized.endsWith(ending)) return 'féminin';
-        }
-        for (const ending of masculinEndings) {
-            if (normalized.endsWith(ending)) return 'masculin';
+            const firstEnding = lookupEndingGender(parts[0]);
+            if (firstEnding !== 'neutre') return firstEnding;
+            return lookupEndingGender(parts[1]);
         }
 
-        // Par défaut, neutre (on utilisera "cet élève")
-        return 'neutre';
+        return lookupEndingGender(normalized);
     },
 
     /**
