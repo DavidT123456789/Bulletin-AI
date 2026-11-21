@@ -438,7 +438,7 @@
     gap: 2px;
     z-index: 100;
     transform-origin: top right;
-    animation: menu-open 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: menu-open 0.2s var(--ease-spring) forwards;
 }
 
 .wizard-period-dropdown.open .wizard-period-menu,

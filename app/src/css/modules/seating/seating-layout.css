@@ -339,8 +339,12 @@
     overflow: hidden;
     min-height: 0;
     position: relative;
-    background-color: var(--bg-color);
+    background-color: color-mix(in srgb, var(--bg-color) 50%, var(--surface-color));
     background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
     background-size: 18px 18px;
+}
+
+[data-theme="dark"] .sc-body {
+    background-color: var(--bg-color);
 }
 

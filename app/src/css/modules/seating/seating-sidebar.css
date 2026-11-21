@@ -407,7 +407,6 @@
     border: 1px solid var(--border-color);
     border-radius: calc(var(--sc-cell-radius, 14px) + 10px);
     padding: var(--sc-board-padding, 12px);
-    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     align-items: safe center;
@@ -420,14 +419,9 @@
     flex-shrink: 0;
     will-change: translate, transform, scale;
     transition: translate var(--sc-drawer-transition),
-                box-shadow 0.54s cubic-bezier(0.22, 1, 0.36, 1),
                 border-color 0.2s ease,
                 background-color 0.2s ease;
     width: fit-content;
-}
-
-.sc-grid-area[data-fitted="false"] .sc-classroom-board {
-    box-shadow: var(--shadow-lg);
 }
 
 /* Classroom Board Orientation (Student / Video Projection View) */

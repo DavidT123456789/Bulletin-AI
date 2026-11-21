@@ -28,27 +28,29 @@
     --sc-target-bg: var(--bg-tertiary);
 }
 
-/* In consultation/locked mode, empty desks are subtle ghost silhouettes without dashed borders */
+/* In consultation/locked mode, empty & condemned desks are subtle engraved silhouettes without dashed borders */
 .sc-classroom-board[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]),
-#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
+.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty:not([class*="sc-cell-special-"]),
+#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
     border: 1.5px solid transparent;
-    background: rgba(255, 255, 255, 0.45);
+    background: var(--item-idle-bg);
     opacity: 1;
     pointer-events: none;
 }
 
-/* In edit mode, standard empty cells are clearly visible (inviting placement) */
+/* In edit mode, standard empty cells keep the same engraved polarity one step deeper (inviting placement) */
 .sc-classroom-board[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]),
 #seatingChartView[data-locked="false"] .sc-classroom-board:not([data-locked="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 1;
     border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.28);
-    background: rgba(var(--surface-color-rgb), 0.22);
+    background: var(--item-hover-bg);
 }
 
 @media (hover: hover) {
     #seatingChartView[data-locked="false"]:not([data-has-selection="true"]):not([data-dragging="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
         border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.55);
-        background: rgba(var(--surface-color-rgb), 0.4);
+        background: rgba(var(--surface-color-rgb), 0.55);
     }
 }
 
@@ -841,14 +843,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-weight: 600;
 }
 
-/* In consultation/locked mode, "Condamné" blends into a quiet empty desk silhouette without visual noise */
-.sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked,
-#seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked {
-    border: 1.5px solid transparent;
-    background: rgba(255, 255, 255, 0.45);
-    opacity: 1;
-}
-
+/* In consultation/locked mode, hide "Condamné" icon/label (background mutualized with locked empty desks above) */
 .sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
 .sc-classroom-board[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name,
 #seatingChartView[data-locked="true"] .sc-classroom-board:not([data-locked="false"]) .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
@@ -1839,13 +1834,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-classroom-board {
         padding: var(--sc-board-padding, 6px);
         border-radius: calc(var(--sc-cell-radius, 12px) + 8px);
-        border: 1px solid var(--border-color);
-        background: var(--bg-secondary);
-        box-shadow: var(--shadow-sm);
         gap: 10px;
-        width: fit-content;
         min-width: auto;
-        align-items: safe center;
     }
 
     /* ── Layout: sidebar becomes bottom tray (inherits GPU translate transition from base .sc-sidebar) ── */
@@ -2280,24 +2270,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     #seatingChartView :is(.sc-config-popover, .sc-placement-popover).open {
         transform: translateY(0) scale(1);
-    }
-
-    #seatingChartView :is(.sc-config-popover, .sc-placement-popover)::before {
-        top: auto;
-        bottom: -5px;
-        border-top: none;
-        border-left: none;
-        border-bottom: var(--dropdown-border-glass);
-        border-right: var(--dropdown-border-glass);
-    }
-
-    #seatingChartView .sc-config-popover::before {
-        left: auto;
-        right: 28px;
-    }
-
-    #seatingChartView .sc-placement-popover::before {
-        left: 13px;
     }
 
     #seatingChartView .sc-popover-item {

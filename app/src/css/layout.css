@@ -625,7 +625,7 @@ body.is-cloud-syncing label {
 
 .header-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 17px);
     right: 0;
     min-width: 205px;
     width: max-content;
@@ -640,23 +640,11 @@ body.is-cloud-syncing label {
     gap: 2px;
     z-index: 1000;
     transform-origin: top right;
-    animation: menu-open 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: menu-open 0.2s var(--ease-spring) forwards;
 }
 
 .header-dropdown-menu.open {
     display: flex;
-}
-
-@keyframes menu-open {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
 /* Menu Items Styles */
@@ -994,7 +982,7 @@ button > .icon-spin-wrapper {
     /* Header menu dropdown: fixed position to escape header overflow clipping */
     .header-dropdown-menu {
         position: fixed !important;
-        top: 56px !important;
+        top: 64px !important;
         right: 12px !important;
         left: auto !important;
         min-width: 205px;

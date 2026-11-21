@@ -210,7 +210,7 @@ export const SeatingZoom = {
 
         const rAfter = board.getBoundingClientRect?.();
         if (!rAfter || rAfter.width <= 0) {
-            board.style.transition = 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
+            board.style.transition = 'transform 0.42s var(--ease-spring)';
             board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
             this._bindBoardSlideCleanup(board, 0);
             return;
@@ -265,7 +265,7 @@ export const SeatingZoom = {
         const isPureTranslationSettle = sameScale && Math.abs(scaleX - 1) < 0.015;
         board.style.transition = (isLockToggle || isPureTranslationSettle)
             ? 'transform var(--sc-drawer-transition)'
-            : 'transform 0.54s cubic-bezier(0.28, 1.2, 0.46, 1)';
+            : 'transform 0.42s var(--ease-spring)';
         board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 
         this._bindBoardSlideCleanup(board, 600);

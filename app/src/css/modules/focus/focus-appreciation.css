@@ -312,7 +312,7 @@
     color: var(--error-text);
 }
 
-/* History Popover (surface dépolie mutualisée dans dropdown.css) */
+/* History Popover (surface mutualisée dans dropdown.css) */
 
 .history-popover {
     position: fixed;
@@ -320,37 +320,21 @@
     min-width: 280px;
     max-width: 380px;
     overflow: hidden;
-    animation: popover-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes popover-in {
-    from {
-        opacity: 0;
-        transform: translateY(-6px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    animation: menu-open 0.2s var(--ease-spring) forwards;
 }
 
 .history-popover-title {
     padding: 10px 14px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 500;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
-    background: var(--item-idle-bg);
+    background: transparent;
     display: flex;
     align-items: center;
     gap: 7px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     user-select: none;
-}
-
-[data-theme="dark"] .history-popover-title {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .history-popover-title iconify-icon {

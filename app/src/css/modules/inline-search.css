@@ -282,20 +282,16 @@
     transform: scale(0.9);
 }
 
-/* Cross-class suggestions popover (surface dépolie mutualisée dans dropdown.css) */
+/* Cross-class suggestions popover (surface mutualisée dans dropdown.css) */
 .sc-floating-search-suggestions {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 17px);
     right: 0;
     min-width: 260px;
     max-width: 340px;
     z-index: 300;
-    animation: scSuggestionsIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes scSuggestionsIn {
-    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    transform-origin: top right;
+    animation: menu-open 0.2s var(--ease-spring) forwards;
 }
 
 .sc-cross-suggestion-pill {
@@ -499,6 +495,7 @@
     }
 
     .header-search .sc-floating-search-suggestions {
+        top: calc(100% + 8px);
         left: var(--space-3);
         right: var(--space-3);
         min-width: 0;

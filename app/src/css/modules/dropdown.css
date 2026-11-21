@@ -80,7 +80,7 @@
     transform: rotate(180deg);
 }
 
-/* === Surface dépolie (Glass) mutualisée des menus déroulants, contextuels & popovers === */
+/* === Surface élevée mutualisée des menus déroulants, contextuels & popovers === */
 .custom-dropdown-menu,
 .header-model-dropdown,
 .wizard-period-menu,
@@ -96,12 +96,23 @@
 .journal-pill-menu,
 .trombi-student-popover,
 .history-popover {
-    background: var(--dropdown-bg-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: var(--dropdown-border-glass);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
+    background: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius);
+    box-shadow: var(--dropdown-shadow);
+}
+
+/* Animation d'entrée canonique mutualisée des menus & popovers */
+@keyframes menu-open {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .custom-dropdown-menu,

@@ -1054,6 +1054,38 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         expect(ClassUIManager._isNotePopoverOpen).toBe(true);
         expect(DOM.headerClassNoteBtn.classList.contains('active')).toBe(true);
     });
+
+    it('devrait ancrer la bulle Mémo 8px sous la barre d’en-tête sans jamais chevaucher sa bordure inférieure', () => {
+        document.body.insertAdjacentHTML('beforeend', `
+            <header class="header"></header>
+            <button type="button" id="headerClassNoteBtn" class="header-class-note-btn"></button>
+            <div id="classNotePopover" class="class-note-popover"></div>
+        `);
+        const header = document.querySelector('.header');
+        const btn = document.getElementById('headerClassNoteBtn');
+        const popover = document.getElementById('classNotePopover');
+        DOM.headerClassNoteBtn = btn;
+        DOM.classNotePopover = popover;
+
+        Object.defineProperty(btn, 'offsetWidth', { value: 34, configurable: true });
+        vi.spyOn(header, 'getBoundingClientRect').mockReturnValue({ bottom: 56, left: 0, right: 1200, top: 0, width: 1200, height: 56 });
+        const btnRectSpy = vi.spyOn(btn, 'getBoundingClientRect').mockReturnValue({ bottom: 45, left: 120, right: 154, top: 11, width: 34, height: 34 });
+
+        // Nominal : bouton centré dans le header (bottom 45 < header 56) -> calé à 56 + 8 = 64px
+        ClassUIManager._positionNotePopover();
+        expect(popover.style.top).toBe('64px');
+
+        // Cas limite : ancre plus basse que le header -> suit l'ancre (72 + 8 = 80px)
+        btnRectSpy.mockReturnValue({ bottom: 72, left: 120, right: 154, top: 38, width: 34, height: 34 });
+        ClassUIManager._positionNotePopover();
+        expect(popover.style.top).toBe('80px');
+
+        // Repli : absence de header ou rect vide -> fallback sûr à 64px
+        header.remove();
+        btnRectSpy.mockReturnValue({ bottom: 0, left: 0, right: 0, top: 0, width: 0, height: 0 });
+        ClassUIManager._positionNotePopover();
+        expect(popover.style.top).toBe('64px');
+    });
 });
 
 

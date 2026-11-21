@@ -966,8 +966,9 @@ textarea {
 .model-dropdown-divider {
     height: 1px;
     background-color: var(--border-color);
-    margin: 3.5px 0;
-    width: 100%;
+    margin: 4px 8px;
+    width: auto;
+    align-self: stretch;
     flex-shrink: 0;
 }
 

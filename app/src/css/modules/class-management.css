@@ -167,42 +167,54 @@
 
 .class-dropdown {
     position: absolute;
-    top: calc(100% + 12px);
+    top: calc(100% + 17px);
     left: 0;
-    min-width: 280px;
-    max-width: 340px;
+    min-width: min(280px, calc(100vw - 24px));
+    max-width: min(340px, calc(100vw - 24px));
     z-index: var(--z-dropdown);
     overflow: hidden;
     opacity: 0;
-    transform: translate3d(0, -6px, 0);
-    transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top left;
+    transform: translate3d(0, -6px, 0) scale(0.97);
+    transition: opacity 0.18s var(--ease-spring), transform 0.2s var(--ease-spring);
     pointer-events: none;
 }
 
 .class-dropdown.visible {
     display: block !important;
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
     pointer-events: auto;
 }
 
-.class-dropdown-header {
+/* En-têtes mutualisés des popovers d'en-tête (Mes classes & Mémo) */
+.class-dropdown-header,
+.class-note-popover-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 10px 8px 18px;
+    gap: 8px;
+    min-height: 46px;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(var(--surface-color-rgb), 0.45);
+    background: transparent;
+}
+
+.class-dropdown-header {
+    padding: 8px 10px 8px 18px;
+}
+
+.class-dropdown-title,
+.class-note-popover-title {
+    display: inline-flex;
+    align-items: baseline;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    letter-spacing: normal;
 }
 
 .class-dropdown-title {
-    display: inline-flex;
-    align-items: baseline;
     gap: 4px;
-    font-weight: 500;
-    font-size: 0.78rem;
-    color: var(--text-tertiary);
-    letter-spacing: normal;
     user-select: none;
     cursor: default;
 }
@@ -611,6 +623,10 @@
         gap: 2px;
     }
 
+    .class-dropdown {
+        top: calc(100% + 18px);
+    }
+
     .header-class-note-btn {
         width: 32px;
         height: 36px;
@@ -626,35 +642,25 @@
     z-index: var(--z-dropdown);
     overflow: hidden;
     opacity: 0;
-    transform: translate3d(0, -6px, 0);
-    transition: opacity 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top left;
+    transform: translate3d(0, -6px, 0) scale(0.97);
+    transition: opacity 0.18s var(--ease-spring), transform 0.2s var(--ease-spring);
     pointer-events: none;
 }
 
 .class-note-popover.visible {
     display: flex !important;
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
     pointer-events: auto;
 }
 
 .class-note-popover-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
     padding: 8px 10px 8px 14px;
-    border-bottom: 1px solid var(--border-color);
-    background: rgba(var(--surface-color-rgb), 0.45);
 }
 
 .class-note-popover-title {
-    display: inline-flex;
-    align-items: baseline;
     gap: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-secondary);
     min-width: 0;
 }
 

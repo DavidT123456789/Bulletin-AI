@@ -22,23 +22,9 @@
     flex-direction: column;
     gap: 2px;
     opacity: 0;
-    transform: translateY(-6px) scale(0.95);
+    transform: translateY(-6px) scale(0.97);
     pointer-events: none;
-    transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
-}
-
-.sc-placement-popover::before,
-.sc-config-popover::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 12px;
-    width: 8px;
-    height: 8px;
-    background: var(--dropdown-bg-glass);
-    border-top: var(--dropdown-border-glass);
-    border-left: var(--dropdown-border-glass);
-    transform: rotate(45deg);
+    transition: opacity 0.18s var(--ease-spring), transform 0.2s var(--ease-spring);
 }
 
 .sc-placement-popover.open {
@@ -93,7 +79,9 @@
 .sc-popover-divider {
     height: 1px;
     background: var(--border-color);
-    margin: 4px 0;
+    margin: 4px 8px;
+    width: auto;
+    align-self: stretch;
 }
 
 .sc-popover-item-disabled {
@@ -136,14 +124,9 @@
     flex-direction: column;
     gap: 10px;
     opacity: 0;
-    transform: translateX(-40%) translateY(-6px) scale(0.95);
+    transform: translateX(-40%) translateY(-6px) scale(0.97);
     pointer-events: none;
-    transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
-}
-
-/* Tooltip arrow pointing to Settings button */
-.sc-config-popover::before {
-    left: 40%;
+    transition: opacity 0.18s var(--ease-spring), transform 0.2s var(--ease-spring);
 }
 
 .sc-config-popover.open {

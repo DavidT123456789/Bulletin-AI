@@ -225,9 +225,12 @@ export const ClassNotePopover = {
         const btn = DOM.headerClassNoteBtn || document.getElementById('headerClassNoteBtn');
         const anchorEl = (btn && btn.offsetWidth > 0) ? btn : DOM.headerClassChip;
         const rect = anchorEl?.getBoundingClientRect();
+        const headerRect = document.querySelector('.header')?.getBoundingClientRect();
+        const headerBottom = headerRect?.bottom > 0 ? headerRect.bottom : 56;
+        const anchorBottom = rect?.bottom > 0 ? rect.bottom : headerBottom;
 
         popover.style.position = 'fixed';
-        popover.style.top = `${Math.round((rect?.bottom || 56) + 8)}px`;
+        popover.style.top = `${Math.round(Math.max(headerBottom, anchorBottom) + 8)}px`;
         popover.style.zIndex = '9999';
 
         if (window.innerWidth <= 600) {

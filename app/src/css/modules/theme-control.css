@@ -9,7 +9,5 @@
     box-sizing: border-box;
     margin-bottom: 0;
     display: flex;
-    /* Added for centering */
     justify-content: center;
-    /* Center the control */
 }
