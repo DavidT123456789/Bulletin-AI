@@ -1355,39 +1355,75 @@ export const Utils = {
     },
 
     /**
-     * Retourne les informations sur le mode de génération (icône, tooltip).
+     * Formate une durée en millisecondes pour un affichage lisible en français :
+     * - `< 100 ms` → `< 0,1 s`
+     * - `100 ms – 9,9 s` → `0,8 s`, `2,4 s` (1 décimale, virgule française)
+     * - `10 s – 59 s` → `14 s` (entier)
+     * - `≥ 60 s` → `1 min`, `1 min 15 s`
+     * Utilise des espaces insécables (`\u00A0`) entre nombre et unité.
+     * @param {number} ms - Durée en millisecondes
+     * @returns {string} Durée formatée (ou chaîne vide si invalide ou ≤ 0)
+     */
+    formatDuration(ms) {
+        if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) return '';
+        if (ms < 100) return '<\u00A00,1\u00A0s';
+
+        const roundedTenths = Math.round(ms / 100) / 10;
+        if (roundedTenths < 10) {
+            return `${roundedTenths.toFixed(1).replace('.', ',')}\u00A0s`;
+        }
+
+        const totalSec = Math.round(ms / 1000);
+        if (totalSec < 60) {
+            return `${totalSec}\u00A0s`;
+        }
+
+        const minutes = Math.floor(totalSec / 60);
+        const remainingSec = totalSec % 60;
+        return remainingSec > 0
+            ? `${minutes}\u00A0min ${remainingSec}\u00A0s`
+            : `${minutes}\u00A0min`;
+    },
+
+    /**
+     * Retourne le tooltip d'informations sur le mode de génération IA.
      * @param {Object} result - Résultat de l'élève
-     * @returns {{icon: string, tooltip: string}}
+     * @returns {{tooltip: string}}
      */
     getGenerationModeInfo(result) {
-        const sd = result.studentData || {};
+        const sd = result?.studentData || {};
         const modelKey = sd.currentAIModel || appState.currentAIModel;
         // Utiliser le nom court s'il existe, sinon la clé brute
-        const modelName = MODEL_SHORT_NAMES[modelKey] || modelKey;
+        const modelName = MODEL_SHORT_NAMES[modelKey] || modelKey || '';
 
         // Construire le tooltip selon les données disponibles
-        const parts = [modelName];
+        const parts = modelName ? [modelName] : [];
 
         // Ajouter les tokens seulement s'ils sont disponibles et > 0
-        const tokens = result.tokenUsage?.appreciation?.total_tokens;
-        if (tokens && tokens > 0) {
-            parts.push(`${tokens} tokens`);
+        const tokens = result?.tokenUsage?.appreciation?.total_tokens;
+        if (typeof tokens === 'number' && Number.isFinite(tokens) && tokens > 0) {
+            const formattedTokens = tokens.toLocaleString('fr-FR');
+            parts.push(`${formattedTokens}\u00A0${tokens > 1 ? 'tokens' : 'token'}`);
         }
 
         // Ajouter le temps seulement s'il est disponible et > 0
         // Note: generationTimeMs est toujours mesuré côté client, indépendamment des tokens API
-        const timeMs = result.tokenUsage?.generationTimeMs;
-        if (timeMs && timeMs > 0) {
-            const timeStr = timeMs >= 1000
-                ? `${(timeMs / 1000).toFixed(1)}s`
-                : `${timeMs}ms`;
+        const timeStr = this.formatDuration(result?.tokenUsage?.generationTimeMs);
+        if (timeStr) {
             parts.push(timeStr);
         }
 
         // Fallback si aucune métadonnée disponible
-        const tip = parts.length > 1 ? parts.join(' • ') : `${modelName} • Généré par IA`;
+        let tip;
+        if (parts.length > 1) {
+            tip = parts.join(' • ');
+        } else if (modelName && parts.length === 1) {
+            tip = `${modelName} • Généré par IA`;
+        } else {
+            tip = parts[0] || 'Généré par IA';
+        }
 
-        return { icon: '<iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>', tooltip: tip };
+        return { tooltip: tip };
     },
 
     /**

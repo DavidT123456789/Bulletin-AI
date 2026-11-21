@@ -1253,5 +1253,80 @@ describe('Utils', () => {
             expect(Utils.detectGender('Xyz')).toBe('neutre');
         });
     });
+
+    describe('formatDuration', () => {
+        it('formate les durées très courtes (< 100 ms) en "< 0,1 s" avec espaces insécables', () => {
+            expect(Utils.formatDuration(1)).toBe('<\u00A00,1\u00A0s');
+            expect(Utils.formatDuration(42)).toBe('<\u00A00,1\u00A0s');
+            expect(Utils.formatDuration(99)).toBe('<\u00A00,1\u00A0s');
+        });
+
+        it('formate les durées entre 100 ms et 9,9 s avec 1 décimale, virgule française et espace insécable', () => {
+            expect(Utils.formatDuration(100)).toBe('0,1\u00A0s');
+            expect(Utils.formatDuration(815)).toBe('0,8\u00A0s');
+            expect(Utils.formatDuration(1000)).toBe('1,0\u00A0s');
+            expect(Utils.formatDuration(2440)).toBe('2,4\u00A0s');
+            expect(Utils.formatDuration(9949)).toBe('9,9\u00A0s');
+        });
+
+        it('bascule en secondes entières entre 10 s et 59 s sans artefact 10,0 s', () => {
+            expect(Utils.formatDuration(9950)).toBe('10\u00A0s');
+            expect(Utils.formatDuration(14300)).toBe('14\u00A0s');
+            expect(Utils.formatDuration(59499)).toBe('59\u00A0s');
+        });
+
+        it('bascule en minutes et secondes dès 60 s sans afficher 0 s ou 60 s', () => {
+            expect(Utils.formatDuration(59500)).toBe('1\u00A0min');
+            expect(Utils.formatDuration(60000)).toBe('1\u00A0min');
+            expect(Utils.formatDuration(65000)).toBe('1\u00A0min 5\u00A0s');
+            expect(Utils.formatDuration(75400)).toBe('1\u00A0min 15\u00A0s');
+            expect(Utils.formatDuration(120000)).toBe('2\u00A0min');
+        });
+
+        it('retourne une chaîne vide pour les valeurs nulles, négatives ou non numériques', () => {
+            expect(Utils.formatDuration(0)).toBe('');
+            expect(Utils.formatDuration(-250)).toBe('');
+            expect(Utils.formatDuration(null)).toBe('');
+            expect(Utils.formatDuration(undefined)).toBe('');
+            expect(Utils.formatDuration(NaN)).toBe('');
+            expect(Utils.formatDuration(Infinity)).toBe('');
+            expect(Utils.formatDuration('815')).toBe('');
+        });
+    });
+
+    describe('getGenerationModeInfo', () => {
+        it('formate le tooltip avec modèle, tokens (séparateur de milliers) et durée lisible', () => {
+            const shortInfo = Utils.getGenerationModeInfo({
+                studentData: { currentAIModel: 'gemini-4-hydrogen' },
+                tokenUsage: { appreciation: { total_tokens: 699 }, generationTimeMs: 815 }
+            });
+            expect(shortInfo).toEqual({
+                tooltip: 'Gemini 4 Hydrogen • 699\u00A0tokens • 0,8\u00A0s'
+            });
+
+            const longInfo = Utils.getGenerationModeInfo({
+                studentData: { currentAIModel: 'ollama-qwen3-8b' },
+                tokenUsage: { appreciation: { total_tokens: 1482 }, generationTimeMs: 75400 }
+            });
+            expect(longInfo.tooltip).toContain(`${(1482).toLocaleString('fr-FR')}\u00A0tokens • 1\u00A0min 15\u00A0s`);
+        });
+
+        it('gère le singulier (1 token) et les replis sans modèle ou sans métadonnées', () => {
+            const singleToken = Utils.getGenerationModeInfo({
+                studentData: { currentAIModel: 'gemini-4-hydrogen' },
+                tokenUsage: { appreciation: { total_tokens: 1 }, generationTimeMs: 0 }
+            });
+            expect(singleToken.tooltip).toBe('Gemini 4 Hydrogen • 1\u00A0token');
+
+            const fallbackWithModel = Utils.getGenerationModeInfo({
+                studentData: { currentAIModel: 'gemini-4-hydrogen' },
+                tokenUsage: { appreciation: { total_tokens: 0 }, generationTimeMs: 0 }
+            });
+            expect(fallbackWithModel.tooltip).toBe('Gemini 4 Hydrogen • Généré par IA');
+
+            const fallbackEmpty = Utils.getGenerationModeInfo(null);
+            expect(fallbackEmpty.tooltip).toBe('Généré par IA');
+        });
+    });
 });
 
