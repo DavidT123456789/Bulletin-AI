@@ -400,6 +400,22 @@
     }
 }
 
+/* When desktop Focus Panel is open on the right, anchor toasts top-left over the blurred backdrop so they never mask the Focus Panel header */
+@media (min-width: 769px) {
+    body:has(#focusPanel.open) #notification-container {
+        left: 24px;
+        right: auto;
+    }
+
+    body:has(#focusPanel.open) .notification {
+        transform: translateX(-450px) scale(1);
+    }
+
+    body:has(#focusPanel.open) .notification.show {
+        transform: translateX(0) scale(1);
+    }
+}
+
 /* ====================================================================
    MOBILE RESPONSIVENESS - iOS Premium Style Center Banner
    ==================================================================== */

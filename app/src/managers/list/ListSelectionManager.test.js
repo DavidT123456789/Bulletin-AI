@@ -53,6 +53,7 @@ vi.mock('../FocusPanelManager.js', () => ({
 
 vi.mock('../UIManager.js', () => ({
     UI: {
+        checkAPIKeyPresence: vi.fn(() => true),
         showNotification: vi.fn(),
         showHeaderProgress: vi.fn(),
         hideHeaderProgress: vi.fn(),
@@ -403,6 +404,19 @@ describe('ListSelectionManager', () => {
             // updateStudentRow called once when student-1 succeeded, then only for student-2 and student-3 on abort cleanup
             expect(mockCallbacks.updateStudentRow.mock.calls.map(c => c[0])).toEqual(['student-1', 'student-2', 'student-3']);
             expect(UI.showNotification).toHaveBeenCalledWith('Régénération interrompue (1/3 régénérée).', 'warning');
+        });
+
+        it('should abort bulkRegenerate before clearing selection or calling AI when API key is missing (B3)', async () => {
+            vi.spyOn(UI, 'checkAPIKeyPresence').mockReturnValue(false);
+            AppreciationsManager.generateAppreciation = vi.fn();
+            ListSelectionManager.selectedIds = new Set(['student-1', 'student-2']);
+
+            await ListSelectionManager.bulkRegenerate(['student-1', 'student-2']);
+
+            expect(UI.checkAPIKeyPresence).toHaveBeenCalledTimes(1);
+            expect(AppreciationsManager.generateAppreciation).not.toHaveBeenCalled();
+            expect(ListSelectionManager.selectedIds.size).toBe(2);
+            vi.restoreAllMocks();
         });
     });
 

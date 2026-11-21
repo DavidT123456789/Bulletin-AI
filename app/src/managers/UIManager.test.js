@@ -471,6 +471,51 @@ describe('UIManager', () => {
             expect(result).toBe(false);
         });
 
+        it('should show warning notification with direct Configurer action opening IA & Clés when no key is configured (B3)', async () => {
+            const { appState } = await import('../state/State.js');
+            const { DOM } = await import('../utils/DOM.js');
+            appState.currentAIModel = 'albert-openweight-medium';
+            appState.albertApiKey = '';
+            appState.googleApiKey = '';
+            appState.openaiApiKey = '';
+            appState.groqApiKey = '';
+            appState.openrouterApiKey = '';
+            appState.anthropicApiKey = '';
+            appState.mistralApiKey = '';
+            appState.ollamaEnabled = false;
+
+            const fakeModal = document.createElement('div');
+            fakeModal.id = 'appSettingsModal';
+            DOM.settingsModal = fakeModal;
+
+            const notifSpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+            const openModalSpy = vi.spyOn(UI, 'openModal').mockImplementation(() => {});
+            const showTabSpy = vi.spyOn(UI, 'showSettingsTab').mockImplementation(() => {});
+
+            const result = UI.checkAPIKeyPresence(false);
+
+            expect(result).toBe(false);
+            expect(notifSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Aucune clé API configurée'),
+                'warning',
+                5000,
+                expect.objectContaining({
+                    group: 'missing-api-key',
+                    action: expect.objectContaining({ label: 'Configurer', onClick: expect.any(Function) })
+                })
+            );
+
+            // Cliquer sur l'action du toast ouvre directement Paramètres > IA & Clés
+            const actionOnClick = notifSpy.mock.calls[0][3].action.onClick;
+            actionOnClick();
+            expect(openModalSpy).toHaveBeenCalledWith(fakeModal);
+            expect(showTabSpy).toHaveBeenCalledWith('settings-engine');
+
+            notifSpy.mockRestore();
+            openModalSpy.mockRestore();
+            showTabSpy.mockRestore();
+        });
+
         it('should disable cloud AI generation when offline without triggering missing API key warning, while keeping local Ollama enabled', async () => {
             const { appState } = await import('../state/State.js');
             const { DOM } = await import('../utils/DOM.js');

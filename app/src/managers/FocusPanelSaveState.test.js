@@ -650,11 +650,27 @@ describe('FocusPanelManager and Save State integrity', () => {
 
     describe('Progressive Reveal & Button Synchronization', () => {
         beforeEach(() => {
+            appState.currentAIModel = 'albert-openweight-medium';
+            appState.albertApiKey = 'sk-test-valid-key';
             document.getElementById('focusRefinementOptions').innerHTML = `
                 <button data-refine-type="concise">Concise</button>
                 <button data-refine-type="encouraging">Encourageante</button>
                 <button data-refine-type="polish">Peaufiner</button>
             `;
+        });
+
+        it('blocks FocusPanelManager.generate() before mutating UI when no API key is configured (B3)', async () => {
+            appState.albertApiKey = '';
+            appState.googleApiKey = '';
+            const mockAm = { generateAppreciation: vi.fn() };
+            FocusPanelManager.init(mockAm, null);
+            FocusPanelManager.open('student-1');
+
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            await FocusPanelManager.generate();
+
+            expect(mockAm.generateAppreciation).not.toHaveBeenCalled();
+            expect(generateBtn.classList.contains('is-loading')).toBe(false);
         });
 
         it('keeps Annuler active and secondary buttons disabled during progressive reveal, then unlocks all together with the generated badge', async () => {

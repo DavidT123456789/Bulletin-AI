@@ -22,6 +22,12 @@
     padding-bottom: 64px;
 }
 
+@media (max-width: 768px) {
+    .main-content-wrapper:not([data-view="plan"]) .output-section:has(.student-list-view) {
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 [data-theme="dark"] .student-list-view {
     box-shadow: none;
 }

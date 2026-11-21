@@ -488,6 +488,13 @@ export const ListSelectionManager = {
     },
 
     async bulkRegenerate(ids) {
+        if (!navigator.onLine && !(appState.currentAIModel || '').startsWith('ollama')) {
+            UI?.showNotification("Mode hors-ligne : connexion Internet requise pour régénérer avec l'IA.", "warning");
+            return;
+        }
+        if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
+            return;
+        }
         const batchClassId = appState.currentClassId;
         const batchPeriod = appState.currentPeriod;
 

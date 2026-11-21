@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { appState } from '../state/State.js';
 
 vi.mock('../state/State.js', () => ({
     appState: {
@@ -68,6 +69,7 @@ vi.mock('./DropdownManager.js', () => ({
     DropdownManager: {
         instances: new Map(),
         enhance: vi.fn(),
+        refresh: vi.fn(),
         updateDisplay: vi.fn(),
         closeAll: vi.fn()
     }
@@ -257,9 +259,10 @@ describe('ImportWizardManager — Sécurité XSS DOM & Rejet Excel (.xlsx/.xls)'
         ImportWizardManager.state.columnCount = 3;
         ImportWizardManager.state.hasHeader = false;
         ImportWizardManager.state.detectedFormat = null;
-        ImportWizardManager._guessTypeTag = vi.fn((_, idx) => (['NOM_PRENOM', 'STATUT', 'MOY_T1'][idx] || 'IGNORE'));
+        const guessSpy = vi.spyOn(ImportWizardManager, '_guessTypeTag').mockImplementation((_, idx) => (['NOM_PRENOM', 'STATUT', 'MOY_T1'][idx] || 'IGNORE'));
 
         ImportWizardManager._buildMappingTable(true);
+        guessSpy.mockRestore();
 
         const table = document.querySelector('.import-mapping-table');
         expect(table).not.toBeNull();
@@ -388,5 +391,88 @@ describe('ImportWizardManager — Affichage conditionnel du panneau Règles (Ét
         expect(document.getElementById('wizardRulesSection').style.display).toBe('none');
         expect(document.getElementById('wizardDepartedRuleText').style.display).toBe('none');
         expect(document.getElementById('wizardOverwriteWarning').style.display).toBe('none');
+    });
+});
+
+describe('ImportWizardManager — Auto-mapping TSV Pronote/Excel & en-tête (B2, F8)', () => {
+    beforeEach(() => {
+        appState.currentPeriod = 'T1';
+        appState.periodSystem = 'trimestres';
+        appState.massImportFormats = { trimestres: {}, semestres: {} };
+        document.body.innerHTML = `
+            <div id="importWizardModal">
+                <textarea id="wizardDataTextarea"></textarea>
+                <button id="wizardStep1NextBtn" disabled></button>
+                <div id="wizardStep1LineCount" style="display:none;"><span id="wizardLineCountBadge">0</span></div>
+                <span id="wizardCountBadge2">0</span>
+                <select id="wizardSeparatorSelect"><option value="tab">Tab</option><option value=";">;</option><option value=",">,</option></select>
+                <div id="wizardMappingContainer"></div>
+            </div>
+        `;
+        vi.spyOn(ImportWizardManager, '_updatePreview').mockResolvedValue();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        ImportWizardManager._reset();
+    });
+
+    it('détecte l\'en-tête Élève/Moyenne/Appréciation, mappe sur NOM_PRENOM/MOY_T1/APP_T1 et exclut l\'en-tête du compteur et du tableau (B2)', () => {
+        const tsv = [
+            'Élève\tMoyenne\tAppréciation',
+            'DURAND Sophie\t11,5\t',
+            'BERNARD Thomas\t16,0\tTrès bon trimestre, travail rigoureux.',
+            'GARCIA Léa\t14,5\tBon investissement en classe.',
+            'ROUX Maxime\t8,5\tDes difficultés mais de la bonne volonté.'
+        ].join('\n');
+
+        document.getElementById('wizardDataTextarea').value = tsv;
+        ImportWizardManager._processData();
+
+        expect(ImportWizardManager.state.hasHeader).toBe(true);
+        expect(document.getElementById('wizardStep1NextBtn').disabled).toBe(false);
+        expect(document.getElementById('wizardCountBadge2').textContent).toBe('4');
+
+        const selects = Array.from(document.querySelectorAll('.mapping-select')).map(s => s.value);
+        expect(selects).toEqual(['NOM_PRENOM', 'MOY_T1', 'APP_T1']);
+
+        const bodyRows = document.querySelectorAll('.import-mapping-table tbody tr');
+        expect(bodyRows.length).toBe(4);
+        expect(bodyRows[0].textContent).toContain('DURAND Sophie');
+        expect(bodyRows[0].textContent).not.toContain('Moyenne');
+    });
+
+    it('mappe correctement un tableau sans en-tête contenant des moyennes décimales françaises (B2 repli)', () => {
+        const tsv = [
+            'DURAND Sophie\t11,5\tÉlève sérieuse et régulière.',
+            'BERNARD Thomas\t16,0\tExcellent trimestre.'
+        ].join('\n');
+
+        document.getElementById('wizardDataTextarea').value = tsv;
+        ImportWizardManager._processData();
+
+        expect(ImportWizardManager.state.hasHeader).toBe(false);
+        expect(document.getElementById('wizardCountBadge2').textContent).toBe('2');
+        const selects = Array.from(document.querySelectorAll('.mapping-select')).map(s => s.value);
+        expect(selects[0]).toBe('NOM_PRENOM');
+        expect(selects[1]).toBe('MOY_T1');
+    });
+
+    it('active le bouton Suivant dès un événement paste ou change sur le champ texte (F8)', async () => {
+        vi.useFakeTimers();
+        try {
+            ImportWizardManager._bindEvents();
+            const textarea = document.getElementById('wizardDataTextarea');
+            const nextBtn = document.getElementById('wizardStep1NextBtn');
+            expect(nextBtn.disabled).toBe(true);
+
+            textarea.value = 'DURAND Sophie\t14,5';
+            textarea.dispatchEvent(new Event('paste'));
+            await vi.advanceTimersByTimeAsync(10);
+
+            expect(nextBtn.disabled).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

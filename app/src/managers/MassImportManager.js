@@ -301,18 +301,22 @@ export const MassImportManager = {
                 const importedAppreciation = studentData.periods?.[currentPeriod]?.appreciation ?? '';
                 const finalAppreciation = existingResult.studentData.periods[currentPeriod]?.appreciation || '';
 
-                existingResult.studentData.statuses = studentData.statuses || existingResult.studentData.statuses;
+                if (Array.isArray(studentData.statuses) && studentData.statuses.length > 0) {
+                    existingResult.studentData.statuses = studentData.statuses;
+                }
 
                 // Synchronisation du champ d'appréciation racine
                 existingResult.appreciation = finalAppreciation;
                 existingResult.isPending = !finalAppreciation;
 
-                // An imported appreciation is NOT AI-generated — reset the flag
-                // so the AI icon is not shown for data that came from a PDF/manual import
+                // An imported appreciation is NOT AI-generated — reset AI & error flags
+                // so neither the AI icon nor a stale AI failure badge remain on imported text
                 if (importedAppreciation) {
                     existingResult.wasGenerated = false;
                     existingResult.appreciationSource = 'imported';
                     existingResult.generationPeriod = currentPeriod;
+                    existingResult.errorMessage = null;
+                    existingResult.errorPeriod = null;
                     try {
                         existingResult.promptHash = PromptService.getPromptHash({
                             ...existingResult.studentData,
@@ -359,6 +363,9 @@ export const MassImportManager = {
     async generateAllPending() {
         if (!navigator.onLine && !(appState.currentAIModel || '').startsWith('ollama')) {
             UI?.showNotification("Mode hors-ligne : connexion Internet requise pour générer avec l'IA.", "warning");
+            return;
+        }
+        if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
             return;
         }
         // Récupérer les élèves en attente de la classe courante

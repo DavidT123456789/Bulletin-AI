@@ -633,6 +633,12 @@
     }
 }
 
+@media (max-width: 480px) {
+    .header-class-note-btn {
+        width: 26px;
+    }
+}
+
 .class-note-popover {
     position: fixed;
     top: 64px;

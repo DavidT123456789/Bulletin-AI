@@ -559,16 +559,17 @@ describe('SettingsUIManager', () => {
             `;
         });
 
-        it('devrait réinitialiser currentAIModel vers gemini-4-hydrogen et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
+        it('devrait réinitialiser currentAIModel vers albert-openweight-medium et masquer le bandeau d\'erreur si aucune clé n\'est configurée', () => {
             appState.currentAIModel = 'mistral-direct-small-latest';
             appState.mistralApiKey = '';
+            appState.albertApiKey = '';
             appState.googleApiKey = '';
             appState.groqApiKey = '';
 
             SettingsUIManager.updateApiStatusDisplay();
 
-            expect(appState.currentAIModel).toBe('gemini-4-hydrogen');
-            expect(DOM.aiModelSelect.value).toBe('gemini-4-hydrogen');
+            expect(appState.currentAIModel).toBe('albert-openweight-medium');
+            expect(DOM.aiModelSelect.value).toBe('albert-openweight-medium');
             expect(document.getElementById('missingApiKeyWarning').style.display).toBe('none');
         });
 

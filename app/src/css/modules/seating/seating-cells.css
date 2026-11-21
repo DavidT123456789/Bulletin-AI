@@ -1848,6 +1848,17 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         padding-top: 0;
     }
 
+    .sc-sidebar::before {
+        content: '';
+        display: block;
+        width: 36px;
+        height: 4px;
+        border-radius: var(--radius-pill);
+        background: var(--text-quaternary, rgba(150, 150, 150, 0.4));
+        margin: 8px auto 0;
+        flex-shrink: 0;
+    }
+
     /* Locked sidebar slides smoothly off-screen vertically on mobile (120Hz GPU translate) */
     #seatingChartView[data-locked="true"] .sc-sidebar {
         translate: 0 calc(100% + 12px);

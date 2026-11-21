@@ -415,12 +415,12 @@ export const ListViewRenderer = {
                             <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="${title}" data-tooltip="${title}">
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                             </button>
-                            <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">
+                            <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})" aria-label="Générer les appréciations en attente (${activePeriodLabel})">
                                 <iconify-icon icon="solar:stars-bold-duotone" class="smart-action-icon"></iconify-icon>
                                 ${Utils.getStopSquareHTML(12)}
                                 <span class="smart-action-badge" id="generateBadgeInline">0</span>
                             </button>
-                            <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})">
+                            <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})" aria-label="Actualiser les appréciations modifiées (${activePeriodLabel})">
                                 <iconify-icon icon="solar:refresh-bold" class="smart-action-icon"></iconify-icon>
                                 ${Utils.getStopSquareHTML(12)}
                                 <span class="smart-action-badge" id="updateBadgeInline">0</span>

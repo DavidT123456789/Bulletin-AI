@@ -673,6 +673,7 @@ export const ResultsUIManager = {
                 generateBtn.disabled = false;
             }
             if (generateBtn.dataset.tooltip) {
+                generateBtn.setAttribute('aria-label', generateBtn.dataset.tooltip);
                 UI?.updateTooltip?.(generateBtn, generateBtn.dataset.tooltip);
             }
         }
@@ -721,6 +722,7 @@ export const ResultsUIManager = {
                 updateBtn.disabled = false;
             }
             if (updateBtn.dataset.tooltip) {
+                updateBtn.setAttribute('aria-label', updateBtn.dataset.tooltip);
                 UI?.updateTooltip?.(updateBtn, updateBtn.dataset.tooltip);
             }
         }
@@ -903,6 +905,9 @@ export const ResultsUIManager = {
     async regenerateDirty() {
         if (!navigator.onLine && !(appState.currentAIModel || '').startsWith('ollama')) {
             UI?.showNotification("Mode hors-ligne : connexion Internet requise pour actualiser avec l'IA.", "warning");
+            return;
+        }
+        if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
             return;
         }
         const currentPeriod = appState.currentPeriod;

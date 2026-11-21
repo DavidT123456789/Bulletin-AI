@@ -185,6 +185,10 @@ export const FocusPanelGenerator = {
             return;
         }
 
+        if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
+            return;
+        }
+
         panel._activeGenerationStartTime = Date.now();
 
         const abortController = new AbortController();

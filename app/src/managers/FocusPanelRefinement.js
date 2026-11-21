@@ -237,6 +237,10 @@ export const FocusPanelRefinement = {
             return;
         }
 
+        if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
+            return;
+        }
+
         FocusPanelHistory.push(currentText, 'edit', { studentId: refineStudentId, period: refinePeriod });
 
         document.querySelectorAll('#focusRefinementOptions [data-refine-type]').forEach(b => {

@@ -1100,11 +1100,26 @@ export const UI = {
 
         if (name && !key) {
             if (!silent) {
-                if (provider === 'ollama') {
-                    this.showNotification(`Ollama n'est pas activé. Activez-le dans les paramètres.`, 'warning');
-                } else {
-                    this.showNotification(`Clé API ${name} manquante.`, 'warning');
-                }
+                const openApiSettings = () => {
+                    const settingsModal = DOM.settingsModal || document.getElementById('appSettingsModal');
+                    if (settingsModal) {
+                        this.openModal(settingsModal);
+                        this.showSettingsTab('settings-engine');
+                    }
+                };
+                const hasAnyConfiguredProvider = Object.keys(PROVIDER_CONFIG).some(p => hasValidApiKey(p, { state: appState }));
+                const message = provider === 'ollama'
+                    ? `Ollama n'est pas activé. Activez-le dans les paramètres.`
+                    : (!hasAnyConfiguredProvider
+                        ? `Aucune clé API configurée. Ajoutez une clé dans les paramètres (IA & Clés).`
+                        : `Clé API ${name} manquante.`);
+                this.showNotification(message, 'warning', 5000, {
+                    group: 'missing-api-key',
+                    action: {
+                        label: 'Configurer',
+                        onClick: openApiSettings
+                    }
+                });
                 const engineTab = document.getElementById('settings-engine');
                 if (errEl && DOM.settingsModal?.style?.display === 'flex' && engineTab?.classList?.contains('active')) {
                     errEl.textContent = `⚠️ Clé ${name} requise.`;
@@ -1171,13 +1186,22 @@ export const UI = {
             // Determine target element (closest matching ancestor or element itself)
             const target = (parentSelector && element.closest(parentSelector)) || element;
 
-            // Scroll into view
+            // Scroll into view only when target is outside the visible area of its scroll container
             if (scrollIntoView) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const scrollParent = target.closest('.ui-tabs-content, .modal-body, .lab-pane');
+                let isAlreadyVisible = false;
+                if (scrollParent && typeof scrollParent.getBoundingClientRect === 'function' && typeof target.getBoundingClientRect === 'function') {
+                    const pRect = scrollParent.getBoundingClientRect();
+                    const tRect = target.getBoundingClientRect();
+                    isAlreadyVisible = pRect.height > 0 && tRect.top >= pRect.top && tRect.bottom <= pRect.bottom;
+                }
+                if (!isAlreadyVisible && typeof target.scrollIntoView === 'function') {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             }
 
-            // Focus the element for accessibility
-            if (element.focus) element.focus();
+            // Focus the element for accessibility without snapping scroll position
+            if (element.focus) element.focus({ preventScroll: true });
 
             // Apply highlight animation class
             target.classList.remove('settings-focus-highlight');

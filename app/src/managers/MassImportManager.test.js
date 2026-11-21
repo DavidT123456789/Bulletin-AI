@@ -356,4 +356,93 @@ describe('MassImportManager', () => {
             expect(emma.studentData.periods.T2.appreciation).toBe('');
         });
     });
+
+    describe('importStudentsOnly — fusion & intégrité (B1, B4)', () => {
+        it('préserve les statuts existants lors d\'une fusion sans colonne Statut (B1) et efface une erreur IA résiduelle lors d\'un import d\'appréciation (B4)', async () => {
+            const { StorageManager } = await import('./StorageManager.js');
+            const { ClassManager } = await import('./ClassManager.js');
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockResolvedValue();
+            const filterSpy = vi.spyOn(ClassManager, '_filterResultsByClass').mockResolvedValue();
+            appState.currentClassId = 'cls-demo';
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [
+                {
+                    id: 'st-durand',
+                    classId: 'cls-demo',
+                    nom: 'DURAND',
+                    prenom: 'Sophie',
+                    appreciation: 'Ancienne appréciation',
+                    errorMessage: 'Erreur IA : Clé API manquante.',
+                    errorPeriod: 'T1',
+                    studentData: {
+                        statuses: ['PPRE'],
+                        periods: { T1: { grade: 9.0, appreciation: 'Ancienne appréciation', context: 'Accompagnement' } }
+                    }
+                },
+                {
+                    id: 'st-bernard',
+                    classId: 'cls-demo',
+                    nom: 'BERNARD',
+                    prenom: 'Thomas',
+                    appreciation: '',
+                    errorMessage: 'Erreur IA : Clé API manquante.',
+                    errorPeriod: 'T1',
+                    studentData: {
+                        statuses: ['DÉLÉGUÉ'],
+                        periods: { T1: { grade: 15.0, appreciation: '', context: '' } }
+                    }
+                }
+            ];
+
+            await MassImportManager.importStudentsOnly([
+                {
+                    nom: 'DURAND',
+                    prenom: 'Sophie',
+                    statuses: [], // Aucun statut importé
+                    periods: { T1: { grade: 11.5, appreciation: '', context: '' } }
+                },
+                {
+                    nom: 'BERNARD',
+                    prenom: 'Thomas',
+                    statuses: ['PAP'], // Statut explicitement importé
+                    periods: { T1: { grade: 16.0, appreciation: 'Très bon trimestre.', context: '' } }
+                }
+            ], 0);
+
+            const durand = appState.generatedResults.find(r => r.id === 'st-durand');
+            const bernard = appState.generatedResults.find(r => r.id === 'st-bernard');
+
+            // B1 : PPRE préservé quand statuses est vide, mis à jour quand non vide
+            expect(durand.studentData.statuses).toEqual(['PPRE']);
+            expect(durand.studentData.periods.T1.grade).toBe(11.5);
+            expect(durand.studentData.periods.T1.appreciation).toBe('Ancienne appréciation');
+            expect(bernard.studentData.statuses).toEqual(['PAP']);
+
+            // B4 : l'import d'une appréciation valide nettoie errorMessage/errorPeriod
+            expect(bernard.appreciation).toBe('Très bon trimestre.');
+            expect(bernard.errorMessage).toBeNull();
+            expect(bernard.errorPeriod).toBeNull();
+            // Sans appréciation importée, on ne masque pas une erreur préexistante silencieusement
+            expect(durand.errorMessage).toBe('Erreur IA : Clé API manquante.');
+
+            saveSpy.mockRestore();
+            filterSpy.mockRestore();
+        });
+    });
+
+    describe('generateAllPending — garde préalable sans clé API (B3)', () => {
+        it('bloque immédiatement sans lancer processMassImport si checkAPIKeyPresence retourne false', async () => {
+            mockUI.checkAPIKeyPresence = vi.fn(() => false);
+            const processSpy = vi.spyOn(MassImportManager, 'processMassImport');
+
+            await MassImportManager.generateAllPending();
+
+            expect(mockUI.checkAPIKeyPresence).toHaveBeenCalledTimes(1);
+            expect(processSpy).not.toHaveBeenCalled();
+            expect(mockAm.generateAppreciation).not.toHaveBeenCalled();
+
+            delete mockUI.checkAPIKeyPresence;
+            processSpy.mockRestore();
+        });
+    });
 });

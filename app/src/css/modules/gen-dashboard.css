@@ -401,6 +401,12 @@
     }
 }
 
+@media (max-width: 480px) {
+    .header-gen-dashboard:not(.generating) {
+        width: 30px;
+    }
+}
+
 /* ====================================================================
    FAST AI MODEL SWITCHER POPOVER (Apple / Google 2026 Style)
    ==================================================================== */

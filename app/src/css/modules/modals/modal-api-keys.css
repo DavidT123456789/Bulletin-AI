@@ -140,6 +140,8 @@
 
 .api-key-section .api-key-actions .api-key-input-container:focus-within::after,
 .welcome-api-key-group .api-key-input-container:focus-within::after,
+.api-key-section .api-key-actions .api-key-input-container:has(input:placeholder-shown)::after,
+.welcome-api-key-group .api-key-input-container:has(input:placeholder-shown)::after,
 .api-key-section .api-key-actions .api-key-input-container:has(.ollama-base-url-input)::after {
     opacity: 0;
 }

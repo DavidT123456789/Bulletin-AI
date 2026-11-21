@@ -438,13 +438,13 @@ export const SettingsUIManager = {
         // Injecter les icônes à jour avant d'afficher le statut
         this.injectProviderIcons();
 
-        let model = appState.currentAIModel || PROVIDER_DEFAULT_MODELS.google;
+        let model = appState.currentAIModel || PROVIDER_DEFAULT_MODELS.albert;
 
         // Si le modèle actif n'est pas disponible (clé absente ou supprimée),
-        // basculer vers le premier modèle disponible, ou revenir au modèle par défaut (Gemini) si aucune clé n'existe.
+        // basculer vers le premier modèle disponible, ou revenir au modèle par défaut (Albert) si aucune clé n'existe.
         if (!this._isModelAvailable(model)) {
             const firstAvailable = buildFallbackQueue(model).find(m => this._isModelAvailable(m));
-            model = firstAvailable || PROVIDER_DEFAULT_MODELS.google;
+            model = firstAvailable || PROVIDER_DEFAULT_MODELS.albert;
             if (appState.currentAIModel !== model) {
                 appState.currentAIModel = model;
             }

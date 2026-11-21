@@ -53,7 +53,7 @@ export const userSettings = {
 
     /** Configuration API */
     api: {
-        currentAIModel: PROVIDER_DEFAULT_MODELS.google,
+        currentAIModel: PROVIDER_DEFAULT_MODELS.albert,
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',

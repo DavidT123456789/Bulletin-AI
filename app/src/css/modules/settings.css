@@ -1362,9 +1362,15 @@ label.settings-row-title {
 }
 
 .settings-row-control.model-selector-wrapper {
-    flex: 0 0 295px;
-    width: 295px;
+    flex: 0 1 240px;
+    width: 240px;
     max-width: 100%;
+}
+
+.settings-row:has(.accent-color-selector) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .settings-row-control .model-selector-wrapper {
@@ -1377,6 +1383,16 @@ label.settings-row-title {
     background: transparent;
     border: none;
     border-radius: 0;
+}
+
+.settings-providers-card .api-key-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.settings-providers-card .api-key-links {
+    margin-left: -10px;
 }
 
 .settings-providers-card > .api-key-section + .api-key-section {

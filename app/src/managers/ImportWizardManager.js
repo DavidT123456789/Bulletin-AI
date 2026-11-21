@@ -321,7 +321,7 @@ export const ImportWizardManager = {
         const dataTextarea = document.getElementById('wizardDataTextarea');
         if (dataTextarea) {
             FocusPanelManager.bindScrollAffordances(dataTextarea);
-            const debouncedProcess = Utils.debounce(() => {
+            const syncTextareaData = () => {
                 const currentText = dataTextarea.value;
                 if (currentText && (!this.state.currentSource || this.state.currentSource === 'sample')) {
                     this._setDropZone('text');
@@ -329,10 +329,21 @@ export const ImportWizardManager = {
                     this._resetFile();
                 }
                 this._processData();
-            }, 300);
+            };
+            const debouncedProcess = Utils.debounce(syncTextareaData, 300);
             dataTextarea.addEventListener('input', () => {
                 FocusPanelManager.updateScrollAffordances(dataTextarea);
                 debouncedProcess();
+            });
+            dataTextarea.addEventListener('paste', () => {
+                setTimeout(() => {
+                    FocusPanelManager.updateScrollAffordances(dataTextarea);
+                    syncTextareaData();
+                }, 0);
+            });
+            dataTextarea.addEventListener('change', () => {
+                FocusPanelManager.updateScrollAffordances(dataTextarea);
+                syncTextareaData();
             });
         }
 
@@ -1221,10 +1232,13 @@ export const ImportWizardManager = {
         const container = document.getElementById('wizardMappingContainer');
         if (!container || this.state.lines.length === 0) return;
 
-        // Update student count badge (now in footer)
+        // Update student count badge (now in footer — exclude detected header row)
+        const dataLines = (this.state.hasHeader && this.state.lines.length > 1)
+            ? this.state.lines.slice(1)
+            : this.state.lines;
         const countBadge = document.getElementById('wizardCountBadge2');
         if (countBadge) {
-            countBadge.textContent = this.state.lines.length;
+            countBadge.textContent = dataLines.length;
         }
 
         const cols = this.state.columnCount;
@@ -1301,7 +1315,9 @@ export const ImportWizardManager = {
 
         for (let i = 0; i < cols; i++) {
             // Determine initial value: use saved format if available and matching, otherwise auto-detect
-            let initialValue = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
+            // Pick first non-empty data cell (excluding header row) so structural guessing inspects real values
+            const sampleCell = dataLines.map(row => row?.[i] || '').find(v => String(v).trim() !== '') || dataLines[0]?.[i] || '';
+            let initialValue = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(sampleCell, i);
 
             html += `<th>
                 <select id="wizardMappingSelect_${i}" class="mapping-select" data-col-index="${i}">
@@ -1311,8 +1327,8 @@ export const ImportWizardManager = {
         }
         html += `</tr></thead><tbody>`;
 
-        // Show ALL lines (container has max-height with scroll)
-        const previewLines = this.state.lines;
+        // Show ALL student data lines (excluding detected header row; container has max-height with scroll)
+        const previewLines = dataLines;
         previewLines.forEach(line => {
             html += `<tr>`;
             for (let i = 0; i < cols; i++) {
@@ -1648,12 +1664,14 @@ export const ImportWizardManager = {
             if (kws.some(kw => matchKeyword(title, kw))) return tag;
         }
 
-        // 2. Check for Period-specific columns (Moy, App, Ctx)
-        // Patterns to look for: "Moyenne T1", "App S2", "Note T3"
+        // 2. Check for Period-specific columns (Dev, Moy, Ctx, App)
+        // Patterns to look for: "Moyenne T1", "App S2", "Note T3", or generic "Moyenne" / "Appréciation"
+        const currentPeriod = appState.currentPeriod || periods[0] || 'T1';
         const periodPrefixes = {
+            'DEV_': ['nb note', 'nb eval', 'devoir', 'eval'],
             'MOY_': ['moy', 'note'],
-            'APP_': ['app', 'com', 'obs'],
-            'CTX_': ['contexte', 'ctx', 'instruction', 'observation']
+            'CTX_': ['contexte', 'ctx', 'instruction', 'observation'],
+            'APP_': ['app', 'com', 'obs']
         };
 
         for (const [prefix, kws] of Object.entries(periodPrefixes)) {
@@ -1665,9 +1683,8 @@ export const ImportWizardManager = {
                     if (periods.includes(p)) return prefix + p;
                 }
 
-                // If no specific period found in header, but we found "Moyenne", "Note", etc.
-                // We could infer it matches the current period, but that's risky for headers.
-                // Better to return null and let structural guessing handle it.
+                // Generic single-period header (e.g. "Moyenne", "Appréciation") -> map to current period
+                return prefix + currentPeriod;
             }
         }
 

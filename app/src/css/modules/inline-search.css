@@ -504,6 +504,10 @@
 }
 
 @media (max-width: 480px) {
+    .header-search.sc-floating-search {
+        width: 30px;
+    }
+
     .header-search .sc-floating-search-input-box {
         right: var(--space-2);
         width: 38px;

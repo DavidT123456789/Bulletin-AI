@@ -1077,37 +1077,66 @@ button > .icon-spin-wrapper {
     }
 
     .header {
-        gap: 4px;
-        padding: 0 var(--space-2);
+        gap: 3px;
+        padding: 0 6px;
     }
 
     .header-left {
-        gap: 4px;
+        gap: 3px;
+        flex: 1 1 auto;
     }
 
     .header .header-context-chip {
-        padding: 0 8px;
-        gap: 4px;
-        font-size: 0.9rem;
+        padding: 0 5px;
+        gap: 3px;
+        font-size: 0.85rem;
+    }
+
+    .header .class-chip .student-count-badge {
+        padding: 0 4px;
+        min-width: 17px;
+        height: 17px;
+        font-size: 0.68rem;
     }
 
     #headerClassName {
-        max-width: 118px;
+        max-width: 128px;
     }
 
-    .header-actions,
+    .header-actions {
+        gap: 1px;
+    }
+
     .header-center {
         gap: 2px;
     }
 
+    .header-actions-pill {
+        gap: 0;
+    }
+
+    .header-actions-pill .pill-segment {
+        width: 30px;
+        height: 36px;
+    }
+
+    .menu-btn {
+        margin: -7px;
+    }
+
+    .ui-segmented-control.header-style {
+        --sc-padding: 2px;
+    }
+
     .ui-segmented-control.header-style .ui-segment {
-        min-width: 34px;
-        padding: 0 9px;
+        min-width: 28px;
+        padding: 0 6px;
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
-        min-width: 31px;
-        padding: 0 7px;
+        min-width: 24px;
+        padding: 0 4.5px;
+        font-size: 0.76rem;
     }
 
     .section-title {

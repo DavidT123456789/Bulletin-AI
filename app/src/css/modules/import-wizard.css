@@ -1689,8 +1689,8 @@
 }
 
 .preview-status-dot.dot-updated {
-    background: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+    background: var(--info-color, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .preview-status-dot.dot-departed {

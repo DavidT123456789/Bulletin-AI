@@ -1219,7 +1219,7 @@ export const StorageManager = {
 
             if (resetPreferences) {
                 appState.periodSystem = 'trimestres';
-                appState.currentAIModel = PROVIDER_DEFAULT_MODELS.google;
+                appState.currentAIModel = PROVIDER_DEFAULT_MODELS.albert;
                 appState.seatingStatusDots = { ...DEFAULT_SEATING_STATUS_DOTS };
                 parts.push('préférences');
             }
