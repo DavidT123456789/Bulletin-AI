@@ -103,6 +103,8 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(OLLAMA_CONFIG.apiEndpoint).toBe('/api/chat');
         expect(getModelMeta('groq-llama-3.3-70b').isReasoning).toBe(true);
         expect(getModelMeta('openai-gpt-6-luna').supportsTemperature).toBe(false);
+        expect(getModelMeta('gemini-4-hydrogen').supportsTemperature).toBe(false);
+        expect(getModelMeta('gemini-3.8-flash').supportsTemperature).toBe(false);
         expect(getModelMeta('deepseek-r1').supportsTemperature).toBe(false);
         expect(getModelMeta('anthropic-claude-opus-5-5').supportsTemperature).toBe(false);
     });

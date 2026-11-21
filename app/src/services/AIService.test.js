@@ -132,22 +132,18 @@ describe('AIService', () => {
             expect(config.payload.max_tokens).toBe(5);
         });
 
-        it('should inject thinkingConfig.thinkingLevel and calibrated sampling from aiRegistry for Google models', async () => {
+        it('should inject thinkingConfig.thinkingLevel and omit temperature/maxOutputTokens on Google reasoning models while calibrating non-reasoning models', async () => {
             const { appState } = await import('../state/State.js');
             appState.googleApiKey = 'test-google-key';
 
             appState.currentAIModel = 'gemini-3.8-flash';
             expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'LOW' },
-                temperature: 0.65,
-                maxOutputTokens: 2048
+                thinkingConfig: { thinkingLevel: 'LOW' }
             });
 
             appState.currentAIModel = 'gemini-4-hydrogen';
             expect(AIService._getApiConfig('Test', { taskType: 'analysis' }).payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'LOW' },
-                temperature: 0.2,
-                maxOutputTokens: 2048
+                thinkingConfig: { thinkingLevel: 'LOW' }
             });
 
             appState.currentAIModel = 'gemini-3.6-flash';
@@ -155,6 +151,45 @@ describe('AIService', () => {
                 temperature: 0.65,
                 maxOutputTokens: 1024
             });
+        });
+
+        it('should never leak Gemini thought-only parts as final appreciation text when truncated', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.googleApiKey = 'test-google-key';
+            appState.currentAIModel = 'gemini-4-hydrogen';
+
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    candidates: [{
+                        finishReason: 'MAX_TOKENS',
+                        content: {
+                            parts: [
+                                { thought: true, text: 'Stick strictly to data. Let us write: "Lucas...' }
+                            ]
+                        }
+                    }]
+                })
+            });
+
+            await expect(AIService.callAI('Test prompt')).rejects.toThrow(/Réponse vide/i);
+
+            global.fetch = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { thought: true, text: 'Internal reasoning...' },
+                                { text: 'Lucas a mené un travail approfondi ce semestre.' }
+                            ]
+                        }
+                    }]
+                })
+            });
+
+            const res = await AIService.callAI('Test prompt');
+            expect(res.text).toBe('Lucas a mené un travail approfondi ce semestre.');
         });
 
         it('should return correct config for OpenAI provider', async () => {

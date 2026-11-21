@@ -212,7 +212,8 @@ export const AIService = {
                     if (sampling.temperature !== undefined) {
                         genConfig.temperature = sampling.temperature;
                     }
-                    if (!isValidation) {
+                    // Ne pas plafonner maxOutputTokens sur Gemini reasoning (thinking + réponse partagent ce budget)
+                    if (!isValidation && !sampling.isReasoning) {
                         genConfig.maxOutputTokens = sampling.maxTokens;
                     }
                     if (Object.keys(genConfig).length > 0) {
@@ -488,11 +489,12 @@ export const AIService = {
                 // Extraction du texte selon le format de réponse
                 let text = "";
                 if (res.candidates?.[0]?.content?.parts) {
-                    // Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
+                    // Google Gemini : ne jamais exposer les parties de réflexion interne (thought: true),
+                    // même si la réponse a été tronquée avant le texte final (MAX_TOKENS -> réponse vide -> fallback)
                     const nonThoughtParts = res.candidates[0].content.parts
                         .filter(p => !p.thought && p.text)
                         .map(p => p.text);
-                    text = (nonThoughtParts.length > 0 ? nonThoughtParts : res.candidates[0].content.parts.map(p => p.text || '')).join('').trim();
+                    text = nonThoughtParts.join('').trim();
                 } else if (Array.isArray(res.content)) {
                     // Anthropic Claude : extraire les blocs text du tableau content
                     text = res.content
